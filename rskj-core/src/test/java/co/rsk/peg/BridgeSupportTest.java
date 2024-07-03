@@ -267,6 +267,14 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getActiveFederationBtcUTXOs() {
+            List<UTXO> utxos = BitcoinTestUtils.createUTXOs(2, federation.getAddress());
+
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(utxos);
+            assertThat(bridgeSupport.getActiveFederationBtcUTXOs(), is(utxos));
+        }
+
+        @Test
         void getRetiringFederation() {
             when(federationSupport.getRetiringFederation()).thenReturn(federation);
             assertThat(bridgeSupport.getRetiringFederation(), is(federation));
@@ -338,6 +346,22 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getRetiringFederationBtcUTXOs() {
+            List<UTXO> utxos = BitcoinTestUtils.createUTXOs(2, federation.getAddress());
+
+            when(federationSupport.getRetiringFederationBtcUTXOs()).thenReturn(utxos);
+            assertThat(bridgeSupport.getRetiringFederationBtcUTXOs(), is(utxos));
+        }
+
+        @Test
+        void getNewFederationBtcUTXOs() {
+            List<UTXO> utxos = BitcoinTestUtils.createUTXOs(2, federation.getAddress());
+
+            when(federationSupport.getNewFederationBtcUTXOs()).thenReturn(utxos);
+            assertThat(bridgeSupport.getNewFederationBtcUTXOs(), is(utxos));
+        }
+
+        @Test
         void getPendingFederationHash() {
             PendingFederation pendingFederation = new PendingFederationBuilder().build();
             Keccak256 hash = pendingFederation.getHash();
@@ -387,6 +411,20 @@ class BridgeSupportTest {
 
             when(federationSupport.voteFederationChange(any(), any(), any(), any())).thenReturn(result);
             assertThat(bridgeSupport.voteFederationChange(tx, callSpec), is(result));
+        }
+
+        @Test
+        void clearRetiredFederation_callsFederationSupportClearRetiredFederation() {
+            bridgeSupport.clearRetiredFederation();
+            verify(federationSupport).clearRetiredFederation();
+        }
+
+        @Test
+        void getLastRetiredFederationP2SHScript() {
+            Script script = federation.getP2SHScript();
+
+            when(federationSupport.getLastRetiredFederationP2SHScript()).thenReturn(Optional.ofNullable(script));
+            assertThat(bridgeSupport.getLastRetiredFederationP2SHScript(), is(script));
         }
 
         @Test

@@ -266,7 +266,7 @@ public class BridgeSupport {
      */
     public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
         Federation federation = getActiveFederation();
-        List<UTXO> utxos = federationSupport.getActiveFederationBtcUTXOs();
+        List<UTXO> utxos = getActiveFederationBtcUTXOs();
 
         return BridgeUtils.getFederationSpendWallet(
             btcContext,
@@ -286,7 +286,7 @@ public class BridgeSupport {
      * @param shouldConsiderFlyoverUTXOs
      */
     protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
-        List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+        List<UTXO> retiringFederationBtcUTXOs = getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
@@ -297,7 +297,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<UTXO> utxos = federationSupport.getRetiringFederationBtcUTXOs();
+        List<UTXO> utxos = getRetiringFederationBtcUTXOs();
         if (utxos.size() > utxosSizeLimit) {
             logger.debug("[getRetiringFederationWallet] Going to limit the amount of UTXOs to {}", utxosSizeLimit);
             utxos = utxos.subList(0, utxosSizeLimit);
@@ -380,7 +380,7 @@ public class BridgeSupport {
                 bridgeConstants,
                 getActiveFederation(),
                 getRetiringFederation(),
-                federationSupport.getLastRetiredFederationP2SHScript().orElse(null),
+                getLastRetiredFederationP2SHScript(),
                 btcTx,
                 height
             );
@@ -407,6 +407,10 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    protected Script getLastRetiredFederationP2SHScript() {
+        return federationSupport.getLastRetiredFederationP2SHScript().orElse(null);
     }
 
     @VisibleForTesting
@@ -755,7 +759,7 @@ public class BridgeSupport {
                 btcTx.isCoinBase(),
                 output.getScriptPubKey()
             );
-            federationSupport.getActiveFederationBtcUTXOs().add(utxo);
+            getActiveFederationBtcUTXOs().add(utxo);
         }
         logger.debug("[saveNewUTXOs] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
 
@@ -772,7 +776,7 @@ public class BridgeSupport {
                     btcTx.isCoinBase(),
                     output.getScriptPubKey()
                 );
-                federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
+                getRetiringFederationBtcUTXOs().add(utxo);
             }
             logger.debug("[saveNewUTXOs] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
         }
@@ -946,7 +950,7 @@ public class BridgeSupport {
             getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
             getRetiringFederationWallet(true);
 
-        List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
+        List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
 
         if (federationIsInMigrationAge(activeFederation)) {
@@ -995,8 +999,12 @@ public class BridgeSupport {
                 "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
                 availableUTXOs.size()
             );
-            federationSupport.clearRetiredFederation();
+            clearRetiredFederation();
         }
+    }
+
+    protected void clearRetiredFederation() {
+        federationSupport.clearRetiredFederation();
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
@@ -1097,7 +1105,7 @@ public class BridgeSupport {
             // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
             activeFederationWallet = getActiveFederationWallet(true);
             pegoutRequests = provider.getReleaseRequestQueue();
-            availableUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+            availableUTXOs = getActiveFederationBtcUTXOs();
             pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process pegout requests", e);
@@ -1581,7 +1589,7 @@ public class BridgeSupport {
     public byte[] getStateForDebugging() throws IOException, BlockStoreException {
         int btcBlockchainBestChainHeight = getBtcBlockchainBestChainHeight();
         long nextPegoutCreationBlockNumber = provider.getNextPegoutHeight().orElse(0L);
-        List<UTXO> newFederationBtcUTXOs = federationSupport.getNewFederationBtcUTXOs();
+        List<UTXO> newFederationBtcUTXOs = getNewFederationBtcUTXOs();
         SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures = provider.getPegoutsWaitingForSignatures();
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
@@ -1597,6 +1605,10 @@ public class BridgeSupport {
         );
 
         return stateForDebugging.getEncoded();
+    }
+
+    protected List<UTXO> getNewFederationBtcUTXOs() {
+        return federationSupport.getNewFederationBtcUTXOs();
     }
 
     /**
@@ -1930,6 +1942,10 @@ public class BridgeSupport {
         return federationSupport.getActiveFederationCreationBlockNumber();
     }
 
+    protected List<UTXO> getActiveFederationBtcUTXOs() {
+        return federationSupport.getActiveFederationBtcUTXOs();
+    }
+
     /**
      * Returns the retiring federation bitcoin address.
      * @return the retiring federation bitcoin address, null if no retiring federation exists
@@ -1988,6 +2004,10 @@ public class BridgeSupport {
      */
     public long getRetiringFederationCreationBlockNumber() {
         return federationSupport.getRetiringFederationCreationBlockNumber();
+    }
+
+    protected List<UTXO> getRetiringFederationBtcUTXOs() {
+        return federationSupport.getRetiringFederationBtcUTXOs();
     }
 
     /**
@@ -2663,7 +2683,7 @@ public class BridgeSupport {
     ) throws IOException {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
-        federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
+        getActiveFederationBtcUTXOs().addAll(utxosList);
     }
 
     protected void saveFlyoverRetiringFederationDataInStorage(
@@ -2674,7 +2694,7 @@ public class BridgeSupport {
     ) throws IOException {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
-        federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
+        getRetiringFederationBtcUTXOs().addAll(utxosList);
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
