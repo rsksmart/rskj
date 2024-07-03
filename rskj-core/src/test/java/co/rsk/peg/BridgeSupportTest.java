@@ -256,14 +256,6 @@ class BridgeSupportTest {
             when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
             assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
         }
-
-        @Test
-        void getActiveFederationBtcUTXOs() {
-            int threshold = federation.getNumberOfSignaturesRequired();
-
-            when(federationSupport.getActiveFederationThreshold()).thenReturn(threshold);
-            assertThat(bridgeSupport.getActiveFederationThreshold(), is(threshold));
-        }
     }
 
     @Test
