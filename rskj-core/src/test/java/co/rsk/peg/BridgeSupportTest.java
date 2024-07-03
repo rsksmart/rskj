@@ -557,7 +557,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -565,7 +565,7 @@ class BridgeSupportTest {
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         WhitelistStorageProvider whitelistProvider = mock(WhitelistStorageProvider.class);
-        when(whitelistProvider.getLockWhitelist(activations, btcRegTestParams)).thenReturn(lockWhitelist);
+        when(whitelistProvider.getLockWhitelist(activations, bridgeMainNetConstants.getBtcParams())).thenReturn(lockWhitelist);
         when(mockBridgeStorageProvider.getNewFederation()).thenReturn(genesisFederation);
 
         Block executionBlock = mock(Block.class);
@@ -576,7 +576,7 @@ class BridgeSupportTest {
 
         // Create transaction
         Coin lockValue = Coin.COIN;
-        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        BtcTransaction tx = new BtcTransaction(bridgeMainNetConstants.getBtcParams());
         tx.addOutput(lockValue, mockBridgeStorageProvider.getNewFederation().getAddress());
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
@@ -586,21 +586,21 @@ class BridgeSupportTest {
         bits[0] = 0x3f;
         List<Sha256Hash> hashes = new ArrayList<>();
         hashes.add(tx.getHash());
-        PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstantsRegtest.getBtcParams(), bits, hashes, 1);
+        PartialMerkleTree pmt = new PartialMerkleTree(bridgeMainNetConstants.getBtcParams(), bits, hashes, 1);
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
         co.rsk.bitcoinj.core.BtcBlock btcBlock =
-            new co.rsk.bitcoinj.core.BtcBlock(bridgeConstantsRegtest.getBtcParams(), 1, PegTestUtils.createHash(), merkleRoot,
+            new co.rsk.bitcoinj.core.BtcBlock(bridgeMainNetConstants.getBtcParams(), 1, PegTestUtils.createHash(), merkleRoot,
                 1, 1, 1, new ArrayList<>());
 
         int height = 1;
 
-        mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(), height);
+        mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
 
         FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
         when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(mockBridgeStorageProvider)
             .withEventLogger(mockedEventLogger)
             .withBtcLockSenderProvider(new BtcLockSenderProvider())
@@ -7224,7 +7224,7 @@ class BridgeSupportTest {
         if (blockStoreFactory == null) {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
         }
-        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeMainNetConstants.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
         return new BridgeSupport(
             constants,
             provider,
