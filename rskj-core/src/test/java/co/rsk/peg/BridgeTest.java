@@ -1679,7 +1679,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getActiveFederatorPublicKey(federatorIndex);
+            verify(bridgeSupportMock, times(1)).getActiveFederatorBtcPublicKey(federatorIndex);
         }
     }
 

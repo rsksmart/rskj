@@ -1896,7 +1896,7 @@ public class BridgeSupport {
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
-    public byte[] getActiveFederatorPublicKey(int index) {
+    public byte[] getActiveFederatorBtcPublicKey(int index) {
         return federationSupport.getActiveFederatorBtcPublicKey(index);
     }
 
