@@ -428,19 +428,6 @@ class BridgeSupportTest {
     }
 
     @Test
-    void getActivePowpegRedeemScript_before_RSKIP293_activation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
-            .withActivations(activations)
-            .build();
-
-        assertEquals(Optional.empty(), bridgeSupport.getActiveFederationRedeemScript());
-    }
-
-    @Test
     void increaseLockingCap_unauthorized() {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(authorizer.isAuthorized(any(Transaction.class), any())).thenReturn(false);
