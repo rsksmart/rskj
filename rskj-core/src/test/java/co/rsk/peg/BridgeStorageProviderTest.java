@@ -37,7 +37,6 @@ import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -1588,50 +1587,6 @@ class BridgeStorageProviderTest {
             storageKey,
             serializedHash
         );
-    }
-
-    @Test
-    void getActiveFederationCreationBlockHeight_before_fork() {
-        Repository repository = mock(Repository.class);
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        assertEquals(Optional.empty(), federationStorageProvider.getActiveFederationCreationBlockHeight(activationsBeforeFork));
-
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(bridgeAddress, ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
-    }
-
-    @Test
-    void getActiveFederationCreationBlockHeight_after_fork() {
-        Repository repository = mock(Repository.class);
-        // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(bridgeAddress, ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        assertEquals(Optional.of(1L), federationStorageProvider.getActiveFederationCreationBlockHeight(activationsAllForks));
-
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(bridgeAddress, ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
-    }
-
-    @Test
-    void setActiveFederationCreationBlockHeightAndGetActiveFederationCreationBlockHeight() {
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
-
-        // We store the value
-        federationStorageProvider.setActiveFederationCreationBlockHeight(1L);
-        federationStorageProvider.save(testnetBtcParams, activationsAllForks);
-        track.commit();
-
-        track = repository.startTracking();
-        federationStorageProvider = createFederationStorageProvider(track);
-
-        // And then we get it back
-        MatcherAssert.assertThat(federationStorageProvider.getActiveFederationCreationBlockHeight(activationsAllForks), is(Optional.of(1L)));
     }
 
     @Test
