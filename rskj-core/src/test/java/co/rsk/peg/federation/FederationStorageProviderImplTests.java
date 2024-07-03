@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -822,6 +824,80 @@ class FederationStorageProviderImplTests {
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+
+    }
+
+    @Test
+    void getActiveFederationCreationBlockHeight_beforeRSKIP186_storageIsNotAccessedAndReturnsEmpty() {
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+
+        // Arrange
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 1 });
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Assert
+        assertEquals(Optional.empty(), federationStorageProvider.getActiveFederationCreationBlockHeight(activations));
+
+    }
+
+    @Test
+    void getActiveFederationCreationBlockHeight_afterRSKIP186_getsValueFromStorage() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        // Arrange
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        long expectedValue = 1;
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 1 });
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+
+        // Assert
+
+        assertTrue(actualValueOptional.isPresent());
+        assertEquals(expectedValue, actualValueOptional.get());
+
+        // Setting in storage a different value to assert that calling the method again should return cached value
+
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 2 });
+
+        Optional<Long> actualCachedValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+
+        assertTrue(actualCachedValueOptional.isPresent());
+        assertEquals(expectedValue, actualCachedValueOptional.get());
+
+    }
+
+    @Test
+    void getActiveFederationCreationBlockHeight_afterRSKIP186AndNoValueInStorage_returnsEmpty() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        // Arrange
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null);
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+
+        // Assert
+
+        assertFalse(actualValueOptional.isPresent());
 
     }
 
