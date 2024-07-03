@@ -68,7 +68,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
     private static final ActivationConfig.ForBlock lovell700Activations = ActivationConfigsForTest.lovell700().forBlock(0);
     private WhitelistStorageProvider whitelistStorageProvider;
-    private ActivationConfig.ForBlock activationConfig;
 
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
     private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
@@ -433,9 +432,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         whitelistStorageProvider = mock(WhitelistStorageProvider.class);
-        activationConfig = mock(ActivationConfig.ForBlock.class);
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-        when(whitelistStorageProvider.getLockWhitelist(activationConfig, btcMainnetParams)).thenReturn(lockWhitelist);
+        when(whitelistStorageProvider.getLockWhitelist(lovell700Activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
         when(provider.getOldFederationBtcUTXOs())
             .thenReturn(retiringFederationUtxos);
@@ -2514,7 +2512,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-        when(whitelistStorageProvider.getLockWhitelist(activationConfig, btcMainnetParams)).thenReturn(lockWhitelist);
+        when(whitelistStorageProvider.getLockWhitelist(lovell700Activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
         when(provider.getNewFederationBtcUTXOs()).thenReturn(activeFederationUtxos);
 
