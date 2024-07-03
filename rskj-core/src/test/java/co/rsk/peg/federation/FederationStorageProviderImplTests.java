@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -799,6 +800,7 @@ class FederationStorageProviderImplTests {
         // Assert
 
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
 
     }
