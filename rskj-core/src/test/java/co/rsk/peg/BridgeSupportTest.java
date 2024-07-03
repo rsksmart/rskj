@@ -207,6 +207,63 @@ class BridgeSupportTest {
             when(federationSupport.getActiveFederationSize()).thenReturn(size);
             assertThat(bridgeSupport.getActiveFederationSize(), is(size));
         }
+
+        @Test
+        void getActiveFederationThreshold() {
+            int threshold = federation.getNumberOfSignaturesRequired();
+
+            when(federationSupport.getActiveFederationThreshold()).thenReturn(threshold);
+            assertThat(bridgeSupport.getActiveFederationThreshold(), is(threshold));
+        }
+
+        @Test
+        void getActiveFederationCreationTime() {
+            Instant creationTime = federation.getCreationTime();
+
+            when(federationSupport.getActiveFederationCreationTime()).thenReturn(creationTime);
+            assertThat(bridgeSupport.getActiveFederationCreationTime(), is(creationTime));
+        }
+
+        @Test
+        void getActiveFederationCreationBlockNumber() {
+            long creationBlockNumber = federation.getCreationBlockNumber();
+
+            when(federationSupport.getActiveFederationCreationBlockNumber()).thenReturn(creationBlockNumber);
+            assertThat(bridgeSupport.getActiveFederationCreationBlockNumber(), is(creationBlockNumber));
+        }
+
+        @Test
+        void getActiveFederatorBtcPublicKey() {
+            BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+
+            when(federationSupport.getActiveFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKey(0), is(publicKey.getPubKey()));
+        }
+
+        @Test
+        void getActiveFederatorPublicKeyOfType() {
+            FederationMember member = federation.getMembers().get(0);
+            BtcECKey btcKey = member.getBtcPublicKey();
+            ECKey rskKey = member.getRskPublicKey();
+            ECKey mstKey = member.getMstPublicKey();
+
+            when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+
+            when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+
+            when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
+            assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void getActiveFederationBtcUTXOs() {
+            int threshold = federation.getNumberOfSignaturesRequired();
+
+            when(federationSupport.getActiveFederationThreshold()).thenReturn(threshold);
+            assertThat(bridgeSupport.getActiveFederationThreshold(), is(threshold));
+        }
     }
 
     @Test
