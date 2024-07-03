@@ -934,6 +934,10 @@ public class BridgeSupport {
 
         processConfirmedPegouts(rskTx);
 
+        updateFederationCreationBlockHeights();
+    }
+
+    protected void updateFederationCreationBlockHeights() {
         federationSupport.updateFederationCreationBlockHeights();
     }
 

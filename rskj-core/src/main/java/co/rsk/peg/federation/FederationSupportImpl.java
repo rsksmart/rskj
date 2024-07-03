@@ -766,6 +766,7 @@ public class FederationSupportImpl implements FederationSupport {
         return currentBlockHeight < nextFederationCreationBlockHeight + constants.getFederationActivationAge(activations);
     }
 
+    @Override
     public void save() {
         provider.save(constants.getBtcParams(), activations);
     }
