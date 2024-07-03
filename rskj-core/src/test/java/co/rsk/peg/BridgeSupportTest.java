@@ -44,6 +44,7 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.UnrefundablePeginReason;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -233,6 +234,14 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getActiveFederationCreationBlockHeight() {
+            long creationBlockHeight = 100L;
+
+            when(federationSupport.getActiveFederationCreationBlockHeight()).thenReturn(creationBlockHeight);
+            assertThat(bridgeSupport.getActiveFederationCreationBlockHeight(), is(creationBlockHeight));
+        }
+
+        @Test
         void getActiveFederatorBtcPublicKey() {
             BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
 
@@ -326,6 +335,70 @@ class BridgeSupportTest {
 
             when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
             assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void getPendingFederationHash() {
+            PendingFederation pendingFederation = new PendingFederationBuilder().build();
+            Keccak256 hash = pendingFederation.getHash();
+
+            when(federationSupport.getPendingFederationHash()).thenReturn(hash);
+            assertThat(bridgeSupport.getPendingFederationHash(), is(hash));
+        }
+
+        @Test
+        void getPendingFederationSize() {
+            int size = federation.getSize();
+
+            when(federationSupport.getPendingFederationSize()).thenReturn(size);
+            assertThat(bridgeSupport.getPendingFederationSize(), is(size));
+        }
+
+        @Test
+        void getPendingFederatorBtcPublicKey() {
+            BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+
+            when(federationSupport.getPendingFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+        }
+
+        @Test
+        void getPendingFederatorPublicKeyOfType() {
+            FederationMember member = federation.getMembers().get(0);
+            BtcECKey btcKey = member.getBtcPublicKey();
+            ECKey rskKey = member.getRskPublicKey();
+            ECKey mstKey = member.getMstPublicKey();
+
+            when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+
+            when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+
+            when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
+            assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void voteFederationChange() throws BridgeIllegalArgumentException {
+            Transaction tx = mock(Transaction.class);
+            ABICallSpec callSpec = mock(ABICallSpec.class);
+            int result = 1;
+
+            when(federationSupport.voteFederationChange(any(), any(), any(), any())).thenReturn(result);
+            assertThat(bridgeSupport.voteFederationChange(tx, callSpec), is(result));
+        }
+
+        @Test
+        void updateFederationCreationBlockHeights_callsFederationSupportUpdateFederationCreationBlockHeights() {
+            bridgeSupport.updateFederationCreationBlockHeights();
+            verify(federationSupport).updateFederationCreationBlockHeights();
+        }
+
+        @Test
+        void save_callsFederationSupportSave() throws IOException {
+            bridgeSupport.save();
+            verify(federationSupport).save();
         }
     }
 
