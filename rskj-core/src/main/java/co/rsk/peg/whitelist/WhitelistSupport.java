@@ -85,4 +85,9 @@ public interface WhitelistSupport {
      * @return true if sender is authorized to peg-in the corresponding amount, false otherwise
      */
     boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height);
+
+    /**
+     * Saves the whitelisted addresses to the storage
+     */
+    void save();
 }

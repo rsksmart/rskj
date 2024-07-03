@@ -192,6 +192,7 @@ public class BridgeSupport {
     public void save() throws IOException {
         provider.save();
         feePerKbSupport.save();
+        whitelistSupport.save();
     }
 
     /**
