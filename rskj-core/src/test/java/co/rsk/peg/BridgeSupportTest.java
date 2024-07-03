@@ -179,7 +179,7 @@ class BridgeSupportTest {
         }
 
         @Test
-            void getActiveFederation() {
+        void getActiveFederation() {
             when(federationSupport.getActiveFederation()).thenReturn(federation);
             assertThat(bridgeSupport.getActiveFederation(), is(federation));
         }
@@ -237,7 +237,7 @@ class BridgeSupportTest {
             BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
 
             when(federationSupport.getActiveFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
-            assertThat(bridgeSupport.getActiveFederatorPublicKey(0), is(publicKey.getPubKey()));
+            assertThat(bridgeSupport.getActiveFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
         }
 
         @Test
@@ -255,6 +255,77 @@ class BridgeSupportTest {
 
             when(federationSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
             assertThat(bridgeSupport.getActiveFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void getRetiringFederation() {
+            when(federationSupport.getRetiringFederation()).thenReturn(federation);
+            assertThat(bridgeSupport.getRetiringFederation(), is(federation));
+        }
+
+        @Test
+        void getRetiringFederationAddress() {
+            Address address = federation.getAddress();
+
+            when(federationSupport.getRetiringFederationAddress()).thenReturn(address);
+            assertThat(bridgeSupport.getRetiringFederationAddress(), is(address));
+        }
+
+        @Test
+        void getRetiringFederationSize() {
+            int size = federation.getSize();
+
+            when(federationSupport.getRetiringFederationSize()).thenReturn(size);
+            assertThat(bridgeSupport.getRetiringFederationSize(), is(size));
+        }
+
+        @Test
+        void getRetiringFederationThreshold() {
+            int threshold = federation.getNumberOfSignaturesRequired();
+
+            when(federationSupport.getRetiringFederationThreshold()).thenReturn(threshold);
+            assertThat(bridgeSupport.getRetiringFederationThreshold(), is(threshold));
+        }
+
+        @Test
+        void getRetiringFederationCreationTime() {
+            Instant creationTime = federation.getCreationTime();
+
+            when(federationSupport.getRetiringFederationCreationTime()).thenReturn(creationTime);
+            assertThat(bridgeSupport.getRetiringFederationCreationTime(), is(creationTime));
+        }
+
+        @Test
+        void getRetiringFederationCreationBlockNumber() {
+            long creationBlockNumber = federation.getCreationBlockNumber();
+
+            when(federationSupport.getRetiringFederationCreationBlockNumber()).thenReturn(creationBlockNumber);
+            assertThat(bridgeSupport.getRetiringFederationCreationBlockNumber(), is(creationBlockNumber));
+        }
+
+        @Test
+        void getRetiringFederatorBtcPublicKey() {
+            BtcECKey publicKey = federation.getBtcPublicKeys().get(0);
+
+            when(federationSupport.getRetiringFederatorBtcPublicKey(0)).thenReturn(publicKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorBtcPublicKey(0), is(publicKey.getPubKey()));
+        }
+
+        @Test
+        void getRetiringFederatorPublicKeyOfType() {
+            FederationMember member = federation.getMembers().get(0);
+            BtcECKey btcKey = member.getBtcPublicKey();
+            ECKey rskKey = member.getRskPublicKey();
+            ECKey mstKey = member.getMstPublicKey();
+
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)).thenReturn(btcKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), is(btcKey.getPubKey()));
+
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)).thenReturn(rskKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), is(rskKey.getPubKey()));
+
+            when(federationSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
+            assertThat(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
         }
     }
 
