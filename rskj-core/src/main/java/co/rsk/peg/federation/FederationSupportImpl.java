@@ -312,7 +312,6 @@ public class FederationSupportImpl implements FederationSupport {
         }
     }
 
-
     @Override
     public List<UTXO> getNewFederationBtcUTXOs() {
         return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
