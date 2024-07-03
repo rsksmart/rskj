@@ -792,7 +792,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        return bridgeSupport.getActiveFederatorPublicKey(index);
+        return bridgeSupport.getActiveFederatorBtcPublicKey(index);
     }
 
     public byte[] getFederatorPublicKeyOfType(Object[] args) throws VMException {
