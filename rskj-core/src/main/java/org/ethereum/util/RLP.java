@@ -155,24 +155,33 @@ public class RLP {
     }
 
     public static int decodeInt(byte[] data, int index) {
-        int value = 0;
         // NOTE: there are two ways zero can be encoded - 0x00 and OFFSET_SHORT_ITEM
 
-        if ((data[index] & 0xFF) < OFFSET_SHORT_ITEM) {
+        if (index < 0 || index >= data.length) {
+            throw new RLPException("Index out of bounds");
+        }
+
+        int firstByte = data[index] & 0xFF;
+
+        if (firstByte < OFFSET_SHORT_ITEM) {
             return data[index];
-        } else if ((data[index] & 0xFF) >= OFFSET_SHORT_ITEM
-                && (data[index] & 0xFF) < OFFSET_LONG_ITEM) {
+        }
+
+        if (firstByte < OFFSET_LONG_ITEM) {
+            int value = 0;
 
             byte length = (byte) (data[index] - OFFSET_SHORT_ITEM);
+            if(length  >= (data.length - index)) {
+                throw new RLPException("RLP wrong encoding");
+            }
             byte pow = (byte) (length - 1);
             for (int i = 1; i <= length; ++i) {
                 value += (data[index + i] & 0xFF) << (8 * pow);
                 pow--;
             }
-        } else {
-            throw new RuntimeException("wrong decode attempt");
+            return value;
         }
-        return value;
+        throw new RLPException("wrong decode attempt");
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
@@ -189,46 +198,6 @@ public class RLP {
         }
 
         return BigIntegers.fromUnsignedByteArray(bytes);
-    }
-
-    public static byte[] decodeIP4Bytes(byte[] data, int index) {
-
-        int offset = 1;
-
-        final byte[] result = new byte[4];
-        for (int i = 0; i < 4; i++) {
-            result[i] = decodeOneByteItem(data, index + offset);
-            if ((data[index + offset] & 0xFF) > OFFSET_SHORT_ITEM) {
-                offset += 2;
-            } else {
-                offset += 1;
-            }
-        }
-
-        // return IP address
-        return result;
-    }
-
-    public static int getFirstListElement(byte[] payload, int pos) {
-
-        if (pos >= payload.length) {
-            return -1;
-        }
-
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_LIST) {
-            byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
-            return pos + lengthOfLength + 1;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_SHORT_LIST
-                && (payload[pos] & 0xFF) < OFFSET_LONG_LIST) {
-            return pos + 1;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_SHORT_LIST) {
-            byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_ITEM);
-            return pos + lengthOfLength + 1;
-        }
-        return -1;
     }
 
     public static int getNextElementIndex(byte[] payload, int pos) {
@@ -426,25 +395,22 @@ public class RLP {
             if (b0 <= 192 + TINY_SIZE) {
                 length = b0 - 192 + 1;
                 offset = 1;
-            }
-            else {
+            } else {
                 int nbytes = b0 - 247;
-                length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
                 offset = 1 + nbytes;
+                length = safeAdd(offset, bytesToLength(msgData, position + 1, nbytes));
             }
 
-            if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
-                throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
-            }
+            int endingIndex = safeAdd(length, position);
 
-            if (position + length > msgData.length) {
+            if (endingIndex > msgData.length) {
                 throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
             }
 
-            byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
+            byte[] bytes = Arrays.copyOfRange(msgData, position, endingIndex);
             RLPList list = new RLPList(bytes, offset);
 
-            return Pair.of(list, position + length);
+            return Pair.of(list, endingIndex);
         }
 
         if (b0 == EMPTY_MARK) {
@@ -463,8 +429,7 @@ public class RLP {
         if (b0 > (EMPTY_MARK + TINY_SIZE)) {
             offset = b0 - (EMPTY_MARK + TINY_SIZE) + 1;
             length = bytesToLength(msgData, position + 1, offset - 1);
-        }
-        else {
+        } else {
             length = b0 & 0x7f;
             offset = 1;
         }
@@ -473,7 +438,8 @@ public class RLP {
             throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
         }
 
-        if (position + offset + length < 0 || position + offset + length > msgData.length) {
+        int endingIndex = position + offset + length;
+        if (  endingIndex < 0 || endingIndex > msgData.length) {
             throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
         }
 
@@ -482,6 +448,14 @@ public class RLP {
         System.arraycopy(msgData, position + offset, decoded, 0, length);
 
         return Pair.of(new RLPItem(decoded), position + offset + length);
+    }
+
+    private static int safeAdd(int a, int b) {
+        try{
+          return Math.addExact(a, b);
+        }catch (ArithmeticException ex){
+          throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+        }
     }
 
     private static int bytesToLength(byte[] bytes, int position, int size) {
