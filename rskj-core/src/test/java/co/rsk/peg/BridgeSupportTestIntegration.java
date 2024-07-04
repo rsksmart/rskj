@@ -938,10 +938,29 @@ public class BridgeSupportTestIntegration {
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
         TestUtils.setInternalState(bridgeSupport, "btcBlockChain", btcBlockChain);
+
+        Sha256Hash merkleRoot = PegTestUtils.createHash(2);
+
+        co.rsk.bitcoinj.core.BtcBlock prevBlock = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1), // hash from its previous block
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
+        BigInteger prevBlockChainWork = new BigInteger("ffffffffffffffff", 16);
+        StoredBlock prevStoredBlock = new StoredBlock(prevBlock, prevBlockChainWork, 1);
+        // save previous block in storage, so we are able to build next block from it
+        btcBlockStore.put(prevStoredBlock);
+        track.save();
+
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
                 btcParams,
                 1,
-                PegTestUtils.createHash(1),
+                prevBlock.getHash(),
                 PegTestUtils.createHash(2),
                 1,
                 1,
