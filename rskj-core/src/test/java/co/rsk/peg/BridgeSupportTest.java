@@ -6232,6 +6232,8 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test chain work before and after rskip 434")
     class ChainWorkTests {
+        ActivationConfig.ForBlock activationsPreRSKIP434 = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock activationsPostRSKIP434 = ActivationConfigsForTest.arrowhead631().forBlock(0);
         Repository repository;
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
         BtcBlockStoreWithCache btcBlockStoreWithCachePreRSKIP434;
@@ -6251,9 +6253,6 @@ class BridgeSupportTest {
         @BeforeEach
         void setUp() {
             BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-            ActivationConfig.ForBlock activationsPreRSKIP434 = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP434).forBlock(0);
-            ActivationConfig.ForBlock activationsPostRSKIP434 = ActivationConfigsForTest.all().forBlock(0);
-
             repository = createRepository();
             btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeMainnetConstants.getBtcParams(), 100, 100);
 
@@ -6470,18 +6469,15 @@ class BridgeSupportTest {
         }
 
         private Stream<Arguments> notMainnetAndActivationsArgs() {
-            ActivationConfig.ForBlock activationsPreRSKIP434 = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP434).forBlock(0);
-            ActivationConfig.ForBlock activationsPostRSKIP434 = ActivationConfigsForTest.all().forBlock(0);
-
             BridgeConstants testnet = BridgeTestNetConstants.getInstance();
             BridgeConstants regtest = BridgeRegTestConstants.getInstance();
 
             return Stream.of(
-                    Arguments.of(activationsPreRSKIP434, testnet),
-                    Arguments.of(activationsPostRSKIP434, testnet),
-                    Arguments.of(activationsPreRSKIP434, regtest),
-                    Arguments.of(activationsPostRSKIP434, regtest)
-                );
+                Arguments.of(activationsPreRSKIP434, testnet),
+                Arguments.of(activationsPostRSKIP434, testnet),
+                Arguments.of(activationsPreRSKIP434, regtest),
+                Arguments.of(activationsPostRSKIP434, regtest)
+            );
         }
     }
 

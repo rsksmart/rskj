@@ -43,6 +43,7 @@ class ActivationConfigTest {
             "    hop401: 0",
             "    fingerroot500: 0",
             "    arrowhead600: 0",
+            "    arrowhead631: 0",
             "    lovell700: 0",
             "},",
             "consensusRules: {",
@@ -120,6 +121,7 @@ class ActivationConfigTest {
             "    rskip412: arrowhead600",
             "    rskip415: arrowhead600",
             "    rskip417: arrowhead600",
+            "    rskip434: arrowhead631",
             "    rskip428: lovell700",
             "}"
     ));
