@@ -212,6 +212,11 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
         for (BtcBlock header : headers) {
             try {
+                StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash());
+                if (cannotProcessNextBlock(previousBlock)) {
+                    logger.warn("[receiveHeaders] Header {} has too much work to be processed", header.getHash());
+                    break;
+                }
                 btcBlockChain.add(header);
             } catch (Exception e) {
                 // If we try to add an orphan header bitcoinj throws an exception
@@ -253,6 +258,11 @@ public class BridgeSupport {
             return RECEIVE_HEADER_BLOCK_TOO_OLD;
         }
 
+        if (cannotProcessNextBlock(previousBlock)) {
+            logger.warn("[receiveHeader] Header {} has too much work to be processed", header.getHash());
+            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+        }
+
         try {
             btcBlockChain.add(header);
         } catch (Exception e) {
@@ -263,6 +273,15 @@ public class BridgeSupport {
         }
         provider.setReceiveHeadersLastTimestamp(currentTimeStamp);
         return 0;
+    }
+
+    private boolean cannotProcessNextBlock(StoredBlock previousBlock) {
+        int nextBlockHeight = previousBlock.getHeight() + 1;
+        boolean networkIsMainnet = btcContext.getParams().equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
+
+        return nextBlockHeight >= bridgeConstants.getBlockWithTooMuchChainWorkHeight()
+            && networkIsMainnet
+            && !activations.isActive(ConsensusRule.RSKIP434);
     }
 
     /**
