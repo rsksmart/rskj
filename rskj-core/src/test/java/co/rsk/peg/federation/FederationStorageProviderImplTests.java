@@ -898,6 +898,30 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void testSetActiveFederationCreationBlockHeight() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        federationStorageProvider.setActiveFederationCreationBlockHeight(3);
+
+        // Assert
+
+        Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+
+        assertTrue(actualValueOptional.isPresent());
+        assertEquals(3, actualValueOptional.get());
+
+    }
+
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
