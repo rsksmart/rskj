@@ -1807,53 +1807,6 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getLastRetiredFederationP2SHScript_before_fork() {
-        Repository repository = mock(Repository.class);
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        assertEquals(Optional.empty(), federationStorageProvider.getLastRetiredFederationP2SHScript(activationsBeforeFork));
-
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(bridgeAddress, LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey());
-    }
-
-    @Test
-    void getLastRetiredFederationP2SHScript_after_fork() {
-        Repository repository = mock(Repository.class);
-        Script script = new Script(new byte[] {});
-        // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(bridgeAddress, LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey()))
-            .thenReturn(BridgeSerializationUtils.serializeScript(script));
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        assertEquals(Optional.of(script), federationStorageProvider.getLastRetiredFederationP2SHScript(activationsAllForks));
-
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(bridgeAddress, LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey());
-    }
-
-    @Test
-    void setLastRetiredFederationP2SHScriptAndGetLastRetiredFederationP2SHScript() {
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-        Script script = new Script(new byte[] {});
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
-
-        // We store the value
-        federationStorageProvider.setLastRetiredFederationP2SHScript(script);
-        federationStorageProvider.save(testnetBtcParams, activationsAllForks);
-        track.commit();
-
-        track = repository.startTracking();
-        federationStorageProvider = createFederationStorageProvider(track);
-
-        // And then we get it back
-        MatcherAssert.assertThat(federationStorageProvider.getLastRetiredFederationP2SHScript(activationsAllForks), is(Optional.of(script)));
-    }
-
-    @Test
     void saveLastRetiredFederationP2SHScript_after_RSKIP186() {
         Repository repository = mock(Repository.class);
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);

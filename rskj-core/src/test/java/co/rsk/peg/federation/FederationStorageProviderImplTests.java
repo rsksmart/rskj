@@ -1,5 +1,7 @@
 package co.rsk.peg.federation;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -12,13 +14,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.verification.VerificationMode;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,12 +23,19 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.verification.VerificationMode;
 
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -1000,6 +1002,109 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void getLastRetiredFederationP2SHScript_beforeRSKIP186_storageIsNotAccessedAndReturnsEmpty() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        Script expectedScript = createFederationScript();
+        System.out.println(Arrays.toString(expectedScript.getProgram()));
+        byte[] serializedScript = BridgeSerializationUtils.serializeScript(expectedScript);
+        // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
+        storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), serializedScript);
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Assert
+        assertEquals(Optional.empty(), federationStorageProvider.getLastRetiredFederationP2SHScript(activations));
+
+    }
+
+    @Test
+    void getLastRetiredFederationP2SHScript_afterRSKIP186_getsValueFromStorage() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        Script expectedScript = createFederationScript();
+        byte[] serializedScript = BridgeSerializationUtils.serializeScript(expectedScript);
+
+        storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), serializedScript);
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Script> actualValueOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+
+        // Assert
+
+        assertTrue(actualValueOptional.isPresent());
+        assertEquals(expectedScript, actualValueOptional.get());
+
+        // Setting in storage a different value to assert that calling the method again should return cached value
+
+        storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), expectedScript.getProgram());
+
+        Optional<Script> actualCachedValueOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+
+        assertTrue(actualCachedValueOptional.isPresent());
+        assertEquals(expectedScript, actualCachedValueOptional.get());
+
+    }
+
+    @Test
+    void getLastRetiredFederationP2SHScript_afterRSKIP186AndNoValueInStorage_returnsEmpty() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), null);
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Script> actualValueOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+
+        // Assert
+
+        assertFalse(actualValueOptional.isPresent());
+
+    }
+
+    @Test
+    void testSetLastRetiredFederationP2SHScript() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        Script expectedScript = createFederationScript();
+        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
+        Optional<Script> actualScriptOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+        // Assert
+
+        assertTrue(actualScriptOptional.isPresent());
+        assertEquals(expectedScript, actualScriptOptional.get());
+
+    }
+
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
@@ -1103,6 +1208,14 @@ class FederationStorageProviderImplTests {
             Collections.singletonList(address)
         );
         return new ABICallElection(authorizer, sampleVotes);
+    }
+
+    private static Script createFederationScript() {
+        List<BtcECKey> fedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{"fa06", "fa07", "fa08"}, true
+        );
+        Federation federation = createP2shErpFederation(federationConstants, fedSigners);
+        return federation.getP2SHScript();
     }
 
 }
