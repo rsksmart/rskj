@@ -1623,25 +1623,6 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void setNextFederationCreationBlockHeightAndGetNextFederationCreationBlockHeight() {
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
-
-        // We store the value
-        federationStorageProvider.setNextFederationCreationBlockHeight(1L);
-        federationStorageProvider.save(testnetBtcParams, activationsAllForks);
-        track.commit();
-
-        track = repository.startTracking();
-        federationStorageProvider = createFederationStorageProvider(track);
-
-        // And then we get it back
-        MatcherAssert.assertThat(federationStorageProvider.getNextFederationCreationBlockHeight(activationsAllForks), is(Optional.of(1L)));
-    }
-
-    @Test
     void saveNextFederationCreationBlockHeight_after_RSKIP186() {
         Repository repository1 = mock(Repository.class);
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository1);
