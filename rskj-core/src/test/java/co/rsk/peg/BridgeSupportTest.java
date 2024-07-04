@@ -6232,14 +6232,16 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test chain work before and after rskip 434")
     class ChainWorkTests {
-        ActivationConfig.ForBlock activations;
-        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         Repository repository;
-        BridgeStorageProvider bridgeStorageProvider;
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
-        BtcBlockStoreWithCache btcBlockStoreWithCache;
+        BridgeStorageProvider bridgeStorageProviderPreRSKIP434;
+        BridgeStorageProvider bridgeStorageProviderPostRSKIP434;
+        BtcBlockStoreWithCache btcBlockStoreWithCachePreRSKIP434;
+        BtcBlockStoreWithCache btcBlockStoreWithCachePostRSKIP434;
+
         BridgeSupportBuilder bridgeSupportBuilder = new BridgeSupportBuilder();
-        BridgeSupport bridgeSupport;
+        BridgeSupport bridgeSupportPreRSKIP434;
+        BridgeSupport bridgeSupportPostRSKIP434;
 
         BtcBlock block849134;
         BtcBlock block849135;
@@ -6250,9 +6252,46 @@ class BridgeSupportTest {
 
         @BeforeEach
         void setUp() {
-            activations = ActivationConfigsForTest.all().forBlock(0);
+            BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+            ActivationConfig.ForBlock activationsPreRSKIP434 = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP434).forBlock(0);
+            ActivationConfig.ForBlock activationsPostRSKIP434 = ActivationConfigsForTest.all().forBlock(0);
+
             repository = createRepository();
             btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeMainnetConstants.getBtcParams(), 100, 100);
+
+            // recreate context pre rskip 434 for mainnet
+            bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeMainnetConstants,
+                activationsPreRSKIP434
+            );
+            bridgeSupportPreRSKIP434 = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainnetConstants)
+                .withProvider(bridgeStorageProviderPreRSKIP434)
+                .withRepository(repository)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activationsPreRSKIP434)
+                .build();
+            btcBlockStoreWithCachePreRSKIP434 =
+                btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProviderPreRSKIP434, activationsPreRSKIP434);
+
+            // recreate context post rskip 434 for mainnet
+            bridgeStorageProviderPostRSKIP434 = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeMainnetConstants,
+                activationsPostRSKIP434
+            );
+            bridgeSupportPostRSKIP434 = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainnetConstants)
+                .withProvider(bridgeStorageProviderPostRSKIP434)
+                .withRepository(repository)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activationsPostRSKIP434)
+                .build();
+            btcBlockStoreWithCachePostRSKIP434 =
+                btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProviderPostRSKIP434, activationsPostRSKIP434);
 
             String block849134Header = "0080b92c24f123130ae29e899f0cab72653722e54cdf3b30445202000000000000000000c72ead65a3b78ab637d1876c00414a77e47bcc5b52667ac1e573633563bea5a695aa7766255d031728d182a8";
             block849134 = new BtcBlock(bridgeMainnetConstants.getBtcParams(), HexUtils.stringHexToByteArray(block849134Header));
@@ -6275,172 +6314,106 @@ class BridgeSupportTest {
 
         @Test
         void receiveHeader_beforeRSKIP434_returnsUnexpectedExceptionResponseCodeAndDoesNotSaveTheBlock() throws BlockStoreException, IOException {
-            // rskip434 should be inactive
-            activations = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP434).forBlock(0);
-            bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
-                activations
-            );
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainnetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withActivations(activations)
-                .build();
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
-
             // Create block with too much work parent with cumulative difficulty
             BigInteger block849137ChainWork = new BigInteger("00000000000000000000000000000000000000007fffdc6f043e4a69ea179a7a", 16);
             StoredBlock block849137ToStore = new StoredBlock(block849137, block849137ChainWork, 849137);
 
             // save parent in storage
-            btcBlockStoreWithCache.put(block849137ToStore);
-            btcBlockStoreWithCache.setChainHead(block849137ToStore);
+            btcBlockStoreWithCachePreRSKIP434.put(block849137ToStore);
+            btcBlockStoreWithCachePreRSKIP434.setChainHead(block849137ToStore);
             repository.save();
             // assert that parent was correctly saved
-            assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
+            assertEquals(btcBlockStoreWithCachePreRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns an exception and does not save the block
             Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
-            assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_UNEXPECTED_EXCEPTION));
-            assertNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
+            assertThat(bridgeSupportPreRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_UNEXPECTED_EXCEPTION));
+            assertNull(btcBlockStoreWithCachePreRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
 
         @Test
         void receiveHeaders_beforeRSKIP434_savesBlocksUntilReachesBlockWithTooMuchChainWork() throws BlockStoreException, IOException {
-            activations = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP434).forBlock(0);
-            bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
-                activations
-            );
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainnetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withActivations(activations)
-                .build();
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
-
             // Create block 849134 with cumulative difficulty
             BigInteger block849134ChainWork = new BigInteger("00000000000000000000000000000000000000007ffef81fa11393037c9df17b", 16);
             StoredBlock block849134ToStore = new StoredBlock(block849134, block849134ChainWork, 849134);
 
             // save block 849134 in storage
-            btcBlockStoreWithCache.put(block849134ToStore);
-            btcBlockStoreWithCache.setChainHead(block849134ToStore);
+            btcBlockStoreWithCachePreRSKIP434.put(block849134ToStore);
+            btcBlockStoreWithCachePreRSKIP434.setChainHead(block849134ToStore);
             repository.save();
             // assert that block 849134 was correctly saved
-            assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849134.getHash());
+            assertEquals(btcBlockStoreWithCachePreRSKIP434.getChainHead().getHeader().getHash(), block849134.getHash());
 
             BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
             // assert blocks until 849137 are correctly saved
             // and blocks from 849138 are not saved
-            bridgeSupport.receiveHeaders(headersToSend);
-            assertNotNull(btcBlockStoreWithCache.get(block849135.getHash()));
-            assertNotNull(btcBlockStoreWithCache.get(block849136.getHash()));
-            assertNotNull(btcBlockStoreWithCache.get(block849137.getHash()));
-            assertNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
-            assertNull(btcBlockStoreWithCache.get(block849139.getHash()));
+            bridgeSupportPreRSKIP434.receiveHeaders(headersToSend);
+            assertNotNull(btcBlockStoreWithCachePreRSKIP434.get(block849135.getHash()));
+            assertNotNull(btcBlockStoreWithCachePreRSKIP434.get(block849136.getHash()));
+            assertNotNull(btcBlockStoreWithCachePreRSKIP434.get(block849137.getHash()));
+            assertNull(btcBlockStoreWithCachePreRSKIP434.get(blockWithTooMuchWork.getHash()));
+            assertNull(btcBlockStoreWithCachePreRSKIP434.get(block849139.getHash()));
         }
 
         @Test
         void receiveHeader_afterRSKIP434_returnsSuccessfulAndSavesTheBlock() throws BlockStoreException, IOException {
-            // rskip434 should be active
-            activations = ActivationConfigsForTest.all().forBlock(0);
-            bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
-                activations
-            );
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainnetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withActivations(activations)
-                .build();
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
-
             // Create block with too much work parent with cumulative difficulty
             BigInteger block849137ChainWork = new BigInteger("00000000000000000000000000000000000000007fffdc6f043e4a69ea179a7a", 16);
             StoredBlock block849137ToStore = new StoredBlock(block849137, block849137ChainWork, 849137);
 
             // save parent in storage
-            btcBlockStoreWithCache.put(block849137ToStore);
-            btcBlockStoreWithCache.setChainHead(block849137ToStore);
+            btcBlockStoreWithCachePostRSKIP434.put(block849137ToStore);
+            btcBlockStoreWithCachePostRSKIP434.setChainHead(block849137ToStore);
             repository.save();
             // assert that previous block was correctly saved
-            assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
+            assertEquals(btcBlockStoreWithCachePostRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
             Integer RECEIVE_HEADER_SUCCESSFUL = 0;
-            assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
-            assertNotNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
+            assertThat(bridgeSupportPostRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
+            assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
 
         @Test
         void receiveHeaders_afterRSKIP434_savesAllBlocks() throws BlockStoreException, IOException {
-            activations = ActivationConfigsForTest.all().forBlock(0);
-            bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
-                activations
-            );
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainnetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withActivations(activations)
-                .build();
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProvider, activations);
-
             // Create block 849134 with cumulative difficulty
             BigInteger block849134ChainWork = new BigInteger("00000000000000000000000000000000000000007ffef81fa11393037c9df17b", 16);
             StoredBlock block849134ToStore = new StoredBlock(block849134, block849134ChainWork, 849134);
 
             // save block 849134 in storage
-            btcBlockStoreWithCache.put(block849134ToStore);
-            btcBlockStoreWithCache.setChainHead(block849134ToStore);
+            btcBlockStoreWithCachePostRSKIP434.put(block849134ToStore);
+            btcBlockStoreWithCachePostRSKIP434.setChainHead(block849134ToStore);
             repository.save();
             // assert that block 849134 was correctly saved
-            assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849134.getHash());
+            assertEquals(btcBlockStoreWithCachePostRSKIP434.getChainHead().getHeader().getHash(), block849134.getHash());
 
             BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
             // assert all blocks are correctly saved
-            bridgeSupport.receiveHeaders(headersToSend);
-            assertNotNull(btcBlockStoreWithCache.get(block849135.getHash()));
-            assertNotNull(btcBlockStoreWithCache.get(block849136.getHash()));
-            assertNotNull(btcBlockStoreWithCache.get(block849137.getHash()));
-            assertNotNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
-            assertNotNull(btcBlockStoreWithCache.get(block849139.getHash()));
+            bridgeSupportPostRSKIP434.receiveHeaders(headersToSend);
+            assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(block849135.getHash()));
+            assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(block849136.getHash()));
+            assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(block849137.getHash()));
+            assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(blockWithTooMuchWork.getHash()));
+            assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(block849139.getHash()));
         }
 
         @ParameterizedTest
         @MethodSource("notMainnetAndActivationsArgs")
         void receiveHeader_networkNotMainnet_returnsSuccessfulAndSavesTheBlock(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) throws BlockStoreException, IOException {
-            bridgeStorageProvider = new BridgeStorageProvider(
+            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activations
             );
-            bridgeSupport = bridgeSupportBuilder
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstants)
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withActivations(activations)
                 .build();
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
+            BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
 
             // Create block with too much work parent with cumulative difficulty
             BigInteger block849137ChainWork = new BigInteger("00000000000000000000000000000000000000007fffdc6f043e4a69ea179a7a", 16);
@@ -6462,20 +6435,20 @@ class BridgeSupportTest {
         @ParameterizedTest
         @MethodSource("notMainnetAndActivationsArgs")
         void receiveHeaders_networkNotMainnet_savesAllBlocks(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) throws BlockStoreException, IOException {
-            bridgeStorageProvider = new BridgeStorageProvider(
+            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activations
             );
-            bridgeSupport = bridgeSupportBuilder
+            BridgeSupport bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstants)
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withActivations(activations)
                 .build();
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
+            BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
 
             // Create block 849134 with cumulative difficulty
             BigInteger block849134ChainWork = new BigInteger("00000000000000000000000000000000000000007ffef81fa11393037c9df17b", 16);
