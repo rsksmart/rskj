@@ -6232,7 +6232,7 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test chain work before and after rskip 434")
     class ChainWorkTests {
-        ActivationConfig.ForBlock activationsPreRSKIP434 = ActivationConfigsForTest.arrowhead631(Collections.singletonList(ConsensusRule.RSKIP434)).forBlock(0);
+        ActivationConfig.ForBlock activationsPreRSKIP434 = ActivationConfigsForTest.arrowhead600().forBlock(0);
         ActivationConfig.ForBlock activationsPostRSKIP434 = ActivationConfigsForTest.arrowhead631().forBlock(0);
         Repository repository;
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
