@@ -146,7 +146,8 @@ class FederationStorageProviderImplTests {
 
     @Test
     void getOldFederation_previouslySetToNull_returnsNull() {
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(null);
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationStorageProvider.setOldFederation(null);
         Federation oldFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
         assertNull(oldFederation);
@@ -170,8 +171,6 @@ class FederationStorageProviderImplTests {
         // Arrange
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
 
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
 
