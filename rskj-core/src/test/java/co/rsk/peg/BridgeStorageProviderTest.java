@@ -1623,30 +1623,6 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void getNextFederationCreationBlockHeight_before_fork() {
-        Repository repository = mock(Repository.class);
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        assertEquals(Optional.empty(), federationStorageProvider.getNextFederationCreationBlockHeight(activationsBeforeFork));
-
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(bridgeAddress, NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
-    }
-
-    @Test
-    void getNextFederationCreationBlockHeight_after_fork() {
-        Repository repository = mock(Repository.class);
-        // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(bridgeAddress, NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        assertEquals(Optional.of(1L), federationStorageProvider.getNextFederationCreationBlockHeight(activationsAllForks));
-
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(bridgeAddress, NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
-    }
-
-    @Test
     void setNextFederationCreationBlockHeightAndGetNextFederationCreationBlockHeight() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
