@@ -6234,8 +6234,6 @@ class BridgeSupportTest {
     class ChainWorkTests {
         Repository repository;
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
-        BridgeStorageProvider bridgeStorageProviderPreRSKIP434;
-        BridgeStorageProvider bridgeStorageProviderPostRSKIP434;
         BtcBlockStoreWithCache btcBlockStoreWithCachePreRSKIP434;
         BtcBlockStoreWithCache btcBlockStoreWithCachePostRSKIP434;
 
@@ -6260,7 +6258,7 @@ class BridgeSupportTest {
             btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeMainnetConstants.getBtcParams(), 100, 100);
 
             // recreate context pre rskip 434 for mainnet
-            bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
+            BridgeStorageProvider bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeMainnetConstants,
@@ -6277,7 +6275,7 @@ class BridgeSupportTest {
                 btcBlockStoreFactory.newInstance(repository, bridgeMainnetConstants, bridgeStorageProviderPreRSKIP434, activationsPreRSKIP434);
 
             // recreate context post rskip 434 for mainnet
-            bridgeStorageProviderPostRSKIP434 = new BridgeStorageProvider(
+            BridgeStorageProvider bridgeStorageProviderPostRSKIP434 = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeMainnetConstants,
