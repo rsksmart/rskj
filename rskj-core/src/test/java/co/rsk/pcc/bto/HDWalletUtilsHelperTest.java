@@ -63,7 +63,7 @@ class HDWalletUtilsHelperTest {
     void validateAndExtractNetworkFromExtendedPublicKeyWithInvalidLongXpub() {
         NativeContractIllegalArgumentException exception = Assertions.assertThrows(
                 NativeContractIllegalArgumentException.class,
-                () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidLongLongLonStuff"));
-        assertEquals("Invalid extended public key 'completelyInvalidLongLongLonStuf...'", exception.getMessage());
+                () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidLongLongLongLongLongLongLongLongLongLongLonStuff"));
+        assertEquals("Invalid extended public key 'completelyInvalidLongLongLongLongLongLongLongLongLongLongLonStuf...'", exception.getMessage());
     }
 }
