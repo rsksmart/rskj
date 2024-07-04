@@ -787,7 +787,6 @@ class FederationStorageProviderImplTests {
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
         ABICallElection expectedElection = new ABICallElection(authorizer);
-        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
@@ -798,6 +797,7 @@ class FederationStorageProviderImplTests {
 
         // Assert
 
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
 
     }
