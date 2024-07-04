@@ -19,6 +19,8 @@
 
 package org.ethereum.util;
 
+import co.rsk.util.RLPException;
+import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
@@ -34,7 +36,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
@@ -46,23 +47,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("squid:S2699")
 class RLPTest {
-
-    @Test
-    void test1() throws UnknownHostException {
-
-        String peersPacket = "F8 4E 11 F8 4B C5 36 81 " +
-                "CC 0A 29 82 76 5F B8 40 D8 D6 0C 25 80 FA 79 5C " +
-                "FC 03 13 EF DE BA 86 9D 21 94 E7 9E 7C B2 B5 22 " +
-                "F7 82 FF A0 39 2C BB AB 8D 1B AC 30 12 08 B1 37 " +
-                "E0 DE 49 98 33 4F 3B CF 73 FA 11 7E F2 13 F8 74 " +
-                "17 08 9F EA F8 4C 21 B0";
-
-        byte[] payload = Hex.decode(peersPacket);
-
-        byte[] ip = decodeIP4Bytes(payload, 5);
-
-        assertEquals(InetAddress.getByAddress(ip).toString(), ("/54.204.10.41"));
-    }
 
     @Test
     void test2() throws UnknownHostException {
@@ -78,60 +62,6 @@ class RLPTest {
         int oneInt = decodeInt(payload, 11);
 
         assertEquals(30303, oneInt);
-    }
-
-    @Test
-    void test3() throws UnknownHostException {
-
-        String peersPacket = "F8 9A 11 F8 4B C5 36 81 " +
-                "CC 0A 29 82 76 5F B8 40 D8 D6 0C 25 80 FA 79 5C " +
-                "FC 03 13 EF DE BA 86 9D 21 94 E7 9E 7C B2 B5 22 " +
-                "F7 82 FF A0 39 2C BB AB 8D 1B AC 30 12 08 B1 37 " +
-                "E0 DE 49 98 33 4F 3B CF 73 FA 11 7E F2 13 F8 74 " +
-                "17 08 9F EA F8 4C 21 B0 F8 4A C4 36 02 0A 29 " +
-                "82 76 5F B8 40 D8 D6 0C 25 80 FA 79 5C FC 03 13 " +
-                "EF DE BA 86 9D 21 94 E7 9E 7C B2 B5 22 F7 82 FF " +
-                "A0 39 2C BB AB 8D 1B AC 30 12 08 B1 37 E0 DE 49 " +
-                "98 33 4F 3B CF 73 FA 11 7E F2 13 F8 74 17 08 9F " +
-                "EA F8 4C 21 B0 ";
-
-        byte[] payload = Hex.decode(peersPacket);
-
-        int nextIndex = 5;
-        byte[] ip = decodeIP4Bytes(payload, nextIndex);
-        assertEquals("/54.204.10.41", InetAddress.getByAddress(ip).toString());
-
-        nextIndex = getNextElementIndex(payload, nextIndex);
-        int port = decodeInt(payload, nextIndex);
-        assertEquals(30303, port);
-
-        nextIndex = getNextElementIndex(payload, nextIndex);
-        BigInteger peerId = decodeBigInteger(payload, nextIndex);
-
-        BigInteger expectedPeerId =
-                new BigInteger("11356629247358725515654715129711890958861491612873043044752814241820167155109073064559464053586837011802513611263556758124445676272172838679152022396871088");
-        assertEquals(expectedPeerId, peerId);
-
-        nextIndex = getNextElementIndex(payload, nextIndex);
-        nextIndex = getFirstListElement(payload, nextIndex);
-        ip = decodeIP4Bytes(payload, nextIndex);
-        assertEquals("/54.2.10.41", InetAddress.getByAddress(ip).toString());
-
-        nextIndex = getNextElementIndex(payload, nextIndex);
-        port = decodeInt(payload, nextIndex);
-        assertEquals(30303, port);
-
-        nextIndex = getNextElementIndex(payload, nextIndex);
-        peerId = decodeBigInteger(payload, nextIndex);
-
-        expectedPeerId =
-                new BigInteger("11356629247358725515654715129711890958861491612873043044752814241820167155109073064559464053586837011802513611263556758124445676272172838679152022396871088");
-
-        assertEquals(expectedPeerId, peerId);
-
-        nextIndex = getNextElementIndex(payload, nextIndex);
-        nextIndex = getFirstListElement(payload, nextIndex);
-        assertEquals(-1, nextIndex);
     }
 
     @Test
@@ -1117,5 +1047,28 @@ class RLPTest {
         byte[] rlpEncoded = encode(testString);
         String res = new String(decode2(rlpEncoded).get(0).getRLPData());
         assertEquals(testString, res);
+    }
+
+    @Test
+    void testDecode2_outOfMem() {
+        byte[] payload = Base64.decodeBase64("BQACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/QH4f///9wAAAAAAAAAABSQGYA==");
+        assertThrows(RLPException.class, () -> RLP.decode2(payload));
+    }
+
+    @Test
+    void testDecode2() {
+        byte[] payload = Base64.decodeBase64("ADU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTU1NTX//8DLAH///8s=");
+        assertThrows(RLPException.class, () -> RLP.decode2(payload));
+    }
+    @Test
+    void testDecodeInt() {
+        byte[] payload = Base64.decodeBase64("kQo=");
+        assertThrows(RLPException.class, () -> RLP.decodeInt(payload, 0));
+    }
+
+    @Test
+    void testIncorrectDecodeInt(){
+        byte[] payload = {(byte) 0x84, (byte) 0x00, (byte) 0x00, (byte) 0x84, (byte) 0x00, (byte) 0x0f, (byte) 0xab};
+        assertThrows(RLPException.class, () -> RLP.decodeInt(payload, 3));
     }
 }
