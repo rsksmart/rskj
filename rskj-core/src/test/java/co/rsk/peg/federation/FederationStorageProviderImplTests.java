@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import static java.util.Objects.nonNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static java.util.Objects.isNull;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -149,6 +151,152 @@ class FederationStorageProviderImplTests {
         federationStorageProvider.setOldFederation(null);
         Federation oldFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
         assertNull(oldFederation);
+    }
+
+    private static Stream<Arguments> providePendingFederationAndFormatArguments() {
+        return Stream.of(
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build()),
+            Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build()),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("providePendingFederationAndFormatArguments")
+    void testGetPendingFederation(
+        int federationFormat,
+        PendingFederation expectedFederation
+    ) {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(federationFormat);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        byte[] serializedFederation = expectedFederation.serialize(activations);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedFederation);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation obtainedFederation = federationStorageProvider.getPendingFederation();
+
+        // Directly saving a null federation in storage to then assert that the method returns the cached federation
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+
+        // Assert
+
+        // Call the method again and assert the same cached federation is returned
+        assertEquals(obtainedFederation, federationStorageProvider.getPendingFederation());
+
+        assertEquals(expectedFederation, obtainedFederation);
+
+    }
+
+    @Test
+    void getPendingFederation_whenStorageVersionIsNotAvailable_deserializeFromBtcKeysOnly(
+    ) {
+
+        PendingFederation expectedFederation = new PendingFederationBuilder().build();
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(INVALID_FEDERATION_FORMAT);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        byte[] serializedFederation = expectedFederation.serialize(activations);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedFederation);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation obtainedFederation = federationStorageProvider.getPendingFederation();
+
+        // Directly saving a null federation in storage to then assert that the method returns the cached federation
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+
+        // Assert
+
+        // Call the method again and assert the same cached federation is returned
+        assertEquals(obtainedFederation, federationStorageProvider.getPendingFederation());
+
+
+        assertArrayEquals(expectedFederation.serialize(activations), obtainedFederation.serialize(activations));
+
+    }
+
+    @Test
+    void getPendingFederation_previouslySet_returnsCachedPendingFederation() {
+
+        // Arrange
+
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(null);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+
+        // Assert
+
+        assertEquals(expectedPendingFederation, federationStorageProvider.getPendingFederation());
+
+    }
+
+    @Test
+    void getPendingFederation_previouslySetToNull_returnsNull() {
+        // Arrange
+
+        StorageAccessor storageAccessor = mock(StorageAccessor.class);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        federationStorageProvider.setPendingFederation(null);
+        PendingFederation pendingFederation = federationStorageProvider.getPendingFederation();
+
+        // Assert
+
+        assertNull(pendingFederation);
+        verify(storageAccessor, never()).getFromRepository(any(), any());
+
+    }
+
+    @Test
+    void getPendingFederation_nullPendingFederationInStorage_returnsNull() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        byte[] federationFormatSerialized = getFederationFormatSerialized(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
+        storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
+
+        storageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), null);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        PendingFederation actualPendingFederation = federationStorageProvider.getPendingFederation();
+
+        // Assert
+
+        assertNull(actualPendingFederation);
+
     }
 
     @Test
