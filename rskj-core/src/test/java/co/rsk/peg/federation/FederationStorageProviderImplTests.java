@@ -14,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,7 +35,6 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
-import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
@@ -1011,7 +1011,7 @@ class FederationStorageProviderImplTests {
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
-        Script expectedScript = createFederationScript();
+        Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
         System.out.println(Arrays.toString(expectedScript.getProgram()));
         byte[] serializedScript = BridgeSerializationUtils.serializeScript(expectedScript);
         // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
@@ -1035,7 +1035,8 @@ class FederationStorageProviderImplTests {
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
-        Script expectedScript = createFederationScript();
+        Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
+
         byte[] serializedScript = BridgeSerializationUtils.serializeScript(expectedScript);
 
         storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), serializedScript);
@@ -1054,10 +1055,10 @@ class FederationStorageProviderImplTests {
 
         storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), expectedScript.getProgram());
 
-        Optional<Script> actualCachedValueOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+        Optional<Script> actualCachedValue = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
 
-        assertTrue(actualCachedValueOptional.isPresent());
-        assertEquals(expectedScript, actualCachedValueOptional.get());
+        assertTrue(actualCachedValue.isPresent());
+        assertEquals(expectedScript, actualCachedValue.get());
 
     }
 
@@ -1084,7 +1085,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void testSetLastRetiredFederationP2SHScript() {
+    void setLastRetiredFederationP2SHScript() {
 
         // Arrange
 
@@ -1095,7 +1096,7 @@ class FederationStorageProviderImplTests {
 
         // Act
 
-        Script expectedScript = createFederationScript();
+        Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
         federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
         Optional<Script> actualScriptOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
         // Assert
@@ -1208,14 +1209,6 @@ class FederationStorageProviderImplTests {
             Collections.singletonList(address)
         );
         return new ABICallElection(authorizer, sampleVotes);
-    }
-
-    private static Script createFederationScript() {
-        List<BtcECKey> fedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa06", "fa07", "fa08"}, true
-        );
-        Federation federation = createP2shErpFederation(federationConstants, fedSigners);
-        return federation.getP2SHScript();
     }
 
 }
