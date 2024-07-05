@@ -899,7 +899,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void testSetActiveFederationCreationBlockHeight() {
+    void setActiveFederationCreationBlockHeight() {
 
         // Arrange
 
@@ -910,15 +910,15 @@ class FederationStorageProviderImplTests {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         // Act
-
-        federationStorageProvider.setActiveFederationCreationBlockHeight(3);
+        long expectedValue = 3;
+        federationStorageProvider.setActiveFederationCreationBlockHeight(expectedValue);
 
         // Assert
 
         Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
         assertTrue(actualValueOptional.isPresent());
-        assertEquals(3, actualValueOptional.get());
+        assertEquals(expectedValue, actualValueOptional.get());
 
     }
 
