@@ -1,6 +1,5 @@
 package co.rsk.peg.federation;
 
-import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,22 +13,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static java.util.Objects.isNull;
-
-import co.rsk.core.RskAddress;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.ABICallSpec;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import java.util.Optional;
+import static java.util.Objects.nonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.verification.VerificationMode;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,11 +33,15 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
+import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
-import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -60,7 +58,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-
 import co.rsk.bitcoinj.core.UTXO;
 
 class FederationStorageProviderImplTests {
@@ -857,7 +854,7 @@ class FederationStorageProviderImplTests {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         long expectedValue = 1;
-        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 1 });
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { (byte) expectedValue });
 
         // Act
 
