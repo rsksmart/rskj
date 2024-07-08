@@ -1105,6 +1105,45 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @ParameterizedTest
+    @MethodSource("provideFederationBtcUTXOsTestArguments")
+    void save_saveNewFederationBtcUTXOs_utxosShouldBeSavedToStorage(FederationStorageIndexKey federationStorageIndexKey, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
+
+        int originalAmountOfUtxos = 2;
+        // Save utxos directly in storage
+        List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(originalAmountOfUtxos, btcAddress);
+        storageAccessor.saveToRepository(federationStorageIndexKey.getKey(), BridgeSerializationUtils.serializeUTXOList(expectedUtxos));
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Getting utxos from method
+        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+
+        // Should be as the expected utxos
+        assertEquals(actualUtxos.size(), originalAmountOfUtxos);
+        assertEquals(expectedUtxos, actualUtxos);
+
+        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+
+        actualUtxos.addAll(extraUtxos);
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        int finalExpectedAmountOfUtxos = originalAmountOfUtxos + 1;
+
+        // Getting the utxos from storage to ensure they were stored in the storage.
+        List<UTXO> finalListOfUtxos = storageAccessor.getFromRepository(federationStorageIndexKey.getKey(), BridgeSerializationUtils::deserializeUTXOList);
+
+        assertEquals(actualUtxos.size(), finalExpectedAmountOfUtxos);
+        assertEquals(actualUtxos, finalListOfUtxos);
+        // Ensuring `getNewFederationBtcUTXOs` also returns the one saved in the storage.
+        assertEquals(finalListOfUtxos, federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations));
+
+    }
+
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
