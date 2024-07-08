@@ -17,6 +17,7 @@
  */
 package org.ethereum.rpc.dto;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
@@ -36,10 +37,11 @@ class TransactionReceiptDTOTest {
 
     @Test
     void testOkStatusField() {
+        //given
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
-
+        Coin gasPrice = Coin.valueOf(100);
         Block block = mock(Block.class);
         when(block.getHash()).thenReturn(hash);
 
@@ -47,6 +49,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getHash()).thenReturn(hash);
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+        when(transaction.getGasPrice()).thenReturn(gasPrice);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -58,17 +61,21 @@ class TransactionReceiptDTOTest {
 
         TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
+        //when
         String actualStatus = transactionReceiptDTO.getStatus();
 
+        //then
         assertNotNull(actualStatus);
         assertEquals("0x1", actualStatus);
     }
 
     @Test
     void testErrorStatusField() {
+        //given
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
+        Coin gasPrice = Coin.valueOf(100);
 
         Block block = mock(Block.class);
         when(block.getHash()).thenReturn(hash);
@@ -77,6 +84,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getHash()).thenReturn(hash);
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+        when(transaction.getGasPrice()).thenReturn(gasPrice);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -88,17 +96,21 @@ class TransactionReceiptDTOTest {
 
         TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
+        //when
         String actualStatus = transactionReceiptDTO.getStatus();
 
+        //then
         assertNotNull(actualStatus);
         assertEquals("0x0", actualStatus);
     }
 
     @Test
     void testErrorStatusFieldUsingEmptyByteArray() {
+        //given
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
+        Coin gasPrice = Coin.valueOf(100);
 
         Block block = mock(Block.class);
         when(block.getHash()).thenReturn(hash);
@@ -107,6 +119,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getHash()).thenReturn(hash);
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+        when(transaction.getGasPrice()).thenReturn(gasPrice);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -118,17 +131,21 @@ class TransactionReceiptDTOTest {
 
         TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
+        //when
         String actualStatus = transactionReceiptDTO.getStatus();
 
+        //then
         assertNotNull(actualStatus);
         assertEquals("0x0", actualStatus);
     }
 
     @Test
     void testErrorStatusFieldUsingNullByteArray() {
+        //given
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
+        Coin gasPrice = Coin.valueOf(100);
 
         Block block = mock(Block.class);
         when(block.getHash()).thenReturn(hash);
@@ -137,26 +154,33 @@ class TransactionReceiptDTOTest {
         when(transaction.getHash()).thenReturn(hash);
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+        when(transaction.getGasPrice()).thenReturn(gasPrice);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
         when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
         when(txReceipt.getBloomFilter()).thenReturn(bloom);
         when(txReceipt.getStatus()).thenReturn(null);
+        when(txReceipt.getStatus()).thenReturn(null);
+
 
         TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
 
         TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
+        //when
         String actualStatus = transactionReceiptDTO.getStatus();
 
+        //then
         assertNotNull(actualStatus);
         assertEquals("0x0", actualStatus);
     }
     @Test
     void testTypeField() {
+        //given
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
+        Coin gasPrice = Coin.valueOf(100);
         Bloom bloom = new Bloom();
 
         Block block = mock(Block.class);
@@ -166,6 +190,7 @@ class TransactionReceiptDTOTest {
         when(transaction.getHash()).thenReturn(hash);
         when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+        when(transaction.getGasPrice()).thenReturn(gasPrice);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
         when(txReceipt.getTransaction()).thenReturn(transaction);
@@ -177,8 +202,10 @@ class TransactionReceiptDTOTest {
 
         TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
+        //when
         String actualType = transactionReceiptDTO.getType();
 
+        //then
         assertNotNull(actualType);
         assertEquals("0x0", actualType);
     }

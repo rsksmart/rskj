@@ -58,7 +58,8 @@
             ],
             "logsBloom": "0x00...0",
             "status": "0x1",
-            "type": "0x0"
+            "type": "0x0",
+            "effectiveGasPrice": "0x1"
           }
         ]
       }
