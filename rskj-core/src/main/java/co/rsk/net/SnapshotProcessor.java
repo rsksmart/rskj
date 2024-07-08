@@ -352,7 +352,7 @@ public class SnapshotProcessor implements InternalService {
     private void processOrderedStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage message) {
         try {
             logger.debug("CLIENT - Processing State chunk received from: {}", message.getFrom());
-            peersInformation.getOrRegisterSnapPeer(peer);
+            peersInformation.getOrRegisterPeer(peer);
             state.onNewChunk();
 
             RLPList nodeLists = RLP.decodeList(message.getChunkOfTrieKeyValue());

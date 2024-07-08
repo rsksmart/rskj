@@ -51,7 +51,7 @@ public final class SyncConfiguration {
 
     private final int snapshotSyncLimit;
     private final List<Node> snapshotTrustedPeers;
-    private Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
+    private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
@@ -129,8 +129,8 @@ public final class SyncConfiguration {
         this.snapshotSyncLimit = snapshotSyncLimit;
         this.snapshotTrustedPeers = snapshotTrustedPeers != null ? snapshotTrustedPeers : Collections.emptyList();
 
-        nodeIdToSnapshotTrustedPeerMap = getSnapshotTrustedPeers().stream()
-                .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer));
+        nodeIdToSnapshotTrustedPeerMap = Collections.unmodifiableMap(this.snapshotTrustedPeers.stream()
+                .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer)));
     }
 
     public final int getExpectedPeers() {
@@ -183,10 +183,6 @@ public final class SyncConfiguration {
 
     public int getSnapshotSyncLimit() {
         return snapshotSyncLimit;
-    }
-
-    public List<Node> getSnapshotTrustedPeers() {
-        return snapshotTrustedPeers;
     }
 
     public Map<String, Node> getNodeIdToSnapshotTrustedPeerMap() {

@@ -39,7 +39,6 @@ import org.mockito.MockitoAnnotations;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,22 +119,6 @@ class PeersInformationTest {
     }
 
     @Test
-    void testGetOrRegisterSnapPeer_ShouldThrowIllegalArgumentException(){
-        SnapshotPeersInformation peersInformation = setupTopBestSnapshotScenario(100.0D);
-        Peer snapPeer5 = Mockito.mock(Peer.class);
-        Mockito.when(snapPeer5.getPeerNodeID()).thenReturn(new NodeID("snapPeer6".getBytes()));
-
-        Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
-
-        Exception exception = Assertions.assertThrows(IllegalArgumentException.class, () -> peersInformation.getOrRegisterSnapPeer(snapPeer5));
-
-        String expectedMessage = "Peer not allowed:";
-        String actualMessage = exception.getMessage();
-
-        Assertions.assertTrue(actualMessage.contains(expectedMessage));
-    }
-
-    @Test
     void testGetOrRegisterSnapPeer_ShouldRegisterSnapPeer(){
         PeersInformation peersInformation = setupTopBestSnapshotScenario(100.0D);
         Peer snapPeer5 = Mockito.mock(Peer.class);
@@ -143,7 +126,7 @@ class PeersInformationTest {
 
         Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
 
-        SyncPeerStatus expectedPeerStatus = peersInformation.getOrRegisterSnapPeer(snapPeer5);
+        SyncPeerStatus expectedPeerStatus = peersInformation.getOrRegisterPeer(snapPeer5);
         SyncPeerStatus actualPeerStatus = peersInformation.getPeer(snapPeer5);
 
         Assertions.assertEquals(expectedPeerStatus,actualPeerStatus);
@@ -237,7 +220,6 @@ class PeersInformationTest {
         Mockito.when(blockchain.getStatus()).thenReturn(blockChainStatus);
 
         Mockito.when(syncConfiguration.getNodeIdToSnapshotTrustedPeerMap()).thenReturn(trustedSnapPeersMap);
-        Mockito.when(syncConfiguration.getSnapshotTrustedPeers()).thenReturn(new ArrayList<>(trustedSnapPeersMap.values()));
 
         PeersInformation peersInformation = new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager, random);
 

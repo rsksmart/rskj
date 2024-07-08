@@ -118,16 +118,6 @@ public class PeersInformation implements SnapshotPeersInformation {
         return this.registerPeer(peer);
     }
 
-    @Override
-    public SyncPeerStatus getOrRegisterSnapPeer(Peer peer) {
-
-        if (syncConfiguration.getNodeIdToSnapshotTrustedPeerMap().containsKey(peer.getPeerNodeID().toString())) {
-            return getOrRegisterPeer(peer);
-        }
-
-        throw new IllegalArgumentException(String.format("Peer not allowed: %s", peer.getPeerNodeID().toString()));
-    }
-
     public SyncPeerStatus getPeer(Peer peer) {
         return this.peerStatuses.get(peer);
     }

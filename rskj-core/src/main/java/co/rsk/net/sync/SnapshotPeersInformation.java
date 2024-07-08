@@ -30,5 +30,5 @@ import java.util.Optional;
 public interface SnapshotPeersInformation {
     Optional<Peer> getBestSnapPeer();
     List<Peer> getBestSnapPeerCandidates();
-    SyncPeerStatus getOrRegisterSnapPeer(Peer peer);
+    SyncPeerStatus getOrRegisterPeer(Peer peer);
 }
