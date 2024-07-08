@@ -1102,6 +1102,62 @@ class FederationStorageProviderImplTests {
         );
     }
 
+    @Test
+    void save_savePendingFederation_postRSKIP123_shouldBeSavedInStorageWithFormatVersion() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        StorageAccessor storageAccessor = new InMemoryStorage();
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+        federationStorageProvider.save(networkParameters, activations);
+
+        PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
+            PendingFederation::deserialize);
+
+        int formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils::deserializeInteger);
+
+        // Assert
+
+        assertEquals(STANDARD_MULTISIG_FEDERATION.getFormatVersion(), formatVersion);
+        assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
+
+    }
+
+    @Test
+    void save_savePendingFederation_preRSKIP123_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        StorageAccessor storageAccessor = new InMemoryStorage();
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+        federationStorageProvider.save(networkParameters, activations);
+
+        PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
+            PendingFederation::deserializeFromBtcKeysOnly);
+
+        byte[] formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), data -> data);
+
+        // Assert
+
+        assertNull(formatVersion);
+        assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
+
+    }
+
     private static Federation createFederation(int version) {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
