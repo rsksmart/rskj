@@ -2705,7 +2705,7 @@ class BridgeSupportTest {
         provider.setNewFederation(federation1);
 
         // Whitelist the address
-        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
+        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcRegTestParams);
         whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(5)));
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
