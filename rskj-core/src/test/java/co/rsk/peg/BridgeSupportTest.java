@@ -2750,8 +2750,6 @@ class BridgeSupportTest {
         // Assert
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(amountToLock);
 
-        whitelist.consume(btcAddress);
-
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         Assertions.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
         Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
@@ -2940,8 +2938,6 @@ class BridgeSupportTest {
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
 
-        whitelist.consume(btcAddress);
-
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         Assertions.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
         Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
@@ -3111,8 +3107,6 @@ class BridgeSupportTest {
         );
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
-
-        whitelist.consume(btcAddress);
 
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         Assertions.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
