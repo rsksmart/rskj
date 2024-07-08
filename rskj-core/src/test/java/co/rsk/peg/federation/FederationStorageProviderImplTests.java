@@ -1138,6 +1138,41 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void save_saveOldFederationBtcUTXOs_utxosShouldBeSavedToStorage() {
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
+
+        DataWord oldFederationBtcUtxosKey = OLD_FEDERATION_BTC_UTXOS_KEY.getKey();
+
+        // Save utxos directly in storage.
+        List<UTXO> expectedUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        storageAccessor.saveToRepository(oldFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
+
+        // Get utxos from method and check they are as expected
+        List<UTXO> actualUtxos = federationStorageProvider.getOldFederationBtcUTXOs();
+        assertEquals(1, actualUtxos.size());
+        assertEquals(expectedUtxos, actualUtxos);
+
+        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+
+        actualUtxos.addAll(extraUtxos);
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Getting the utxos from storage to ensure they were stored in the storage.
+        List<UTXO> finalListOfUtxos = storageAccessor.getFromRepository(oldFederationBtcUtxosKey, BridgeSerializationUtils::deserializeUTXOList);
+
+        assertEquals(actualUtxos.size(), 2);
+        assertEquals(actualUtxos, finalListOfUtxos);
+        // Ensuring `getOldFederationBtcUTXOs` also returns the one saved in the storage.
+        assertEquals(finalListOfUtxos, federationStorageProvider.getOldFederationBtcUTXOs());
+
+    }
+
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
