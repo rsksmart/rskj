@@ -415,94 +415,35 @@ class FederationStorageProviderImplTests {
         );
     }
 
-    @Test
-    void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-
-        testSaveOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-
-        testSaveOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP123_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP201_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP353_should_save_standard_multisig_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveOldFederation(
-            STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION,
-            createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP201_should_save_non_standard_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-        testSaveOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP353_should_save_non_standard_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveOldFederation(
-            NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveOldFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201,
-            ConsensusRule.RSKIP353
-        ).forBlock(0);
-        testSaveOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
+    private static Stream<Arguments> provideSaveOldFederationTestArguments() {
+        return Stream.of(
+            Arguments.of(ActivationConfigsForTest.only().forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only().forBlock(0), NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only().forBlock(0), P2SH_ERP_FEDERATION_FORMAT_VERSION, createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only(
+                ConsensusRule.RSKIP123,
+                ConsensusRule.RSKIP201
+            ).forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only(
+                ConsensusRule.RSKIP123,
+                ConsensusRule.RSKIP201,
+                ConsensusRule.RSKIP353
+            ).forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only(
+                ConsensusRule.RSKIP123,
+                ConsensusRule.RSKIP201
+            ).forBlock(0), NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only(
+                ConsensusRule.RSKIP123,
+                ConsensusRule.RSKIP201,
+                ConsensusRule.RSKIP353
+            ).forBlock(0), NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(ActivationConfigsForTest.only(
+                ConsensusRule.RSKIP123,
+                ConsensusRule.RSKIP201,
+                ConsensusRule.RSKIP353
+            ).forBlock(0), P2SH_ERP_FEDERATION_FORMAT_VERSION, createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION))
         );
     }
 
@@ -1125,7 +1066,10 @@ class FederationStorageProviderImplTests {
 
     }
 
-    private void testSaveOldFederation(
+    @ParameterizedTest
+    @MethodSource("provideSaveOldFederationTestArguments")
+    void testSaveOldFederation(
+        ActivationConfig.ForBlock activations,
         int expectedFormat,
         Federation federationToSave
     ) {
