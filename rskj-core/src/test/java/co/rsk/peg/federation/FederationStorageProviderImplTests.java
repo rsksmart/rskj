@@ -1201,6 +1201,31 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void save_saveLastRetiredFederationP2SHScript_afterRSKIP186_getsValueFromStorage() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        Script actualScript = storageAccessor.getFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), BridgeSerializationUtils::deserializeScript);
+
+        assertEquals(expectedScript, actualScript);
+
+    }
+
     private static Federation createFederation(int version) {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
