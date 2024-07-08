@@ -646,7 +646,7 @@ class BridgeSupportTest {
         byte[] data = tx.getInput(0).getScriptSig().getChunks().get(1).data;
         BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, bridgeMainNetConstants.getBtcParams());
         Address address = senderBtcKey.toAddress(bridgeMainNetConstants.getBtcParams());
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
@@ -867,7 +867,7 @@ class BridgeSupportTest {
         byte[] data = tx.getInput(0).getScriptSig().getChunks().get(1).data;
         BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, bridgeMainNetConstants.getBtcParams());
         Address address = senderBtcKey.toAddress(bridgeMainNetConstants.getBtcParams());
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
@@ -941,7 +941,7 @@ class BridgeSupportTest {
         byte[] data = tx.getInput(0).getScriptSig().getChunks().get(1).data;
         BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, bridgeMainNetConstants.getBtcParams());
         Address address = senderBtcKey.toAddress(bridgeMainNetConstants.getBtcParams());
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
@@ -2704,7 +2704,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest, activations);
         provider.setNewFederation(federation1);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
         whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(5)));
 
@@ -2895,7 +2895,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest, activations);
         provider.setNewFederation(federation1);
 
-        //Whitelist the addresses
+        //Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
         whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(5)));
 
@@ -3062,7 +3062,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest, activations);
         provider.setNewFederation(federation1);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
         whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, amountToLock));
 
@@ -3738,7 +3738,7 @@ class BridgeSupportTest {
         );
         provider.setNewFederation(federation1);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
         whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
 
@@ -4106,7 +4106,7 @@ class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest, activations);
         provider.setNewFederation(federation1);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
         whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
 
@@ -4315,7 +4315,7 @@ class BridgeSupportTest {
         );
         provider.setNewFederation(federation1);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams);
         whitelist.put(btcAddressFromBtcLockSender, new OneOffWhiteListEntry(btcAddressFromBtcLockSender, amountToLock));
 
@@ -7137,7 +7137,7 @@ class BridgeSupportTest {
         byte[] data = tx.getInput(0).getScriptSig().getChunks().get(1).data;
         BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
 
-        // Whitelist the addresses
+        // Whitelist the address
         LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcRegTestParams);
         Address address = senderBtcKey.toAddress(bridgeConstants.getBtcParams());
         whitelist.put(address, new OneOffWhiteListEntry(address, lockValue));
