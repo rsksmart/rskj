@@ -166,4 +166,9 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         AddressBasedAuthorizer authorizer = whitelistConstants.getLockWhitelistChangeAuthorizer();
         return authorizer.isAuthorized(tx, signatureCache);
     }
+
+    @Override
+    public void save() {
+        whitelistStorageProvider.save(activations);
+    }
 }
