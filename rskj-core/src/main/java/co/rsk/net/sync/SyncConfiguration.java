@@ -50,7 +50,6 @@ public final class SyncConfiguration {
     private final Duration timeoutWaitingSnapChunk;
 
     private final int snapshotSyncLimit;
-    private final List<Node> snapshotTrustedPeers;
     private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
 
     /**
@@ -112,7 +111,7 @@ public final class SyncConfiguration {
             boolean isClientSnapSyncEnabled,
             int timeoutWaitingSnapChunk,
             int snapshotSyncLimit,
-            List<Node> snapshotTrustedPeers) {
+            List<Node> snapBootNodes) {
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -127,9 +126,12 @@ public final class SyncConfiguration {
         // TODO(snap-poc) re-visit the need of this specific timeout as the algorithm evolves
         this.timeoutWaitingSnapChunk = Duration.ofSeconds(timeoutWaitingSnapChunk);
         this.snapshotSyncLimit = snapshotSyncLimit;
-        this.snapshotTrustedPeers = snapshotTrustedPeers != null ? snapshotTrustedPeers : Collections.emptyList();
 
-        nodeIdToSnapshotTrustedPeerMap = Collections.unmodifiableMap(this.snapshotTrustedPeers.stream()
+
+
+        List<Node> snapBootNodesList = snapBootNodes != null ? snapBootNodes : Collections.emptyList();
+
+        nodeIdToSnapshotTrustedPeerMap = Collections.unmodifiableMap(snapBootNodesList.stream()
                 .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer)));
     }
 
