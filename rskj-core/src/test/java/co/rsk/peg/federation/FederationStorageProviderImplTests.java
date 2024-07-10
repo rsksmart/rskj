@@ -1228,7 +1228,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_saveFederationElection_shouldSaveInStorage() {
+    void saveFederationElection_shouldSaveInStorage() {
 
         // Arrange
 
@@ -1236,14 +1236,14 @@ class FederationStorageProviderImplTests {
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
-        // Act
-
         ABICallElection defaultFederationElection = federationStorageProvider.getFederationElection(authorizer);
         byte[] defaultFederationElectionSerialized = BridgeSerializationUtils.serializeElection(defaultFederationElection);
         ABICallSpec abiCallSpec = new ABICallSpec("function1", new byte[][]{});
         RskAddress voterAddress = new RskAddress("9be6f6735c4d59c10240d4987414fb686c6b7323");
         defaultFederationElection.vote(abiCallSpec, voterAddress);
         byte[] federationElectionSerializedWithVote = BridgeSerializationUtils.serializeElection(defaultFederationElection);
+
+        // Act
 
         federationStorageProvider.save(networkParameters, activations);
 
