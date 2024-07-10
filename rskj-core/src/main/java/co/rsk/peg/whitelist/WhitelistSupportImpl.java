@@ -17,34 +17,34 @@ public class WhitelistSupportImpl implements WhitelistSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(WhitelistSupportImpl.class);
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
-    private final WhitelistConstants whitelistConstants;
-    private final WhitelistStorageProvider whitelistStorageProvider;
+    private final WhitelistConstants constants;
+    private final WhitelistStorageProvider storageProvider;
     private final ActivationConfig.ForBlock activations;
     private final SignatureCache signatureCache;
     private final NetworkParameters networkParameters;
 
     public WhitelistSupportImpl(
-        WhitelistConstants whitelistConstants,
-        WhitelistStorageProvider whitelistStorageProvider,
+        WhitelistConstants constants,
+        WhitelistStorageProvider storageProvider,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
 
-        this.whitelistConstants = whitelistConstants;
-        this.whitelistStorageProvider = whitelistStorageProvider;
+        this.constants = constants;
+        this.storageProvider = storageProvider;
         this.activations = activations;
         this.signatureCache = signatureCache;
 
-        this.networkParameters = whitelistConstants.getBtcParams();
+        this.networkParameters = constants.getBtcParams();
     }
 
     @Override
     public int getLockWhitelistSize() {
-        return whitelistStorageProvider.getLockWhitelist(activations, networkParameters).getSize();
+        return storageProvider.getLockWhitelist(activations, networkParameters).getSize();
     }
 
     @Override
     public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
-        List<LockWhitelistEntry> entries = whitelistStorageProvider.getLockWhitelist(
+        List<LockWhitelistEntry> entries = storageProvider.getLockWhitelist(
             activations,
             networkParameters
         ).getAll();
@@ -60,7 +60,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
         try {
             Address address = Address.fromBase58(networkParameters, addressBase58);
 
-            return whitelistStorageProvider.getLockWhitelist(activations, networkParameters).get(address);
+            return storageProvider.getLockWhitelist(activations, networkParameters).get(address);
         } catch (AddressFormatException e) {
             logger.warn("[getLockWhitelistEntryByAddress] {}", INVALID_ADDRESS_FORMAT_MESSAGE, e);
             return null;
@@ -99,7 +99,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
-        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
+        LockWhitelist whitelist = storageProvider.getLockWhitelist(activations, networkParameters);
         if (whitelist.isWhitelisted(entry.address())) {
             return ADDRESS_ALREADY_WHITELISTED.getCode();
         }
@@ -113,7 +113,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
-        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
+        LockWhitelist whitelist = storageProvider.getLockWhitelist(activations, networkParameters);
         try {
             Address address = Address.fromBase58(networkParameters, addressBase58);
             if (!whitelist.remove(address)) {
@@ -133,7 +133,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
             return UNAUTHORIZED_CALLER.getCode();
         }
 
-        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
+        LockWhitelist lockWhitelist = storageProvider.getLockWhitelist(activations, networkParameters);
         if (lockWhitelist.isDisableBlockSet()) {
             return DELAY_ALREADY_SET.getCode();
         }
@@ -151,7 +151,7 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     @Override
     public boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
         final String ADDRESS_NOT_WHITELISTED_MESSAGE = "Rejected lock. Address is not whitelisted. Address: ";
-        LockWhitelist lockWhitelist = whitelistStorageProvider.getLockWhitelist(activations, networkParameters);
+        LockWhitelist lockWhitelist = storageProvider.getLockWhitelist(activations, networkParameters);
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
             logger.info("[verifyLockSenderIsWhitelisted] {} {}", ADDRESS_NOT_WHITELISTED_MESSAGE, senderBtcAddress);
             return false;
@@ -163,12 +163,12 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     }
 
     private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
-        AddressBasedAuthorizer authorizer = whitelistConstants.getLockWhitelistChangeAuthorizer();
+        AddressBasedAuthorizer authorizer = constants.getLockWhitelistChangeAuthorizer();
         return authorizer.isAuthorized(tx, signatureCache);
     }
 
     @Override
     public void save() {
-        whitelistStorageProvider.save(activations);
+        storageProvider.save(activations);
     }
 }
