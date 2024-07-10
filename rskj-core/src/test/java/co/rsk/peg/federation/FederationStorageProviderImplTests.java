@@ -859,21 +859,21 @@ class FederationStorageProviderImplTests {
         // Act
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
         // Assert
 
-        assertTrue(actualValueOptional.isPresent());
-        assertEquals(expectedValue, actualValueOptional.get());
+        assertTrue(actualValue.isPresent());
+        assertEquals(expectedValue, actualValue.get());
 
         // Setting in storage a different value to assert that calling the method again should return cached value
 
         storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 2 });
 
-        Optional<Long> actualCachedValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+        Optional<Long> actualCachedValue = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
-        assertTrue(actualCachedValueOptional.isPresent());
-        assertEquals(expectedValue, actualCachedValueOptional.get());
+        assertTrue(actualCachedValue.isPresent());
+        assertEquals(expectedValue, actualCachedValue.get());
 
     }
 
@@ -890,11 +890,11 @@ class FederationStorageProviderImplTests {
         // Act
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
         // Assert
 
-        assertFalse(actualValueOptional.isPresent());
+        assertFalse(actualValue.isPresent());
 
     }
 
