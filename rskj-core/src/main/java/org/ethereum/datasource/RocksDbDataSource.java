@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -151,13 +152,13 @@ public class RocksDbDataSource implements KeyValueDataSource {
             while (retries < MAX_RETRIES) {
                 try {
                     if (logger.isTraceEnabled()) {
-                        logger.trace("~> RocksDbDataSource.get(): {}, key: {}", name, ByteUtil.toHexString(key));
+                        logger.trace("~> RocksDbDataSource.get(): {}, key: {}", name, Bytes.of(key));
                     }
 
                     byte[] ret = db.get(key);
 
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
+                        logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, Bytes.of(key), (ret == null ? "null" : ret.length));
                     }
 
                     result = ret;
@@ -193,13 +194,13 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> RocksDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
+                logger.trace("~> RocksDbDataSource.put(): {}, key: {}, return length: {}", name, Bytes.of(key), value.length);
             }
 
             db.put(key, value);
 
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ RocksDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
+                logger.trace("<~ RocksDbDataSource.put(): {}, key: {}, return length: {}", name, Bytes.of(key), value.length);
             }
         } catch (RocksDBException e) {
             logger.error("Exception. Not retrying.", e);
@@ -219,12 +220,12 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> RocksDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
+                logger.trace("~> RocksDbDataSource.delete(): {}, key: {}", name, Bytes.of(key));
             }
 
             db.delete(key);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ RocksDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
+                logger.trace("<~ RocksDbDataSource.delete(): {}, key: {}", name, Bytes.of(key));
             }
 
         } catch (RocksDBException e) {

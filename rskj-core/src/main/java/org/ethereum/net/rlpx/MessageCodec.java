@@ -19,6 +19,7 @@
 
 package org.ethereum.net.rlpx;
 
+import co.rsk.core.types.bytes.Bytes;
 import com.google.common.io.ByteStreams;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -136,7 +137,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         }
 
         if (loggerWire.isDebugEnabled()) {
-            loggerWire.debug("Recv: Encoded: {} [{}]", frameType, ByteUtil.toHexString(payload));
+            loggerWire.debug("Recv: Encoded: {} [{}]", frameType, Bytes.of(payload));
         }
 
         Message msg = createMessage((byte) frameType, payload);
@@ -159,7 +160,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         byte[] encoded = msg.getEncoded();
 
         if (loggerWire.isDebugEnabled()) {
-            loggerWire.debug("Send: Encoded: {} [{}]", getCode(msg.getCommand()), ByteUtil.toHexString(encoded));
+            loggerWire.debug("Send: Encoded: {} [{}]", getCode(msg.getCommand()), Bytes.of(encoded));
         }
 
         List<Frame> frames = splitMessageToFrames(msg);
@@ -227,7 +228,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             return ethMessageFactory.create(resolved, payload);
         }
 
-        throw new IllegalArgumentException("No such message: " + code + " [" + ByteUtil.toHexString(payload) + "]");
+        throw new IllegalArgumentException("No such message: " + code + " [" + Bytes.of(payload) + "]");
     }
 
     public void setChannel(Channel channel){
