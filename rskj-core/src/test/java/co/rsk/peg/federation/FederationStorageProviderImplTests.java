@@ -919,10 +919,10 @@ class FederationStorageProviderImplTests {
 
         // Assert
 
-        Optional<Long> actualValueOptional = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
-        assertTrue(actualValueOptional.isPresent());
-        assertEquals(expectedValue, actualValueOptional.get());
+        assertTrue(actualValue.isPresent());
+        assertEquals(expectedValue, actualValue.get());
 
     }
 
@@ -962,21 +962,21 @@ class FederationStorageProviderImplTests {
         // Act
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Long> actualValueOptional = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
 
         // Assert
 
-        assertTrue(actualValueOptional.isPresent());
-        assertEquals(expectedValue, actualValueOptional.get());
+        assertTrue(actualValue.isPresent());
+        assertEquals(expectedValue, actualValue.get());
 
         // Setting in storage a different value to assert that calling the method again should return cached value
 
         storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 2 });
 
-        Optional<Long> actualCachedValueOptional = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+        Optional<Long> actualCachedValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
 
-        assertTrue(actualCachedValueOptional.isPresent());
-        assertEquals(expectedValue, actualCachedValueOptional.get());
+        assertTrue(actualCachedValue.isPresent());
+        assertEquals(expectedValue, actualCachedValue.get());
 
     }
 
@@ -994,11 +994,11 @@ class FederationStorageProviderImplTests {
         // Act
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Long> actualValueOptional = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
 
         // Assert
 
-        assertFalse(actualValueOptional.isPresent());
+        assertFalse(actualValue.isPresent());
 
     }
 
@@ -1012,7 +1012,6 @@ class FederationStorageProviderImplTests {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
-        System.out.println(Arrays.toString(expectedScript.getProgram()));
         byte[] serializedScript = BridgeSerializationUtils.serializeScript(expectedScript);
         // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
         storageAccessor.saveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), serializedScript);
@@ -1044,12 +1043,12 @@ class FederationStorageProviderImplTests {
         // Act
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Script> actualValueOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+        Optional<Script> actualValue = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
 
         // Assert
 
-        assertTrue(actualValueOptional.isPresent());
-        assertEquals(expectedScript, actualValueOptional.get());
+        assertTrue(actualValue.isPresent());
+        assertEquals(expectedScript, actualValue.get());
 
         // Setting in storage a different value to assert that calling the method again should return cached value
 
@@ -1076,11 +1075,11 @@ class FederationStorageProviderImplTests {
         // Act
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Script> actualValueOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+        Optional<Script> actualValue = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
 
         // Assert
 
-        assertFalse(actualValueOptional.isPresent());
+        assertFalse(actualValue.isPresent());
 
     }
 
@@ -1098,11 +1097,11 @@ class FederationStorageProviderImplTests {
 
         Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
         federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
-        Optional<Script> actualScriptOptional = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+        Optional<Script> actualScript = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
         // Assert
 
-        assertTrue(actualScriptOptional.isPresent());
-        assertEquals(expectedScript, actualScriptOptional.get());
+        assertTrue(actualScript.isPresent());
+        assertEquals(expectedScript, actualScript.get());
 
     }
 
