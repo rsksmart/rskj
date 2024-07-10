@@ -766,11 +766,32 @@ class FederationStorageProviderImplTests {
         // Assert
 
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+        
+    }
 
-        // Setting a different election in storage to assert that calling the method again returns the cached election
+    @Test
+    void getFederationElection_whenCalledTwice_shouldReturnCached() {
 
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
+
+        ABICallElection expectedElection = getSampleElection("function1", authorizer);
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), expectedElectionEncoded);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
         ABICallElection secondElectionSample = getSampleElection("function2", authorizer);
         storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), BridgeSerializationUtils.serializeElection(secondElectionSample));
+
+        // Assert
 
         ABICallElection cachedElection = federationStorageProvider.getFederationElection(authorizer);
 
