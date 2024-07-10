@@ -955,7 +955,7 @@ class FederationStorageProviderImplTests {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         long expectedValue = 1;
-        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 1 });
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { (byte) expectedValue });
 
         // Act
 
