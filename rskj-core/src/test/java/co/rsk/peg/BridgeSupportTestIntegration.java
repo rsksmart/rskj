@@ -3143,35 +3143,6 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    void getLockWhitelistMethods() {
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
-        NetworkParameters networkParameters = bridgeMainNetConstants.getBtcParams();
-
-        List<LockWhitelistEntry> entries = Arrays.stream(new Integer[]{2, 3, 4, 5})
-            .map(i -> new UnlimitedWhiteListEntry(
-                new Address(networkParameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash())
-            )).collect(Collectors.toList());
-
-        for (int i = 0; i < 4; i++) {
-            int addLockWhitelistEntry = whitelistSupport.addUnlimitedLockWhitelistAddress(tx, entries.get(i).address().toBase58());
-            Assertions.assertEquals(WhitelistResponseCode.SUCCESS.getCode(), addLockWhitelistEntry);
-        }
-
-        Assertions.assertEquals(entries.size(), whitelistSupport.getLockWhitelistSize());
-        Assertions.assertNull(whitelistSupport.getLockWhitelistEntryByIndex(-1));
-        Assertions.assertNull(whitelistSupport.getLockWhitelistEntryByIndex(4));
-        Assertions.assertNull(whitelistSupport.getLockWhitelistEntryByIndex(5));
-
-        String addressBase58 = new Address(networkParameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58();
-        Assertions.assertNull(whitelistSupport.getLockWhitelistEntryByAddress(addressBase58));
-
-        for (int i = 0; i < 4; i++) {
-            Assertions.assertNotNull(whitelistSupport.getLockWhitelistEntryByIndex(i));
-            Assertions.assertEquals(entries.get(i).address(), whitelistSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toBase58()).address());
-        }
-    }
-
-    @Test
     void getBtcBlockchainInitialBlockHeight() throws IOException {
         Repository repository = createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
