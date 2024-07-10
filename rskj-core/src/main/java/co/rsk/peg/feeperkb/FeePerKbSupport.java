@@ -24,7 +24,5 @@ public interface FeePerKbSupport {
      */
     Integer voteFeePerKbChange(Transaction tx, Coin feePerKb, SignatureCache signatureCache);
 
-
     void save();
-
 }
