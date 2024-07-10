@@ -19,6 +19,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.util.StringUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -79,7 +80,7 @@ public final class FederationMember {
                 case "btc":
                     return KeyType.BTC;
                 default:
-                    throw new IllegalArgumentException(String.format("Invalid value for FederationMember.KeyType: %s", value));
+                    throw new IllegalArgumentException(String.format("Invalid value for FederationMember.KeyType: %s", StringUtils.trim(value)));
             }
         }
     }

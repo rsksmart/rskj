@@ -1,5 +1,6 @@
 package co.rsk.validators;
 
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -20,7 +21,7 @@ public class BlockUnclesHashValidationRule implements BlockValidationRule {
 
         if (!ByteUtil.fastEquals(unclesHeader, unclesBlock)) {
             String message = String.format("Block's given Uncle Hash doesn't match: %s != %s",
-                    ByteUtil.toHexString(unclesHeader), ByteUtil.toHexString(unclesBlock));
+                    Bytes.of(unclesHeader), Bytes.of(unclesBlock));
             logger.warn(message);
             panicProcessor.panic("invaliduncle", message);
             return false;

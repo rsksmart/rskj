@@ -23,12 +23,12 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.collect.ImmutableList;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
@@ -208,7 +208,7 @@ public class Block {
     @Override
     public String toString() {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append(ByteUtil.toHexString(this.getEncoded())).append("\n");
+        toStringBuff.append(Bytes.of(this.getEncoded())).append("\n");
         toStringBuff.append("BlockData [ ");
         toStringBuff.append("hash=").append(this.getHash()).append("\n");
         toStringBuff.append(header.toString());

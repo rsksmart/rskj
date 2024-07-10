@@ -23,6 +23,7 @@ import co.rsk.cli.tools.RewindBlocks;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidator;
@@ -32,7 +33,6 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +95,7 @@ public class BlockChainLoader {
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     bestBlock.getNumber(),
                     totalDifficulty,
-                    ByteUtil.toHexString(bestBlock.getStateRoot()));
+                    Bytes.of(bestBlock.getStateRoot()));
         }
 
         if (!isBlockConsistent(bestBlock)) {
