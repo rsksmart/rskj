@@ -68,12 +68,14 @@ class BridgeSupportAddSignatureTest {
     private ActivationConfig.ForBlock activationsBeforeForks;
     private ActivationConfig.ForBlock activationsAfterForks;
     private BridgeSupportBuilder bridgeSupportBuilder;
+    private WhitelistSupport whitelistSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         bridgeSupportBuilder = new BridgeSupportBuilder();
+        whitelistSupport = mock(WhitelistSupport.class);
     }
 
     @Test

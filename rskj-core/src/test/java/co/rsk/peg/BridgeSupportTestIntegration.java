@@ -47,7 +47,9 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.BlockDifficulty;
@@ -56,6 +58,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
@@ -69,6 +72,13 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.peg.whitelist.WhitelistCaller;
+import co.rsk.peg.whitelist.WhitelistResponseCode;
+import co.rsk.peg.whitelist.WhitelistStorageProvider;
+import co.rsk.peg.whitelist.WhitelistStorageProviderImpl;
+import co.rsk.peg.whitelist.WhitelistSupport;
+import co.rsk.peg.whitelist.WhitelistSupportImpl;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
@@ -148,20 +158,30 @@ public class BridgeSupportTestIntegration {
     private static final String DATA = "80af2871";
 
     private BridgeConstants bridgeConstants;
+    private BridgeConstants bridgeMainNetConstants;
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
+    private ActivationConfig.ForBlock activations;
 
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
+    private WhitelistSupport whitelistSupport;
+    private WhitelistStorageProvider whitelistStorageProvider;
 
     @BeforeEach
     void setUpOnEachTest() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
+        bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
+        activations = mock(ActivationConfig.ForBlock.class);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+        StorageAccessor inMemoryStorage = new InMemoryStorage();
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
+        whitelistSupport = new WhitelistSupportImpl(WhitelistMainNetConstants.getInstance(), whitelistStorageProvider, activations, signatureCache);
+
     }
 
     @Test
@@ -260,7 +280,6 @@ public class BridgeSupportTestIntegration {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
         List<BtcBlock> checkpoints = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
 
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeConstants,
             provider,
@@ -272,6 +291,7 @@ public class BridgeSupportTestIntegration {
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, null, activationsBeforeForks),
             feePerKbSupport,
+            whitelistSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -1685,7 +1705,7 @@ public class BridgeSupportTestIntegration {
         provider.setOldFederation(federation2);
 
         // Whitelist the addresses
-        LockWhitelist whitelist = provider.getLockWhitelist();
+        LockWhitelist whitelist = whitelistStorageProvider.getLockWhitelist(activations, btcParams);
         Address address1 = srcKey1.toAddress(btcParams);
         Address address2 = srcKey2.toAddress(btcParams);
         Address address3 = srcKey3.toAddress(btcParams);
@@ -3140,7 +3160,7 @@ public class BridgeSupportTestIntegration {
         }
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assertions.assertEquals(4, bridgeSupport.getLockWhitelistSize().intValue());
+        Assertions.assertEquals(4, bridgeSupport.getLockWhitelistSize());
         Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(-1));
         Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(4));
         Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(5));
@@ -3201,7 +3221,7 @@ public class BridgeSupportTestIntegration {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assertions.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        Assertions.assertEquals(WhitelistResponseCode.GENERIC_ERROR.getCode(), bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
@@ -3242,7 +3262,9 @@ public class BridgeSupportTestIntegration {
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
 
-        Assertions.assertEquals(1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        int actualResult = bridgeSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI);
+        Assertions.assertEquals(WhitelistResponseCode.SUCCESS.getCode(), actualResult);
         verify(mockedWhitelist, times(1)).setDisableBlockHeight(disableBlockDelayBI.intValue() + bestChainHeight);
     }
 
@@ -3431,7 +3453,8 @@ public class BridgeSupportTestIntegration {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assertions.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.UNAUTHORIZED.getRskAddress());
+        Assertions.assertEquals(WhitelistResponseCode.UNAUTHORIZED_CALLER.getCode(), bridgeSupport.removeLockWhitelistAddress(tx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
         verify(mockedWhitelist, never()).remove(any());
     }
 
@@ -4024,7 +4047,8 @@ public class BridgeSupportTestIntegration {
 
     private BridgeSupport getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(LockWhitelist mockedWhitelist, BtcBlockStoreWithCache btcBlockStore) {
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
-        when(providerMock.getLockWhitelist()).thenReturn(mockedWhitelist);
+        WhitelistStorageProvider whitelistProvider = mock(WhitelistStorageProvider.class);
+        when(whitelistProvider.getLockWhitelist(activations, bridgeMainNetConstants.getBtcParams())).thenReturn(mockedWhitelist);
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
@@ -4150,6 +4174,7 @@ public class BridgeSupportTestIntegration {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, executionBlock, activations),
                 feePerKbSupport,
+                whitelistSupport,
                 blockStoreFactory,
                 activations,
                 signatureCache
