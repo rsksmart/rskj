@@ -20,6 +20,7 @@ package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
@@ -118,19 +119,19 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "minimumGasPrice={}\n",
 
                     addr,
-                    ByteUtil.toHexString(origin),
-                    ByteUtil.toHexString(caller),
+                    Bytes.of(origin),
+                    Bytes.of(caller),
                     balance,
                     txGasPrice,
                     new BigInteger(1, gas).longValue(),
                     callValue,
-                    ByteUtil.toHexString(data),
-                    ByteUtil.toHexString(lastHash),
-                    ByteUtil.toHexString(coinbase),
+                    Bytes.of(data),
+                    Bytes.of(lastHash),
+                    Bytes.of(coinbase),
                     timestamp,
                     number,
                     txindex,
-                    ByteUtil.toHexString(difficulty),
+                    Bytes.of(difficulty),
                     gaslimit,
                     minimumGasPrice);
         }
@@ -190,20 +191,20 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "difficulty={}\n" +
                             "gaslimit={}\n" +
                             "minimumGasPrice={}\n",
-                    ByteUtil.toHexString(address.getLast20Bytes()),
-                    ByteUtil.toHexString(origin.getLast20Bytes()),
-                    ByteUtil.toHexString(caller.getLast20Bytes()),
+                    Bytes.of(address.getLast20Bytes()),
+                    Bytes.of(origin.getLast20Bytes()),
+                    Bytes.of(caller.getLast20Bytes()),
                     balance.toString(),
                     txGasPrice.longValue(),
                     agas,
-                    ByteUtil.toHexString(callValue.getNoLeadZeroesData()),
+                    Bytes.of(callValue.getNoLeadZeroesData()),
                     data == null ? "" : ByteUtil.toHexString(data),
-                    ByteUtil.toHexString(lastHash.getData()),
-                    ByteUtil.toHexString(coinbase.getLast20Bytes()),
+                    Bytes.of(lastHash.getData()),
+                    Bytes.of(coinbase.getLast20Bytes()),
                     timestamp.longValue(),
                     number.longValue(),
                     transactionIndex.intValue(),
-                    ByteUtil.toHexString(difficulty.getNoLeadZeroesData()),
+                    Bytes.of(difficulty.getNoLeadZeroesData()),
                     gasLimit.bigIntValue(),
                     minimumGasPrice.longValue());
         }
