@@ -995,7 +995,7 @@ class FederationStorageProviderImplTests {
 
     @ParameterizedTest
     @MethodSource("provideFederationBtcUTXOsTestArguments")
-    void save_saveNewFederationBtcUTXOs_utxosShouldBeSavedToStorage(FederationStorageIndexKey federationStorageIndexKey, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
+    void saveNewFederationBtcUTXOs_utxosShouldBeSavedToStorage(FederationStorageIndexKey federationStorageIndexKey, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
@@ -1033,7 +1033,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_saveOldFederationBtcUTXOs_utxosShouldBeSavedToStorage() {
+    void saveOldFederationBtcUTXOs_utxosShouldBeSavedToStorage() {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
@@ -1104,7 +1104,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_savePendingFederation_postRSKIP123_shouldBeSavedInStorageWithFormatVersion() {
+    void savePendingFederation_postRSKIP123_shouldBeSavedInStorageWithFormatVersion() {
 
         // Arrange
 
@@ -1132,18 +1132,19 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_savePendingFederation_preRSKIP123_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
+    void savePendingFederation_preRSKIP123_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
 
         // Arrange
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+
         PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         // Act
 
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationStorageProvider.setPendingFederation(expectedPendingFederation);
         federationStorageProvider.save(networkParameters, activations);
 
@@ -1210,20 +1211,20 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_saveLastRetiredFederationP2SHScript_afterRSKIP186_getsValueFromStorage() {
-
+    void saveLastRetiredFederationP2SHScript_afterRSKIP186_getsValueFromStorage() {
         // Arrange
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
-        StorageAccessor storageAccessor = new InMemoryStorage();
         Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
 
         // Act
 
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
         federationStorageProvider.save(networkParameters, activations);
 
         // Assert
