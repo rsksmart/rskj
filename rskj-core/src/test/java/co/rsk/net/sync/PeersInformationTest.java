@@ -102,6 +102,17 @@ class PeersInformationTest {
         Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer1".getBytes()));
     }
 
+    @Test
+    void testGetBestPeer_ShouldReturnBestPeerWithTopBestAt90Perc() {
+        PeersInformation peersInformation = setupTopBestScenario(90.0D);
+
+        Mockito.doReturn(4).when(random).nextInt(Mockito.eq(5));
+
+        Optional<Peer> optionalPeer = peersInformation.getBestPeer();
+
+        Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer1".getBytes()));
+    }
+
     private PeersInformation setupTopBestScenario(double topBest) {
         Peer peer1 = Mockito.mock(Peer.class);
         Peer peer2 = Mockito.mock(Peer.class);
