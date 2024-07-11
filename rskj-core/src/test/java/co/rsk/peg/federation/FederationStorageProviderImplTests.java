@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static java.util.Objects.isNull;
-
 import java.math.BigInteger;
 import java.util.*;
 import org.ethereum.util.RLP;
