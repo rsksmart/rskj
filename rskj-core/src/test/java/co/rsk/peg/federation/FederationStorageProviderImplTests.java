@@ -18,6 +18,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.vote.AddressBasedAuthorizerVoteCaller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -751,7 +752,7 @@ class FederationStorageProviderImplTests {
 
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        ABICallElection expectedElection = getSampleElection("function1", authorizer);
+        ABICallElection expectedElection = getSampleElection("function1", authorizer, AddressBasedAuthorizerVoteCaller.FIRST_AUTHORIZED);
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -776,7 +777,7 @@ class FederationStorageProviderImplTests {
 
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        ABICallElection expectedElection = getSampleElection("function1", authorizer);
+        ABICallElection expectedElection = getSampleElection("function1", authorizer,AddressBasedAuthorizerVoteCaller.SECOND_AUTHORIZED);
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -788,7 +789,7 @@ class FederationStorageProviderImplTests {
 
         ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
-        ABICallElection secondElectionSample = getSampleElection("function2", authorizer);
+        ABICallElection secondElectionSample = getSampleElection("function2", authorizer, AddressBasedAuthorizerVoteCaller.THIRD_AUTHORIZED);
         storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), BridgeSerializationUtils.serializeElection(secondElectionSample));
 
         // Assert
@@ -912,18 +913,17 @@ class FederationStorageProviderImplTests {
 
     private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {
         return new AddressBasedAuthorizer(Collections.EMPTY_LIST, null) {
-            public boolean isAuthorized(RskAddress addess) {
-                return true;
+            public boolean isAuthorized(RskAddress address) {
+                return !AddressBasedAuthorizerVoteCaller.UNAUTHORIZED.getRskAddress().equals(address);
             }
         };
     }
 
-    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer) {
+    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer, AddressBasedAuthorizerVoteCaller addressBasedAuthorizerVoteCaller) {
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
-        RskAddress address = new RskAddress("9be6f6735c4d59c10240d4987414fb686c6b7323");
         sampleVotes.put(
             new ABICallSpec(functionName, new byte[][]{}),
-            Collections.singletonList(address)
+            Collections.singletonList(addressBasedAuthorizerVoteCaller.getRskAddress())
         );
         return new ABICallElection(authorizer, sampleVotes);
     }
