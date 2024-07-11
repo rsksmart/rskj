@@ -319,7 +319,6 @@ class FederationStorageProviderImplTests {
             Arguments.of(irisActivations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
             Arguments.of(irisActivations, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation)
         );
-
     }
 
     @Test
