@@ -15,6 +15,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -715,7 +717,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_beforeIris300_storageIsNotAccessedAndReturnsEmpty() {
+    void getActiveFederationCreationBlockHeight_preIris300_storageIsNotAccessedAndReturnsEmpty() {
 
         // Arrange
 
@@ -723,7 +725,7 @@ class FederationStorageProviderImplTests {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
-        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 1 });
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(1_000_000)));
 
         // Act
 
@@ -735,19 +737,23 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_afterIris300_getsValueFromStorage() {
+    void getActiveFederationCreationBlockHeight_postIris300_getsValueFromStorage() {
 
         // Arrange
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
-        long expectedValue = 1;
-        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { (byte) expectedValue });
+
+        long expectedValue = 1_000_000L;
+        byte[] expectedValueInBytes = RLP.encodeBigInteger(BigInteger.valueOf(expectedValue));
+
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), expectedValueInBytes);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         // Act
 
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         Optional<Long> actualValue = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
         // Assert
@@ -757,7 +763,7 @@ class FederationStorageProviderImplTests {
 
         // Setting in storage a different value to assert that calling the method again should return cached value
 
-        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 2 });
+        storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(2_000_000)));
 
         Optional<Long> actualCachedValue = federationStorageProvider.getActiveFederationCreationBlockHeight(activations);
 
@@ -767,7 +773,7 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_afterIris300AndNoValueInStorage_returnsEmpty() {
+    void getActiveFederationCreationBlockHeight_postIris300AndNoValueInStorage_returnsEmpty() {
 
         // Arrange
 
@@ -800,7 +806,7 @@ class FederationStorageProviderImplTests {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         // Act
-        long expectedValue = 3;
+        long expectedValue = 2_500_000L;
         federationStorageProvider.setActiveFederationCreationBlockHeight(expectedValue);
 
         // Assert
