@@ -715,12 +715,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_beforeRSKIP186_storageIsNotAccessedAndReturnsEmpty() {
+    void getActiveFederationCreationBlockHeight_beforeIris300_storageIsNotAccessedAndReturnsEmpty() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
@@ -736,12 +735,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_afterRSKIP186_getsValueFromStorage() {
+    void getActiveFederationCreationBlockHeight_afterIris300_getsValueFromStorage() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         long expectedValue = 1;
@@ -769,11 +767,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getActiveFederationCreationBlockHeight_afterRSKIP186AndNoValueInStorage_returnsEmpty() {
+    void getActiveFederationCreationBlockHeight_afterIris300AndNoValueInStorage_returnsEmpty() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
