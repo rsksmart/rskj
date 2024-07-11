@@ -18,7 +18,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.vote.AddressBasedAuthorizerVoteCaller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +57,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-
 import co.rsk.bitcoinj.core.UTXO;
 
 class FederationStorageProviderImplTests {
@@ -750,9 +748,9 @@ class FederationStorageProviderImplTests {
 
         // Arrange
 
-        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
 
-        ABICallElection expectedElection = getSampleElection("function1", authorizer, AddressBasedAuthorizerVoteCaller.FIRST_AUTHORIZED);
+        ABICallElection expectedElection = getSampleElection("function1", authorizer, FederationChangeCaller.FIRST_AUTHORIZED);
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -775,9 +773,10 @@ class FederationStorageProviderImplTests {
 
         // Arrange
 
-        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
 
-        ABICallElection expectedElection = getSampleElection("function1", authorizer,AddressBasedAuthorizerVoteCaller.SECOND_AUTHORIZED);
+        ABICallElection expectedElection = getSampleElection("function1", authorizer,
+            FederationChangeCaller.SECOND_AUTHORIZED);
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -789,7 +788,7 @@ class FederationStorageProviderImplTests {
 
         ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
-        ABICallElection secondElectionSample = getSampleElection("function2", authorizer, AddressBasedAuthorizerVoteCaller.THIRD_AUTHORIZED);
+        ABICallElection secondElectionSample = getSampleElection("function2", authorizer, FederationChangeCaller.THIRD_AUTHORIZED);
         storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), BridgeSerializationUtils.serializeElection(secondElectionSample));
 
         // Assert
@@ -806,7 +805,7 @@ class FederationStorageProviderImplTests {
 
         // Arrange
 
-        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
 
         ABICallElection expectedElection = new ABICallElection(authorizer);
 
@@ -911,19 +910,11 @@ class FederationStorageProviderImplTests {
 
     }
 
-    private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {
-        return new AddressBasedAuthorizer(Collections.EMPTY_LIST, null) {
-            public boolean isAuthorized(RskAddress address) {
-                return !AddressBasedAuthorizerVoteCaller.UNAUTHORIZED.getRskAddress().equals(address);
-            }
-        };
-    }
-
-    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer, AddressBasedAuthorizerVoteCaller addressBasedAuthorizerVoteCaller) {
+    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer, FederationChangeCaller federationChangeCaller) {
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
         sampleVotes.put(
             new ABICallSpec(functionName, new byte[][]{}),
-            Collections.singletonList(addressBasedAuthorizerVoteCaller.getRskAddress())
+            Collections.singletonList(federationChangeCaller.getRskAddress())
         );
         return new ABICallElection(authorizer, sampleVotes);
     }
