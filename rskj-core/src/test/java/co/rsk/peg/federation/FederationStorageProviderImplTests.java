@@ -966,6 +966,36 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void saveFederationElection_shouldSaveInStorage() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        ABICallElection defaultFederationElection = federationStorageProvider.getFederationElection(authorizer);
+        byte[] defaultFederationElectionSerialized = BridgeSerializationUtils.serializeElection(defaultFederationElection);
+        ABICallSpec abiCallSpec = new ABICallSpec("function1", new byte[][]{});
+        RskAddress voterAddress = AddressBasedAuthorizerVoteCaller.FIRST_AUTHORIZED.getRskAddress();
+        defaultFederationElection.vote(abiCallSpec, voterAddress);
+        byte[] federationElectionSerializedWithVote = BridgeSerializationUtils.serializeElection(defaultFederationElection);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        ABICallElection actualAbiCallElection = storageAccessor.getFromRepository(FEDERATION_ELECTION_KEY.getKey(), data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
+        byte[] actualAbiCallElectionSerialized = BridgeSerializationUtils.serializeElection(actualAbiCallElection);
+
+        assertFalse(Arrays.equals(defaultFederationElectionSerialized, federationElectionSerializedWithVote));
+        assertArrayEquals(federationElectionSerializedWithVote, actualAbiCallElectionSerialized);
+
+    }
+
     private static Federation createFederation(int version) {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
