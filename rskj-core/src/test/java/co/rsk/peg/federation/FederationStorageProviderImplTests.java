@@ -837,12 +837,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_savePendingFederation_postRSKIP123_shouldBeSavedInStorageWithFormatVersion() {
+    void savePendingFederation_postWasabi_shouldBeSavedInStorageWithFormatVersion() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        ActivationConfig.ForBlock wasabiActivation = ActivationConfigsForTest.wasabi100().forBlock(0L);
         PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
 
@@ -850,7 +849,7 @@ class FederationStorageProviderImplTests {
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationStorageProvider.setPendingFederation(expectedPendingFederation);
-        federationStorageProvider.save(networkParameters, activations);
+        federationStorageProvider.save(networkParameters, wasabiActivation);
 
         PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
             PendingFederation::deserialize);
@@ -865,12 +864,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void save_savePendingFederation_preRSKIP123_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
+    void savePendingFederation_preWasabi_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+        ActivationConfig.ForBlock orchidActivation = ActivationConfigsForTest.orchid().forBlock(0L);
         PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
 
@@ -878,7 +876,7 @@ class FederationStorageProviderImplTests {
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationStorageProvider.setPendingFederation(expectedPendingFederation);
-        federationStorageProvider.save(networkParameters, activations);
+        federationStorageProvider.save(networkParameters, orchidActivation);
 
         PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
             PendingFederation::deserializeFromBtcKeysOnly);
