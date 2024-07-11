@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -19,10 +20,13 @@ import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.vote.AddressBasedAuthorizerVoteCaller;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,11 +41,11 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
 import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
+import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
-import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -821,6 +825,81 @@ class FederationStorageProviderImplTests {
 
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+
+    }
+
+    @Test
+    void getNextFederationCreationBlockHeight_preIris300_storageIsNotAccessedAndReturnsEmpty() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(
+            BigInteger.valueOf(1_300_000)));
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Assert
+        assertEquals(Optional.empty(), federationStorageProvider.getNextFederationCreationBlockHeight(activations));
+
+    }
+
+    @Test
+    void getNextFederationCreationBlockHeight_postIris300_getsValueFromStorage() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        long expectedValue = 1_000_000L;
+
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(expectedValue)));
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+
+        // Assert
+
+        assertTrue(actualValue.isPresent());
+        assertEquals(expectedValue, actualValue.get());
+
+        // Setting in storage a different value to assert that calling the method again should return cached value
+
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(2_000_000L)));
+
+        Optional<Long> actualCachedValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+
+        assertTrue(actualCachedValue.isPresent());
+        assertEquals(expectedValue, actualCachedValue.get());
+
+    }
+
+    @Test
+    void getNextFederationCreationBlockHeight_postIris300AndNoValueInStorage_returnsEmpty() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null);
+
+        // Act
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+
+        // Assert
+
+        assertFalse(actualValue.isPresent());
 
     }
 
