@@ -911,13 +911,11 @@ class FederationStorageProviderImplTests {
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         storageAccessor.saveToRepository(federationStorageIndexKey.getKey(), new byte[] {});
-
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        List<UTXO> utxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
 
+        List<UTXO> utxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
         Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
         List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
-
         utxos.addAll(extraUtxos);
 
         // Act
@@ -927,12 +925,14 @@ class FederationStorageProviderImplTests {
         // Assert
 
         // Getting the utxos from storage to ensure they were stored in the storage.
-        List<UTXO> finalListOfUtxos = storageAccessor.getFromRepository(federationStorageIndexKey.getKey(), BridgeSerializationUtils::deserializeUTXOList);
+        List<UTXO> finalListOfUtxosFromStorage = storageAccessor.getFromRepository(federationStorageIndexKey.getKey(), BridgeSerializationUtils::deserializeUTXOList);
 
         assertEquals(1, utxos.size());
-        assertEquals(utxos, finalListOfUtxos);
+        assertEquals(utxos, finalListOfUtxosFromStorage);
+
         // Ensuring `getNewFederationBtcUTXOs` also returns the one saved in the storage.
-        assertEquals(finalListOfUtxos, federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations));
+        List<UTXO> finalListOfUtxosFromMethod = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+        assertEquals(finalListOfUtxosFromStorage, finalListOfUtxosFromMethod);
 
     }
 
