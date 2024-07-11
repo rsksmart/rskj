@@ -35,6 +35,7 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import co.rsk.peg.vote.AddressBasedAuthorizerVoteCaller;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
@@ -640,7 +641,7 @@ class FederationStorageProviderImplTests {
 
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        ABICallElection expectedElection = getSampleElection("function1", authorizer);
+        ABICallElection expectedElection = getSampleElection("function1", authorizer, AddressBasedAuthorizerVoteCaller.FIRST_AUTHORIZED);
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -665,7 +666,7 @@ class FederationStorageProviderImplTests {
 
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        ABICallElection expectedElection = getSampleElection("function1", authorizer);
+        ABICallElection expectedElection = getSampleElection("function1", authorizer,AddressBasedAuthorizerVoteCaller.SECOND_AUTHORIZED);
         byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -677,7 +678,7 @@ class FederationStorageProviderImplTests {
 
         ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
         assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
-        ABICallElection secondElectionSample = getSampleElection("function2", authorizer);
+        ABICallElection secondElectionSample = getSampleElection("function2", authorizer, AddressBasedAuthorizerVoteCaller.THIRD_AUTHORIZED);
         storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), BridgeSerializationUtils.serializeElection(secondElectionSample));
 
         // Assert
@@ -1239,7 +1240,7 @@ class FederationStorageProviderImplTests {
         ABICallElection defaultFederationElection = federationStorageProvider.getFederationElection(authorizer);
         byte[] defaultFederationElectionSerialized = BridgeSerializationUtils.serializeElection(defaultFederationElection);
         ABICallSpec abiCallSpec = new ABICallSpec("function1", new byte[][]{});
-        RskAddress voterAddress = new RskAddress("9be6f6735c4d59c10240d4987414fb686c6b7323");
+        RskAddress voterAddress = AddressBasedAuthorizerVoteCaller.FIRST_AUTHORIZED.getRskAddress();
         defaultFederationElection.vote(abiCallSpec, voterAddress);
         byte[] federationElectionSerializedWithVote = BridgeSerializationUtils.serializeElection(defaultFederationElection);
 
@@ -1313,18 +1314,17 @@ class FederationStorageProviderImplTests {
 
     private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {
         return new AddressBasedAuthorizer(Collections.EMPTY_LIST, null) {
-            public boolean isAuthorized(RskAddress addess) {
-                return true;
+            public boolean isAuthorized(RskAddress address) {
+                return !AddressBasedAuthorizerVoteCaller.UNAUTHORIZED.getRskAddress().equals(address);
             }
         };
     }
 
-    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer) {
+    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer, AddressBasedAuthorizerVoteCaller addressBasedAuthorizerVoteCaller) {
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
-        RskAddress address = new RskAddress("9be6f6735c4d59c10240d4987414fb686c6b7323");
         sampleVotes.put(
             new ABICallSpec(functionName, new byte[][]{}),
-            Collections.singletonList(address)
+            Collections.singletonList(addressBasedAuthorizerVoteCaller.getRskAddress())
         );
         return new ABICallElection(authorizer, sampleVotes);
     }
