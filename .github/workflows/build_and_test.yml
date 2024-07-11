@@ -106,6 +106,17 @@ jobs:
             rskj-core/build/test-results/
             rskj-core/build/reports/
 
+      - name: Verify downloaded test reports
+        run: |
+          ls -l rskj-core/build/test-results/
+          ls -l rskj-core/build/reports/
+          echo "Contents of rskj-core/build/reports/jacoco/test/html:"
+          ls -l rskj-core/build/reports/jacoco/test/html
+          echo "Contents of rskj-core/build/reports/jacoco/test/jacocoTestReport.xml:"
+          ls -l rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
+          echo "Checking coverage data in jacocoTestReport.xml..."
+          cat rskj-core/build/reports/jacoco/test/jacocoTestReport.xml | cut -c 1-600 | grep 'covered'
+
       - name: Run SonarQube analysis
         env:
           GH_EVENT: ${{ github.event_name }}
