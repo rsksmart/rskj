@@ -40,6 +40,7 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.WhitelistStorageProvider;
+import co.rsk.peg.whitelist.WhitelistSupportImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -532,6 +533,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             feePerKbStorageProvider
         );
 
+        LockWhitelist lockWhitelist = mock(LockWhitelist.class);
+        whitelistStorageProvider = mock(WhitelistStorageProvider.class);
+        when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
+        when(whitelistStorageProvider.getLockWhitelist(activations, btcMainnetParams)).thenReturn(lockWhitelist);
+
         return new BridgeSupportBuilder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
@@ -544,6 +550,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .withPeginInstructionsProvider(peginInstructionsProvider)
             .withExecutionBlock(rskExecutionBlock)
             .withFeePerKbSupport(feePerKbSupport)
+            .withWhitelistSupport(new WhitelistSupportImpl(bridgeMainnetConstants.getWhitelistConstants(), whitelistStorageProvider, activations, mock(SignatureCache.class)))
             .build();
     }
 
