@@ -111,9 +111,10 @@ class WhitelistSupportImplTest {
 
     private void saveInMemoryStorageOneOffWhiteListEntry() {
         Coin maxTransferValue = Coin.COIN;
+        final int disableBlockHeight = 100;
         OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(btcAddress, maxTransferValue);
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
-        Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
+        Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, disableBlockHeight);
 
         inMemoryStorage.safeSaveToRepository(
             LOCK_ONE_OFF.getKey(),
