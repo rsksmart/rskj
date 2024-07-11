@@ -778,7 +778,6 @@ class FederationStorageProviderImplTests {
         // Arrange
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         storageAccessor.saveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null);
@@ -799,8 +798,7 @@ class FederationStorageProviderImplTests {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
