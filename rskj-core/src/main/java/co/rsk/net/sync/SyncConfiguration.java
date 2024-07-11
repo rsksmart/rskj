@@ -18,9 +18,14 @@
 package co.rsk.net.sync;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.net.rlpx.Node;
 
 import javax.annotation.concurrent.Immutable;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Immutable
 public final class SyncConfiguration {
@@ -45,6 +50,7 @@ public final class SyncConfiguration {
     private final Duration timeoutWaitingSnapChunk;
 
     private final int snapshotSyncLimit;
+    private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
@@ -73,8 +79,39 @@ public final class SyncConfiguration {
             double topBest,
             boolean isServerSnapSyncEnabled,
             boolean isClientSnapSyncEnabled,
-            int timeoutWaitingSnapChunk, 
+            int timeoutWaitingSnapChunk,
             int snapshotSyncLimit) {
+        this(expectedPeers,
+                timeoutWaitingPeers,
+                timeoutWaitingRequest,
+                expirationTimePeerStatus,
+                maxSkeletonChunks,
+                chunkSize,
+                maxRequestedBodies,
+                longSyncLimit,
+                topBest,
+                isServerSnapSyncEnabled,
+                isClientSnapSyncEnabled,
+                timeoutWaitingSnapChunk,
+                snapshotSyncLimit,
+                Collections.emptyList());
+    }
+
+    public SyncConfiguration(
+            int expectedPeers,
+            int timeoutWaitingPeers,
+            int timeoutWaitingRequest,
+            int expirationTimePeerStatus,
+            int maxSkeletonChunks,
+            int chunkSize,
+            int maxRequestedBodies,
+            int longSyncLimit,
+            double topBest,
+            boolean isServerSnapSyncEnabled,
+            boolean isClientSnapSyncEnabled,
+            int timeoutWaitingSnapChunk,
+            int snapshotSyncLimit,
+            List<Node> snapBootNodes) {
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -89,6 +126,13 @@ public final class SyncConfiguration {
         // TODO(snap-poc) re-visit the need of this specific timeout as the algorithm evolves
         this.timeoutWaitingSnapChunk = Duration.ofSeconds(timeoutWaitingSnapChunk);
         this.snapshotSyncLimit = snapshotSyncLimit;
+
+
+
+        List<Node> snapBootNodesList = snapBootNodes != null ? snapBootNodes : Collections.emptyList();
+
+        nodeIdToSnapshotTrustedPeerMap = Collections.unmodifiableMap(snapBootNodesList.stream()
+                .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer)));
     }
 
     public final int getExpectedPeers() {
@@ -124,7 +168,7 @@ public final class SyncConfiguration {
     }
 
     public double getTopBest() {
-       return topBest;
+        return topBest;
     }
 
     public boolean isServerSnapSyncEnabled() {
@@ -141,5 +185,9 @@ public final class SyncConfiguration {
 
     public int getSnapshotSyncLimit() {
         return snapshotSyncLimit;
+    }
+
+    public Map<String, Node> getNodeIdToSnapshotTrustedPeerMap() {
+        return nodeIdToSnapshotTrustedPeerMap;
     }
 }

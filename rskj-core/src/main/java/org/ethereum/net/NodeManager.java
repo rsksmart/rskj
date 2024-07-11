@@ -19,8 +19,8 @@
 
 package org.ethereum.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.discovery.PeerExplorer;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ public class NodeManager {
 
     private boolean discoveryEnabled;
 
-    public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
+    public NodeManager(PeerExplorer peerExplorer, RskSystemProperties config) {
         this.peerExplorer = peerExplorer;
         this.discoveryEnabled = config.isPeerDiscoveryEnabled();
 
@@ -61,6 +61,13 @@ public class NodeManager {
             NodeHandler handler = new NodeHandler(node);
             handler.getNodeStatistics().setPredefined(true);
             createNodeHandler(node);
+        }
+        if(config.isClientSnapshotSyncEnabled()){
+            for (Node snapNode : config.getSnapBootNodes()) {
+                NodeHandler handler = new NodeHandler(snapNode);
+                handler.getNodeStatistics().setPredefined(true);
+                createNodeHandler(snapNode);
+            }
         }
     }
 

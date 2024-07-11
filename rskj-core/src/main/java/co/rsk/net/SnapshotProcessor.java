@@ -67,7 +67,7 @@ public class SnapshotProcessor implements InternalService {
     private final TrieStore trieStore;
     private final BlockStore blockStore;
     private final int chunkSize;
-    private final PeersInformation peersInformation;
+    private final SnapshotPeersInformation peersInformation;
     private final TransactionPool transactionPool;
     private long messageId = 0;
 
@@ -81,7 +81,7 @@ public class SnapshotProcessor implements InternalService {
 
     public SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
-                             PeersInformation peersInformation,
+                             SnapshotPeersInformation peersInformation,
                              BlockStore blockStore,
                              TransactionPool transactionPool,
                              int chunkSize,
@@ -92,7 +92,7 @@ public class SnapshotProcessor implements InternalService {
     @VisibleForTesting
     SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
-                             PeersInformation peersInformation,
+                             SnapshotPeersInformation peersInformation,
                              BlockStore blockStore,
                              TransactionPool transactionPool,
                              int chunkSize,
@@ -117,7 +117,7 @@ public class SnapshotProcessor implements InternalService {
     public void startSyncing() {
         // get more than one peer, use the peer queue
         // TODO(snap-poc) deal with multiple peers algorithm here
-        Peer peer = peersInformation.getBestPeerCandidates().get(0);
+        Peer peer = peersInformation.getBestSnapPeerCandidates().get(0);
         logger.info("CLIENT - Starting Snapshot sync.");
         requestSnapStatus(peer);
     }
@@ -460,7 +460,7 @@ public class SnapshotProcessor implements InternalService {
     }
 
     private void startRequestingChunks(SnapSyncState state) {
-        List<Peer> bestPeerCandidates = peersInformation.getBestPeerCandidates();
+        List<Peer> bestPeerCandidates = peersInformation.getBestSnapPeerCandidates();
         List<Peer> peerList = bestPeerCandidates.subList(0, !parallel ? 1 : bestPeerCandidates.size());
         for (Peer peer : peerList) {
             executeNextChunkRequestTask(state, peer);
