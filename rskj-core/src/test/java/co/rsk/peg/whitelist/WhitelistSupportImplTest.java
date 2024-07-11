@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -22,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
@@ -36,15 +35,17 @@ class WhitelistSupportImplTest {
     private SignatureCache signatureCache;
     private StorageAccessor inMemoryStorage;
     private Address btcAddress;
+    private Address secondBtcAddress;
 
     @BeforeEach
     void setUp() {
         inMemoryStorage = new InMemoryStorage();
         WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorage);
-        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         whitelistSupport = new WhitelistSupportImpl(whitelistConstants, whitelistStorageProvider, activationConfig, signatureCache);
         btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "btcAddress");
+        secondBtcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "secondBtcAddress");
     }
 
     @Test
@@ -102,6 +103,20 @@ class WhitelistSupportImplTest {
         LockWhitelistEntry actualLockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
 
         assertEquals(btcAddress, actualLockWhitelistEntry.address());
+    }
+
+    private void saveInMemoryStorageOneOffWhiteListEntry() {
+        Coin maxTransferValue = Coin.COIN;
+        final int disableBlockHeight = 100;
+        OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(btcAddress, maxTransferValue);
+        List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
+        Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, disableBlockHeight);
+
+        inMemoryStorage.safeSaveToRepository(
+            LOCK_ONE_OFF.getKey(),
+            pairValue,
+            BridgeSerializationUtils::serializeOneOffLockWhitelist
+        );
     }
 
     @Test
@@ -293,16 +308,55 @@ class WhitelistSupportImplTest {
         assertFalse(actualResult);
     }
 
-    private void saveInMemoryStorageOneOffWhiteListEntry() {
-        Coin maxTransferValue = Coin.COIN;
-        OneOffWhiteListEntry oneOffWhiteListEntry = new OneOffWhiteListEntry(btcAddress, maxTransferValue);
-        List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
-        Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
+    @Test
+    void save_whenLockWhitelistIsNull_shouldReturnZeroEntries() {
+        whitelistSupport.save();
 
-        inMemoryStorage.safeSaveToRepository(
-            LOCK_ONE_OFF.getKey(),
-            pairValue,
-            BridgeSerializationUtils::serializeOneOffLockWhitelist
-        );
+        int actualSize = whitelistSupport.getLockWhitelistSize();
+        assertEquals(0, actualSize);
+        assertNull(whitelistSupport.getLockWhitelistEntryByIndex(0));
+        assertNull(whitelistSupport.getLockWhitelistEntryByIndex(1));
+    }
+
+    @Test
+    void save_whenOneOffLockWhitelistAddressIsWhitelisted_shouldSaveOneOffLockWhitelistAddress() {
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        whitelistSupport.addOneOffLockWhitelistAddress(tx, btcAddress.toString(), BigInteger.TEN);
+
+        whitelistSupport.save();
+
+        int actualSize = whitelistSupport.getLockWhitelistSize();
+        Address actualBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString()).address();
+        assertEquals(1, actualSize);
+        assertEquals(btcAddress, actualBtcAddress);
+    }
+
+    @Test
+    void save_whenUnlimitedLockWhitelistAddressIsWhitelisted_shouldSaveUnlimitedLockWhitelistAddress() {
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        whitelistSupport.addUnlimitedLockWhitelistAddress(tx, btcAddress.toString());
+
+        whitelistSupport.save();
+
+        int actualSize = whitelistSupport.getLockWhitelistSize();
+        Address actualBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString()).address();
+        assertEquals(1, actualSize);
+        assertEquals(btcAddress, actualBtcAddress);
+    }
+
+    @Test
+    void save_whenOneOffAndUnlimitedLockWhitelistAddressesAreWhitelisted_shouldSaveBothAddresses() {
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+        whitelistSupport.addOneOffLockWhitelistAddress(tx, btcAddress.toString(), BigInteger.TEN);
+        whitelistSupport.addUnlimitedLockWhitelistAddress(tx, secondBtcAddress.toString());
+
+        whitelistSupport.save();
+
+        int actualSize = whitelistSupport.getLockWhitelistSize();
+        Address actualBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString()).address();
+        Address actualSecondBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(secondBtcAddress.toString()).address();
+        assertEquals(2, actualSize);
+        assertEquals(btcAddress, actualBtcAddress);
+        assertEquals(secondBtcAddress, actualSecondBtcAddress);
     }
 }
