@@ -2,6 +2,7 @@ package co.rsk.peg.whitelist.constants;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
@@ -70,7 +71,7 @@ class WhitelistConstantsTest {
     void getBtcParams(WhitelistConstants whitelistConstants, NetworkParameters expectedNetworkParameters) {
         NetworkParameters actualNetworkParameters = whitelistConstants.getBtcParams();
 
-        assertThat(actualNetworkParameters, samePropertyValuesAs(expectedNetworkParameters));
+        assertEquals(expectedNetworkParameters, actualNetworkParameters);
     }
 
     private static Stream<Arguments> btcParamsProvider() {
