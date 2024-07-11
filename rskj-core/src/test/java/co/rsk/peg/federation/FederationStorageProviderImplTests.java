@@ -312,34 +312,31 @@ class FederationStorageProviderImplTests {
     }
 
     private static Stream<Arguments> provideSaveNewFederationTestArguments() {
-        return Stream.of(Arguments.of(activations, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(activations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(activations, P2SH_ERP_FEDERATION_FORMAT_VERSION, createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(ActivationConfigsForTest.only(
-                ConsensusRule.RSKIP123,
-                ConsensusRule.RSKIP201
-            ).forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(ActivationConfigsForTest.only(
-                ConsensusRule.RSKIP123,
-                ConsensusRule.RSKIP201,
-                ConsensusRule.RSKIP353
-            ).forBlock(0), STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(ActivationConfigsForTest.only(
-                ConsensusRule.RSKIP123,
-                ConsensusRule.RSKIP201
-            ).forBlock(0), NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(ActivationConfigsForTest.only(
-                ConsensusRule.RSKIP123,
-                ConsensusRule.RSKIP201,
-                ConsensusRule.RSKIP353
-            ).forBlock(0), NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(ActivationConfigsForTest.only(
-                ConsensusRule.RSKIP123,
-                ConsensusRule.RSKIP201,
-                ConsensusRule.RSKIP353
-            ).forBlock(0), P2SH_ERP_FEDERATION_FORMAT_VERSION, createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION))
+
+        ActivationConfig.ForBlock activationsPostPapyrus = ActivationConfigsForTest.papyrus200().forBlock(0L);
+        ActivationConfig.ForBlock activationsPostIris = ActivationConfigsForTest.iris300().forBlock(0L);
+        ActivationConfig.ForBlock activationsPostHop = ActivationConfigsForTest.hop400().forBlock(0L);
+
+        Federation standardFederation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
+        Federation nonStandardFederation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
+        Federation ps2hErpFederation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
+
+        return Stream.of(
+            // Post papyrus, should allow to save any fed type
+            Arguments.of(activationsPostPapyrus, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(activationsPostPapyrus, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(activationsPostPapyrus, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation),
+            // Post iris, should allow to save any fed type
+            Arguments.of(activationsPostIris, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(activationsPostIris, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(activationsPostIris, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation),
+            // Post hop, should allow to save any fed type
+            Arguments.of(activationsPostHop, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(activationsPostHop, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(activationsPostHop, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation)
+
         );
+
     }
 
     @Test
