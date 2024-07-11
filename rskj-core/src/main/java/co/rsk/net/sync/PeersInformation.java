@@ -260,4 +260,8 @@ public class PeersInformation {
     public void clearOldFailedPeers() {
         failedPeers.values().removeIf(Instant.now().minusSeconds(TIME_LIMIT_FAILURE_RECORD)::isAfter);
     }
+
+    public int sumTwoNumbersDeleteMe(int x, int y) {
+        return x + y;
+    }
 }

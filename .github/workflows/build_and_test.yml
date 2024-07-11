@@ -44,10 +44,6 @@ jobs:
           ./configure.sh
           ./gradlew --no-daemon dependencies
 
-      - name: Generate JaCoCo Test Reports
-        run: |
-          ./gradlew clean build jacocoTestReport --no-daemon
-
       - name: Build
         run: |
           ./gradlew --no-daemon --stacktrace build -x test
@@ -106,17 +102,6 @@ jobs:
             rskj-core/build/test-results/
             rskj-core/build/reports/
 
-      - name: Verify downloaded test reports
-        run: |
-          ls -l rskj-core/build/test-results/
-          ls -l rskj-core/build/reports/
-          echo "Contents of rskj-core/build/reports/jacoco/test/html:"
-          ls -l rskj-core/build/reports/jacoco/test/html
-          echo "Contents of rskj-core/build/reports/jacoco/test/jacocoTestReport.xml:"
-          ls -l rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
-          echo "Checking coverage data in jacocoTestReport.xml..."
-          awk 'BEGIN { RS="</method>" } /covered="56"/ { print $0 "</method>" }' rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
-
       - name: Run SonarQube analysis
         env:
           GH_EVENT: ${{ github.event_name }}
@@ -127,23 +112,21 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           if [ "$GH_EVENT" = pull_request ]; then
-            ./gradlew sonarqube --no-daemon -x build -x test -Dsonar.verbose=true \
+            ./gradlew sonarqube --no-daemon -x build -x test \
               -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
               -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
               -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
               -Dsonar.organization=rsksmart \
               -Dsonar.projectKey=rskj \
               -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.token="$SONAR_TOKEN" \
-              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
+              -Dsonar.token="$SONAR_TOKEN"
           else
-            ./gradlew sonarqube --no-daemon -x build -x test -Dsonar.verbose=true \
+            ./gradlew sonarqube --no-daemon -x build -x test \
               -Dsonar.branch.name="$GH_REF" \
               -Dsonar.organization=rsksmart \
               -Dsonar.projectKey=rskj \
               -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.token="$SONAR_TOKEN" \
-              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
+              -Dsonar.token="$SONAR_TOKEN"
           fi
 
 
@@ -236,6 +219,7 @@ jobs:
             | cut -d = -f 2- | paste -sd - -)
           echo "Using RskJ version $version at ../rskj-core/build/libs/rskj-core-$version-all.jar"
           java -Drsk.conf.file=./rsk-integration-test.conf -cp ../rskj-core/build/libs/rskj-core-"$version"-all.jar co.rsk.Start --regtest & rskpid=$!
+
           tries=0
           MAX_TRIES=10
           while [ $tries -lt $MAX_TRIES ]; do
@@ -244,10 +228,12 @@ jobs:
             tries=$((tries+1))
             sleep 1
           done
+
           if [ $tries -eq $MAX_TRIES ]; then
             echo "RskJ unreachable after $MAX_TRIES attempts. Aborting." >&2
             exit 1
           fi
+
           npm test
           kill $rskpid
 
@@ -280,9 +266,9 @@ jobs:
           ./configure.sh
           ./gradlew --no-daemon dependencies
 
-      - name: Run tests and generate JaCoCo Test Reports
+      - name: Run tests
         run: |
-          ./gradlew --no-daemon --stacktrace clean test jacocoTestReport
+          ./gradlew --no-daemon --stacktrace test
 
       - name: Persist test reports for sonar
         uses: actions/upload-artifact@v4

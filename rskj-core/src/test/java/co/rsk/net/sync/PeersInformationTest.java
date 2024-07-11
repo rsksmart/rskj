@@ -113,6 +113,13 @@ class PeersInformationTest {
         Assertions.assertEquals(optionalPeer.get().getPeerNodeID(), new NodeID("peer1".getBytes()));
     }
 
+    @Test
+    void testSumDummyTest_ShouldReturn21() {
+        PeersInformation peersInformation = setupTopBestScenario(90.0D);
+
+        Assertions.assertEquals(21, peersInformation.sumTwoNumbersDeleteMe(20,1));
+    }
+
     private PeersInformation setupTopBestScenario(double topBest) {
         Peer peer1 = Mockito.mock(Peer.class);
         Peer peer2 = Mockito.mock(Peer.class);
