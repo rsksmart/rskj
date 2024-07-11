@@ -24,6 +24,7 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -937,6 +938,32 @@ class FederationStorageProviderImplTests {
 
         assertTrue(actualFederationCreationBlockHeight.isPresent());
         assertEquals(expectedFederationCreationBlockHeight, actualFederationCreationBlockHeight.get());
+
+    }
+
+    @Test
+    void saveLastRetiredFederationP2SHScript_afterRSKIP186_getsValueFromStorage() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        Script actualScript = storageAccessor.getFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(), BridgeSerializationUtils::deserializeScript);
+
+        assertEquals(expectedScript, actualScript);
 
     }
 
