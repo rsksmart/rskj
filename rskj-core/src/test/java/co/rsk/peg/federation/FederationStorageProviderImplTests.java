@@ -817,16 +817,15 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getNextFederationCreationBlockHeight_beforeRSKIP186_storageIsNotAccessedAndReturnsEmpty() {
+    void getNextFederationCreationBlockHeight_preIris300_storageIsNotAccessedAndReturnsEmpty() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
-        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 1 });
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(1_300_000)));
 
         // Act
 
@@ -838,16 +837,16 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getNextFederationCreationBlockHeight_afterRSKIP186_getsValueFromStorage() {
+    void getNextFederationCreationBlockHeight_postIris300_getsValueFromStorage() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
-        long expectedValue = 1;
-        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { (byte) expectedValue });
+        long expectedValue = 1_000_000L;
+
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(expectedValue)));
 
         // Act
 
@@ -861,7 +860,7 @@ class FederationStorageProviderImplTests {
 
         // Setting in storage a different value to assert that calling the method again should return cached value
 
-        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), new byte[] { 2 });
+        storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(2_000_000L)));
 
         Optional<Long> actualCachedValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
 
@@ -871,12 +870,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getNextFederationCreationBlockHeight_afterRSKIP186AndNoValueInStorage_returnsEmpty() {
+    void getNextFederationCreationBlockHeight_postIris300AndNoValueInStorage_returnsEmpty() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null);
