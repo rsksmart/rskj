@@ -7089,7 +7089,7 @@ class BridgeSupportTest {
             BridgeStorageProvider bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
+                bridgeMainnetConstants.getBtcParams(),
                 activationsPreRSKIP434
             );
             bridgeSupportPreRSKIP434 = bridgeSupportBuilder

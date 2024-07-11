@@ -122,9 +122,9 @@ class BridgeSupportAddSignatureTest {
             mock(Repository.class),
             mock(Block.class),
             new Context(bridgeRegTestConstants.getBtcParams()),
-            mockFederationSupport,
             feePerKbSupport,
             whitelistSupport,
+            mockFederationSupport,
             null,
             null,
             null
@@ -157,9 +157,9 @@ class BridgeSupportAddSignatureTest {
             mock(Repository.class),
             mock(Block.class),
             new Context(bridgeRegTestConstants.getBtcParams()),
-            mockFederationSupport,
             feePerKbSupport,
             whitelistSupport,
+            mockFederationSupport,
             null,
             null,
             null
@@ -223,9 +223,9 @@ class BridgeSupportAddSignatureTest {
             mock(Repository.class),
             mock(Block.class),
             new Context(bridgeRegTestConstants.getBtcParams()),
-            mockFederationSupport,
             feePerKbSupport,
             whitelistSupport,
+            mockFederationSupport,
             null,
             null,
             null
