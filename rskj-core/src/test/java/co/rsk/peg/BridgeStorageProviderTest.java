@@ -2480,43 +2480,6 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveNewFederationBtcUTXOs_no_data() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
-        Repository repository = mock(Repository.class);
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        federationStorageProvider.save(testnetBtcParams, activations);
-
-        verify(repository, times(0)).addStorageBytes(
-            eq(bridgeAddress),
-            eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKey()),
-            any()
-        );
-    }
-
-    @Test
-    void saveNewFederationBtcUTXOs_before_RSKIP284_activation_testnet() throws IOException {
-        testSaveNewFederationBtcUTXOs(false, NetworkParameters.ID_TESTNET);
-    }
-
-    @Test
-    void saveNewFederationBtcUTXOs_after_RSKIP284_activation_testnet() throws IOException {
-        testSaveNewFederationBtcUTXOs(true, NetworkParameters.ID_TESTNET);
-    }
-
-    @Test
-    void saveNewFederationBtcUTXOs_before_RSKIP284_activation_mainnet() throws IOException {
-        testSaveNewFederationBtcUTXOs(false, NetworkParameters.ID_MAINNET);
-    }
-
-    @Test
-    void saveNewFederationBtcUTXOs_after_RSKIP284_activation_mainnet() throws IOException {
-        testSaveNewFederationBtcUTXOs(true, NetworkParameters.ID_MAINNET);
-    }
-
-    @Test
     void getReleaseRequestQueueSize_when_releaseRequestQueue_is_null() throws IOException {
         Repository repository = mock(Repository.class);
 
@@ -2645,62 +2608,6 @@ class BridgeStorageProviderTest {
             federationStorageProvider.save(testnetBtcParams, activations);
             Assertions.assertEquals(2, storageBytesCalls.size());
             Assertions.assertEquals(1, serializeCalls.size());
-        }
-    }
-
-    private void testSaveNewFederationBtcUTXOs(boolean isRskip284Active, String networkId) throws IOException {
-        NetworkParameters networkParameters = NetworkParameters.fromID(networkId);
-
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
-
-        Repository repository = mock(Repository.class);
-        List<UTXO> federationUtxos = Arrays.asList(
-            PegTestUtils.createUTXO(1, 0, Coin.COIN),
-            PegTestUtils.createUTXO(2, 2, Coin.COIN.divide(2)),
-            PegTestUtils.createUTXO(3, 0, Coin.COIN.multiply(3))
-        );
-        when(repository.getStorageBytes(
-            bridgeAddress,
-            NEW_FEDERATION_BTC_UTXOS_KEY.getKey()
-        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
-
-        List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
-            PegTestUtils.createUTXO(4, 0, Coin.FIFTY_COINS),
-            PegTestUtils.createUTXO(5, 2, Coin.COIN.multiply(2))
-        );
-        when(repository.getStorageBytes(
-            bridgeAddress,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey()
-        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
-
-        federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations); // Ensure there are elements in the UTXOs list
-        federationStorageProvider.save(networkParameters, activations);
-
-        if (isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
-            verify(repository, never()).addStorageBytes(
-                eq(bridgeAddress),
-                eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKey()),
-                any()
-            );
-            verify(repository, times(1)).addStorageBytes(
-                bridgeAddress,
-                NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey(),
-                BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation)
-            );
-        } else {
-            verify(repository, times(1)).addStorageBytes(
-                bridgeAddress,
-                NEW_FEDERATION_BTC_UTXOS_KEY.getKey(),
-                BridgeSerializationUtils.serializeUTXOList(federationUtxos)
-            );
-            verify(repository, never()).addStorageBytes(
-                eq(bridgeAddress),
-                eq(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey()),
-                any()
-            );
         }
     }
 
