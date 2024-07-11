@@ -154,5 +154,14 @@ class NodeRunnerImplTest {
         }
     }
 
+    @Test
+    void testProcessState() {
+        runner.processState(ExecState.RUNNING);
+    }
+
+    @Test
+    void testProcessState2() {
+        assertThrows(NullPointerException.class, () -> runner.processState(null));
+    }
 
 }

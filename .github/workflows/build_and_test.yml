@@ -269,6 +269,9 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace test
+          mkdir -p ~/junit/
+          find rskj-core/build/test-results -type f -name "*.xml" \
+              -exec cp {} ~/junit/ \;
 
       - name: Persist test reports for sonar
         uses: actions/upload-artifact@v4
@@ -277,6 +280,7 @@ jobs:
           path: |
             rskj-core/build/test-results/
             rskj-core/build/reports/
+            ~/junit/
 
   integration-tests:
     runs-on: ubuntu-latest

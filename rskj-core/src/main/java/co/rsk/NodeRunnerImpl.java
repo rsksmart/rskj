@@ -27,10 +27,7 @@ import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class NodeRunnerImpl implements NodeRunner {
@@ -58,6 +55,14 @@ public class NodeRunnerImpl implements NodeRunner {
     @VisibleForTesting
     ExecState getState() {
         return state;
+    }
+
+    public void processState(ExecState state) {
+        this.state = Objects.requireNonNull(state);
+    }
+
+    public void processState2(ExecState state) {
+        this.state = Objects.requireNonNull(state);
     }
 
     /**
@@ -148,6 +153,10 @@ public class NodeRunnerImpl implements NodeRunner {
             internalServices.get(i).stop();
         }
 
-        logger.info("RSK node Shut down");
+        logger.info("RSK node Shut down. {}", getSomeDummyString());
+    }
+
+    public String getSomeDummyString() {
+        return "state: " + state;
     }
 }
