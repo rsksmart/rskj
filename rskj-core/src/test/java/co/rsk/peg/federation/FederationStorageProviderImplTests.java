@@ -942,12 +942,11 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void saveLastRetiredFederationP2SHScript_afterRSKIP186_getsValueFromStorage() {
+    void saveLastRetiredFederationP2SHScript_postIris_getsValueFromStorage() {
 
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
 
@@ -957,7 +956,7 @@ class FederationStorageProviderImplTests {
         // Act
 
         federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
-        federationStorageProvider.save(networkParameters, activations);
+        federationStorageProvider.save(networkParameters, irisActivations);
 
         // Assert
 
