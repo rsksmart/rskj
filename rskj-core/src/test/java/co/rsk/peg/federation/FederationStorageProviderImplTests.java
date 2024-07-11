@@ -889,6 +889,31 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void saveActiveFederationCreationBlockHeight_whenHeightIsNotNullAndRSKIP186IsActive_shouldSaveToStorage() {
+        // Arrange
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        long expectedFederationCreationBlockHeight = 100;
+        federationStorageProvider.setActiveFederationCreationBlockHeight(expectedFederationCreationBlockHeight);
+
+        // Act
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        Optional<Long> actualFederationCreationBlockHeight = storageAccessor.getFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), BridgeSerializationUtils::deserializeOptionalLong);
+
+        assertTrue(actualFederationCreationBlockHeight.isPresent());
+        assertEquals(expectedFederationCreationBlockHeight, actualFederationCreationBlockHeight.get());
+
+    }
+
     private static Federation createFederation(int version) {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)
