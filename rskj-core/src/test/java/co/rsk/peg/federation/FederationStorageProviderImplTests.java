@@ -915,20 +915,21 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void saveNextFederationCreationBlockHeight_whenHeightIsNotNullAndRSKIP186IsActive_shouldSaveToStorage() {
+    void saveNextFederationCreationBlockHeight_postIrisAndHeightIsNotNull_shouldSaveToStorage() {
+
         // Arrange
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
-        long expectedFederationCreationBlockHeight = 100;
+        long expectedFederationCreationBlockHeight = 1_400_000L;
         federationStorageProvider.setNextFederationCreationBlockHeight(expectedFederationCreationBlockHeight);
 
         // Act
-        federationStorageProvider.save(networkParameters, activations);
+
+        federationStorageProvider.save(networkParameters, irisActivations);
 
         // Assert
 
