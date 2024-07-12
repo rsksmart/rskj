@@ -143,6 +143,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 2_589_553; // Estimated date Wed, 20 Mar 2024 15:00:00 GMT. 2,579,823 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 1_440; // 10 days in BTC blocks (considering 1 block every 10 minutes)
+
+        blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }
 
     public static BridgeTestNetConstants getInstance() {

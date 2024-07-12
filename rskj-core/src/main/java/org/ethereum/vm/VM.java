@@ -21,6 +21,7 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
@@ -2175,8 +2176,8 @@ public class VM {
                         DataWord key = keysIterator.next();
                         DataWord value = storage.getStorageValue(ownerAddress, key);
                         dumpLogger.trace("{} {}",
-                                ByteUtil.toHexString(key.getNoLeadZeroesData()),
-                                ByteUtil.toHexString(value.getNoLeadZeroesData()));
+                                Bytes.of(key.getNoLeadZeroesData()),
+                                Bytes.of(value.getNoLeadZeroesData()));
                     }
                     break;
                 default:

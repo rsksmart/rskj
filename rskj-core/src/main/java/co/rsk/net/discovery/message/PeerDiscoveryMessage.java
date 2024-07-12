@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery.message;
 
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.net.NodeID;
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -179,10 +180,10 @@ public abstract class PeerDiscoveryMessage {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("mdc", ByteUtil.toHexString(mdc))
-                .append("signature", ByteUtil.toHexString(signature))
-                .append("type", ByteUtil.toHexString(type))
-                .append("data", ByteUtil.toHexString(data)).toString();
+                .append("mdc", Bytes.of(mdc))
+                .append("signature", Bytes.of(signature))
+                .append("type", Bytes.of(type))
+                .append("data", Bytes.of(data)).toString();
     }
 
     protected String extractMessageId(RLPItem chk) {

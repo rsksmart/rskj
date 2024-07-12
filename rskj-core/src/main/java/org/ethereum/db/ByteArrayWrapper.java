@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
@@ -69,7 +70,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
 
     @Override
     public String toString() {
-        return ByteUtil.toHexString(data);
+        return Bytes.toPrintableString(data);
     }
 
     public boolean equalsToByteArray(byte[] otherData) {

@@ -19,10 +19,10 @@
 package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -119,7 +119,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
 
             // No function found with the given data? => halt!
             if (!methodWithArguments.isPresent()) {
-                String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
+                String errorMessage = String.format("Invalid data given: %s.", Bytes.of(data));
                 logger.info(errorMessage);
                 throw new NativeContractIllegalArgumentException(errorMessage);
             }
@@ -174,7 +174,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
 
     private Optional<NativeMethod.WithArguments> parseData(byte[] data) {
         if (data != null && (data.length >= 1 && data.length <= 3)) {
-            logger.warn("Invalid function signature {}.", ByteUtil.toHexString(data));
+            logger.warn("Invalid function signature {}.", Bytes.of(data));
             return Optional.empty();
         }
 
@@ -194,7 +194,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                     ).findFirst();
 
             if (!maybeMethod.isPresent()) {
-                logger.warn("Invalid function signature {}.", ByteUtil.toHexString(encodedSignature));
+                logger.warn("Invalid function signature {}.", Bytes.of(encodedSignature));
                 return Optional.empty();
             }
 
@@ -209,7 +209,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                 Object[] arguments = method.getFunction().decode(data);
                 return Optional.of(method.new WithArguments(arguments, data));
             } catch (Exception e) {
-                logger.warn(String.format("Invalid arguments %s for function %s.", ByteUtil.toHexString(data), ByteUtil.toHexString(encodedSignature)), e);
+                logger.warn(String.format("Invalid arguments %s for function %s.", Bytes.of(data), Bytes.of(encodedSignature)), e);
                 return Optional.empty();
             }
         }
