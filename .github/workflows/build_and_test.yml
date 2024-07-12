@@ -44,6 +44,10 @@ jobs:
           ./configure.sh
           ./gradlew --no-daemon dependencies
 
+      - name: Run tests and generate JaCoCo Test Reports
+        run: |
+          ./gradlew --no-daemon --stacktrace clean test jacocoTestReport
+
       - name: Build
         run: |
           ./gradlew --no-daemon --stacktrace build -x test
@@ -267,6 +271,10 @@ jobs:
         run: |
           ./configure.sh
           ./gradlew --no-daemon dependencies
+
+      - name: Run tests and generate JaCoCo Test Reports
+        run: |
+          ./gradlew --no-daemon --stacktrace clean test jacocoTestReport
 
       - name: Run tests
         run: |
