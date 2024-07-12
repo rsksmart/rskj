@@ -3,6 +3,7 @@ package co.rsk.peg.federation;
 import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,6 +14,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static java.util.Objects.isNull;
 
+import co.rsk.core.RskAddress;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -31,6 +40,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
+import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -47,7 +57,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-
 import co.rsk.bitcoinj.core.UTXO;
 
 class FederationStorageProviderImplTests {
@@ -734,6 +743,86 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Test
+    void getFederationElection_whenElectionIsInStorage_shouldReturnNewElection() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
+
+        ABICallElection expectedElection = getSampleElection("function1", authorizer, FederationChangeCaller.FIRST_AUTHORIZED);
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), expectedElectionEncoded);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+
+        // Assert
+
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+        
+    }
+
+    @Test
+    void getFederationElection_whenCalledTwice_shouldReturnCached() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
+
+        ABICallElection expectedElection = getSampleElection("function1", authorizer,
+            FederationChangeCaller.SECOND_AUTHORIZED);
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), expectedElectionEncoded);
+
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+        ABICallElection secondElectionSample = getSampleElection("function2", authorizer, FederationChangeCaller.THIRD_AUTHORIZED);
+        storageAccessor.saveToRepository(FEDERATION_ELECTION_KEY.getKey(), BridgeSerializationUtils.serializeElection(secondElectionSample));
+
+        // Assert
+
+        ABICallElection cachedElection = federationStorageProvider.getFederationElection(authorizer);
+
+        assertArrayEquals(serializeElection(actualElection), serializeElection(cachedElection));
+        assertFalse(Arrays.equals(expectedElectionEncoded, serializeElection(secondElectionSample)));
+
+    }
+
+    @Test
+    void getFederationElection_whenElectionIsNotInStorage_shouldReturnDefault() {
+
+        // Arrange
+
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
+
+        ABICallElection expectedElection = new ABICallElection(authorizer);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        // Act
+
+        ABICallElection actualElection = federationStorageProvider.getFederationElection(authorizer);
+
+        // Assert
+
+        byte[] expectedElectionEncoded = BridgeSerializationUtils.serializeElection(expectedElection);
+        assertArrayEquals(expectedElectionEncoded, serializeElection(actualElection));
+
+    }
+
     private void testSaveOldFederation(
         int expectedFormat,
         Federation federationToSave
@@ -819,6 +908,15 @@ class FederationStorageProviderImplTests {
 
         return BridgeSerializationUtils.serializeFederation(federation);
 
+    }
+
+    private static ABICallElection getSampleElection(String functionName, AddressBasedAuthorizer authorizer, FederationChangeCaller federationChangeCaller) {
+        Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
+        sampleVotes.put(
+            new ABICallSpec(functionName, new byte[][]{}),
+            Collections.singletonList(federationChangeCaller.getRskAddress())
+        );
+        return new ABICallElection(authorizer, sampleVotes);
     }
 
 }
