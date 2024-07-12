@@ -311,11 +311,10 @@ class FederationStorageProviderImplTests {
 
     }
 
-    private static Stream<Arguments> provideSaveNewFederationTestArguments() {
+    private static Stream<Arguments> provideSaveFederationTestArguments() {
 
         ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0L);
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
-        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
 
         Federation standardFederation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
         Federation nonStandardFederation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
@@ -371,7 +370,7 @@ class FederationStorageProviderImplTests {
     }
 
     @ParameterizedTest
-    @MethodSource("provideSaveNewFederationTestArguments")
+    @MethodSource("provideSaveFederationTestArguments")
     void testSaveNewFederation(
         ActivationConfig.ForBlock activations,
         int expectedFormatToSave,
