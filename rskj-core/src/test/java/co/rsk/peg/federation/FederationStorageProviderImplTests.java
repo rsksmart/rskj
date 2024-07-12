@@ -14,7 +14,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static java.util.Objects.isNull;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +36,6 @@ import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
-
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -933,6 +931,39 @@ class FederationStorageProviderImplTests {
 
         // Ensuring `getNewFederationBtcUTXOs` also returns the one saved in the storage.
         List<UTXO> finalListOfUtxosFromMethod = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+        assertEquals(finalListOfUtxosFromStorage, finalListOfUtxosFromMethod);
+
+    }
+
+    @Test
+    void saveOldFederationBtcUTXOs_utxosShouldBeSavedToStorage() {
+
+        // Arrange
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        DataWord oldFederationBtcUtxosKey = OLD_FEDERATION_BTC_UTXOS_KEY.getKey();
+        storageAccessor.saveToRepository(oldFederationBtcUtxosKey, new byte[]{});
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "test");
+        List<UTXO> utxos = federationStorageProvider.getOldFederationBtcUTXOs();
+        List<UTXO> extraUtxos = BitcoinTestUtils.createUTXOs(1, btcAddress);
+        utxos.addAll(extraUtxos);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        // Assert
+
+        List<UTXO> finalListOfUtxosFromStorage = storageAccessor.getFromRepository(oldFederationBtcUtxosKey,
+            BridgeSerializationUtils::deserializeUTXOList);
+
+        assertEquals(1, finalListOfUtxosFromStorage.size());
+        assertEquals(utxos, finalListOfUtxosFromStorage);
+
+        // Ensuring `getOldFederationBtcUTXOs` also returns the one saved in the storage.
+        List<UTXO> finalListOfUtxosFromMethod = federationStorageProvider.getOldFederationBtcUTXOs();
         assertEquals(finalListOfUtxosFromStorage, finalListOfUtxosFromMethod);
 
     }
