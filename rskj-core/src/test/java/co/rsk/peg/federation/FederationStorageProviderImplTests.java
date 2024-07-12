@@ -313,28 +313,23 @@ class FederationStorageProviderImplTests {
 
     private static Stream<Arguments> provideSaveNewFederationTestArguments() {
 
-        ActivationConfig.ForBlock activationsPostPapyrus = ActivationConfigsForTest.papyrus200().forBlock(0L);
-        ActivationConfig.ForBlock activationsPostIris = ActivationConfigsForTest.iris300().forBlock(0L);
-        ActivationConfig.ForBlock activationsPostHop = ActivationConfigsForTest.hop400().forBlock(0L);
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
 
         Federation standardFederation = createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
         Federation nonStandardFederation = createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION);
         Federation ps2hErpFederation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
 
         return Stream.of(
-            // Post papyrus, should allow to save any fed type
-            Arguments.of(activationsPostPapyrus, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
-            Arguments.of(activationsPostPapyrus, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
-            Arguments.of(activationsPostPapyrus, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation),
-            // Post iris, should allow to save any fed type
-            Arguments.of(activationsPostIris, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
-            Arguments.of(activationsPostIris, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
-            Arguments.of(activationsPostIris, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation),
-            // Post hop, should allow to save any fed type
-            Arguments.of(activationsPostHop, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
-            Arguments.of(activationsPostHop, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
-            Arguments.of(activationsPostHop, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation)
-
+            // When iris is not active, should allow to save any fed type but not the version
+            Arguments.of(papyrusActivations, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(papyrusActivations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(papyrusActivations, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation),
+            // When iris is active, should allow to save any fed type with its the version
+            Arguments.of(irisActivations, STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, standardFederation),
+            Arguments.of(irisActivations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
+            Arguments.of(irisActivations, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation)
         );
 
     }
