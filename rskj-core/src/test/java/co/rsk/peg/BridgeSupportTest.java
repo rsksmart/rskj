@@ -47,6 +47,7 @@ import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.*;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
