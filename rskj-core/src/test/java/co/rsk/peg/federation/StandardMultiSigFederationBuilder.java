@@ -25,8 +25,8 @@ public class StandardMultiSigFederationBuilder {
         );
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
-        this.creationTime = Instant.ofEpochMilli(0);
-        this.creationBlockNumber = 0;
+        this.creationTime = Instant.ofEpochMilli(10L);
+        this.creationBlockNumber = 1L;
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
     }
 
