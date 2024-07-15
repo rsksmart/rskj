@@ -893,7 +893,7 @@ class FederationStorageProviderImplTests {
     void saveActiveFederationCreationBlockHeight_postIrisAndHeightIsNotNull_shouldSaveToStorage() {
         // Arrange
 
-        ActivationConfig.ForBlock irisActivation = ActivationConfigsForTest.iris300().forBlock(0L);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
@@ -902,7 +902,7 @@ class FederationStorageProviderImplTests {
         federationStorageProvider.setActiveFederationCreationBlockHeight(expectedFederationCreationBlockHeight);
 
         // Act
-        federationStorageProvider.save(networkParameters, irisActivation);
+        federationStorageProvider.save(networkParameters, irisActivations);
 
         // Assert
 
