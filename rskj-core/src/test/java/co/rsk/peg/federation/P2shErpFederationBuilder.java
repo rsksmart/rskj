@@ -3,6 +3,7 @@ package co.rsk.peg.federation;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import org.ethereum.crypto.ECKey;
 
 import java.time.Instant;
@@ -27,12 +28,10 @@ public class P2shErpFederationBuilder {
         );
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
-        this.erpPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"erp01", "erp02", "erp03", "erp04"}, true
-        );
+        this.erpPublicKeys = FederationMainNetConstants.getInstance().getErpFedPubKeysList();
         this.erpActivationDelay = 52_560;
-        this.creationTime = Instant.ofEpochMilli(0);
-        this.creationBlockNumber = 0;
+        this.creationTime = Instant.ofEpochMilli(10L);
+        this.creationBlockNumber = 1L;
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
     }
 
