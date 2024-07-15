@@ -837,33 +837,6 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void savePendingFederation_postWasabi_shouldBeSavedInStorageWithFormatVersion() {
-
-        // Arrange
-
-        ActivationConfig.ForBlock wasabiActivation = ActivationConfigsForTest.wasabi100().forBlock(0L);
-        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
-        StorageAccessor storageAccessor = new InMemoryStorage();
-
-        // Act
-
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        federationStorageProvider.setPendingFederation(expectedPendingFederation);
-        federationStorageProvider.save(networkParameters, wasabiActivation);
-
-        PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
-            PendingFederation::deserialize);
-
-        int formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils::deserializeInteger);
-
-        // Assert
-
-        assertEquals(STANDARD_MULTISIG_FEDERATION.getFormatVersion(), formatVersion);
-        assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
-
-    }
-
-    @Test
     void savePendingFederation_preWasabi_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
 
         // Arrange
@@ -871,21 +844,48 @@ class FederationStorageProviderImplTests {
         ActivationConfig.ForBlock orchidActivation = ActivationConfigsForTest.orchid().forBlock(0L);
         PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
 
         // Act
 
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        federationStorageProvider.setPendingFederation(expectedPendingFederation);
         federationStorageProvider.save(networkParameters, orchidActivation);
+
+        // Assert
 
         PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
             PendingFederation::deserializeFromBtcKeysOnly);
 
         byte[] formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), data -> data);
 
+        assertNull(formatVersion);
+        assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
+
+    }
+
+    @Test
+    void savePendingFederation_postWasabi_shouldBeSavedInStorageWithFormatVersion() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0L);
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, wasabiActivations);
+
         // Assert
 
-        assertNull(formatVersion);
+        PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
+            PendingFederation::deserialize);
+
+        int formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils::deserializeInteger);
+
+        assertEquals(STANDARD_MULTISIG_FEDERATION.getFormatVersion(), formatVersion);
         assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
 
     }
