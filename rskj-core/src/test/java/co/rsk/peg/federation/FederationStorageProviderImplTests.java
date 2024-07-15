@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static java.util.Objects.isNull;
+
 import java.math.BigInteger;
 import java.util.*;
 import org.ethereum.util.RLP;
@@ -67,16 +68,16 @@ class FederationStorageProviderImplTests {
 
     private static Stream<Arguments> provideFederationAndFormatArguments() {
         return Stream.of(
-            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, new P2shErpFederationBuilder().build()),
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createFederation(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION)),
-            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new StandardMultiSigFederationBuilder().build()),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
             Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(INVALID_FEDERATION_FORMAT, null),
             Arguments.of(EMPTY_FEDERATION_FORMAT, null),
-            Arguments.of(INVALID_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build()),
-            Arguments.of(EMPTY_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build())
+            Arguments.of(INVALID_FEDERATION_FORMAT, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION)),
+            Arguments.of(EMPTY_FEDERATION_FORMAT, createFederation(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION))
         );
     }
 
