@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static java.util.Objects.isNull;
+
 import java.math.BigInteger;
 import java.util.*;
 import org.ethereum.util.RLP;
@@ -318,7 +319,6 @@ class FederationStorageProviderImplTests {
             Arguments.of(irisActivations, NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, nonStandardFederation),
             Arguments.of(irisActivations, P2SH_ERP_FEDERATION_FORMAT_VERSION, ps2hErpFederation)
         );
-
     }
 
     @Test
@@ -834,6 +834,60 @@ class FederationStorageProviderImplTests {
             OLD_FEDERATION_KEY.getKey(),
             serializedFederation
         );
+    }
+
+    @Test
+    void savePendingFederation_preWasabi_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock orchidActivations = ActivationConfigsForTest.orchid().forBlock(0L);
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, orchidActivation);
+
+        // Assert
+
+        PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
+            PendingFederation::deserializeFromBtcKeysOnly);
+
+        byte[] formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), data -> data);
+
+        assertNull(formatVersion);
+        assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
+
+    }
+
+    @Test
+    void savePendingFederation_postWasabi_shouldBeSavedInStorageWithFormatVersion() {
+
+        // Arrange
+
+        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0L);
+        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setPendingFederation(expectedPendingFederation);
+
+        // Act
+
+        federationStorageProvider.save(networkParameters, wasabiActivations);
+
+        // Assert
+
+        PendingFederation actualPendingFederationInStorage = storageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
+            PendingFederation::deserialize);
+
+        int formatVersion = storageAccessor.getFromRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils::deserializeInteger);
+
+        assertEquals(STANDARD_MULTISIG_FEDERATION.getFormatVersion(), formatVersion);
+        assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
+
     }
 
     private static Federation createFederation(int version) {
