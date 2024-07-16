@@ -63,12 +63,6 @@ public abstract class BridgeConstants {
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
 
-    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
-
-    protected Coin initialLockingCap;
-
-    protected int lockingCapIncrementsMultiplier;
-
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
     protected long minSecondsBetweenCallsReceiveHeader;
@@ -151,12 +145,6 @@ public abstract class BridgeConstants {
     }
 
     public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
-
-    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
-
-    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
-
-    public Coin getInitialLockingCap() { return initialLockingCap; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
