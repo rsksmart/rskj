@@ -841,7 +841,7 @@ class FederationStorageProviderImplTests {
 
         // Arrange
 
-        ActivationConfig.ForBlock orchidActivation = ActivationConfigsForTest.orchid().forBlock(0L);
+        ActivationConfig.ForBlock orchidActivations = ActivationConfigsForTest.orchid().forBlock(0L);
         PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
