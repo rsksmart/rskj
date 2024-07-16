@@ -948,14 +948,14 @@ class FederationStorageProviderImplTests {
 
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
-        Script expectedScript = new P2shErpFederationBuilder().build().getP2SHScript();
+        Script expectedScript = new P2shErpFederationBuilder().build().getDefaultP2SHScript();
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
 
         // Act
 
-        federationStorageProvider.setLastRetiredFederationP2SHScript(expectedScript);
         federationStorageProvider.save(networkParameters, irisActivations);
 
         // Assert
