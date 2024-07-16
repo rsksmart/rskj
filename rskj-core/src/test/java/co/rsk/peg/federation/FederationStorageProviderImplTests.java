@@ -971,14 +971,14 @@ class FederationStorageProviderImplTests {
 
         // Arrange
 
-        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
+        AddressBasedAuthorizer authorizer = federationConstants.getFederationChangeAuthorizer();
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         ABICallElection defaultFederationElection = federationStorageProvider.getFederationElection(authorizer);
         byte[] defaultFederationElectionSerialized = BridgeSerializationUtils.serializeElection(defaultFederationElection);
         ABICallSpec abiCallSpec = new ABICallSpec("function1", new byte[][]{});
-        RskAddress voterAddress = AddressBasedAuthorizerVoteCaller.FIRST_AUTHORIZED.getRskAddress();
+        RskAddress voterAddress = FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress();
         defaultFederationElection.vote(abiCallSpec, voterAddress);
         byte[] federationElectionSerializedWithVote = BridgeSerializationUtils.serializeElection(defaultFederationElection);
 
