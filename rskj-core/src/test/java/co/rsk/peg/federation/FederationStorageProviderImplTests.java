@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static java.util.Objects.isNull;
-
 import java.math.BigInteger;
 import java.util.*;
 import org.ethereum.util.RLP;
@@ -887,6 +886,30 @@ class FederationStorageProviderImplTests {
 
         assertEquals(STANDARD_MULTISIG_FEDERATION.getFormatVersion(), formatVersion);
         assertEquals(expectedPendingFederation, actualPendingFederationInStorage);
+
+    }
+
+    @Test
+    void saveActiveFederationCreationBlockHeight_postIrisAndHeightIsNotNull_shouldSaveToStorage() {
+        // Arrange
+
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
+
+        StorageAccessor storageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+
+        long expectedFederationCreationBlockHeight = 1_300_000L;
+        federationStorageProvider.setActiveFederationCreationBlockHeight(expectedFederationCreationBlockHeight);
+
+        // Act
+        federationStorageProvider.save(networkParameters, irisActivations);
+
+        // Assert
+
+        Optional<Long> actualFederationCreationBlockHeight = storageAccessor.getFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), BridgeSerializationUtils::deserializeOptionalLong);
+
+        assertTrue(actualFederationCreationBlockHeight.isPresent());
+        assertEquals(expectedFederationCreationBlockHeight, actualFederationCreationBlockHeight.get());
 
     }
 
