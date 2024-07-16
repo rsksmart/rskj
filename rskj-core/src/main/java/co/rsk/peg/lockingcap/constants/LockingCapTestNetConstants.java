@@ -24,8 +24,8 @@ public class LockingCapTestNetConstants extends LockingCapConstants {
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        incrementsMultiplier = 2;
         initialValue = Coin.COIN.multiply(200L); // 200 BTC
+        incrementsMultiplier = 2;
     }
 
     public static LockingCapTestNetConstants getInstance() {

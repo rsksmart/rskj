@@ -13,11 +13,11 @@ public class LockingCapConstants {
         return increaseAuthorizer;
     }
 
-    public int getIncrementsMultiplier() {
-        return incrementsMultiplier;
-    }
-
     public Coin getInitialValue() {
         return initialValue;
+    }
+
+    public int getIncrementsMultiplier() {
+        return incrementsMultiplier;
     }
 }
