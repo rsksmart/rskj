@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
@@ -84,7 +85,7 @@ public class Bloom {
 
     @Override
     public String toString() {
-        return ByteUtil.toHexString(data);
+        return Bytes.toPrintableString(data);
     }
 
     @Override

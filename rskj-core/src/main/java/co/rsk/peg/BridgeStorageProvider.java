@@ -18,26 +18,20 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeStorageIndexKey.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.whitelist.LockWhitelist;
-import co.rsk.peg.whitelist.LockWhitelistEntry;
-import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import org.apache.commons.lang3.tuple.Pair;
+import java.io.IOException;
+import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.util.*;
-import static co.rsk.peg.BridgeStorageIndexKey.*;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -66,8 +60,6 @@ public class BridgeStorageProvider {
     private ReleaseRequestQueue releaseRequestQueue;
     private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
-
-    private LockWhitelist lockWhitelist;
 
     private Coin lockingCap;
 
@@ -257,50 +249,6 @@ public class BridgeStorageProvider {
         safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
-    /**
-     * Save the lock whitelist
-     */
-    public void saveLockWhitelist() {
-        if (lockWhitelist == null) {
-            return;
-        }
-
-        List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
-        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
-
-        if (activations.isActive(RSKIP87)) {
-            List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
-            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
-        }
-    }
-
-    public LockWhitelist getLockWhitelist() {
-        if (lockWhitelist != null) {
-            return lockWhitelist;
-        }
-
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
-                safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
-                        data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
-        if (oneOffWhitelistAndDisableBlockHeightData == null) {
-            lockWhitelist = new LockWhitelist(new HashMap<>());
-            return lockWhitelist;
-        }
-
-        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
-
-        whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
-
-        if (activations.isActive(RSKIP87)) {
-            whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
-                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
-        }
-
-        lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
-
-        return lockWhitelist;
-    }
-
     public void saveLockingCap() {
         if (activations.isActive(RSKIP134)) {
             safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
@@ -393,7 +341,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        if (coinbaseInformationMap == null || coinbaseInformationMap.size() == 0) {
+        if (coinbaseInformationMap == null || coinbaseInformationMap.isEmpty()) {
             return;
         }
         coinbaseInformationMap.forEach((Sha256Hash blockHash, CoinbaseInformation data) ->
@@ -599,8 +547,6 @@ public class BridgeStorageProvider {
         saveReleaseRequestQueue();
         savePegoutsWaitingForConfirmations();
         savePegoutsWaitingForSignatures();
-
-        saveLockWhitelist();
 
         saveLockingCap();
 

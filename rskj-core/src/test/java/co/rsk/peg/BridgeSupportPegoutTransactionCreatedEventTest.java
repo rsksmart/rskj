@@ -56,6 +56,10 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             ERP_FEDERATION.getAddress()
         );
 
+        provider = mock(BridgeStorageProvider.class);
+        when(provider.getPegoutsWaitingForSignatures()).thenReturn(new TreeMap<>());
+        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(new HashSet<>()));
+
         BlockGenerator blockGenerator = new BlockGenerator();
         rskCurrentBlock = blockGenerator.createBlock(ERP_FEDERATION.getCreationBlockNumber(), 1);
 

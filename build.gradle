@@ -7,3 +7,4 @@ subprojects {
     group = 'co.rsk'
     version = config.modifier?.trim() ? config.versionNumber + "-" + config.modifier : config.versionNumber
 }
+

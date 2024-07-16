@@ -24,8 +24,9 @@ import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.bitcoinj.crypto.HDUtils;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
+import co.rsk.util.StringUtils;
 import org.ethereum.core.CallTransaction;
 
 import java.util.Arrays;
@@ -126,7 +127,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     }
 
     private String getInvalidPathErrorMessage(String path) {
-        return String.format("Invalid path '%s'", path);
+        return String.format("Invalid path '%s'", StringUtils.trim(path));
     }
 
     private boolean isDecimal(String s) {

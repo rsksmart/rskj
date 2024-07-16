@@ -19,26 +19,22 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.federation.FederationStorageProvider;
-import co.rsk.peg.federation.FederationStorageProviderImpl;
-import co.rsk.peg.federation.FederationSupport;
-import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
-import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BrigeEventLoggerLegacyImpl;
+import co.rsk.peg.whitelist.*;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -57,18 +53,24 @@ public class BridgeSupportFactory {
     private final ActivationConfig activationConfig;
     private final SignatureCache signatureCache;
 
-    public BridgeSupportFactory(Factory btcBlockStoreFactory,
-                                BridgeConstants bridgeConstants,
-                                ActivationConfig activationConfig,
-                                SignatureCache signatureCache) {
+    public BridgeSupportFactory(
+        Factory btcBlockStoreFactory,
+        BridgeConstants bridgeConstants,
+        ActivationConfig activationConfig,
+        SignatureCache signatureCache) {
+
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
         this.signatureCache = signatureCache;
     }
 
-    public BridgeSupport newInstance(Repository repository, Block executionBlock,
-            RskAddress contractAddress, List<LogInfo> logs) {
+    public BridgeSupport newInstance(
+        Repository repository,
+        Block executionBlock,
+        RskAddress contractAddress,
+        List<LogInfo> logs) {
+
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
@@ -82,13 +84,17 @@ public class BridgeSupportFactory {
             activations
         );
 
-        FederationSupport federationSupport = newFederationSupportInstance(bridgeStorageAccessor, bridgeConstants, executionBlock, activations);
-        FeePerKbSupport feePerKbSupport = newFeePerKbSupportInstance(bridgeStorageAccessor, bridgeConstants);
+        FeePerKbSupport feePerKbSupport = getFeePerKbSupportInstance(bridgeStorageAccessor);
+        WhitelistSupport whitelistSupport = getWhitelistSupportInstance(bridgeStorageAccessor, activations);
+        FederationSupport federationSupport = getFederationSupportInstance(
+            bridgeStorageAccessor,
+            bridgeConstants,
+            executionBlock,
+            activations
+        );
 
-        BridgeEventLogger eventLogger;
-        if (logs == null) {
-            eventLogger = null;
-        } else {
+        BridgeEventLogger eventLogger = null;
+        if (logs != null) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
                 eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs, signatureCache);
             } else {
@@ -100,29 +106,48 @@ public class BridgeSupportFactory {
         PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
 
         return new BridgeSupport(
-                bridgeConstants,
-                provider,
-                eventLogger,
-                btcLockSenderProvider,
-                peginInstructionsProvider,
-                repository,
-                executionBlock,
-                btcContext,
-                federationSupport,
-                feePerKbSupport,
-                btcBlockStoreFactory,
-                activations,
-                signatureCache
+            bridgeConstants,
+            provider,
+            eventLogger,
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            repository,
+            executionBlock,
+            btcContext,
+            feePerKbSupport,
+            whitelistSupport,
+            federationSupport,
+            btcBlockStoreFactory,
+            activations,
+            signatureCache
         );
     }
 
-    private FeePerKbSupport newFeePerKbSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants) {
+    private FeePerKbSupport getFeePerKbSupportInstance(StorageAccessor bridgeStorageAccessor) {
         FeePerKbConstants feePerKbConstants = bridgeConstants.getFeePerKbConstants();
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+
         return new FeePerKbSupportImpl(feePerKbConstants, feePerKbStorageProvider);
     }
 
-    private FederationSupport newFederationSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeConstants bridgeConstants, Block rskExecutionBlock, ActivationConfig.ForBlock activations) {
+    private WhitelistSupport getWhitelistSupportInstance(StorageAccessor bridgeStorageAccessor, ActivationConfig.ForBlock activations) {
+        WhitelistConstants whitelistConstants = bridgeConstants.getWhitelistConstants();
+        WhitelistStorageProvider whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
+
+        return new WhitelistSupportImpl(
+            whitelistConstants,
+            whitelistStorageProvider,
+            activations,
+            signatureCache
+        );
+    }
+
+    private FederationSupport getFederationSupportInstance(
+        StorageAccessor bridgeStorageAccessor,
+        BridgeConstants bridgeConstants,
+        Block rskExecutionBlock,
+        ActivationConfig.ForBlock activations) {
+
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);

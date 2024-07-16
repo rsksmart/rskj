@@ -29,6 +29,7 @@ import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -61,7 +62,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -86,12 +86,6 @@ public class BridgeSupport {
 
     public static final int MAX_RELEASE_ITERATIONS = 30;
 
-    public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
-    public static final Integer LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
-    public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
-    public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
-    public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
-
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -1;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -2;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE = -3;
@@ -111,9 +105,6 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
-
-    private final FeePerKbSupport feePerKbSupport;
     private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
@@ -122,6 +113,8 @@ public class BridgeSupport {
     private final BtcLockSenderProvider btcLockSenderProvider;
     private final PeginInstructionsProvider peginInstructionsProvider;
 
+    private final FeePerKbSupport feePerKbSupport;
+    private final WhitelistSupport whitelistSupport;
     private final FederationSupport federationSupport;
 
     private final Context btcContext;
@@ -134,19 +127,20 @@ public class BridgeSupport {
     private final SignatureCache signatureCache;
 
     public BridgeSupport(
-            BridgeConstants bridgeConstants,
-            BridgeStorageProvider provider,
-            BridgeEventLogger eventLogger,
-            BtcLockSenderProvider btcLockSenderProvider,
-            PeginInstructionsProvider peginInstructionsProvider,
-            Repository repository,
-            Block executionBlock,
-            Context btcContext,
-            FederationSupport federationSupport,
-            FeePerKbSupport feePerKbSupport,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
-            ActivationConfig.ForBlock activations,
-            SignatureCache signatureCache) {
+        BridgeConstants bridgeConstants,
+        BridgeStorageProvider provider,
+        BridgeEventLogger eventLogger,
+        BtcLockSenderProvider btcLockSenderProvider,
+        PeginInstructionsProvider peginInstructionsProvider,
+        Repository repository,
+        Block executionBlock,
+        Context btcContext,
+        FeePerKbSupport feePerKbSupport,
+        WhitelistSupport whitelistSupport,
+        FederationSupport federationSupport,
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
+        ActivationConfig.ForBlock activations,
+        SignatureCache signatureCache) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -155,8 +149,9 @@ public class BridgeSupport {
         this.btcLockSenderProvider = btcLockSenderProvider;
         this.peginInstructionsProvider = peginInstructionsProvider;
         this.btcContext = btcContext;
-        this.federationSupport = federationSupport;
         this.feePerKbSupport = feePerKbSupport;
+        this.whitelistSupport = whitelistSupport;
+        this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -186,6 +181,7 @@ public class BridgeSupport {
     public void save() throws IOException {
         provider.save();
         feePerKbSupport.save();
+        whitelistSupport.save();
         federationSupport.save();
     }
 
@@ -204,6 +200,11 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
         for (BtcBlock header : headers) {
             try {
+                StoredBlock previousBlock = btcBlockStore.get(header.getPrevBlockHash());
+                if (cannotProcessNextBlock(previousBlock)) {
+                    logger.warn("[receiveHeaders] Header {} has too much work to be processed", header.getHash());
+                    break;
+                }
                 btcBlockChain.add(header);
             } catch (Exception e) {
                 // If we try to add an orphan header bitcoinj throws an exception
@@ -245,6 +246,11 @@ public class BridgeSupport {
             return RECEIVE_HEADER_BLOCK_TOO_OLD;
         }
 
+        if (cannotProcessNextBlock(previousBlock)) {
+            logger.warn("[receiveHeader] Header {} has too much work to be processed", header.getHash());
+            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+        }
+
         try {
             btcBlockChain.add(header);
         } catch (Exception e) {
@@ -255,6 +261,15 @@ public class BridgeSupport {
         }
         provider.setReceiveHeadersLastTimestamp(currentTimeStamp);
         return 0;
+    }
+
+    private boolean cannotProcessNextBlock(StoredBlock previousBlock) {
+        int nextBlockHeight = previousBlock.getHeight() + 1;
+        boolean networkIsMainnet = btcContext.getParams().equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
+
+        return nextBlockHeight >= bridgeConstants.getBlockWithTooMuchChainWorkHeight()
+            && networkIsMainnet
+            && !activations.isActive(ConsensusRule.RSKIP434);
     }
 
     /**
@@ -690,11 +705,16 @@ public class BridgeSupport {
         logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTx.getHash(false));
     }
 
-    private boolean shouldProcessPegInVersionLegacy(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx,
-                                       Address senderBtcAddress, Coin totalAmount, int height) {
+    private boolean shouldProcessPegInVersionLegacy(
+        TxSenderAddressType txSenderAddressType,
+        BtcTransaction btcTx,
+        Address senderBtcAddress,
+        Coin totalAmount,
+        int height) {
+
         return isTxLockableForLegacyVersion(txSenderAddressType, btcTx, senderBtcAddress) &&
-                verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
-                verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
+            whitelistSupport.verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
+            verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
     }
 
     protected boolean isTxLockableForLegacyVersion(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx, Address senderBtcAddress) {
@@ -1196,7 +1216,7 @@ public class BridgeSupport {
         if (currentBlockNumber < nextPegoutCreationBlockNumber) {
             return;
         }
-        
+
         List<ReleaseRequestQueue.Entry> pegoutEntries = pegoutRequests.getEntries();
         Coin totalPegoutValue = pegoutEntries
             .stream()
@@ -1486,7 +1506,7 @@ public class BridgeSupport {
                     "Malformed signature for input {} of tx {}: {}",
                     i,
                     new Keccak256(rskTxHash),
-                    ByteUtil.toHexString(signatures.get(i))
+                    Bytes.of(signatures.get(i))
                 );
                 return;
             }
@@ -1497,7 +1517,7 @@ public class BridgeSupport {
                 logger.warn(
                     "Signature {} {} is not valid for hash {} and public key {}",
                     i,
-                    ByteUtil.toHexString(sig.encodeToDER()),
+                    Bytes.of(sig.encodeToDER()),
                     sighash,
                     federatorBtcPublicKey
                 );
@@ -1507,7 +1527,7 @@ public class BridgeSupport {
             TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
             txSigs.add(txSig);
             if (!txSig.isCanonical()) {
-                logger.warn("Signature {} {} is not canonical.", i, ByteUtil.toHexString(signatures.get(i)));
+                logger.warn("Signature {} {} is not canonical.", i, Bytes.of(signatures.get(i)));
                 return;
             }
         }
@@ -1555,7 +1575,7 @@ public class BridgeSupport {
         }
 
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {
-            logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
+            logger.info("Tx fully signed {}. Hex: {}", btcTx, Bytes.of(btcTx.bitcoinSerialize()));
             provider.getPegoutsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
@@ -2049,135 +2069,28 @@ public class BridgeSupport {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
 
-    /**
-     * Returns the lock whitelist size, that is,
-     * the number of whitelisted addresses
-     * @return the lock whitelist size
-     */
     public Integer getLockWhitelistSize() {
-        return provider.getLockWhitelist().getSize();
+        return whitelistSupport.getLockWhitelistSize();
     }
 
-    /**
-     * Returns the lock whitelist address stored
-     * at the given index, or null if the
-     * index is out of bounds
-     * @param index the index at which to get the address
-     * @return the base58-encoded address stored at the given index, or null if index is out of bounds
-     */
     public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
-        List<LockWhitelistEntry> entries = provider.getLockWhitelist().getAll();
-
-        if (index < 0 || index >= entries.size()) {
-            return null;
-        }
-
-        return entries.get(index);
+        return whitelistSupport.getLockWhitelistEntryByIndex(index);
     }
 
-    /**
-     *
-     * @param addressBase58
-     * @return
-     */
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
-        try {
-            Address address = getParsedAddress(addressBase58);
-            return provider.getLockWhitelist().get(address);
-        } catch (AddressFormatException e) {
-            logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return null;
-        }
+        return whitelistSupport.getLockWhitelistEntryByAddress(addressBase58);
     }
 
-    /**
-     * Adds the given address to the lock whitelist.
-     * Returns 1 upon success, or -1 if the address was
-     * already in the whitelist.
-     * @param addressBase58 the base58-encoded address to add to the whitelist
-     * @param maxTransferValue the max amount of satoshis enabled to transfer for this address
-     * @return 1 upon success, -1 if the address was already
-     * in the whitelist, -2 if address is invalid
-     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
-     */
     public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
-        try {
-            Address address = getParsedAddress(addressBase58);
-            Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
-            return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
-        } catch (AddressFormatException e) {
-            logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
-        }
+       return whitelistSupport.addOneOffLockWhitelistAddress(tx, addressBase58, maxTransferValue);
     }
 
     public Integer addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
-        try {
-            Address address = getParsedAddress(addressBase58);
-            return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
-        } catch (AddressFormatException e) {
-            logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
-        }
+        return whitelistSupport.addUnlimitedLockWhitelistAddress(tx, addressBase58);
     }
 
-    private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
-        if (!isLockWhitelistChangeAuthorized(tx)) {
-            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
-        }
-
-        LockWhitelist whitelist = provider.getLockWhitelist();
-
-        try {
-            if (whitelist.isWhitelisted(entry.address())) {
-                return LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE;
-            }
-            whitelist.put(entry.address(), entry);
-            return LOCK_WHITELIST_SUCCESS_CODE;
-        } catch (Exception e) {
-            logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
-            panicProcessor.panic("lock-whitelist", e.getMessage());
-            return LOCK_WHITELIST_UNKNOWN_ERROR_CODE;
-        }
-    }
-
-    private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
-        AddressBasedAuthorizer authorizer = bridgeConstants.getLockWhitelistChangeAuthorizer();
-
-        return authorizer.isAuthorized(tx, signatureCache);
-    }
-
-    /**
-     * Removes the given address from the lock whitelist.
-     * Returns 1 upon success, or -1 if the address was
-     * not in the whitelist.
-     * @param addressBase58 the base58-encoded address to remove from the whitelist
-     * @return 1 upon success, -1 if the address was not
-     * in the whitelist, -2 if the address is invalid,
-     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
-     */
     public Integer removeLockWhitelistAddress(Transaction tx, String addressBase58) {
-        if (!isLockWhitelistChangeAuthorized(tx)) {
-            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
-        }
-
-        LockWhitelist whitelist = provider.getLockWhitelist();
-
-        try {
-            Address address = getParsedAddress(addressBase58);
-
-            if (!whitelist.remove(address)) {
-                return -1;
-            }
-
-            return 1;
-        } catch (AddressFormatException e) {
-            return -2;
-        } catch (Exception e) {
-            logger.error("Unexpected error in removeLockWhitelistAddress: {}", e.getMessage());
-            panicProcessor.panic("lock-whitelist", e.getMessage());
-            return 0;
-        }
+        return whitelistSupport.removeLockWhitelistAddress(tx, addressBase58);
     }
 
     public Coin getFeePerKb() {
@@ -2188,27 +2101,10 @@ public class BridgeSupport {
         return feePerKbSupport.voteFeePerKbChange(tx, feePerKb, signatureCache);
     }
 
-    /**
-     * Sets a delay in the BTC best chain to disable lock whitelist
-     * @param tx current RSK transaction
-     * @param disableBlockDelayBI block since current BTC best chain height to disable lock whitelist
-     * @return 1 if it was successful, -1 if a delay was already set, -2 if disableBlockDelay contains an invalid value
-     */
-    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) throws IOException, BlockStoreException {
-        if (!isLockWhitelistChangeAuthorized(tx)) {
-            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
-        }
-        LockWhitelist lockWhitelist = provider.getLockWhitelist();
-        if (lockWhitelist.isDisableBlockSet()) {
-            return -1;
-        }
-        int disableBlockDelay = disableBlockDelayBI.intValueExact();
-        int bestChainHeight = getBtcBlockchainBestChainHeight();
-        if (disableBlockDelay + bestChainHeight <= bestChainHeight) {
-            return -2;
-        }
-        lockWhitelist.setDisableBlockHeight(bestChainHeight + disableBlockDelay);
-        return 1;
+    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI)
+        throws IOException, BlockStoreException {
+        int btcBlockchainBestChainHeight = getBtcBlockchainBestChainHeight();
+        return whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, btcBlockchainBestChainHeight);
     }
 
     public Coin getLockingCap() {
@@ -2289,7 +2185,7 @@ public class BridgeSupport {
             }
         } catch (VerificationException e) {
             logger.warn("[btcTx:{}] PartialMerkleTree could not be parsed", btcTxHash);
-            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", ByteUtil.toHexString(pmtSerialized)), e);
+            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Bytes.of(pmtSerialized)), e);
         }
 
         // Check merkle root equals btc block merkle root at the specified height in the btc best chain
@@ -2784,10 +2680,6 @@ public class BridgeSupport {
         }
     }
 
-    private Address getParsedAddress(String base58Address) throws AddressFormatException {
-        return Address.fromBase58(btcContext.getParams(), base58Address);
-    }
-
     private void generateRejectionRelease(
         BtcTransaction btcTx,
         Address btcRefundAddress,
@@ -2868,24 +2760,6 @@ public class BridgeSupport {
         };
 
         generateRejectionRelease(btcTx, senderBtcAddress, null, rskTxHash, totalAmount, createWallet);
-    }
-
-    private boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
-        // If the address is not whitelisted, then return the funds
-        // using the exact same utxos sent to us.
-        // That is, build a pegout waiting for confirmations and get it in the pegoutWaitingForConfirmations set.
-        // Otherwise, transfer SBTC to the sender of the BTC
-        // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-        LockWhitelist lockWhitelist = provider.getLockWhitelist();
-        if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
-            logger.info("Rejecting lock. Address {} is not whitelisted.", senderBtcAddress);
-            return false;
-        }
-
-        // Consume this whitelisted address
-        lockWhitelist.consume(senderBtcAddress);
-
-        return true;
     }
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {

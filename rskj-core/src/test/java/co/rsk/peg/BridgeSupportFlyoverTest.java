@@ -41,6 +41,7 @@ import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -80,6 +81,7 @@ class BridgeSupportFlyoverTest {
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
+    private WhitelistSupport whitelistSupport;
     private FederationSupportBuilder federationSupportBuilder;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
@@ -91,6 +93,7 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         bridgeSupportBuilder = new BridgeSupportBuilder();
+        whitelistSupport = mock(WhitelistSupport.class);
         federationSupportBuilder = new FederationSupportBuilder();
     }
 
@@ -2953,8 +2956,9 @@ class BridgeSupportFlyoverTest {
             mock(Repository.class),
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3035,8 +3039,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3127,8 +3132,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3221,8 +3227,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3330,8 +3337,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            federationSupport,
             feePerKbSupport,
+            whitelistSupport,
+            federationSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3440,8 +3448,9 @@ class BridgeSupportFlyoverTest {
             mock(Repository.class),
             mock(Block.class),
             mock(Context.class),
-            federationSupport,
             feePerKbSupport,
+            whitelistSupport,
+            federationSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3491,8 +3500,9 @@ class BridgeSupportFlyoverTest {
             mock(Repository.class),
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
             feePerKbSupport,
+            whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache

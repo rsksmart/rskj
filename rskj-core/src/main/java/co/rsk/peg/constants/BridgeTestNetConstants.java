@@ -21,11 +21,12 @@ package co.rsk.peg.constants;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationTestNetConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbTestNetConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import co.rsk.peg.feeperkb.constants.FeePerKbTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -35,6 +36,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
         feePerKbConstants = FeePerKbTestNetConstants.getInstance();
+        whitelistConstants = WhitelistTestNetConstants.getInstance();
         federationConstants = FederationTestNetConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 10;
@@ -49,16 +51,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
         minimumPeginTxValue = Coin.valueOf(500_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(250_000);
-
-        // Passphrases are kept private
-        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-            "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
-            lockWhitelistAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
-        );
 
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
             "04701d1d27f8c2ae97912d96fb1f82f10c2395fd320e7a869049268c6b53d2060dfb2e22e3248955332d88cd2ae29a398f8f3858e48dd6d8ffbc37dfd6d1aa4934",
@@ -88,6 +80,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 2_589_553; // Estimated date Wed, 20 Mar 2024 15:00:00 GMT. 2,579,823 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 1_440; // 10 days in BTC blocks (considering 1 block every 10 minutes)
+
+        blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
     }
 
     public static BridgeTestNetConstants getInstance() {

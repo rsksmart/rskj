@@ -22,6 +22,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -36,6 +37,7 @@ import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.WhitelistResponseCode;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
@@ -69,7 +71,7 @@ import java.util.stream.Collectors;
  */
 public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
-    private static final Logger logger = LoggerFactory.getLogger("bridge");
+    private static final Logger logger = LoggerFactory.getLogger(Bridge.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     // No parameters
@@ -206,10 +208,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
-    public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
-    public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
-    public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
-
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
@@ -301,7 +299,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         BridgeParsedData bridgeParsedData = new BridgeParsedData();
 
         if (data != null && (data.length >= 1 && data.length <= 3)) {
-            logger.warn("Invalid function signature {}.", ByteUtil.toHexString(data));
+            logger.warn("Invalid function signature {}.", Bytes.of(data));
             return null;
         }
 
@@ -312,14 +310,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             byte[] functionSignature = Arrays.copyOfRange(data, 0, 4);
             Optional<BridgeMethods> invokedMethod = BridgeMethods.findBySignature(functionSignature);
             if (!invokedMethod.isPresent()) {
-                logger.warn("Invalid function signature {}.", ByteUtil.toHexString(functionSignature));
+                logger.warn("Invalid function signature {}.", Bytes.of(functionSignature));
                 return null;
             }
             bridgeParsedData.bridgeMethod = invokedMethod.get();
             try {
                 bridgeParsedData.args = bridgeParsedData.bridgeMethod.getFunction().decode(data);
             } catch (Exception e) {
-                logger.warn("Invalid function arguments {} for function {}.", ByteUtil.toHexString(data), ByteUtil.toHexString(functionSignature));
+                logger.warn("Invalid function arguments {} for function {}.", Bytes.of(data), Bytes.of(functionSignature));
                 return null;
             }
         }
@@ -370,7 +368,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
-                String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
+                String errorMessage = String.format("Invalid data given: %s.", Bytes.of(data));
                 logger.info("[execute] {}", errorMessage);
                 if (!activations.isActive(ConsensusRule.RSKIP88)) {
                     return null;
@@ -527,7 +525,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(btcBlockSerialized);
                 btcBlockArray[i] = header;
             } catch (ProtocolException e) {
-                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + ByteUtil.toHexString(btcBlockSerialized), e);
+                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + Bytes.of(btcBlockSerialized), e);
             }
         }
         try {
@@ -599,7 +597,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             federatorPublicKey = BtcECKey.fromPublicOnly(federatorPublicKeySerialized);
         } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + ByteUtil.toHexString(federatorPublicKeySerialized), e);
+            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Bytes.of(federatorPublicKeySerialized), e);
         }
         Object[] signaturesObjectArray = (Object[]) args[1];
         if (signaturesObjectArray.length == 0) {
@@ -611,13 +609,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             try {
                 BtcECKey.ECDSASignature.decodeFromDER((byte[])signatureObject);
             } catch (Exception e) {
-                throw new BridgeIllegalArgumentException("Signature could not be parsed " + ByteUtil.toHexString(signatureByteArray), e);
+                throw new BridgeIllegalArgumentException("Signature could not be parsed " + Bytes.of(signatureByteArray), e);
             }
             signatures.add(signatureByteArray);
         }
         byte[] rskTxHash = (byte[]) args[2];
         if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + ByteUtil.toHexString(rskTxHash));
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHash));
         }
         try {
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
@@ -1055,20 +1053,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in getLockWhitelistEntryByAddress", e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
+            logger.warn("[getLockWhitelistEntryByAddress] Error while parsing the provided address. {}", e.getMessage());
+            return WhitelistResponseCode.INVALID_ADDRESS_FORMAT.getCode();
         }
 
         LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
 
         if (entry == null) {
             // Empty string is returned when address is not found
-            return LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE;
+            logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
+            return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
         }
 
         return entry.getClass() == OneOffWhiteListEntry.class ?
-                ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
-                LOCK_WHITELIST_UNLIMITED_MODE_CODE;
+            ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
+            WhitelistResponseCode.UNLIMITED_MODE.getCode();
     }
 
     public Integer addOneOffLockWhitelistAddress(Object[] args) {
@@ -1080,7 +1079,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
             maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
-            logger.warn("Exception in addOneOffLockWhitelistAddress", e);
+            logger.warn("[addOneOffLockWhitelistAddress] Error while parsing the provided address and max value. {}", e.getMessage());
             return 0;
         }
 
@@ -1094,7 +1093,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in addUnlimitedLockWhitelistAddress", e);
+            logger.warn("[addUnlimitedLockWhitelistAddress] Exception in addUnlimitedLockWhitelistAddress", e);
             return 0;
         }
 
@@ -1108,7 +1107,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in removeLockWhitelistAddress", e);
+            logger.warn("[removeLockWhitelistAddress] Error while parsing the provided address. {}", e.getMessage());
             return 0;
         }
 
@@ -1118,6 +1117,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
+
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
     }
 

@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class HDWalletUtilsHelperTest {
     private HDWalletUtilsHelper helper;
 
@@ -35,7 +37,7 @@ class HDWalletUtilsHelperTest {
 
     @Test
     void validateAndExtractNetworkFromExtendedPublicKeyMainnet() throws NativeContractIllegalArgumentException {
-        Assertions.assertEquals(
+        assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("xpubSomethingSomething")
         );
@@ -43,14 +45,25 @@ class HDWalletUtilsHelperTest {
 
     @Test
     void validateAndExtractNetworkFromExtendedPublicKeyTestnet() throws NativeContractIllegalArgumentException {
-        Assertions.assertEquals(
+        assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("tpubSomethingSomething")
         );
     }
 
     @Test
-    void validateAndExtractNetworkFromExtendedPublicKeyInvalid() {
-        Assertions.assertThrows(NativeContractIllegalArgumentException.class, () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidStuff"));
+    void validateAndExtractNetworkFromExtendedPublicKeyWithInvalidXpub() {
+        NativeContractIllegalArgumentException exception = Assertions.assertThrows(
+                NativeContractIllegalArgumentException.class,
+                () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidStuff"));
+        assertEquals("Invalid extended public key 'completelyInvalidStuff'", exception.getMessage());
+    }
+
+    @Test
+    void validateAndExtractNetworkFromExtendedPublicKeyWithInvalidLongXpub() {
+        NativeContractIllegalArgumentException exception = Assertions.assertThrows(
+                NativeContractIllegalArgumentException.class,
+                () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidLongLongLongLongLongLongLongLongLongLongLonStuff"));
+        assertEquals("Invalid extended public key 'completelyInvalidLongLongLongLongLongLongLongLongLongLongLonStuf...'", exception.getMessage());
     }
 }

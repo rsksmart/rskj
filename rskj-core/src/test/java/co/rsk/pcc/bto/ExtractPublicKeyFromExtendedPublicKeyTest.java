@@ -79,7 +79,7 @@ class ExtractPublicKeyFromExtendedPublicKeyTest {
             });
             Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assertions.assertTrue(e.getMessage().contains("Invalid extended public key"));
+            Assertions.assertEquals("Invalid extended public key 'this-is-not-an-xpub'", e.getMessage());
         }
     }
 
@@ -91,7 +91,7 @@ class ExtractPublicKeyFromExtendedPublicKeyTest {
             });
             Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assertions.assertTrue(e.getMessage().contains("Invalid extended public key"));
+            Assertions.assertEquals("Invalid extended public key 'tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77L...'", e.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ class ExtractPublicKeyFromExtendedPublicKeyTest {
             method.execute(null);
             Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assertions.assertTrue(e.getMessage().contains("Invalid extended public key"));
+            Assertions.assertEquals("Invalid extended public key 'null'", e.getMessage());
         }
     }
 

@@ -3,8 +3,9 @@ package co.rsk.peg.constants;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
     private BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
         feePerKbConstants = FeePerKbMainNetConstants.getInstance();
+        whitelistConstants = WhitelistMainNetConstants.getInstance();
         federationConstants = FederationMainNetConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 100;
@@ -31,15 +33,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
         minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(400_000);
-
-        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-            "041a2449e9d63409c5a8ea3a21c4109b1a6634ee88fd57176d45ea46a59713d5e0b688313cf252128a3e49a0b2effb4b413e5a2525a6fa5894d059f815c9d9efa6"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
-            lockWhitelistAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
-        );
 
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
             "0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378",
@@ -69,6 +62,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
+
+        blockWithTooMuchChainWorkHeight = 849_138;
     }
 
     public static BridgeMainNetConstants getInstance() {
