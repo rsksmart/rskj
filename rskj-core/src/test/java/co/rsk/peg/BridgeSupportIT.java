@@ -477,7 +477,7 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10, 0));
 
         federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
-            BitcoinTestUtils.createHash(),
+            BitcoinTestUtils.createHash(1),
             1,
             Coin.valueOf(12, 0),
             0,
@@ -564,7 +564,7 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
 
         federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
-            BitcoinTestUtils.createHash(),
+            BitcoinTestUtils.createHash(1),
             1,
             Coin.valueOf(1000000),
             0,
@@ -656,7 +656,7 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         for (int i = 0; i < 2000; i++) {
             federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activationsBeforeForks).add(new UTXO(
-                BitcoinTestUtils.createHash(),
+                BitcoinTestUtils.createHash(1),
                 1,
                 Coin.CENT,
                 0,
@@ -857,7 +857,7 @@ public class BridgeSupportIT {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
 
         UTXO utxo = new UTXO(
-            BitcoinTestUtils.createHash(),
+            BitcoinTestUtils.createHash(1),
             1,
             Coin.COIN.add(Coin.valueOf(100)),
             0,
@@ -2318,15 +2318,15 @@ public class BridgeSupportIT {
             assertArrayEquals(
                 members.get(i).getBtcPublicKey().getPubKey(),
                 bridgeSupport.getRetiringFederatorBtcPublicKey(i)
-            );
+                );
             assertArrayEquals(
                 members.get(i).getBtcPublicKey().getPubKey(),
                 bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.BTC)
-            );
+                );
             assertArrayEquals(
                 members.get(i).getRskPublicKey().getPubKey(true),
                 bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.RSK)
-            );
+);
             assertArrayEquals(
                 members.get(i).getMstPublicKey().getPubKey(true),
                 bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.MST)
@@ -2645,7 +2645,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorBtcPublicKey(0)
-        );
+            );
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC)
@@ -2695,7 +2695,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorBtcPublicKey(0)
-        );
+            );
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC)
@@ -2707,7 +2707,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST)
-        );
+);
 
         assertArrayEquals(
             Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
@@ -2716,7 +2716,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(1, KeyType.BTC)
-        );
+);
         assertArrayEquals(
             Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(1, KeyType.RSK)
@@ -4236,123 +4236,6 @@ public class BridgeSupportIT {
             .withFederationSupport(federationSupport)
             .withExecutionBlock(executionBlock)
             .build();
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeStorageProvider provider, Repository track) {
-        return getBridgeSupport(bridgeConstants, provider, track, mock(BtcBlockStoreWithCache.Factory.class));
-    }
-
-    private BridgeSupport getBridgeSupport(
-            BridgeStorageProvider provider,
-            Repository track,
-            BtcBlockStoreWithCache.Factory blockStoreFactory) {
-        return getBridgeSupport(bridgeConstants, provider, track, blockStoreFactory);
-    }
-
-    private BridgeSupport getBridgeSupport(
-            BridgeStorageProvider provider,
-            Repository track,
-            BtcBlockStoreWithCache.Factory blockStoreFactory,
-            ActivationConfig.ForBlock activations) {
-
-        return getBridgeSupport(
-                bridgeConstants,
-                provider,
-                track,
-                null,
-                null,
-                null,
-                blockStoreFactory,
-                activations
-        );
-    }
-
-    private BridgeSupport getBridgeSupport(
-            BridgeConstants constants,
-            BridgeStorageProvider provider,
-            Repository track,
-            BtcBlockStoreWithCache.Factory blockStoreFactory) {
-
-        return getBridgeSupport(
-                constants,
-                provider,
-                track,
-                mock(BridgeEventLogger.class),
-                null,
-                blockStoreFactory
-        );
-    }
-
-    private BridgeSupport getBridgeSupport(
-            BridgeConstants constants,
-            BridgeStorageProvider provider,
-            Repository track,
-            BridgeEventLogger eventLogger,
-            Block executionBlock,
-            BtcBlockStoreWithCache.Factory blockStoreFactory) {
-
-        return getBridgeSupport(
-                constants,
-                provider,
-                track,
-                eventLogger,
-                new BtcLockSenderProvider(),
-                executionBlock,
-                blockStoreFactory
-        );
-    }
-
-    private BridgeSupport getBridgeSupport(
-            BridgeConstants constants,
-            BridgeStorageProvider provider,
-            Repository track,
-            BridgeEventLogger eventLogger,
-            BtcLockSenderProvider btcLockSenderProvider,
-            Block executionBlock,
-            BtcBlockStoreWithCache.Factory blockStoreFactory) {
-
-        return getBridgeSupport(
-                constants,
-                provider,
-                track,
-                eventLogger,
-                btcLockSenderProvider,
-                executionBlock,
-                blockStoreFactory,
-                mock(ActivationConfig.ForBlock.class)
-        );
-    }
-
-    private BridgeSupport getBridgeSupport(
-            BridgeConstants constants,
-            BridgeStorageProvider provider,
-            Repository track,
-            BridgeEventLogger eventLogger,
-            BtcLockSenderProvider btcLockSenderProvider,
-            Block executionBlock,
-            BtcBlockStoreWithCache.Factory blockStoreFactory,
-            ActivationConfig.ForBlock activations) {
-
-        if (blockStoreFactory == null) {
-            blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        }
-
-        return new BridgeSupport(
-                constants,
-                provider,
-                eventLogger,
-                btcLockSenderProvider,
-                new PeginInstructionsProvider(),
-                track,
-                executionBlock,
-                new Context(constants.getBtcParams()),
-                new FederationSupport(constants, provider, executionBlock, activations),
-                feePerKbSupport,
-                whitelistSupport,
-                blockStoreFactory,
-                activations,
-                signatureCache
-        );
     }
 
     private BtcTransaction createTransaction() {

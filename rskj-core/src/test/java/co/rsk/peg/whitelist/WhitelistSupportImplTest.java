@@ -112,7 +112,7 @@ class WhitelistSupportImplTest {
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, disableBlockHeight);
 
-        inMemoryStorage.safeSaveToRepository(
+        inMemoryStorage.saveToRepository(
             LOCK_ONE_OFF.getKey(),
             pairValue,
             BridgeSerializationUtils::serializeOneOffLockWhitelist

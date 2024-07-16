@@ -7074,7 +7074,7 @@ class BridgeSupportTest {
             BridgeStorageProvider bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
+                bridgeMainnetConstants.getBtcParams(),
                 activationsPreRSKIP434
             );
             bridgeSupportPreRSKIP434 = bridgeSupportBuilder
@@ -7091,7 +7091,7 @@ class BridgeSupportTest {
             BridgeStorageProvider bridgeStorageProviderPostRSKIP434 = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                bridgeMainnetConstants,
+                bridgeMainnetConstants.getBtcParams(),
                 activationsPostRSKIP434
             );
             bridgeSupportPostRSKIP434 = bridgeSupportBuilder
@@ -7214,7 +7214,7 @@ class BridgeSupportTest {
             BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
+                bridgeConstants.getBtcParams(),
                 activations
             );
             BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -7249,7 +7249,7 @@ class BridgeSupportTest {
             BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
+                bridgeConstants.getBtcParams(),
                 activations
             );
             BridgeSupport bridgeSupport = bridgeSupportBuilder
