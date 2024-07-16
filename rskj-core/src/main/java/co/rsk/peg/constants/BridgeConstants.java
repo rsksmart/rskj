@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -46,12 +45,6 @@ public abstract class BridgeConstants {
     protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
-
-    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
-
-    protected Coin initialLockingCap;
-
-    protected int lockingCapIncrementsMultiplier;
 
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
@@ -106,12 +99,6 @@ public abstract class BridgeConstants {
     public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
-
-    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
-
-    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
-
-    public Coin getInitialLockingCap() { return initialLockingCap; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
