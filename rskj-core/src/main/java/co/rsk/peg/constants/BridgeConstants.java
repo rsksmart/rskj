@@ -31,10 +31,8 @@ public abstract class BridgeConstants {
     protected String btcParamsString;
 
     protected FeePerKbConstants feePerKbConstants;
-
-    protected FederationConstants federationConstants;
-
     protected WhitelistConstants whitelistConstants;
+    protected FederationConstants federationConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -50,12 +48,6 @@ public abstract class BridgeConstants {
     protected Coin minimumPegoutTxValue;
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
-
-    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
-
-    protected Coin initialLockingCap;
-
-    protected int lockingCapIncrementsMultiplier;
 
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
@@ -110,12 +102,6 @@ public abstract class BridgeConstants {
     public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
-
-    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
-
-    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
-
-    public Coin getInitialLockingCap() { return initialLockingCap; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
