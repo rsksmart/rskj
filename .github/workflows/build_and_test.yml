@@ -11,7 +11,7 @@ on:
       - "**"
 
 jobs:
-  build-rskj:
+  build:
     runs-on: ubuntu-latest
     container:
       image: openjdk:8-jdk
@@ -47,7 +47,6 @@ jobs:
       - name: Build
         run: |
           ./gradlew --no-daemon --stacktrace build -x test
-          ./gradlew --no-daemon jacocoTestReport
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@v4
@@ -55,7 +54,6 @@ jobs:
           name: build-files
           path: |
             rskj-core/build
-            rskj-core/build/reports/jacoco/test
 
   smell-test:
     needs: unit-tests
@@ -95,14 +93,19 @@ jobs:
           name: build-files
           path: |
             rskj-core/build
-            rskj-core/build/reports/jacoco/test
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+          path: |
+            rskj-core/build/test-results/
 
       - name: Download test reports
         uses: actions/download-artifact@v4
         with:
-          name: test-report
+          name: test-reports
           path: |
-            rskj-core/build/test-results/
             rskj-core/build/reports/
 
       - name: Run SonarQube analysis
@@ -114,6 +117,7 @@ jobs:
           GH_REF: ${{ github.ref }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          ls rskj-core/build/
           if [ "$GH_EVENT" = pull_request ]; then
             ./gradlew sonarqube --no-daemon -x build -x test \
               -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
@@ -122,20 +126,23 @@ jobs:
               -Dsonar.organization=rsksmart \
               -Dsonar.projectKey=rskj \
               -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.token="$SONAR_TOKEN" \
-              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
+              -Dsonar.junit.reportPaths=rskj-core/build/test-results/ \
+              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
+              -Dsonar.token="$SONAR_TOKEN"
           else
             ./gradlew sonarqube --no-daemon -x build -x test \
               -Dsonar.branch.name="$GH_REF" \
               -Dsonar.organization=rsksmart \
               -Dsonar.projectKey=rskj \
               -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.token="$SONAR_TOKEN" \
-              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml
+              -Dsonar.junit.reportPaths=rskj-core/build/test-results/ \
+              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
+              -Dsonar.token="$SONAR_TOKEN"
           fi
 
+
   mining-tests:
-    needs: build-rskj
+    needs: build
     runs-on: ubuntu-latest
     services:
       bitcoind1:
@@ -242,6 +249,7 @@ jobs:
           kill $rskpid
 
   unit-tests:
+    needs: build
     runs-on: ubuntu-latest
     container:
       image: openjdk:8-jdk
@@ -274,12 +282,18 @@ jobs:
         run: |
           ./gradlew --no-daemon --stacktrace test
 
+      - name: Persist test results for sonar
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            rskj-core/build/test-results/
+
       - name: Persist test reports for sonar
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          name: test-reports
           path: |
-            rskj-core/build/test-results/
             rskj-core/build/reports/
 
   integration-tests:
