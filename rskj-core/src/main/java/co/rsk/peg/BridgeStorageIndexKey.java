@@ -15,7 +15,6 @@ public enum BridgeStorageIndexKey {
     OLD_FEDERATION_KEY("oldFederation"),
     PENDING_FEDERATION_KEY("pendingFederation"),
     FEDERATION_ELECTION_KEY("federationElection"),
-    LOCKING_CAP_KEY("lockingCap"),
     RELEASE_REQUEST_QUEUE_WITH_TXHASH("releaseRequestQueueWithTxHash"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY("releaseTransactionSetWithTxHash"),
     RECEIVE_HEADERS_TIMESTAMP("receiveHeadersLastTimestamp"),
