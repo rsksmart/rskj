@@ -154,5 +154,8 @@ class NodeRunnerImplTest {
         }
     }
 
-
+    @Test
+    void processStateTest() {
+        assertDoesNotThrow(() -> runner.processState(ExecState.FINISHED));
+    }
 }

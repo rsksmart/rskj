@@ -60,6 +60,14 @@ public class NodeRunnerImpl implements NodeRunner {
         return state;
     }
 
+    public void processState(ExecState state) {
+        this.state = state;
+    }
+
+    public void processState2(ExecState state) {
+        this.state = state;
+    }
+
     /**
      * This method starts internal services.
      *
