@@ -1,10 +1,11 @@
 package co.rsk.peg.lockingcap;
 
 import co.rsk.bitcoinj.core.Coin;
+import java.util.Optional;
 
 public interface LockingCapStorageProvider {
 
-    Coin getLockingCap();
+    Optional<Coin> getLockingCap();
 
     void setLockingCap(Coin lockingCap);
 
