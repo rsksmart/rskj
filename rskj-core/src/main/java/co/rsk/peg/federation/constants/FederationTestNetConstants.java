@@ -19,12 +19,12 @@ public class FederationTestNetConstants extends FederationConstants {
     private FederationTestNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
-        genesisFederationPublicKeys = Stream.of(
+        genesisFederationPublicKeys = Collections.unmodifiableList(Stream.of(
             "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9",
             "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
             "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
             "034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T19:29:27.600Z").toInstant();
 
         // Passphrases are kept private
@@ -42,11 +42,11 @@ public class FederationTestNetConstants extends FederationConstants {
         fundsMigrationAgeSinceActivationEnd = 900L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 900L;
 
-        erpFedPubKeysList = Stream.of(
+        erpFedPubKeysList = Collections.unmodifiableList(Stream.of(
             "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
             "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f",
             "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
         // Multisig address created in bitcoind with the following private keys:
