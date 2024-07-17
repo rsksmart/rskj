@@ -42,11 +42,11 @@ public class FederationTestNetConstants extends FederationConstants {
         fundsMigrationAgeSinceActivationEnd = 900L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 900L;
 
-        erpFedPubKeysList = Collections.unmodifiableList(Stream.of(
+        erpFedPubKeysList = Stream.of(
             "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
             "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f",
             "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
         // Multisig address created in bitcoind with the following private keys:

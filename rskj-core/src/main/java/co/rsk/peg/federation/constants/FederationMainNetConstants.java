@@ -52,12 +52,12 @@ public class FederationMainNetConstants extends FederationConstants {
         fundsMigrationAgeSinceActivationEnd = 10585L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 172_800L; // 60 days, considering 1 block every 30 seconds
 
-        erpFedPubKeysList = Collections.unmodifiableList(Stream.of(
+        erpFedPubKeysList = Stream.of(
             "0257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d4",
             "03c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f9",
             "03cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b3",
             "02370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
