@@ -1334,7 +1334,7 @@ class BridgeSupportTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsMainnet)
+            .withFederationConstants(bridgeConstantsRegtest.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(executionBlock)
             .withActivations(activations)
@@ -1522,7 +1522,7 @@ class BridgeSupportTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsMainnet)
+            .withFederationConstants(bridgeConstantsRegtest.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(executionBlock)
             .withActivations(activations)
