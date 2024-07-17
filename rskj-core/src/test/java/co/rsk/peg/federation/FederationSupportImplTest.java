@@ -28,15 +28,21 @@ import static org.mockito.Mockito.*;
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.ABICallSpec;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -49,6 +55,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,6 +72,10 @@ class FederationSupportImplTest {
     private FederationStorageProvider storageProvider;
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
+    private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+    private static final FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+    private static final NetworkParameters networkParameters = federationConstants.getBtcParams();
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUp() {
@@ -73,6 +85,7 @@ class FederationSupportImplTest {
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
             .build();
+        signatureCache = mock(SignatureCache.class);
     }
 
     @Nested
@@ -2194,6 +2207,39 @@ class FederationSupportImplTest {
         verify(storageProvider).save(federationMainnetConstants.getBtcParams(), activations);
     }
 
+    @Nested
+    @Tag("vote federation change unauthorized")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class VoteFederationChangeUnauthorized {
+
+        BridgeEventLogger bridgeEventLogger;
+
+        @BeforeAll
+        void setUp() {
+            signatureCache = mock(SignatureCache.class);
+            bridgeEventLogger = mock(BridgeEventLogger.class);
+        }
+
+        @Test
+        void voteFederationChange_WithUnauthorizedCaller_returnsUnauthorizedResponseCode() {
+
+            // Arrange
+
+            Transaction tx = getTransactionFromCaller(FederationChangeCaller.UNAUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec("create", new byte[][]{});
+
+            // Act
+
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode(), result);
+
+        }
+
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
@@ -2205,4 +2251,11 @@ class FederationSupportImplTest {
             .map(FederationMember::getMstPublicKey)
             .collect(Collectors.toList());
     }
+
+    private Transaction getTransactionFromCaller(RskAddress authorizer) {
+        Transaction txFromAuthorizedCaller = mock(Transaction.class);
+        when(txFromAuthorizedCaller.getSender(signatureCache)).thenReturn(authorizer);
+        return txFromAuthorizedCaller;
+    }
+
 }
