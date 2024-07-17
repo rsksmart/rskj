@@ -117,7 +117,6 @@ jobs:
           GH_REF: ${{ github.ref }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ls rskj-core/build/
           if [ "$GH_EVENT" = pull_request ]; then
             ./gradlew sonarqube --no-daemon -x build -x test \
               -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
