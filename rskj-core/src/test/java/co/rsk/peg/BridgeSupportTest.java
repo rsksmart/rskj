@@ -497,6 +497,9 @@ class BridgeSupportTest {
             BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+            FederationSupport federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstantsMainnet)
+                .build();
 
             bridgeSupport = bridgeSupportBuilder
                 .withWhitelistSupport(whitelistSupport)
@@ -505,6 +508,7 @@ class BridgeSupportTest {
                 .withBridgeConstants(bridgeConstantsMainNet)
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withActivations(activations)
+                .withFederationSupport(federationSupport)
                 .build();
 
             // Set of variables to be used mocking
