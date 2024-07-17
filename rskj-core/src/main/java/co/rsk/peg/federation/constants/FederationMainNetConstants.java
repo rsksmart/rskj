@@ -19,7 +19,7 @@ public class FederationMainNetConstants extends FederationConstants {
     private FederationMainNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
-        genesisFederationPublicKeys = Collections.unmodifiableList(Stream.of(
+        genesisFederationPublicKeys = Stream.of(
             "03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2",
             "027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344",
             "0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70",
@@ -35,7 +35,7 @@ public class FederationMainNetConstants extends FederationConstants {
             "03f909ae15558c70cc751aff9b1f495199c325b13a9e5b934fd6299cd30ec50be8",
             "02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259",
             "03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
 
         List<ECKey> federationChangeAuthorizedKeys =  Collections.unmodifiableList(Stream.of(
