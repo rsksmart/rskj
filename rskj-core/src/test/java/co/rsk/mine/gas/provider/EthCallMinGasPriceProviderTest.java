@@ -1,14 +1,30 @@
-package co.rsk.mine.gas.provider.onchain;
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2024 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-import co.rsk.config.mining.OnChainMinGasPriceSystemConfig;
+package co.rsk.mine.gas.provider;
+
+import co.rsk.config.mining.EthCallMinGasPriceSystemConfig;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
-import co.rsk.mine.gas.provider.MinGasPriceProvider;
-import co.rsk.mine.gas.provider.MinGasPriceProviderType;
+import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.util.HexUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import co.rsk.rpc.modules.eth.EthModule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
@@ -20,11 +36,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class OnChainMinGasPriceProviderTest {
+class EthCallMinGasPriceProviderTest {
     private EthModule ethModule_mock;
     private MinGasPriceProvider fallback_mock;
-    private OnChainMinGasPriceSystemConfig onChainMinGasPriceSystemConfig_mock;
-    private OnChainMinGasPriceProvider onChainMinGasPriceProvider;
+    private EthCallMinGasPriceSystemConfig ethCallMinGasPriceSystemConfig_mock;
+    private EthCallMinGasPriceProvider ethCallMinGasPriceProvider;
     private StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig;
 
     @BeforeEach
@@ -37,20 +53,20 @@ class OnChainMinGasPriceProviderTest {
         long fallback_minGasPrice_fake = 1234567890L;
         when(fallback_mock.getMinGasPrice()).thenReturn(fallback_minGasPrice_fake);
 
-        onChainMinGasPriceSystemConfig_mock = mock(OnChainMinGasPriceSystemConfig.class);
+        ethCallMinGasPriceSystemConfig_mock = mock(EthCallMinGasPriceSystemConfig.class);
         String oracle_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
-        when(onChainMinGasPriceSystemConfig_mock.getAddress()).thenReturn(oracle_address);
+        when(ethCallMinGasPriceSystemConfig_mock.getAddress()).thenReturn(oracle_address);
         String from_address = "0xbffBD993FF1d229B0FfE55668F2009d20d4F7C5f";
-        when(onChainMinGasPriceSystemConfig_mock.getFrom()).thenReturn(from_address);
+        when(ethCallMinGasPriceSystemConfig_mock.getFrom()).thenReturn(from_address);
         String data = "0x";
-        when(onChainMinGasPriceSystemConfig_mock.getData()).thenReturn(data);
+        when(ethCallMinGasPriceSystemConfig_mock.getData()).thenReturn(data);
         
         stableMinGasPriceSystemConfig = mock(StableMinGasPriceSystemConfig.class);
-        when(stableMinGasPriceSystemConfig.getOnChainConfig()).thenReturn(onChainMinGasPriceSystemConfig_mock);
+        when(stableMinGasPriceSystemConfig.getEthCallConfig()).thenReturn(ethCallMinGasPriceSystemConfig_mock);
         when(stableMinGasPriceSystemConfig.getMinStableGasPrice()).thenReturn(fallback_minGasPrice_fake);
 
 
-        onChainMinGasPriceProvider = new OnChainMinGasPriceProvider(
+        ethCallMinGasPriceProvider = new EthCallMinGasPriceProvider(
                 fallback_mock,
                 stableMinGasPriceSystemConfig,
                 () -> ethModule_mock
@@ -69,13 +85,13 @@ class OnChainMinGasPriceProviderTest {
     @ValueSource(strings = {"0x123", "0xabc"})
     void constructorSetsFieldsCorrectly(String data_input) {
         MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
-        OnChainMinGasPriceSystemConfig config = stableMinGasPriceSystemConfig.getOnChainConfig();
+        EthCallMinGasPriceSystemConfig config = stableMinGasPriceSystemConfig.getEthCallConfig();
 
         when(config.getAddress()).thenReturn("0xaddress");
         when(config.getFrom()).thenReturn("0xfrom");
         when(config.getData()).thenReturn(data_input);
 
-        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
+        EthCallMinGasPriceProvider provider = new EthCallMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
 
         Assertions.assertEquals("0xaddress", provider.getToAddress());
     }
@@ -83,13 +99,13 @@ class OnChainMinGasPriceProviderTest {
     @Test
     void constructorSetsFieldsToNullWhenConfigReturnsNull() {
         MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
-        OnChainMinGasPriceSystemConfig config = stableMinGasPriceSystemConfig.getOnChainConfig();
+        EthCallMinGasPriceSystemConfig config = stableMinGasPriceSystemConfig.getEthCallConfig();
         when(config.getAddress()).thenReturn(null);
         when(config.getFrom()).thenReturn(null);
         when(config.getData()).thenReturn(null);
 
 
-        OnChainMinGasPriceProvider provider = new OnChainMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
+        EthCallMinGasPriceProvider provider = new EthCallMinGasPriceProvider(fallbackProvider, stableMinGasPriceSystemConfig, () -> ethModule_mock);
 
         Assertions.assertNull(provider.getToAddress());
         Assertions.assertNull(provider.getFromAddress());
@@ -101,10 +117,10 @@ class OnChainMinGasPriceProviderTest {
         String expectedPrice = "0x21";
         when(ethModule_mock.call(any(), any())).thenReturn(expectedPrice);
 
-        assertTrue(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
+        assertTrue(ethCallMinGasPriceProvider.getBtcExchangeRate().isPresent());
         Assertions.assertEquals(
                 HexUtils.jsonHexToLong(expectedPrice),
-                onChainMinGasPriceProvider.getBtcExchangeRate().get()
+                ethCallMinGasPriceProvider.getBtcExchangeRate().get()
         );
     }
 
@@ -112,20 +128,20 @@ class OnChainMinGasPriceProviderTest {
     @NullSource
     @ValueSource(strings = {"", "0x"})
     void getStableMinGasPrice_callsFallback_whenNoData(String data_input) {
-        when(onChainMinGasPriceSystemConfig_mock.getData()).thenReturn(data_input);
+        when(ethCallMinGasPriceSystemConfig_mock.getData()).thenReturn(data_input);
 
-        assertFalse(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
+        assertFalse(ethCallMinGasPriceProvider.getBtcExchangeRate().isPresent());
     }
 
 
     @Test
     void getStableMinGasPrice_callsFallback_whenEthModuleIsNull() {
-        assertFalse(onChainMinGasPriceProvider.getBtcExchangeRate().isPresent());
+        assertFalse(ethCallMinGasPriceProvider.getBtcExchangeRate().isPresent());
     }
 
     @Test
     void getType_returnsOnChain() {
-        Assertions.assertEquals(MinGasPriceProviderType.ON_CHAIN, onChainMinGasPriceProvider.getType());
+        Assertions.assertEquals(MinGasPriceProviderType.ETH_CALL, ethCallMinGasPriceProvider.getType());
     }
 
 }

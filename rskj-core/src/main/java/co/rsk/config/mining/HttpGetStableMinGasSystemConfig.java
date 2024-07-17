@@ -15,31 +15,35 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.config.mining;
 
-package co.rsk.mine.gas.provider;
+import com.typesafe.config.Config;
 
-import co.rsk.core.Coin;
+public class HttpGetStableMinGasSystemConfig {
+    private static final String URL_PROPERTY = "url";
+    private static final String JSON_PATH = "jsonPath";
+    private static final String TIMEOUT_PROPERTY = "timeout";
 
-public class FixedMinGasPriceProvider implements MinGasPriceProvider {
+    private final String url;
+    private final String jsonPath;
+    private final int timeout;
 
-    private final long minGasPrice;
-
-    public FixedMinGasPriceProvider(long minGasPrice) {
-        this.minGasPrice = minGasPrice;
+    public HttpGetStableMinGasSystemConfig(Config config) {
+        this.url = config.getString(URL_PROPERTY);
+        this.jsonPath = config.getString(JSON_PATH);
+        this.timeout = config.getInt(TIMEOUT_PROPERTY);
     }
 
-    @Override
-    public long getMinGasPrice() {
-        return minGasPrice;
+    public String getUrl() {
+        return url;
     }
 
-    @Override
-    public MinGasPriceProviderType getType() {
-        return MinGasPriceProviderType.FIXED;
+    public String getJsonPath() {
+        return jsonPath;
     }
 
-    @Override
-    public Coin getMinGasPriceAsCoin() {
-        return Coin.valueOf(minGasPrice);
+    public int getTimeout() {
+        return timeout;
     }
+
 }

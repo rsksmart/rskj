@@ -1,10 +1,29 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2024 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.mine.gas.provider;
 
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
-import co.rsk.mine.gas.provider.onchain.OnChainMinGasPriceProvider;
-import co.rsk.mine.gas.provider.web.WebMinGasPriceProvider;
+import co.rsk.rpc.modules.eth.EthModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.function.Supplier;
 
 
 public class MinGasPriceProviderFactory {
@@ -14,7 +33,7 @@ public class MinGasPriceProviderFactory {
     private MinGasPriceProviderFactory() {
     }
 
-    public static MinGasPriceProvider create(long fixedMinGasPrice, StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig, OnChainMinGasPriceProvider.GetContextCallback getContextCallback) {
+    public static MinGasPriceProvider create(long fixedMinGasPrice, StableMinGasPriceSystemConfig stableMinGasPriceSystemConfig, Supplier<EthModule> ethModuleSupplier) {
         FixedMinGasPriceProvider fixedMinGasPriceProvider = new FixedMinGasPriceProvider(fixedMinGasPrice);
 
         if (stableMinGasPriceSystemConfig == null) {
@@ -32,14 +51,15 @@ public class MinGasPriceProviderFactory {
         }
 
         switch (method) {
-            case WEB:
-                return new WebMinGasPriceProvider(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
-            case ON_CHAIN:
-                return new OnChainMinGasPriceProvider(fixedMinGasPriceProvider, stableMinGasPriceSystemConfig, getContextCallback);
+            case HTTP_GET:
+                return new HttpGetMinGasPriceProvider(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
+            case ETH_CALL:
+                return new EthCallMinGasPriceProvider(fixedMinGasPriceProvider, stableMinGasPriceSystemConfig, ethModuleSupplier);
+            case FIXED:
+                return fixedMinGasPriceProvider;
             default:
                 logger.debug("Could not find a valid implementation for the method {}. Returning fallback provider {}", method, fixedMinGasPriceProvider.getType().name());
                 return fixedMinGasPriceProvider;
         }
-
     }
 }

@@ -18,7 +18,6 @@
 package co.rsk.mine.gas.provider;
 
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
-import co.rsk.mine.gas.provider.web.WebMinGasPriceProvider;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Test;
@@ -28,14 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MinGasPriceProviderFactoryTest {
 
-
     @Test
     void createFixedMinGasPriceProvider() {
         Config testConfig = ConfigFactory.parseString(
                 "enabled=true\n" +
                         "refreshRate=10\n" +
                         "minStableGasPrice=100\n" +
-                        "method=FIXED"
+                        "source={ method=FIXED }"
         );
         StableMinGasPriceSystemConfig config = new StableMinGasPriceSystemConfig(testConfig);
 
@@ -57,36 +55,34 @@ class MinGasPriceProviderFactoryTest {
     @Test
     void createWebProviderMethod() {
         Config testConfig = ConfigFactory.parseString(
-                "enabled=true   \n" +
+                "enabled=true\n" +
                         "refreshRate=10\n" +
                         "minStableGasPrice=100\n" +
-                        "method=WEB\n" +
-                        "web.url=url\n" +
-                        "web.timeout=1000 \n" +
-                        "web.apiKey=1234\n" +
-                        "web.requestPath=/price"
+                        "source.method=HTTP_GET\n" +
+                        "source.params.url=url\n" +
+                        "source.params.timeout=1000\n" +
+                        "source.params.jsonPath=/price"
         );
 
         StableMinGasPriceSystemConfig disabledConfig = new StableMinGasPriceSystemConfig(testConfig);
 
         MinGasPriceProvider provider = MinGasPriceProviderFactory.create(100L, disabledConfig, () -> null);
 
-        assertTrue(provider instanceof WebMinGasPriceProvider);
+        assertTrue(provider instanceof HttpGetMinGasPriceProvider);
         assertEquals(100, provider.getMinGasPrice());
-        assertEquals(MinGasPriceProviderType.WEB, provider.getType());
+        assertEquals(MinGasPriceProviderType.HTTP_GET, provider.getType());
     }
 
     @Test
     void createWithDisabledConfigReturnFixed() {
         Config testConfig = ConfigFactory.parseString(
-                "enabled=false   \n" +
+                "enabled=false\n" +
                         "refreshRate=10\n" +
                         "minStableGasPrice=100\n" +
-                        "method=WEB\n" +
-                        "web.url=url\n" +
-                        "web.timeout=1000 \n" +
-                        "web.apiKey=1234\n" +
-                        "web.jsonPath=price"
+                        "source.method=HTTP_GET\n" +
+                        "source.params.url=url\n" +
+                        "source.params.timeout=1000 \n" +
+                        "source.params.jsonPath=price"
         );
 
         StableMinGasPriceSystemConfig disabledConfig = new StableMinGasPriceSystemConfig(testConfig);
@@ -97,6 +93,4 @@ class MinGasPriceProviderFactoryTest {
         assertEquals(100, provider.getMinGasPrice());
         assertEquals(MinGasPriceProviderType.FIXED, provider.getType());
     }
-
-
 }
