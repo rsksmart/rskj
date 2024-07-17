@@ -43,7 +43,6 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.*;
-import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
@@ -96,7 +95,8 @@ class BridgeSupportTest {
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstantsMainnet = bridgeMainNetConstants.getFederationConstants();
-    protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    private final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
     private FederationSupportBuilder federationSupportBuilder;
     private WhitelistSupport whitelistSupport;
@@ -1777,7 +1777,7 @@ class BridgeSupportTest {
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
-            btcRegTestParams
+            btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
@@ -1796,8 +1796,8 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
+        // Old federation will be in migration age at block 18500 since we are using mainnet constants
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
         Transaction tx = Transaction
             .builder()
             .nonce(NONCE)
@@ -1817,7 +1817,7 @@ class BridgeSupportTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
@@ -1852,7 +1852,7 @@ class BridgeSupportTest {
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
-            btcRegTestParams
+            btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
@@ -1872,8 +1872,8 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
+        // Old federation will be in migration age at block 18500 since we are using mainnet constants
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
         Transaction tx = Transaction
             .builder()
             .nonce(NONCE)
@@ -1894,7 +1894,7 @@ class BridgeSupportTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
@@ -1934,7 +1934,7 @@ class BridgeSupportTest {
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
-            btcRegTestParams
+            btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(
             newFederationArgs
@@ -1956,8 +1956,8 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        // Old federation will be in migration age at block 18500 since we are using mainnet constants
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
         Transaction tx = Transaction
             .builder()
             .nonce(NONCE)
@@ -1977,7 +1977,7 @@ class BridgeSupportTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
@@ -2012,7 +2012,7 @@ class BridgeSupportTest {
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
-            btcRegTestParams
+            btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
@@ -2032,8 +2032,8 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        // Old federation will be in migration age at block 18500 since we are using mainnet constants
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
         Transaction tx = Transaction
             .builder()
             .nonce(NONCE)
@@ -2053,7 +2053,7 @@ class BridgeSupportTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
@@ -2093,7 +2093,7 @@ class BridgeSupportTest {
             FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
-            btcRegTestParams
+            btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
         
@@ -2113,8 +2113,8 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        // Old federation will be in migration age at block 18500 since we are using mainnet constants
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
         Transaction tx = Transaction
             .builder()
             .nonce(NONCE)
@@ -2134,7 +2134,7 @@ class BridgeSupportTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
@@ -2168,7 +2168,7 @@ class BridgeSupportTest {
         FederationArgs newFederationArgs = new FederationArgs(FederationTestUtils.getFederationMembers(1),
             Instant.EPOCH,
             5L,
-            btcRegTestParams
+            btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
 
@@ -2189,8 +2189,8 @@ class BridgeSupportTest {
             .thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        // Old federation will be in migration age at block 18500 since we are using mainnet constants
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
         Transaction tx = Transaction
             .builder()
             .nonce(NONCE)
@@ -2210,7 +2210,7 @@ class BridgeSupportTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
+            .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
             .withExecutionBlock(rskCurrentBlock)
@@ -3216,6 +3216,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         byte[] bits = new byte[1];
@@ -3423,6 +3424,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         byte[] bits = new byte[1];
@@ -3606,6 +3608,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         byte[] bits = new byte[1];
@@ -4329,6 +4332,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
@@ -4709,6 +4713,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
@@ -4942,6 +4947,7 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         // Act
@@ -7461,7 +7467,7 @@ class BridgeSupportTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsMainnet)
+            .withFederationConstants(bridgeConstantsRegtest.getFederationConstants())
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(block)
             .withActivations(activations)
