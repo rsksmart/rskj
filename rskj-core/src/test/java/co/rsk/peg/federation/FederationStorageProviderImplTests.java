@@ -850,7 +850,7 @@ class FederationStorageProviderImplTests {
 
         // Act
 
-        federationStorageProvider.save(networkParameters, orchidActivation);
+        federationStorageProvider.save(networkParameters, orchidActivations);
 
         // Assert
 
