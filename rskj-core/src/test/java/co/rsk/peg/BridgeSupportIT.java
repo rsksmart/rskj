@@ -1947,6 +1947,7 @@ public class BridgeSupportIT {
             .withExecutionBlock(executionBlock)
             .withActivations(activations)
             .withFederationSupport(federationSupport)
+            .withWhitelistSupport(whitelistSupport)
             .build();
 
         byte[] bits = new byte[1];

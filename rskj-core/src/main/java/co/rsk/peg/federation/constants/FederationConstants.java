@@ -3,6 +3,7 @@ package co.rsk.peg.federation.constants;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.util.ArrayList;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -29,7 +30,7 @@ public class FederationConstants {
     public NetworkParameters getBtcParams() { return btcParams; }
 
     public List<BtcECKey> getGenesisFederationPublicKeys() {
-        return genesisFederationPublicKeys;
+        return new ArrayList<>(genesisFederationPublicKeys);
     }
 
     public Instant getGenesisFederationCreationTime() {
@@ -59,7 +60,7 @@ public class FederationConstants {
     }
 
     public List<BtcECKey> getErpFedPubKeysList() {
-        return erpFedPubKeysList;
+        return new ArrayList<>(erpFedPubKeysList);
     }
 
     public String getOldFederationAddress() {
