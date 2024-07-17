@@ -61,8 +61,6 @@ public class BridgeStorageProvider {
     private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
 
-    private Coin lockingCap;
-
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
