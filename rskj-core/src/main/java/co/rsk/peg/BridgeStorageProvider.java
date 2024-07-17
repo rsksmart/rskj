@@ -249,26 +249,6 @@ public class BridgeStorageProvider {
         safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
-    public void saveLockingCap() {
-        if (activations.isActive(RSKIP134)) {
-            safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
-        }
-    }
-
-    public void setLockingCap(Coin lockingCap) {
-        this.lockingCap = lockingCap;
-    }
-
-    public Coin getLockingCap() {
-        if (activations.isActive(RSKIP134)) {
-            if (this.lockingCap == null) {
-                this.lockingCap = safeGetFromRepository(LOCKING_CAP_KEY, BridgeSerializationUtils::deserializeCoin);
-            }
-            return this.lockingCap;
-        }
-        return null;
-    }
-
     public CoinbaseInformation getCoinbaseInformation(Sha256Hash blockHash) {
         if (!activations.isActive(RSKIP143)) {
             return null;
@@ -547,8 +527,6 @@ public class BridgeStorageProvider {
         saveReleaseRequestQueue();
         savePegoutsWaitingForConfirmations();
         savePegoutsWaitingForSignatures();
-
-        saveLockingCap();
 
         saveHeightBtcTxHashAlreadyProcessed();
 
