@@ -12,18 +12,14 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 public class LockingCapStorageProviderImpl implements LockingCapStorageProvider {
 
     private Coin lockingCap;
-    private final ActivationConfig.ForBlock activations;
     private final StorageAccessor bridgeStorageAccessor;
 
-    public LockingCapStorageProviderImpl(
-        ActivationConfig.ForBlock activations,
-        StorageAccessor bridgeStorageAccessor) {
-        this.activations = activations;
+    public LockingCapStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
     }
 
     @Override
-    public Optional<Coin> getLockingCap() {
+    public Optional<Coin> getLockingCap(ActivationConfig.ForBlock activations) {
         if (activations.isActive(RSKIP134)) {
             if (lockingCap == null) {
                 lockingCap = initializeLockingCap();
@@ -43,9 +39,13 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
     }
 
     @Override
-    public void save() {
+    public void save(ActivationConfig.ForBlock activations) {
         if (activations.isActive(RSKIP134)) {
-            bridgeStorageAccessor.saveToRepository(LOCKING_CAP.getKey(), getLockingCap().get(), BridgeSerializationUtils::serializeCoin);
+            bridgeStorageAccessor.saveToRepository(
+                LOCKING_CAP.getKey(),
+                getLockingCap(activations).get(),
+                BridgeSerializationUtils::serializeCoin
+            );
         }
     }
 }
