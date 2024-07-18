@@ -107,6 +107,24 @@ class FederationConstantsTest {
     }
 
     @ParameterizedTest
+    @MethodSource("validationPeriodDurationArgs")
+    void getValidationPeriodDuration(FederationConstants constants, long expectedDuration) {
+        assertEquals(expectedDuration, constants.getValidationPeriodDuration());
+    }
+
+    private static Stream<Arguments> validationPeriodDurationArgs() {
+        long validationPeriodDurationMainnet = 16000L;
+        long validationPeriodDurationTestnet = 80L;
+        long validationPeriodDurationRegtest = 15L;
+
+        return Stream.of(
+            Arguments.of(mainnet, validationPeriodDurationMainnet),
+            Arguments.of(testnet, validationPeriodDurationTestnet),
+            Arguments.of(regtest, validationPeriodDurationRegtest)
+        );
+    }
+
+    @ParameterizedTest
     @MethodSource("fedActivationAgeAndActivationArgs")
     void getFederationActivationAge(FederationConstants constants, ActivationConfig.ForBlock activations, long expectedActivationAge) {
         assertEquals(expectedActivationAge, constants.getFederationActivationAge(activations));
