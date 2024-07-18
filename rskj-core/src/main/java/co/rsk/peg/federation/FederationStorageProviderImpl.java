@@ -40,7 +40,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
 
     private Script lastRetiredFederationP2SHScript;
-    private Sha256Hash validationFundTxHashUnsigned;
+    private Sha256Hash svpFundTxHashUnsigned;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
