@@ -217,12 +217,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public void setProposedFederation(Federation proposedFederation) {
-        this.proposedFederation = proposedFederation;
-        isProposedFederationSet = true;
-    }
-
-    @Override
     public Optional<Federation> getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
         if (!activations.isActive(RSKIP419)) {
             return Optional.empty();
@@ -255,6 +249,12 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         );
 
         return Optional.ofNullable(proposedFederation);
+    }
+
+    @Override
+    public void setProposedFederation(Federation proposedFederation) {
+        this.proposedFederation = proposedFederation;
+        isProposedFederationSet = true;
     }
 
     @Override
