@@ -2363,6 +2363,36 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_addFederatorPublicKeyWithLessThanMofNVotes_returnsPendingFederationSizeZeroResponseCode() {
+
+            // Arrange
+
+            BtcECKey expectedBtcECKey = new BtcECKey();
+
+            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+
+            // Voting with  m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec("add", new byte[][]{expectedBtcECKey.getPubKey()});
+
+            // Act
+
+            // Voting less than m of n authorizers
+            int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertThat(federationSupport.getPendingFederationSize(), is(0));
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
