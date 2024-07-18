@@ -18,6 +18,7 @@ public class FederationConstants {
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
     protected String oldFederationAddress;
+    protected long validationPeriodDuration;
     protected long federationActivationAge;
     protected long federationActivationAgeLegacy;
     protected long fundsMigrationAgeSinceActivationBegin;
@@ -36,6 +37,8 @@ public class FederationConstants {
     public Instant getGenesisFederationCreationTime() {
         return genesisFederationCreationTime;
     }
+
+    public long getValidationPeriodDuration() { return validationPeriodDuration; }
 
     public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
         return activations.isActive(ConsensusRule.RSKIP383) ? federationActivationAge  : federationActivationAgeLegacy;
