@@ -41,10 +41,10 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
     public EthCallMinGasPriceProvider(MinGasPriceProvider fallBackProvider, StableMinGasPriceSystemConfig config, Supplier<EthModule> ethModuleSupplier) {
         super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
         this.ethModuleSupplier = ethModuleSupplier;
-        EthCallMinGasPriceSystemConfig oConfig = config.getEthCallConfig();
-        this.toAddress = oConfig.getAddress();
-        this.fromAddress = oConfig.getFrom();
-        this.data = oConfig.getData();
+        EthCallMinGasPriceSystemConfig ethCallConfig = config.getEthCallConfig();
+        this.toAddress = ethCallConfig.getAddress();
+        this.fromAddress = ethCallConfig.getFrom();
+        this.data = ethCallConfig.getData();
     }
 
     @Override

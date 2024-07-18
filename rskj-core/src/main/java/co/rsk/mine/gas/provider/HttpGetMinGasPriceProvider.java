@@ -38,23 +38,17 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
     private final ObjectMapper objectMapper;
 
     public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider) {
-        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
-        HttpGetStableMinGasSystemConfig httpGetConfig = config.getHttpGetConfig();
-        url = httpGetConfig.getUrl();
-        jsonPath = JsonPointer.valueOf(httpGetConfig.getJsonPath());
-        timeout = httpGetConfig.getTimeout();
-        httpClient = new SimpleHttpClient(httpGetConfig.getTimeout());
-        objectMapper = new ObjectMapper();
+        this(config, fallBackProvider, new SimpleHttpClient(config.getHttpGetConfig().getTimeout()));
     }
 
     public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider, SimpleHttpClient httpClient) {
         super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
-        HttpGetStableMinGasSystemConfig webConfig = config.getHttpGetConfig();
-        url = webConfig.getUrl();
-        jsonPath = JsonPointer.valueOf(webConfig.getJsonPath());
-        timeout = webConfig.getTimeout();
+        HttpGetStableMinGasSystemConfig httpGetConfig = config.getHttpGetConfig();
+        this.url = httpGetConfig.getUrl();
+        this.jsonPath = JsonPointer.valueOf(httpGetConfig.getJsonPath());
+        this.timeout = httpGetConfig.getTimeout();
         this.httpClient = httpClient;
-        objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
