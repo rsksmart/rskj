@@ -12,6 +12,7 @@ public enum FederationStorageIndexKey {
     NEW_FEDERATION_KEY("newFederation"),
     OLD_FEDERATION_KEY("oldFederation"),
     PENDING_FEDERATION_KEY("pendingFederation"),
+    PROPOSED_FEDERATION("proposedFederation"),
 
     FEDERATION_ELECTION_KEY("federationElection"),
 
@@ -23,7 +24,8 @@ public enum FederationStorageIndexKey {
     // Format version keys
     NEW_FEDERATION_FORMAT_VERSION("newFederationFormatVersion"),
     OLD_FEDERATION_FORMAT_VERSION("oldFederationFormatVersion"),
-    PENDING_FEDERATION_FORMAT_VERSION("pendingFederationFormatVersion")
+    PENDING_FEDERATION_FORMAT_VERSION("pendingFederationFormatVersion"),
+    PROPOSED_FEDERATION_FORMAT_VERSION("proposedFederationFormatVersion")
     ;
 
     private final String key;
