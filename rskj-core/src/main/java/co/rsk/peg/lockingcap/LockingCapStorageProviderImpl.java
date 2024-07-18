@@ -22,15 +22,15 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
     public Optional<Coin> getLockingCap(ActivationConfig.ForBlock activations) {
         if (activations.isActive(RSKIP134)) {
             if (lockingCap == null) {
-                lockingCap = initializeLockingCap();
+                initializeLockingCap();
             }
             return Optional.of(lockingCap);
         }
         return Optional.empty();
     }
 
-    private synchronized Coin initializeLockingCap() {
-        return bridgeStorageAccessor.getFromRepository(LOCKING_CAP.getKey(), BridgeSerializationUtils::deserializeCoin);
+    private synchronized void initializeLockingCap() {
+        lockingCap = bridgeStorageAccessor.getFromRepository(LOCKING_CAP.getKey(), BridgeSerializationUtils::deserializeCoin);
     }
 
     @Override
@@ -40,12 +40,15 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
 
     @Override
     public void save(ActivationConfig.ForBlock activations) {
-        if (activations.isActive(RSKIP134)) {
-            bridgeStorageAccessor.saveToRepository(
-                LOCKING_CAP.getKey(),
-                getLockingCap(activations).get(),
-                BridgeSerializationUtils::serializeCoin
-            );
+        if (!activations.isActive(RSKIP134)) {
+            return;
         }
+
+        Coin currentLockingCap = getLockingCap(activations).orElse(null);
+        bridgeStorageAccessor.saveToRepository(
+            LOCKING_CAP.getKey(),
+            currentLockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
     }
 }
