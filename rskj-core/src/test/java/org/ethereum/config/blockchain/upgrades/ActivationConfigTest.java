@@ -121,8 +121,8 @@ class ActivationConfigTest {
             "    rskip412: arrowhead600",
             "    rskip415: arrowhead600",
             "    rskip417: arrowhead600",
-            "    rskip434: arrowhead631",
             "    rskip419: lovell700",
+            "    rskip434: arrowhead631",
             "    rskip428: lovell700",
             "}"
     ));
