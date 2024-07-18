@@ -20,6 +20,7 @@ public enum FederationStorageIndexKey {
     NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY("nextFedCreationBlockHeight"),
 
     LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY("lastRetiredFedP2SHScript"),
+    SVP_FUND_TX_HASH_UNSIGNED_KEY("svpFundTxHashUnsigned"),
 
     // Format version keys
     NEW_FEDERATION_FORMAT_VERSION("newFederationFormatVersion"),
