@@ -54,6 +54,13 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.ABICallSpec;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 
 class FederationSupportImplTest {
 
@@ -64,6 +71,8 @@ class FederationSupportImplTest {
     private FederationStorageProvider storageProvider;
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
+    private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUp() {
@@ -2194,6 +2203,39 @@ class FederationSupportImplTest {
         verify(storageProvider).save(federationMainnetConstants.getBtcParams(), activations);
     }
 
+    @Nested
+    @Tag("vote federation change")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class VoteFederationChangeTest {
+
+        BridgeEventLogger bridgeEventLogger;
+
+        @BeforeAll
+        void setUp() {
+            signatureCache = mock(SignatureCache.class);
+            bridgeEventLogger = mock(BridgeEventLogger.class);
+        }
+
+        @Test
+        void voteFederationChange_WithUnauthorizedCaller_returnsUnauthorizedResponseCode() {
+
+            // Arrange
+
+            Transaction tx = getTransactionFromCaller(FederationChangeCaller.UNAUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec("create", new byte[][]{});
+
+            // Act
+
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode(), result);
+
+        }
+
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
@@ -2205,4 +2247,11 @@ class FederationSupportImplTest {
             .map(FederationMember::getMstPublicKey)
             .collect(Collectors.toList());
     }
+
+    private Transaction getTransactionFromCaller(RskAddress authorizer) {
+        Transaction txFromAuthorizedCaller = mock(Transaction.class);
+        when(txFromAuthorizedCaller.getSender(signatureCache)).thenReturn(authorizer);
+        return txFromAuthorizedCaller;
+    }
+
 }
