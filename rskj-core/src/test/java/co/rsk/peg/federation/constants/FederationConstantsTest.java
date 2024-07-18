@@ -113,14 +113,10 @@ class FederationConstantsTest {
     }
 
     private static Stream<Arguments> validationPeriodDurationArgs() {
-        long validationPeriodDurationMainnet = 16000L;
-        long validationPeriodDurationTestnet = 80L;
-        long validationPeriodDurationRegtest = 15L;
-
         return Stream.of(
-            Arguments.of(mainnet, validationPeriodDurationMainnet),
-            Arguments.of(testnet, validationPeriodDurationTestnet),
-            Arguments.of(regtest, validationPeriodDurationRegtest)
+            Arguments.of(mainnet, 16000L),
+            Arguments.of(testnet, 80L),
+            Arguments.of(regtest, 15L)
         );
     }
 
