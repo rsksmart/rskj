@@ -19,6 +19,7 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.core.types.bytes.Bytes;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -30,7 +31,6 @@ import io.netty.handler.logging.LoggingHandler;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ public class PeerServerImpl implements PeerServer {
             peerServiceExecutor.execute(() -> start(config.getBindAddress(), config.getPeerPort()));
         }
 
-        logger.info("RskJ node started: enode://{}@{}:{}" , ByteUtil.toHexString(config.nodeId()), config.getPublicIp(), config.getPeerPort());
+        logger.info("RskJ node started: enode://{}@{}:{}" , Bytes.of(config.nodeId()), config.getPublicIp(), config.getPeerPort());
     }
 
     @Override
@@ -109,8 +109,8 @@ public class PeerServerImpl implements PeerServer {
             b.childHandler(ethereumChannelInitializer);
 
             // Start the client.
-            logger.info("Listening for incoming connections, hosts: {}, port: [{}] ", host, port);
-            logger.info("NodeId: [{}] ", ByteUtil.toHexString(config.nodeId()));
+            logger.info("Listening for incoming connections, host: {}, port: [{}] ", host, port);
+            logger.info("NodeId: [{}] ", Bytes.of(config.nodeId()));
 
             ChannelFuture f = b.bind(host, port).sync();
 

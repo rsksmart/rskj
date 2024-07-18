@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.core.VarInt;
+import co.rsk.core.types.bytes.Bytes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -11,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.spongycastle.util.encoders.Hex;
 
 public final class UtxoUtils {
 
@@ -40,7 +40,7 @@ public final class UtxoUtils {
             } catch (Exception ex) {
                 throw new InvalidOutpointValueException(
                     String.format("Invalid value with invalid VarInt format: %s",
-                        Hex.toHexString(encodedOutpointValues).toUpperCase()
+                        Bytes.toPrintableString(encodedOutpointValues).toUpperCase()
                     ),
                     ex
                 );

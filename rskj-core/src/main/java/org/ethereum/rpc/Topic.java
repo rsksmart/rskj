@@ -18,11 +18,10 @@
 
 package org.ethereum.rpc;
 
-import java.util.Arrays;
-
-import org.ethereum.util.ByteUtil;
-
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.util.HexUtils;
+
+import java.util.Arrays;
 
 /**
  * Created by ajlopez on 18/01/2018.
@@ -79,7 +78,7 @@ public final class Topic {
 
     @Override
     public String toString() {
-        return ByteUtil.toHexString(bytes);
+        return Bytes.toPrintableString(bytes);
     }
 
     public String toJsonString() {

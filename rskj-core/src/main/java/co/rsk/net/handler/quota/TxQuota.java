@@ -81,11 +81,15 @@ public class TxQuota {
 
         if (this.availableVirtualGas < virtualGasToConsume) {
             String acceptanceNote = forcingAcceptance ? "Forcing tx acceptance" : "NOT enough virtualGas";
-            logger.warn("{} for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", acceptanceNote, blockNumber, sender, tx, this.availableVirtualGas, virtualGasToConsume);
+            if (logger.isWarnEnabled()) {
+                logger.warn("{} for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", acceptanceNote, blockNumber, sender, tx.getHash(), this.availableVirtualGas, virtualGasToConsume);
+            }
             return false;
         }
 
-        logger.trace("Enough virtualGas for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", blockNumber, sender, tx, this.availableVirtualGas, virtualGasToConsume);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Enough virtualGas for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", blockNumber, sender, tx.getHash(), this.availableVirtualGas, virtualGasToConsume);
+        }
         this.availableVirtualGas -= virtualGasToConsume;
         return true;
     }

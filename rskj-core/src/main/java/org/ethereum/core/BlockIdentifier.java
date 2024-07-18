@@ -18,7 +18,7 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import org.ethereum.util.ByteUtil;
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -74,7 +74,7 @@ public class BlockIdentifier {
     @Override
     public String toString() {
         return "BlockIdentifier {" +
-                "hash=" + ByteUtil.toHexString(hash) +
+                "hash=" + Bytes.of(hash) +
                 ", number=" + number +
                 '}';
     }

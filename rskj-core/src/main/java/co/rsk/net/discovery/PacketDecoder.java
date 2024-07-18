@@ -19,13 +19,13 @@
 package co.rsk.net.discovery;
 
 
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.net.discovery.message.MessageDecoder;
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class PacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
             PeerDiscoveryMessage msg = MessageDecoder.decode(encoded);
             return new DiscoveryEvent(msg, sender);
         } catch (Exception e) {
-            logger.error("Exception processing inbound message from {} : {}", ctx.channel().remoteAddress(), ByteUtil.toHexString(encoded), e);
+            logger.error("Exception processing inbound message from {} : {}", ctx.channel().remoteAddress(), Bytes.of(encoded), e);
             throw e;
         }
     }
