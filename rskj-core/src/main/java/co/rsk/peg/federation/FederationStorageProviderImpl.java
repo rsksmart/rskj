@@ -207,6 +207,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setProposedFederation(Federation proposedFederation) {
+        this.proposedFederation = proposedFederation;
+    }
+
+    @Override
     public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
         if (federationElection != null) {
             return federationElection;
@@ -365,6 +370,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         bridgeStorageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
+    }
+
+    private void saveProposedFederation(Federation proposedFederation) {
+        saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion());
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_KEY.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     @Nullable
