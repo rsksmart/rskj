@@ -45,6 +45,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -116,6 +117,7 @@ public class BridgeSupport {
     private final FeePerKbSupport feePerKbSupport;
     private final WhitelistSupport whitelistSupport;
     private final FederationSupport federationSupport;
+    private final LockingCapSupport lockingCapSupport;
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
@@ -138,6 +140,7 @@ public class BridgeSupport {
         FeePerKbSupport feePerKbSupport,
         WhitelistSupport whitelistSupport,
         FederationSupport federationSupport,
+        LockingCapSupport lockingCapSupport,
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
@@ -152,6 +155,7 @@ public class BridgeSupport {
         this.feePerKbSupport = feePerKbSupport;
         this.whitelistSupport = whitelistSupport;
         this.federationSupport = federationSupport;
+        this.lockingCapSupport = lockingCapSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -183,6 +187,7 @@ public class BridgeSupport {
         feePerKbSupport.save();
         whitelistSupport.save();
         federationSupport.save();
+        // TODO: save lockingCapSupport.save();
     }
 
     /**
