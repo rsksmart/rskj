@@ -36,14 +36,9 @@ class StableMinGasPriceSystemConfigTest {
                 "enabled=true\n" +
                         "refreshRate=10\n" +
                         "minStableGasPrice=100\n" +
-                        "method=FIXED"
+                        "source={ method=FIXED }"
         );
         config = new StableMinGasPriceSystemConfig(testConfig);
-    }
-
-    @Test
-    void testIsValid() {
-        assertTrue(config.isValid());
     }
 
     @Test
@@ -72,14 +67,13 @@ class StableMinGasPriceSystemConfigTest {
                 "enabled=true\n" +
                         "refreshRate=10\n" +
                         "minStableGasPrice=100\n" +
-                        "method=INVALID"
+                        "source={ method=INVALID }"
         );
         assertThrows(
                 ConfigException.BadValue.class,
                 () -> new StableMinGasPriceSystemConfig(testConfig),
                 "Expected to throw Config exception, but it didn't"
         );
-
     }
 
     @Test

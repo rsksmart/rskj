@@ -24,17 +24,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class WebStableMinGasSystemConfigTest {
-    private WebStableMinGasSystemConfig config;
+class HttpGetStableMinGasSystemConfigTest {
+    private HttpGetStableMinGasSystemConfig config;
 
     @BeforeEach
     void setUp() {
         Config testConfig = ConfigFactory.parseString(
                 "url=\"http://test.url\"\n" +
-                        "requestPath=testPath\n" +
+                        "jsonPath=testPath\n" +
                         "timeout=1000\n"
         );
-        config = new WebStableMinGasSystemConfig(testConfig);
+        config = new HttpGetStableMinGasSystemConfig(testConfig);
     }
 
     @Test
@@ -44,7 +44,7 @@ class WebStableMinGasSystemConfigTest {
 
     @Test
     void testRequestPath() {
-        assertEquals("testPath", config.getRequestPath());
+        assertEquals("testPath", config.getJsonPath());
     }
 
     @Test

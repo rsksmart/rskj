@@ -22,10 +22,12 @@ import com.typesafe.config.Config;
 
 public class StableMinGasPriceSystemConfig {
     public static final String STABLE_GAS_PRICE_CONFIG_PATH_PROPERTY = "miner.stableGasPrice";
+
     private static final String ENABLED_PROPERTY = "enabled";
     private static final String REFRESH_RATE_PROPERTY = "refreshRate";
     private static final String MIN_STABLE_GAS_PRICE_PROPERTY = "minStableGasPrice";
-    private static final String METHOD_PROPERTY = "method";
+    private static final String METHOD_PROPERTY = "source.method";
+    private static final String PARAMS_PROPERTY = "source.params";
 
     private final Integer refreshRate;
     private final Long minStableGasPrice;
@@ -34,15 +36,11 @@ public class StableMinGasPriceSystemConfig {
     private final Config config;
 
     public StableMinGasPriceSystemConfig(Config config) {
-        enabled = config.getBoolean(ENABLED_PROPERTY);
-        refreshRate = config.getInt(REFRESH_RATE_PROPERTY);
-        minStableGasPrice = config.getLong(MIN_STABLE_GAS_PRICE_PROPERTY);
-        method = config.getEnum(MinGasPriceProviderType.class, METHOD_PROPERTY);
+        this.enabled = config.hasPath(ENABLED_PROPERTY) && config.getBoolean(ENABLED_PROPERTY);
+        this.refreshRate = this.enabled && config.hasPath(REFRESH_RATE_PROPERTY) ? config.getInt(REFRESH_RATE_PROPERTY) : 0;
+        this.minStableGasPrice = this.enabled && config.hasPath(MIN_STABLE_GAS_PRICE_PROPERTY) ? config.getLong(MIN_STABLE_GAS_PRICE_PROPERTY) : 0;
+        this.method = this.enabled ? config.getEnum(MinGasPriceProviderType.class, METHOD_PROPERTY) : MinGasPriceProviderType.FIXED;
         this.config = config;
-    }
-
-    public boolean isValid() {
-        return true;
     }
 
     public int getRefreshRate() {
@@ -57,15 +55,13 @@ public class StableMinGasPriceSystemConfig {
         return enabled;
     }
 
-    public WebStableMinGasSystemConfig getWebConfig() {
-        return new WebStableMinGasSystemConfig(config.getConfig(WebStableMinGasSystemConfig.WEB_STABLE_GAS_PRICE_CONFIG_PATH));
+    public HttpGetStableMinGasSystemConfig getHttpGetConfig() {
+        return new HttpGetStableMinGasSystemConfig(config.getConfig(PARAMS_PROPERTY));
     }
 
-    public OnChainMinGasPriceSystemConfig getOnChainConfig() {
-        return new OnChainMinGasPriceSystemConfig(config.getConfig(OnChainMinGasPriceSystemConfig.ONCHAIN_STABLE_GAS_PRICE_CONFIG_PATH));
+    public EthCallMinGasPriceSystemConfig getEthCallConfig() {
+        return new EthCallMinGasPriceSystemConfig(config.getConfig(PARAMS_PROPERTY));
     }
-
-
 
     public MinGasPriceProviderType getMethod() {
         return method;

@@ -15,13 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.mine.gas.provider.web;
+package co.rsk.mine.gas.provider;
 
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
-import co.rsk.config.mining.WebStableMinGasSystemConfig;
-import co.rsk.mine.gas.provider.MinGasPriceProvider;
-import co.rsk.mine.gas.provider.MinGasPriceProviderType;
-import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
+import co.rsk.config.mining.HttpGetStableMinGasSystemConfig;
 import co.rsk.net.http.SimpleHttpClient;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
+public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("GasPriceProvider");
     private final String url;
     private final JsonPointer jsonPath;
@@ -40,25 +37,18 @@ public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
     private final SimpleHttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-
-    public WebMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider) {
-        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
-        WebStableMinGasSystemConfig webConfig = config.getWebConfig();
-        url = webConfig.getUrl();
-        jsonPath = JsonPointer.valueOf(webConfig.getRequestPath());
-        timeout = webConfig.getTimeout();
-        httpClient = new SimpleHttpClient(webConfig.getTimeout());
-        objectMapper = new ObjectMapper();
+    public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider) {
+        this(config, fallBackProvider, new SimpleHttpClient(config.getHttpGetConfig().getTimeout()));
     }
 
-    public WebMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider, SimpleHttpClient httpClient) {
+    public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider, SimpleHttpClient httpClient) {
         super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
-        WebStableMinGasSystemConfig webConfig = config.getWebConfig();
-        url = webConfig.getUrl();
-        jsonPath = JsonPointer.valueOf(webConfig.getRequestPath());
-        timeout = webConfig.getTimeout();
+        HttpGetStableMinGasSystemConfig httpGetConfig = config.getHttpGetConfig();
+        this.url = httpGetConfig.getUrl();
+        this.jsonPath = JsonPointer.valueOf(httpGetConfig.getJsonPath());
+        this.timeout = httpGetConfig.getTimeout();
         this.httpClient = httpClient;
-        objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -68,7 +58,6 @@ public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
             Long price = parsePrice(response);
             return Optional.ofNullable(price);
         }
-        logger.error("Error getting min gas price from web provider, empty response.");
         return Optional.empty();
     }
 
@@ -87,9 +76,7 @@ public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
 
     private String getResponseFromWeb() {
         try {
-            String response = httpClient.doGet(url);
-            logger.debug("Response from web: {}", response);
-            return response;
+            return httpClient.doGet(url);
         } catch (Exception e) {
             logger.error("Error getting min gas price from web provider: {}", e.getMessage());
         }
@@ -98,7 +85,7 @@ public class WebMinGasPriceProvider extends StableMinGasPriceProvider {
 
     @Override
     public MinGasPriceProviderType getType() {
-        return MinGasPriceProviderType.WEB;
+        return MinGasPriceProviderType.HTTP_GET;
     }
 
     public String getUrl() {

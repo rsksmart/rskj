@@ -15,36 +15,34 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.config.mining;
 
 import com.typesafe.config.Config;
 
-public class WebStableMinGasSystemConfig {
-    public static final String WEB_STABLE_GAS_PRICE_CONFIG_PATH = "web";
-    private static final String URL_PROPERTY = "url";
-    private static final String REQUEST_PATH = "requestPath";
-    private static final String TIMEOUT_PROPERTY = "timeout";
+public class EthCallMinGasPriceSystemConfig {
+    private static final String FROM_PROPERTY = "from";
+    private static final String TO_PROPERTY = "to";
+    private static final String DATA_PROPERTY = "data";
+    private final String address;
+    private final String from;
+    private final String data;
 
-    private final String url;
-    private final String requestPath;
-    private final int timeout;
-
-    public WebStableMinGasSystemConfig(Config config) {
-        this.url = config.getString(URL_PROPERTY);
-        this.requestPath = config.getString(REQUEST_PATH);
-        this.timeout = config.getInt(TIMEOUT_PROPERTY);
+    public EthCallMinGasPriceSystemConfig(Config config) {
+        address = config.getString(TO_PROPERTY);
+        from = config.getString(FROM_PROPERTY);
+        data = config.getString(DATA_PROPERTY);
     }
 
-    public String getUrl() {
-        return url;
+    public String getAddress() {
+        return address;
     }
 
-    public String getRequestPath() {
-        return requestPath;
+    public String getFrom() {
+        return from;
     }
 
-    public int getTimeout() {
-        return timeout;
+    public String getData() {
+        return data;
     }
-
 }

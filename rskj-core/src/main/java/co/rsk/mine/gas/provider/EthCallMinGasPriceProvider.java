@@ -1,53 +1,60 @@
-package co.rsk.mine.gas.provider.onchain;
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2024 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-import co.rsk.config.mining.OnChainMinGasPriceSystemConfig;
+package co.rsk.mine.gas.provider;
+
+import co.rsk.config.mining.EthCallMinGasPriceSystemConfig;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
-import co.rsk.mine.gas.provider.MinGasPriceProvider;
-import co.rsk.mine.gas.provider.MinGasPriceProviderType;
-import co.rsk.mine.gas.provider.StableMinGasPriceProvider;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.util.HexUtils;
-import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-import org.ethereum.rpc.parameters.HexNumberParam;
+import org.ethereum.rpc.parameters.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
-public class OnChainMinGasPriceProvider extends StableMinGasPriceProvider {
-    private static final Logger logger = LoggerFactory.getLogger(OnChainMinGasPriceProvider.class);
+public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
+    private static final Logger logger = LoggerFactory.getLogger(EthCallMinGasPriceProvider.class);
 
     private final String toAddress;
     private final String fromAddress;
     private final String data;
 
-    @FunctionalInterface
-    public interface GetContextCallback {
-        EthModule getEthModule();
-    }
+    private final Supplier<EthModule> ethModuleSupplier;
 
-    private final GetContextCallback getContextCallback;
-
-    public OnChainMinGasPriceProvider(MinGasPriceProvider fallBackProvider, StableMinGasPriceSystemConfig config, GetContextCallback getContextCallback) {
+    public EthCallMinGasPriceProvider(MinGasPriceProvider fallBackProvider, StableMinGasPriceSystemConfig config, Supplier<EthModule> ethModuleSupplier) {
         super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
-        this.getContextCallback = getContextCallback;
-        OnChainMinGasPriceSystemConfig oConfig = config.getOnChainConfig();
-        this.toAddress = oConfig.getAddress();
-        this.fromAddress = oConfig.getFrom();
-        this.data = oConfig.getData();
+        this.ethModuleSupplier = ethModuleSupplier;
+        EthCallMinGasPriceSystemConfig ethCallConfig = config.getEthCallConfig();
+        this.toAddress = ethCallConfig.getAddress();
+        this.fromAddress = ethCallConfig.getFrom();
+        this.data = ethCallConfig.getData();
     }
 
     @Override
     public MinGasPriceProviderType getType() {
-        return MinGasPriceProviderType.ON_CHAIN;
+        return MinGasPriceProviderType.ETH_CALL;
     }
 
     @Override
     protected Optional<Long> getBtcExchangeRate() {
-        EthModule ethModule = this.getContextCallback.getEthModule();
+        EthModule ethModule = ethModuleSupplier.get();
         if (ethModule == null) {
             logger.error("Could not get eth module");
             return Optional.empty();

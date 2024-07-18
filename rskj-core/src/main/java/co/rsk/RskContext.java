@@ -256,9 +256,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
-    private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
-
     private MinGasPriceProvider minGasPriceProvider;
+    private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
 
