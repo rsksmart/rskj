@@ -22,6 +22,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -301,7 +302,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         BridgeParsedData bridgeParsedData = new BridgeParsedData();
 
         if (data != null && (data.length >= 1 && data.length <= 3)) {
-            logger.warn("Invalid function signature {}.", ByteUtil.toHexString(data));
+            logger.warn("Invalid function signature {}.", Bytes.of(data));
             return null;
         }
 
@@ -312,14 +313,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             byte[] functionSignature = Arrays.copyOfRange(data, 0, 4);
             Optional<BridgeMethods> invokedMethod = BridgeMethods.findBySignature(functionSignature);
             if (!invokedMethod.isPresent()) {
-                logger.warn("Invalid function signature {}.", ByteUtil.toHexString(functionSignature));
+                logger.warn("Invalid function signature {}.", Bytes.of(functionSignature));
                 return null;
             }
             bridgeParsedData.bridgeMethod = invokedMethod.get();
             try {
                 bridgeParsedData.args = bridgeParsedData.bridgeMethod.getFunction().decode(data);
             } catch (Exception e) {
-                logger.warn("Invalid function arguments {} for function {}.", ByteUtil.toHexString(data), ByteUtil.toHexString(functionSignature));
+                logger.warn("Invalid function arguments {} for function {}.", Bytes.of(data), Bytes.of(functionSignature));
                 return null;
             }
         }
@@ -370,7 +371,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
-                String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
+                String errorMessage = String.format("Invalid data given: %s.", Bytes.of(data));
                 logger.info("[execute] {}", errorMessage);
                 if (!activations.isActive(ConsensusRule.RSKIP88)) {
                     return null;
@@ -527,7 +528,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(btcBlockSerialized);
                 btcBlockArray[i] = header;
             } catch (ProtocolException e) {
-                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + ByteUtil.toHexString(btcBlockSerialized), e);
+                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + Bytes.of(btcBlockSerialized), e);
             }
         }
         try {
@@ -599,7 +600,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             federatorPublicKey = BtcECKey.fromPublicOnly(federatorPublicKeySerialized);
         } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + ByteUtil.toHexString(federatorPublicKeySerialized), e);
+            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Bytes.of(federatorPublicKeySerialized), e);
         }
         Object[] signaturesObjectArray = (Object[]) args[1];
         if (signaturesObjectArray.length == 0) {
@@ -611,13 +612,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             try {
                 BtcECKey.ECDSASignature.decodeFromDER((byte[])signatureObject);
             } catch (Exception e) {
-                throw new BridgeIllegalArgumentException("Signature could not be parsed " + ByteUtil.toHexString(signatureByteArray), e);
+                throw new BridgeIllegalArgumentException("Signature could not be parsed " + Bytes.of(signatureByteArray), e);
             }
             signatures.add(signatureByteArray);
         }
         byte[] rskTxHash = (byte[]) args[2];
         if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + ByteUtil.toHexString(rskTxHash));
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHash));
         }
         try {
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);

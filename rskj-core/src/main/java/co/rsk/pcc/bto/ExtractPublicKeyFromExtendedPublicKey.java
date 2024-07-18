@@ -21,8 +21,9 @@ package co.rsk.pcc.bto;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
+import co.rsk.util.StringUtils;
 import org.ethereum.core.CallTransaction;
 
 /**
@@ -40,7 +41,7 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
 
     private final HDWalletUtilsHelper helper;
 
-    private final static String INVALID_EXTENDED_PUBLIC_KEY = "Invalid extended public key '%s";
+    private final static String INVALID_EXTENDED_PUBLIC_KEY = "Invalid extended public key '%s'";
 
     public ExtractPublicKeyFromExtendedPublicKey(ExecutionEnvironment executionEnvironment, HDWalletUtilsHelper helper) {
         super(executionEnvironment);
@@ -64,7 +65,7 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
         try {
             key = DeterministicKey.deserializeB58(xpub, params);
         } catch (IllegalArgumentException e) {
-            throw new NativeContractIllegalArgumentException(String.format(INVALID_EXTENDED_PUBLIC_KEY, xpub), e);
+            throw new NativeContractIllegalArgumentException(String.format(INVALID_EXTENDED_PUBLIC_KEY, StringUtils.trim(xpub)), e);
         }
 
         return key.getPubKeyPoint().getEncoded(true);

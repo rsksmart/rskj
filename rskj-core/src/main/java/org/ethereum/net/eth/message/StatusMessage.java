@@ -19,6 +19,7 @@
 
 package org.ethereum.net.eth.message;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -155,9 +156,9 @@ public class StatusMessage extends EthMessage {
         return "[" + this.getCommand().name() +
                 " protocolVersion=" + this.protocolVersion +
                 " networkId=" + this.networkId +
-                " totalDifficulty=" + ByteUtil.toHexStringOrEmpty(this.totalDifficulty) +
-                " bestHash=" + ByteUtil.toHexString(this.bestHash) +
-                " genesisHash=" + ByteUtil.toHexString(this.genesisHash) +
+                " totalDifficulty=" + Bytes.of(this.totalDifficulty) +
+                " bestHash=" + Bytes.of(this.bestHash) +
+                " genesisHash=" + Bytes.of(this.genesisHash) +
                 "]";
     }
 }
