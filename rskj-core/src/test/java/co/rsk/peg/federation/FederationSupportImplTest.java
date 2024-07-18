@@ -2309,6 +2309,7 @@ class FederationSupportImplTest {
         }
 
         @Test
+<<<<<<< HEAD
         void voteFederationChange_whenCreateIsCalledBy2DifferentAuthorizer_returnsSuccessfulResponseCodeAndPendingFederationCreated() {
 
             // Arrange
