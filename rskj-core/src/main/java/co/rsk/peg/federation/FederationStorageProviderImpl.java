@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -29,6 +30,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Federation oldFederation;
     private boolean shouldSaveOldFederation = false;
 
+    private Federation proposedFederation;
     private PendingFederation pendingFederation;
     private boolean shouldSavePendingFederation = false;
 
@@ -38,6 +40,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
 
     private Script lastRetiredFederationP2SHScript;
+    private Sha256Hash svpFundTxHashUnsigned;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
