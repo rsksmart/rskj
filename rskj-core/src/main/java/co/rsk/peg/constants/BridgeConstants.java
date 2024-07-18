@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -32,6 +33,7 @@ public abstract class BridgeConstants {
     protected FeePerKbConstants feePerKbConstants;
     protected WhitelistConstants whitelistConstants;
     protected FederationConstants federationConstants;
+    protected LockingCapConstants lockingCapConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -71,6 +73,8 @@ public abstract class BridgeConstants {
     public WhitelistConstants getWhitelistConstants() { return whitelistConstants; }
 
     public FederationConstants getFederationConstants() { return federationConstants; }
+
+    public LockingCapConstants getLockingCapConstants() { return lockingCapConstants; }
 
     public String getBtcParamsString() {
         return btcParamsString;
