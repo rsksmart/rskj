@@ -208,6 +208,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setProposedFederation(Federation proposedFederation) {
+        this.proposedFederation = proposedFederation;
+    }
+
+    @Override
     public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
         if (federationElection != null) {
             return federationElection;
@@ -366,6 +371,12 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         }
 
         bridgeStorageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
+    }
+
+    private void saveProposedFederation(Federation proposedFederation) {
+        // we only need to save the standard part of the fed since the emergency part is constant
+        saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     @Nullable
