@@ -13,14 +13,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: openjdk:8-jdk
     steps:
       - uses: actions/checkout@v4
-      - name: Setup System Tools
-        run: |
-          apt update -y
-          apt install -y gnupg2 curl
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Verify files
         run: |
@@ -250,15 +250,14 @@ jobs:
   unit-tests:
     needs: build
     runs-on: ubuntu-latest
-    container:
-      image: openjdk:8-jdk
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup System Tools
-        run: |
-          apt update -y
-          apt install -y curl
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
       - uses: actions/cache@v4
         name: Cache Gradle
@@ -297,15 +296,14 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
-    container:
-      image: openjdk:8-jdk
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup System Tools
-        run: |
-          apt update -y
-          apt install -y curl
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
       - uses: actions/cache@v4
         name: Cache Gradle

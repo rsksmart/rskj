@@ -315,7 +315,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     long startNanos = System.nanoTime();
                     logStart(task);
                     this.processMessage(task.getSender(), task.getMessage());
-                    logEnd(task, startNanos);
+                    logEnd(task, startNanos, loggerMessageProcess);
                 } else {
                     logger.trace("No task");
                 }
@@ -362,7 +362,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     @VisibleForTesting
-    void logEnd(MessageTask task, long startNanos) {
+    static void logEnd(MessageTask task, long startNanos, Logger messageProcessingLogger) {
         Duration processTime = Duration.ofNanos(System.nanoTime() - startNanos);
 
         Message message = task.getMessage();
@@ -371,7 +371,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         boolean isOtherSlow = !isBlockRelated && processTime.getSeconds() > PROCESSING_TIME_TO_WARN_LIMIT;
 
         if (isBlockSlow || isOtherSlow) {
-            loggerMessageProcess.warn("Message[{}] processing took too much: [{}]s.", message.getMessageType(), processTime.getSeconds());
+            messageProcessingLogger.warn("Message[{}] processing took too much: [{}]s.", message.getMessageType(), processTime.getSeconds());
         }
 
         logger.trace("End {} message task after [{}]s", task.getMessage().getMessageType(), processTime.getSeconds());
