@@ -2585,6 +2585,45 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_rollback_returnsSuccessResponseCode() {
+
+            // Arrange
+
+            BtcECKey expectedBtcECKey = new BtcECKey();
+            ECKey expectedRskKey = new ECKey();
+            ECKey expectedMstKey = new ECKey();
+
+            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+
+            // Voting with  m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec("rollback", new byte[][]{
+                expectedBtcECKey.getPubKey(),
+                expectedRskKey.getPubKey(),
+                expectedMstKey.getPubKey()
+            });
+
+            // Act
+
+            // Voting add new fed with m of n authorizers
+            int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int result2 = federationSupport.voteFederationChange(tx2, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
+            assertThat(federationSupport.getPendingFederationSize(), is(-1));
+            assertNull(federationSupport.getPendingFederationHash());
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
