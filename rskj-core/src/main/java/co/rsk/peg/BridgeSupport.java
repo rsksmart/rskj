@@ -2113,7 +2113,7 @@ public class BridgeSupport {
     }
 
     public Coin getLockingCap() {
-        return lockingCapSupport.getLockingCap().get();
+        return lockingCapSupport.getLockingCap();
     }
 
     /**
