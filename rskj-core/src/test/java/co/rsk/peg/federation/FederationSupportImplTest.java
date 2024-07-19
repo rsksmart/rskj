@@ -2602,6 +2602,56 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_addMultiFederatorPublicKeyWithDifferentMstKey_returnsSuccessResponseCodeAndFedSizeZero() {
+
+            // Arrange
+
+            BtcECKey expectedBtcECKey1 = new BtcECKey();
+            ECKey expectedRskKey = new ECKey();
+            ECKey expectedMstKey = new ECKey();
+
+            ECKey differentMstKey = new ECKey();
+
+            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+
+            // Voting with  m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Same btc and rsk keys for both feds, different mst key.
+
+            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec("add-multi", new byte[][]{
+                expectedBtcECKey1.getPubKey(),
+                expectedRskKey.getPubKey(),
+                expectedMstKey.getPubKey(),
+            });
+
+            ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec("add-multi", new byte[][]{
+                expectedBtcECKey1.getPubKey(),
+                expectedRskKey.getPubKey(),
+                differentMstKey.getPubKey(),
+            });
+
+            // Act
+
+            // Voting add new fed with m of n authorizers, but essentially for different federators due to the different mst key
+            int result = federationSupport.voteFederationChange(tx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+            int result2 = federationSupport.voteFederationChange(tx2, addMultiKeyAbiCallSpec2, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
+
+            // Pending federation size is 0, because authorizers voted for different federators and there's no winner yet
+            assertThat(federationSupport.getPendingFederationSize(), is(0));
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
