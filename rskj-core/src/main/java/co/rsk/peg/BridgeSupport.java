@@ -2113,7 +2113,7 @@ public class BridgeSupport {
     }
 
     public Coin getLockingCap() {
-        return lockingCapSupport.getLockingCap();
+        return lockingCapSupport.getLockingCap().orElse(null);
     }
 
     /**
@@ -2745,11 +2745,11 @@ public class BridgeSupport {
         }
 
         Coin fedCurrentFunds = getBtcLockedInFederation();
-        Coin lockingCap = this.getLockingCap();
+        Optional<Coin> lockingCap = lockingCapSupport.getLockingCap();
         logger.trace("Evaluating locking cap for: TxId {}. Value to lock {}. Current funds {}. Current locking cap {}", btcTx.getHash(true), totalAmount, fedCurrentFunds, lockingCap);
         Coin fedUTXOsAfterThisLock = fedCurrentFunds.add(totalAmount);
         // If the federation funds (including this new UTXO) are smaller than or equals to the current locking cap, we are fine.
-        if (fedUTXOsAfterThisLock.compareTo(lockingCap) <= 0) {
+        if (lockingCap.isPresent() && fedUTXOsAfterThisLock.compareTo(lockingCap.get()) <= 0) {
             return true;
         }
 
