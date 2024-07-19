@@ -2652,6 +2652,41 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_add100Members_returnsSuccessResponseCodeAndFedSize100() {
+
+            // Arrange
+
+            int EXPECTED_COUNT_OF_MEMBERS = 100;
+
+            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+
+            // Voting with  m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Act
+
+            // Voting add new fed with m of n authorizers
+
+            for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
+                BtcECKey expectedBtcECKey = new BtcECKey();
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec("add", new byte[][]{expectedBtcECKey.getPubKey()});
+                int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+                int result2 = federationSupport.voteFederationChange(tx2, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+                assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+                assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
+            }
+
+            // Assert
+
+            assertThat(federationSupport.getPendingFederationSize(), is(EXPECTED_COUNT_OF_MEMBERS));
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
