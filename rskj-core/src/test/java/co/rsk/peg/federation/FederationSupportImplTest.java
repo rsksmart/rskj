@@ -2438,9 +2438,6 @@ class FederationSupportImplTest {
 =======
             byte[] actualBtcECkey = federationSupport.getPendingFederatorBtcPublicKey(0);
 
-            System.out.println(ByteUtil.toHexString(actualBtcECkey));
-            System.out.println(ByteUtil.toHexString(expectedBtcECKey.getPubKey()));
-
             assertArrayEquals(expectedBtcECKey.getPubKey(), actualBtcECkey);
 >>>>>>> 57f87f377 (Adds add multi-key test)
 
