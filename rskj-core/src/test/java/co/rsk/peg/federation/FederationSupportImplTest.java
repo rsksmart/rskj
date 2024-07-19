@@ -55,8 +55,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.ABICallSpec;
 import org.ethereum.core.SignatureCache;
@@ -71,7 +69,6 @@ class FederationSupportImplTest {
     private FederationStorageProvider storageProvider;
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
-    private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private SignatureCache signatureCache;
 
     @BeforeEach
