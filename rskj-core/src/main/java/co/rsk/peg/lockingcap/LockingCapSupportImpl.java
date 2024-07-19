@@ -32,7 +32,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     }
 
     @Override
-    public Optional<Coin> getLockingCap() {
+    public Coin getLockingCap() {
         Optional<Coin> lockingCap = storageProvider.getLockingCap(activations);
 
         // Before returning the locking cap, check if it was already set
@@ -41,7 +41,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
             logger.debug("[getLockingCap] {}", "Setting initial Locking Cap value");
             storageProvider.setLockingCap(constants.getInitialValue());
         }
-        return storageProvider.getLockingCap(activations);
+        return storageProvider.getLockingCap(activations).get();
     }
 
     @Override
@@ -54,13 +54,13 @@ public class LockingCapSupportImpl implements LockingCapSupport {
         }
 
         // New Locking Cap must be bigger than current Locking Cap
-        Optional<Coin> currentLockingCap = getLockingCap();
-        if (currentLockingCap.isPresent() && newLockingCap.compareTo(currentLockingCap.get()) < 0) {
+        Coin currentLockingCap = getLockingCap();
+        if (newLockingCap.compareTo(currentLockingCap) < 0) {
             logger.warn("[increaseLockingCap] {} {}", "Attempted value doesn't increase Locking Cap. Value attempted: ", newLockingCap.value);
             return false;
         }
 
-        Coin maxLockingCap = currentLockingCap.get().multiply(constants.getIncrementsMultiplier());
+        Coin maxLockingCap = currentLockingCap.multiply(constants.getIncrementsMultiplier());
         if (newLockingCap.compareTo(maxLockingCap) > 0) {
             logger.warn("[increaseLockingCap] {} {}", "Attempted value increases Locking Cap above its limit. Value attempted: ", newLockingCap.value);
             return false;
@@ -70,5 +70,10 @@ public class LockingCapSupportImpl implements LockingCapSupport {
         logger.info("[increaseLockingCap] {} {}", "Increased locking cap: ", newLockingCap.value);
 
         return true;
+    }
+
+    @Override
+    public void save(){
+        storageProvider.save(activations);
     }
 }

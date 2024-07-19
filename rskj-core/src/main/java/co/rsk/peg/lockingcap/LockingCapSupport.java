@@ -6,7 +6,9 @@ import org.ethereum.core.Transaction;
 
 public interface LockingCapSupport {
 
-    Optional<Coin> getLockingCap();
+    Coin getLockingCap();
 
     boolean increaseLockingCap(Transaction tx, Coin newCap);
+
+    void save();
 }
