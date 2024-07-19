@@ -32,7 +32,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     }
 
     @Override
-    public Coin getLockingCap() {
+    public Optional<Coin> getLockingCap() {
         Optional<Coin> lockingCap = storageProvider.getLockingCap(activations);
 
         // Before returning the locking cap, check if it was already set
@@ -41,7 +41,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
             logger.debug("[getLockingCap] {}", "Setting initial Locking Cap value");
             storageProvider.setLockingCap(constants.getInitialValue());
         }
-        return storageProvider.getLockingCap(activations).get();
+        return storageProvider.getLockingCap(activations);
     }
 
     @Override
@@ -54,13 +54,13 @@ public class LockingCapSupportImpl implements LockingCapSupport {
         }
 
         // New Locking Cap must be bigger than current Locking Cap
-        Coin currentLockingCap = getLockingCap();
-        if (newLockingCap.compareTo(currentLockingCap) < 0) {
+        Optional<Coin> currentLockingCap = getLockingCap();
+        if (currentLockingCap.isPresent() && newLockingCap.compareTo(currentLockingCap.get()) < 0) {
             logger.warn("[increaseLockingCap] {} {}", "Attempted value doesn't increase Locking Cap. Value attempted: ", newLockingCap.value);
             return false;
         }
 
-        Coin maxLockingCap = currentLockingCap.multiply(constants.getIncrementsMultiplier());
+        Coin maxLockingCap = currentLockingCap.get().multiply(constants.getIncrementsMultiplier());
         if (newLockingCap.compareTo(maxLockingCap) > 0) {
             logger.warn("[increaseLockingCap] {} {}", "Attempted value increases Locking Cap above its limit. Value attempted: ", newLockingCap.value);
             return false;
