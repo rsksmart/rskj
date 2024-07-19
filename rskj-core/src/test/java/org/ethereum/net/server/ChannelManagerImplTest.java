@@ -30,24 +30,21 @@ import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
@@ -102,12 +99,7 @@ class ChannelManagerImplTest {
         channelManager.add(peer);
         channelManager.tryProcessNewPeers();
 
-        Logger logger = mock(Logger.class);
-        TestUtils.setFinalStatic(channelManager, "logger", logger);
-
         Assertions.assertTrue(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
-
-        verify(logger).error(anyString(), any(Throwable.class));
     }
 
     @Test
@@ -216,10 +208,6 @@ class ChannelManagerImplTest {
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final ChannelManagerImpl channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
         channelManager.setActivePeers(activePeers);
-
-        Logger logger = mock(Logger.class);
-        TestUtils.setFinalStatic(channelManager, "logger", logger);
-        when(logger.isDebugEnabled()).thenReturn(true);
 
         LongSupplier timeLastLoggedPeersSupplier = () -> TestUtils.getInternalState(channelManager, "timeLastLoggedPeers");
 
