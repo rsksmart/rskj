@@ -14,6 +14,7 @@ import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.ABICallVoteResult;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -480,7 +481,7 @@ public class FederationSupportImpl implements FederationSupport {
                 break;
             case "commit":
                 Keccak256 hash = new Keccak256(callSpec.getArguments()[0]);
-                executionResult = commitFederation(dryRun, hash, eventLogger);
+                executionResult = commitFederationPreRSKIP419(dryRun, hash, eventLogger);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "rollback":
@@ -515,6 +516,14 @@ public class FederationSupportImpl implements FederationSupport {
             logger.warn("[createPendingFederation] A pending federation already exists.");
             return FederationChangeResponseCode.PENDING_FEDERATION_ALREADY_EXISTS.getCode();
         }
+
+        //if (activations.isActive(ConsensusRule.RSKIP419)) {
+            Federation currentProposedFederation = provider.getProposedFederation(constants, activations);
+            if (currentProposedFederation != null) {
+                logger.warn("[createPendingFederation] A proposed federation already exists.");
+                return FederationChangeResponseCode.PROPOSED_FEDERATION_ALREADY_EXISTS.getCode();
+            }
+        //}
 
         if (amAwaitingFederationActivation()) {
             logger.warn("[createPendingFederation] There is an existing federation awaiting for activation.");
@@ -599,7 +608,7 @@ public class FederationSupportImpl implements FederationSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    protected Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+    protected Integer commitFederationPreRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -665,6 +674,87 @@ public class FederationSupportImpl implements FederationSupport {
         eventLogger.logCommitFederation(rskExecutionBlock, oldFederation, newFederation);
 
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
+    }
+
+    /**
+     * Commits the currently pending federation to be the proposed one.
+     * That is, the proposed federation is set to be the currently pending federation,
+     * and the pending federation is wiped out.
+     * @param dryRun whether to just do a dry run
+     * @param hash the pending federation's hash. This is checked the execution block's pending federation hash for equality.
+     * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
+     * -3 if the given hash doesn't match the current pending federation's hash.
+     */
+    protected Integer commitFederationPostRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            logger.warn("[commitFederation] Pending federation does not exist.");
+            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+        }
+
+        if (!currentPendingFederation.isComplete()) {
+            logger.warn("[commitFederation] Pending federation has {} members, so it does not meet the minimum required.", currentPendingFederation.getMembers().size());
+            return FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode();
+        }
+
+        if (!hash.equals(currentPendingFederation.getHash())) {
+            logger.warn("[commitFederation] Provided hash {} does not match pending federation hash {}.", hash, currentPendingFederation.getHash());
+            return FederationChangeResponseCode.PENDING_FEDERATION_MISMATCHED_HASH.getCode();
+        }
+
+        if (dryRun) {
+            logger.info("[commitFederation] DryRun execution successful.");
+            return FederationChangeResponseCode.SUCCESSFUL.getCode();
+        }
+
+        // Network parameters for the proposed federation are taken from the bridge constants.
+        // Creation time is the block's timestamp.
+        Instant proposedFederationCreationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
+        Federation proposedFederation = currentPendingFederation.buildFederation(
+            proposedFederationCreationTime,
+            rskExecutionBlock.getNumber(),
+            constants,
+            activations
+        );
+        provider.setProposedFederation(proposedFederation);
+
+        // Clear pending federation and votes on election
+        provider.setPendingFederation(null);
+        provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
+
+        Federation activeFederation = getActiveFederation();
+        eventLogger.logCommitFederation(rskExecutionBlock, activeFederation, proposedFederation);
+        logger.debug("[commitProposedFederation] Proposed Federation committed: {}", proposedFederation.getAddress());
+
+        if (activations.isActive(RSKIP186)) {
+            // Preserve federation change info
+            long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
+            provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+            Script oldFederationP2SHScript = activations.isActive(RSKIP377) && activeFederation instanceof ErpFederation ?
+                ((ErpFederation) activeFederation).getDefaultP2SHScript() : activeFederation.getP2SHScript();
+            provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
+        }
+
+        return FederationChangeResponseCode.SUCCESSFUL.getCode();
+    }
+
+    private void setNewAndOldFederations() {
+        // Move UTXOs from the new federation into the old federation
+        // and clear the new federation's UTXOs
+        List<UTXO> utxosToMove = new ArrayList<>(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
+        provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations).clear();
+        List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
+        oldFederationUTXOs.clear();
+        oldFederationUTXOs.addAll(utxosToMove);
+
+        provider.setOldFederation(getActiveFederation());
+        provider.setNewFederation(getProposedFederation());
+    }
+
+    @Nullable
+    private Federation getProposedFederation() {
+        return provider.getProposedFederation(constants, activations);
     }
 
     /**

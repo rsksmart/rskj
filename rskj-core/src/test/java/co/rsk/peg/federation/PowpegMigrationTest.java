@@ -190,7 +190,7 @@ class PowpegMigrationTest {
 
         // Proceed with the powpeg change
         FederationSupportImpl federationSupportImpl = new FederationSupportImpl(bridgeConstants.getFederationConstants(), federationStorageProvider, initialBlock, activations);
-        federationSupportImpl.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
+        federationSupportImpl.commitFederationPreRSKIP419(false, pendingFederation.getHash(), bridgeEventLogger);
 
         ArgumentCaptor<Federation> argumentCaptor = ArgumentCaptor.forClass(Federation.class);
         verify(bridgeEventLogger).logCommitFederation(
