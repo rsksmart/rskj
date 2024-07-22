@@ -2283,12 +2283,12 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_whenCreateCallTwiceBySameAuthorizer_returnsGenericResponseCode() {
+        void voteFederationChange_whenCreateIsCalledTwiceBySameAuthorizer_returnsGenericErrorResponseCode() {
 
             // Arrange
 
-            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            ABICallSpec abiCallSpec = new ABICallSpec("create", new byte[][]{});
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
             // Act
 
