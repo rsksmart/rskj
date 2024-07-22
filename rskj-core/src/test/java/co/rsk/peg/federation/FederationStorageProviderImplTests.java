@@ -410,12 +410,12 @@ class FederationStorageProviderImplTests {
 
         return Stream.of(
             Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, testnetNetworkParams, activationsWithRskip284Inactive),
-            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, null),
+            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, activationsWithRskip284Inactive),
             Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP, testnetNetworkParams, activationsWithRskip284ActiveAnd293Inactive),
-            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, null),
-            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, null),
+            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, activationsWithRskip284ActiveAnd293Inactive),
+            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, activationsWithRskip284ActiveAnd293Inactive),
             Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP, testnetNetworkParams, activationsWithRskip284And293Active),
-            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, null)
+            Arguments.of(NEW_FEDERATION_BTC_UTXOS_KEY, mainnetNetworkParams, activationsWithRskip284And293Active)
         );
     }
 
