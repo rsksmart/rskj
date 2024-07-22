@@ -20,6 +20,7 @@ package org.ethereum.net.rlpx;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.scoring.PeerScoringManager;
+import com.typesafe.config.ConfigFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -41,6 +42,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.net.client.Capability.RSK;
+import static org.ethereum.net.client.Capability.SNAP;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -58,7 +60,12 @@ class HandshakeHandlerTest {
 
     @BeforeEach
     void setup() {
-        RskSystemProperties config = new TestSystemProperties();
+        RskSystemProperties config = new TestSystemProperties(rawConfig ->
+                ConfigFactory.parseString("{" +
+                        "sync.snapshot.server.enabled = true," +
+                        "peer.capabilities = [rsk, eth, shh, snap]" +
+                        "}").withFallback(rawConfig));
+
         hhKey = config.getMyKey();
         handler = new HandshakeHandler(
                 config,
@@ -92,10 +99,17 @@ class HandshakeHandlerTest {
     }
 
     @Test
-    void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
+    void shouldDisconnectIfRskOrSnapCapabilityAreMissing() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability("eth", (byte) 62)));
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());
+    }
+
+    @Test
+    void shouldConnectWithSnapCapability() throws Exception {
+        simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(SNAP, (byte) 62)));
+        // this will only happen when an exception is raised
+        assertTrue(ch.isOpen());
     }
 
     // This is sort of an integration test. It interacts with the handshake handler and multiple other objects to
