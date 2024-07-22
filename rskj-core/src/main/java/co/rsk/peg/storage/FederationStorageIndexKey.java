@@ -12,7 +12,7 @@ public enum FederationStorageIndexKey {
     NEW_FEDERATION_KEY("newFederation"),
     OLD_FEDERATION_KEY("oldFederation"),
     PENDING_FEDERATION_KEY("pendingFederation"),
-    PROPOSED_FEDERATION_KEY("proposedFederation"),
+    PROPOSED_FEDERATION("proposedFederation"),
 
     FEDERATION_ELECTION_KEY("federationElection"),
 
@@ -20,7 +20,6 @@ public enum FederationStorageIndexKey {
     NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY("nextFedCreationBlockHeight"),
 
     LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY("lastRetiredFedP2SHScript"),
-    SVP_FUND_TX_HASH_UNSIGNED_KEY("svpFundTxHashUnsigned"),
 
     // Format version keys
     NEW_FEDERATION_FORMAT_VERSION("newFederationFormatVersion"),
