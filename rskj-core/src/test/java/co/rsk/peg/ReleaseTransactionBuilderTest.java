@@ -138,7 +138,7 @@ class ReleaseTransactionBuilderTest {
         assertEquals(standardMultisigFederation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
         // And if its value is the spent UTXOs summatory minus the requested pegout amount
         // we can ensure the Federation is not paying fees for pegouts
-        assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
+        Assertions.assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
     }
 
     @Test
