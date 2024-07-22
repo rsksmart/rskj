@@ -73,7 +73,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     }
 
     @Override
-    public void save(){
+    public void save() {
         storageProvider.save(activations);
     }
 }
