@@ -55,7 +55,13 @@ public class LockingCapSupportImpl implements LockingCapSupport {
 
         // New Locking Cap must be bigger than current Locking Cap
         Optional<Coin> currentLockingCap = getLockingCap();
-        if (currentLockingCap.isPresent() && newLockingCap.compareTo(currentLockingCap.get()) < 0) {
+
+        if (!currentLockingCap.isPresent()) {
+            logger.warn("[increaseLockingCap] {}", "Current Locking Cap is not set since RSKIP134 is not active");
+            return false;
+        }
+
+        if (newLockingCap.compareTo(currentLockingCap.get()) < 0) {
             logger.warn("[increaseLockingCap] {} {}", "Attempted value doesn't increase Locking Cap. Value attempted: ", newLockingCap.value);
             return false;
         }
