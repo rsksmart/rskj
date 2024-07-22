@@ -109,7 +109,7 @@ class FederationConstantsTest {
     @ParameterizedTest
     @MethodSource("validationPeriodDurationArgs")
     void getValidationPeriodDuration(FederationConstants constants, long expectedDuration) {
-        assertEquals(expectedDuration, constants.getValidationPeriodDuration());
+        assertEquals(expectedDuration, constants.getValidationPeriodDurationInBlocks());
     }
 
     private static Stream<Arguments> validationPeriodDurationArgs() {
