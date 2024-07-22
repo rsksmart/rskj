@@ -86,12 +86,7 @@ public class BridgeSupportFactory {
 
         FeePerKbSupport feePerKbSupport = getFeePerKbSupportInstance(bridgeStorageAccessor);
         WhitelistSupport whitelistSupport = getWhitelistSupportInstance(bridgeStorageAccessor, activations);
-        FederationSupport federationSupport = getFederationSupportInstance(
-            bridgeStorageAccessor,
-            bridgeConstants,
-            executionBlock,
-            activations
-        );
+        FederationSupport federationSupport = getFederationSupportInstance(bridgeStorageAccessor, executionBlock, activations);
 
         BridgeEventLogger eventLogger = null;
         if (logs != null) {
@@ -144,12 +139,12 @@ public class BridgeSupportFactory {
 
     private FederationSupport getFederationSupportInstance(
         StorageAccessor bridgeStorageAccessor,
-        BridgeConstants bridgeConstants,
         Block rskExecutionBlock,
         ActivationConfig.ForBlock activations) {
 
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
         return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);
     }
 }
