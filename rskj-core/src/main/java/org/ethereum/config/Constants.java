@@ -51,7 +51,6 @@ public class Constants {
     private static final int MAX_CONTRACT_SIZE = 0x6000;
     private static final int MAX_INITCODE_SIZE = 2 * MAX_CONTRACT_SIZE;
 
-
     private final byte chainId;
     private final boolean seedCowAccounts;
     private final int durationLimit;

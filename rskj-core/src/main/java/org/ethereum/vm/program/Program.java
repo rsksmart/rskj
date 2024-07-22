@@ -1608,6 +1608,10 @@ public class Program {
             return new RuntimeException(format("Maximum contract size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
         }
 
+        public static RuntimeException tooLargeInitCodeSize(@Nonnull Program program, int maxSize, int actualSize) {
+            return new RuntimeException(format("Maximum initcode size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
+        }
+
         public static AddressCollisionException addressCollisionException(@Nonnull Program program, RskAddress address) {
             return new AddressCollisionException("Trying to create a contract with existing contract address: 0x" + address + ", tx: " + extractTxHash(program));
         }

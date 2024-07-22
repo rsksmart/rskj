@@ -98,6 +98,7 @@ public class GasCost {
     public static final long CODEREPLACE = 15000;
     public static final long NEW_ACCT_SUICIDE = 25000;
     public static final long RETURN = 0;
+    public static final int INITCODE_WORD_COST = 2;
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
