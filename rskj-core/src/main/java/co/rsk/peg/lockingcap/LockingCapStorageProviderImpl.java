@@ -22,15 +22,15 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
     public Optional<Coin> getLockingCap(ActivationConfig.ForBlock activations) {
         if (activations.isActive(RSKIP134)) {
             if (lockingCap == null) {
-                lockingCap = initializeLockingCap();
+                initializeLockingCap();
             }
             return Optional.of(lockingCap);
         }
         return Optional.empty();
     }
 
-    private synchronized Coin initializeLockingCap() {
-        return bridgeStorageAccessor.getFromRepository(LOCKING_CAP.getKey(), BridgeSerializationUtils::deserializeCoin);
+    private synchronized void initializeLockingCap() {
+        lockingCap = bridgeStorageAccessor.getFromRepository(LOCKING_CAP.getKey(), BridgeSerializationUtils::deserializeCoin);
     }
 
     @Override
