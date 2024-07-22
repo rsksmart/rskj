@@ -29,6 +29,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Federation oldFederation;
     private boolean shouldSaveOldFederation = false;
 
+    private Federation proposedFederation;
     private PendingFederation pendingFederation;
     private boolean shouldSavePendingFederation = false;
 
