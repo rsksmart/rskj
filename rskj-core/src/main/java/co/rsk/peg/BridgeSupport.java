@@ -2112,6 +2112,17 @@ public class BridgeSupport {
         return whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, btcBlockchainBestChainHeight);
     }
 
+    public Coin getLockingCap() {
+        // Before returning the locking cap, check if it was already set
+        if (activations.isActive(ConsensusRule.RSKIP134) && this.provider.getLockingCap() == null) {
+            // Set the initial locking cap value
+            logger.debug("Setting initial locking cap value");
+            this.provider.setLockingCap(bridgeConstants.getInitialLockingCap());
+        }
+
+        return this.provider.getLockingCap();
+    }
+
     /**
      * Returns the redeemScript of the current active federation
      *
@@ -2119,6 +2130,31 @@ public class BridgeSupport {
      */
     public Optional<Script> getActiveFederationRedeemScript() {
         return federationSupport.getActiveFederationRedeemScript();
+    }
+
+    public boolean increaseLockingCap(Transaction tx, Coin newCap) {
+        // Only pre-configured addresses can modify locking cap
+        AddressBasedAuthorizer authorizer = bridgeConstants.getIncreaseLockingCapAuthorizer();
+        if (!authorizer.isAuthorized(tx, signatureCache)) {
+            logger.warn("not authorized address tried to increase locking cap. Address: {}", tx.getSender(signatureCache));
+            return false;
+        }
+        // new locking cap must be bigger than current locking cap
+        Coin currentLockingCap = this.getLockingCap();
+        if (newCap.compareTo(currentLockingCap) < 0) {
+            logger.warn("attempted value doesn't increase locking cap. Attempted: {}", newCap.value);
+            return false;
+        }
+        Coin maxLockingCap = currentLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
+        if (newCap.compareTo(maxLockingCap) > 0) {
+            logger.warn("attempted value increases locking cap above its limit. Attempted: {}", newCap.value);
+            return false;
+        }
+
+        logger.info("increased locking cap: {}", newCap.value);
+        this.provider.setLockingCap(newCap);
+
+        return true;
     }
 
     public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
