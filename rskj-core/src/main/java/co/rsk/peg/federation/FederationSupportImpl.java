@@ -516,8 +516,8 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.PENDING_FEDERATION_ALREADY_EXISTS.getCode();
         }
 
-        Federation currentProposedFederation = provider.getProposedFederation(constants, activations);
-        if (currentProposedFederation != null) {
+        Optional<Federation> currentProposedFederation = provider.getProposedFederation(constants, activations);
+        if (currentProposedFederation.isPresent()) {
             logger.warn("[createPendingFederation] A proposed federation already exists.");
             return FederationChangeResponseCode.PROPOSED_FEDERATION_ALREADY_EXISTS.getCode();
         }
@@ -657,7 +657,7 @@ public class FederationSupportImpl implements FederationSupport {
                 activations
             )
         );
-        provider.setPendingFederation(null);
+        provider.clearPendingFederation();
 
         // Clear votes on election
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
@@ -725,7 +725,7 @@ public class FederationSupportImpl implements FederationSupport {
         provider.setProposedFederation(proposedFederation);
 
         // Clear pending federation and votes on election
-        provider.setPendingFederation(null);
+        provider.clearPendingFederation();
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
 
         Federation activeFederation = getActiveFederation();
@@ -755,11 +755,11 @@ public class FederationSupportImpl implements FederationSupport {
 
         provider.setOldFederation(getActiveFederation());
         provider.setNewFederation(getProposedFederation());
+        provider.clearProposedFederation();
     }
 
-    @Nullable
     private Federation getProposedFederation() {
-        return provider.getProposedFederation(constants, activations);
+        return provider.getProposedFederation(constants, activations).orElse(null);
     }
 
     /**
@@ -781,7 +781,7 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
-        provider.setPendingFederation(null);
+        provider.clearPendingFederation();
 
         // Clear votes on election
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
@@ -838,7 +838,7 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight(activations);
-        if (thereIsNoNextFederationCreation(nextFederationCreationBlockHeightOpt)) {
+        if (!nextFederationCreationBlockHeightOpt.isPresent()) {
             return;
         }
 
@@ -851,10 +851,6 @@ public class FederationSupportImpl implements FederationSupport {
 
         provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
         provider.clearNextFederationCreationBlockHeight();
-    }
-
-    private boolean thereIsNoNextFederationCreation(Optional<Long> nextFederationCreationBlockHeight) {
-        return !nextFederationCreationBlockHeight.isPresent();
     }
 
     private boolean newFederationShouldNotBeActiveYet(long currentBlockHeight, long nextFederationCreationBlockHeight) {

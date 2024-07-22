@@ -209,13 +209,25 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public Federation getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
-        if (proposedFederation != null || isProposedFederationSet) {
-            return proposedFederation;
+    public void clearPendingFederation() {
+        pendingFederation = null;
+    }
+
+    @Override
+    public Optional<Federation> getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (proposedFederation != null) {
+            return Optional.of(proposedFederation);
+        }
+
+        if (isProposedFederationSet) {
+            return Optional.ofNullable(proposedFederation);
         }
 
         Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
-
         proposedFederation = bridgeStorageAccessor.getFromRepository(
             PROPOSED_FEDERATION.getKey(),
             data -> {
@@ -227,13 +239,18 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             }
         );
 
-        return proposedFederation;
+        return Optional.ofNullable(proposedFederation);
     }
 
     @Override
     public void setProposedFederation(Federation proposedFederation) {
         this.proposedFederation = proposedFederation;
         isProposedFederationSet = true;
+    }
+
+    @Override
+    public void clearProposedFederation() {
+        proposedFederation = null;
     }
 
     @Override
