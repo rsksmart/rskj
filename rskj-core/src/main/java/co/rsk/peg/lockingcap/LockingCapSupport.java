@@ -9,4 +9,6 @@ public interface LockingCapSupport {
     Optional<Coin> getLockingCap();
 
     boolean increaseLockingCap(Transaction tx, Coin newCap);
+
+    void save();
 }
