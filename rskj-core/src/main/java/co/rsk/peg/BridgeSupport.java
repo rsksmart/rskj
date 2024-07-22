@@ -187,6 +187,7 @@ public class BridgeSupport {
         feePerKbSupport.save();
         whitelistSupport.save();
         federationSupport.save();
+        // TODO: save lockingCapSupport.save();
     }
 
     /**
