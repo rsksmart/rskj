@@ -2304,6 +2304,34 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_whenCreateIsCalledBy2DifferentAuthorizer_returnsSuccessfulResponseCodeAndPendingFederationCreated() {
+
+            // Arrange
+
+            Transaction firstAuthorizerTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizerTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Act
+
+            // First create call
+            int resultFromFirstAuthorizer = federationSupport.voteFederationChange(firstAuthorizerTx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Second create call
+            int resultFromSecondAuthorizer = federationSupport.voteFederationChange(secondAuthorizerTx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            System.out.println("federationSupport.getPendingFederationHash(): " + federationSupport.getPendingFederationHash());
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromFirstAuthorizer);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromSecondAuthorizer);
+            assertThat(federationSupport.getPendingFederationSize(), is(0));
+            assertNotNull(federationSupport.getPendingFederationHash());
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
