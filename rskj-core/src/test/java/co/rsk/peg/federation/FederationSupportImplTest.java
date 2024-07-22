@@ -2246,7 +2246,7 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             ABICallSpec abiCallSpec = new ABICallSpec("nonExistingFunctionName", new byte[][]{});
 
             // Act
