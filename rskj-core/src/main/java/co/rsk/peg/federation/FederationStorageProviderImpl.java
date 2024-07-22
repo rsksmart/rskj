@@ -375,7 +375,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         bridgeStorageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
     }
 
-    private void saveProposedFederation(Federation proposedFederation) {
+    private void saveProposedFederation(ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(RSKIP419)) {
+            return;
+        }
+
         if (!isProposedFederationSet) {
             return;
         }
