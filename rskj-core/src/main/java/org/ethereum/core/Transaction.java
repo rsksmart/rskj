@@ -49,7 +49,10 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.Objects;
 
+import static co.rsk.util.ListArrayUtil.getLength;
+import static java.lang.Math.ceil;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 /**
  * A transaction (formally, T) is a single cryptographically
@@ -203,13 +206,22 @@ public class Transaction {
         }
 
         long nonZeroes = this.nonZeroDataBytes();
-        long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
+        long zeroVals = getLength(this.getData()) - nonZeroes;
 
-        long transactionCost = this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION;
+        long transactionCost = this.isContractCreation()
+                ? GasCost.TRANSACTION_CREATE_CONTRACT + getTxInitCodeCost(activations)
+                : GasCost.TRANSACTION;
 
         long txNonZeroDataCost = getTxNonZeroDataCost(activations);
 
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
+    }
+
+    private long getTxInitCodeCost(ActivationConfig.ForBlock activations) {
+        if( activations.isActive(ConsensusRule.RSKIP438) ) {
+            return  INITCODE_WORD_COST  *  (long) Math.ceil((double) getLength(this.getData()) / 32);
+        }
+        return 0;
     }
 
     private static long getTxNonZeroDataCost(ActivationConfig.ForBlock activations) {

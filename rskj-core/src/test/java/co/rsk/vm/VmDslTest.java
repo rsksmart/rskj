@@ -18,10 +18,12 @@
 
 package co.rsk.vm;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -31,6 +33,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Created by ajlopez on 15/04/2020.
