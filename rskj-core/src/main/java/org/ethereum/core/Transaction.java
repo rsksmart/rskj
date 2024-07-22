@@ -27,6 +27,7 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import co.rsk.util.ListArrayUtil;
+import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -49,7 +50,10 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.Objects;
 
+import static co.rsk.util.ListArrayUtil.getLength;
+import static java.lang.Math.ceil;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 /**
  * A transaction (formally, T) is a single cryptographically
@@ -203,13 +207,30 @@ public class Transaction {
         }
 
         long nonZeroes = this.nonZeroDataBytes();
-        long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
+        long zeroVals = getLength(this.getData()) - nonZeroes;
 
-        long transactionCost = this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION;
+        long transactionCost = this.isContractCreation()
+                ? GasCost.TRANSACTION_CREATE_CONTRACT + getTxInitCodeCost(activations)
+                : GasCost.TRANSACTION;
 
         long txNonZeroDataCost = getTxNonZeroDataCost(activations);
 
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
+    }
+
+    public long getTxInitCodeCost(ActivationConfig.ForBlock activations) {
+        if( activations.isActive(ConsensusRule.RSKIP438) ) {
+            return  INITCODE_WORD_COST  *  (long) Math.ceil((double) getLength(this.getData()) / 32);
+        }
+        return 0;
+    }
+
+    public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
+        int initCodeSize = getLength(this.getData());
+
+        return this.isContractCreation()
+                && activations.isActive(ConsensusRule.RSKIP438)
+                && initCodeSize > Constants.getMaxInitCodeSize();
     }
 
     private static long getTxNonZeroDataCost(ActivationConfig.ForBlock activations) {

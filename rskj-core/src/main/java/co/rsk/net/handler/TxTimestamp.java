@@ -23,6 +23,7 @@ import org.ethereum.core.Transaction;
 /**
  * Used to known when a given tx was received by txhandler
  */
+//TODO: Remove it
 class TxTimestamp {
 
     long timestamp;
