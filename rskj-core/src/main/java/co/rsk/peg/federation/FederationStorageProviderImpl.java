@@ -33,7 +33,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private boolean shouldSavePendingFederation = false;
 
     private Federation proposedFederation;
-    private boolean proposedFederationIsSet = false;
 
     private ABICallElection federationElection;
 
@@ -211,7 +210,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     @Override
     public void setProposedFederation(Federation proposedFederation) {
         this.proposedFederation = proposedFederation;
-        proposedFederationIsSet = true;
     }
 
     @Override
@@ -376,10 +374,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private void saveProposedFederation(Federation proposedFederation) {
-        if (!proposedFederationIsSet) {
-            return;
-        }
-
         saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion());
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
