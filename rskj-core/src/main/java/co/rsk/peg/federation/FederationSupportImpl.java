@@ -517,13 +517,13 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.PENDING_FEDERATION_ALREADY_EXISTS.getCode();
         }
 
-        //if (activations.isActive(ConsensusRule.RSKIP419)) {
+        if (activations.isActive(ConsensusRule.RSKIP419)) {
             Federation currentProposedFederation = provider.getProposedFederation(constants, activations);
             if (currentProposedFederation != null) {
                 logger.warn("[createPendingFederation] A proposed federation already exists.");
                 return FederationChangeResponseCode.PROPOSED_FEDERATION_ALREADY_EXISTS.getCode();
             }
-        //}
+        }
 
         if (amAwaitingFederationActivation()) {
             logger.warn("[createPendingFederation] There is an existing federation awaiting for activation.");
