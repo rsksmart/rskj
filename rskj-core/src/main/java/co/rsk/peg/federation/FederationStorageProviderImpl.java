@@ -373,8 +373,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private void saveProposedFederation(Federation proposedFederation) {
-        saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion());
-        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_KEY.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+        // we only need to save the standard part of the fed since the emergency part is constant
+        saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), STANDARD_MULTISIG_FEDERATION.getFormatVersion());
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     @Nullable
