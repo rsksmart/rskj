@@ -481,7 +481,7 @@ public class FederationSupportImpl implements FederationSupport {
                 break;
             case "commit":
                 Keccak256 hash = new Keccak256(callSpec.getArguments()[0]);
-                executionResult = commitFederationPreRSKIP419(dryRun, hash, eventLogger);
+                executionResult = commitFederation(dryRun, hash, eventLogger);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "rollback":
@@ -593,6 +593,14 @@ public class FederationSupportImpl implements FederationSupport {
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
+    protected Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+        if (!activations.isActive(ConsensusRule.RSKIP419)) {
+            return commitFederationPreRSKIP419(dryRun, hash, eventLogger);
+        }
+
+        return commitFederationPostRSKIP419(dryRun, hash, eventLogger);
+    }
+
     /**
      * Commits the currently pending federation.
      * That is, the retiring federation is set to be the currently active federation,
@@ -605,7 +613,7 @@ public class FederationSupportImpl implements FederationSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    protected Integer commitFederationPreRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+    private Integer commitFederationPreRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -682,7 +690,7 @@ public class FederationSupportImpl implements FederationSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    protected Integer commitFederationPostRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+    private Integer commitFederationPostRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {

@@ -190,7 +190,7 @@ class PowpegMigrationTest {
 
         // Proceed with the powpeg change
         FederationSupportImpl federationSupportImpl = new FederationSupportImpl(bridgeConstants.getFederationConstants(), federationStorageProvider, initialBlock, activations);
-        federationSupportImpl.commitFederationPreRSKIP419(false, pendingFederation.getHash(), bridgeEventLogger);
+        federationSupportImpl.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
 
         ArgumentCaptor<Federation> argumentCaptor = ArgumentCaptor.forClass(Federation.class);
         verify(bridgeEventLogger).logCommitFederation(
@@ -225,7 +225,6 @@ class PowpegMigrationTest {
         for (UTXO utxo : existingUtxos) {
             assertTrue(utxosToMigrate.stream().anyMatch(storedUtxo -> storedUtxo.equals(utxo)));
         }
-        assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activations).isEmpty());
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
