@@ -210,7 +210,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public Federation getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
-        if (proposedFederation != null) {
+        if (proposedFederation != null || isProposedFederationSet) {
             return proposedFederation;
         }
 
