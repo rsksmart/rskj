@@ -219,11 +219,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return Optional.empty();
         }
 
-        if (proposedFederation != null) {
-            return Optional.of(proposedFederation);
-        }
-
-        if (isProposedFederationSet) {
+        if (proposedFederation != null || isProposedFederationSet) {
             return Optional.ofNullable(proposedFederation);
         }
 
