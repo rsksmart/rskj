@@ -25,6 +25,7 @@ public interface FederationStorageProvider {
     PendingFederation getPendingFederation();
     void setPendingFederation(PendingFederation federation);
 
+    Federation getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations);
     void setProposedFederation(Federation proposedFederation);
 
     ABICallElection getFederationElection(AddressBasedAuthorizer authorizer);

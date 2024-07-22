@@ -209,6 +209,28 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public Federation getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
+        if (proposedFederation != null) {
+            return proposedFederation;
+        }
+
+        Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
+
+        proposedFederation = bridgeStorageAccessor.getFromRepository(
+            PROPOSED_FEDERATION.getKey(),
+            data -> {
+                if (data == null) {
+                    return null;
+                }
+                // storage version should be always present for proposed federation
+                return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
+            }
+        );
+
+        return proposedFederation;
+    }
+
+    @Override
     public void setProposedFederation(Federation proposedFederation) {
         this.proposedFederation = proposedFederation;
         isProposedFederationSet = true;
