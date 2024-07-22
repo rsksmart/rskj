@@ -40,13 +40,15 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
 
     @Override
     public void save(ActivationConfig.ForBlock activations) {
-        if (activations.isActive(RSKIP134)) {
-            Coin currentLockingCap = getLockingCap(activations).orElse(null);
-            bridgeStorageAccessor.saveToRepository(
-                LOCKING_CAP.getKey(),
-                currentLockingCap,
-                BridgeSerializationUtils::serializeCoin
-            );
+        if (!activations.isActive(RSKIP134)) {
+            return;
         }
+
+        Coin currentLockingCap = getLockingCap(activations).orElse(null);
+        bridgeStorageAccessor.saveToRepository(
+            LOCKING_CAP.getKey(),
+            currentLockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
     }
 }
