@@ -22,7 +22,8 @@ public class LockingCapSupportImpl implements LockingCapSupport {
 
     public LockingCapSupportImpl(
         LockingCapStorageProvider storageProvider,
-        ForBlock activations, LockingCapConstants constants,
+        ActivationConfig.ForBlock activations,
+        LockingCapConstants constants,
         SignatureCache signatureCache
     ) {
         this.storageProvider = storageProvider;
