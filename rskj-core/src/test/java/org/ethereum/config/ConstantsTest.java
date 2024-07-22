@@ -81,4 +81,14 @@ class ConstantsTest {
         assertEquals(300, Constants.testnet(activationConfig).getMaxTimestampsDiffInSecs(preRskip297Config));
         assertEquals(7200, Constants.testnet(activationConfig).getMaxTimestampsDiffInSecs(postRskip297Config));
     }
+
+    @Test
+    void maxInitcodeSizeTest() {
+        //given
+        int maxInitCodeSizeExpected = 49152;
+        //when
+        int maxInitCodeSize = Constants.getMaxInitCodeSize();
+        //then
+        assertEquals(maxInitCodeSizeExpected, maxInitCodeSize);
+    }
 }
