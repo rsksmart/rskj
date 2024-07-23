@@ -2241,6 +2241,24 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_nonExistingFunction_returnsNonExistingResponseCode() {
+
+            // Arrange
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec("nonExistingFunctionName", new byte[][]{});
+
+            // Act
+
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.NON_EXISTING_FUNCTION_CALLED.getCode(), result);
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
