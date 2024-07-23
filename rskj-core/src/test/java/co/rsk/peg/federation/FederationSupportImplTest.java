@@ -2227,8 +2227,7 @@ class FederationSupportImplTest {
             ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
             logs = new ArrayList<>();
-            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(),
-                activations, logs, signatureCache);
+            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
             StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
