@@ -2364,26 +2364,30 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addFederatorPublicKeyWithLessThanMofNVotes_returnsPendingFederationSizeZeroResponseCode() {
+        void voteFederationChange_addFederatorPublicKeyWithLessThanMofNVotes_returnsSuccessfulResponseCodeAndPendingFederationSizeZero() {
 
             // Arrange
 
-            BtcECKey expectedBtcECKey = new BtcECKey();
+            List<BtcECKey> unknownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"key1"}, true
+            );
 
-            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            BtcECKey expectedBtcECKey = unknownFedSigners.get(0);
 
-            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
-            // Voting with  m of n authorizers to create the pending federation
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with m of n authorizers to create the pending federation
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec("add", new byte[][]{expectedBtcECKey.getPubKey()});
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
 
             // Act
 
-            // Voting less than m of n authorizers
+            // Voting with less than m of n authorizers
             int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
