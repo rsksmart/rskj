@@ -376,11 +376,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private void saveProposedFederation(ActivationConfig.ForBlock activations) {
-        if (!activations.isActive(RSKIP419)) {
-            return;
-        }
-
-        if (!isProposedFederationSet) {
+        if (!activations.isActive(RSKIP419) || !isProposedFederationSet) {
             return;
         }
 
