@@ -455,6 +455,14 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     }
 
+    private Integer getProposedFederationFormatVersion() {
+        if (proposedFederation == null) {
+            return null;
+        }
+
+        return proposedFederation.getFormatVersion();
+    }
+
     @Nullable
     private byte[] serializePendingFederation(ActivationConfig.ForBlock activations) {
         if (pendingFederation == null) {
