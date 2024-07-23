@@ -2208,17 +2208,18 @@ class FederationSupportImplTest {
     class VoteFederationChangeTest {
 
         private BridgeEventLogger bridgeEventLogger;
-        private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        private ActivationConfig.ForBlock activations;
         private FederationSupport federationSupport;
 
         @BeforeEach
         void setUp() {
+            activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
-            when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(true);
             bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, Collections.EMPTY_LIST, signatureCache);
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
+                .withActivations(activations)
                 .build();
         }
 
