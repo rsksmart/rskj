@@ -2817,10 +2817,10 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
-            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
             // Voting with  m of n authorizers to create the pending federation
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
@@ -2832,14 +2832,14 @@ class FederationSupportImplTest {
 
             for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
                 BtcECKey expectedBtcECKey = new BtcECKey();
-                ABICallSpec addFederationAbiCallSpec = new ABICallSpec("add", new byte[][]{expectedBtcECKey.getPubKey()});
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
                 federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
                 federationSupport.voteFederationChange(tx2, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             }
 
             Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
 
-            ABICallSpec commitFederationAbiCallSpec = new ABICallSpec("commit", new byte[][]{pendingFederationHash.getBytes()});
+            ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{pendingFederationHash.getBytes()});
 
             // Act
 
