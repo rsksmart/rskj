@@ -2224,7 +2224,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_WithUnauthorizedCaller_returnsUnauthorizedResponseCode() {
+        void voteFederationChange_withUnauthorizedCaller_returnsUnauthorizedResponseCode() {
 
             // Arrange
 
