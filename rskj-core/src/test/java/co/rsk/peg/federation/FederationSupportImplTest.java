@@ -2413,13 +2413,13 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
 
             // Act
 
             // Voting add new fed with m of n authorizers
-            int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            int result2 = federationSupport.voteFederationChange(tx2, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int result = federationSupport.voteFederationChange(tx, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
+            int result2 = federationSupport.voteFederationChange(tx2, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
 
