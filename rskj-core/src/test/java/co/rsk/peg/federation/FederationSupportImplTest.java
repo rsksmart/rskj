@@ -2323,8 +2323,6 @@ class FederationSupportImplTest {
 
             // Assert
 
-            System.out.println("federationSupport.getPendingFederationHash(): " + federationSupport.getPendingFederationHash());
-
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromFirstAuthorizer);
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromSecondAuthorizer);
             assertThat(federationSupport.getPendingFederationSize(), is(0));
