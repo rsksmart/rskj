@@ -2214,7 +2214,7 @@ class FederationSupportImplTest {
         @BeforeEach
         void setUp() {
             signatureCache = mock(SignatureCache.class);
-            when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(false);
+            when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(true);
             bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, Collections.EMPTY_LIST, signatureCache);
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
