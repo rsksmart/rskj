@@ -210,7 +210,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void clearPendingFederation() {
-        pendingFederation = null;
+        setPendingFederation(null);
     }
 
     @Override
@@ -246,7 +246,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void clearProposedFederation() {
-        proposedFederation = null;
+        setProposedFederation(null);
     }
 
     @Override
@@ -299,7 +299,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void clearNextFederationCreationBlockHeight() {
-        this.nextFederationCreationBlockHeight = -1L;
+        setNextFederationCreationBlockHeight(-1L);
     }
 
     @Override
