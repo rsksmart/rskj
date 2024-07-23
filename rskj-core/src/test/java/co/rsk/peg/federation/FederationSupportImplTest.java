@@ -2703,14 +2703,11 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_commit15MembersFederation_returnsSuccessResponseCodeAndPendingFedNullAndActiveFedIsTheVotedFed() {
+        void voteFederationChange_commit10MembersFederation_returnsSuccessResponseCodeAndPendingFedNullAndActiveFedIsTheVotedFed() {
 
             // Arrange
 
             Block executionBlock = mock(Block.class);
-
-            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
             long creationBlockNumber = 1_000L;
             when(executionBlock.getNumber())
@@ -2737,7 +2734,7 @@ class FederationSupportImplTest {
             List<DataWord> encodedTopics = LogInfo.byteArrayToList(commitFederationEventTopic);
             DataWord expectedCommitTopic = encodedTopics.get(0);
 
-            int EXPECTED_COUNT_OF_MEMBERS = 15;
+            int EXPECTED_COUNT_OF_MEMBERS = 10;
 
             // Voting add new fed with m of n authorizers
 
