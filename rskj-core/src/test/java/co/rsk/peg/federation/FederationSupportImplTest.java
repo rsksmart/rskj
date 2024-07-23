@@ -2221,10 +2221,11 @@ class FederationSupportImplTest {
         private FederationSupport federationSupport;
         private FederationStorageProvider storageProvider;
         private List<LogInfo> logs;
+        private ActivationConfig.ForBlock activations;
 
         @BeforeEach
         void setUp() {
-            ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+            activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
             logs = new ArrayList<>();
             bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
@@ -2796,14 +2797,11 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_commitFederationWithOver15Members_throwsException() {
+        void voteFederationChange_commitFederationWithOver10Members_throwsException() {
 
             // Arrange
 
             Block executionBlock = mock(Block.class);
-
-            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
             long creationBlockNumber = 1_000L;
             when(executionBlock.getNumber())
@@ -2826,7 +2824,7 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            int EXPECTED_COUNT_OF_MEMBERS = 16;
+            int EXPECTED_COUNT_OF_MEMBERS = 11;
 
             // Voting add new fed with m of n authorizers
 
@@ -2850,7 +2848,7 @@ class FederationSupportImplTest {
                 federationSupport.voteFederationChange(tx2, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             });
 
-            assertEquals("The script size is 547, that is above the maximum allowed.", exception.getMessage());
+            assertEquals("The script size is 525, that is above the maximum allowed.", exception.getMessage());
 
         }
 
