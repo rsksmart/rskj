@@ -2211,7 +2211,7 @@ class FederationSupportImplTest {
         private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         private FederationSupport federationSupport;
 
-        @BeforeAll
+        @BeforeEach
         void setUp() {
             signatureCache = mock(SignatureCache.class);
             when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(false);
