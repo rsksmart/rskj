@@ -645,15 +645,12 @@ public class FederationSupportImpl implements FederationSupport {
         oldFederationUTXOs.addAll(utxosToMove);
 
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
+        long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
         Federation activeFederation = getActiveFederation();
+
         provider.setOldFederation(activeFederation);
         provider.setNewFederation(
-            currentPendingFederation.buildFederation(
-                creationTime,
-                rskExecutionBlock.getNumber(),
-                constants,
-                activations
-            )
+            currentPendingFederation.buildFederation(creationTime, rskExecutionBlockNumber, constants, activations)
         );
         provider.clearPendingFederation();
 
@@ -664,10 +661,8 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (activations.isActive(RSKIP186)) {
             // Preserve federation change info
-            long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
-            provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-            Script oldFederationP2SHScript = activations.isActive(RSKIP377) && activeFederation instanceof ErpFederation ?
-                ((ErpFederation) activeFederation).getDefaultP2SHScript() : activeFederation.getP2SHScript();
+            provider.setNextFederationCreationBlockHeight(rskExecutionBlockNumber);
+            Script oldFederationP2SHScript = getFederationP2SHScript(activeFederation);
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 
@@ -711,13 +706,11 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
-        Instant proposedFederationCreationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
-        Federation proposedFederation = currentPendingFederation.buildFederation(
-            proposedFederationCreationTime,
-            rskExecutionBlock.getNumber(),
-            constants,
-            activations
-        );
+        Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
+        long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
+
+        Federation proposedFederation =
+            currentPendingFederation.buildFederation(creationTime, rskExecutionBlockNumber, constants, activations);
         provider.setProposedFederation(proposedFederation);
 
         // Clear pending federation and votes on election
@@ -730,14 +723,24 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (activations.isActive(RSKIP186)) {
             // Preserve federation change info
-            long nextFederationCreationBlockHeight = rskExecutionBlock.getNumber();
-            provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-            Script oldFederationP2SHScript = activations.isActive(RSKIP377) && activeFederation instanceof ErpFederation ?
-                ((ErpFederation) activeFederation).getDefaultP2SHScript() : activeFederation.getP2SHScript();
+            provider.setNextFederationCreationBlockHeight(rskExecutionBlockNumber);
+            Script oldFederationP2SHScript = getFederationP2SHScript(activeFederation);
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
         }
 
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
+    }
+
+    private Script getFederationP2SHScript(Federation federation) {
+        if (!activations.isActive(RSKIP377)) {
+            return federation.getP2SHScript();
+        }
+
+        if (!(federation instanceof ErpFederation)) {
+            return federation.getP2SHScript();
+        }
+
+        return ((ErpFederation) federation).getDefaultP2SHScript();
     }
 
     /**
