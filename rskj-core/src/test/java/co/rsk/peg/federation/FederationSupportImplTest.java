@@ -32,6 +32,7 @@ import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
+import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -43,6 +44,7 @@ import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.util.HexUtils;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +61,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -2218,12 +2222,14 @@ class FederationSupportImplTest {
         private FederationSupport federationSupport;
         private StorageAccessor storageAccessor;
         private FederationStorageProvider storageProvider;
+        private List<LogInfo> logs;
 
         @BeforeEach
         void setUp() {
             activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
-            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, Collections.EMPTY_LIST, signatureCache);
+            logs = new ArrayList<>();
+            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
             storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
@@ -2727,6 +2733,10 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
+            byte[][] commitFederationEventTopic = BridgeEvents.COMMIT_FEDERATION.getEvent().encodeEventTopics();
+            List<DataWord> encodedTopics = LogInfo.byteArrayToList(commitFederationEventTopic);
+            DataWord expectedCommitTopic = encodedTopics.get(0);
+
             int EXPECTED_COUNT_OF_MEMBERS = 15;
 
             // Voting add new fed with m of n authorizers
@@ -2770,6 +2780,13 @@ class FederationSupportImplTest {
                 .collect(Collectors.toSet());
 
             assertEquals(expectedPubKeys, actualPubKeys);
+
+            assertThat(logs.size(), is(1));
+
+            LogInfo log = logs.get(0);
+            DataWord actualTopic = log.getTopics().get(0);
+
+            assertEquals(expectedCommitTopic, actualTopic);
 
         }
 
