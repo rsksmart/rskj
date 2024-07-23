@@ -2210,12 +2210,17 @@ class FederationSupportImplTest {
         private BridgeEventLogger bridgeEventLogger;
         private ActivationConfig.ForBlock activations;
         private FederationSupport federationSupport;
+        private StorageAccessor storageAccessor;
+        private FederationStorageProvider storageProvider;
 
         @BeforeEach
         void setUp() {
             activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
             bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, Collections.EMPTY_LIST, signatureCache);
+            storageAccessor = new InMemoryStorage();
+            storageProvider = new FederationStorageProviderImpl(storageAccessor);
+
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
@@ -2256,6 +2261,24 @@ class FederationSupportImplTest {
             // Assert
 
             assertEquals(FederationChangeResponseCode.NON_EXISTING_FUNCTION_CALLED.getCode(), result);
+
+        }
+
+        @Test
+        void voteFederationChange_create_returnsSuccessfulResponseCode() {
+
+            // Arrange
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Act
+
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
 
         }
 
