@@ -2865,23 +2865,6 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            Block executionBlock = mock(Block.class);
-
-            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
-
-            long creationBlockNumber = 1_000L;
-            when(executionBlock.getNumber())
-                .thenReturn(creationBlockNumber)
-                .thenReturn(federationMainnetConstants.getFederationActivationAge(activations) + creationBlockNumber);
-
-            federationSupport = federationSupportBuilder
-                .withFederationConstants(federationMainnetConstants)
-                .withFederationStorageProvider(storageProvider)
-                .withRskExecutionBlock(executionBlock)
-                .withActivations(activations)
-                .build();
-
             Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
