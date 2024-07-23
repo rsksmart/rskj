@@ -31,12 +31,15 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +57,10 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.ABICallSpec;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 
 class FederationSupportImplTest {
 
@@ -64,6 +71,7 @@ class FederationSupportImplTest {
     private FederationStorageProvider storageProvider;
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
     private FederationSupport federationSupport;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUp() {
@@ -2194,6 +2202,47 @@ class FederationSupportImplTest {
         verify(storageProvider).save(federationMainnetConstants.getBtcParams(), activations);
     }
 
+    @Nested
+    @Tag("vote federation change")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class VoteFederationChangeTest {
+
+        private BridgeEventLogger bridgeEventLogger;
+        private ActivationConfig.ForBlock activations;
+        private FederationSupport federationSupport;
+
+        @BeforeEach
+        void setUp() {
+            activations = ActivationConfigsForTest.all().forBlock(0L);
+            signatureCache = mock(SignatureCache.class);
+            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, Collections.EMPTY_LIST, signatureCache);
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activations)
+                .build();
+        }
+
+        @Test
+        void voteFederationChange_withUnauthorizedCaller_returnsUnauthorizedResponseCode() {
+
+            // Arrange
+
+            Transaction tx =  TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.UNAUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Act
+
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.UNAUTHORIZED_CALLER.getCode(), result);
+
+        }
+
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
@@ -2205,4 +2254,5 @@ class FederationSupportImplTest {
             .map(FederationMember::getMstPublicKey)
             .collect(Collectors.toList());
     }
+
 }
