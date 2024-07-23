@@ -2613,10 +2613,10 @@ class FederationSupportImplTest {
 
             ECKey differentMstKey = new ECKey();
 
-            Transaction tx = getTransactionFromCaller(FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction tx2 = getTransactionFromCaller(FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
-            ABICallSpec createFederationAbiCallSpec = new ABICallSpec("create", new byte[][]{});
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
             // Voting with  m of n authorizers to create the pending federation
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
@@ -2624,13 +2624,13 @@ class FederationSupportImplTest {
 
             // Same btc and rsk keys for both feds, different mst key.
 
-            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec("add-multi", new byte[][]{
+            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
                 expectedBtcECKey1.getPubKey(),
                 expectedRskKey.getPubKey(),
                 expectedMstKey.getPubKey(),
             });
 
-            ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec("add-multi", new byte[][]{
+            ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
                 expectedBtcECKey1.getPubKey(),
                 expectedRskKey.getPubKey(),
                 differentMstKey.getPubKey(),
