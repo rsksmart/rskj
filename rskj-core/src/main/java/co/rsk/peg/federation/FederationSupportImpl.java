@@ -593,7 +593,7 @@ public class FederationSupportImpl implements FederationSupport {
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
 
-    protected Integer commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+    protected int commitFederation(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         if (!activations.isActive(ConsensusRule.RSKIP419)) {
             return commitFederationPreRSKIP419(dryRun, hash, eventLogger);
         }
@@ -609,11 +609,11 @@ public class FederationSupportImpl implements FederationSupport {
      * Also, UTXOs are moved from active to retiring so that the transfer of funds can
      * begin.
      * @param dryRun whether to just do a dry run
-     * @param hash the pending federation's hash. This is checked the execution block's pending federation hash for equality.
+     * @param hash the pending federation's hash. This is checked to match the execution block's pending federation hash.
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    private Integer commitFederationPreRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+    private int commitFederationPreRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -644,8 +644,6 @@ public class FederationSupportImpl implements FederationSupport {
         oldFederationUTXOs.clear();
         oldFederationUTXOs.addAll(utxosToMove);
 
-        // Network parameters for the new federation are taken from the bridge constants.
-        // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         Federation activeFederation = getActiveFederation();
         provider.setOldFederation(activeFederation);
@@ -686,11 +684,11 @@ public class FederationSupportImpl implements FederationSupport {
      * That is, the proposed federation is set to be the currently pending federation,
      * and the pending federation is wiped out.
      * @param dryRun whether to just do a dry run
-     * @param hash the pending federation's hash. This is checked the execution block's pending federation hash for equality.
+     * @param hash the pending federation's hash. This is checked to match the execution block's pending federation hash.
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    private Integer commitFederationPostRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
+    private int commitFederationPostRSKIP419(boolean dryRun, Keccak256 hash, BridgeEventLogger eventLogger) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -713,8 +711,6 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
-        // Network parameters for the proposed federation are taken from the bridge constants.
-        // Creation time is the block's timestamp.
         Instant proposedFederationCreationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         Federation proposedFederation = currentPendingFederation.buildFederation(
             proposedFederationCreationTime,
@@ -742,24 +738,6 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
-    }
-
-    private void setNewAndOldFederations() {
-        // Move UTXOs from the new federation into the old federation
-        // and clear the new federation's UTXOs
-        List<UTXO> utxosToMove = new ArrayList<>(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
-        provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations).clear();
-        List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
-        oldFederationUTXOs.clear();
-        oldFederationUTXOs.addAll(utxosToMove);
-
-        provider.setOldFederation(getActiveFederation());
-        provider.setNewFederation(getProposedFederation());
-        provider.clearProposedFederation();
-    }
-
-    private Federation getProposedFederation() {
-        return provider.getProposedFederation(constants, activations).orElse(null);
     }
 
     /**
