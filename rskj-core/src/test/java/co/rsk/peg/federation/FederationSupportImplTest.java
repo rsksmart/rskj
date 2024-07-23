@@ -2368,11 +2368,11 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            List<BtcECKey> unknownFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
                 new String[]{"key1"}, true
             );
 
-            BtcECKey expectedBtcECKey = unknownFedSigners.get(0);
+            BtcECKey expectedBtcECKey = fedKeys.get(0);
 
             Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
