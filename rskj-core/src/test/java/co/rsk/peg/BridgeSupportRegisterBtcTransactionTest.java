@@ -30,6 +30,7 @@ import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.*;
+import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
@@ -539,7 +540,8 @@ class BridgeSupportRegisterBtcTransactionTest {
     private BridgeSupport buildBridgeSupport(ActivationConfig.ForBlock activations) {
         Repository repository = mock(Repository.class);
         when(repository.getBalance(PrecompiledContracts.BRIDGE_ADDR)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
-        when(provider.getLockingCap()).thenReturn(bridgeMainnetConstants.getMaxRbtc());
+        LockingCapSupport lockingCapSupport =  mock(LockingCapSupport.class);
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(bridgeMainnetConstants.getMaxRbtc()));
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
