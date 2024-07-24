@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import java.time.Instant;
 import java.math.BigInteger;
@@ -81,6 +82,7 @@ class BridgeSupportAddSignatureTest {
     private ActivationConfig.ForBlock activationsAfterForks;
     private BridgeSupportBuilder bridgeSupportBuilder;
     private WhitelistSupport whitelistSupport;
+    private LockingCapSupport lockingCapSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -88,6 +90,7 @@ class BridgeSupportAddSignatureTest {
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         bridgeSupportBuilder = new BridgeSupportBuilder();
         whitelistSupport = mock(WhitelistSupport.class);
+        lockingCapSupport = mock(LockingCapSupport.class);
     }
 
     @Test
@@ -125,6 +128,7 @@ class BridgeSupportAddSignatureTest {
             feePerKbSupport,
             whitelistSupport,
             mockFederationSupport,
+            lockingCapSupport,
             null,
             null,
             null
@@ -160,6 +164,7 @@ class BridgeSupportAddSignatureTest {
             feePerKbSupport,
             whitelistSupport,
             mockFederationSupport,
+            lockingCapSupport,
             null,
             null,
             null
@@ -226,6 +231,7 @@ class BridgeSupportAddSignatureTest {
             feePerKbSupport,
             whitelistSupport,
             mockFederationSupport,
+            lockingCapSupport,
             null,
             null,
             null
