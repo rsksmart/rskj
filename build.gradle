@@ -1,5 +1,5 @@
 plugins {
-    id "org.sonarqube" version "2.7.1"
+    id "org.sonarqube" version "5.1.0.4882"
 }
 
 subprojects {
@@ -7,4 +7,3 @@ subprojects {
     group = 'co.rsk'
     version = config.modifier?.trim() ? config.versionNumber + "-" + config.modifier : config.versionNumber
 }
-
