@@ -2293,14 +2293,15 @@ class FederationSupportImplTest {
             // Act
 
             // First create call
-            federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
 
             // Second create call
-            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+            int result2 = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
 
-            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result2);
 
         }
 
