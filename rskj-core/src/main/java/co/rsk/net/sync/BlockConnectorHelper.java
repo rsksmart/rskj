@@ -30,24 +30,26 @@ import java.util.List;
 public class BlockConnectorHelper {
     private static final Logger logger = LoggerFactory.getLogger("SnapBlockConnector");
     private final BlockStore blockStore;
-    private final List<Pair<Block,BlockDifficulty>> blockAndDifficultiesList;
 
-    public BlockConnectorHelper(BlockStore blockStore, List<Pair<Block,BlockDifficulty>> blockAndDifficultiesList) {
+    public BlockConnectorHelper(BlockStore blockStore) {
         this.blockStore = blockStore;
-        this.blockAndDifficultiesList = blockAndDifficultiesList;
-        blockAndDifficultiesList.sort(new BlockAndDiffComparator());
     }
 
-    public void startConnecting() {
+    public void startConnecting(List<Pair<Block, BlockDifficulty>> blockAndDifficultiesList) {
+        blockAndDifficultiesList.sort(new BlockAndDiffComparator());
         Block child = null;
-        logger.info("Start connecting Blocks");
+        logger.info("Start connecting Blocks. To connect from {} to {} - Total: {}",
+                blockAndDifficultiesList.get(0).getKey().getNumber(),
+                blockAndDifficultiesList.get(blockAndDifficultiesList.size() - 1).getKey().getNumber(),
+                blockAndDifficultiesList.size());
+
         if (blockAndDifficultiesList.isEmpty()) {
             logger.debug("Block list is empty, nothing to connect");
             return;
         }
         int blockIndex = blockAndDifficultiesList.size() - 1;
         if (blockStore.isEmpty()) {
-            Pair<Block,BlockDifficulty> blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
+            Pair<Block, BlockDifficulty> blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
             child = blockAndDifficulty.getLeft();
             logger.debug("BlockStore is empty, setting child block number the last block from the list: {}", child.getNumber());
             blockStore.saveBlock(child, blockAndDifficulty.getRight(), true);
@@ -58,7 +60,7 @@ public class BlockConnectorHelper {
             logger.debug("Best block number: {}", child.getNumber());
         }
         while (blockIndex >= 0) {
-            Pair<Block,BlockDifficulty> currentBlockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
+            Pair<Block, BlockDifficulty> currentBlockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
             Block currentBlock = currentBlockAndDifficulty.getLeft();
             logger.info("Connecting block number: {}", currentBlock.getNumber());
 
@@ -72,10 +74,10 @@ public class BlockConnectorHelper {
         logger.info("Finished connecting blocks");
     }
 
-    static class BlockAndDiffComparator implements java.util.Comparator<Pair<Block,BlockDifficulty>> {
+    static class BlockAndDiffComparator implements java.util.Comparator<Pair<Block, BlockDifficulty>> {
         @Override
-        public int compare(Pair<Block,BlockDifficulty> o1, Pair<Block,BlockDifficulty> o2) {
-            return Long.compare(o1.getLeft().getNumber(),o2.getLeft().getNumber());
+        public int compare(Pair<Block, BlockDifficulty> o1, Pair<Block, BlockDifficulty> o2) {
+            return Long.compare(o1.getLeft().getNumber(), o2.getLeft().getNumber());
         }
     }
 }

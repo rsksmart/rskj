@@ -41,7 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class SnapSyncState extends BaseSyncState {
 
-    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
+    private static final Logger logger = LoggerFactory.getLogger("snapSyncState");
 
     private final SnapshotProcessor snapshotProcessor;
 
@@ -76,7 +76,7 @@ public class SnapSyncState extends BaseSyncState {
 
     @VisibleForTesting
     SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor,
-                         SyncConfiguration syncConfiguration, @Nullable SyncMessageHandler.Listener listener) {
+                  SyncConfiguration syncConfiguration, @Nullable SyncMessageHandler.Listener listener) {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
         this.allNodes = Lists.newArrayList();
@@ -207,8 +207,16 @@ public class SnapSyncState extends BaseSyncState {
         this.remoteTrieSize = remoteTrieSize;
     }
 
-    public List<Pair<Block, BlockDifficulty>> getBlocks() {
-        return blocks;
+    public void addBlock(Pair<Block, BlockDifficulty> blockPair) {
+        blocks.add(blockPair);
+    }
+
+    public void addAllBlocks(List<Pair<Block, BlockDifficulty>> blocks) {
+        this.blocks.addAll(blocks);
+    }
+
+    public void connectBlocks(BlockConnectorHelper blockConnectorHelper) {
+        blockConnectorHelper.startConnecting(blocks);
     }
 
     public List<TrieDTO> getAllNodes() {
