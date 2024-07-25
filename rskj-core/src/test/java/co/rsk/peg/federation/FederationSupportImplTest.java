@@ -2398,7 +2398,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addFederatorPublicKey_returnsExpectedPendingFederationSizeResponseCode() {
+        void voteFederationChange_addFederatorPublicKey_returnsSuccessfulResponseCode() {
 
             // Arrange
 
@@ -2427,9 +2427,7 @@ class FederationSupportImplTest {
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
             assertThat(federationSupport.getPendingFederationSize(), is(1));
 
-            byte[] actualBtcECkey = federationSupport.getPendingFederatorBtcPublicKey(0);
-
-            assertArrayEquals(expectedBtcECKey.getPubKey(), actualBtcECkey);
+            assertArrayEquals(expectedBtcECKey.getPubKey(), federationSupport.getPendingFederatorBtcPublicKey(0));
 
         }
 
