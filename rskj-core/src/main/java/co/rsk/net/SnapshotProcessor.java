@@ -267,10 +267,9 @@ public class SnapshotProcessor implements InternalService {
      * STATE CHUNK
      */
     private void requestStateChunk(Peer peer, long from, long blockNumber, int chunkSize) {
-        logger.debug("CLIENT - Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
+        logger.debug("CLIENT - Requesting state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from/1024);
         SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(messageId++, blockNumber, from, chunkSize);
         peer.sendMessage(message);
-        logger.debug("CLIENT - Request sent state chunk to node {} - block {} - from {}", peer.getPeerNodeID(), blockNumber, from);
     }
 
     public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage requestMessage) {
@@ -334,7 +333,7 @@ public class SnapshotProcessor implements InternalService {
     }
 
     public void processStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage responseMessage) {
-        logger.debug("CLIENT - State chunk received from {} to {} of {}", responseMessage.getFrom(), responseMessage.getTo(), state.getLastBlock());
+        logger.debug("CLIENT - State chunk received from {} to {} of {}", responseMessage.getFrom()/1024, responseMessage.getTo()/1024, state.getLastBlock().getNumber());
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = state.getSnapStateChunkQueue();
         queue.add(responseMessage);
