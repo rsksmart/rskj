@@ -510,14 +510,12 @@ public class FederationSupportImpl implements FederationSupport {
      * and if -3 funds are still to be moved between federations.
      */
     private Integer createPendingFederation(boolean dryRun) {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
-        if (currentPendingFederation != null) {
+        if (pendingFederationExists()) {
             logger.warn("[createPendingFederation] A pending federation already exists.");
             return FederationChangeResponseCode.PENDING_FEDERATION_ALREADY_EXISTS.getCode();
         }
 
-        Optional<Federation> currentProposedFederation = provider.getProposedFederation(constants, activations);
-        if (currentProposedFederation.isPresent()) {
+        if (proposedFederationExists()) {
             logger.warn("[createPendingFederation] A proposed federation already exists.");
             return FederationChangeResponseCode.PROPOSED_FEDERATION_ALREADY_EXISTS.getCode();
         }
@@ -537,7 +535,7 @@ public class FederationSupportImpl implements FederationSupport {
             return FederationChangeResponseCode.SUCCESSFUL.getCode();
         }
 
-        currentPendingFederation = new PendingFederation(Collections.emptyList());
+        PendingFederation currentPendingFederation = new PendingFederation(Collections.emptyList());
 
         provider.setPendingFederation(currentPendingFederation);
 
@@ -546,6 +544,16 @@ public class FederationSupportImpl implements FederationSupport {
 
         logger.info("[createPendingFederation] Pending federation created successfully.");
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
+    }
+
+    private boolean pendingFederationExists() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+        return currentPendingFederation != null;
+    }
+
+    private boolean proposedFederationExists() {
+        Optional<Federation> currentProposedFederation = provider.getProposedFederation(constants, activations);
+        return currentProposedFederation.isPresent();
     }
 
     private boolean amAwaitingFederationActivation() {
@@ -750,9 +758,8 @@ public class FederationSupportImpl implements FederationSupport {
      * @return 1 upon success, 1 if there was no pending federation
      */
     private Integer rollbackFederation(boolean dryRun) {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
 
-        if (currentPendingFederation == null) {
+        if (!pendingFederationExists()) {
             logger.warn("[rollbackFederation] Pending federation does not exist.");
             return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
         }
