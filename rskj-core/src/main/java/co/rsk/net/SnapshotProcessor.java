@@ -157,6 +157,7 @@ public class SnapshotProcessor implements InternalService {
         logger.debug("SERVER - Processing snapshot status request.");
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
         long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+        logger.debug("SERVER - checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
         for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
@@ -165,8 +166,10 @@ public class SnapshotProcessor implements InternalService {
             difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
         }
 
+        logger.trace("SERVER - Sending snapshot status response. From block {} to block {} - chunksize {}", blocks.get(0).getNumber(), blocks.get(blocks.size() - 1).getNumber(), BLOCK_CHUNK_SIZE);
         Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
         blocks.add(checkpointBlock);
+        logger.trace("SERVER - adding checkpoint block: {}", checkpointBlock.getNumber());
         difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
         byte[] rootHash = checkpointBlock.getStateRoot();
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
