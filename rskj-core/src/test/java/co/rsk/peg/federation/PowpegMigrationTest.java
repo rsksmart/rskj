@@ -14,6 +14,11 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
+import co.rsk.peg.lockingcap.LockingCapStorageProvider;
+import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.LockingCapSupportImpl;
+import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallSpec;
@@ -33,7 +38,10 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -226,6 +234,15 @@ class PowpegMigrationTest {
         }
         assertTrue(federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activations).isEmpty());
 
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(new InMemoryStorage());
+        LockingCapSupport lockingCapSupport = new LockingCapSupportImpl(
+            lockingCapStorageProvider,
+            activations,
+            LockingCapMainNetConstants.getInstance(),
+            signatureCache
+        );
+
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
@@ -239,6 +256,7 @@ class PowpegMigrationTest {
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
             .withFederationSupport(federationSupportImpl)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         attemptToCreateNewFederation(bridgeSupport, -2);
