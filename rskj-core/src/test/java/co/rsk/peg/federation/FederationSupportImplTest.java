@@ -2472,7 +2472,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addFederatorMultiKey_returnsExpectedPendingFederationSizeResponseCode() {
+        void voteFederationChange_addFederatorMultiKey_returnsSuccessfulResponseCode() {
 
             // Arrange
 
