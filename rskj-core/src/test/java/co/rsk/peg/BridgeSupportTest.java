@@ -32,6 +32,12 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
 import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.lockingcap.LockingCapStorageProvider;
+import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.LockingCapSupportImpl;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -101,6 +107,7 @@ class BridgeSupportTest {
     private FederationSupportBuilder federationSupportBuilder;
     private WhitelistSupport whitelistSupport;
     private WhitelistStorageProvider whitelistStorageProvider;
+    private LockingCapSupport lockingCapSupport;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -126,6 +133,8 @@ class BridgeSupportTest {
         StorageAccessor inMemoryStorageAccessor = new InMemoryStorage();
         whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorageAccessor);
         whitelistSupport = new WhitelistSupportImpl(WhitelistMainNetConstants.getInstance(), whitelistStorageProvider, mock(ActivationConfig.ForBlock.class), signatureCache);
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(inMemoryStorageAccessor);
+        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, mock(ActivationConfig.ForBlock.class), LockingCapMainNetConstants.getInstance(), signatureCache);
     }
 
     @Test
@@ -528,123 +537,6 @@ class BridgeSupportTest {
 
             assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
         }
-    }
-
-    @Test
-    void getLockingCap() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
-
-        BridgeConstants constants = mock(BridgeConstants.class);
-        when(constants.getInitialLockingCap()).thenReturn(Coin.SATOSHI);
-
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(null).thenReturn(constants.getInitialLockingCap());
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .withActivations(activations)
-            .build();
-
-        // First time should also call setLockingCap as it was null
-        assertEquals(constants.getInitialLockingCap(), bridgeSupport.getLockingCap());
-        // Second time should just return the value
-        assertEquals(constants.getInitialLockingCap(), bridgeSupport.getLockingCap());
-        // Verify the set was called just once
-        verify(provider, times(1)).setLockingCap(constants.getInitialLockingCap());
-    }
-
-    @Test
-    void increaseLockingCap_unauthorized() {
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        when(authorizer.isAuthorized(any(Transaction.class), any())).thenReturn(false);
-
-        BridgeConstants constants = mock(BridgeConstants.class);
-        when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withActivations(ActivationConfigsForTest.all().forBlock(0))
-            .build();
-
-        assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.SATOSHI));
-    }
-
-    @Test
-    void increaseLockingCap_below_current_value() {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(Coin.COIN);
-
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        when(authorizer.isAuthorized(any(Transaction.class), any())).thenReturn(true);
-
-        BridgeConstants constants = mock(BridgeConstants.class);
-        when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .withActivations(ActivationConfigsForTest.all().forBlock(0))
-            .build();
-
-        assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.SATOSHI));
-    }
-
-    @Test
-    void increaseLockingCap_above_upper_value() {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(Coin.COIN);
-
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        when(authorizer.isAuthorized(any(Transaction.class), any())).thenReturn(true);
-
-        BridgeConstants constants = mock(BridgeConstants.class);
-        when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
-
-        int multiplier = 2;
-        when(constants.getLockingCapIncrementsMultiplier()).thenReturn(multiplier);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .withActivations(ActivationConfigsForTest.all().forBlock(0))
-            .build();
-
-        assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.COIN.multiply(multiplier).plus(Coin.SATOSHI)));
-    }
-
-    @Test
-    void increaseLockingCap() {
-        Coin lastValue = Coin.COIN;
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(lastValue);
-
-        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        when(authorizer.isAuthorized(any(Transaction.class), any())).thenReturn(true);
-
-        BridgeConstants constants = mock(BridgeConstants.class);
-        when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
-        int multiplier = 2;
-        when(constants.getLockingCapIncrementsMultiplier()).thenReturn(multiplier);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(constants)
-            .withProvider(provider)
-            .withActivations(ActivationConfigsForTest.all().forBlock(0))
-            .build();
-
-        // Accepts up to the last value (increment 0)
-        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue));
-
-        // Accepts up to the last value plus one
-        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue.plus(Coin.SATOSHI)));
-
-        // Accepts a value in the middle
-        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue.plus(Coin.CENT)));
-
-        // Accepts up to the last value times multiplier
-        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue.multiply(multiplier)));
     }
 
     @Test
@@ -1711,7 +1603,8 @@ class BridgeSupportTest {
         when(provider.getCoinbaseInformation(registerHeader.getHash())).thenReturn(new CoinbaseInformation(witnessMerkleRoot));
         WhitelistStorageProvider whitelistProvider = mock(WhitelistStorageProvider.class);
         when(whitelistProvider.getLockWhitelist(activationsBeforeForks, btcRegTestParams)).thenReturn(new LockWhitelist(new HashMap<>(), 0));
-        when(provider.getLockingCap()).thenReturn(Coin.FIFTY_COINS);
+        LockingCapSupport lockingCapSupportMock = mock(LockingCapSupport.class);
+        when(lockingCapSupportMock.getLockingCap()).thenReturn(Optional.of(Coin.FIFTY_COINS));
         // mock an actual store for the processed txs
         HashMap<Sha256Hash, Long> processedTxs = new HashMap<>();
         doAnswer(a -> {
@@ -1748,6 +1641,7 @@ class BridgeSupportTest {
             .withFeePerKbSupport(feePerKbSupport)
             .withActivations(mockedActivations)
             .withFederationSupport(federationSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         int height = 30;
@@ -6517,6 +6411,7 @@ class BridgeSupportTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -6575,6 +6470,7 @@ class BridgeSupportTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -7341,7 +7237,8 @@ class BridgeSupportTest {
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         if (mockLockingCap) {
-            when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
+            LockingCapSupport lockingCapSupportMock = mock(LockingCapSupport.class);
+            when(lockingCapSupportMock.getLockingCap()).thenReturn(Optional.of(Coin.COIN.multiply(1)));
         }
 
         BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(lockSenderAddressType, btcAddress, rskAddress);
@@ -7364,6 +7261,7 @@ class BridgeSupportTest {
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         // Act
@@ -7871,8 +7769,8 @@ class BridgeSupportTest {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
-
-        when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
+        LockingCapSupport lockingCapSupportMock = mock(LockingCapSupport.class);
+        when(lockingCapSupportMock.getLockingCap()).thenReturn(Optional.of(Coin.COIN.multiply(1)));
 
         BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(lockSenderAddressType, btcSenderAddress, rskAddress);
 
@@ -7902,6 +7800,7 @@ class BridgeSupportTest {
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupportMock)
             .build();
 
         // Act
@@ -7954,7 +7853,8 @@ class BridgeSupportTest {
         when(bridgeConstants.getFederationConstants()).thenReturn(federationConstants);
 
         // Configure locking cap
-        when(bridgeConstants.getInitialLockingCap()).thenReturn(lockingCap);
+        LockingCapConstants lockingCapConstants = mock(LockingCapConstants.class);
+        when(lockingCapConstants.getInitialValue()).thenReturn(lockingCap);
 
         Repository repository = createRepository();
 
@@ -8094,6 +7994,7 @@ class BridgeSupportTest {
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .withWhitelistSupport(whitelistSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         // Simulate blockchain
@@ -8174,6 +8075,7 @@ class BridgeSupportTest {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             blockStoreFactory,
             activations,
             signatureCache
