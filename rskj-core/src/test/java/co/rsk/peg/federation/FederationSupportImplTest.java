@@ -2310,24 +2310,57 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            Transaction firstAuthorizerTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction secondAuthorizerTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
-            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+            Transaction firstAuthorizerTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizerTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(),
+                new byte[][]{});
 
             // Act
 
             // First create call
-            int resultFromFirstAuthorizer = federationSupport.voteFederationChange(firstAuthorizerTx, abiCallSpec, signatureCache, bridgeEventLogger);
+            int resultFromFirstAuthorizer = federationSupport.voteFederationChange(
+                firstAuthorizerTx, abiCallSpec, signatureCache, bridgeEventLogger);
 
             // Second create call
-            int resultFromSecondAuthorizer = federationSupport.voteFederationChange(secondAuthorizerTx, abiCallSpec, signatureCache, bridgeEventLogger);
+            int resultFromSecondAuthorizer = federationSupport.voteFederationChange(
+                secondAuthorizerTx, abiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
 
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromFirstAuthorizer);
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromSecondAuthorizer);
+
             assertThat(federationSupport.getPendingFederationSize(), is(0));
             assertNotNull(federationSupport.getPendingFederationHash());
+
+        }
+
+        @Test
+        void voteFederationChange_commitEmptyFederation_returnsInsufficientMembersResponseCode() {
+
+            // Arrange
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.THIRD_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with  m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+            ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{pendingFederationHash.getBytes()});
+
+            // Act
+
+            int result = federationSupport.voteFederationChange(tx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode(), result);
 
         }
 
