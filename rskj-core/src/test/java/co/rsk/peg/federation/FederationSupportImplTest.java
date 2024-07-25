@@ -2282,6 +2282,29 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_whenCreateIsCalledTwiceBySameAuthorizer_returnsGenericErrorResponseCode() {
+
+            // Arrange
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            ABICallSpec abiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Act
+
+            // First create call
+            int result = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Second create call
+            int result2 = federationSupport.voteFederationChange(tx, abiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result2);
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
