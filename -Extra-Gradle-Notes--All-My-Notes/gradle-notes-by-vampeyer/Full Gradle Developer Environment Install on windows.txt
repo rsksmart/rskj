@@ -1,0 +1,45 @@
+
+----------------------------
+
+Installing gradle on a local device quick and painlesly 
+
+-------------------
+
+
+Prerequisites --- Java 21 + , reccommendeed JDK == Corretto 
+@  - https://aws.amazon.com/corretto/
+
+-- Installing Gradle on a local dev machine --- 
+
+1. You may more easily download gradle , via another major windows package manager
+and path it to your env variable automatically ,  as well !
+( which is much more easier than the direct process , I am running 
+- gradle 8.8 , from chocolateys latest repo updates. 
+ 
+You may also use 
+PAckage managers such as 
+ choclolatey , npm -g ( global ) , scoop , or winget. 
+--------------------------------------------------- -------------------------------------------
+For this demonstration i used choco , 
+To install choco , install Node , and in the installation of node on the machine , 
+watch out for a check box that says ,  
+-- install chocololatey package manager via local machine. 
+
+--- verify the install with  
+*choco  -v  
+
+- once your chocolatey package manager 
+ installation is verified , 
+
+
+2. Install gradle the easy way , via choco. 
+
+*choco install gradle 
+
+
+After installation
+Verify the installation with 
+
+*gradle - v          , in a command prompt. 
+
+______________________________________________________ 

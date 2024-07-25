@@ -1,0 +1,94 @@
+
+
+I had found some bugs and issues with the gradle building and the gradle wrapper so , 
+I am installing gradle on my local , rebuilding it , and , 
+republishing it. 
+
+
+
+1
+------------------------------
+
+- 1  - 1. - opt 1 ,  for windows ,  
+-  download the gradfle files latest release from the 
+download site , at this time   - 07/16/2024  , 
+the version is 8.9 to install this verion   , 
+the instructions can be found on the gradle pages and docs , and it goes something like thes , 
+for windows  / win10 at least , 
+  - - download latest gradle version from the site and 
+-- create a flder in C: / called gradle , 
+- extract the folder conents there ,  and 
+-- then set your own path variable.   
+
+( Quite the complicated installation processs 
+
+1 - 2.   It is much easier and reccomended to install by a package manager , such as 
+choco , scoop , or winget.  Choco can be installed sutomatically when installing Node for a good setup/ 
+you may verify the installation of choco , by using choco -v
+
+
+if you have choco installed like me you can run  , 
+
+
+*choco install gradle , and it will install version 8.8,   
+
+----------------------------
+
+Be certain to verify your gradle installed version with , 
+*gradle -v      
+
+and you will see an output of your gradle version , which should now be a part of your command path, 
+thats how you can know and verify it was installed correctly 
+
+
+----------------------------------
+
+-------------------------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+
+
+-------   Using Gradle , with a java or etc type of package. 
+
+to start and initialize a project with gradle , you may run , 
+
+*gradle init   
+
+
+
+
+---- go through the prompts and pick your type ans setup of your build. 
+
+
+
+-- then when its done , to build your gradle  , .jar app. 
+in the  
+
+\app\build\libs folder run , 
+
+*gradle build
+
+
+
+-- and you should then see the .jar file output .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+____________________________________________________________________
