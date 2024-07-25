@@ -2764,7 +2764,7 @@ class FederationSupportImplTest {
 
             assertNull(federationSupport.getPendingFederationHash());
             // -1 because the pending fed no longer exist
-            assertThat(federationSupport.getPendingFederationSize(), is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT));
+            assertThat(federationSupport.getPendingFederationSize(), is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode()));
 
             Federation activeFederationAfterCommit = federationSupport.getActiveFederation();
 
