@@ -2603,13 +2603,13 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addMultiFederatorPublicKeyWithDifferentMstKey_returnsSuccessResponseCodeAndFedSizeZero() {
+        void voteFederationChange_addFederatorMultiKeyWithDifferentMstKey_returnsSuccessResponseCodeAndFedSizeZero() {
 
             // Arrange
 
-            BtcECKey expectedBtcECKey1 = new BtcECKey();
-            ECKey expectedRskKey = new ECKey();
-            ECKey expectedMstKey = new ECKey();
+            BtcECKey btcKey = new BtcECKey();
+            ECKey rskKey = new ECKey();
+            ECKey mstKey = new ECKey();
 
             ECKey differentMstKey = new ECKey();
 
@@ -2625,20 +2625,20 @@ class FederationSupportImplTest {
             // Same btc and rsk keys for both feds, different mst key.
 
             ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
-                expectedBtcECKey1.getPubKey(),
-                expectedRskKey.getPubKey(),
-                expectedMstKey.getPubKey(),
+                btcKey.getPubKey(),
+                rskKey.getPubKey(),
+                mstKey.getPubKey(),
             });
 
             ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
-                expectedBtcECKey1.getPubKey(),
-                expectedRskKey.getPubKey(),
+                btcKey.getPubKey(),
+                rskKey.getPubKey(),
                 differentMstKey.getPubKey(),
             });
 
             // Act
 
-            // Voting add new fed with m of n authorizers, but essentially for different federators due to the different mst key
+            // Voting add new fed member with m of n authorizers, but essentially for different federators due to the different mst key
             int result = federationSupport.voteFederationChange(tx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
             int result2 = federationSupport.voteFederationChange(tx2, addMultiKeyAbiCallSpec2, signatureCache, bridgeEventLogger);
 
