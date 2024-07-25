@@ -2726,7 +2726,7 @@ class FederationSupportImplTest {
 
             ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
-            // Voting with  m of n authorizers to create the pending federation
+            // Voting with m of n authorizers to create the pending federation
             federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
@@ -2736,7 +2736,7 @@ class FederationSupportImplTest {
 
             int EXPECTED_COUNT_OF_MEMBERS = 10;
 
-            // Voting add new fed with m of n authorizers
+            // Voting add new fed member with m of n authorizers
 
             Set<String> expectedPubKeys = new HashSet<>();
 
@@ -2752,7 +2752,7 @@ class FederationSupportImplTest {
 
             ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{pendingFederationHash.getBytes()});
 
-            Federation initialActiveFederation = federationSupport.getActiveFederation();
+            Federation activeFederationBeforeCommit = federationSupport.getActiveFederation();
 
             // Act
 
@@ -2764,20 +2764,21 @@ class FederationSupportImplTest {
 
             assertNull(federationSupport.getPendingFederationHash());
             // -1 because the pending fed no longer exist
-            assertThat(federationSupport.getPendingFederationSize(), is(-1));
+            assertThat(federationSupport.getPendingFederationSize(), is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT));
 
-            Federation finalActiveFederation = federationSupport.getActiveFederation();
+            Federation activeFederationAfterCommit = federationSupport.getActiveFederation();
 
             assertThat(federationSupport.getActiveFederationSize(), is(EXPECTED_COUNT_OF_MEMBERS));
 
-            assertNotEquals(initialActiveFederation, finalActiveFederation);
+            assertNotEquals(activeFederationBeforeCommit, activeFederationAfterCommit);
 
-            Set<String> actualPubKeys = finalActiveFederation.getMembers().stream()
+            Set<String> actualPubKeys = activeFederationAfterCommit.getMembers().stream()
                 .map(member -> HexUtils.toJsonHex(member.getBtcPublicKey().getPubKey()))
                 .collect(Collectors.toSet());
 
             assertEquals(expectedPubKeys, actualPubKeys);
 
+            // asserting that 'commit_federation' event was emitted
             assertThat(logs.size(), is(1));
 
             LogInfo log = logs.get(0);
