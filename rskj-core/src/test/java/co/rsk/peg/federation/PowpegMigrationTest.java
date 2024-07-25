@@ -95,7 +95,6 @@ class PowpegMigrationTest {
         );
 
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
-        bridgeStorageProvider.setLockingCap(bridgeConstants.getMaxRbtc());
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
             btcParams,
