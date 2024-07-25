@@ -2561,7 +2561,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addSameFederatorPublicKeyBySameAuthorizerTwice_returnsGenericResponseCodeOnSecondCall() {
+        void voteFederationChange_addFederatorPublicKeyBySameAuthorizerTwice_returnsGenericErrorResponseCode() {
 
             // Arrange
 
