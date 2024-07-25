@@ -2435,7 +2435,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addWrongFederatorPublicKey_returnsGenericResponseCode() {
+        void voteFederationChange_whenAddingInvalidFederatorPublicKey_returnsGenericErrorResponseCode() {
 
             // Arrange
 
@@ -2450,12 +2450,12 @@ class FederationSupportImplTest {
 
             byte[] invalidPublicKey = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(123_456_789));
 
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{ invalidPublicKey });
+            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{ invalidPublicKey });
 
             // Act
 
             // Voting add new fed with m of n authorizers
-            int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int result = federationSupport.voteFederationChange(tx, addFederatorAbiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
 
