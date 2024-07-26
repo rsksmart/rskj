@@ -2884,7 +2884,7 @@ class FederationSupportImplTest {
                 firstAuthorizedTx,
                 addMultiKeyAbiCallSpec,
                 signatureCache,
-            bridgeEventLogger
+                bridgeEventLogger
             );
 
             // Assert
