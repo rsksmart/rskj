@@ -20,6 +20,8 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.ArrayUtils.subarray;
 import static org.apache.commons.lang3.StringUtils.stripEnd;
 import static org.ethereum.util.ByteUtil.longToBytesNoLeadZeroes;
 
@@ -119,9 +120,9 @@ public class CallTransaction {
          */
         public abstract byte[] encode(Object value);
 
-        public abstract Object decode(byte[] encoded, int offset);
+        public abstract Object decode(BytesSlice encoded, int offset);
 
-        public Object decode(byte[] encoded) {
+        public Object decode(BytesSlice encoded) {
             return decode(encoded, 0);
         }
 
@@ -187,12 +188,12 @@ public class CallTransaction {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             return decodeInt(encoded, offset);
         }
 
-        public static BigInteger decodeInt(byte[] encoded, int offset) {
-            return new BigInteger(Arrays.copyOfRange(encoded, offset, offset + 32));
+        public static BigInteger decodeInt(BytesSlice encoded, int offset) {
+            return new BigInteger(encoded.copyArrayOfRange(offset, offset + 32));
         }
 
         public static byte[] encodeInt(int i) {
@@ -222,7 +223,7 @@ public class CallTransaction {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             return Boolean.valueOf(((Number) super.decode(encoded, offset)).intValue() != 0);
         }
     }
@@ -350,7 +351,7 @@ public class CallTransaction {
             checkFunctionType(FunctionType.event);
             Param[] dataInputs = Arrays.stream(inputs).filter(i -> !i.indexed).toArray(Param[]::new);
 
-            return decode(encodedData, dataInputs);
+            return decode(Bytes.of(encodedData), dataInputs);
         }
 
         private void checkFunctionType(FunctionType expected) {
@@ -405,7 +406,7 @@ public class CallTransaction {
             return encodeArguments(outputs, args);
         }
 
-        private Object[] decode(byte[] encoded, Param[] params) {
+        private Object[] decode(BytesSlice encoded, Param[] params) {
             Object[] ret = new Object[params.length];
 
             int off = 0;
@@ -421,11 +422,11 @@ public class CallTransaction {
         }
 
         public Object[] decode(byte[] encoded) {
-            return decode(subarray(encoded, 4, encoded.length), inputs);
+            return decode(Bytes.of(encoded).slice(4, encoded.length), inputs);
         }
 
         public Object[] decodeResult(byte[] encodedRet) {
-            return decode(encodedRet, outputs);
+            return decode(Bytes.of(encodedRet), outputs);
         }
 
         public String formatSignature() {
