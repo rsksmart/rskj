@@ -80,7 +80,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNotExistsPreviousValueAndTakeDefaultInitialValueAndNewLockingCapIsGreaterThanInitialValue_ShouldReturnTrue() {
+    void increaseLockingCap_whenNoPreviousValueExistsAndTakeDefaultInitialValueAndNewLockingCapIsGreaterThanInitialValue_ShouldReturnTrue() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -94,7 +94,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNotExistsPreviousValueAndTakeDefaultInitialValueAndNewLockingCapIsLessThanInitialValue_ShouldReturnFalse() {
+    void increaseLockingCap_whenNoPreviousValueExistsAndTakeDefaultInitialValueAndNewLockingCapIsLessThanInitialValue_ShouldReturnFalse() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().subtract(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -108,7 +108,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenExistInStorageAPreviousValueAndNewLockingCapIsGreaterThanPreviousValue_ShouldReturnTrue() {
+    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_ShouldReturnTrue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -129,7 +129,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenExistInStorageAPreviousValueAndNewLockingCapIsLessThanPreviousValue_ShouldReturnFalse() {
+    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_ShouldReturnFalse() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -208,7 +208,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsEqualToLockingCapValueAlreadyExist_ShouldReturnTrue() {
+    void increaseLockingCap_whenNewLockingCapIsEqualToLockingCapValueAlreadyExists_ShouldReturnTrue() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue();
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
