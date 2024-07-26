@@ -51,6 +51,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
@@ -2866,6 +2867,81 @@ class FederationSupportImplTest {
             // Assert
             assertEquals(FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode(), firstVoteCommitFederationResult);
             assertEquals(FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode(), secondVoteCommitFederationResult);
+        }
+
+        @Test
+        void voteFederationChange_addMultiFederatorPublicKeyWithBadBtcKey_returnsGenericErrorResponseCode() {
+            // Arrange
+            byte[] invalidBtcPublicKey = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(123_456_789));
+            ECKey expectedRskKey = new ECKey();
+            ECKey expectedMstKey = new ECKey();
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            voteToCreateFederation(tx, tx2);
+
+            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                invalidBtcPublicKey,
+                expectedRskKey.getPubKey(),
+                expectedMstKey.getPubKey(),
+            });
+
+            // Act
+            int result = federationSupport.voteFederationChange(tx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+
+            // Assert
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result);
+        }
+
+        @Test
+        void voteFederationChange_addMultiFederatorPublicKeyWithBadRskKey_returnsGenericErrorResponseCode() {
+            // Arrange
+            BtcECKey btcECKey = new BtcECKey();
+            byte[] invalidRskPublicKey = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(123_456_789));
+            ECKey mstKey = new ECKey();
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            voteToCreateFederation(tx, tx2);
+
+            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                btcECKey.getPubKey(),
+                invalidRskPublicKey,
+                mstKey.getPubKey(),
+            });
+
+            // Act
+            int result = federationSupport.voteFederationChange(tx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+
+            // Assert
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result);
+        }
+
+        @Test
+        void voteFederationChange_addMultiFederatorPublicKeyWithBadMstKey_returnsGenericErrorResponseCode() {
+            // Arrange
+            BtcECKey btcECKey = new BtcECKey();
+            ECKey rskKey = new ECKey();
+            byte[] invalidMstPublicKey = ByteUtil.bigIntegerToBytes(BigInteger.valueOf(123_456_789));
+
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            voteToCreateFederation(tx, tx2);
+
+            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                btcECKey.getPubKey(),
+                rskKey.getPubKey(),
+                invalidMstPublicKey,
+            });
+
+            // Act
+            int result = federationSupport.voteFederationChange(tx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+
+            // Assert
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result);
         }
 
         private void voteToCreateFederation(Transaction firstAuthorizedTx, Transaction secondAuthorizedTx) {
