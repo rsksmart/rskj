@@ -32,6 +32,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.lockingcap.*;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.storage.*;
 import co.rsk.peg.bitcoin.*;
@@ -518,6 +519,64 @@ class BridgeSupportTest {
         void save_callsFederationSupportSave() throws IOException {
             bridgeSupport.save();
             verify(federationSupport).save();
+        }
+    }
+
+    @Nested
+    @Tag("LockingCap")
+    class LockingCapTest {
+
+        private LockingCapSupport lockingCapSupport;
+        private BridgeSupport bridgeSupport;
+        private final LockingCapConstants constants = LockingCapMainNetConstants.getInstance();
+
+        @BeforeEach
+        void setUp() {
+            lockingCapSupport = mock(LockingCapSupportImpl.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withLockingCapSupport(lockingCapSupport)
+                .build();
+        }
+
+        @Test
+        void getLockingCap_whenNoValueExistsInStorage_shouldReturnInitialValue() {
+            // Arrange
+            Optional<Coin> expectedLockingCap = Optional.of(constants.getInitialValue());
+            when(lockingCapSupport.getLockingCap()).thenReturn(expectedLockingCap);
+
+            // Act
+            Optional<Coin> actualLockingCap = Optional.of(bridgeSupport.getLockingCap());
+
+            // Assert
+            assertEquals(expectedLockingCap, actualLockingCap);
+        }
+
+        @Test
+        void getLockingCap_whenLockingCapIsEmpty_shouldReturnNull() {
+            // Arrange
+            when(lockingCapSupport.getLockingCap()).thenReturn(Optional.empty());
+
+            // Act
+            Coin actualLockingCap = bridgeSupport.getLockingCap();
+
+            // Assert
+            assertNull(actualLockingCap);
+        }
+
+        @Test
+        void increaseLockingCap() {
+            // Arrange
+            Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+            when(lockingCapSupport.increaseLockingCap(tx, newLockingCap)).thenReturn(true);
+            when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(newLockingCap));
+
+            // Act
+            boolean actualResult = bridgeSupport.increaseLockingCap(tx, newLockingCap);
+
+            // Assert
+            assertTrue(actualResult);
+            assertEquals(newLockingCap, bridgeSupport.getLockingCap());
         }
     }
 

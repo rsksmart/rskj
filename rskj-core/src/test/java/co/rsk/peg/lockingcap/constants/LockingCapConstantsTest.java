@@ -1,5 +1,7 @@
 package co.rsk.peg.lockingcap.constants;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Coin;
@@ -21,7 +23,7 @@ class LockingCapConstantsTest {
     @MethodSource("getIncreaseAuthorizerProvider")
     void getIncreaseAuthorizer(LockingCapConstants lockingCapConstants, AddressBasedAuthorizer expectedIncreaseAuthorizer) {
         AddressBasedAuthorizer actualIncreaseAuthorizer = lockingCapConstants.getIncreaseAuthorizer();
-        assertEquals(expectedIncreaseAuthorizer, actualIncreaseAuthorizer);
+        assertThat(actualIncreaseAuthorizer, samePropertyValuesAs(expectedIncreaseAuthorizer));
     }
 
     private static Stream<Arguments> getIncreaseAuthorizerProvider() {
