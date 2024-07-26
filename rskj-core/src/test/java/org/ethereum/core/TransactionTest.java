@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
@@ -508,7 +509,7 @@ class TransactionTest {
 
                     track.rollback();
 
-                    System.out.println("Return value: " + new CallTransaction.IntType("uint").decode(executor.getResult().getHReturn()));
+                    System.out.println("Return value: " + new CallTransaction.IntType("uint").decode(Bytes.of(executor.getResult().getHReturn())));
                 }
 
                 // now executing the JSON test transaction

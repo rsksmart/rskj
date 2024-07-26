@@ -19,6 +19,7 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.types.bytes.BytesSlice;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import java.lang.reflect.Array;
@@ -206,15 +207,15 @@ public class Utils {
         return false;
     }
 
-    public static void validateArrayAllegedSize(byte[] data, int offset, int allegedSize) {
-        if (data.length < Math.addExact(allegedSize, offset)) {
+    public static void validateArrayAllegedSize(BytesSlice data, int offset, int allegedSize) {
+        if (data.length() < Math.addExact(allegedSize, offset)) {
             throw new IllegalArgumentException("The specified size exceeds the size of the payload");
         }
     }
 
-    public static byte[] safeCopyOfRange(byte[] data, int from, int size) {
+    public static byte[] safeCopyOfRange(BytesSlice data, int from, int size) {
         validateArrayAllegedSize(data, from, size);
-        return Arrays.copyOfRange(data, from, from + size);
+        return data.copyArrayOfRange(from, from + size);
     }
 
     public static boolean isDecimalString(String s) {
