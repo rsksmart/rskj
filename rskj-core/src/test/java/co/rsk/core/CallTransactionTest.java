@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
@@ -115,7 +116,7 @@ class CallTransactionTest {
                 // string
                 104, 101, 108, 108, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-        Assertions.assertEquals("hello", type.decode(toDecode));
+        Assertions.assertEquals("hello", type.decode(Bytes.of(toDecode)));
     }
 
     @Test
