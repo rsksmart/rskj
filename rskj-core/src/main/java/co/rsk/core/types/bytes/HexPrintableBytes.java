@@ -77,7 +77,7 @@ class PrintableBytesHexFormatter implements PrintableBytes.Formatter<HexPrintabl
         }
 
         if (length > 32) {
-            return printableBytes.toHexString(off, 15) + ".." + printableBytes.toHexString(off + length - 15, 15);
+            return printableBytes.toHexString(off, 16) + ".." + printableBytes.toHexString(off + length - 15, 15);
         }
         return printableBytes.toHexString(off, length);
     }
