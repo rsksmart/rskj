@@ -530,6 +530,64 @@ class BridgeSupportTest {
         }
     }
 
+    @Nested
+    @Tag("LockingCap")
+    class LockingCapTest {
+
+        private LockingCapSupport lockingCapSupport;
+        private BridgeSupport bridgeSupport;
+        private final LockingCapConstants constants = LockingCapMainNetConstants.getInstance();
+
+        @BeforeEach
+        void setUp() {
+            lockingCapSupport = mock(LockingCapSupportImpl.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withLockingCapSupport(lockingCapSupport)
+                .build();
+        }
+
+        @Test
+        void getLockingCap_whenNoValueExistsInStorage_shouldReturnInitialValue() {
+            // Arrange
+            Optional<Coin> expectedLockingCap = Optional.of(constants.getInitialValue());
+            when(lockingCapSupport.getLockingCap()).thenReturn(expectedLockingCap);
+
+            // Act
+            Optional<Coin> actualLockingCap = Optional.of(bridgeSupport.getLockingCap());
+
+            // Assert
+            assertEquals(expectedLockingCap, actualLockingCap);
+        }
+
+        @Test
+        void getLockingCap_whenLockingCapIsEmpty_shouldReturnNull() {
+            // Arrange
+            when(lockingCapSupport.getLockingCap()).thenReturn(Optional.empty());
+
+            // Act
+            Coin actualLockingCap = bridgeSupport.getLockingCap();
+
+            // Assert
+            assertNull(actualLockingCap);
+        }
+
+        @Test
+        void increaseLockingCap() {
+            // Arrange
+            Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+            when(lockingCapSupport.increaseLockingCap(tx, newLockingCap)).thenReturn(true);
+            when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(newLockingCap));
+
+            // Act
+            boolean actualResult = bridgeSupport.increaseLockingCap(tx, newLockingCap);
+
+            // Assert
+            assertTrue(actualResult);
+            assertEquals(newLockingCap, bridgeSupport.getLockingCap());
+        }
+    }
+
     @Test
     void registerBtcTransaction_before_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // Sending above locking cap evaluating different conditions (sending to both fed, to one, including funds in wallet and in utxos waiting for signatures...)
