@@ -5,7 +5,6 @@ import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -69,8 +68,8 @@ public class LockingCapSupportImpl implements LockingCapSupport {
             return false;
         }
 
-        Coin maxLockingCap = lockingCap.multiply(constants.getIncrementsMultiplier());
-        if (newLockingCap.compareTo(maxLockingCap) > 0) {
+        Coin maxLockingCapVoteValueAllowed = lockingCap.multiply(constants.getIncrementsMultiplier());
+        if (newLockingCap.compareTo(maxLockingCapVoteValueAllowed) > 0) {
             logger.warn("[increaseLockingCap] {} {}", "Attempted value increases Locking Cap above its limit. Value attempted: ", newLockingCap.value);
             return false;
         }
