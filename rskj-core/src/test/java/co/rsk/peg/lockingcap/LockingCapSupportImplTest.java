@@ -14,7 +14,6 @@ import co.rsk.peg.storage.StorageAccessor;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.SignatureCache;
@@ -68,9 +67,9 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void getLockingCap_preRSKIP134_whenLockingCapIsNotSet_ShouldReturnEmpty() {
+    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_ShouldReturnEmpty() {
         // Arrange
-        activations = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP134).forBlock(0);
+        activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
 
         // Act
@@ -251,9 +250,9 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_preRSKIP134_whenLockingCapIsNotSet_ShouldReturnFalse() {
+    void increaseLockingCap_prePapyrus200_whenLockingCapIsNotSet_ShouldReturnFalse() {
         // Arrange
-        activations = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP134).forBlock(0);
+        activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -284,9 +283,9 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void save_preRSKIP134_whenIsAttemptedIncreaseLockingCapValue_ShouldNotSaveLockingCap() {
+    void save_prePapyrus200_whenIsAttemptedIncreaseLockingCapValue_ShouldNotSaveLockingCap() {
         // Arrange
-        activations = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP134).forBlock(0);
+        activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
