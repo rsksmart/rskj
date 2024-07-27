@@ -60,7 +60,7 @@ class PreflightChecksUtilsTest {
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("16");
 
         Exception exception = Assertions.assertThrows(PreflightCheckException.class, preflightChecksUtilsSpy::runChecks);
-        Assertions.assertEquals("Invalid Java Version '16'. Supported versions: 8 11 17", exception.getMessage());
+        Assertions.assertEquals("Invalid Java Version '16'. Supported versions: 17", exception.getMessage());
 
         rskContext.close();
     }
@@ -76,21 +76,6 @@ class PreflightChecksUtilsTest {
 
         verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
         verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("17");
-
-        rskContext.close();
-    }
-
-    @Test
-    void runChecks_currentJavaVersionIs11_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(tempDir);
-        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
-
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("11");
-
-        preflightChecksUtilsSpy.runChecks();
-
-        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
-        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("11");
 
         rskContext.close();
     }
