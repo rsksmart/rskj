@@ -1,0 +1,147 @@
+
+
+
+
+To recreate the file structure in the repositiory for a successful build , 
+you must follow these steps. 
+
+This is specific to the gradle updates ,and this build , 
+and this is a working and su-table method. 
+
+
+
+Step one , 
+
+copy amd paste the /doc and /rjsk-core folders into the root directory. 
+
+then run  , 
+
+
+_______________________________________________________________________________________________________
+
+*gradle init 
+-----------------------------------------------------------------------------------------------
+C:\Users\vampeyer\Desktop\HACKATHON-IN-48HRSD-OR-LESS\rootstock---NOdes\GRADLE-REBUILD-NOTES
+\GRADLESAMP2
+> gradle init
+
+Select type of build to generate:
+  1: Application
+  2: Library
+  3: Gradle plugin
+  4: Basic (build structure only)
+Enter selection (default: Application) [1..4]----- 1
+
+Select implementation language:
+  1: Java
+  2: Kotlin
+  3: Groovy
+  4: Scala
+  5: C++
+  6: Swift
+Enter selection (default: Java) [1..6]---------------- 1
+
+Enter target Java version (min: 7, default: 21):------ 21
+
+Project name (default: GRADLESAMP2): rsjk
+
+Select application structure:
+  1: Single application project
+  2: Application and library project
+Enter selection (default: Single application project) [1..2]---- 1
+
+Select build script DSL:
+  1: Kotlin
+  2: Groovy
+Enter selection (default: Kotlin) [1..2] ------------------------2
+
+Select test framework:
+  1: JUnit 4
+  2: TestNG
+  3: Spock
+  4: JUnit Jupiter
+Enter selection (default: JUnit Jupiter) [1..4]------------------- 4
+
+Generate build using new APIs and behavior (some features may change in the next minor release)? (default: no) [yes, no]
+-------------- yes
+
+
+> Task :init
+To learn more about Gradle by exploring our Samples at https://docs.gradle.org/8.8/samples/sample_building_java_applications.html
+
+BUILD SUCCESSFUL in 1m 27s
+1 actionable task: 1 executed
+PS C:\Users\vampeyer\Desktop\HACKATHON-IN-48HRSD-OR-LESS\rootstock---NOdes\GRADLE-REBUILD-NOTES\GRADLESAMP2> gradle build
+
+
+
+_______________________________________________________________________
+
+
+
+
+---------------
+
+Then running  
+
+*gradle build        for gradle build CLI install with gradle wrapper , will build them 
+
+as well as the wrapper files for a regular local pull and run , 
+
+as the read me originally described , the following commands now work under this build. 
+___________________________________________________________________________________
+
+
+./gradlew build   
+
+&& 
+
+gradle.bat , 
+
+
+
+
+These  will also work by default now , for building the repository 
+with gradle  , 
+
+
+When pulling from this repository. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+____________________________________________________________________________
+
+There are a few options , but the main commands are just  .
+
+*gradle init                  - followed by a series of selections and then 
+*gradle build               
+
+
+But only one set of the selections will follolow the proper directory structure. 
+
+./gradle
+/gradle
+/app
+ - 
+ - 
+gradlew
+gradlew.bat
+settings.gradle 
+
+_______________________________________________________________________  
+

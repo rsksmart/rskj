@@ -1,0 +1,19 @@
+
+
+After copying the root directory , run the 
+config.bat file 
+
+
+
+-----------------------------
+
+
+
+1. To install a working directory initialized with gradle , there are two main  options on the windows
+machine . 
+
+ 1-a. run the gradlew.bat file. 
+1-b. Go to a terminal in the directory of the app and run  , ./gradlew build. 
+
+
+--- 
