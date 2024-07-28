@@ -43,15 +43,19 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
 
     public ConfigCapabilitiesImpl(RskSystemProperties config) {
         if (config.syncVersion() != null) {
-            EthVersion eth =fromCode(config.syncVersion());
+            EthVersion eth = fromCode(config.syncVersion());
             if (eth != null) {
                 allCaps.add(new Capability(RSK, eth.getCode()));
-                if (config.isServerSnapshotSyncEnabled()) allCaps.add(new Capability(SNAP, eth.getCode()));
+                if (config.isServerSnapshotSyncEnabled()){
+                    allCaps.add(new Capability(SNAP, eth.getCode()));
+                }
             }
         } else {
             for (EthVersion v : EthVersion.supported()) {
                 allCaps.add(new Capability(RSK, v.getCode()));
-                if (config.isServerSnapshotSyncEnabled()) allCaps.add(new Capability(SNAP, v.getCode()));
+                if (config.isServerSnapshotSyncEnabled()){
+                    allCaps.add(new Capability(SNAP, v.getCode()));
+                }
             }
         }
         this.config = config;
