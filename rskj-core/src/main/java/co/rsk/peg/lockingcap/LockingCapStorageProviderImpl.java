@@ -24,7 +24,7 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
             if (lockingCap == null) {
                 initializeLockingCap();
             }
-            return Optional.of(lockingCap);
+            return Optional.ofNullable(lockingCap);
         }
         return Optional.empty();
     }
