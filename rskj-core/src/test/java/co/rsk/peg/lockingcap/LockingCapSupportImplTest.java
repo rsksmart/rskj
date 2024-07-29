@@ -37,7 +37,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void getLockingCap_whenNoPreviousValueExists_shouldReturnInitialValue() {
+    void getLockingCap_whenNoValueExistsInStorage_shouldReturnInitialValue() {
         // Arrange
         Optional<Coin> expectedLockingCap = Optional.of(constants.getInitialValue());
 
