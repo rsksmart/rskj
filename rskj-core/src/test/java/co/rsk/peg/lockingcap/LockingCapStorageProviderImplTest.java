@@ -75,7 +75,8 @@ class LockingCapStorageProviderImplTest {
         lockingCapStorageProvider.setLockingCap(newLockingCap);
 
         // Assert
-        assertEquals(Optional.of(newLockingCap), lockingCapStorageProvider.getLockingCap(activations));
+        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
+        assertEquals(Optional.of(newLockingCap), actualLockingCap);
     }
 
     @Test
@@ -90,7 +91,8 @@ class LockingCapStorageProviderImplTest {
         // Assert
         // Recreate LockingCapStorageProvider to load the previous value from storage and make sure it was saved
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        assertEquals(Optional.of(newLockingCap), lockingCapStorageProvider.getLockingCap(activations));
+        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
+        assertEquals(Optional.of(newLockingCap), actualLockingCap);
     }
 
     @Test
@@ -106,6 +108,7 @@ class LockingCapStorageProviderImplTest {
         // Assert
         // Recreate LockingCapStorageProvider to load the previous value from storage and make sure it was not saved
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        assertEquals(Optional.empty(), lockingCapStorageProvider.getLockingCap(activations));
+        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
+        assertEquals(Optional.empty(), actualLockingCap);
     }
 }
