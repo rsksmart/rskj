@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -45,6 +46,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
 
     private Script lastRetiredFederationP2SHScript;
+
+    private Sha256Hash svpFundTransactionUnsignedHash;
+    private boolean isSvpFundTransactionUnsignedHashSet = false;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -326,6 +330,12 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setSvpFundTransactionUnsignedHash(Sha256Hash hash) {
+        this.svpFundTransactionUnsignedHash = hash;
+        isSvpFundTransactionUnsignedHashSet = true;
+    }
+
+    @Override
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
@@ -343,6 +353,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveNextFederationCreationBlockHeight(activations);
 
         saveLastRetiredFederationP2SHScript(activations);
+
+        saveSvpFundTransactionUnsignedHash(activations);
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -427,6 +439,20 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), formatVersion);
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+    }
+
+    private void saveSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+
+        if (!activations.isActive(RSKIP419) || !isSvpFundTransactionUnsignedHashSet) {
+            return;
+        }
+
+        byte[] data = Optional.ofNullable(svpFundTransactionUnsignedHash)
+            .map(BridgeSerializationUtils::serializeSha256Hash)
+            .orElse(null);
+
+        bridgeStorageAccessor.saveToRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
+
     }
 
     @Nullable
