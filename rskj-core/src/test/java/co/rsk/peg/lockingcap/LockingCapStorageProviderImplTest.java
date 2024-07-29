@@ -80,6 +80,16 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
+    void setLockingCap_whenIsSetNullValue_shouldReturnOptionalEmpty() {
+        // Act
+        lockingCapStorageProvider.setLockingCap(null);
+
+        // Assert
+        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
+        assertEquals(Optional.empty(), actualLockingCap);
+    }
+
+    @Test
     void save_whenIsSavedANewLockingCapValue_shouldSaveLockingCap() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
