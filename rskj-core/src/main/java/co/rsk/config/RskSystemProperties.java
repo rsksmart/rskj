@@ -69,6 +69,9 @@ public class RskSystemProperties extends SystemProperties {
     public static final String PROPERTY_SYNC_TOP_BEST = "sync.topBest";
     public static final String USE_PEERS_FROM_LAST_SESSION = "peer.discovery.usePeersFromLastSession";
 
+    public static final String PROPERTY_SYNC_MODE = "sync.mode";
+    public static final String PROPERTY_SNAP_NODES = "sync.snapshot.client.snapBootNodes";
+
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
 
@@ -409,6 +412,10 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean isServerSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.server.enabled");}
     public boolean isClientSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.client.enabled");}
+
+    public String getSyncMode(){
+        return configFromFiles.getString("sync.mode");
+    }
 
     public int getSnapshotChunkTimeout() {
         return configFromFiles.getInt("sync.snapshot.client.chunkRequestTimeout");

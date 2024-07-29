@@ -1010,7 +1010,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
-            if (getSyncConfiguration().isServerSnapSyncEnabled()) {
+            if (getSyncConfiguration().isServerSnapSyncEnabled() || getRskSystemProperties().getSyncMode().equalsIgnoreCase("snap")) {
                 internalServices.add(getSnapshotProcessor());
             }
         }
