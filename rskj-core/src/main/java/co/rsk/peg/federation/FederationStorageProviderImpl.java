@@ -216,41 +216,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public Optional<Federation> getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
-        if (!activations.isActive(RSKIP419)) {
-            return Optional.empty();
-        }
-
-        if (proposedFederation != null) {
-            return Optional.of(proposedFederation);
-        }
-
-        // reaching this point means the proposed federation was set to null
-        if (isProposedFederationSet) {
-            return Optional.empty();
-        }
-
-        proposedFederation = bridgeStorageAccessor.getFromRepository(
-            PROPOSED_FEDERATION.getKey(),
-            data -> {
-                if (data == null) {
-                    return null;
-                }
-
-                Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
-                if (!storageVersion.isPresent()) {
-                    String message = "Storage version should be present for non-null proposed federation";
-                    logger.warn("[getProposedFederation] {}", message);
-                    throw new IllegalStateException(message);
-                }
-                return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
-            }
-        );
-
-        return Optional.ofNullable(proposedFederation);
-    }
-
-    @Override
     public void setProposedFederation(Federation proposedFederation) {
         this.proposedFederation = proposedFederation;
         isProposedFederationSet = true;
