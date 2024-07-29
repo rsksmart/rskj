@@ -38,7 +38,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void getLockingCap_whenNoPreviousValueExists_ShouldReturnInitialValue() {
+    void getLockingCap_whenNoPreviousValueExists_shouldReturnInitialValue() {
         // Arrange
         Optional<Coin> expectedLockingCap = Optional.of(constants.getInitialValue());
 
@@ -50,7 +50,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void getLockingCap_whenAPreviousLockingCapValueExistsInStorage_ShouldReturnPreviousValue() {
+    void getLockingCap_whenAPreviousLockingCapValueExistsInStorage_shouldReturnPreviousValue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -67,7 +67,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_ShouldReturnEmpty() {
+    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnEmpty() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
@@ -80,7 +80,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNoPreviousValueExistsAndTakeDefaultInitialValueAndNewLockingCapIsGreaterThanInitialValue_ShouldReturnTrue() {
+    void increaseLockingCap_whenNoPreviousValueExistsAndTakeDefaultInitialValueAndNewLockingCapIsGreaterThanInitialValue_shouldReturnTrue() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -94,7 +94,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNoPreviousValueExistsAndTakeDefaultInitialValueAndNewLockingCapIsLessThanInitialValue_ShouldReturnFalse() {
+    void increaseLockingCap_whenNoPreviousValueExistsAndTakeDefaultInitialValueAndNewLockingCapIsLessThanInitialValue_shouldReturnFalse() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().subtract(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -108,7 +108,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_ShouldReturnTrue() {
+    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_shouldReturnTrue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -129,7 +129,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_ShouldReturnFalse() {
+    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldReturnFalse() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -150,7 +150,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenAnUnauthorizedCallerRequestToIncreaseLockingCapValue_ShouldReturnFalse() {
+    void increaseLockingCap_whenAnUnauthorizedCallerRequestToIncreaseLockingCapValue_shouldReturnFalse() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.UNAUTHORIZED.getRskAddress());
@@ -164,7 +164,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_ShouldReturnFalse() {
+    void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_shouldReturnFalse() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -186,7 +186,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsEqualToMaxLockingCap_ShouldReturnTrue() {
+    void increaseLockingCap_whenNewLockingCapIsEqualToMaxLockingCap_shouldReturnTrue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -208,7 +208,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsEqualToLockingCapValueAlreadyExists_ShouldReturnTrue() {
+    void increaseLockingCap_whenNewLockingCapIsEqualToLockingCapValueAlreadyExists_shouldReturnTrue() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue();
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -222,7 +222,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsZero_ShouldReturnFalse() {
+    void increaseLockingCap_whenNewLockingCapIsZero_shouldReturnFalse() {
         // Arrange
         Coin newLockingCap = Coin.ZERO;
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -236,7 +236,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsNegative_ShouldReturnFalse() {
+    void increaseLockingCap_whenNewLockingCapIsNegative_shouldReturnFalse() {
         // Arrange
         Coin newLockingCap = Coin.NEGATIVE_SATOSHI;
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -250,7 +250,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_prePapyrus200_whenLockingCapIsNotSet_ShouldReturnFalse() {
+    void increaseLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnFalse() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
@@ -266,7 +266,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void save_whenIsIncreasedLockingCapValue_ShouldSaveLockingCap() {
+    void save_whenIsIncreasedLockingCapValue_shouldSaveLockingCap() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -283,7 +283,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void save_prePapyrus200_whenIsAttemptedIncreaseLockingCapValue_ShouldNotSaveLockingCap() {
+    void save_prePapyrus200_whenIsAttemptedIncreaseLockingCapValue_shouldNotSaveLockingCap() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
