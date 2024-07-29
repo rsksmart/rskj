@@ -207,7 +207,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsEqualToLockingCapValueAlreadyExists_shouldReturnTrue() {
+    void increaseLockingCap_whenNewValueIsEqualToCurrentValue_shouldReturnTrue() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue();
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
