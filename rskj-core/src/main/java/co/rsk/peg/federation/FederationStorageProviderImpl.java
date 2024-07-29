@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -20,6 +21,7 @@ import java.util.Optional;
 
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
+import static java.util.Objects.nonNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationStorageProviderImpl implements FederationStorageProvider {
@@ -44,6 +46,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
 
     private Script lastRetiredFederationP2SHScript;
+
+    private Sha256Hash fundTransactionUnsignedHash;
+    private boolean isFundTransactionUnsignedHashSet = false;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -325,6 +330,12 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setFundTransactionUnsignedHash(Sha256Hash hash) {
+        this.fundTransactionUnsignedHash = hash;
+        isFundTransactionUnsignedHashSet = true;
+    }
+
+    @Override
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
@@ -342,6 +353,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveNextFederationCreationBlockHeight(activations);
 
         saveLastRetiredFederationP2SHScript(activations);
+
+        saveFundTransactionUnsignedHash(activations);
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -426,6 +439,18 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), formatVersion);
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+    }
+
+    private void saveFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+
+        if (!activations.isActive(RSKIP419) || !isFundTransactionUnsignedHashSet) {
+            return;
+        }
+
+        byte[] data = nonNull(fundTransactionUnsignedHash) ? fundTransactionUnsignedHash.getBytes() : null;
+
+        bridgeStorageAccessor.saveToRepository(FUND_TX_HASH_UNSIGNED.getKey(), data);
+
     }
 
     @Nullable
