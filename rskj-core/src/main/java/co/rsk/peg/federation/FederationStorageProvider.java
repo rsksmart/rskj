@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -41,5 +42,8 @@ public interface FederationStorageProvider {
     Optional<Script> getLastRetiredFederationP2SHScript(ActivationConfig.ForBlock activations);
     void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript);
 
+    void setSvpFundTransactionUnsignedHash(Sha256Hash hash);
+
     void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
+
 }

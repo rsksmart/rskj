@@ -917,7 +917,7 @@ class FederationStorageProviderImplTests {
     class ProposedFederationTests {
         private final ActivationConfig.ForBlock preLovellActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
         private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
-        private final Federation proposedFederation = new P2shErpFederationBuilder().build();
+        private final Federation proposedFederation = P2shErpFederationBuilder.builder().build();
         private StorageAccessor bridgeStorageAccessor;
         private FederationStorageProvider federationStorageProvider;
 
@@ -1090,6 +1090,92 @@ class FederationStorageProviderImplTests {
             Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
             assertEquals(Optional.of(proposedFederation), actualProposedFederation);
         }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save fund transaction unsigned hash tests")
+    class SaveSvpFundTransactionUnsignedHashTests {
+
+        private StorageAccessor storageAccessor;
+        private FederationStorageProvider federationStorageProvider;
+        private ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+
+        @BeforeEach
+        void setup() {
+            storageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        }
+
+        @Test
+        void saveSvpFundTransactionUnsignedHash_preLovell700_shouldNotSaveInStorage() {
+
+            // Arrange
+
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+
+            Sha256Hash expectedHash = BitcoinTestUtils.createHash(123_456_789);
+
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(expectedHash);
+
+            // Act
+
+            federationStorageProvider.save(networkParameters, arrowheadActivations);
+
+            // Assert
+
+            Sha256Hash actualHash = storageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+
+            assertNull(actualHash);
+
+        }
+
+        @Test
+        void saveSvpFundTransactionUnsignedHash_postLovell700_shouldSaveInStorage() {
+
+            // Arrange
+
+            Sha256Hash expectedHash = BitcoinTestUtils.createHash(123_456_789);
+
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(expectedHash);
+
+            // Act
+
+            federationStorageProvider.save(networkParameters, activations);
+
+            // Assert
+
+            Sha256Hash actualHash = storageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+
+            assertEquals(expectedHash, actualHash);
+
+        }
+
+        @Test
+        void saveSvpFundTransactionUnsignedHash_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
+
+            // Arrange
+
+            Sha256Hash expectedHash = BitcoinTestUtils.createHash(123_456_789);
+
+            // Initially setting a valid hash in storage
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(expectedHash);
+            federationStorageProvider.save(networkParameters, activations);
+
+            // Act
+
+            // Setting to null
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(null);
+            federationStorageProvider.save(networkParameters, activations);
+
+            // Assert
+
+            Sha256Hash finalHashFromStorage = storageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+
+            assertNull(finalHashFromStorage);
+
+        }
+
     }
 
     private static Federation createNonStandardErpFederation() {
