@@ -29,8 +29,6 @@ public interface FederationStorageProvider {
     Optional<Federation> getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations);
     void setProposedFederation(Federation proposedFederation);
 
-    Optional<Federation> getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations);
-
     ABICallElection getFederationElection(AddressBasedAuthorizer authorizer);
 
     Optional<Long> getActiveFederationCreationBlockHeight(ActivationConfig.ForBlock activations);
@@ -46,5 +44,4 @@ public interface FederationStorageProvider {
     void setSvpFundTransactionUnsignedHash(Sha256Hash hash);
 
     void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
-
 }
