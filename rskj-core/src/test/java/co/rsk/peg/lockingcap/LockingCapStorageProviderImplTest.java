@@ -27,7 +27,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_whenNoPreviousValueExists_ShouldReturnOptionalEmpty() {
+    void getLockingCap_whenNoPreviousValueExists_shouldReturnOptionalEmpty() {
         // Arrange
         Optional<Coin> expectedLockingCap = Optional.empty();
 
@@ -39,7 +39,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_whenAPreviousLockingCapValueExistsInStorage_ShouldReturnPreviousValue() {
+    void getLockingCap_whenAPreviousLockingCapValueExistsInStorage_shouldReturnPreviousValue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -55,7 +55,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_ShouldReturnEmpty() {
+    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnEmpty() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
 
@@ -67,7 +67,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void setLockingCap_whenIsSetANewLockingCapValue_ShouldSetLockingCap() {
+    void setLockingCap_whenIsSetANewLockingCapValue_shouldSetLockingCap() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
 
@@ -79,7 +79,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void save_whenIsSavedANewLockingCapValue_ShouldSaveLockingCap() {
+    void save_whenIsSavedANewLockingCapValue_shouldSaveLockingCap() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(newLockingCap);
@@ -94,7 +94,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void save_prePapyrus200_whenIsAttemptedSaveANewLockingCapValue_ShouldNotSaveLockingCap() {
+    void save_prePapyrus200_whenIsAttemptedSaveANewLockingCapValue_shouldNotSaveLockingCap() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
