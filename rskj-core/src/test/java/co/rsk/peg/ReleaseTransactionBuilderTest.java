@@ -974,9 +974,56 @@ class ReleaseTransactionBuilderTest {
         assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
     }
 
+    @ParameterizedTest()
+    @MethodSource("providePegoutMinimumParameters")
+    void buildBatchedPegouts_whenTenUXTOs_shouldBuildTransactionSuccessfully(Coin feePerKb, Coin minPegoutValue) {
+        // build federation with 9 members
+        Integer[] memberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600, 700, 800, 900 };
+        Federation fed = FederationTestUtils.getFederation(memberPKs);
+        // list of peg-out requests with the given minimum peg-out value
+        List<ReleaseRequestQueue.Entry> entries = Arrays.asList(
+            createTestEntry(1000, minPegoutValue));
+        // this is a bit hacky, but this is to ensure the minPegoutValue chosen
+        // is not dust with the current wallet implementation. Either way this would be
+        // checked later on when building the transaction, but I think is good to have this explicitly
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(entries.get(0).getAmount(), entries.get(0).getDestination());
+        assertFalse(tx.getOutput(0).isDust());
+        // list of utxos that contains 10 utxos to cover the minPegoutValue
+        Coin utxoValue = minPegoutValue.div(10);
+        List<UTXO> utxos = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+          utxos.add(
+            new UTXO(mockUTXOHash("utxo " + i), 0, utxoValue, 0, false, fed.getP2SHScript()));
+        }
+        // the federation wallet, without flyover support
+        Wallet fedWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            fed,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+        // build release transaction builder for current fed
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            networkParameters,
+            fedWallet,
+            fed.getAddress(),
+            feePerKb,
+            activations
+        );
+
+        // build batch peg-out transaction
+        ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildBatchedPegouts(entries);
+
+        // the proposed feePerKb and minPegoutValue are compatible
+        assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
+    }
+
     private static Stream<Arguments> providePegoutMinimumParameters() {
         return Stream.of(
-            Arguments.of(Coin.valueOf(24_000L), Coin.valueOf(28_500L))
+            Arguments.of(Coin.valueOf(24_000L), Coin.valueOf(180_000L))
         );
     }
 
