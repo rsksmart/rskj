@@ -556,7 +556,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getLockingCap_whenNoValueExistsInStorage_ReturnInitialValue() {
+        void getLockingCap_whenNoValueExistsInStorage_shouldReturnInitialValue() {
             // Arrange
             Optional<Coin> expectedLockingCap = Optional.of(constants.getInitialValue());
             when(lockingCapSupport.getLockingCap()).thenReturn(expectedLockingCap);
@@ -569,7 +569,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getLockingCap_whenLockingCapIsEmpty_ReturnNull() {
+        void getLockingCap_whenLockingCapIsEmpty_shouldReturnNull() {
             // Arrange
             when(lockingCapSupport.getLockingCap()).thenReturn(Optional.empty());
 
