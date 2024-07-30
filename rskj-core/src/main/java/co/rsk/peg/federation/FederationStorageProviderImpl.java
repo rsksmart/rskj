@@ -330,6 +330,12 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setFundTransactionUnsignedHash(Sha256Hash hash) {
+        this.fundTransactionUnsignedHash = hash;
+        isFundTransactionUnsignedHashSet = true;
+    }
+
+    @Override
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
@@ -349,12 +355,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveLastRetiredFederationP2SHScript(activations);
 
         saveFundTransactionUnsignedHash(activations);
-    }
-
-    @Override
-    public void setFundTransactionUnsignedHash(Sha256Hash hash) {
-        this.fundTransactionUnsignedHash = hash;
-        isFundTransactionUnsignedHashSet = true;
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -443,7 +443,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     private void saveFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
 
-        if (!isFundTransactionUnsignedHashSet || !activations.isActive(RSKIP419)) {
+        if (!activations.isActive(RSKIP419) || !isFundTransactionUnsignedHashSet) {
             return;
         }
 

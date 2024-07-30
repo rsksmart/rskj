@@ -42,8 +42,8 @@ public interface FederationStorageProvider {
     Optional<Script> getLastRetiredFederationP2SHScript(ActivationConfig.ForBlock activations);
     void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript);
 
-    void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
-
     void setFundTransactionUnsignedHash(Sha256Hash hash);
+
+    void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
 
 }
