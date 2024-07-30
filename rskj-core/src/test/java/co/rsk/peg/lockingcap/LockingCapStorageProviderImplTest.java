@@ -1,6 +1,7 @@
 package co.rsk.peg.lockingcap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.InMemoryStorage;
@@ -30,25 +31,21 @@ class LockingCapStorageProviderImplTest {
     void getLockingCap_prePapyrus200_shouldReturnOptionalEmpty() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
-        Optional<Coin> expectedLockingCap = Optional.empty();
 
         // Act
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
 
         // Assert
-        assertEquals(expectedLockingCap, actualLockingCap);
+        assertFalse(actualLockingCap.isPresent());
     }
 
     @Test
     void getLockingCap_whenNoPreviousValueExists_shouldReturnOptionalEmpty() {
-        // Arrange
-        Optional<Coin> expectedLockingCap = Optional.empty();
-
         // Act
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
 
         // Assert
-        assertEquals(expectedLockingCap, actualLockingCap);
+        assertFalse(actualLockingCap.isPresent());
     }
 
     @Test
@@ -82,22 +79,18 @@ class LockingCapStorageProviderImplTest {
 
     @Test
     void setLockingCap_whenIsSetNullValue_shouldReturnOptionalEmpty() {
-        // Arrange
-        Optional<Coin> expectedLockingCap = Optional.empty();
-
         // Act
         lockingCapStorageProvider.setLockingCap(null);
 
         // Assert
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
-        assertEquals(expectedLockingCap, actualLockingCap);
+        assertFalse(actualLockingCap.isPresent());
     }
 
     @Test
     void save_prePapyrus200_whenIsAttemptedSaveANewLockingCapValue_shouldNotSaveLockingCap() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
-        Optional<Coin> expectedLockingCap = Optional.empty();
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(newLockingCap);
 
@@ -108,7 +101,7 @@ class LockingCapStorageProviderImplTest {
         // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
-        assertEquals(expectedLockingCap, actualLockingCap);
+        assertFalse(actualLockingCap.isPresent());
     }
 
     @Test
