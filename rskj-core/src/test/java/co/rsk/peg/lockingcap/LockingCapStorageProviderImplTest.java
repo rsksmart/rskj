@@ -55,15 +55,16 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnEmpty() {
+    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnOptionalEmpty() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
+        Optional<Coin> expectedLockingCap = Optional.empty();
 
         // Act
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
 
         // Assert
-        assertEquals(Optional.empty(), actualLockingCap);
+        assertEquals(expectedLockingCap, actualLockingCap);
     }
 
     @Test
@@ -81,12 +82,15 @@ class LockingCapStorageProviderImplTest {
 
     @Test
     void setLockingCap_whenIsSetNullValue_shouldReturnOptionalEmpty() {
+        // Arrange
+        Optional<Coin> expectedLockingCap = Optional.empty();
+
         // Act
         lockingCapStorageProvider.setLockingCap(null);
 
         // Assert
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
-        assertEquals(Optional.empty(), actualLockingCap);
+        assertEquals(expectedLockingCap, actualLockingCap);
     }
 
     @Test
@@ -109,6 +113,7 @@ class LockingCapStorageProviderImplTest {
     void save_prePapyrus200_whenIsAttemptedSaveANewLockingCapValue_shouldNotSaveLockingCap() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
+        Optional<Coin> expectedLockingCap = Optional.empty();
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(newLockingCap);
 
@@ -119,6 +124,6 @@ class LockingCapStorageProviderImplTest {
         // Recreate LockingCapStorageProvider to load the previous value from storage and make sure it was not saved
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
-        assertEquals(Optional.empty(), actualLockingCap);
+        assertEquals(expectedLockingCap, actualLockingCap);
     }
 }
