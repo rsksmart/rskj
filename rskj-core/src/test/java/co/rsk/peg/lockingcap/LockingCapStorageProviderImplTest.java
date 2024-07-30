@@ -27,6 +27,19 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
+    void getLockingCap_prePapyrus200_shouldReturnOptionalEmpty() {
+        // Arrange
+        activations = ActivationConfigsForTest.wasabi100().forBlock(0);
+        Optional<Coin> expectedLockingCap = Optional.empty();
+
+        // Act
+        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
+
+        // Assert
+        assertEquals(expectedLockingCap, actualLockingCap);
+    }
+
+    @Test
     void getLockingCap_whenNoPreviousValueExists_shouldReturnOptionalEmpty() {
         // Arrange
         Optional<Coin> expectedLockingCap = Optional.empty();
@@ -55,20 +68,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_prePapyrus200_shouldReturnOptionalEmpty() {
-        // Arrange
-        activations = ActivationConfigsForTest.wasabi100().forBlock(0);
-        Optional<Coin> expectedLockingCap = Optional.empty();
-
-        // Act
-        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
-
-        // Assert
-        assertEquals(expectedLockingCap, actualLockingCap);
-    }
-
-    @Test
-    void setLockingCap_whenANewLockingCapValueIsSet_shouldSetLockingCap() {
+    void setLockingCap_whenNewLockingCapValueIsSet_shouldSetLockingCap() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
 
@@ -94,22 +94,6 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void save_whenIsSavedANewLockingCapValue_shouldSaveLockingCap() {
-        // Arrange
-        Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        lockingCapStorageProvider.setLockingCap(newLockingCap);
-
-        // Act
-        lockingCapStorageProvider.save(activations);
-
-        // Assert
-        // Recreate LockingCapStorageProvider to load the previous value from storage and make sure it was saved
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
-        assertEquals(Optional.of(newLockingCap), actualLockingCap);
-    }
-
-    @Test
     void save_prePapyrus200_whenIsAttemptedSaveANewLockingCapValue_shouldNotSaveLockingCap() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
@@ -125,5 +109,21 @@ class LockingCapStorageProviderImplTest {
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
         assertEquals(expectedLockingCap, actualLockingCap);
+    }
+
+    @Test
+    void save_whenIsSavedANewLockingCapValue_shouldSaveLockingCap() {
+        // Arrange
+        Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+        lockingCapStorageProvider.setLockingCap(newLockingCap);
+
+        // Act
+        lockingCapStorageProvider.save(activations);
+
+        // Assert
+        // Recreate LockingCapStorageProvider to load the previous value from storage and make sure it was saved
+        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
+        assertEquals(Optional.of(newLockingCap), actualLockingCap);
     }
 }
