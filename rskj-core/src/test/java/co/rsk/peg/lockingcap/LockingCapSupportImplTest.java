@@ -51,8 +51,8 @@ class LockingCapSupportImplTest {
     @Test
     void getLockingCap_whenLockingCapValueIsSavedInStorage_shouldReturnSavedValue() {
         // Arrange
-        Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        lockingCapStorageProvider.setLockingCap(previousLockingCap);
+        Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+        lockingCapStorageProvider.setLockingCap(expectedLockingCap);
         lockingCapSupport.save();
         // Recreate LockingCapSupport to load the previous value from storage
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
@@ -62,7 +62,7 @@ class LockingCapSupportImplTest {
         Optional<Coin> actualLockingCap = lockingCapSupport.getLockingCap();
 
         // Assert
-        assertEquals(Optional.of(previousLockingCap), actualLockingCap);
+        assertEquals(Optional.of(expectedLockingCap), actualLockingCap);
     }
 
     @Test
@@ -130,14 +130,14 @@ class LockingCapSupportImplTest {
     @Test
     void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldReturnFalse() {
         // Arrange
-        Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        lockingCapStorageProvider.setLockingCap(previousLockingCap);
+        Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+        lockingCapStorageProvider.setLockingCap(expectedLockingCap);
         lockingCapSupport.save();
         // Recreate LockingCapSupport to load the previous value from storage
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
 
-        Coin newLockingCap = previousLockingCap.subtract(Coin.SATOSHI);
+        Coin newLockingCap = expectedLockingCap.subtract(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
 
         // Act
@@ -145,7 +145,7 @@ class LockingCapSupportImplTest {
 
         // Assert
         assertFalse(actualResult);
-        assertEquals(Optional.of(previousLockingCap), lockingCapSupport.getLockingCap());
+        assertEquals(Optional.of(expectedLockingCap), lockingCapSupport.getLockingCap());
     }
 
     @Test
@@ -165,14 +165,14 @@ class LockingCapSupportImplTest {
     @Test
     void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_shouldReturnFalse() {
         // Arrange
-        Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        lockingCapStorageProvider.setLockingCap(previousLockingCap);
+        Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+        lockingCapStorageProvider.setLockingCap(expectedLockingCap);
         lockingCapSupport.save();
         // Recreate LockingCapSupport to load the previous value from storage
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
 
-        Coin maxLockingCap = previousLockingCap.multiply(constants.getIncrementsMultiplier());
+        Coin maxLockingCap = expectedLockingCap.multiply(constants.getIncrementsMultiplier());
         Coin newLockingCap = maxLockingCap.add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
 
@@ -181,7 +181,7 @@ class LockingCapSupportImplTest {
 
         // Assert
         assertFalse(actualResult);
-        assertEquals(Optional.of(previousLockingCap), lockingCapSupport.getLockingCap());
+        assertEquals(Optional.of(expectedLockingCap), lockingCapSupport.getLockingCap());
     }
 
     @Test
