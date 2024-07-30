@@ -40,7 +40,6 @@ import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
-import co.rsk.util.HexUtils;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Collections;
@@ -56,7 +55,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -2463,6 +2461,52 @@ class FederationSupportImplTest {
             // Assert
 
             assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), addVoteResult);
+
+        }
+
+        @Test
+        void voteFederationChange_addFederatorMultiKey_returnsSuccessfulResponseCode() {
+
+            // Arrange
+
+            BtcECKey expectedFederatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey expectedFederatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                expectedFederatorBtcECKey.getPubKey(),
+                expectedFederatorRskKey.getPubKey(),
+                expectedFederatorMstKey.getPubKey()
+            });
+
+            // Act
+
+            // Voting add new fed with m of n authorizers
+            int result = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int result2 = federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
+            assertThat(federationSupport.getPendingFederationSize(), is(1));
+
+            byte[] actualFederatorBtcECkey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC);
+            byte[] actualFederatorRskKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.RSK);
+            byte[] actualFederatorMstKey = federationSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST);
+
+            assertArrayEquals(expectedFederatorBtcECKey.getPubKey(), actualFederatorBtcECkey);
+            assertArrayEquals(expectedFederatorRskKey.getPubKey(true), actualFederatorRskKey);
+            assertArrayEquals(expectedFederatorMstKey.getPubKey(true), actualFederatorMstKey);
 
         }
 
