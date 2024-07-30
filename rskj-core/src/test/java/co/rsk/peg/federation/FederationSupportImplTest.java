@@ -2398,6 +2398,41 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_addFederatorPublicKey_returnsSuccessfulResponseCode() {
+
+            // Arrange
+
+            BtcECKey expectedBtcECKey = new BtcECKey();
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+
+            // Act
+
+            // Voting add new fed with m of n authorizers
+            int firstVoteCreateFederationResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
+            int secondVoteCreateFederationResult = federationSupport.voteFederationChange(secondAuthorizedTx, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(),
+                firstVoteCreateFederationResult);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteCreateFederationResult);
+            assertEquals(1, federationSupport.getPendingFederationSize());
+
+            assertArrayEquals(expectedBtcECKey.getPubKey(), federationSupport.getPendingFederatorBtcPublicKey(0));
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
