@@ -2571,30 +2571,30 @@ class FederationSupportImplTest {
 
             BtcECKey expectedBtcECKey = fedKeys.get(0);
 
-            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
             ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
             // Voting with  m of n authorizers to create the pending federation
-            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
             ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
 
             // Act
 
             // Voting add public key twice with same authorizer
-            int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            int result2 = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int firstVoteAddFederationResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int secondVoteAddFederationResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
 
             // First call is successful
-            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddFederationResult);
 
             // Second call fails
-            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), result2);
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), secondVoteAddFederationResult);
 
         }
 
