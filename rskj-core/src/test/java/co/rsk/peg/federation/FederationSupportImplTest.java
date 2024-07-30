@@ -2607,48 +2607,48 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            BtcECKey btcKey = new BtcECKey();
-            ECKey rskKey = new ECKey();
-            ECKey mstKey = new ECKey();
+            BtcECKey federatorBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
             ECKey differentMstKey = new ECKey();
 
-            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
             ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
-            // Voting with  m of n authorizers to create the pending federation
-            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
             // Same btc and rsk keys for both feds, different mst key.
 
             ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
-                btcKey.getPubKey(),
-                rskKey.getPubKey(),
-                mstKey.getPubKey(),
+                federatorBtcKey.getPubKey(),
+                federatorRskKey.getPubKey(),
+                federatorMstKey.getPubKey(),
             });
 
             ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
-                btcKey.getPubKey(),
-                rskKey.getPubKey(),
+                federatorBtcKey.getPubKey(),
+                federatorRskKey.getPubKey(),
                 differentMstKey.getPubKey(),
             });
 
             // Act
 
             // Voting add new fed member with m of n authorizers, but essentially for different federators due to the different mst key
-            int result = federationSupport.voteFederationChange(tx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
-            int result2 = federationSupport.voteFederationChange(tx2, addMultiKeyAbiCallSpec2, signatureCache, bridgeEventLogger);
+            int firstVoteAddMultiFederatorKyesResult = federationSupport.voteFederationChange(firstAuthorizedTx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+            int secondVoteAddMultiFederatorKyesResult = federationSupport.voteFederationChange(secondAuthorizedTx, addMultiKeyAbiCallSpec2, signatureCache, bridgeEventLogger);
 
             // Assert
 
-            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
-            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddMultiFederatorKyesResult);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteAddMultiFederatorKyesResult);
 
             // Pending federation size is 0, because authorizers voted for different federators and there's no winner yet
-            assertThat(federationSupport.getPendingFederationSize(), is(0));
+            assertEquals(0, federationSupport.getPendingFederationSize());
 
         }
 
