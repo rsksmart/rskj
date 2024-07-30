@@ -58,7 +58,6 @@ public enum NodeCliOptions implements OptionalizableCliArg {
             if(configValue.equalsIgnoreCase("full") || configValue.equalsIgnoreCase("snap")){
                 return config.withValue(RskSystemProperties.PROPERTY_SYNC_MODE, ConfigValueFactory.fromAnyRef(configValue));
             }else {
-                System.err.println("Invalid sync mode provided: " + configValue);
                 throw new IllegalArgumentException("Invalid sync mode: " + configValue + ". The valid options are <full> or <snap>.");
             }
         }
