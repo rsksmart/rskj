@@ -556,7 +556,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getLockingCap() {
+        void getLockingCap_whenNoValueExistsInStorage_ReturnInitialValue() {
             // Arrange
             Optional<Coin> expectedLockingCap = Optional.of(constants.getInitialValue());
             when(lockingCapSupport.getLockingCap()).thenReturn(expectedLockingCap);
@@ -566,6 +566,18 @@ class BridgeSupportTest {
 
             // Assert
             assertEquals(expectedLockingCap, actualLockingCap);
+        }
+
+        @Test
+        void getLockingCap_whenLockingCapIsEmpty_ReturnNull() {
+            // Arrange
+            when(lockingCapSupport.getLockingCap()).thenReturn(Optional.empty());
+
+            // Act
+            Coin actualLockingCap = bridgeSupport.getLockingCap();
+
+            // Assert
+            assertNull(actualLockingCap);
         }
 
         @Test
