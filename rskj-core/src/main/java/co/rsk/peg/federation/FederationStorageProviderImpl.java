@@ -235,7 +235,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             }
         );
 
-        return Optional.of(proposedFederation);
+        return Optional.ofNullable(proposedFederation);
     }
 
     @Override
