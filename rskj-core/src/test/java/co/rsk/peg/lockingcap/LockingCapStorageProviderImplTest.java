@@ -39,7 +39,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_whenAPreviousLockingCapValueExistsInStorage_shouldReturnPreviousValue() {
+    void getLockingCap_whenLockingCapIsSavedInStorage_shouldReturnSavedValue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
