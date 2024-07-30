@@ -2590,35 +2590,35 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            BtcECKey expectedBtcECKey = new BtcECKey();
-            ECKey expectedRskKey = new ECKey();
-            ECKey expectedMstKey = new ECKey();
+            BtcECKey expectedFederatorBtcECKey = new BtcECKey();
+            ECKey expectedFederatorRskKey = new ECKey();
+            ECKey expectedFederatorMstKey = new ECKey();
 
-            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
-            Transaction tx2 = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
             ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
-            // Voting with  m of n authorizers to create the pending federation
-            federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            federationSupport.voteFederationChange(tx2, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ROLLBACK.getKey(), new byte[][]{
-                expectedBtcECKey.getPubKey(),
-                expectedRskKey.getPubKey(),
-                expectedMstKey.getPubKey()
+            ABICallSpec rollbackAbiCallSpec = new ABICallSpec(FederationChangeFunction.ROLLBACK.getKey(), new byte[][]{
+                expectedFederatorBtcECKey.getPubKey(),
+                expectedFederatorRskKey.getPubKey(),
+                expectedFederatorMstKey.getPubKey()
             });
 
             // Act
 
             // Voting add new fed with m of n authorizers
-            int result = federationSupport.voteFederationChange(tx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            int result2 = federationSupport.voteFederationChange(tx2, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int firstVoteRollbackResult = federationSupport.voteFederationChange(firstAuthorizedTx, rollbackAbiCallSpec, signatureCache, bridgeEventLogger);
+            int secondVoteRollbackResult = federationSupport.voteFederationChange(secondAuthorizedTx, rollbackAbiCallSpec, signatureCache, bridgeEventLogger);
 
             // Assert
 
-            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result);
-            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), result2);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteRollbackResult);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteRollbackResult);
             assertThat(federationSupport.getPendingFederationSize(), is(-1));
             assertNull(federationSupport.getPendingFederationHash());
 
