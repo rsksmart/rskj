@@ -52,8 +52,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import co.rsk.bitcoinj.core.UTXO;
 
-import javax.swing.text.html.Option;
-
 class FederationStorageProviderImplTests {
 
     private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
