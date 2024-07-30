@@ -68,7 +68,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void setLockingCap_whenIsSetANewLockingCapValue_shouldSetLockingCap() {
+    void setLockingCap_whenANewLockingCapValueIsSet_shouldSetLockingCap() {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
 
