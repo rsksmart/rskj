@@ -41,8 +41,8 @@ class LockingCapStorageProviderImplTest {
     @Test
     void getLockingCap_whenLockingCapIsSavedInStorage_shouldReturnSavedValue() {
         // Arrange
-        Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        lockingCapStorageProvider.setLockingCap(previousLockingCap);
+        Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
+        lockingCapStorageProvider.setLockingCap(expectedLockingCap);
         lockingCapStorageProvider.save(activations);
         // Recreate LockingCapStorageProvider to load the previous value from storage
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
@@ -51,7 +51,7 @@ class LockingCapStorageProviderImplTest {
         Optional<Coin> actualLockingCap = lockingCapStorageProvider.getLockingCap(activations);
 
         // Assert
-        assertEquals(Optional.of(previousLockingCap), actualLockingCap);
+        assertEquals(Optional.of(expectedLockingCap), actualLockingCap);
     }
 
     @Test
