@@ -53,7 +53,7 @@ jobs:
             rskj-core/build
 
   smell-test:
-    needs: unit-tests
+    needs: unit-tests-java17
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -227,7 +227,7 @@ jobs:
           npm test
           kill $rskpid
 
-  unit-tests:
+  unit-tests-java17:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -265,6 +265,31 @@ jobs:
           name: test-reports
           path: |
             rskj-core/build/reports/
+
+  unit-tests-java21:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - uses: actions/cache/restore@v4
+        name: Restore Gradle Wrapper
+        with:
+          path: |
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
+
+      - name: Run tests
+        run: |
+          ./gradlew --no-daemon --stacktrace test
 
   integration-tests:
     needs: build
