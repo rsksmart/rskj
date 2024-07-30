@@ -2611,7 +2611,7 @@ class FederationSupportImplTest {
             ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
             ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
-            ECKey differentMstKey = new ECKey();
+            ECKey differentFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(400));;
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2633,7 +2633,7 @@ class FederationSupportImplTest {
             ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
                 federatorBtcKey.getPubKey(),
                 federatorRskKey.getPubKey(),
-                differentMstKey.getPubKey(),
+                differentFederatorMstKey.getPubKey(),
             });
 
             // Act
