@@ -1,6 +1,7 @@
 package co.rsk.peg.federation;
 
 import static java.util.Objects.nonNull;
+import static javafx.scene.input.KeyCode.T;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
 import org.mockito.verification.VerificationMode;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -922,6 +924,45 @@ class FederationStorageProviderImplTests {
 
         assertFalse(Arrays.equals(defaultFederationElectionSerialized, federationElectionSerializedWithVote));
         assertArrayEquals(federationElectionSerializedWithVote, actualAbiCallElectionSerialized);
+    }
+
+    @Test
+    void saveProposedFederation_whenProposedFederationIsNotSet_shouldDoNothing() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        StorageAccessor bridgeStorageAccessor = mock(BridgeStorageAccessorImpl.class);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+        federationStorageProvider.save(networkParameters, activations);
+
+        verify(bridgeStorageAccessor, never()).saveToRepository(any(), any(), any());
+    }
+
+    @Test
+    void saveProposedFederation_preRSKIP419_whenProposedFederationIsSet_shouldDoNothing() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+        StorageAccessor bridgeStorageAccessor = mock(BridgeStorageAccessorImpl.class);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+
+        federationStorageProvider.setProposedFederation(proposedFederation);
+        federationStorageProvider.save(networkParameters, activations);
+
+        verify(bridgeStorageAccessor, never()).saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+        verify(bridgeStorageAccessor, never()).saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+    }
+
+    @Test
+    void saveProposedFederation_whenProposedFederationIsSet_shouldSave() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        StorageAccessor bridgeStorageAccessor = mock(BridgeStorageAccessorImpl.class);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+
+        federationStorageProvider.setProposedFederation(proposedFederation);
+        federationStorageProvider.save(networkParameters, activations);
+
+        verify(bridgeStorageAccessor).saveToRepository(eq(PROPOSED_FEDERATION_FORMAT_VERSION.getKey()), eq(proposedFederation.getFormatVersion()), any());
+        verify(bridgeStorageAccessor).saveToRepository(eq(PROPOSED_FEDERATION.getKey()), eq(proposedFederation), any());
     }
 
     private static Federation createNonStandardErpFederation() {

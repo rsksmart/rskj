@@ -295,6 +295,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveOldFederation(activations);
 
         savePendingFederation(activations);
+        saveProposedFederation(activations);
 
         saveFederationElection();
 
