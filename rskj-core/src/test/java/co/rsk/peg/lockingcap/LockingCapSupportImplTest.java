@@ -172,8 +172,8 @@ class LockingCapSupportImplTest {
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
 
-        Coin maxLockingCap = expectedLockingCap.multiply(constants.getIncrementsMultiplier());
-        Coin newLockingCap = maxLockingCap.add(Coin.SATOSHI);
+        Coin maxLockingCapVoteValueAllowed = expectedLockingCap.multiply(constants.getIncrementsMultiplier());
+        Coin newLockingCap = maxLockingCapVoteValueAllowed.add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
 
         // Act
