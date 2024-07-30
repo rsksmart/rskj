@@ -1,7 +1,6 @@
 package co.rsk.peg.federation;
 
 import static java.util.Objects.nonNull;
-import static javafx.scene.input.KeyCode.T;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentMatchers;
 import org.mockito.verification.VerificationMode;
 import java.time.Instant;
 import java.util.ArrayList;
