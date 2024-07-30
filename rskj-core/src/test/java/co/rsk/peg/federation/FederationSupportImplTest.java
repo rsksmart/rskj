@@ -2515,9 +2515,9 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            BtcECKey expectedFederatorBtcECKey = new BtcECKey();
-            ECKey expectedFederatorRskKey = new ECKey();
-            ECKey expectedFederatorMstKey = new ECKey();
+            BtcECKey expectedFederatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey expectedFederatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2544,7 +2544,7 @@ class FederationSupportImplTest {
 
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteRollbackResult);
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteRollbackResult);
-            assertThat(federationSupport.getPendingFederationSize(), is(-1));
+            assertEquals(-1, federationSupport.getPendingFederationSize());
             assertNull(federationSupport.getPendingFederationHash());
 
         }
