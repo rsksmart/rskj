@@ -55,7 +55,7 @@ class LockingCapStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnOptionalEmpty() {
+    void getLockingCap_prePapyrus200_shouldReturnOptionalEmpty() {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         Optional<Coin> expectedLockingCap = Optional.empty();
