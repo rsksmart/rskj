@@ -219,8 +219,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return Optional.empty();
         }
 
-        if (proposedFederation != null || isProposedFederationSet) {
-            return Optional.ofNullable(proposedFederation);
+        if (proposedFederation != null) {
+            return Optional.of(proposedFederation);
+        }
+
+        // reaching this line means proposed federation was set to null
+        if (isProposedFederationSet) {
+            return Optional.empty();
         }
 
         proposedFederation = bridgeStorageAccessor.getFromRepository(

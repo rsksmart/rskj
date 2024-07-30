@@ -9,6 +9,7 @@ import static java.util.Objects.isNull;
 import java.math.BigInteger;
 import java.util.*;
 import org.ethereum.util.RLP;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -51,6 +52,8 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import co.rsk.bitcoinj.core.UTXO;
 
+import javax.swing.text.html.Option;
+
 class FederationStorageProviderImplTests {
 
     private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
@@ -65,6 +68,15 @@ class FederationStorageProviderImplTests {
     private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationConstants = bridgeConstants.getFederationConstants();
     private static final NetworkParameters networkParameters = federationConstants.getBtcParams();
+
+    private StorageAccessor bridgeStorageAccessor;
+    private FederationStorageProvider federationStorageProvider;
+
+    @BeforeEach
+    void setUp() {
+        bridgeStorageAccessor = new InMemoryStorage();
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+    }
 
     private static Stream<Arguments> provideFederationAndFormatArguments() {
         return Stream.of(
@@ -922,6 +934,73 @@ class FederationStorageProviderImplTests {
 
         assertFalse(Arrays.equals(defaultFederationElectionSerialized, federationElectionSerializedWithVote));
         assertArrayEquals(federationElectionSerializedWithVote, actualAbiCallElectionSerialized);
+    }
+
+    @Test
+    void getProposedFederation_preRSKIP419_shouldReturnEmpty() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+
+        federationStorageProvider.setProposedFederation(proposedFederation);
+
+        assertFalse(federationStorageProvider.getProposedFederation(federationConstants, activations).isPresent());
+    }
+
+    @Test
+    void getProposedFederation_whenProposedFederationIsCached_shouldReturnCachedFederation() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        Federation proposedFederationToCache = new P2shErpFederationBuilder().build();
+        Federation proposedFederationToBeSavedAfterCache = new StandardMultiSigFederationBuilder().build();
+
+        // first we have to save the proposed fed so the repo is not empty
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederationToCache.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederationToCache, BridgeSerializationUtils::serializeFederation);
+        // this should cache the proposed fed
+        federationStorageProvider.getProposedFederation(federationConstants, activations);
+
+        // saving in the repo another fed to make sure the cached value is the one being returned
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederationToBeSavedAfterCache.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederationToBeSavedAfterCache, BridgeSerializationUtils::serializeFederation);
+
+        assertEquals(Optional.of(proposedFederationToCache), federationStorageProvider.getProposedFederation(federationConstants, activations));
+    }
+
+    @Test
+    void getProposedFederation_whenProposedFederationIsSet_shouldReturnFederationSet() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+
+        federationStorageProvider.setProposedFederation(proposedFederation);
+
+        assertEquals(Optional.of(proposedFederation), federationStorageProvider.getProposedFederation(federationConstants, activations));
+    }
+
+    @Test
+    void getProposedFederation_whenProposedFederationIsSetToNull_shouldReturnEmpty() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+
+        federationStorageProvider.setProposedFederation(null);
+
+        assertFalse(federationStorageProvider.getProposedFederation(federationConstants, activations).isPresent());
+    }
+
+    @Test
+    void getProposedFederation_whenStorageEntryIsNull_shouldReturnEmpty() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+
+        assertFalse(federationStorageProvider.getProposedFederation(federationConstants, activations).isPresent());
+    }
+
+    @Test
+    void getProposedFederation_whenProposedFederationIsSaved_shouldReturnSavedFederation() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+
+        // first we have to save the proposed fed so the repo is not empty
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+        assertEquals(Optional.of(proposedFederation), federationStorageProvider.getProposedFederation(federationConstants, activations));
     }
 
     private static Federation createNonStandardErpFederation() {
