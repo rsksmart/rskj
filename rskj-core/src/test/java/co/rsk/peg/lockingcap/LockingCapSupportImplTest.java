@@ -107,7 +107,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_shouldReturnTrue() {
+    void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_shouldReturnTrue() {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -128,7 +128,7 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenAPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldReturnFalse() {
+    void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldReturnFalse() {
         // Arrange
         Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(expectedLockingCap);
