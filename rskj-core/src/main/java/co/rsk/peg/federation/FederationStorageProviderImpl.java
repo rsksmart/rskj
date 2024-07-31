@@ -220,8 +220,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return Optional.empty();
         }
 
-        if (proposedFederation != null || isProposedFederationSet) {
-            return Optional.ofNullable(proposedFederation);
+        if (proposedFederation != null) {
+            return Optional.of(proposedFederation);
+        }
+
+        // reaching this point means the proposed federation was set to null
+        if (isProposedFederationSet) {
+            return Optional.empty();
         }
 
         proposedFederation = bridgeStorageAccessor.getFromRepository(
@@ -230,6 +235,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
                 if (data == null) {
                     return null;
                 }
+
                 // storage version is always present for non-null proposed federation
                 Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
                 return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
