@@ -1075,6 +1075,18 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
+        void getProposedFederation_whenNullProposedFederationIsSaved_shouldReturnEmpty() {
+            // first save a non-null value to make sure saving a null one is actually happening
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), null, BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), null, BridgeSerializationUtils::serializeFederation);
+
+            assertFalse(federationStorageProvider.getProposedFederation(federationConstants, allActivations).isPresent());
+        }
+
+        @Test
         void getProposedFederation_whenProposedFederationIsCached_shouldReturnCachedFederation() {
             // first we have to save the proposed fed so the repo is not empty
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
