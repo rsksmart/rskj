@@ -18,9 +18,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.constants.*;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.storage.*;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.InMemoryStorage;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
@@ -35,8 +39,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -906,6 +909,73 @@ class FederationStorageProviderImplTests {
 
         assertFalse(Arrays.equals(defaultFederationElectionSerialized, federationElectionSerializedWithVote));
         assertArrayEquals(federationElectionSerializedWithVote, actualAbiCallElectionSerialized);
+    }
+
+    @Nested
+    @Tag("proposed federation tests")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class ProposedFederationTests {
+        private final ActivationConfig.ForBlock preLovellActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+        private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+        private final Federation proposedFederation = new P2shErpFederationBuilder().build();
+        private StorageAccessor bridgeStorageAccessor;
+        private FederationStorageProvider federationStorageProvider;
+
+        @BeforeEach
+        void setUp() {
+            bridgeStorageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        }
+
+        @Test
+        void saveProposedFederation_whenProposedFederationIsNotSet_shouldNotSave() {
+            federationStorageProvider.save(networkParameters, allActivations);
+
+            assertNull(getProposedFederationFromRepository());
+        }
+
+        @Test
+        void saveProposedFederation_preRSKIP419_whenProposedFederationIsSet_shouldNotSave() {
+            federationStorageProvider.setProposedFederation(proposedFederation);
+            federationStorageProvider.save(networkParameters, preLovellActivations);
+
+            assertNull(getProposedFederationFromRepository());
+        }
+
+        @Test
+        void saveProposedFederation_whenProposedFederationIsSet_shouldSave() {
+            federationStorageProvider.setProposedFederation(proposedFederation);
+            federationStorageProvider.save(networkParameters, allActivations);
+
+            assertEquals(proposedFederation, getProposedFederationFromRepository());
+        }
+
+        @Test
+        void saveProposedFederation_whenProposedFederationIsSetToNull_shouldSave() {
+            // first save a non-null value to make sure saving a null one is actually happening
+            federationStorageProvider.setProposedFederation(proposedFederation);
+            federationStorageProvider.save(networkParameters, allActivations);
+
+            federationStorageProvider.setProposedFederation(null);
+            federationStorageProvider.save(networkParameters, allActivations);
+
+            assertNull(getProposedFederationFromRepository());
+        }
+
+        private Federation getProposedFederationFromRepository() {
+            return bridgeStorageAccessor.getFromRepository(
+                PROPOSED_FEDERATION.getKey(),
+                data -> {
+                    if (data == null) {
+                        return null;
+                    }
+
+                    // storage version should be always present for non-null proposed federation
+                    Integer storageVersion = bridgeStorageAccessor.getFromRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils::deserializeInteger);
+                    return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion, federationConstants, allActivations);
+                }
+            );
+        }
     }
 
     private static Federation createNonStandardErpFederation() {
