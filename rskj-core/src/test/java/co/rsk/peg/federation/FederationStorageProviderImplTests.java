@@ -944,6 +944,7 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.save(networkParameters, allActivations);
 
             assertNull(getProposedFederationFromRepository());
+            assertNull(getProposedFederationFormatVersionFromRepository());
         }
 
         @Test
@@ -952,6 +953,7 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.save(networkParameters, preLovellActivations);
 
             assertNull(getProposedFederationFromRepository());
+            assertNull(getProposedFederationFormatVersionFromRepository());
         }
 
         @Test
@@ -960,6 +962,7 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.save(networkParameters, allActivations);
 
             assertEquals(proposedFederation, getProposedFederationFromRepository());
+            assertEquals(proposedFederation.getFormatVersion(), getProposedFederationFormatVersionFromRepository());
         }
 
         @Test
@@ -972,6 +975,7 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.save(networkParameters, allActivations);
 
             assertNull(getProposedFederationFromRepository());
+            assertNull(getProposedFederationFormatVersionFromRepository());
         }
 
         private Federation getProposedFederationFromRepository() {
@@ -982,11 +986,17 @@ class FederationStorageProviderImplTests {
                         return null;
                     }
 
-                    // storage version should be always present for non-null proposed federation
-                    Integer storageVersion = bridgeStorageAccessor.getFromRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils::deserializeInteger);
-                    return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion, federationConstants, allActivations);
+                    return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, getProposedFederationFormatVersionFromRepository(), federationConstants, allActivations);
                 }
             );
+        }
+
+        private Integer getProposedFederationFormatVersionFromRepository() {
+            byte[] versionSerialized = bridgeStorageAccessor.getFromRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), data -> data);
+
+            return Optional.ofNullable(versionSerialized)
+                .map(BridgeSerializationUtils::deserializeInteger)
+                .orElse(null);
         }
     }
 
