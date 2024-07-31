@@ -1165,9 +1165,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("increaseLockingCap");
 
         Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
-        if (newLockingCap.getValue() <= 0) {
-            throw new BridgeIllegalArgumentException("Locking cap must be bigger than zero");
-        }
 
         return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
     }

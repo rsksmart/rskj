@@ -183,29 +183,17 @@ class BridgeTest {
     }
 
     @Test
-    void increaseLockingCap_invalidParameter() {
+    void increaseLockingCap_whenNewLockingCapIsInvalidParameter_shouldThrowVMException() {
         ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
-        CallTransaction.Function increaseLockingCapFunction = BridgeMethods.INCREASE_LOCKING_CAP.getFunction();
-
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .build();
-
-        // Uses the proper signature but with no argument
-        // The solidity decoder in the Bridge will convert the undefined argument as 0,
-        // but the initial validation in the method will reject said value
-        final byte[] noArgumentData = increaseLockingCapFunction.encodeSignature();
-        assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
 
         // Uses the proper signature but appends invalid data type
         // This will be rejected by the solidity decoder in the Bridge directly
         final byte[] invalidTypeData = ByteUtil.merge(increaseLockingCapFunction.encodeSignature(), Hex.decode("ab"));
         assertThrows(VMException.class, () -> bridge.execute(invalidTypeData));
-
-        // Uses the proper signature and data type, but with an invalid value
-        // This will be rejected by the initial validation in the method
-        final byte[] invalidValueData = increaseLockingCapFunction.encode(-1);
-        assertThrows(VMException.class, () -> bridge.execute(invalidValueData));
 
         // Uses the proper signature and data type, but with a value that exceeds the long max value
         final byte[] aboveMaxLengthData = ByteUtil.merge(
@@ -213,6 +201,58 @@ class BridgeTest {
             Hex.decode("0000000000000000000000000000000000000000000000080000000000000000")
         );
         assertThrows(VMException.class, () -> bridge.execute(aboveMaxLengthData));
+    }
+
+    @Test
+    void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldReturnFalse() throws VMException {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        // No arguments signature
+        final byte[] noArgumentData = increaseLockingCapFunction.encodeSignature();
+
+        // Act
+        byte[] result = bridge.execute(noArgumentData);
+
+        // Assert
+        boolean decodedResult = (boolean) increaseLockingCapFunction.decodeResult(result)[0];
+        assertFalse(decodedResult);
+    }
+
+    @Test
+    void increaseLockingCap_whenNewLockingCapIsNegativeValue_shouldThrowVMException() {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        // When new LockingCap is a negative value
+        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.NEGATIVE_SATOSHI.getValue());
+
+        // Act / Assert
+        assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
+    }
+
+    @Test
+    void increaseLockingCap_whenNewLockingCapIsZeroValue_shouldThrowVMException() {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        // When new LockingCap is a zero value
+        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.ZERO.getValue());
+
+        // Act / Assert
+        assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
     }
 
     @Test
