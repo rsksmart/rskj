@@ -941,14 +941,14 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void saveProposedFederation_whenProposedFederationIsNotSet_shouldDoNothing() {
+        void saveProposedFederation_whenProposedFederationIsNotSet_shouldNotSave() {
             federationStorageProvider.save(networkParameters, lovellActivations);
 
             assertNull(getProposedFederationFromRepository());
         }
 
         @Test
-        void saveProposedFederation_preRSKIP419_whenProposedFederationIsSet_shouldDoNothing() {
+        void saveProposedFederation_preRSKIP419_whenProposedFederationIsSet_shouldNotSave() {
             federationStorageProvider.setProposedFederation(proposedFederation);
             federationStorageProvider.save(networkParameters, preLovellActivations);
 
