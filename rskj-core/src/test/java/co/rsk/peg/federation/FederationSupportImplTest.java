@@ -2694,25 +2694,24 @@ class FederationSupportImplTest {
             ECKey federator2RskKey = ECKey.fromPrivate(BigInteger.valueOf(500));
             ECKey federator2MstKey = ECKey.fromPrivate(BigInteger.valueOf(600));
 
+            FederationMember federator1 = new FederationMember(federator1BtcKey, federator1RskKey, federator1MstKey);
+
+            FederationMember federator2WithSameMstKey = new FederationMember(federator2BtcKey, federator2RskKey, federator1MstKey);
+            FederationMember federator2WithSameRskKey = new FederationMember(federator2BtcKey, federator1RskKey, federator2MstKey);
+            FederationMember federator2WithSameBtcKey = new FederationMember(federator1BtcKey, federator2RskKey, federator2MstKey);
+
             return Stream.of(
-                // 2 federators with different btc and rsk keys and same mst key
-                Arguments.of(federator1BtcKey, federator1RskKey, federator1MstKey, federator2BtcKey, federator2RskKey, federator1MstKey),
-                // 2 federators with different btc and mst keys and same rsk key
-                Arguments.of(federator1BtcKey, federator1RskKey, federator1MstKey, federator2BtcKey, federator1RskKey, federator2MstKey),
-                // 2 federators with different rsk and mst keys and same btc key
-                Arguments.of(federator1BtcKey, federator1RskKey, federator1MstKey, federator1BtcKey, federator2RskKey, federator2MstKey)
+                Arguments.of(federator1, federator2WithSameMstKey),
+                Arguments.of(federator1, federator2WithSameRskKey),
+                Arguments.of(federator1, federator2WithSameBtcKey)
             );
         }
 
         @ParameterizedTest
         @MethodSource("federatorsWithDifferentKeysButOneParametersProvider")
         void voteFederationChange_add2FederatorsWithWithDifferentKeysButOne_returnsFederatorAlreadyPresentResponseCode(
-            BtcECKey federator1BtcKey,
-            ECKey federator1RskKey,
-            ECKey federator1MstKey,
-            BtcECKey federator2BtcKey,
-            ECKey federator2RskKey,
-            ECKey federator2MstKey
+            FederationMember federator1,
+            FederationMember federator2
         ) {
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
@@ -2724,17 +2723,9 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
-                federator1BtcKey.getPubKey(),
-                federator1RskKey.getPubKey(),
-                federator1MstKey.getPubKey(),
-            });
+            ABICallSpec addMultiKeyAbiCallSpec1 = getAddMultiKeysVote(federator1);
 
-            ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
-                federator2BtcKey.getPubKey(),
-                federator2RskKey.getPubKey(),
-                federator2MstKey.getPubKey(),
-            });
+            ABICallSpec addMultiKeyAbiCallSpec2 = getAddMultiKeysVote(federator2);
 
             // Act
 
