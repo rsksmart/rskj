@@ -2623,6 +2623,80 @@ class FederationSupportImplTest {
             assertEquals(0, federationSupport.getPendingFederationSize());
         }
 
+        private Stream<Arguments> federatorsWithDifferentKeysButOneParametersProvider() {
+
+            BtcECKey federator1BtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey federator1RskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey federator1MstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
+
+            BtcECKey federator2BtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(400));
+            ECKey federator2RskKey = ECKey.fromPrivate(BigInteger.valueOf(500));
+            ECKey federator2MstKey = ECKey.fromPrivate(BigInteger.valueOf(600));
+
+            return Stream.of(
+                // 2 federators with different btc and rsk keys and same mst key
+                Arguments.of(federator1BtcKey, federator1RskKey, federator1MstKey, federator2BtcKey, federator2RskKey, federator1MstKey),
+                // 2 federators with different btc and mst keys and same rsk key
+                Arguments.of(federator1BtcKey, federator1RskKey, federator1MstKey, federator2BtcKey, federator1RskKey, federator2MstKey),
+                // 2 federators with different rsk and mst keys and same btc key
+                Arguments.of(federator1BtcKey, federator1RskKey, federator1MstKey, federator1BtcKey, federator2RskKey, federator2MstKey)
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("federatorsWithDifferentKeysButOneParametersProvider")
+        void voteFederationChange_add2FederatorsWithWithDifferentKeysButOne_returnsFederatorAlreadyPresentResponseCode(
+            BtcECKey federator1BtcKey,
+            ECKey federator1RskKey,
+            ECKey federator1MstKey,
+            BtcECKey federator2BtcKey,
+            ECKey federator2RskKey,
+            ECKey federator2MstKey
+        ) {
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec addMultiKeyAbiCallSpec1 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                federator1BtcKey.getPubKey(),
+                federator1RskKey.getPubKey(),
+                federator1MstKey.getPubKey(),
+            });
+
+            ABICallSpec addMultiKeyAbiCallSpec2 = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                federator2BtcKey.getPubKey(),
+                federator2RskKey.getPubKey(),
+                federator2MstKey.getPubKey(),
+            });
+
+            // Act
+
+            // Voting add new fed member with m of n authorizers
+            int firstVoteAddMultiFederator1KeysResult = federationSupport.voteFederationChange(firstAuthorizedTx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+            int secondVoteAddMultiFederator1KeysResult = federationSupport.voteFederationChange(secondAuthorizedTx, addMultiKeyAbiCallSpec1, signatureCache, bridgeEventLogger);
+
+            // Voting add new fed member that will be considered the same as the previous one because they share at least one of the same keys
+            int firstVoteAddMultiFederator2KeysResult = federationSupport.voteFederationChange(firstAuthorizedTx, addMultiKeyAbiCallSpec2, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddMultiFederator1KeysResult);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteAddMultiFederator1KeysResult);
+
+            // Federator is considered the same due to sharing at least one key with the previous federator voted
+            assertEquals(FederationChangeResponseCode.FEDERATOR_ALREADY_PRESENT.getCode(), firstVoteAddMultiFederator2KeysResult);
+
+            // Pending federation size is 1, because authorizers first voted for the same federator and the second was ignored
+            assertEquals(1, federationSupport.getPendingFederationSize());
+
+        }
+
         @Test
         void voteFederationChange_add100Members_returnsSuccessResponseCodeAndFedSize100() {
             // Arrange
