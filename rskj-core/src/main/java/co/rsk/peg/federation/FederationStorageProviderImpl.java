@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
-import static java.util.Objects.nonNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationStorageProviderImpl implements FederationStorageProvider {
@@ -330,7 +329,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public void setFundTransactionUnsignedHash(Sha256Hash hash) {
+    public void setSvpFundTransactionUnsignedHash(Sha256Hash hash) {
         this.fundTransactionUnsignedHash = hash;
         isFundTransactionUnsignedHashSet = true;
     }
@@ -447,7 +446,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        byte[] data = nonNull(fundTransactionUnsignedHash) ? BridgeSerializationUtils.serializeSha256Hash(fundTransactionUnsignedHash) : null;
+        byte[] data = Optional.ofNullable(fundTransactionUnsignedHash)
+            .map(BridgeSerializationUtils::serializeSha256Hash)
+            .orElse(null);
 
         bridgeStorageAccessor.saveToRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
 
