@@ -20,13 +20,14 @@ public class LockingCapStorageProviderImpl implements LockingCapStorageProvider 
 
     @Override
     public Optional<Coin> getLockingCap(ActivationConfig.ForBlock activations) {
-        if (activations.isActive(RSKIP134)) {
-            if (lockingCap == null) {
-                initializeLockingCap();
-            }
-            return Optional.of(lockingCap);
+        if (!activations.isActive(RSKIP134)) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        if (lockingCap == null) {
+            initializeLockingCap();
+        }
+        return Optional.ofNullable(lockingCap);
     }
 
     private synchronized void initializeLockingCap() {
