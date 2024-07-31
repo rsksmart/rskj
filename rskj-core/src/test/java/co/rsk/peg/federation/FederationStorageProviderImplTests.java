@@ -1001,7 +1001,7 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getProposedFederation_whenThereIsNoProposedFederationSaved_shouldReturnEmpty() {
+        void getProposedFederation_whenThereIsNoProposedFederationSavedNorSet_shouldReturnEmpty() {
             assertFalse(federationStorageProvider.getProposedFederation(federationConstants, allActivations).isPresent());
         }
 
