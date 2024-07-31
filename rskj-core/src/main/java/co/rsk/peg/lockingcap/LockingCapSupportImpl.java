@@ -1,6 +1,7 @@
 package co.rsk.peg.lockingcap;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.peg.BridgeIllegalArgumentException;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Optional;
@@ -45,7 +46,11 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     }
 
     @Override
-    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) {
+    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws BridgeIllegalArgumentException {
+        if (newLockingCap.getValue() <= 0) {
+            throw new BridgeIllegalArgumentException("Locking Cap must be greater than zero");
+        }
+
         // Only pre-configured addresses can modify Locking Cap
         AddressBasedAuthorizer authorizer = constants.getIncreaseAuthorizer();
         if (!authorizer.isAuthorized(tx, signatureCache)) {
