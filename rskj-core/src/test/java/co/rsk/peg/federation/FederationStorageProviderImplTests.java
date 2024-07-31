@@ -1001,15 +1001,15 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getProposedFederation_preRSKIP419_shouldReturnEmpty() {
-            federationStorageProvider.setProposedFederation(proposedFederation);
-
-            assertFalse(federationStorageProvider.getProposedFederation(federationConstants, preLovellActivations).isPresent());
+        void getProposedFederation_whenThereIsNoProposedFederationSaved_shouldReturnEmpty() {
+            assertFalse(federationStorageProvider.getProposedFederation(federationConstants, allActivations).isPresent());
         }
 
         @Test
-        void getProposedFederation_whenStorageEntryIsNull_shouldReturnEmpty() {
-            assertFalse(federationStorageProvider.getProposedFederation(federationConstants, allActivations).isPresent());
+        void getProposedFederation_preRSKIP419_whenProposedFederationIsSet_shouldReturnEmpty() {
+            federationStorageProvider.setProposedFederation(proposedFederation);
+
+            assertFalse(federationStorageProvider.getProposedFederation(federationConstants, preLovellActivations).isPresent());
         }
 
         @Test
@@ -1037,8 +1037,6 @@ class FederationStorageProviderImplTests {
 
         @Test
         void getProposedFederation_whenProposedFederationIsCached_shouldReturnCachedFederation() {
-            Federation proposedFederationToBeSavedAfterCache = new StandardMultiSigFederationBuilder().build();
-
             // first we have to save the proposed fed so the repo is not empty
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
@@ -1046,8 +1044,9 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.getProposedFederation(federationConstants, allActivations);
 
             // saving in the repo another fed to make sure the cached value is the one being returned
-            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederationToBeSavedAfterCache.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
-            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederationToBeSavedAfterCache, BridgeSerializationUtils::serializeFederation);
+            Federation anotherFederation = new StandardMultiSigFederationBuilder().build();
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), anotherFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), anotherFederation, BridgeSerializationUtils::serializeFederation);
 
             assertEquals(Optional.of(proposedFederation), federationStorageProvider.getProposedFederation(federationConstants, allActivations));
         }
