@@ -28,11 +28,13 @@ import static org.mockito.Mockito.*;
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
@@ -45,12 +47,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.test.builders.FederationSupportBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -58,8 +62,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.vote.ABICallSpec;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 
@@ -3194,6 +3196,224 @@ class FederationSupportImplTest {
             });
         }
     }
+
+    @Nested
+    @Tag("commit federation")
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class CommitFederationTests {
+        private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        private final CallTransaction.Function commitFederationEvent = BridgeEvents.COMMIT_FEDERATION.getEvent();
+
+        private List<LogInfo> logs;
+        private ActivationConfig.ForBlock activations;
+
+        private FederationStorageProvider federationStorageProvider;
+        private FederationSupportImpl federationSupport;
+        private PendingFederation pendingFederation;
+        private BridgeEventLogger bridgeEventLogger;
+
+        private Block rskExecutionBlock;
+        long rskExecutionBlockNumber = 1000L;
+        long rskExecutionBlockTimestamp = 10L;
+
+        @BeforeEach
+        void setUp() {
+            logs = new ArrayList<>();
+
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+
+            pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembers(5));
+            federationStorageProvider.setPendingFederation(pendingFederation);
+
+            BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(rskExecutionBlockNumber)
+                .setTimestamp(rskExecutionBlockTimestamp)
+                .build();
+            rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
+        }
+
+        @Test
+        void commitFederation_preRSKIP186_shouldPerformLegacyCommitFederationActionsButShouldNotSetFederationChangeInfo() {
+            // arrange
+            activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+            bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs, signatureCache);
+            federationSupport = new FederationSupportImpl(federationMainnetConstants, federationStorageProvider, rskExecutionBlock, activations);
+            List<UTXO> utxosToMove = new ArrayList<>(federationStorageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
+
+            // act
+            FederationChangeResponseCode commitFederationCall = federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
+
+
+            // assertions
+
+            assertUTXOsWereMoved(utxosToMove);
+
+            assertNewAndOldFederationsWereSet();
+
+            assertPendingFederationVotingWasCleaned();
+
+            assertFederationChangeInfoWasNotSet();
+
+            Federation oldFederation = federationStorageProvider.getOldFederation(federationMainnetConstants, activations);
+            Federation newFederation = federationStorageProvider.getNewFederation(federationMainnetConstants, activations);
+            assertLogCommitFederation(oldFederation, newFederation);
+
+            assertCallWasSuccessful(commitFederationCall);
+        }
+
+        @Test
+        void commitFederation_postRSKIP186_preRSKIP419_shouldPerformLegacyCommitFederationActions() {
+            // arrange
+            activations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs, signatureCache);
+            federationSupport = new FederationSupportImpl(federationMainnetConstants, federationStorageProvider, rskExecutionBlock, activations);
+            List<UTXO> utxosToMove = new ArrayList<>(federationStorageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
+
+            // act
+            FederationChangeResponseCode commitFederationCall = federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
+
+
+            // assertions
+
+            assertUTXOsWereMoved(utxosToMove);
+
+            assertNewAndOldFederationsWereSet();
+
+            assertPendingFederationVotingWasCleaned();
+
+            assertFederationChangeInfoWasSet();
+
+            Federation oldFederation = federationStorageProvider.getOldFederation(federationMainnetConstants, activations);
+            Federation newFederation = federationStorageProvider.getNewFederation(federationMainnetConstants, activations);
+            assertLogCommitFederation(oldFederation, newFederation);
+
+            assertCallWasSuccessful(commitFederationCall);
+        }
+
+        @Test
+        void commitFederation_postRSKIP419_shouldCallCommitPendingFederation() {
+            // arrange
+            activations = ActivationConfigsForTest.all().forBlock(0L);
+            bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs, signatureCache);
+            federationSupport = new FederationSupportImpl(federationMainnetConstants, federationStorageProvider, rskExecutionBlock, activations);
+            Federation activeFederation = federationSupport.getActiveFederation();
+            Federation federationBuiltFromPendingFederation =
+                pendingFederation.buildFederation(Instant.ofEpochMilli(rskExecutionBlockTimestamp), rskExecutionBlockNumber, federationMainnetConstants, activations);
+
+            // act
+            FederationChangeResponseCode commitFederationCall = federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
+
+
+            // assertions
+
+            // assert proposed federation was set correctly
+            Optional<Federation> proposedFederation =
+                federationStorageProvider.getProposedFederation(federationMainnetConstants, activations);
+            assertTrue(proposedFederation.isPresent());
+            assertEquals(federationBuiltFromPendingFederation, proposedFederation.get());
+
+            assertPendingFederationVotingWasCleaned();
+
+            assertFederationChangeInfoWasSet();
+
+            assertLogCommitFederation(activeFederation, proposedFederation.get());
+
+            assertCallWasSuccessful(commitFederationCall);
+        }
+
+        private void assertUTXOsWereMoved(List<UTXO> utxosToMove) {
+            // assert utxos were moved from new federation to old federation
+            List<UTXO> oldFederationUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
+            assertEquals(utxosToMove, oldFederationUTXOs);
+
+            // assert new federation utxos were cleaned
+            List<UTXO> newFederationUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations);
+            assertTrue(newFederationUTXOs.isEmpty());
+        }
+
+        private void assertNewAndOldFederationsWereSet() {
+            // assert old federation was set as the active federation
+            Federation oldFederation = federationStorageProvider.getOldFederation(federationMainnetConstants, activations);
+            assertEquals(federationSupport.getActiveFederation(), oldFederation);
+
+            // assert new federation was set as the federation built from the pending one
+            Federation federationBuiltFromPendingFederation =
+                pendingFederation.buildFederation(Instant.ofEpochMilli(rskExecutionBlockTimestamp), rskExecutionBlockNumber, federationMainnetConstants, activations);
+            Federation newFederation = federationStorageProvider.getNewFederation(federationMainnetConstants, activations);
+            assertEquals(federationBuiltFromPendingFederation, newFederation);
+        }
+
+        private void assertPendingFederationVotingWasCleaned() {
+            assertNull(federationStorageProvider.getPendingFederation());
+
+            Map<ABICallSpec, List<RskAddress>> federationElectionVotes = federationStorageProvider.getFederationElection(federationMainnetConstants.getFederationChangeAuthorizer()).getVotes();
+            assertTrue(federationElectionVotes.isEmpty());
+        }
+
+        private void assertFederationChangeInfoWasSet() {
+            // assert federation creation block height was set correctly
+            Optional<Long> nextFederationCreationBlockHeight = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+            assertTrue(nextFederationCreationBlockHeight.isPresent());
+            assertEquals(rskExecutionBlockNumber, nextFederationCreationBlockHeight.get());
+
+            // assert last retired federation p2sh script was set correctly
+            Script activeFederationMembersP2SHScript = federationSupport.getFederationMembersP2SHScript(federationSupport.getActiveFederation());
+            Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+            assertTrue(lastRetiredFederationP2SHScript.isPresent());
+            assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
+        }
+
+        private void assertFederationChangeInfoWasNotSet() {
+            // assert federation creation block height was not set
+            Optional<Long> nextFederationCreationBlockHeight = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+            assertFalse(nextFederationCreationBlockHeight.isPresent());
+
+            // assert last retired federation p2sh script was not set
+            Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+            assertFalse(lastRetiredFederationP2SHScript.isPresent());
+        }
+
+        private void assertLogCommitFederation(Federation federationToBeRetired, Federation votedFederation) {
+            List<DataWord> encodedTopics = getEncodedTopics();
+            byte[] encodedData = getEncodedData(federationToBeRetired, votedFederation);
+
+            // assert the event was emitted just once with the expected topic and data
+            assertEquals(1, logs.size());
+
+            LogInfo log = logs.get(0);
+            List<DataWord> topic = log.getTopics();
+            assertEquals(encodedTopics.get(0), topic.get(0));
+            assertArrayEquals(encodedData, log.getData());
+        }
+
+        private List<DataWord> getEncodedTopics() {
+            byte[][] encodedTopicsInBytes = commitFederationEvent.encodeEventTopics();
+            return LogInfo.byteArrayToList(encodedTopicsInBytes);
+        }
+
+        private byte[] getEncodedData(Federation federationToBeRetired, Federation votedFederation) {
+            byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(federationToBeRetired.getBtcPublicKeys());
+            String oldFederationBtcAddress = federationToBeRetired.getAddress().toBase58();
+            byte[] newFederationFlatPubKeys = flatKeysAsByteArray(votedFederation.getBtcPublicKeys());
+            String newFederationBtcAddress = votedFederation.getAddress().toBase58();
+            long newFedActivationBlockNumber = rskExecutionBlock.getNumber() + federationMainnetConstants.getFederationActivationAge(activations);
+
+            return commitFederationEvent.encodeEventData(
+                oldFederationFlatPubKeys,
+                oldFederationBtcAddress,
+                newFederationFlatPubKeys,
+                newFederationBtcAddress,
+                newFedActivationBlockNumber
+            );
+        }
+
+        private void assertCallWasSuccessful(FederationChangeResponseCode commitFederationCall) {
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL, commitFederationCall);
+        }
+    }
+
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
