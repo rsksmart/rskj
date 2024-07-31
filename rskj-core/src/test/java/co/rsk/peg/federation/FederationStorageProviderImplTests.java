@@ -926,7 +926,7 @@ class FederationStorageProviderImplTests {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ProposedFederationTests {
         private final ActivationConfig.ForBlock preLovellActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
-        private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+        private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
         private final Federation proposedFederation = new P2shErpFederationBuilder().build();
         private StorageAccessor bridgeStorageAccessor;
         private FederationStorageProvider federationStorageProvider;
