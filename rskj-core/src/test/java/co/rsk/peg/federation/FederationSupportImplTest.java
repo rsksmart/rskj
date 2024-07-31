@@ -2516,8 +2516,6 @@ class FederationSupportImplTest {
             // Arrange
 
             BtcECKey expectedFederatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
-            ECKey expectedFederatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
-            ECKey expectedFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2528,23 +2526,32 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec rollbackAbiCallSpec = new ABICallSpec(FederationChangeFunction.ROLLBACK.getKey(), new byte[][]{
-                expectedFederatorBtcECKey.getPubKey(),
-                expectedFederatorRskKey.getPubKey(),
-                expectedFederatorMstKey.getPubKey()
-            });
+            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedFederatorBtcECKey.getPubKey()});
 
             // Act
 
-            // Voting add new fed with m of n authorizers
+            // Voting add new fed with m of n authorizers to have at least one federation member before roll back
+            federationSupport.voteFederationChange(firstAuthorizedTx, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec rollbackAbiCallSpec = new ABICallSpec(FederationChangeFunction.ROLLBACK.getKey(), new byte[][]{});
+
+            // Act
+
+            int pendingFederationSizeBeforeRollback = federationSupport.getPendingFederationSize();
+
+            // Voting to roll back the pending federation with m of n authorizers
             int firstVoteRollbackResult = federationSupport.voteFederationChange(firstAuthorizedTx, rollbackAbiCallSpec, signatureCache, bridgeEventLogger);
             int secondVoteRollbackResult = federationSupport.voteFederationChange(secondAuthorizedTx, rollbackAbiCallSpec, signatureCache, bridgeEventLogger);
 
+            int pendingFederationSizeAfterRollback = federationSupport.getPendingFederationSize();
+
             // Assert
 
+            assertEquals(1, pendingFederationSizeBeforeRollback);
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteRollbackResult);
             assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteRollbackResult);
-            assertEquals(-1, federationSupport.getPendingFederationSize());
+            assertEquals(-1, pendingFederationSizeAfterRollback);
             assertNull(federationSupport.getPendingFederationHash());
 
         }
