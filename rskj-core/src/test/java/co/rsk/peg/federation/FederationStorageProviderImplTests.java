@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.bitcoinj.core.NetworkParameters.*;
 import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
-import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.federation.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
@@ -997,6 +996,110 @@ class FederationStorageProviderImplTests {
             return Optional.ofNullable(versionSerialized)
                 .map(BridgeSerializationUtils::deserializeInteger)
                 .orElse(null);
+        }
+
+        @Test
+        void getProposedFederation_whenThereIsNoProposedFederationSavedNorSet_shouldReturnEmpty() {
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederation_preRSKIP419_whenProposedFederationIsSet_shouldReturnEmpty() {
+            federationStorageProvider.setProposedFederation(proposedFederation);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, preLovellActivations);
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederation_whenProposedFederationIsSet_shouldReturnFederationSet() {
+            federationStorageProvider.setProposedFederation(proposedFederation);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertEquals(Optional.of(proposedFederation), actualProposedFederation);
+        }
+
+        @Test
+        void getProposedFederation_whenProposedFederationIsSetToNull_shouldReturnEmpty() {
+            federationStorageProvider.setProposedFederation(null);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederation_whenStorageIsNotEmptyAndProposedFederationIsSet_shouldReturnFederationSet() {
+            // first we have to save the another proposed fed so the repo is not empty
+            Federation savedFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), savedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), savedFederation, BridgeSerializationUtils::serializeFederation);
+
+            federationStorageProvider.setProposedFederation(proposedFederation);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertEquals(Optional.of(proposedFederation), actualProposedFederation);
+        }
+
+        @Test
+        void getProposedFederation_whenStorageIsNotEmptyAndProposedFederationIsSetToNull_shouldReturnEmpty() {
+            // first we have to save the another proposed fed so the repo is not empty
+            Federation savedFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), savedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), savedFederation, BridgeSerializationUtils::serializeFederation);
+
+            federationStorageProvider.setProposedFederation(null);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederation_whenProposedFederationIsSaved_shouldReturnSavedFederation() {
+            // first we have to save the proposed fed so the repo is not empty
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertEquals(Optional.of(proposedFederation), actualProposedFederation);
+        }
+
+        @Test
+        void getProposedFederation_whenNullProposedFederationIsSaved_shouldReturnEmpty() {
+            // first save a non-null value to make sure saving a null one is actually happening
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), null, BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), null, BridgeSerializationUtils::serializeFederation);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederation_whenProposedFederationIsSavedWithoutStorageVersion_shouldThrowIllegalStateException() {
+            // save a proposed federation without storage version
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+            assertThrows(IllegalStateException.class, () -> federationStorageProvider.getProposedFederation(federationConstants, allActivations));
+        }
+
+        @Test
+        void getProposedFederation_whenProposedFederationIsCached_shouldReturnCachedFederation() {
+            // first we have to save the proposed fed so the repo is not empty
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+            // this should set the proposed fed in proposedFederation field
+            federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+
+            // saving in the repo another fed to make sure the cached value is the one being returned
+            Federation anotherFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());;
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), anotherFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), anotherFederation, BridgeSerializationUtils::serializeFederation);
+
+            Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
+            assertEquals(Optional.of(proposedFederation), actualProposedFederation);
         }
     }
 
