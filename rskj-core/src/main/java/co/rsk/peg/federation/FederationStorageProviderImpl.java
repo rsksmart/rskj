@@ -382,6 +382,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
+        // format version is always non-null in a non-null federation
         Integer formatVersion = Optional.ofNullable(proposedFederation)
             .map(Federation::getFormatVersion)
             .orElse(null);
