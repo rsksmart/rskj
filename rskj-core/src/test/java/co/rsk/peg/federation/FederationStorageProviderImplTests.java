@@ -930,15 +930,14 @@ class FederationStorageProviderImplTests {
     class ProposedFederationTests {
         private final ActivationConfig.ForBlock preLovellActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
         private final ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        private final Federation proposedFederation = new P2shErpFederationBuilder().build();
         private StorageAccessor bridgeStorageAccessor;
         private FederationStorageProvider federationStorageProvider;
-        private Federation proposedFederation;
 
         @BeforeEach
         void setUp() {
             bridgeStorageAccessor = new InMemoryStorage();
             federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-            proposedFederation = new P2shErpFederationBuilder().build();
         }
 
         @Test
