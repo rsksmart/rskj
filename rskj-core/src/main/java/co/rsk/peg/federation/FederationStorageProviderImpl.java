@@ -381,9 +381,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        Integer formatVersion = proposedFederation != null ?
-            proposedFederation.getFormatVersion()
-            : null;
+        Integer formatVersion = Optional.ofNullable(proposedFederation)
+            .map(Federation::getFormatVersion)
+            .orElse(null);
 
         saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), formatVersion);
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
