@@ -2,10 +2,12 @@ package co.rsk.peg.lockingcap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.net.utils.TransactionUtils;
+import co.rsk.peg.BridgeIllegalArgumentException;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
@@ -79,7 +81,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewValueIsGreaterThanCurrentLockingCap_shouldReturnTrue() {
+    void increaseLockingCap_whenNewValueIsGreaterThanCurrentLockingCap_shouldReturnTrue()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -93,7 +96,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewValueIsLessThanInitialValue_shouldReturnFalse() {
+    void increaseLockingCap_whenNewValueIsLessThanInitialValue_shouldReturnFalse()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().subtract(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -107,7 +111,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_shouldReturnTrue() {
+    void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_shouldReturnTrue()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -128,7 +133,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldReturnFalse() {
+    void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldReturnFalse()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(expectedLockingCap);
@@ -149,7 +155,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenAnUnauthorizedCallerRequestToIncreaseLockingCapValue_shouldReturnFalse() {
+    void increaseLockingCap_whenAnUnauthorizedCallerRequestToIncreaseLockingCapValue_shouldReturnFalse()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.UNAUTHORIZED.getRskAddress());
@@ -163,7 +170,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_shouldReturnFalse() {
+    void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_shouldReturnFalse()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin expectedLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(expectedLockingCap);
@@ -185,7 +193,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewLockingCapIsEqualToMaxLockingCap_shouldReturnTrue() {
+    void increaseLockingCap_whenNewLockingCapIsEqualToMaxLockingCap_shouldReturnTrue()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin previousLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         lockingCapStorageProvider.setLockingCap(previousLockingCap);
@@ -207,7 +216,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_whenNewValueIsEqualToCurrentValue_shouldReturnTrue() {
+    void increaseLockingCap_whenNewValueIsEqualToCurrentValue_shouldReturnTrue()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue();
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -226,11 +236,8 @@ class LockingCapSupportImplTest {
         Coin newLockingCap = Coin.ZERO;
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
 
-        // Act
-        boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
-
-        // Assert
-        assertFalse(actualResult);
+        // Act / Assert
+        assertThrows(BridgeIllegalArgumentException.class, () -> lockingCapSupport.increaseLockingCap(tx, newLockingCap));
         assertEquals(Optional.of(constants.getInitialValue()), lockingCapSupport.getLockingCap());
     }
 
@@ -240,16 +247,14 @@ class LockingCapSupportImplTest {
         Coin newLockingCap = Coin.NEGATIVE_SATOSHI;
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
 
-        // Act
-        boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
-
-        // Assert
-        assertFalse(actualResult);
+        // Act / Assert
+        assertThrows(BridgeIllegalArgumentException.class, () -> lockingCapSupport.increaseLockingCap(tx, newLockingCap));
         assertEquals(Optional.of(constants.getInitialValue()), lockingCapSupport.getLockingCap());
     }
 
     @Test
-    void increaseLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnFalse() {
+    void increaseLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldReturnFalse()
+        throws BridgeIllegalArgumentException {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
@@ -265,7 +270,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void save_whenIsIncreasedLockingCapValue_shouldSaveLockingCap() {
+    void save_whenIsIncreasedLockingCapValue_shouldSaveLockingCap()
+        throws BridgeIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
         Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
@@ -282,7 +288,8 @@ class LockingCapSupportImplTest {
     }
 
     @Test
-    void save_prePapyrus200_whenIsAttemptedIncreaseLockingCapValue_shouldNotSaveLockingCap() {
+    void save_prePapyrus200_whenIsAttemptedIncreaseLockingCapValue_shouldNotSaveLockingCap()
+        throws BridgeIllegalArgumentException {
         // Arrange
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
