@@ -272,7 +272,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
                 if (data == null) {
                     return null;
                 }
-                // storage version should be always present for non-null proposed federation
+                // storage version is always present for non-null proposed federation
                 Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
                 return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
             }
