@@ -2120,7 +2120,7 @@ public class BridgeSupport {
         return federationSupport.getActiveFederationRedeemScript();
     }
 
-    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) {
+    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws BridgeIllegalArgumentException {
         return lockingCapSupport.increaseLockingCap(tx, newLockingCap);
     }
 
