@@ -2576,7 +2576,7 @@ class FederationSupportImplTest {
 
             ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
 
-            // Voting with  m of n authorizers to create the pending federation
+            // Voting with m of n authorizers to create the pending federation
             federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
@@ -2595,6 +2595,8 @@ class FederationSupportImplTest {
 
             // Second call fails
             assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), secondVoteAddFederationResult);
+
+            assertEquals(0, federationSupport.getPendingFederationSize());
 
         }
 
