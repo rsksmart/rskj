@@ -295,6 +295,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveOldFederation(activations);
 
         savePendingFederation(activations);
+        saveProposedFederation(activations);
 
         saveFederationElection();
 
@@ -380,7 +381,10 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        Integer formatVersion = Optional.of(proposedFederation.getFormatVersion()).orElse(null);
+        Integer formatVersion = proposedFederation != null ?
+            proposedFederation.getFormatVersion()
+            : null;
+
         saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), formatVersion);
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
@@ -396,7 +400,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     private void saveFederationFormatVersion(DataWord versionKey, Integer version) {
         bridgeStorageAccessor.saveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
-        storageVersionEntries.put(versionKey, Optional.of(version));
+        storageVersionEntries.put(versionKey, Optional.ofNullable(version));
     }
 
     private void saveFederationElection() {
