@@ -447,9 +447,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             return;
         }
 
-        byte[] data = nonNull(fundTransactionUnsignedHash) ? fundTransactionUnsignedHash.getBytes() : null;
+        byte[] data = nonNull(fundTransactionUnsignedHash) ? BridgeSerializationUtils.serializeSha256Hash(fundTransactionUnsignedHash) : null;
 
-        bridgeStorageAccessor.saveToRepository(FUND_TX_HASH_UNSIGNED.getKey(), data);
+        bridgeStorageAccessor.saveToRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
 
     }
 
