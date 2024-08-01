@@ -2673,8 +2673,14 @@ class FederationSupportImplTest {
             // Voting add new fed with m of n authorizers
 
             for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
-                BtcECKey expectedBtcECKey = new BtcECKey();
-                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+                BtcECKey federatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
+                ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
+                ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                    federatorBtcECKey.getPubKey(),
+                    federatorRskKey.getPubKey(),
+                    federatorMstKey.getPubKey()
+                });
                 int firstVoteAddResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
                 int secondVoteAddResult = federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
                 assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddResult);
