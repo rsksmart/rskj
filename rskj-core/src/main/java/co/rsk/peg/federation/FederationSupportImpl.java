@@ -442,6 +442,9 @@ public class FederationSupportImpl implements FederationSupport {
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "add":
+                if(activations.isActive(RSKIP123)) {
+                    throw new IllegalStateException("The \"add\" function is disabled.");
+                }
                 byte[] publicKeyBytes = callSpec.getArguments()[0];
                 BtcECKey publicKey;
                 ECKey publicKeyEc;
