@@ -51,7 +51,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
@@ -2885,7 +2884,7 @@ class FederationSupportImplTest {
                 firstAuthorizedTx,
                 addMultiKeyAbiCallSpec,
                 signatureCache,
-            bridgeEventLogger
+                bridgeEventLogger
             );
 
             // Assert
@@ -2915,6 +2914,26 @@ class FederationSupportImplTest {
 
             // Assert
             assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), voteAddMultiKeyResult);
+        }
+
+        @Test
+        void voteFederationChange_callMultiKeyWithOnlyOneKey_ThrowsArrayIndexOutOfBoundsException() {
+
+            // Arrange
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
+
+            BtcECKey federatorBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{ federatorBtcKey.getPubKey() });
+
+            // Act and assert
+
+            assertThrows(ArrayIndexOutOfBoundsException.class, () -> federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger));
+
         }
 
         private void voteToCreateFederation(Transaction firstAuthorizedTx, Transaction secondAuthorizedTx) {
