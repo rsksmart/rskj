@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.bitcoinj.core.NetworkParameters.*;
 import static java.util.Objects.nonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static co.rsk.bitcoinj.core.NetworkParameters.ID_TESTNET;
-import static co.rsk.bitcoinj.core.NetworkParameters.ID_MAINNET;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static co.rsk.peg.storage.FederationStorageIndexKey.*;
 import static co.rsk.peg.BridgeSerializationUtils.serializeElection;
@@ -1033,7 +1032,7 @@ class FederationStorageProviderImplTests {
         @Test
         void getProposedFederation_whenStorageIsNotEmptyAndProposedFederationIsSet_shouldReturnFederationSet() {
             // first we have to save the another proposed fed so the repo is not empty
-            Federation savedFederation = createAnotherFederation();
+            Federation savedFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), savedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), savedFederation, BridgeSerializationUtils::serializeFederation);
 
@@ -1046,7 +1045,7 @@ class FederationStorageProviderImplTests {
         @Test
         void getProposedFederation_whenStorageIsNotEmptyAndProposedFederationIsSetToNull_shouldReturnEmpty() {
             // first we have to save the another proposed fed so the repo is not empty
-            Federation savedFederation = createAnotherFederation();
+            Federation savedFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), savedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), savedFederation, BridgeSerializationUtils::serializeFederation);
 
@@ -1080,6 +1079,14 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
+        void getProposedFederation_whenProposedFederationIsSavedWithoutStorageVersion_shouldThrowIllegalStateException() {
+            // save a proposed federation without storage version
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+            assertThrows(IllegalStateException.class, () -> federationStorageProvider.getProposedFederation(federationConstants, allActivations));
+        }
+
+        @Test
         void getProposedFederation_whenProposedFederationIsCached_shouldReturnCachedFederation() {
             // first we have to save the proposed fed so the repo is not empty
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
@@ -1088,21 +1095,12 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.getProposedFederation(federationConstants, allActivations);
 
             // saving in the repo another fed to make sure the cached value is the one being returned
-            Federation anotherFederation = createAnotherFederation();
+            Federation anotherFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());;
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), anotherFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), anotherFederation, BridgeSerializationUtils::serializeFederation);
 
             Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
             assertEquals(Optional.of(proposedFederation), actualProposedFederation);
-        }
-
-        private Federation createAnotherFederation() {
-            List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
-            );
-            return new P2shErpFederationBuilder()
-                .withMembersBtcPublicKeys(federationKeys)
-                .build();
         }
     }
 

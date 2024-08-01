@@ -4,12 +4,15 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -21,6 +24,7 @@ import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationStorageProviderImpl implements FederationStorageProvider {
+    private static final Logger logger = LoggerFactory.getLogger(FederationStorageProviderImpl.class);
     private final StorageAccessor bridgeStorageAccessor;
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
@@ -238,7 +242,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
                 Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
                 if (!storageVersion.isPresent()) {
-                    throw new IllegalStateException("Storage version should be present for non-null proposed federation");
+                    String message = "Storage version should be present for non-null proposed federation";
+                    logger.warn("[getProposedFederation] {}", message);
+                    throw new IllegalStateException(message);
                 }
                 return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
             }
