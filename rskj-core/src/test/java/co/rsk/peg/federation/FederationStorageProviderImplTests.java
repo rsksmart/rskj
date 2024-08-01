@@ -1064,14 +1064,6 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getProposedFederation_whenProposedFederationIsSavedWithoutStorageVersion_shouldThrowIllegalStateException() {
-            // save a proposed federation without storage version
-            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
-
-            assertThrows(IllegalStateException.class, () -> federationStorageProvider.getProposedFederation(federationConstants, allActivations));
-        }
-
-        @Test
         void getProposedFederation_whenNullProposedFederationIsSaved_shouldReturnEmpty() {
             // first save a non-null value to make sure saving a null one is actually happening
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), proposedFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
@@ -1082,6 +1074,14 @@ class FederationStorageProviderImplTests {
 
             Optional<Federation> actualProposedFederation = federationStorageProvider.getProposedFederation(federationConstants, allActivations);
             assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederation_whenProposedFederationIsSavedWithoutStorageVersion_shouldThrowIllegalStateException() {
+            // save a proposed federation without storage version
+            bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+
+            assertThrows(IllegalStateException.class, () -> federationStorageProvider.getProposedFederation(federationConstants, allActivations));
         }
 
         @Test

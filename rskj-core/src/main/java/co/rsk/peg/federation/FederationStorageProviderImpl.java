@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
@@ -280,7 +281,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
                 Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
                 if (!storageVersion.isPresent()) {
-                    throw new IllegalStateException("Storage version should be present for non-null proposed federation");
+                    String message = "Storage version should be present for non-null proposed federation";
+                    logger.warn("[getProposedFederation] {}", message);
+                    throw new IllegalStateException(message);
                 }
                 return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
             }
