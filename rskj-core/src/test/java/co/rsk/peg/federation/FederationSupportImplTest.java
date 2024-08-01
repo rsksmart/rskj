@@ -2565,11 +2565,9 @@ class FederationSupportImplTest {
 
             // Arrange
 
-            List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"key1"}, true
-            );
-
-            BtcECKey expectedBtcECKey = fedKeys.get(0);
+            BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2580,7 +2578,11 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                expectedBtcECKey.getPubKey(),
+                expectedRskECKey.getPubKey(),
+                expectedMstECKey.getPubKey()
+            });
 
             // Act
 
