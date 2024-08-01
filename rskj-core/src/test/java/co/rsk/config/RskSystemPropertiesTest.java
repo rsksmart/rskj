@@ -136,7 +136,10 @@ class RskSystemPropertiesTest {
     @Test
     void rskCliSnapNodes_ShouldSetSnapBootNodes() {
         RskCli rskCli = new RskCli();
-        String[] snapNodesArgs = {"--snap-nodes=[enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501,enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501]"};
+        String[] snapNodesArgs = {
+                "--snap-nodes=enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501",
+                "--snap-nodes=enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501"
+        };
         rskCli.load(snapNodesArgs);
 
         RskSystemProperties rskSystemProperties = new RskSystemProperties(
@@ -146,13 +149,31 @@ class RskSystemPropertiesTest {
         );
 
         Node expectedFirstSnapNode = new Node("enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc1e502@3.94.45.146:50501");
-        Node expectedSecondSnapNode = new Node("enode://b2a304b30b3ff90aabcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501");
+        Node expectedSecondSnapNode = new Node("enode://b2a304b30b3ff90bbbcb5e37fa3cc70511c9f5bf457d6d8bfb6f0905baf6d714b66a73fede2ea0671b3a4d1af2aed3379d7eb9340d775ae27800e0757dc10502@3.94.45.146:50501");
 
         Assertions.assertEquals(2, rskSystemProperties.getSnapBootNodes().size());
         Assertions.assertEquals(expectedFirstSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(0).getHexId());
         Assertions.assertEquals(expectedSecondSnapNode.getHexId(), rskSystemProperties.getSnapBootNodes().get(1).getHexId());
         Assertions.assertEquals(expectedFirstSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(0).getId());
         Assertions.assertEquals(expectedSecondSnapNode.getId(), rskSystemProperties.getSnapBootNodes().get(1).getId());
+    }
+
+    @Test
+    void rskCliSnapNodes_ShouldReturnZeroSnapBootNodesForInvalidNodeFormat() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {
+                "--snap-nodes=http://www.google.es",
+        };
+
+        rskCli.load(snapNodesArgs);
+
+        Assertions.assertThrows(RuntimeException.class, () -> {
+            RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                    new ConfigLoader(rskCli.getCliArgs())
+            );
+
+            Assertions.assertEquals(0, rskSystemProperties.getSnapBootNodes().size());
+        });
     }
 
     @Test
@@ -167,7 +188,7 @@ class RskSystemPropertiesTest {
                 )
         );
 
-        Assertions.assertEquals("snap", rskSystemProperties.getSyncMode());
+        Assertions.assertTrue(rskSystemProperties.isClientSnapshotSyncEnabled());
     }
 
     @Test
@@ -182,7 +203,7 @@ class RskSystemPropertiesTest {
                 )
         );
 
-        Assertions.assertEquals("full", rskSystemProperties.getSyncMode());
+        Assertions.assertFalse(rskSystemProperties.isClientSnapshotSyncEnabled());
     }
 
     @Test

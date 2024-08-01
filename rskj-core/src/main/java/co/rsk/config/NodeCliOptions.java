@@ -25,8 +25,6 @@ import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.config.SystemProperties;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -55,21 +53,27 @@ public enum NodeCliOptions implements OptionalizableCliArg {
     SYNC_MODE("sync-mode", true) {
         @Override
         public Config withConfig(Config config, String configValue) {
-            if(configValue.equalsIgnoreCase("full") || configValue.equalsIgnoreCase("snap")){
-                return config.withValue(RskSystemProperties.PROPERTY_SYNC_MODE, ConfigValueFactory.fromAnyRef(configValue));
-            }else {
+            SyncMode mode;
+            try {
+                mode = SyncMode.valueOf(configValue.toUpperCase());
+            } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid sync mode: " + configValue + ". The valid options are <full> or <snap>.");
             }
+
+            if (mode == SyncMode.SNAP) {
+                return config.withValue(RskSystemProperties.PROPERTY_SNAP_CLIENT_ENABLED, ConfigValueFactory.fromAnyRef(true));
+            }
+            return config;
         }
     },
     SNAP_NODES("snap-nodes", true) {
         @Override
         public Config withConfig(Config config, String configValue) {
             try {
-                List<ConfigObject> snapConfigObjects = Arrays.stream(configValue.substring(1, configValue.length() - 1).split(","))
+                List<ConfigObject> snapConfigObjects = Arrays.stream(configValue.split(","))
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
-                        .map(this::createConfigObjectFromNode)
+                        .map(this::createConfigObjectFromSnapNode)
                         .collect(Collectors.toList());
 
                 if(!snapConfigObjects.isEmpty()) {
@@ -79,32 +83,17 @@ public enum NodeCliOptions implements OptionalizableCliArg {
                 return config;
             } catch (Exception e) {
                 e.printStackTrace();
-                return config;
+                throw new RuntimeException("expecting URL in the format enode://PUBKEY@HOST:PORT", e);
             }
         }
-        private ConfigObject createConfigObjectFromNode(String snapNode) {
+        private ConfigObject createConfigObjectFromSnapNode(String snapNode) {
             try {
-                URI snapURI = new URI(snapNode);
-                validateSnapNodeURI(snapURI);
+                Map<String, ConfigValue> properties = new HashMap<>();
+                properties.put("url", ConfigValueFactory.fromAnyRef(snapNode));
 
-                String id = snapURI.getUserInfo();
-                String host = snapURI.getHost();
-                int port = snapURI.getPort();
-
-                Map<String, ConfigValue> map = new HashMap<>();
-                map.put("port", ConfigValueFactory.fromAnyRef(port));
-                map.put("ip", ConfigValueFactory.fromAnyRef(host));
-                map.put("nodeId", ConfigValueFactory.fromAnyRef(id));
-
-                return ConfigFactory.parseMap(map).root();
-            } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("Invalid URL format: " + snapNode, e);
-            }
-        }
-
-        private void validateSnapNodeURI(URI uri) {
-            if (!"enode".equals(uri.getScheme()) || uri.getUserInfo() == null || uri.getHost() == null || uri.getPort() == -1) {
-                throw new IllegalArgumentException("expecting URL in the format enode://PUBKEY@HOST:PORT");
+                return ConfigFactory.parseMap(properties).root();
+            } catch (Exception e) {
+                throw new RuntimeException("Error processing SnapBoot Nodes configuration. Ensure the URL format is 'enode://PUBKEY@HOST:PORT'.");
             }
         }
     }
