@@ -2803,10 +2803,12 @@ class FederationSupportImplTest {
 
             Block executionBlock = mock(Block.class);
 
-            long creationBlockNumber = 1_000L;
+            long federationCreationBlockNumber = 1_000L;
+            long federationActivationBlockNumber = federationMainnetConstants.getFederationActivationAge(activations) + federationCreationBlockNumber;
+
             when(executionBlock.getNumber())
-                .thenReturn(creationBlockNumber)
-                .thenReturn(federationMainnetConstants.getFederationActivationAge(activations) + creationBlockNumber);
+                .thenReturn(federationCreationBlockNumber)
+                .thenReturn(federationActivationBlockNumber);
 
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
@@ -2829,8 +2831,14 @@ class FederationSupportImplTest {
             // Voting add new fed with m of n authorizers
 
             for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
-                BtcECKey expectedBtcECKey = new BtcECKey();
-                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+                BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
+                ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
+                ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                    expectedBtcECKey.getPubKey(),
+                    expectedRskECKey.getPubKey(),
+                    expectedMstECKey.getPubKey()
+                });
                 federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
                 federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             }
