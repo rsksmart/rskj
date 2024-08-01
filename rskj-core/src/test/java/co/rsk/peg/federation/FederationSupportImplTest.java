@@ -2917,7 +2917,7 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addWrongFederatorPublicKey_returnsGenericResponseCode() {
+        void voteFederationChange_callMultiKeyWithOnlyOneKey_ThrowsArrayIndexOutOfBoundsException() {
 
             // Arrange
 
@@ -2926,18 +2926,13 @@ class FederationSupportImplTest {
 
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
 
-            byte[] invalidFederatorBtcPublicKey = TestUtils.generateBytes(4, 25);
+            BtcECKey federatorBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
 
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{ invalidFederatorBtcPublicKey });
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{ federatorBtcKey.getPubKey() });
 
-            // Act
+            // Act and assert
 
-            // Voting add new fed with m of n authorizers
-            int voteAddFederatorPublicKeyResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-
-            // Assert
-
-            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), voteAddFederatorPublicKeyResult);
+            assertThrows(ArrayIndexOutOfBoundsException.class, () -> federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger));
 
         }
 
