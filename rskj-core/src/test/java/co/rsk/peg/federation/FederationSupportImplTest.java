@@ -2218,11 +2218,10 @@ class FederationSupportImplTest {
     class VoteFederationChangeTest {
 
         private BridgeEventLogger bridgeEventLogger;
-        private ActivationConfig.ForBlock activations;
         private FederationSupport federationSupport;
-        private StorageAccessor storageAccessor;
         private FederationStorageProvider storageProvider;
         private List<LogInfo> logs;
+        private ActivationConfig.ForBlock activations;
 
         @BeforeEach
         void setUp() {
@@ -2230,7 +2229,7 @@ class FederationSupportImplTest {
             signatureCache = mock(SignatureCache.class);
             logs = new ArrayList<>();
             bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
-            storageAccessor = new InMemoryStorage();
+            StorageAccessor storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             federationSupport = federationSupportBuilder
@@ -2795,6 +2794,70 @@ class FederationSupportImplTest {
             DataWord actualTopic = log.getTopics().get(0);
 
             assertEquals(expectedCommitTopic, actualTopic);
+
+        }
+
+        @Test
+        void voteFederationChange_commitFederationWithOver10Members_throwsException() {
+
+            // Arrange
+
+            Block executionBlock = mock(Block.class);
+
+            long federationCreationBlockNumber = 1_000L;
+            long federationActivationBlockNumber = federationMainnetConstants.getFederationActivationAge(activations) + federationCreationBlockNumber;
+
+            when(executionBlock.getNumber())
+                .thenReturn(federationCreationBlockNumber)
+                .thenReturn(federationActivationBlockNumber);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with  m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            int EXPECTED_COUNT_OF_MEMBERS = 11;
+
+            // Voting add new fed with m of n authorizers
+
+            for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
+                BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
+                ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
+                ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                    expectedBtcECKey.getPubKey(),
+                    expectedRskECKey.getPubKey(),
+                    expectedMstECKey.getPubKey()
+                });
+                federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+                federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            }
+
+            Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+
+            ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{pendingFederationHash.getBytes()});
+
+            // Act
+
+            // Voting commit new fed with m of n authorizers
+            federationSupport.voteFederationChange(firstAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            Exception exception = assertThrows(Exception.class, () -> {
+                federationSupport.voteFederationChange(secondAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            });
+
+            assertEquals("The script size is 525, that is above the maximum allowed.", exception.getMessage());
 
         }
 
