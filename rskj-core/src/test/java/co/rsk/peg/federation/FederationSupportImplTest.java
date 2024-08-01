@@ -2561,6 +2561,48 @@ class FederationSupportImplTest {
 
         }
 
+        @Test
+        void voteFederationChange_addFederatorPublicKeyBySameAuthorizerTwice_returnsGenericErrorResponseCode() {
+
+            // Arrange
+
+            BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(300));
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                expectedBtcECKey.getPubKey(),
+                expectedRskECKey.getPubKey(),
+                expectedMstECKey.getPubKey()
+            });
+
+            // Act
+
+            // Voting add public key twice with same authorizer
+            int firstVoteAddFederationResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            int secondVoteAddFederationResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            // First call is successful
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddFederationResult);
+
+            // Second call fails
+            assertEquals(FederationChangeResponseCode.GENERIC_ERROR.getCode(), secondVoteAddFederationResult);
+
+            assertEquals(0, federationSupport.getPendingFederationSize());
+
+        }
+
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
