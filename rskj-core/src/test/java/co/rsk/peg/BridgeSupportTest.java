@@ -581,7 +581,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void increaseLockingCap() throws BridgeIllegalArgumentException {
+        void increaseLockingCap() throws VMException {
             // Arrange
             Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
             Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());

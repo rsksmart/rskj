@@ -46,10 +46,10 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     }
 
     @Override
-    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws BridgeIllegalArgumentException {
+    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws LockingCapIllegalArgumentException {
         if (newLockingCap.getValue() <= 0) {
             logger.warn("[increaseLockingCap] {} {}", "Locking Cap must be greater than zero. Value attempted: ", newLockingCap.value);
-            throw new BridgeIllegalArgumentException("Locking Cap must be greater than zero");
+            throw new LockingCapIllegalArgumentException("Locking Cap must be greater than zero");
         }
 
         // Only pre-configured addresses can modify Locking Cap

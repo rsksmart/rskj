@@ -9,7 +9,7 @@ public interface LockingCapSupport {
 
     Optional<Coin> getLockingCap();
 
-    boolean increaseLockingCap(Transaction tx, Coin newCap) throws BridgeIllegalArgumentException;
+    boolean increaseLockingCap(Transaction tx, Coin newCap) throws LockingCapIllegalArgumentException;
 
     void save();
 }
