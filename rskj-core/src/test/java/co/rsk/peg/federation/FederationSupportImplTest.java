@@ -2938,15 +2938,13 @@ class FederationSupportImplTest {
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
-            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
-
-            // Voting with m of n authorizers to create the pending federation
-            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
 
             byte[] invalidFederatorBtcPublicKey = TestUtils.generateBytes(4, 25);
-
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{ invalidFederatorBtcPublicKey });
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(
+                FederationChangeFunction.ADD.getKey(),
+                new byte[][]{ invalidFederatorBtcPublicKey }
+            );
 
             // Act
 
