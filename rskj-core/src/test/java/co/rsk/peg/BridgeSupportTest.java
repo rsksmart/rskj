@@ -7904,6 +7904,9 @@ class BridgeSupportTest {
 
         Repository repository = createRepository();
 
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(new BridgeStorageAccessorImpl(repository));
+        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, lockingCapConstants, signatureCache);
+
         Federation oldFederation = PegTestUtils.createSimpleActiveFederation(bridgeConstants);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
