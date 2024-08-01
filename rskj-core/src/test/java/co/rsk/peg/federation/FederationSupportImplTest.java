@@ -32,6 +32,7 @@ import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
+import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -40,11 +41,15 @@ import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.util.HexUtils;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
@@ -56,6 +61,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -2215,12 +2222,14 @@ class FederationSupportImplTest {
         private FederationSupport federationSupport;
         private StorageAccessor storageAccessor;
         private FederationStorageProvider storageProvider;
+        private List<LogInfo> logs;
 
         @BeforeEach
         void setUp() {
             activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
-            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, Collections.EMPTY_LIST, signatureCache);
+            logs = new ArrayList<>();
+            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
             storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
@@ -2691,6 +2700,101 @@ class FederationSupportImplTest {
             // Assert
 
             assertEquals(EXPECTED_COUNT_OF_MEMBERS, federationSupport.getPendingFederationSize());
+
+        }
+
+        @Test
+        void voteFederationChange_commit10MembersFederation_returnsSuccessResponseCodeAndPendingFedNullAndActiveFedIsTheVotedFed() {
+
+            // Arrange
+
+            Block executionBlock = mock(Block.class);
+
+            long federationCreationBlockNumber = 1_000L;
+
+            long federationActivationBlockNumber = federationMainnetConstants.getFederationActivationAge(activations) + federationCreationBlockNumber;
+
+            when(executionBlock.getNumber())
+                .thenReturn(federationCreationBlockNumber)
+                .thenReturn(federationActivationBlockNumber);
+
+            federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withRskExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .build();
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            ABICallSpec createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+
+            // Voting with m of n authorizers to create the pending federation
+            federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            byte[][] commitFederationEventTopic = BridgeEvents.COMMIT_FEDERATION.getEvent().encodeEventTopics();
+            List<DataWord> commitFederationEncodedTopics = LogInfo.byteArrayToList(commitFederationEventTopic);
+            DataWord expectedCommitTopic = commitFederationEncodedTopics.get(0);
+
+            int EXPECTED_COUNT_OF_MEMBERS = 10;
+
+            // Voting add new fed member with m of n authorizers
+
+            Set<String> expectedPubKeys = new HashSet<>();
+
+            for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
+                BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
+                ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
+                ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
+                expectedPubKeys.add(HexUtils.toJsonHex(expectedBtcECKey.getPubKey()));
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                    expectedBtcECKey.getPubKey(),
+                    expectedRskECKey.getPubKey(),
+                    expectedMstECKey.getPubKey()
+                });
+                federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+                federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            }
+
+            Keccak256 pendingFederationHash = federationSupport.getPendingFederationHash();
+
+            ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{pendingFederationHash.getBytes()});
+
+            Federation activeFederationBeforeCommit = federationSupport.getActiveFederation();
+
+            // Act
+
+            // Voting commit new fed with m of n authorizers
+            federationSupport.voteFederationChange(firstAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+            federationSupport.voteFederationChange(secondAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+
+            assertNull(federationSupport.getPendingFederationHash());
+            // -1 because the pending fed no longer exist
+            assertThat(federationSupport.getPendingFederationSize(), is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode()));
+
+            Federation activeFederationAfterCommit = federationSupport.getActiveFederation();
+
+            assertThat(federationSupport.getActiveFederationSize(), is(EXPECTED_COUNT_OF_MEMBERS));
+
+            assertNotEquals(activeFederationBeforeCommit, activeFederationAfterCommit);
+
+            Set<String> actualPubKeys = activeFederationAfterCommit.getMembers().stream()
+                .map(member -> HexUtils.toJsonHex(member.getBtcPublicKey().getPubKey()))
+                .collect(Collectors.toSet());
+
+            assertEquals(expectedPubKeys, actualPubKeys);
+
+            // asserting that 'commit_federation' event was emitted
+            assertThat(logs.size(), is(1));
+
+            LogInfo log = logs.get(0);
+            DataWord actualTopic = log.getTopics().get(0);
+
+            assertEquals(expectedCommitTopic, actualTopic);
 
         }
 
