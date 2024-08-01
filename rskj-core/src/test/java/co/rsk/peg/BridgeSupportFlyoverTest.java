@@ -17,51 +17,8 @@
  */
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.federation.*;
-import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
-import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.flyover.FlyoverTxResponseCodes;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.whitelist.WhitelistSupport;
-import co.rsk.test.builders.BridgeSupportBuilder;
-import co.rsk.test.builders.FederationSupportBuilder;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.InternalTransaction;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
@@ -70,8 +27,83 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
-import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.ScriptException;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionWitness;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationStorageProvider;
+import co.rsk.peg.federation.FederationStorageProviderImpl;
+import co.rsk.peg.federation.FederationSupport;
+import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
+import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.whitelist.WhitelistSupport;
+import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class BridgeSupportFlyoverTest {
 
@@ -85,6 +117,7 @@ class BridgeSupportFlyoverTest {
     private FederationSupportBuilder federationSupportBuilder;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
+    private LockingCapSupport lockingCapSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -95,6 +128,7 @@ class BridgeSupportFlyoverTest {
         bridgeSupportBuilder = new BridgeSupportBuilder();
         whitelistSupport = mock(WhitelistSupport.class);
         federationSupportBuilder = new FederationSupportBuilder();
+        lockingCapSupport = mock(LockingCapSupport.class);
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
@@ -734,8 +768,9 @@ class BridgeSupportFlyoverTest {
         when(federationStorageProvider.getNewFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(activeFederation);
         when(federationStorageProvider.getOldFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
+
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
@@ -774,6 +809,7 @@ class BridgeSupportFlyoverTest {
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -1867,9 +1903,7 @@ class BridgeSupportFlyoverTest {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -1885,6 +1919,9 @@ class BridgeSupportFlyoverTest {
 
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
+        Coin lockingCap = Coin.COIN;
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCap));
 
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsSpy)
@@ -1902,6 +1939,7 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2074,9 +2112,7 @@ class BridgeSupportFlyoverTest {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2093,6 +2129,9 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        Coin lockingCapValue = Coin.COIN;
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
+
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
@@ -2100,6 +2139,7 @@ class BridgeSupportFlyoverTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withLockingCapSupport(lockingCapSupport)
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
             .withActivations(activations)
@@ -2232,7 +2272,8 @@ class BridgeSupportFlyoverTest {
         // Perform another flyover pegin using the same BtcTx but without witness and no surpassing locking cap this time
         // We expect the pegin gets processed successfully
         btcTx.setWitness(0, null);
-        provider.setLockingCap(lockingCapValue.multiply(3));
+
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue.multiply(3)));
 
         result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
@@ -2289,7 +2330,8 @@ class BridgeSupportFlyoverTest {
 
         Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
+
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2322,6 +2364,7 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2477,7 +2520,8 @@ class BridgeSupportFlyoverTest {
 
         Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
+
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2502,6 +2546,7 @@ class BridgeSupportFlyoverTest {
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withLockingCapSupport(lockingCapSupport)
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
             .withActivations(activations)
@@ -2959,6 +3004,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3030,6 +3076,8 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3042,6 +3090,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3050,7 +3099,7 @@ class BridgeSupportFlyoverTest {
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
+
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
@@ -3123,6 +3172,8 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3135,6 +3186,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3144,7 +3196,7 @@ class BridgeSupportFlyoverTest {
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
+
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
@@ -3230,6 +3282,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3239,9 +3292,9 @@ class BridgeSupportFlyoverTest {
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(
-            Coin.COIN, // The first time we simulate a lower locking cap than the value to register, to force the reimburse
-            Coin.FIFTY_COINS // The next time we simulate a hight locking cap, to verify the user can't attempt to register the already reimbursed tx
-        ).when(bridgeSupport).getLockingCap();
+            Optional.of(Coin.COIN), // The first time we simulate a lower locking cap than the value to register, to force the reimburse
+            Optional.of(Coin.FIFTY_COINS) // The next time we simulate a height locking cap, to verify the user can't attempt to register the already reimbursed tx
+        ).when(lockingCapSupport).getLockingCap();
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
@@ -3340,6 +3393,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3451,6 +3505,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3503,6 +3558,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
