@@ -4,7 +4,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.vote.ABICallElection;
