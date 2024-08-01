@@ -1161,7 +1161,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
+    public boolean increaseLockingCap(Object[] args) throws VMException {
         logger.trace("increaseLockingCap");
 
         Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
