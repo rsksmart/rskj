@@ -2389,7 +2389,7 @@ class FederationSupportImplTest {
 
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
 
-            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
 
             // Act
 
