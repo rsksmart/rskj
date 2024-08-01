@@ -22,7 +22,6 @@ package org.ethereum.util;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.util.RLPException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
