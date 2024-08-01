@@ -2516,6 +2516,8 @@ class FederationSupportImplTest {
             // Arrange
 
             BtcECKey expectedFederatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey expectedFederatorRskECKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedFederatorMstECKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2526,9 +2528,11 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(firstAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedFederatorBtcECKey.getPubKey()});
-
-            // Act
+            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                expectedFederatorBtcECKey.getPubKey(),
+                expectedFederatorRskECKey.getPubKey(),
+                expectedFederatorMstECKey.getPubKey()
+            });
 
             // Voting add new fed with m of n authorizers to have at least one federation member before roll back
             federationSupport.voteFederationChange(firstAuthorizedTx, addFederationMemberAbiCallSpec, signatureCache, bridgeEventLogger);
