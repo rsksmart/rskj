@@ -2709,10 +2709,13 @@ class FederationSupportImplTest {
 
             Block executionBlock = mock(Block.class);
 
-            long creationBlockNumber = 1_000L;
+            long federationCreationBlockNumber = 1_000L;
+
+            long federationActivationBlockNumber = federationMainnetConstants.getFederationActivationAge(activations) + federationCreationBlockNumber;
+
             when(executionBlock.getNumber())
-                .thenReturn(creationBlockNumber)
-                .thenReturn(federationMainnetConstants.getFederationActivationAge(activations) + creationBlockNumber);
+                .thenReturn(federationCreationBlockNumber)
+                .thenReturn(federationActivationBlockNumber);
 
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
