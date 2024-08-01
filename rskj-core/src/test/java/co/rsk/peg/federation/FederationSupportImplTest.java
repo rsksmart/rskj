@@ -2877,7 +2877,13 @@ class FederationSupportImplTest {
             // Voting add new fed with m of n authorizers
 
             BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
-            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+            ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(300));
+            ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                expectedBtcECKey.getPubKey(),
+                expectedRskECKey.getPubKey(),
+                expectedMstECKey.getPubKey()
+            });
             federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
