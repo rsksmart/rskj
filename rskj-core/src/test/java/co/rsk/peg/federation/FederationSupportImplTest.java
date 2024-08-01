@@ -2741,9 +2741,15 @@ class FederationSupportImplTest {
             Set<String> expectedPubKeys = new HashSet<>();
 
             for(int i = 0; i < EXPECTED_COUNT_OF_MEMBERS; i++) {
-                BtcECKey expectedBtcECKey = new BtcECKey();
+                BtcECKey expectedBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
+                ECKey expectedRskECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
+                ECKey expectedMstECKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
                 expectedPubKeys.add(HexUtils.toJsonHex(expectedBtcECKey.getPubKey()));
-                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+                ABICallSpec addFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                    expectedBtcECKey.getPubKey(),
+                    expectedRskECKey.getPubKey(),
+                    expectedMstECKey.getPubKey()
+                });
                 federationSupport.voteFederationChange(firstAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
                 federationSupport.voteFederationChange(secondAuthorizedTx, addFederationAbiCallSpec, signatureCache, bridgeEventLogger);
             }
