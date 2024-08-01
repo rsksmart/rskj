@@ -153,7 +153,7 @@ class BridgeTest {
     @ParameterizedTest()
     @MethodSource("lockingCapValues")
     void increaseLockingCap_after_RSKIP134_activation(long newLockingCapValue) throws VMException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -184,7 +184,7 @@ class BridgeTest {
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsInvalidParameter_shouldThrowVMException() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -204,29 +204,25 @@ class BridgeTest {
     }
 
     @Test
-    void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldReturnFalse() throws VMException {
+    void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldThrowVMException() {
         // Arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .build();
 
         // No arguments signature
-        final byte[] noArgumentData = increaseLockingCapFunction.encodeSignature();
+        final byte[] noArgumentData = increaseLockingCapFunction.encodeArguments();
 
-        // Act
-        byte[] result = bridge.execute(noArgumentData);
-
-        // Assert
-        boolean decodedResult = (boolean) increaseLockingCapFunction.decodeResult(result)[0];
-        assertFalse(decodedResult);
+        // Act / Assert
+        assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
     }
 
     @Test
     void increaseLockingCap_whenNewLockingCapIsNegativeValue_shouldThrowVMException() {
         // Arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -242,7 +238,7 @@ class BridgeTest {
     @Test
     void increaseLockingCap_whenNewLockingCapIsZeroValue_shouldThrowVMException() {
         // Arrange
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
