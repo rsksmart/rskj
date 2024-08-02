@@ -329,7 +329,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public void setFundTransactionUnsignedHash(Sha256Hash hash) {
+    public void setSvpFundTransactionUnsignedHash(Sha256Hash hash) {
         this.fundTransactionUnsignedHash = hash;
         isFundTransactionUnsignedHashSet = true;
     }
