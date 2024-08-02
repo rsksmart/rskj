@@ -46,8 +46,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     private Script lastRetiredFederationP2SHScript;
 
-    private Sha256Hash fundTransactionUnsignedHash;
-    private boolean isFundTransactionUnsignedHashSet = false;
+    private Sha256Hash svpFundTransactionUnsignedHash;
+    private boolean isSvpFundTransactionUnsignedHashSet = false;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -330,8 +330,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public void setSvpFundTransactionUnsignedHash(Sha256Hash hash) {
-        this.fundTransactionUnsignedHash = hash;
-        isFundTransactionUnsignedHashSet = true;
+        this.svpFundTransactionUnsignedHash = hash;
+        isSvpFundTransactionUnsignedHashSet = true;
     }
 
     @Override
@@ -353,7 +353,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         saveLastRetiredFederationP2SHScript(activations);
 
-        saveFundTransactionUnsignedHash(activations);
+        saveSvpFundTransactionUnsignedHash(activations);
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -440,13 +440,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
 
-    private void saveFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+    private void saveSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
 
-        if (!activations.isActive(RSKIP419) || !isFundTransactionUnsignedHashSet) {
+        if (!activations.isActive(RSKIP419) || !isSvpFundTransactionUnsignedHashSet) {
             return;
         }
 
-        byte[] data = Optional.ofNullable(fundTransactionUnsignedHash)
+        byte[] data = Optional.ofNullable(svpFundTransactionUnsignedHash)
             .map(BridgeSerializationUtils::serializeSha256Hash)
             .orElse(null);
 
