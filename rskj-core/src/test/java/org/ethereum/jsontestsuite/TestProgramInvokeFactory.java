@@ -20,6 +20,8 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
@@ -53,7 +55,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
     @Override
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                              DataWord inValue, long inGas,
-                                             Coin balanceInt, byte[] dataIn,
+                                             Coin balanceInt, BytesSlice dataIn,
                                              Repository repository, BlockStore blockStore,
                                              boolean isStaticCall, boolean byTestingSuite) {
         return null;
@@ -113,7 +115,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         Coin minimumGasPrice = block.getMinimumGasPrice();
 
         return new ProgramInvokeImpl(addr.getBytes(), origin.getBytes(), caller.getBytes(), balance.getBytes(),
-                txGasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
+                txGasPrice.getBytes(), gas, callValue.getBytes(), Bytes.of(data), lastHash, coinbase,
                 timestamp, number, txindex, difficulty, gaslimit, minimumGasPrice.getBytes(), repository, blockStore);
     }
 

@@ -22,6 +22,7 @@ package org.ethereum.vm;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
@@ -642,7 +643,7 @@ public class VM {
         // EXECUTION PHASE
         DataWord memOffsetData = program.stackPop();
         DataWord lengthData = program.stackPop();
-        byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
+        BytesSlice buffer = program.memorySlice(memOffsetData.intValue(), lengthData.intValue());
 
         byte[] encoded = HashUtil.keccak256(buffer);
         DataWord word = DataWord.valueOf(encoded);
@@ -1225,8 +1226,7 @@ public class VM {
         // Int32 address values guaranteed by previous MAX_MEMORY checks
         byte[] data = program.memoryChunk(memStart.intValue(), memOffset.intValue());
 
-        LogInfo logInfo =
-                new LogInfo(address.getLast20Bytes(), topics, data);
+        LogInfo logInfo = new LogInfo(address.getLast20Bytes(), topics, data);
 
         if (isLogEnabled) {
             hint = logInfo.toString();

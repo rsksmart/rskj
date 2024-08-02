@@ -62,9 +62,27 @@ public interface HexPrintableBytes extends PrintableBytes {
         return toPrintableString(SIMPLE_JSON_HEX_FORMATTER);
     }
 
-    String toHexString(int off, int length);
+    default String toHexString(int off, int length) {
+        return toHexStringV2(off, length);
+    }
 
-    String toHexString();
+    default String toHexString() {
+        return toHexString(0, length());
+    }
+
+    default String toHexStringV2(int off, int length) {
+        if (off < 0 || length < 0 || off + length > length()) {
+            throw new IndexOutOfBoundsException("invalid 'off' and/or 'length': " + off + "; " + length);
+        }
+
+        StringBuilder sb = new StringBuilder(length * 2);
+        for (int i = off; i < off + length; i++) {
+            byte b = byteAt(i);
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit((b & 0xF), 16));
+        }
+        return sb.toString();
+    }
 }
 
 class PrintableBytesHexFormatter implements PrintableBytes.Formatter<HexPrintableBytes> {
