@@ -19,6 +19,8 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.types.bytes.BoundaryUtils;
+import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
@@ -29,8 +31,7 @@ import java.util.List;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.oneByteToHexString;
+import static org.ethereum.util.ByteUtil.*;
 
 public class Memory implements ProgramListenerAware {
 
@@ -44,6 +45,16 @@ public class Memory implements ProgramListenerAware {
     @Override
     public void setTraceListener(ProgramListener traceListener) {
         this.traceListener = traceListener;
+    }
+
+    public BytesSlice readSlice(int address, int size) {
+        if (size <= 0) {
+            return EMPTY_BYTES_SLICE;
+        }
+
+        extend(address, size);
+
+        return new MemorySlice(address, size);
     }
 
     public byte[] read(int address, int size) {
@@ -222,6 +233,50 @@ public class Memory implements ProgramListenerAware {
     private void addChunks(int num) {
         for (int i = 0; i < num; ++i) {
             chunks.add(new byte[CHUNK_SIZE]);
+        }
+    }
+
+    private final class MemorySlice implements BytesSlice {
+        private final int address;
+        private final int size;
+
+        MemorySlice(int address, int size) {
+            this.address = address;
+            this.size = size;
+        }
+
+        @Override
+        public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
+            BoundaryUtils.checkArraycopyParams(length(), srcPos, dest, destPos, length);
+
+            int chunkIndex = (address + srcPos) / CHUNK_SIZE;
+            int chunkOffset = (address + srcPos) % CHUNK_SIZE;
+
+            int toGrab = length;
+            int start = destPos;
+
+            while (toGrab > 0) {
+                int copied = grabMax(chunkIndex, chunkOffset, toGrab, dest, start);
+
+                // read next chunk from the start
+                ++chunkIndex;
+                chunkOffset = 0;
+
+                // mark remind
+                toGrab -= copied;
+                start += copied;
+            }
+        }
+
+        @Override
+        public int length() {
+            return size;
+        }
+
+        @Override
+        public byte byteAt(int index) {
+            BoundaryUtils.checkArrayIndexParam(length(), index);
+            return readByte(address + index);
         }
     }
 }
