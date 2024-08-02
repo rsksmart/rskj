@@ -79,7 +79,8 @@ public class LockingCapSupportImpl implements LockingCapSupport {
 
         Coin maxLockingCapVoteValueAllowed = lockingCap.multiply(constants.getIncrementsMultiplier());
         if (newLockingCap.compareTo(maxLockingCapVoteValueAllowed) > 0) {
-            logger.warn(baseMessage, "Attempted value increases Locking Cap above its limit. Value attempted: ", newLockingCap.value);
+            baseMessage = String.format(INCREASE_LOCKING_CAP_TAG, "Attempted value tries to increase Locking Cap above its limit. Value attempted: {} . maxLockingCapVoteValueAllowed: {}");
+            logger.warn(baseMessage, newLockingCap.value, maxLockingCapVoteValueAllowed.value);
             return false;
         }
 
