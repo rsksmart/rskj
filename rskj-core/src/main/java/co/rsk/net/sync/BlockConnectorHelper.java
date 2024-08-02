@@ -36,6 +36,11 @@ public class BlockConnectorHelper {
     }
 
     public void startConnecting(List<Pair<Block, BlockDifficulty>> blockAndDifficultiesList) {
+        if (blockAndDifficultiesList.isEmpty()) {
+            logger.debug("Block list is empty, nothing to connect");
+            return;
+        }
+
         blockAndDifficultiesList.sort(new BlockAndDiffComparator());
         Block child = null;
         logger.info("Start connecting Blocks. To connect from {} to {} - Total: {}",
@@ -43,16 +48,13 @@ public class BlockConnectorHelper {
                 blockAndDifficultiesList.get(blockAndDifficultiesList.size() - 1).getKey().getNumber(),
                 blockAndDifficultiesList.size());
 
-        if (blockAndDifficultiesList.isEmpty()) {
-            logger.debug("Block list is empty, nothing to connect");
-            return;
-        }
         int blockIndex = blockAndDifficultiesList.size() - 1;
         if (blockStore.isEmpty()) {
             Pair<Block, BlockDifficulty> blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
             child = blockAndDifficulty.getLeft();
             logger.debug("BlockStore is empty, setting child block number the last block from the list: {}", child.getNumber());
             blockStore.saveBlock(child, blockAndDifficulty.getRight(), true);
+            logger.debug("Block number: {} saved", child.getNumber());
             blockIndex--;
         } else {
             logger.debug("BlockStore is not empty, getting best block");
@@ -62,7 +64,7 @@ public class BlockConnectorHelper {
         while (blockIndex >= 0) {
             Pair<Block, BlockDifficulty> currentBlockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
             Block currentBlock = currentBlockAndDifficulty.getLeft();
-            logger.info("Connecting block number: {}", currentBlock.getNumber());
+            logger.trace("Connecting block number: {}", currentBlock.getNumber());
 
             if (!currentBlock.isParentOf(child)) {
                 throw new BlockConnectorException(currentBlock.getNumber(), child.getNumber());
@@ -71,7 +73,7 @@ public class BlockConnectorHelper {
             child = currentBlock;
             blockIndex--;
         }
-        logger.info("Finished connecting blocks");
+        logger.info("Finished connecting blocks. Last saved block: {}",child.getNumber());
     }
 
     static class BlockAndDiffComparator implements java.util.Comparator<Pair<Block, BlockDifficulty>> {
