@@ -482,7 +482,7 @@ public class FederationSupportImpl implements FederationSupport {
                 break;
             case "commit":
                 Keccak256 pendingFederationHash = new Keccak256(callSpec.getArguments()[0]);
-                executionResult = commitFederationAccordingToActivations(dryRun, pendingFederationHash, eventLogger).getCode();
+                executionResult = commitFederation(dryRun, pendingFederationHash, eventLogger).getCode();
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "rollback":
@@ -612,35 +612,39 @@ public class FederationSupportImpl implements FederationSupport {
      * PENDING_FEDERATION_MISMATCHED_HASH if the given hash doesn't match the current pending federation's hash.
      * SUCCESSFUL upon success.
      */
-    protected FederationChangeResponseCode commitFederationAccordingToActivations(boolean dryRun, Keccak256 pendingFederationHash, BridgeEventLogger eventLogger) {
+    protected FederationChangeResponseCode commitFederation(boolean dryRun, Keccak256 pendingFederationHash, BridgeEventLogger eventLogger) {
+        // first check that we can commit the pending federation
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
-        // first check that we can commit the pending federation
         if (currentPendingFederation == null) {
-            logger.warn("[commitFederationAccordingToActivations] Pending federation does not exist.");
+            logger.warn("[commitFederation] Pending federation does not exist.");
             return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT;
         }
 
         if (!currentPendingFederation.isComplete()) {
-            logger.warn("[commitFederationAccordingToActivations] Pending federation has {} members, so it does not meet the minimum required.", currentPendingFederation.getMembers().size());
+            logger.warn("[commitFederation] Pending federation has {} members, so it does not meet the minimum required.", currentPendingFederation.getMembers().size());
             return FederationChangeResponseCode.INSUFFICIENT_MEMBERS;
         }
 
         if (!pendingFederationHash.equals(currentPendingFederation.getHash())) {
-            logger.warn("[commitFederationAccordingToActivations] Provided hash {} does not match pending federation hash {}.", pendingFederationHash, currentPendingFederation.getHash());
+            logger.warn("[commitFederation] Provided hash {} does not match pending federation hash {}.", pendingFederationHash, currentPendingFederation.getHash());
             return FederationChangeResponseCode.PENDING_FEDERATION_MISMATCHED_HASH;
         }
 
         if (dryRun) {
-            logger.info("[commitFederationAccordingToActivations] DryRun execution successful.");
+            logger.info("[commitFederation] DryRun execution successful.");
             return FederationChangeResponseCode.SUCCESSFUL;
         }
 
-        // proceed with the federation commitment
+        // proceed with the commitment
+        return commitPendingFederationAccordingToActivations(currentPendingFederation, eventLogger);
+    }
+
+    private FederationChangeResponseCode commitPendingFederationAccordingToActivations(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
         if (!activations.isActive(ConsensusRule.RSKIP419)) {
-            return legacyCommitFederation(currentPendingFederation, eventLogger);
+            return legacyCommitPendingFederation(currentPendingFederation, eventLogger);
         }
-        return commitFederation(currentPendingFederation, eventLogger);
+        return commitPendingFederation(currentPendingFederation, eventLogger);
     }
 
     /**
@@ -650,7 +654,7 @@ public class FederationSupportImpl implements FederationSupport {
      * and the pending federation is wiped out.
      * The federation change info is preserved, and the commitment with the voted federation is logged.
      */
-    private FederationChangeResponseCode legacyCommitFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
+    private FederationChangeResponseCode legacyCommitPendingFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
         moveUTXOsFromNewToOldFederation();
 
         // set old and new federations
@@ -689,7 +693,7 @@ public class FederationSupportImpl implements FederationSupport {
      * and the pending federation is wiped out.
      * The federation change info is preserved, and the commitment with the voted federation is logged.
      */
-    private FederationChangeResponseCode commitFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
+    private FederationChangeResponseCode commitPendingFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
         // set proposed federation
         Federation proposedFederation = buildFederationFromPendingFederation(currentPendingFederation);
         provider.setProposedFederation(proposedFederation);
@@ -723,7 +727,7 @@ public class FederationSupportImpl implements FederationSupport {
         provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
     }
 
-    private Script getFederationMembersP2SHScript(Federation federation) {
+    protected Script getFederationMembersP2SHScript(Federation federation) {
         // when the federation is a standard multisig,
         // the members p2sh script is the p2sh script
         if (!activations.isActive(RSKIP377)) {
