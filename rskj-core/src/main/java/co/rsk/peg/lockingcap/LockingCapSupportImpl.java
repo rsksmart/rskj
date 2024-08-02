@@ -48,6 +48,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws LockingCapIllegalArgumentException {
         final String INCREASE_LOCKING_CAP_TAG = "[increaseLockingCap] %s";
         String baseMessage = String.format(INCREASE_LOCKING_CAP_TAG, " {} {}");
+
         if (newLockingCap.getValue() <= 0) {
             String message = "Locking Cap must be greater than zero. Value attempted: ";
             logger.warn(baseMessage, message, newLockingCap.value);
@@ -57,7 +58,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
         // Only pre-configured addresses can modify Locking Cap
         AddressBasedAuthorizer authorizer = constants.getIncreaseAuthorizer();
         if (!authorizer.isAuthorized(tx, signatureCache)) {
-            logger.warn(baseMessage, "Not authorized address tried to increase Locking Cap. Address: ", tx.getSender(signatureCache));
+            logger.warn(baseMessage, "An unauthorized address tried to increase Locking Cap. Address: ", tx.getSender(signatureCache));
             return false;
         }
 
