@@ -22,6 +22,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
@@ -362,6 +363,10 @@ public class Program {
         return memory.readWord(addr.intValue());
     }
 
+    public BytesSlice memorySlice(int offset, int size) {
+        return memory.readSlice(offset, size);
+    }
+
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
     }
@@ -443,7 +448,7 @@ public class Program {
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void createContract2(DataWord value, DataWord memStart, DataWord memSize, DataWord salt) {
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
-        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+        BytesSlice programCode = memorySlice(memStart.intValue(), memSize.intValue());
 
         byte[] newAddressBytes = HashUtil.calcSaltAddr(senderAddress, programCode, salt.getData());
         byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
@@ -479,7 +484,7 @@ public class Program {
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
-            getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
+            getResult().addCallCreate(Bytes.of(programCode), EMPTY_BYTE_ARRAY,
                     gasLimit,
                     value.getNoLeadZeroesData());
         }
@@ -715,7 +720,7 @@ public class Program {
             return;
         }
 
-        byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
+        BytesSlice data = memorySlice(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
 
         // FETCH THE SAVED STORAGE
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
@@ -814,7 +819,7 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            byte[] data) {
+            BytesSlice data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult;
@@ -1382,7 +1387,7 @@ public class Program {
 
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
-            this.getResult().addCallCreate(data,
+            this.getResult().addCallCreate(Bytes.of(data),
                     codeAddress.getBytes(),
                     msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
@@ -1628,6 +1633,7 @@ public class Program {
     /**
      * used mostly for testing reasons
      */
+    @VisibleForTesting
     public byte[] getMemory() {
         return memory.read(0, memory.size());
     }
