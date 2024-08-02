@@ -353,7 +353,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         saveLastRetiredFederationP2SHScript(activations);
 
-        saveFundTransactionUnsignedHash(activations);
+        saveSvpFundTransactionUnsignedHash(activations);
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -440,7 +440,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
 
-    private void saveFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+    private void saveSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
 
         if (!activations.isActive(RSKIP419) || !isFundTransactionUnsignedHashSet) {
             return;
