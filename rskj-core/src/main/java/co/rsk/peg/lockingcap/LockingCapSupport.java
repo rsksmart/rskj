@@ -1,7 +1,6 @@
 package co.rsk.peg.lockingcap;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.peg.BridgeIllegalArgumentException;
 import java.util.Optional;
 import org.ethereum.core.Transaction;
 
