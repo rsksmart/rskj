@@ -128,6 +128,42 @@ public interface BytesSlice extends HexPrintableBytes {
     default BytesSlice slice(int from, int to) {
         return new BytesSliceImpl(this, from, to);
     }
+
+    static boolean equals(BytesSlice a, BytesSlice b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+
+        int aLen = a.length();
+        if (b.length() != aLen) {
+            return false;
+        }
+
+        for (int i = 0; i < aLen; i++) {
+            if (a.byteAt(i) != b.byteAt(i)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static int hashCode(BytesSlice bytesSlice) {
+        if (bytesSlice == null) {
+            return 0;
+        }
+
+        int result = 1;
+        int len = bytesSlice.length();
+        for (int i = 0; i < len; i++) {
+            result = 31 * result + bytesSlice.byteAt(i);
+        }
+
+        return result;
+    }
 }
 
 class BytesSliceImpl implements BytesSlice {
@@ -161,37 +197,14 @@ class BytesSliceImpl implements BytesSlice {
 
     @Override
     public byte byteAt(int index) {
-        if (index < 0 || index >= length()) {
-            throw new IndexOutOfBoundsException("invalid index: " + index);
-        }
+        BoundaryUtils.checkArrayIndexParam(length(), index);
         return originBytes.byteAt(from + index);
     }
 
     @Override
     public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("invalid 'length': " + length);
-        }
-        if (srcPos < 0 || srcPos + length > length()) {
-            throw new IndexOutOfBoundsException("invalid 'srcPos' and/or 'length': [" + srcPos + ";" + length + ")");
-        }
-        if (destPos < 0 || destPos + length > dest.length) {
-            throw new IndexOutOfBoundsException("invalid 'destPos' and/or 'length': [" + destPos + ";" + length + ")");
-        }
+        BoundaryUtils.checkArraycopyParams(length(), srcPos, dest, destPos, length);
         originBytes.arraycopy(this.from + srcPos, dest, destPos, length);
-    }
-
-    @Override
-    public String toHexString(int off, int length) {
-        if (off < 0 || length < 0 || off + length > length()) {
-            throw new IndexOutOfBoundsException("invalid 'off' and/or 'length': " + off + "; " + length);
-        }
-        return originBytes.toHexString(from + off, length);
-    }
-
-    @Override
-    public String toHexString() {
-        return toHexString(0, length());
     }
 
     @Override
