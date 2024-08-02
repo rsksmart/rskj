@@ -39,27 +39,27 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
 
     private final RskSystemProperties config;
 
-    private SortedSet<Capability> allCaps = new TreeSet<>();
+    private SortedSet<Capability> allCapabilities = new TreeSet<>();
 
     public ConfigCapabilitiesImpl(RskSystemProperties config) {
         if (config.syncVersion() != null) {
             EthVersion eth = fromCode(config.syncVersion());
             if (eth != null) {
-                allCaps.add(new Capability(RSK, eth.getCode()));
-                if (config.isServerSnapshotSyncEnabled()){
-                    allCaps.add(new Capability(SNAP, eth.getCode()));
-                }
+                allCapabilities.add(new Capability(RSK, eth.getCode()));
             }
         } else {
             for (EthVersion v : EthVersion.supported()) {
-                allCaps.add(new Capability(RSK, v.getCode()));
-                if (config.isServerSnapshotSyncEnabled()){
-                    allCaps.add(new Capability(SNAP, v.getCode()));
-                }
+                allCapabilities.add(new Capability(RSK, v.getCode()));
             }
         }
+
+        if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
+            allCapabilities.add(new Capability(SNAP, (byte) 1));
+        }
+
         this.config = config;
     }
+
 
     /**
      * Gets the capabilities listed in 'peer.capabilities' config property
@@ -68,7 +68,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
     public List<Capability> getConfigCapabilities() {
         List<Capability> ret = new ArrayList<>();
         List<String> caps = config.peerCapabilities();
-        for (Capability capability : allCaps) {
+        for (Capability capability : allCapabilities) {
             if (caps.contains(capability.getName())) {
                 ret.add(capability);
             }

@@ -38,6 +38,7 @@ import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -107,7 +108,7 @@ class HandshakeHandlerTest {
 
     @Test
     void shouldConnectWithSnapCapability() throws Exception {
-        simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(SNAP, (byte) 62)));
+        simulateHandshakeStartedByPeer(Arrays.asList(new Capability(SNAP, (byte) 1), new Capability(RSK, EthVersion.UPPER)));
         // this will only happen when an exception is raised
         assertTrue(ch.isOpen());
     }
