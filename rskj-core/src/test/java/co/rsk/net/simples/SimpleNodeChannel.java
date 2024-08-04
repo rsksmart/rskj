@@ -62,6 +62,11 @@ public class SimpleNodeChannel implements Peer {
     }
 
     @Override
+    public boolean isSnapCapable() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

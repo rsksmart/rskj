@@ -194,11 +194,11 @@ class PeersInformationTest {
 
         PeersInformation peersInformation = new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager, random);
 
-        Peer peer1 = setupPeer(peersInformation, null, "peer1", "peerHost1.COM", true, 1L, 1L, true );
-        Peer peer2 = setupPeer(peersInformation, null, "peer2", "peerHost2.COM", true, 2L, 2L, true );
-        Peer peer3 = setupPeer(peersInformation, null, "peer3", "peerHost3.COM", true, 3L, 3L, true );
-        Peer peer4 = setupPeer(peersInformation, null, "peer4", "peerHost4.COM", true, 4L, 4L, true );
-        Peer peer5 = setupPeer(peersInformation, null, "peer5", "peerHost5.COM", true, 5L, 5L, true );
+        Peer peer1 = setupPeer(peersInformation, null, "peer1", "peerHost1.COM", true, 1L, 1L, true, false );
+        Peer peer2 = setupPeer(peersInformation, null, "peer2", "peerHost2.COM", true, 2L, 2L, true, false );
+        Peer peer3 = setupPeer(peersInformation, null, "peer3", "peerHost3.COM", true, 3L, 3L, true, false );
+        Peer peer4 = setupPeer(peersInformation, null, "peer4", "peerHost4.COM", true, 4L, 4L, true, false );
+        Peer peer5 = setupPeer(peersInformation, null, "peer5", "peerHost5.COM", true, 5L, 5L, true, false );
 
         Mockito.when(channelManager.getActivePeers()).thenReturn(Stream.of(
                 peer1, peer2, peer3, peer4, peer5
@@ -223,11 +223,11 @@ class PeersInformationTest {
 
         PeersInformation peersInformation = new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager, random);
 
-        Peer snapPeer1 = setupPeer(peersInformation, trustedSnapPeersMap, "0x0FF", "snapPeerHost1.COM", true, 10L, 10L, true );
-        Peer snapPeer2 = setupPeer(peersInformation, trustedSnapPeersMap, "0xAFE", "snapPeerHost2.COM", true, 20L, 20L, true );
-        Peer snapPeer3 = setupPeer(peersInformation, trustedSnapPeersMap, "0xA8E", "snapPeerHost3.COM", true, 30L, 30L, false );
-        Peer snapPeer4 = setupPeer(peersInformation, trustedSnapPeersMap, "0xA9E", "snapPeerHost4.COM", false, 40L, 40L, true );
-        setupPeer(peersInformation, trustedSnapPeersMap, "0xA9E", "snapPeerHost5.COM", false, 50L, 50L, true );
+        Peer snapPeer1 = setupPeer(peersInformation, trustedSnapPeersMap, "0x0FF", "snapPeerHost1.COM", true, 10L, 10L, true, true );
+        Peer snapPeer2 = setupPeer(peersInformation, trustedSnapPeersMap, "0xAFE", "snapPeerHost2.COM", true, 20L, 20L, true, true );
+        Peer snapPeer3 = setupPeer(peersInformation, trustedSnapPeersMap, "0xA8E", "snapPeerHost3.COM", true, 30L, 30L, false, true );
+        Peer snapPeer4 = setupPeer(peersInformation, trustedSnapPeersMap, "0xA9E", "snapPeerHost4.COM", false, 40L, 40L, true, true );
+        setupPeer(peersInformation, trustedSnapPeersMap, "0xA9E", "snapPeerHost5.COM", false, 50L, 50L, true, true );
 
         Mockito.when(channelManager.getActivePeers()).thenReturn(Stream.of(
                 snapPeer1, snapPeer2, snapPeer3, snapPeer4
@@ -238,9 +238,10 @@ class PeersInformationTest {
     }
     private Peer setupPeer(PeersInformation peersInformation, Map<String, Node> trustedSnapPeersMap, String nodeId, String nodeHost,
                            boolean hasGoodReputation, long bestBlockNumber, long blockDifficulty,
-                           boolean hasLowerTotalDifficultyThan) {
+                           boolean hasLowerTotalDifficultyThan, boolean isSnapCapable) {
         Peer peer = Mockito.mock(Peer.class);
 
+        Mockito.when(peer.isSnapCapable()).thenReturn(isSnapCapable);
         Mockito.when(peer.getPeerNodeID()).thenReturn(new NodeID(nodeId.getBytes()));
 
         if(trustedSnapPeersMap!=null){
