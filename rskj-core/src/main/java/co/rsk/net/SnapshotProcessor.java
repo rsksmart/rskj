@@ -503,4 +503,8 @@ public class SnapshotProcessor implements InternalService {
         isRunning = Boolean.FALSE;
         thread.interrupt();
     }
+
+    public int dummyTest(int a, int b){
+        return a + b;
+    }
 }
