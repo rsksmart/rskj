@@ -2375,20 +2375,23 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addFederatorPublicKeyWithLessThanMofNVotes_returnsSuccessfulResponseCodeAndPendingFederationSizeZero() {
+        void voteFederationChange_addFederatorPublicKeysWithLessThanMofNVotes_returnsSuccessfulResponseCodeAndPendingFederationSizeZero() {
             // Arrange
-            List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"key1"}, true
-            );
 
-            BtcECKey expectedBtcECKey = fedKeys.get(0);
+            BtcECKey federatorBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
 
-            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                federatorBtcKey.getPubKey(),
+                federatorRskKey.getPubKey(),
+                federatorMstKey.getPubKey()
+            });
 
             // Act
 
@@ -2401,9 +2404,8 @@ class FederationSupportImplTest {
         }
 
         @Test
-        void voteFederationChange_addFederatorPublicKey_returnsSuccessfulResponseCode() {
+        void voteFederationChange_addFederatorPublicKeys_returnsSuccessfulResponseCode() {
             // Arrange
-            BtcECKey expectedBtcECKey = new BtcECKey();
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(
                 signatureCache,
@@ -2416,7 +2418,15 @@ class FederationSupportImplTest {
 
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
 
-            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{expectedBtcECKey.getPubKey()});
+            BtcECKey federatorBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+            ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
+
+            ABICallSpec addFederationMemberAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                federatorBtcKey.getPubKey(),
+                federatorRskKey.getPubKey(),
+                federatorMstKey.getPubKey()
+            });
 
             // Act
 
@@ -2435,11 +2445,11 @@ class FederationSupportImplTest {
             );
             assertEquals(1, federationSupport.getPendingFederationSize());
 
-            assertArrayEquals(expectedBtcECKey.getPubKey(), federationSupport.getPendingFederatorBtcPublicKey(0));
+            assertArrayEquals(federatorBtcKey.getPubKey(), federationSupport.getPendingFederatorBtcPublicKey(0));
         }
 
         @Test
-        void voteFederationChange_whenAddingInvalidFederatorPublicKey_returnsGenericErrorResponseCode() {
+        void voteFederationChange_whenAddingInvalidFederatorPublicKeys_returnsGenericErrorResponseCode() {
             // Arrange
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2451,8 +2461,14 @@ class FederationSupportImplTest {
             federationSupport.voteFederationChange(secondAuthorizedTx, createFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
             byte[] invalidPublicKey = TestUtils.generateBytes(1, 30);
+            ECKey expectedFederatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
-            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{ invalidPublicKey });
+            ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(), new byte[][]{
+                invalidPublicKey,
+                expectedFederatorRskKey.getPubKey(),
+                expectedFederatorMstKey.getPubKey()
+            });
 
             // Act
 
@@ -3002,9 +3018,16 @@ class FederationSupportImplTest {
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
 
             byte[] invalidFederatorBtcPublicKey = TestUtils.generateBytes(4, 25);
+            ECKey expectedFederatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
+            ECKey expectedFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
+
             ABICallSpec addFederationAbiCallSpec = new ABICallSpec(
-                FederationChangeFunction.ADD.getKey(),
-                new byte[][]{ invalidFederatorBtcPublicKey }
+                FederationChangeFunction.ADD_MULTI.getKey(),
+                new byte[][]{
+                    invalidFederatorBtcPublicKey,
+                    expectedFederatorRskKey.getPubKey(),
+                    expectedFederatorMstKey.getPubKey()
+                }
             );
 
             // Act
