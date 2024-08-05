@@ -44,6 +44,7 @@ import java.util.List;
 
 import static org.ethereum.net.client.Capability.RSK;
 import static org.ethereum.net.client.Capability.SNAP;
+import static org.ethereum.net.client.Capability.SNAP_VERSION;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -100,7 +101,7 @@ class HandshakeHandlerTest {
     }
 
     @Test
-    void shouldDisconnectIfRskOrSnapCapabilityAreMissing() throws Exception {
+    void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability("eth", (byte) 62)));
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());
@@ -108,7 +109,7 @@ class HandshakeHandlerTest {
 
     @Test
     void shouldConnectWithSnapCapability() throws Exception {
-        simulateHandshakeStartedByPeer(Arrays.asList(new Capability(SNAP, (byte) 1), new Capability(RSK, EthVersion.UPPER)));
+        simulateHandshakeStartedByPeer(Arrays.asList(new Capability(SNAP, (byte) SNAP_VERSION), new Capability(RSK, EthVersion.UPPER)));
         // this will only happen when an exception is raised
         assertTrue(ch.isOpen());
     }

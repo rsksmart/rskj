@@ -77,8 +77,7 @@ public class Channel implements Peer {
     private final PeerStatistics peerStats = new PeerStatistics();
 
     private Stats stats;
-
-    private final List<Capability> capabilities;
+    private final boolean isSnapCapable;
 
     public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
@@ -96,7 +95,8 @@ public class Channel implements Peer {
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
         this.stats = new Stats();
-        this.capabilities = capabilities;
+        this.isSnapCapable = capabilities.stream()
+                .anyMatch(capability -> Capability.SNAP.equals(capability.getName()));
     }
 
     @VisibleForTesting
@@ -282,8 +282,7 @@ public class Channel implements Peer {
 
     @Override
     public boolean isSnapCapable() {
-        return capabilities.stream()
-                .anyMatch(capability -> Capability.SNAP.equals(capability.getName()));
+        return isSnapCapable;
     }
 
     @Override

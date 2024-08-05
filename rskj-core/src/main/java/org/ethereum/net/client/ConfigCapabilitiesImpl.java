@@ -30,6 +30,7 @@ import java.util.TreeSet;
 
 import static org.ethereum.net.client.Capability.RSK;
 import static org.ethereum.net.client.Capability.SNAP;
+import static org.ethereum.net.client.Capability.SNAP_VERSION;
 import static org.ethereum.net.eth.EthVersion.fromCode;
 
 /**
@@ -54,7 +55,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
         }
 
         if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
-            allCapabilities.add(new Capability(SNAP, (byte) 1));
+            allCapabilities.add(new Capability(SNAP, (byte) SNAP_VERSION));
         }
 
         this.config = config;

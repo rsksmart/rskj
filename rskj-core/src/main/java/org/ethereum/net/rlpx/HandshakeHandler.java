@@ -377,7 +377,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
         List<Capability> capInCommon = configCapabilities.getSupportedCapabilities(helloMessage);
         channel.initMessageCodes(capInCommon);
         for (Capability capability : capInCommon) {
-            // Accept RSK capability.
+            // RSK Capability is the condition needed to be able to finish the Handshake successfully.
             if (Capability.RSK.equals(capability.getName())) {
                 publicRLPxHandshakeFinished(ctx, helloMessage, fromCode(capability.getVersion()));
                 return;
