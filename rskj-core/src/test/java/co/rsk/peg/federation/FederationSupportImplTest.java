@@ -3078,6 +3078,72 @@ class FederationSupportImplTest {
             assertArrayEquals(expectedMstKey.getPubKey(true), actualMstKey);
         }
 
+        @Test
+        void voteFederationChange_addFederatorPublicKeyPreWasabi_returnsSuccessfulResponseCode() {
+            ActivationConfig.ForBlock activationsPreWasabi = ActivationConfigsForTest.orchid().forBlock(0L);
+
+            FederationSupport federationSupport = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activationsPreWasabi)
+                .build();
+
+            // Arrange
+            BtcECKey federatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
+
+            voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
+
+            ABICallSpec addFederatorMultiKeyAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{
+                federatorBtcECKey.getPubKey(),
+            });
+
+            // Act
+
+            // Voting add new fed with m of n authorizers
+            int firstVoteAddFederatorMultiKeyResult = federationSupport.voteFederationChange(firstAuthorizedTx, addFederatorMultiKeyAbiCallSpec, signatureCache, bridgeEventLogger);
+            int secondVoteAddFederatorMultiKeyResult = federationSupport.voteFederationChange(secondAuthorizedTx, addFederatorMultiKeyAbiCallSpec, signatureCache, bridgeEventLogger);
+
+            // Assert
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddFederatorMultiKeyResult);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteAddFederatorMultiKeyResult);
+        }
+
+        @Test
+        void voteFederationChange_addFederatorPublicKeyPostWasabi_ThrowsIllegalStateException() {
+            // Arrange
+            BtcECKey federatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress()
+            );
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress()
+            );
+
+            voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
+
+            ABICallSpec addFederatorMultiKeyAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD.getKey(), new byte[][]{
+                federatorBtcECKey.getPubKey(),
+            });
+
+            // Act and assert
+            Exception exception = assertThrows(
+                IllegalStateException.class,
+                () -> federationSupport.voteFederationChange(
+                    firstAuthorizedTx,
+                    addFederatorMultiKeyAbiCallSpec,
+                    signatureCache,
+                    bridgeEventLogger
+                )
+            );
+            assertEquals("The \"add\" function is disabled.", exception.getMessage());
+        }
+
         private void voteToCreateFederation(Transaction firstAuthorizedTx, Transaction secondAuthorizedTx) {
             ABICallSpec createFederationAbiCallSpec = new ABICallSpec(
                 FederationChangeFunction.CREATE.getKey(),
