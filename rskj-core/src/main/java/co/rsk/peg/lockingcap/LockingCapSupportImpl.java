@@ -49,8 +49,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
         if (newLockingCap.getValue() <= 0) {
-            String message = "Locking Cap must be greater than zero. Value attempted: %d";
-            String baseMessage = String.format(message, newLockingCap.value);
+            String baseMessage = String.format("Locking Cap must be greater than zero. Value attempted: %d", newLockingCap.value);
             logger.warn("[{}] {}}", INCREASE_LOCKING_CAP_TAG, baseMessage);
             throw new LockingCapIllegalArgumentException(baseMessage);
         }
