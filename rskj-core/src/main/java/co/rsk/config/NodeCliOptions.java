@@ -19,16 +19,14 @@ package co.rsk.config;
 
 import co.rsk.cli.OptionalizableCliArg;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.config.SystemProperties;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -88,10 +86,7 @@ public enum NodeCliOptions implements OptionalizableCliArg {
         }
         private ConfigObject createConfigObjectFromSnapNode(String snapNode) {
             try {
-                Map<String, ConfigValue> properties = new HashMap<>();
-                properties.put("url", ConfigValueFactory.fromAnyRef(snapNode));
-
-                return ConfigFactory.parseMap(properties).root();
+                return ConfigValueFactory.fromMap(Collections.singletonMap("url", ConfigValueFactory.fromAnyRef(snapNode)));
             } catch (Exception e) {
                 throw new RuntimeException("Error processing SnapBoot Nodes configuration. Ensure the URL format is 'enode://PUBKEY@HOST:PORT'.");
             }
