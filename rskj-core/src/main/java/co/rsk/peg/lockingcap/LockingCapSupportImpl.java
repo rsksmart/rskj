@@ -46,19 +46,18 @@ public class LockingCapSupportImpl implements LockingCapSupport {
 
     @Override
     public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws LockingCapIllegalArgumentException {
-        final String INCREASE_LOCKING_CAP_TAG = "[increaseLockingCap] %s";
-        String baseMessage = String.format(INCREASE_LOCKING_CAP_TAG, " {} {}");
+        final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
         if (newLockingCap.getValue() <= 0) {
-            String message = "Locking Cap must be greater than zero. Value attempted: ";
-            logger.warn(baseMessage, message, newLockingCap.value);
-            throw new LockingCapIllegalArgumentException(message + newLockingCap.value);
+            String baseMessage = String.format("Locking Cap must be greater than zero. Value attempted: %d", newLockingCap.value);
+            logger.warn("[{}] {}}", INCREASE_LOCKING_CAP_TAG, baseMessage);
+            throw new LockingCapIllegalArgumentException(baseMessage);
         }
 
         // Only pre-configured addresses can modify Locking Cap
         AddressBasedAuthorizer authorizer = constants.getIncreaseAuthorizer();
         if (!authorizer.isAuthorized(tx, signatureCache)) {
-            logger.warn(baseMessage, "An unauthorized address tried to increase Locking Cap. Address: ", tx.getSender(signatureCache));
+            logger.warn("[{}] An unauthorized address tried to increase Locking Cap. Address: {}", INCREASE_LOCKING_CAP_TAG, tx.getSender(signatureCache));
             return false;
         }
 
@@ -66,26 +65,25 @@ public class LockingCapSupportImpl implements LockingCapSupport {
         Optional<Coin> currentLockingCap = getLockingCap();
 
         if (!currentLockingCap.isPresent()) {
-            logger.warn(baseMessage, "Current Locking Cap is not set since RSKIP134 is not active. Value attempted: ", newLockingCap.value);
+            logger.warn("[{}] Current Locking Cap is not set since RSKIP134 is not active. Value attempted: {}", INCREASE_LOCKING_CAP_TAG, newLockingCap.value);
             return false;
         }
 
         Coin lockingCap = currentLockingCap.get();
 
         if (newLockingCap.compareTo(lockingCap) < 0) {
-            logger.warn(baseMessage, "Attempted value doesn't increase Locking Cap. Value attempted: ", newLockingCap.value);
+            logger.warn("[{}] Attempted value doesn't increase Locking Cap. Value attempted: {}", INCREASE_LOCKING_CAP_TAG, newLockingCap.value);
             return false;
         }
 
         Coin maxLockingCapVoteValueAllowed = lockingCap.multiply(constants.getIncrementsMultiplier());
         if (newLockingCap.compareTo(maxLockingCapVoteValueAllowed) > 0) {
-            baseMessage = String.format(INCREASE_LOCKING_CAP_TAG, "Attempted value tries to increase Locking Cap above its limit. Value attempted: {} . maxLockingCapVoteValueAllowed: {}");
-            logger.warn(baseMessage, newLockingCap.value, maxLockingCapVoteValueAllowed.value);
+            logger.warn("[{}] Attempted value tries to increase Locking Cap above its limit. Value attempted: {} . maxLockingCapVoteValueAllowed: {}", INCREASE_LOCKING_CAP_TAG, newLockingCap.value, maxLockingCapVoteValueAllowed.value);
             return false;
         }
 
         storageProvider.setLockingCap(newLockingCap);
-        logger.info(baseMessage, "Increased locking cap: ", newLockingCap.value);
+        logger.info("[{}] Increased locking cap: {}", INCREASE_LOCKING_CAP_TAG, newLockingCap.value);
 
         return true;
     }
