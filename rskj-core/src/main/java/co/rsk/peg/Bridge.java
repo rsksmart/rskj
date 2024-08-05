@@ -29,6 +29,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
+import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
@@ -1161,12 +1162,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public boolean increaseLockingCap(Object[] args) throws VMException {
+    public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("increaseLockingCap");
-
         Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
-
-        return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+        try {
+            return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+        } catch (LockingCapIllegalArgumentException e) {
+            throw new BridgeIllegalArgumentException(e.getMessage());
+        }
     }
 
     public void registerBtcCoinbaseTransaction(Object[] args) throws VMException {
