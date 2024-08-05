@@ -331,7 +331,28 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     @Override
     public void setSvpFundTransactionUnsignedHash(Sha256Hash hash) {
         this.svpFundTransactionUnsignedHash = hash;
-        isSvpFundTransactionUnsignedHashSet = true;
+        this.isSvpFundTransactionUnsignedHashSet = true;
+    }
+
+    @Override
+    public Optional<Sha256Hash> getSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpFundTransactionUnsignedHash != null) {
+            return Optional.of(svpFundTransactionUnsignedHash);
+        }
+
+        if (isSvpFundTransactionUnsignedHashSet) {
+            return Optional.empty();
+        }
+
+        Sha256Hash svpFundTxHashUnsigned = bridgeStorageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+
+        return Optional.ofNullable(svpFundTxHashUnsigned);
+
     }
 
     @Override

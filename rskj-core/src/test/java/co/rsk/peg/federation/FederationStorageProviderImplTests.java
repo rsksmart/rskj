@@ -1188,6 +1188,121 @@ class FederationStorageProviderImplTests {
 
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("get fund transaction unsigned hash tests")
+    class GetSvpFundTransactionUnsignedHashTests {
+
+        private StorageAccessor storageAccessor;
+        private FederationStorageProvider federationStorageProvider;
+        private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+
+        @BeforeEach
+        void setup() {
+            storageAccessor = new InMemoryStorage();
+            federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
+        }
+
+        @Test
+        void getSvpFundTransactionUnsignedHash_preLovell700_shouldReturnEmpty() {
+
+            // Arrange
+
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+
+            // Manually setting the value in storage to then assert that pre fork the method doesn't access the storage
+            Sha256Hash hash = BitcoinTestUtils.createHash(123_456_789);
+            storageAccessor.saveToRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(hash));
+
+            // Act
+
+            Optional<Sha256Hash> svpFundTransactionUnsignedHash = federationStorageProvider.getSvpFundTransactionUnsignedHash(arrowheadActivations);
+
+            // Assert
+
+            assertEquals(Optional.empty(), svpFundTransactionUnsignedHash);
+
+        }
+
+        @Test
+        void getSvpFundTransactionUnsignedHash_postLovell700WithHashSetButNotInStorage_shouldReturnTheHash() {
+
+            // Arrange
+
+            Sha256Hash expectedHash = BitcoinTestUtils.createHash(123_456_789);
+
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(expectedHash);
+
+            // Act
+
+            Optional<Sha256Hash> svpFundTransactionUnsignedHash = federationStorageProvider.getSvpFundTransactionUnsignedHash(activations);
+
+            // Assert
+
+            assertTrue(svpFundTransactionUnsignedHash.isPresent());
+            assertEquals(expectedHash, svpFundTransactionUnsignedHash.get());
+
+        }
+
+        @Test
+        void getSvpFundTransactionUnsignedHash_postLovell700WithHashSetAndSavedInStorage_shouldReturnTheHash() {
+
+            // Arrange
+
+            Sha256Hash expectedHash = BitcoinTestUtils.createHash(123_456_789);
+
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(expectedHash);
+            federationStorageProvider.save(networkParameters, activations);
+
+            // Act
+
+            Optional<Sha256Hash> svpFundTransactionUnsignedHash = federationStorageProvider.getSvpFundTransactionUnsignedHash(activations);
+
+            // Assert
+
+            assertTrue(svpFundTransactionUnsignedHash.isPresent());
+            assertEquals(expectedHash, svpFundTransactionUnsignedHash.get());
+
+        }
+
+        @Test
+        void getSvpFundTransactionUnsignedHash_postLovell700AndHashDirectlySavedInStorage_shouldReturnTheHash() {
+
+            // Arrange
+
+            Sha256Hash hash = BitcoinTestUtils.createHash(123_456_789);
+            storageAccessor.saveToRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(hash));
+
+            // Act
+
+            Optional<Sha256Hash> svpFundTransactionUnsignedHash = federationStorageProvider.getSvpFundTransactionUnsignedHash(activations);
+
+            // Assert
+
+            assertTrue(svpFundTransactionUnsignedHash.isPresent());
+            assertEquals(hash, svpFundTransactionUnsignedHash.get());
+
+        }
+
+        @Test
+        void getSvpFundTransactionUnsignedHash_postLovell700AndSetToNull_shouldReturnEmpty() {
+
+            // Arrange
+
+            federationStorageProvider.setSvpFundTransactionUnsignedHash(null);
+
+            // Act
+
+            Optional<Sha256Hash> svpFundTransactionUnsignedHash = federationStorageProvider.getSvpFundTransactionUnsignedHash(activations);
+
+            // Assert
+
+            assertFalse(svpFundTransactionUnsignedHash.isPresent());
+
+        }
+
+    }
+
     private static Federation createNonStandardErpFederation() {
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             PegTestUtils.createRandomBtcECKeys(7)

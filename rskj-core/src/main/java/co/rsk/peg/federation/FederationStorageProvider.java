@@ -43,5 +43,7 @@ public interface FederationStorageProvider {
 
     void setSvpFundTransactionUnsignedHash(Sha256Hash hash);
 
+    Optional<Sha256Hash> getSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations);
+
     void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations);
 }
