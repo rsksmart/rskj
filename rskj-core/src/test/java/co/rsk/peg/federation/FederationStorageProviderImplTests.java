@@ -1225,6 +1225,12 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
+        void getSvpFundTransactionUnsignedHash_whenThereIsNoProposedFederationSavedNorSet_shouldReturnEmpty() {
+            Optional<Sha256Hash> svpFundTransactionUnsignedHash = federationStorageProvider.getSvpFundTransactionUnsignedHash(activations);
+            assertFalse(svpFundTransactionUnsignedHash.isPresent());
+        }
+
+        @Test
         void getSvpFundTransactionUnsignedHash_postLovell700WithHashSetButNotInStorage_shouldReturnTheHash() {
 
             // Arrange
