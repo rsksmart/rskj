@@ -46,8 +46,8 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     private Script lastRetiredFederationP2SHScript;
 
-    private Sha256Hash svpFundTransactionUnsignedHash;
-    private boolean isSvpFundTransactionUnsignedHashSet = false;
+    private Sha256Hash svpFundTxHashUnsigned;
+    private boolean isSvpFundTxHashUnsignedSet = false;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -329,27 +329,28 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public void setSvpFundTransactionUnsignedHash(Sha256Hash hash) {
-        this.svpFundTransactionUnsignedHash = hash;
-        this.isSvpFundTransactionUnsignedHashSet = true;
+    public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
+        this.svpFundTxHashUnsigned = hash;
+        this.isSvpFundTxHashUnsignedSet = true;
     }
 
     @Override
-    public Optional<Sha256Hash> getSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+    public Optional<Sha256Hash> getSvpFundTxHashUnsigned(ActivationConfig.ForBlock activations) {
 
         if (!activations.isActive(RSKIP419)) {
             return Optional.empty();
         }
 
-        if (svpFundTransactionUnsignedHash != null) {
-            return Optional.of(svpFundTransactionUnsignedHash);
+        if (svpFundTxHashUnsigned != null) {
+            return Optional.of(svpFundTxHashUnsigned);
         }
 
-        if (isSvpFundTransactionUnsignedHashSet) {
+        // Return empty if the svp fund tx hash unsigned was explicitly set to null
+        if (isSvpFundTxHashUnsignedSet) {
             return Optional.empty();
         }
 
-        Sha256Hash svpFundTxHashUnsigned = bridgeStorageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        svpFundTxHashUnsigned = bridgeStorageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
 
         return Optional.ofNullable(svpFundTxHashUnsigned);
 
@@ -374,7 +375,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         saveLastRetiredFederationP2SHScript(activations);
 
-        saveSvpFundTransactionUnsignedHash(activations);
+        saveSvpFundTxHashUnsigned(activations);
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -461,13 +462,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
     }
 
-    private void saveSvpFundTransactionUnsignedHash(ActivationConfig.ForBlock activations) {
+    private void saveSvpFundTxHashUnsigned(ActivationConfig.ForBlock activations) {
 
-        if (!activations.isActive(RSKIP419) || !isSvpFundTransactionUnsignedHashSet) {
+        if (!activations.isActive(RSKIP419) || !isSvpFundTxHashUnsignedSet) {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpFundTransactionUnsignedHash)
+        byte[] data = Optional.ofNullable(svpFundTxHashUnsigned)
             .map(BridgeSerializationUtils::serializeSha256Hash)
             .orElse(null);
 
