@@ -109,4 +109,20 @@ public class BitcoinTestUtils {
 
         return tx;
     }
+
+    public static byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
+        List<byte[]> pubKeys = keys.stream()
+            .map(BtcECKey::getPubKey)
+            .collect(Collectors.toList());
+        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
+
+        byte[] flatPubKeys = new byte[pubKeysLength];
+        int copyPos = 0;
+        for (byte[] key : pubKeys) {
+            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
+            copyPos += key.length;
+        }
+
+        return flatPubKeys;
+    }
 }
