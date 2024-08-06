@@ -37,6 +37,7 @@ import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.WhitelistResponseCode;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
@@ -70,7 +71,7 @@ import java.util.stream.Collectors;
  */
 public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
-    private static final Logger logger = LoggerFactory.getLogger("bridge");
+    private static final Logger logger = LoggerFactory.getLogger(Bridge.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     // No parameters
@@ -206,10 +207,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH.getFunction();
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
-
-    public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
-    public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
-    public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
 
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
@@ -1056,20 +1053,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in getLockWhitelistEntryByAddress", e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
+            logger.warn("[getLockWhitelistEntryByAddress] Error while parsing the provided address. {}", e.getMessage());
+            return WhitelistResponseCode.INVALID_ADDRESS_FORMAT.getCode();
         }
 
         LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
 
         if (entry == null) {
             // Empty string is returned when address is not found
-            return LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE;
+            logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
+            return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
         }
 
         return entry.getClass() == OneOffWhiteListEntry.class ?
-                ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
-                LOCK_WHITELIST_UNLIMITED_MODE_CODE;
+            ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
+            WhitelistResponseCode.UNLIMITED_MODE.getCode();
     }
 
     public Integer addOneOffLockWhitelistAddress(Object[] args) {
@@ -1081,7 +1079,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
             maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
-            logger.warn("Exception in addOneOffLockWhitelistAddress", e);
+            logger.warn("[addOneOffLockWhitelistAddress] Error while parsing the provided address and max value. {}", e.getMessage());
             return 0;
         }
 
@@ -1095,7 +1093,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in addUnlimitedLockWhitelistAddress", e);
+            logger.warn("[addUnlimitedLockWhitelistAddress] Exception in addUnlimitedLockWhitelistAddress", e);
             return 0;
         }
 
@@ -1109,7 +1107,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in removeLockWhitelistAddress", e);
+            logger.warn("[removeLockWhitelistAddress] Error while parsing the provided address. {}", e.getMessage());
             return 0;
         }
 
@@ -1119,6 +1117,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
+
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
     }
 

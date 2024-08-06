@@ -29,11 +29,6 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.PendingFederation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import co.rsk.peg.whitelist.LockWhitelist;
-import co.rsk.peg.whitelist.LockWhitelistEntry;
-import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -85,8 +80,6 @@ public class BridgeStorageProvider {
     private boolean shouldSavePendingFederation = false;
 
     private ABICallElection federationElection;
-
-    private LockWhitelist lockWhitelist;
 
     private Coin lockingCap;
 
@@ -500,50 +493,6 @@ public class BridgeStorageProvider {
         return federationElection;
     }
 
-    /**
-     * Save the lock whitelist
-     */
-    public void saveLockWhitelist() {
-        if (lockWhitelist == null) {
-            return;
-        }
-
-        List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
-        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
-
-        if (activations.isActive(RSKIP87)) {
-            List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
-            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
-        }
-    }
-
-    public LockWhitelist getLockWhitelist() {
-        if (lockWhitelist != null) {
-            return lockWhitelist;
-        }
-
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
-                safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
-                        data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
-        if (oneOffWhitelistAndDisableBlockHeightData == null) {
-            lockWhitelist = new LockWhitelist(new HashMap<>());
-            return lockWhitelist;
-        }
-
-        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
-
-        whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
-
-        if (activations.isActive(RSKIP87)) {
-            whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
-                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
-        }
-
-        lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
-
-        return lockWhitelist;
-    }
-
     public void saveLockingCap() {
         if (activations.isActive(RSKIP134)) {
             safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
@@ -636,7 +585,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        if (coinbaseInformationMap == null || coinbaseInformationMap.size() == 0) {
+        if (coinbaseInformationMap == null || coinbaseInformationMap.isEmpty()) {
             return;
         }
         coinbaseInformationMap.forEach((Sha256Hash blockHash, CoinbaseInformation data) ->
@@ -935,8 +884,6 @@ public class BridgeStorageProvider {
         savePendingFederation();
 
         saveFederationElection();
-
-        saveLockWhitelist();
 
         saveLockingCap();
 
