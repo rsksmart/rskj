@@ -1368,7 +1368,7 @@ class FederationStorageProviderImplTests {
         }
 
         @Test
-        void getSvpFundTxHashUnsigned_whenNullHashIsSaved_shouldReturnEmpty() {
+        void getSvpFundTxHashUnsigned_whenNullHashIsSetAndSaved_shouldReturnEmpty() {
 
             // Arrange
 
