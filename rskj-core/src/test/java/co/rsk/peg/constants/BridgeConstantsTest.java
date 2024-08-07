@@ -97,7 +97,7 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), LockingCapMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), LockingCapTestNetConstants.getInstance()),
-            Arguments.of(BridgeRegTestConstants.getInstance(), LockingCapRegTestConstants.getInstance())
+            Arguments.of(new BridgeRegTestConstants(), LockingCapRegTestConstants.getInstance())
         );
     }
 }
