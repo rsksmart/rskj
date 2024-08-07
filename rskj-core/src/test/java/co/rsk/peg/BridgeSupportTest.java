@@ -537,8 +537,7 @@ class BridgeSupportTest {
 
         private LockingCapSupport lockingCapSupport;
         private BridgeSupport bridgeSupport;
-        private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
-        private final LockingCapConstants constants = bridgeMainNetConstants.getLockingCapConstants();
+        private final LockingCapConstants constants = LockingCapMainNetConstants.getInstance();
 
         @BeforeEach
         void setUp() {
