@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
 import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +48,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
         whitelistConstants = WhitelistRegTestConstants.getInstance();
         federationConstants = new FederationRegTestConstants(federationPublicKeys);
+        lockingCapConstants = LockingCapRegTestConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
