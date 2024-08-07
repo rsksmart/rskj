@@ -116,8 +116,6 @@ public class BridgeSupport {
     private final FeePerKbSupport feePerKbSupport;
     private final WhitelistSupport whitelistSupport;
     private final FederationSupport federationSupport;
-    private final FeePerKbSupport feePerKbSupport;
-    private final WhitelistSupport whitelistSupport;
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
@@ -299,15 +297,14 @@ public class BridgeSupport {
      * or null if there's currently no retiring federation
      * @return A BTC wallet for the currently active federation
      *
-     * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
-    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) throws IOException {
+    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
         Federation federation = getRetiringFederation();
         if (federation == null) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
@@ -2562,7 +2559,7 @@ public class BridgeSupport {
             Keccak256 derivationHash,
             FlyoverFederationInformation flyoverFederationInformation,
             List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
@@ -2573,7 +2570,7 @@ public class BridgeSupport {
         Keccak256 derivationHash,
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
