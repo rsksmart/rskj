@@ -24,13 +24,11 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
-import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
@@ -41,13 +39,11 @@ import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.UnrefundablePeginReason;
-import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
@@ -509,6 +505,119 @@ class BridgeSupportTest {
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withActivations(activations)
                 .withFederationSupport(federationSupport)
+                .build();
+
+            // Set of variables to be used mocking
+            BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+            StoredBlock storedBlock = mock(StoredBlock.class);
+            BtcBlock btcBlock = mock(BtcBlock.class);
+            NetworkParameters btcParams = bridgeConstantsMainNet.getBtcParams();
+            BtcBlock genesisBtcBlock = btcParams.getGenesisBlock();
+            Sha256Hash genesisBtcBlockHash = genesisBtcBlock.getHash();
+
+            when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+            when(storedBlock.getHeader()).thenReturn(btcBlock);
+            when(btcBlock.getHash()).thenReturn(genesisBtcBlockHash);
+            when(btcBlockStoreFactory.newInstance(rskRepository, bridgeConstantsMainNet, provider, activations)).thenReturn(btcBlockStore);
+
+            int result = bridgeSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI);
+
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
+    }
+
+    @Nested
+    @Tag("Whitelist")
+    class WhitelistTest {
+        private WhitelistSupport whitelistSupport;
+        private BridgeSupport bridgeSupport;
+
+        @BeforeEach
+        void setUp() {
+            whitelistSupport = mock(WhitelistSupportImpl.class);
+            bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .build();
+        }
+
+        @Test
+        void getLockWhitelistSize() {
+            when(whitelistSupport.getLockWhitelistSize()).thenReturn(10);
+
+            assertEquals(10, bridgeSupport.getLockWhitelistSize());
+        }
+
+        @Test
+        void getLockWhitelistEntryByIndex() {
+            LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
+            when(whitelistSupport.getLockWhitelistEntryByIndex(0)).thenReturn(entry);
+
+            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(0));
+        }
+
+        @Test
+        void getLockWhitelistEntryByAddress() {
+            LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
+            when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(entry);
+
+            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address"));
+        }
+
+        @Test
+        void addOneOffLockWhitelistAddress() {
+            Transaction tx = mock(Transaction.class);
+            String address = "address";
+            BigInteger maxTransferValue = BigInteger.ONE;
+            when(whitelistSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+            int result = bridgeSupport.addOneOffLockWhitelistAddress(tx, address, maxTransferValue);
+
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
+
+        @Test
+        void addUnlimitedLockWhitelistAddress() {
+            Transaction tx = mock(Transaction.class);
+            String address = "address";
+            when(whitelistSupport.addUnlimitedLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+            int result = bridgeSupport.addUnlimitedLockWhitelistAddress(tx, address);
+
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
+
+        @Test
+        void removeLockWhitelistAddress() {
+            Transaction tx = mock(Transaction.class);
+            String address = "address";
+            when(whitelistSupport.removeLockWhitelistAddress(tx, address)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+            int result = bridgeSupport.removeLockWhitelistAddress(tx, address);
+
+            assertEquals(WhitelistResponseCode.SUCCESS.getCode(), result);
+        }
+
+        @Test
+        void setLockWhitelistDisableBlockDelay() throws BlockStoreException, IOException {
+            // Set of Variables to be use in setLockWhitelistDisableBlockDelay
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, WhitelistCaller.AUTHORIZED.getRskAddress());
+            BigInteger disableBlockDelayBI = BigInteger.ONE;
+            when(whitelistSupport.setLockWhitelistDisableBlockDelay(tx, disableBlockDelayBI, 0)).thenReturn(WhitelistResponseCode.SUCCESS.getCode());
+
+            // Set of variables to be use in bridgeSupportBuilder
+            BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+            Repository rskRepository = mock(Repository.class);
+            BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
+            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+            bridgeSupport = bridgeSupportBuilder
+                .withWhitelistSupport(whitelistSupport)
+                .withProvider(provider)
+                .withRepository(rskRepository)
+                .withBridgeConstants(bridgeConstantsMainNet)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
             // Set of variables to be used mocking
@@ -1182,7 +1291,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-        
+
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(genesisFederation);
 
@@ -1730,7 +1839,7 @@ class BridgeSupportTest {
 
         FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstantsRegtest.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
-        
+
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
@@ -2100,16 +2209,16 @@ class BridgeSupportTest {
             btcMainnetParams
         );
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFederationArgs);
-        
+
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-        
+
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForConfirmations())
             .thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
-        
+
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getOldFederation(any(), any()))
             .thenReturn(oldFederation);
@@ -5042,7 +5151,7 @@ class BridgeSupportTest {
             bridgeConstantsRegtest.getBtcParams(),
             activations
         );
-        
+
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation1);
 
@@ -7461,7 +7570,7 @@ class BridgeSupportTest {
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
         when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(new ArrayList<>()));
-        
+
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
         when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(newFed);
         when(federationStorageProviderMock.getOldFederation(any(), any())).thenReturn(oldFed);
@@ -8161,7 +8270,7 @@ class BridgeSupportTest {
         }
         FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeMainNetConstants.getFeePerKbConstants(), mock(FeePerKbStorageProvider.class));
         FederationSupport federationSupport = mock(FederationSupport.class);
-        
+
         return new BridgeSupport(
             constants,
             provider,

@@ -116,6 +116,8 @@ public class BridgeSupport {
     private final FeePerKbSupport feePerKbSupport;
     private final WhitelistSupport whitelistSupport;
     private final FederationSupport federationSupport;
+    private final FeePerKbSupport feePerKbSupport;
+    private final WhitelistSupport whitelistSupport;
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;

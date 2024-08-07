@@ -2319,15 +2319,15 @@ public class BridgeSupportIT {
             assertArrayEquals(
                 members.get(i).getBtcPublicKey().getPubKey(),
                 bridgeSupport.getRetiringFederatorBtcPublicKey(i)
-                );
+            );
             assertArrayEquals(
                 members.get(i).getBtcPublicKey().getPubKey(),
                 bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.BTC)
-                );
+            );
             assertArrayEquals(
                 members.get(i).getRskPublicKey().getPubKey(true),
                 bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.RSK)
-);
+            );
             assertArrayEquals(
                 members.get(i).getMstPublicKey().getPubKey(true),
                 bridgeSupport.getRetiringFederatorPublicKeyOfType(i, KeyType.MST)
@@ -2646,7 +2646,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorBtcPublicKey(0)
-            );
+        );
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC)
@@ -2696,7 +2696,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorBtcPublicKey(0)
-            );
+        );
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(0, KeyType.BTC)
@@ -2708,7 +2708,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(0, KeyType.MST)
-);
+        );
 
         assertArrayEquals(
             Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
@@ -2717,7 +2717,7 @@ public class BridgeSupportIT {
         assertArrayEquals(
             Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(1, KeyType.BTC)
-);
+        );
         assertArrayEquals(
             Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
             bridgeSupport.getPendingFederatorPublicKeyOfType(1, KeyType.RSK)
@@ -4149,8 +4149,8 @@ public class BridgeSupportIT {
             private Federation retiringFederation;
             private ABICallElection federationElection;
 
-            public List<UTXO> retiringUTXOs = new ArrayList<>();
-            public List<UTXO> activeUTXOs = new ArrayList<>();
+            public final List<UTXO> retiringUTXOs = new ArrayList<>();
+            public final List<UTXO> activeUTXOs = new ArrayList<>();
 
             PendingFederation getPendingFederation() {
                 return pendingFederation;
@@ -4204,22 +4204,22 @@ public class BridgeSupportIT {
             }
 
             if (holder.getFederationElection() == null) {
-                AddressBasedAuthorizer auth = m.<AddressBasedAuthorizer>getArgument(0);
+                AddressBasedAuthorizer auth = m.getArgument(0);
                 holder.setFederationElection(new ABICallElection(auth));
             }
 
             return holder.getFederationElection();
         });
         doAnswer((InvocationOnMock m) -> {
-            holder.setActiveFederation(m.<Federation>getArgument(0));
+            holder.setActiveFederation(m.getArgument(0));
             return null;
         }).when(federationStorageProvider).setNewFederation(any());
         doAnswer((InvocationOnMock m) -> {
-            holder.setRetiringFederation(m.<Federation>getArgument(0));
+            holder.setRetiringFederation(m.getArgument(0));
             return null;
         }).when(federationStorageProvider).setOldFederation(any());
         doAnswer((InvocationOnMock m) -> {
-            holder.setPendingFederation(m.<PendingFederation>getArgument(0));
+            holder.setPendingFederation(m.getArgument(0));
             return null;
         }).when(federationStorageProvider).setPendingFederation(any());
 

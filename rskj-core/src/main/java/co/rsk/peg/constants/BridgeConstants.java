@@ -31,10 +31,8 @@ public abstract class BridgeConstants {
     protected String btcParamsString;
 
     protected FeePerKbConstants feePerKbConstants;
-
-    protected FederationConstants federationConstants;
-
     protected WhitelistConstants whitelistConstants;
+    protected FederationConstants federationConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -48,8 +46,6 @@ public abstract class BridgeConstants {
     protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
-
-    protected AddressBasedAuthorizer federationChangeAuthorizer;
 
     protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
 

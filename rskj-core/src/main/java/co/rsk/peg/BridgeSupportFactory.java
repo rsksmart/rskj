@@ -88,7 +88,6 @@ public class BridgeSupportFactory {
         WhitelistSupport whitelistSupport = getWhitelistSupportInstance(bridgeStorageAccessor, activations);
         FederationSupport federationSupport = getFederationSupportInstance(
             bridgeStorageAccessor,
-            bridgeConstants,
             executionBlock,
             activations
         );
@@ -144,7 +143,6 @@ public class BridgeSupportFactory {
 
     private FederationSupport getFederationSupportInstance(
         StorageAccessor bridgeStorageAccessor,
-        BridgeConstants bridgeConstants,
         Block rskExecutionBlock,
         ActivationConfig.ForBlock activations) {
 

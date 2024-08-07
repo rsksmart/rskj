@@ -8,8 +8,8 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 
 import java.util.Optional;
 
-import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
-import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB;
+import static co.rsk.peg.feeperkb.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
+import static co.rsk.peg.feeperkb.FeePerKbStorageIndexKey.FEE_PER_KB;
 
 public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
     private final StorageAccessor bridgeStorageAccessor;
