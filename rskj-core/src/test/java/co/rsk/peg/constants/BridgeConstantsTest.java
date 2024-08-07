@@ -1,10 +1,15 @@
 package co.rsk.peg.constants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapTestNetConstants;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -75,5 +80,24 @@ class BridgeConstantsTest {
 
         // assert
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getLockingCapConstantsProvider")
+    void getLockingCapConstants(BridgeConstants bridgeConstants, LockingCapConstants expectedValue){
+        // Act
+        LockingCapConstants actualLockingCapConstants = bridgeConstants.getLockingCapConstants();
+
+        // Assert
+        assertEquals(expectedValue, actualLockingCapConstants);
+        assertInstanceOf(expectedValue.getClass(), actualLockingCapConstants);
+    }
+
+    private static Stream<Arguments> getLockingCapConstantsProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), LockingCapMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance(), LockingCapTestNetConstants.getInstance()),
+            Arguments.of(new BridgeRegTestConstants(), LockingCapRegTestConstants.getInstance())
+        );
     }
 }

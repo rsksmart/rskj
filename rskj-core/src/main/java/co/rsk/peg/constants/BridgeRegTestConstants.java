@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
 import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +32,6 @@ import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-
     private static final List<BtcECKey> defaultFederationPublicKeys = Collections.unmodifiableList(Stream.of(
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
@@ -47,6 +47,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
         whitelistConstants = WhitelistRegTestConstants.getInstance();
         federationConstants = new FederationRegTestConstants(federationPublicKeys);
+        lockingCapConstants = LockingCapRegTestConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
