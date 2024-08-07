@@ -20,12 +20,12 @@ package co.rsk.mine;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -291,7 +291,7 @@ public class MinerManagerTest {
                         clock,
                         blockFactory,
                         blockExecutor,
-                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinimumGasPriceCalculator(new FixedMinGasPriceProvider(config.minerMinGasPrice())),
                         new MinerUtils(),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache()) // TODO -> should it be ReceivedTxSignatureCache? See Miner Server Test for reference
                 ),

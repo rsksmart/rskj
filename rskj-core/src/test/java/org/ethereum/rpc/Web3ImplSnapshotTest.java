@@ -21,12 +21,12 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
+import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -234,7 +234,7 @@ class Web3ImplSnapshotTest {
                         clock,
                         blockFactory,
                         factory.getBlockExecutor(),
-                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinimumGasPriceCalculator(new FixedMinGasPriceProvider(config.minerMinGasPrice())),
                         new MinerUtils(),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
