@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeIllegalArgumentException;
 import co.rsk.peg.federation.constants.FederationConstants;
@@ -13,6 +14,7 @@ import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.ABICallVoteResult;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.util.StringUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
@@ -373,7 +375,7 @@ public class FederationSupportImpl implements FederationSupport {
         String calledFunction = callSpec.getFunction();
         // Must be on one of the allowed functions
         if (unknownFederationChangeFunction(calledFunction)) {
-            logger.warn("[voteFederationChange] Federation change function {} does not exist.", calledFunction);
+            logger.warn("[voteFederationChange] Federation change function \"{}\" does not exist.", StringUtils.trim(calledFunction));
             return FederationChangeResponseCode.NON_EXISTING_FUNCTION_CALLED.getCode();
         }
 
@@ -461,19 +463,19 @@ public class FederationSupportImpl implements FederationSupport {
                 try {
                     btcPublicKey = BtcECKey.fromPublicOnly(callSpec.getArguments()[0]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + ByteUtil.toHexString(callSpec.getArguments()[0]), e);
+                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + Bytes.of(callSpec.getArguments()[0]), e);
                 }
 
                 try {
                     rskPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[1]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + ByteUtil.toHexString(callSpec.getArguments()[1]), e);
+                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + Bytes.of(callSpec.getArguments()[1]), e);
                 }
 
                 try {
                     mstPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[2]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + ByteUtil.toHexString(callSpec.getArguments()[2]), e);
+                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + Bytes.of(callSpec.getArguments()[2]), e);
                 }
                 executionResult = addFederatorPublicKeyMultikey(dryRun, btcPublicKey, rskPublicKey, mstPublicKey);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
