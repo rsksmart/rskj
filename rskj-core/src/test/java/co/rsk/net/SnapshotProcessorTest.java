@@ -29,6 +29,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,7 +105,7 @@ public class SnapshotProcessorTest {
                 TEST_CHUNK_SIZE,
                 false);
 
-        for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber ++){
+        for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
             blocks.add(currentBlock);
             difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
@@ -181,7 +182,7 @@ public class SnapshotProcessorTest {
                 200,
                 false);
 
-        for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber ++){
+        for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
             blocks.add(currentBlock);
             difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
@@ -216,7 +217,7 @@ public class SnapshotProcessorTest {
                 TEST_CHUNK_SIZE,
                 false);
 
-        SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L,1, TEST_CHUNK_SIZE);
+        SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1, TEST_CHUNK_SIZE);
 
         //when
         underTest.processStateChunkRequestInternal(peer, snapStateChunkRequestMessage);
@@ -331,6 +332,35 @@ public class SnapshotProcessorTest {
 
         assertEquals(peer, jobArg.getValue().getSender());
         assertEquals(msg, jobArg.getValue().getMsg());
+    }
+
+    @Test
+    void givenErrorRLPData_thenOnStateChunkErrorIsCalled() {
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                TEST_CHUNK_SIZE,
+                false);
+
+        PriorityQueue<SnapStateChunkResponseMessage> queue = new PriorityQueue<>(
+                Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom));
+        when(snapSyncState.getSnapStateChunkQueue()).thenReturn(queue);
+        when(snapSyncState.getChunkTaskQueue()).thenReturn(new LinkedList<>());
+        SnapStateChunkResponseMessage responseMessage = mock(SnapStateChunkResponseMessage.class);
+        when(snapSyncState.getNextExpectedFrom()).thenReturn(1L);
+        when(responseMessage.getFrom()).thenReturn(1L);
+        when(responseMessage.getChunkOfTrieKeyValue()).thenReturn(RLP.encodedEmptyList());
+        underTest = spy(underTest);
+
+        underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
+
+        verify(snapSyncState, times(1)).onNewChunk();
+        verify(underTest, times(1)).onStateChunkResponseError(peer, responseMessage);
+        verify(peer, times(1)).sendMessage(any(SnapStateChunkRequestMessage.class));
+
     }
 
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {

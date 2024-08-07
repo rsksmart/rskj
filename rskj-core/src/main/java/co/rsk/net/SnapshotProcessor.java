@@ -247,7 +247,6 @@ public class SnapshotProcessor implements InternalService {
         sender.sendMessage(responseMessage);
     }
 
-    //TODO no multipeer here.
     public void processSnapBlocksResponse(SnapSyncState state, Peer sender, SnapBlocksResponseMessage responseMessage) {
         long lastRequiredBlock = state.getLastBlock().getNumber() - BLOCKS_REQUIRED;
         List<Block> blocksFromResponse = responseMessage.getBlocks();
@@ -363,7 +362,8 @@ public class SnapshotProcessor implements InternalService {
         }
     }
 
-    private void onStateChunkResponseError(Peer peer, SnapStateChunkResponseMessage responseMessage) {
+    @VisibleForTesting
+    void onStateChunkResponseError(Peer peer, SnapStateChunkResponseMessage responseMessage) {
         logger.error("Error while processing chunk response from {} of peer {}. Asking for chunk again.", responseMessage.getFrom(), peer.getPeerNodeID());
         Peer alternativePeer = peersInformation.getBestSnapPeerCandidates().stream()
                 .filter(listedPeer -> !listedPeer.getPeerNodeID().equals(peer.getPeerNodeID()))
