@@ -44,8 +44,8 @@ class BlockConnectorHelperTest {
 
     @Test
     void testStartConnectingWhenBlockListIsEmpty() {
-        blockConnectorHelper = new BlockConnectorHelper(blockStore, Collections.emptyList());
-        blockConnectorHelper.startConnecting();
+        blockConnectorHelper = new BlockConnectorHelper(blockStore);
+        blockConnectorHelper.startConnecting(Collections.emptyList());
         verify(blockStore, never()).saveBlock(any(), any(), anyBoolean());
     }
 
@@ -69,9 +69,9 @@ class BlockConnectorHelperTest {
         blockAndDifficultiesList = buildBlockDifficulties(Arrays.asList(block1, block2,block3),
                 Arrays.asList(diff1, diff2,diff3));
 
-        blockConnectorHelper = new BlockConnectorHelper(blockStore, blockAndDifficultiesList);
+        blockConnectorHelper = new BlockConnectorHelper(blockStore);
 
-        blockConnectorHelper.startConnecting();
+        blockConnectorHelper.startConnecting(blockAndDifficultiesList);
 
         verify(blockStore, times(3)).saveBlock(blockCaptor.capture(), difficultyCaptor.capture(), anyBoolean());
         verify(blockStore, times(0)).getBestBlock();
@@ -101,9 +101,9 @@ class BlockConnectorHelperTest {
         blockAndDifficultiesList = buildBlockDifficulties(Arrays.asList(block2, block1),
                 Arrays.asList(diff2, diff1));
 
-        blockConnectorHelper = new BlockConnectorHelper(blockStore, blockAndDifficultiesList);
+        blockConnectorHelper = new BlockConnectorHelper(blockStore);
 
-        blockConnectorHelper.startConnecting();
+        blockConnectorHelper.startConnecting(blockAndDifficultiesList);
 
         verify(blockStore, times(2)).saveBlock(blockCaptor.capture(), difficultyCaptor.capture(), anyBoolean());
         verify(blockStore, times(0)).getBestBlock();
@@ -131,9 +131,9 @@ class BlockConnectorHelperTest {
         when(blockStore.getBestBlock()).thenReturn(block3);
 
         blockAndDifficultiesList = buildBlockDifficulties(Arrays.asList(block1, block2), Arrays.asList(mock(BlockDifficulty.class), mock(BlockDifficulty.class)));
-        blockConnectorHelper = new BlockConnectorHelper(blockStore, blockAndDifficultiesList);
+        blockConnectorHelper = new BlockConnectorHelper(blockStore);
 
-        blockConnectorHelper.startConnecting();
+        blockConnectorHelper.startConnecting(blockAndDifficultiesList);
         verify(blockStore, times(1)).getBestBlock();
         verify(blockStore, times(2)).saveBlock(any(), any(), anyBoolean());
     }
@@ -148,12 +148,12 @@ class BlockConnectorHelperTest {
         blockAndDifficultiesList = buildBlockDifficulties(Collections.singletonList(block2),
                 Collections.singletonList(mock(BlockDifficulty.class)));
 
-        blockConnectorHelper = new BlockConnectorHelper(blockStore, blockAndDifficultiesList);
+        blockConnectorHelper = new BlockConnectorHelper(blockStore);
 
         when(blockStore.isEmpty()).thenReturn(false);
         when(blockStore.getBestBlock()).thenReturn(block3);
 
-        assertThrows(BlockConnectorException.class, () -> blockConnectorHelper.startConnecting());
+        assertThrows(BlockConnectorException.class, () -> blockConnectorHelper.startConnecting(blockAndDifficultiesList));
     }
 
     @Test
@@ -166,9 +166,9 @@ class BlockConnectorHelperTest {
         when(blockStore.isEmpty()).thenReturn(true);
         blockAndDifficultiesList = buildBlockDifficulties(Arrays.asList(block1, block2),
                 Arrays.asList(mock(BlockDifficulty.class), mock(BlockDifficulty.class)));
-        blockConnectorHelper = new BlockConnectorHelper(blockStore, blockAndDifficultiesList);
+        blockConnectorHelper = new BlockConnectorHelper(blockStore);
 
-        assertThrows(BlockConnectorException.class, () -> blockConnectorHelper.startConnecting());
+        assertThrows(BlockConnectorException.class, () -> blockConnectorHelper.startConnecting(blockAndDifficultiesList));
     }
 
     List<Pair<Block,BlockDifficulty>> buildBlockDifficulties(List<Block> blocks, List<BlockDifficulty> difficulties) {
