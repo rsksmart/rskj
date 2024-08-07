@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants();
     private static final List<BtcECKey> defaultFederationPublicKeys = Collections.unmodifiableList(Stream.of(
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
@@ -80,9 +79,5 @@ public class BridgeRegTestConstants extends BridgeConstants {
         pegoutTxIndexGracePeriodInBtcBlocks = 100;
 
         blockWithTooMuchChainWorkHeight = Integer.MAX_VALUE;
-    }
-
-    public static BridgeRegTestConstants getInstance() {
-        return instance;
     }
 }
