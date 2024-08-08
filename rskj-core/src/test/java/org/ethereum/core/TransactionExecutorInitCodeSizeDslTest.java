@@ -33,9 +33,43 @@ import java.io.FileNotFoundException;
 public class TransactionExecutorInitCodeSizeDslTest {
 
     @Test
-    void testInitCodeSizeValidation() throws FileNotFoundException, DslProcessorException {
+    void testInitCodeSizeValidationSuccess() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_activated.txt");
         World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
+        Assertions.assertNotNull(contractCreationTransaction);
+        Block bestBlock = world.getBlockByName("b01");
+        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+    }
+
+    @Test
+    void testInitCodeSizeValidationFailsDueNotEnoughGas() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_just_enough_gas.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
+        Assertions.assertNotNull(contractCreationTransaction);
+        Block bestBlock = world.getBlockByName("b01");
+        Assertions.assertEquals(0, bestBlock.getTransactionsList().size());
+    }
+
+    @Test
+    void testInitCodeSizeValidationDoesntFailDueNotEnoughGasIfRSKIPNotActivated() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
+
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_just_enough_gas_without_rskip_activated.txt");
+        World world = new World(rskip438Disabled);
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
