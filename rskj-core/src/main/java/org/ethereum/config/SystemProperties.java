@@ -20,9 +20,9 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.config.ConfigLoader;
 import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.config.ConfigLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -38,7 +38,13 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -46,7 +52,12 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -297,6 +308,14 @@ public abstract class SystemProperties {
         });
 
         return ret;
+    }
+
+    public List<Node> getSnapBootNodes() {
+        if (!configFromFiles.hasPath("sync.snapshot.client.snapBootNodes")) {
+            return Collections.emptyList();
+        }
+        List<? extends ConfigObject> list = configFromFiles.getObjectList("sync.snapshot.client.snapBootNodes");
+        return list.stream().map(this::parsePeer).collect(Collectors.toList());
     }
 
     public Integer peerChannelReadTimeout() {

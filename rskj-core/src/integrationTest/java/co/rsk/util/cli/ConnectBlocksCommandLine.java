@@ -20,17 +20,29 @@
 package co.rsk.util.cli;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class ConnectBlocksCommandLine extends RskjCommandLineBase {
 
-    public ConnectBlocksCommandLine(String filePath){
-        super ("co.rsk.cli.tools.ConnectBlocks",
-                new String[]{},
-                new String[]{"-f", filePath, "--regtest"});
+    public ConnectBlocksCommandLine(String filePath) {
+        this(filePath, null);
+    }
+
+    public ConnectBlocksCommandLine(String filePath, Path dbDir) {
+        super("co.rsk.cli.tools.ConnectBlocks",
+                new String[]{ "-Dlogging.dir=./build/tmp" },
+                makeArgs(filePath, dbDir));
     }
 
     @Override
     public Process executeCommand() throws IOException, InterruptedException {
         return super.executeCommand(10);
+    }
+
+    private static String[] makeArgs(String filePath, Path dbDir) {
+        if (dbDir == null) {
+            return new String[]{"-f", filePath, "--regtest"};
+        }
+        return new String[]{"-f", filePath, "-Xdatabase.dir=" + dbDir, "--regtest"};
     }
 }

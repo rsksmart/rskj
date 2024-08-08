@@ -19,6 +19,9 @@ package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
+import co.rsk.net.messages.SnapBlocksResponseMessage;
+import co.rsk.net.messages.SnapStateChunkResponseMessage;
+import co.rsk.net.messages.SnapStatusResponseMessage;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
@@ -39,6 +42,12 @@ public interface SyncState {
     void newPeerStatus();
 
     void newSkeleton(List<BlockIdentifier> skeletonChunk, Peer peer);
+
+    void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage);
+
+    void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage);
+
+    void onSnapStateChunk(Peer peer, SnapStateChunkResponseMessage responseMessage);
 
     void onEnter();
 
