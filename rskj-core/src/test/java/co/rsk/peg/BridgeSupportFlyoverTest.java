@@ -25,9 +25,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -3134,6 +3132,7 @@ class BridgeSupportFlyoverTest {
             btcContext,
             feePerKbSupport,
             whitelistSupport,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3336,9 +3335,9 @@ class BridgeSupportFlyoverTest {
             repository,
             mock(Block.class),
             btcContext,
-            federationSupport,
             feePerKbSupport,
             whitelistSupport,
+            federationSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3447,9 +3446,9 @@ class BridgeSupportFlyoverTest {
             mock(Repository.class),
             mock(Block.class),
             mock(Context.class),
-            federationSupport,
             feePerKbSupport,
             whitelistSupport,
+            federationSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
