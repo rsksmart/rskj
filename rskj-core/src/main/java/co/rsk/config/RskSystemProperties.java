@@ -31,6 +31,7 @@ import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.listener.GasPriceCalculator;
+import org.ethereum.net.client.Capability;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
@@ -412,6 +413,17 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean isServerSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.server.enabled");}
     public boolean isClientSnapshotSyncEnabled() { return configFromFiles.getBoolean(PROPERTY_SNAP_CLIENT_ENABLED);}
+
+    @Override
+    public List<String> peerCapabilities() {
+        List<String> capabilities = super.peerCapabilities();
+
+        if (isServerSnapshotSyncEnabled()) {
+            capabilities.add(Capability.SNAP);
+        }
+
+        return capabilities;
+    }
 
     public int getSnapshotChunkTimeout() {
         return configFromFiles.getInt("sync.snapshot.client.chunkRequestTimeout");

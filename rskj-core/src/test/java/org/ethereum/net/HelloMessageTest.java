@@ -70,6 +70,7 @@ class HelloMessageTest {
         String clientStr = "Ethereum(++)/v0.7.9/Release/Linux/g++";
         List<Capability> capabilities = Arrays.asList(
                 new Capability(Capability.RSK, EthVersion.UPPER),
+                new Capability(Capability.SNAP, EthVersion.UPPER),
                 new Capability(Capability.P2P, P2pHandler.VERSION));
         int listenPort = 992;
         String peerId = "1fbf1e41f08078918c9f7b6734594ee56d7f538614f602c71194db0a1af5a";
@@ -80,7 +81,7 @@ class HelloMessageTest {
         assertEquals(P2pMessageCodes.HELLO, helloMessage.getCommand());
         assertEquals(version, helloMessage.getP2PVersion());
         assertEquals(clientStr, helloMessage.getClientId());
-        assertEquals(2, helloMessage.getCapabilities().size());
+        assertEquals(3, helloMessage.getCapabilities().size());
         assertEquals(listenPort, helloMessage.getListenPort());
         assertEquals(peerId, helloMessage.getPeerId());
     }
