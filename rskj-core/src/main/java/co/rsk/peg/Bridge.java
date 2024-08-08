@@ -1168,7 +1168,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         } catch (LockingCapIllegalArgumentException e) {
-            throw new BridgeIllegalArgumentException(e.getMessage());
+            throw new BridgeIllegalArgumentException(e);
         }
     }
 
