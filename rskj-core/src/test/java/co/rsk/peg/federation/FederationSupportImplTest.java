@@ -17,8 +17,10 @@
  */
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,7 +36,6 @@ import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
@@ -2410,10 +2411,25 @@ class FederationSupportImplTest {
             assertEquals(rskExecutionBlockNumber, nextFederationCreationBlockHeight.get());
 
             // assert last retired federation p2sh script was set correctly
-            Script activeFederationMembersP2SHScript = FederationTestUtils.getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
+            Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
             Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
             assertTrue(lastRetiredFederationP2SHScript.isPresent());
             assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
+        }
+
+        private Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
+            // when the federation is a standard multisig,
+            // the members p2sh script is the p2sh script
+            if (!activations.isActive(RSKIP377)) {
+                return federation.getP2SHScript();
+            }
+            if (!(federation instanceof ErpFederation)) {
+                return federation.getP2SHScript();
+            }
+
+            // when the federation also has erp keys,
+            // the members p2sh script is the default p2sh script
+            return ((ErpFederation) federation).getDefaultP2SHScript();
         }
 
         private void assertFederationChangeInfoWasNotSet() {
