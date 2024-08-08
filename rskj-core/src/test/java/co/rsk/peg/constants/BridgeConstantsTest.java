@@ -6,10 +6,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.federation.constants.FederationRegTestConstants;
+import co.rsk.peg.federation.constants.FederationTestNetConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
+import co.rsk.peg.feeperkb.constants.FeePerKbTestNetConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapTestNetConstants;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
+import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
+import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -80,6 +92,64 @@ class BridgeConstantsTest {
 
         // assert
         assertEquals(expectedValue, pegoutTxIndexGracePeriodInBtcBlocks);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getFeePerKbConstantsProvider")
+    void getFeePerKbConstants(BridgeConstants bridgeConstants, FeePerKbConstants expectedValue) {
+        // Act
+        FeePerKbConstants actualFeePerKbConstants = bridgeConstants.getFeePerKbConstants();
+
+        // Assert
+        assertEquals(expectedValue, actualFeePerKbConstants);
+        assertInstanceOf(expectedValue.getClass(), actualFeePerKbConstants);
+    }
+
+    private static Stream<Arguments> getFeePerKbConstantsProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), FeePerKbMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance(), FeePerKbTestNetConstants.getInstance()),
+            Arguments.of(new BridgeRegTestConstants(), FeePerKbRegTestConstants.getInstance())
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getWhitelistConstantsProvider")
+    void getWhitelistConstants(BridgeConstants bridgeConstants, WhitelistConstants expectedValue) {
+        // Act
+        WhitelistConstants actualWhitelistConstants = bridgeConstants.getWhitelistConstants();
+
+        // Assert
+        assertEquals(expectedValue, actualWhitelistConstants);
+        assertInstanceOf(expectedValue.getClass(), actualWhitelistConstants);
+    }
+
+    private static Stream<Arguments> getWhitelistConstantsProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), WhitelistMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance(), WhitelistTestNetConstants.getInstance()),
+            Arguments.of(new BridgeRegTestConstants(), WhitelistRegTestConstants.getInstance())
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("getFederationConstantsProvider")
+    void getFederationConstants(BridgeConstants bridgeConstants, FederationConstants expectedValue) {
+        // Act
+        FederationConstants actualFederationConstants = bridgeConstants.getFederationConstants();
+
+        // Assert
+        assertInstanceOf(expectedValue.getClass(), actualFederationConstants);
+    }
+
+    private static Stream<Arguments> getFederationConstantsProvider() {
+        BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+        FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), FederationMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance(), FederationTestNetConstants.getInstance()),
+            Arguments.of(bridgeRegTestConstants, new FederationRegTestConstants(federationRegTestConstants.getGenesisFederationPublicKeys()))
+        );
     }
 
     @ParameterizedTest()
