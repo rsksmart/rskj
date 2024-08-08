@@ -79,7 +79,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.storage.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -96,11 +96,16 @@ class BridgeSupportTest {
     private final FederationConstants federationConstantsMainnet = bridgeMainNetConstants.getFederationConstants();
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
-    private StorageAccessor bridgeStorageAccessor;
+
+    private BridgeStorageProvider bridgeStorageProvider;
     private BridgeSupportBuilder bridgeSupportBuilder;
-    private FederationSupportBuilder federationSupportBuilder;
-    private WhitelistSupport whitelistSupport;
+    private StorageAccessor bridgeStorageAccessor;
+    private FederationStorageProvider federationStorageProvider;
     private WhitelistStorageProvider whitelistStorageProvider;
+    private LockingCapStorageProvider lockingCapStorageProvider;
+    private FederationSupportBuilder federationSupportBuilder;
+    private FederationSupport federationSupport;
+    private WhitelistSupport whitelistSupport;
     private LockingCapSupport lockingCapSupport;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -112,22 +117,33 @@ class BridgeSupportTest {
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-    protected ActivationConfig.ForBlock activationsBeforeForks;
-    protected ActivationConfig.ForBlock activationsAfterForks;
+    private ActivationConfig.ForBlock activationsBeforeForks;
+    private ActivationConfig.ForBlock activationsAfterForks;
 
-    protected SignatureCache signatureCache;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
+        Repository repository = createRepository();
+        bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, activationsAfterForks);
         bridgeSupportBuilder = new BridgeSupportBuilder();
-        federationSupportBuilder = new FederationSupportBuilder();
+
         bridgeStorageAccessor = new InMemoryStorage();
         whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+
+        federationSupportBuilder = new FederationSupportBuilder();
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsMainnet)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activationsAfterForks)
+            .build();
         whitelistSupport = new WhitelistSupportImpl(WhitelistMainNetConstants.getInstance(), whitelistStorageProvider, mock(ActivationConfig.ForBlock.class), signatureCache);
-        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, mock(ActivationConfig.ForBlock.class), LockingCapMainNetConstants.getInstance(), signatureCache);
     }
 
@@ -442,16 +458,7 @@ class BridgeSupportTest {
     @Test
     void createAndProcessSvpFundTransactionWithoutSignatures_whenSvpFundTxIsCreated_addsItToPegoutsWaitingConfirmationsAndSavesPegoutTxSigHash() throws Exception {
         // arrange
-        Repository repository = createRepository();
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, btcMainnetParams, activationsAfterForks);
-
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        FederationSupport federationSupport = federationSupportBuilder
-            .withFederationStorageProvider(federationStorageProvider)
-            .withFederationConstants(bridgeMainNetConstants.getFederationConstants())
-            .withActivations(activationsAfterForks)
-            .build();
-
+        // arrange bridge support
         Coin feePerKb = Coin.valueOf(1000);
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
@@ -474,11 +481,11 @@ class BridgeSupportTest {
         List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFed.getAddress());
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
+        // set proposed federation
         Federation proposedFederation = new P2shErpFederationBuilder().build();
         federationStorageProvider.setProposedFederation(proposedFederation);
 
         // act
-
         BtcTransaction svpFundTransaction = bridgeSupport.createSvpFundTransactionWithoutSignatures();
         bridgeSupport.createAndProcessSvpFundTransactionWithoutSignatures();
         bridgeStorageProvider.save(); // to save the tx sig hash
@@ -7993,7 +8000,6 @@ class BridgeSupportTest {
 
         Repository repository = createRepository();
 
-        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(new BridgeStorageAccessorImpl(repository));
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, lockingCapConstants, signatureCache);
 
         Federation oldFederation = PegTestUtils.createSimpleActiveFederation(bridgeConstants);
