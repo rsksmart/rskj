@@ -17,8 +17,8 @@
  */
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.storage.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
-import static co.rsk.peg.storage.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

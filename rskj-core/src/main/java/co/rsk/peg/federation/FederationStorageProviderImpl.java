@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-import static co.rsk.peg.storage.FederationStorageIndexKey.*;
+import static co.rsk.peg.federation.FederationStorageIndexKey.*;
 import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
