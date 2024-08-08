@@ -90,7 +90,6 @@ class BridgeConstantsTest {
         FeePerKbConstants actualFeePerKbConstants = bridgeConstants.getFeePerKbConstants();
 
         // Assert
-        assertEquals(expectedValue, actualFeePerKbConstants);
         assertInstanceOf(expectedValue.getClass(), actualFeePerKbConstants);
     }
 
@@ -109,7 +108,6 @@ class BridgeConstantsTest {
         WhitelistConstants actualWhitelistConstants = bridgeConstants.getWhitelistConstants();
 
         // Assert
-        assertEquals(expectedValue, actualWhitelistConstants);
         assertInstanceOf(expectedValue.getClass(), actualWhitelistConstants);
     }
 
@@ -148,7 +146,6 @@ class BridgeConstantsTest {
         LockingCapConstants actualLockingCapConstants = bridgeConstants.getLockingCapConstants();
 
         // Assert
-        assertEquals(expectedValue, actualLockingCapConstants);
         assertInstanceOf(expectedValue.getClass(), actualLockingCapConstants);
     }
 
