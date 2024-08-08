@@ -6,22 +6,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.federation.constants.FederationMainNetConstants;
-import co.rsk.peg.federation.constants.FederationRegTestConstants;
-import co.rsk.peg.federation.constants.FederationTestNetConstants;
-import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
-import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
-import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
-import co.rsk.peg.feeperkb.constants.FeePerKbTestNetConstants;
-import co.rsk.peg.lockingcap.constants.LockingCapConstants;
-import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
-import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
-import co.rsk.peg.lockingcap.constants.LockingCapTestNetConstants;
-import co.rsk.peg.whitelist.constants.WhitelistConstants;
-import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
-import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
-import co.rsk.peg.whitelist.constants.WhitelistTestNetConstants;
+import co.rsk.peg.federation.constants.*;
+import co.rsk.peg.feeperkb.constants.*;
+import co.rsk.peg.lockingcap.constants.*;
+import co.rsk.peg.whitelist.constants.*;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -43,10 +31,11 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("minimumPeginTxValueArgProvider")
-    void test_getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
+    void getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(isRSKIP219Active);
+
         // Act
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
 
@@ -68,7 +57,7 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("getBtcHeightWhenPegoutTxIndexActivatesArgProvider")
-    void test_getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants, int expectedValue){
+    void getBtcHeightWhenPegoutTxIndexActivates(BridgeConstants bridgeConstants, int expectedValue){
         // Act
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
 
