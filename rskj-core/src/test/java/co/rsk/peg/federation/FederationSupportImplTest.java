@@ -34,7 +34,6 @@ import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
@@ -2840,7 +2839,7 @@ class FederationSupportImplTest {
             ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
             ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
-            ECKey differentFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(400));;
+            ECKey differentFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(400));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -3101,9 +3100,9 @@ class FederationSupportImplTest {
             // Voting commit new fed with m of n authorizers
             federationSupport.voteFederationChange(firstAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            Exception exception = assertThrows(Exception.class, () -> {
-                federationSupport.voteFederationChange(secondAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            });
+            Exception exception = assertThrows(Exception.class, () ->
+                federationSupport.voteFederationChange(secondAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger)
+            );
 
             assertEquals("The script size is 525, that is above the maximum allowed.", exception.getMessage());
         }
