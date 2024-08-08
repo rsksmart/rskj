@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.util.HexUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -40,13 +41,20 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 class TransactionTest {
@@ -290,7 +298,7 @@ class TransactionTest {
                 return super.executeTransaction(tx);
             }
         }.setstateTestUSeREMASC(true).runImpl();
-        Assertions.assertTrue(res.isEmpty(), res.toString());
+        assertTrue(res.isEmpty(), res.toString());
     }
 
     @Test
@@ -309,9 +317,9 @@ class TransactionTest {
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = ByteUtil.toHexString(encoded);
-        Assertions.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
+        assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
         String strhash = ByteUtil.toHexString(hash);
-        Assertions.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
+        assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
     }
@@ -330,9 +338,9 @@ class TransactionTest {
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = ByteUtil.toHexString(encoded);
-        Assertions.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
+        assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
         String strhash = ByteUtil.toHexString(hash);
-        Assertions.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
+        assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
     }
@@ -343,7 +351,7 @@ class TransactionTest {
                 .builder()
                 .destination(RskAddress.nullAddress())
                 .build();
-        Assertions.assertTrue(tx.isContractCreation());
+        assertTrue(tx.isContractCreation());
     }
 
     @Test
@@ -357,7 +365,7 @@ class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assertions.assertTrue(tx.isContractCreation());
+        assertTrue(tx.isContractCreation());
     }
 
     @Test
@@ -372,7 +380,7 @@ class TransactionTest {
 
         byte[] zeroAddress = Hex.decode("00");
 
-        Assertions.assertThrows(RuntimeException.class, () -> builder.destination(zeroAddress));
+        assertThrows(RuntimeException.class, () -> builder.destination(zeroAddress));
     }
 
     @Test
@@ -386,7 +394,7 @@ class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assertions.assertFalse(tx.isContractCreation());
+        assertFalse(tx.isContractCreation());
     }
 
     @Test
@@ -400,7 +408,7 @@ class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assertions.assertFalse(tx.isContractCreation());
+        assertFalse(tx.isContractCreation());
     }
 
     @Test
@@ -414,7 +422,7 @@ class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assertions.assertFalse(tx.isContractCreation());
+        assertFalse(tx.isContractCreation());
     }
 
     @Test
@@ -432,14 +440,14 @@ class TransactionTest {
 
         byte[] vData = rlpList.get(6).getRLPData();
 
-        Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, vData[0]);
-        Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, originalTransaction.getEncodedV());
+        assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, vData[0]);
+        assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, originalTransaction.getEncodedV());
 
         Transaction transaction = new ImmutableTransaction(encoded);
 
-        Assertions.assertEquals(chainId, transaction.getChainId());
-        Assertions.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
-        Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
+        assertEquals(chainId, transaction.getChainId());
+        assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
+        assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
     }
 
     @Test
@@ -451,7 +459,7 @@ class TransactionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         Mockito.doReturn(false).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP400));
 
-        Assertions.assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
+        assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
 
     @Test
@@ -463,7 +471,58 @@ class TransactionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP400));
 
-        Assertions.assertEquals(21016L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
+        assertEquals(21016L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
+    }
+
+    @Test
+    void testTransactionCostWithRSKIP438Enabled() {
+        byte[] bytes = new byte[]{-8, 96, -128, 8, -126, -61, 80, -108, -31, 126, -117, -65, -39, -94, 75, -27, 104, -101, 13, -118, 50, 8, 31, -83, -40, -94, 59, 107, 7, -127, -1, 102, -96, -63, -110, 91, -2, 42, -19, 18, 4, 67, -64, 48, -45, -85, -123, 41, 14, -48, -124, 118, 21, -63, -39, -45, 67, 116, -103, 93, 37, 4, 88, -61, 49, -96, 77, -30, -116, 59, -58, -82, -95, 76, 46, 124, 115, -32, -80, 125, 30, -42, -75, -111, -49, -41, 121, -73, -121, -68, -41, 72, -120, 94, 82, 42, 17, 61};
+        Transaction txInBlock = new ImmutableTransaction(bytes);
+
+        Constants constants = Mockito.mock(Constants.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
+
+        assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initCodeCostInputArguments")
+    void testTransactionInitCodeCostCalculation(long expectedCost, byte[] rawData) {
+        // given
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        byte[] gasPrice = Hex.decode("09184e72a000"); // 10000000000000
+        byte[] gas = Hex.decode("03e8");           // 1000
+        byte[] receiveAddress = null;
+
+        Transaction transaction = Transaction.builder()
+                .nonce(BigIntegers.asUnsignedByteArray(BigInteger.ZERO))
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(receiveAddress)
+                .data(rawData)
+                .build();
+
+        transaction.sign(senderPrivKey);
+        byte[] payload = transaction.getEncoded();
+
+        Transaction tx = new ImmutableTransaction(payload);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
+        // when
+        long initCodeCost = tx.getTxInitCodeCost(activations);
+
+        // then
+        assertEquals(expectedCost, initCodeCost);
+    }
+
+    private static Stream<Arguments> initCodeCostInputArguments() {
+        return Stream.of(
+                Arguments.of(2,  new byte[]{0, 1, 2, 3}),
+                Arguments.of(4, Hex.decode("fd5fa123fd5fa123a31231000076890afd5fa123a31231000076890afd5fa123a31231000076890a")),
+                Arguments.of(6, Hex.decode("fd5fa123a31231000076890abcfff41239123912323123fd5fa123afd5fa12fd5fa123a31231000076890afd5fa123a31231000076890a3a31231000076890a31231000076890a"))
+        );
     }
 }
 

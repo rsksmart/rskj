@@ -81,6 +81,10 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
+        if(tx.isInitCodeSizeInvalidForTx(activationConfig.forBlock(bestBlockNumber))) {
+            return TransactionValidationResult.withError("transaction's init code size is invalid");
+        }
+
         if (tx.getSize() > TX_MAX_SIZE) {
             return TransactionValidationResult.withError(String.format("transaction's size is higher than defined maximum: %s > %s", tx.getSize(), TX_MAX_SIZE));
         }
