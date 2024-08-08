@@ -612,7 +612,7 @@ public class FederationSupportImpl implements FederationSupport {
      * PENDING_FEDERATION_MISMATCHED_HASH if the given hash doesn't match the current pending federation's hash.
      * SUCCESSFUL upon success.
      */
-    protected FederationChangeResponseCode commitFederation(boolean dryRun, Keccak256 pendingFederationHash, BridgeEventLogger eventLogger) {
+    private FederationChangeResponseCode commitFederation(boolean dryRun, Keccak256 pendingFederationHash, BridgeEventLogger eventLogger) {
         // first check that we can commit the pending federation
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
@@ -727,7 +727,7 @@ public class FederationSupportImpl implements FederationSupport {
         provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
     }
 
-    protected Script getFederationMembersP2SHScript(Federation federation) {
+    private Script getFederationMembersP2SHScript(Federation federation) {
         // when the federation is a standard multisig,
         // the members p2sh script is the p2sh script
         if (!activations.isActive(RSKIP377)) {
