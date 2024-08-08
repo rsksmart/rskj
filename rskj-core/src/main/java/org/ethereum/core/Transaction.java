@@ -27,6 +27,7 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import co.rsk.util.ListArrayUtil;
+import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -217,11 +218,19 @@ public class Transaction {
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
     }
 
-    private long getTxInitCodeCost(ActivationConfig.ForBlock activations) {
+    public long getTxInitCodeCost(ActivationConfig.ForBlock activations) {
         if( activations.isActive(ConsensusRule.RSKIP438) ) {
             return  INITCODE_WORD_COST  *  (long) Math.ceil((double) getLength(this.getData()) / 32);
         }
         return 0;
+    }
+
+    public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
+        int initCodeSize = getLength(this.getData());
+
+        return this.isContractCreation()
+                && activations.isActive(ConsensusRule.RSKIP438)
+                && initCodeSize > Constants.getMaxInitCodeSize();
     }
 
     private static long getTxNonZeroDataCost(ActivationConfig.ForBlock activations) {

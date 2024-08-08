@@ -107,7 +107,7 @@ class DslFilesTest {
         Assertions.assertNotNull(txinfo);
         BigInteger gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed());
 
-        Assertions.assertNotEquals(BigInteger.ZERO, gasUsed);
+        Assertions.assertEquals(64857, gasUsed);
         Assertions.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("fd59")), gasUsed);
     }
 

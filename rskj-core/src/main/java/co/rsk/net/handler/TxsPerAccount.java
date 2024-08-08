@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
+//TODO: Maybe move this to a test class?
 public class TxsPerAccount {
 
     private List<Transaction> txs = new LinkedList<>();

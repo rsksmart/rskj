@@ -155,13 +155,11 @@ public class TransactionExecutor {
             return true;
         }
 
-        if (isInitCodeSizeInvalidForTx(tx)) {
+        if (tx.isInitCodeSizeInvalidForTx(activations)) {
 
             String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
 
             logger.warn(errorMessage);
-            logger.warn("Transaction Data: {}", tx);
-            logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             execError(errorMessage);
 
@@ -207,13 +205,6 @@ public class TransactionExecutor {
         return true;
     }
 
-    private boolean isInitCodeSizeInvalidForTx(Transaction tx) {
-        int initCodeSize = getLength(tx.getData());
-
-        return tx.isContractCreation()
-                && activations.isActive(ConsensusRule.RSKIP438)
-                && initCodeSize > Constants.getMaxInitCodeSize();
-    }
 
     private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
@@ -436,7 +427,7 @@ public class TransactionExecutor {
 
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
-        if (vm == null || program.getResult().getException() != null) {
+        if (vm == null) {
             cacheTrack.commit();
             return;
         }
