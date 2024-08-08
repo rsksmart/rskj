@@ -68,6 +68,7 @@ import org.ethereum.core.Transaction;
 
 class FederationSupportImplTest {
 
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
     private ErpFederation newFederation;
@@ -2189,6 +2190,28 @@ class FederationSupportImplTest {
         // check the old federation was removed
         oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         assertThat(oldFederation, is(nullValue()));
+    }
+
+    @Test
+    void createAndProcessSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException {
+        // arrange
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withActivations(allActivations)
+            .build();
+        Federation proposedFed = new P2shErpFederationBuilder().build();
+        storageProvider.setProposedFederation(proposedFed);
+        // make the active fed to have utxos to spend
+        Federation activeFed = federationSupport.getActiveFederation();
+        List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFed.getAddress());
+        storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        // act
+        Coin feePerKb = Coin.valueOf(1000);
+        federationSupport.createAndSetSvpFundTransactionWithoutSignatures(feePerKb);
+
+        Optional<Sha256Hash> svpFundTransactionHashUnsigned = storageProvider.getSvpFundTxHashUnsigned(allActivations);
+        assertTrue(svpFundTransactionHashUnsigned.isPresent());
     }
 
     @Test

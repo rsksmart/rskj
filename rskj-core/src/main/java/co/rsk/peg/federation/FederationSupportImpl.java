@@ -1,8 +1,6 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
@@ -30,6 +28,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationSupportImpl implements FederationSupport {
@@ -746,6 +746,82 @@ public class FederationSupportImpl implements FederationSupport {
     private void logCommitmentWithVotedFederation(BridgeEventLogger eventLogger, Federation federationToBeRetired, Federation votedFederation) {
         eventLogger.logCommitFederation(rskExecutionBlock, federationToBeRetired, votedFederation);
         logger.debug("[logCommitmentWithVotedFederation] Voted federation committed: {}", votedFederation.getAddress());
+    }
+
+    @Override
+    public BtcTransaction createAndSetSvpFundTransactionWithoutSignatures(Coin feePerKb) throws InsufficientMoneyException {
+        Optional<Federation> proposedFederationOpt = provider.getProposedFederation(constants, activations);
+        if (!proposedFederationOpt.isPresent()) {
+            String message = "Proposed federation should be present when creating SVP fund transaction.";
+            logger.warn(message);
+            throw new IllegalStateException(message);
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        BtcTransaction svpFundTransaction = new BtcTransaction(constants.getBtcParams());
+        svpFundTransaction.setVersion(BTC_TX_VERSION_2);
+
+        long transactionSizeToBeSentFromProposedFederation = calculateTransactionSizeToBeSentFromFederation(proposedFederation);
+        Coin neededValueToSendFromProposedFederation = feePerKb.multiply(transactionSizeToBeSentFromProposedFederation);
+
+        List<UTXO> availableUTXOs = getActiveFederationBtcUTXOs();
+        UTXO selectedUTXO = getUtxoWithEnoughValue(availableUTXOs, neededValueToSendFromProposedFederation, feePerKb);
+
+        // add input
+        Script scriptSig = createBaseInputScriptThatSpendsFromTheFederation(getActiveFederation());
+        svpFundTransaction.addInput(selectedUTXO.getHash(), selectedUTXO.getIndex(), scriptSig);
+
+        // add proposed federation and change outputs
+        svpFundTransaction.addOutput(neededValueToSendFromProposedFederation, proposedFederation.getAddress());
+        Coin change = selectedUTXO.getValue().minus(neededValueToSendFromProposedFederation);
+        svpFundTransaction.addOutput(change, getActiveFederationAddress());
+
+        provider.setSvpFundTxHashUnsigned(svpFundTransaction.getHash());
+        return svpFundTransaction;
+    }
+
+    private UTXO getUtxoWithEnoughValue(List<UTXO> availableUTXOs, Coin valueNeededToBeCovered, Coin feePerKb) throws InsufficientMoneyException {
+        long transactionSizeToBeSentFromActiveFederation = calculateTransactionSizeToBeSentFromFederation(getActiveFederation());
+        Coin minimumChangeAllowed = feePerKb.multiply(transactionSizeToBeSentFromActiveFederation);
+
+        for (UTXO utxo : availableUTXOs) {
+            Coin value = utxo.getValue();
+            Coin change = value.minus(valueNeededToBeCovered);
+
+            if (change.isGreaterThan(minimumChangeAllowed)) {
+                return utxo;
+            }
+        }
+
+        throw new InsufficientMoneyException(valueNeededToBeCovered.add(minimumChangeAllowed));
+    }
+
+    private long calculateTransactionSizeToBeSentFromFederation(Federation federation) {
+        long inputInfo = 36;
+        long outputInfo = 32;
+
+        long scriptSigSize = getFederationScriptSigSize(federation);
+        long txBaseSize = inputInfo + outputInfo + scriptSigSize;
+        long txTotalSize = inputInfo + outputInfo + getFederationTransactionWitnessSize(federation);
+
+        return (3 * txBaseSize + txTotalSize) / 4;
+    }
+
+    private int getFederationScriptSigSize(Federation federation) {
+/*        if (federation.isWrappedSegwit()) // TODO how to do this {
+            return 36;
+        }
+        if (federation.isSegwit()) {
+            return 0;
+        }*/
+
+        return getFederationTransactionWitnessSize(federation);
+    }
+
+    private int getFederationTransactionWitnessSize(Federation federation) {
+        int redeemScriptSize = federation.getRedeemScript().getProgram().length;
+        int neededSignaturesSize = 72 * federation.getNumberOfSignaturesRequired();
+        return redeemScriptSize + neededSignaturesSize;
     }
 
     /**

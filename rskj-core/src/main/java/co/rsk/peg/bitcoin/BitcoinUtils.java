@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.peg.federation.Federation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,5 +61,10 @@ public class BitcoinUtils {
             );
             return Optional.empty();
         }
+    }
+
+    public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
+        Script scriptPubKey = federation.getP2SHScript();
+        return scriptPubKey.createEmptyInputScript(null, federation.getRedeemScript());
     }
 }

@@ -966,6 +966,19 @@ public class BridgeSupport {
         updateFederationCreationBlockHeights();
     }
 
+    protected void createAndProcessSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException, IOException {
+        BtcTransaction svpFundTransaction = createSvpFundTransactionWithoutSignatures();
+
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        pegoutsWaitingForConfirmations.add(svpFundTransaction, rskExecutionBlock.getNumber());
+        savePegoutTxSigHash(svpFundTransaction);
+    }
+
+    protected BtcTransaction createSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException {
+        Coin feePerKb = feePerKbSupport.getFeePerKb();
+        return federationSupport.createAndSetSvpFundTransactionWithoutSignatures(feePerKb);
+    }
+
     protected void updateFederationCreationBlockHeights() {
         federationSupport.updateFederationCreationBlockHeights();
     }
