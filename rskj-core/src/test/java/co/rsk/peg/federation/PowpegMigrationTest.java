@@ -1,3 +1,4 @@
+/*
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.*;
@@ -65,13 +66,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@Disabled
 class PowpegMigrationTest {
 
-    /***
+    */
+/***
      * Key is BtcTxHash and output index. Value is the address that received the funds
      * I can use this to validate that a certain redeemscript trying to spend this utxo generates the corresponding address
-     */
+     *//*
+
     private final Map<Sha256Hash, Address> whoCanSpendTheseUtxos = new HashMap<>();
     private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
 
@@ -309,9 +311,11 @@ class PowpegMigrationTest {
             oldPowPegAddress
         );
 
-        /*
+        */
+/*
           Activation phase
-         */
+         *//*
+
         // Move the required blocks ahead for the new powpeg to become active
         // (overriding block number to ensure we don't move beyond the activation phase)
         blockNumber = initialBlock.getNumber() + bridgeConstants.getFederationConstants().getFederationActivationAge(activations);
@@ -408,9 +412,11 @@ class PowpegMigrationTest {
             true
         );
 
-        /*
+        */
+/*
          Migration phase
-         */
+         *//*
+
 
         // Move the required blocks ahead for the new powpeg to start migrating
         blockNumber = blockNumber + bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationBegin() + 1;
@@ -564,9 +570,11 @@ class PowpegMigrationTest {
             newPowPegAddress
         );
 
-        /*
+        */
+/*
           After Migration phase
-         */
+         *//*
+
 
         // Move the height to the block previous to the migration finishing, it should keep on migrating
         blockNumber = blockNumber + bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations) - 2;
@@ -1787,3 +1795,4 @@ class PowpegMigrationTest {
             federation.getP2SHScript();
     }
 }
+*/
