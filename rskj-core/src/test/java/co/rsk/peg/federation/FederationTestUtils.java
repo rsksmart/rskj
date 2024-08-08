@@ -20,6 +20,7 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP377;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 
 public final class FederationTestUtils {
@@ -255,5 +257,20 @@ public final class FederationTestUtils {
             .number(flowOpCode)
             .data(fedRedeemScript.getProgram())
             .build();
+    }
+
+    public static Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
+        // when the federation is a standard multisig,
+        // the members p2sh script is the p2sh script
+        if (!activations.isActive(RSKIP377)) {
+            return federation.getP2SHScript();
+        }
+        if (!(federation instanceof ErpFederation)) {
+            return federation.getP2SHScript();
+        }
+
+        // when the federation also has erp keys,
+        // the members p2sh script is the default p2sh script
+        return ((ErpFederation) federation).getDefaultP2SHScript();
     }
 }
