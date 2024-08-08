@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.peg.InMemoryStorage;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
