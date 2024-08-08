@@ -1,4 +1,4 @@
-package co.rsk.peg.storage;
+package co.rsk.peg.federation;
 
 import org.ethereum.vm.DataWord;
 

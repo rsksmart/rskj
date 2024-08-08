@@ -1,6 +1,5 @@
-package co.rsk.peg;
+package co.rsk.peg.storage;
 
-import co.rsk.peg.storage.StorageAccessor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;

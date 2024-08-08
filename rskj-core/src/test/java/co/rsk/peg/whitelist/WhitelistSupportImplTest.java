@@ -10,7 +10,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.InMemoryStorage;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
