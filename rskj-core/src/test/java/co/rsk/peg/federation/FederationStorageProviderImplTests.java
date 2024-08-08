@@ -33,7 +33,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.InMemoryStorage;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;

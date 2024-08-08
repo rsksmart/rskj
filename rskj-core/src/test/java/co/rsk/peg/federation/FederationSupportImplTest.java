@@ -36,6 +36,7 @@ import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.util.HexUtils;
 import java.math.BigInteger;
