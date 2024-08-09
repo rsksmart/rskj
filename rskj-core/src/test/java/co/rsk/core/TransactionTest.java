@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
@@ -283,7 +284,7 @@ class TransactionTest {
 
                     track.rollback();
 
-                    System.out.println("Return value: " + new CallTransaction.IntType("uint").decode(executor.getResult().getHReturn()));
+                    System.out.println("Return value: " + new CallTransaction.IntType("uint").decode(Bytes.of(executor.getResult().getHReturn())));
                 }
 
                 // now executing the JSON test transaction

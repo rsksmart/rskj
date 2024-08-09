@@ -18,10 +18,61 @@
 
 package co.rsk.core.types.bytes;
 
+import java.util.Arrays;
+
 /**
  * A {@link BytesSlice} is a subsequence of bytes backed by another broader byte sequence.
  */
 public interface BytesSlice extends HexPrintableBytes {
+
+    /**
+     * Copies an array from the {@link BytesSlice} source, beginning at the
+     * specified position, to the specified position of the destination array.
+     * A subsequence of array components are copied from this instance to the
+     * destination array referenced by {@code dest}. The number of components
+     * copied is equal to the {@code length} argument. The components at
+     * positions {@code srcPos} through  {@code srcPos+length-1} in the source
+     * array are copied into positions {@code destPos} through
+     * {@code destPos+length-1}, respectively, of the destination
+     * array.
+     * <p>
+     * If the underlying byte array and {@code dest} argument refer to the
+     * same array object, then the copying is performed as if the
+     * components at positions {@code srcPos} through
+     * {@code srcPos+length-1} were first copied to a temporary
+     * array with {@code length} components and then the contents of
+     * the temporary array were copied into positions
+     * {@code destPos} through {@code destPos+length-1} of the
+     * destination array.
+     * <p>
+     * If {@code dest} is {@code null}, then a
+     * {@code NullPointerException} is thrown.
+     * <p>
+     * Otherwise, if any of the following is true, an
+     * {@code IndexOutOfBoundsException} is
+     * thrown and the destination is not modified:
+     * <ul>
+     * <li>The {@code srcPos} argument is negative.
+     * <li>The {@code destPos} argument is negative.
+     * <li>The {@code length} argument is negative.
+     * <li>{@code srcPos+length} is greater than
+     *     {@code src.length}, the length of the source array.
+     * <li>{@code destPos+length} is greater than
+     *     {@code dest.length}, the length of the destination array.
+     * </ul>
+     *
+     * <p>
+     * Note: this method mimics behaviour of {@link System#arraycopy(Object, int, Object, int, int)}
+     *
+     * @param      srcPos   starting position in the source array.
+     * @param      dest     the destination array.
+     * @param      destPos  starting position in the destination data.
+     * @param      length   the number of array elements to be copied.
+     * @throws     IndexOutOfBoundsException  if copying would cause
+     *             access of data outside array bounds.
+     * @throws     NullPointerException if {@code dest} is {@code null}.
+     */
+    void arraycopy(int srcPos, byte[] dest, int destPos, int length);
 
     /**
      * Copies the specified range of the specified array into a new array.
@@ -37,17 +88,30 @@ public interface BytesSlice extends HexPrintableBytes {
      * greater than or equal to <tt>original.length - from</tt>.  The length
      * of the returned array will be <tt>to - from</tt>.
      *
+     * <p>
+     * Note: this method mimics behaviour of {@link Arrays#copyOfRange(Object[], int, int)}
+     *
      * @param from the initial index of the range to be copied, inclusive
      * @param to the final index of the range to be copied, exclusive.
      *     (This index may lie outside the array.)
      * @return a new array containing the specified range from the original array,
      *     truncated or padded with zeros to obtain the required length
-     * @throws ArrayIndexOutOfBoundsException if {@code from < 0}
+     * @throws IndexOutOfBoundsException if {@code from < 0}
      *     or {@code from > original.length}
      * @throws IllegalArgumentException if <tt>from &gt; to</tt>
-     * @throws NullPointerException if <tt>original</tt> is null
      */
-    byte[] copyArrayOfRange(int from, int to);
+    default byte[] copyArrayOfRange(int from, int to) {
+        if (from < 0 || from > length()) {
+            throw new IndexOutOfBoundsException("invalid 'from': " + from);
+        }
+        int newLength = to - from;
+        if (newLength < 0) {
+            throw new IllegalArgumentException(from + " > " + to);
+        }
+        byte[] copy = new byte[newLength];
+        arraycopy(from, copy, 0, Math.min(length() - from, newLength));
+        return copy;
+    }
 
     default byte[] copyArray() {
         return copyArrayOfRange(0, length());
@@ -104,11 +168,17 @@ class BytesSliceImpl implements BytesSlice {
     }
 
     @Override
-    public byte[] copyArrayOfRange(int from, int to) {
-        if (from < 0 || from > to || to > length()) {
-            throw new IndexOutOfBoundsException("invalid 'from' and/or 'to': [" + from + ";" + to + ")");
+    public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
+        if (length < 0) {
+            throw new IndexOutOfBoundsException("invalid 'length': " + length);
         }
-        return originBytes.copyArrayOfRange(this.from + from, this.from + to);
+        if (srcPos < 0 || srcPos + length > length()) {
+            throw new IndexOutOfBoundsException("invalid 'srcPos' and/or 'length': [" + srcPos + ";" + length + ")");
+        }
+        if (destPos < 0 || destPos + length > dest.length) {
+            throw new IndexOutOfBoundsException("invalid 'destPos' and/or 'length': [" + destPos + ";" + length + ")");
+        }
+        originBytes.arraycopy(this.from + srcPos, dest, destPos, length);
     }
 
     @Override

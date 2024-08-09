@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2024 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,25 +19,12 @@
 
 package co.rsk.util;
 
-import javax.annotation.Nullable;
-
-public class StringUtils {
-
-    private static final int DEFAULT_MAX_LEN = 64;
-
-    private StringUtils() { /* hidden */ }
-
-    public static String trim(@Nullable String src) {
-        return trim(src, DEFAULT_MAX_LEN);
+public interface Functions {
+    interface Function3<T1, T2, T3, TResult> {
+        TResult apply(T1 arg1, T2 arg2, T3 arg3);
     }
 
-    public static String trim(@Nullable String src, int maxLength) {
-        if (maxLength < 0) {
-            throw new IllegalArgumentException("maxLength: " + maxLength);
-        }
-        if (src == null || src.length() <= maxLength) {
-            return src;
-        }
-        return src.substring(0, maxLength) + "...";
+    interface Action5<T1, T2, T3, T4, T5> {
+        void apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
     }
 }
