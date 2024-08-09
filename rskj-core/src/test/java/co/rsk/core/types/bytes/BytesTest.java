@@ -160,6 +160,15 @@ class BytesTest {
     }
 
     private static void checkArraycopy(Functions.Action5<Object, Integer, Object, Integer, Integer> fun) {
+        /*
+            'fun' signature:
+            @src – the source array.
+            @srcPos – starting position in the source array.
+            @dest – the destination array.
+            @destPos – starting position in the destination data.
+            @length – the number of array elements to be copied.
+        */
+
         byte[] dest = new byte[5];
         byte[] origin = new byte[]{1,2,3,4,5};
 
@@ -183,6 +192,16 @@ class BytesTest {
     }
 
     private static void checkCopyOfRange(Functions.Function3<byte[], Integer, Integer, byte[]> fun) {
+        /*
+            'fun' signature:
+            @original – the array from which a range is to be copied
+            @from – the initial index of the range to be copied, inclusive
+            @to – the final index of the range to be copied, exclusive. (This index may lie outside the array.)
+
+            @return a new array containing the specified range from the original array, truncated or padded with zeros
+            to obtain the required length
+        */
+
         byte[] bArray =  new byte[]{1, 2, 3, 4, 5};
 
         assertEquals(bArray.length, fun.apply(bArray, 0, 5).length);
