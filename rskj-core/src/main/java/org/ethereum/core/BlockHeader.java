@@ -27,6 +27,7 @@ import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
 
@@ -43,7 +44,19 @@ import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
  * Block header is a value object containing
  * the basic information of a block
  */
-public class BlockHeader {
+public abstract class BlockHeader {
+    /* RSKIP 351 */
+    public abstract byte getVersion();
+    public abstract BlockHeaderExtension getExtension();
+
+    // fields from block header extension
+    public abstract byte[] getLogsBloom();
+    public abstract void setLogsBloom(byte[] logsBloom);
+    public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
+    public abstract void setTxExecutionSublistsEdges(short[] edges);
+
+    // called after encoding the header, used to add elements at the end
+    public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
@@ -69,8 +82,6 @@ public class BlockHeader {
      * list portion, the trie is populate by [key, val] --> [rlp(index), rlp(tx_recipe)]
      * of the block */
     private byte[] receiptTrieRoot;
-    /* The bloom filter for the logs of the block */
-    private byte[] logsBloom;
     /**
      * A scalar value corresponding to the difficulty level of this block.
      * This can be calculated from the previous block’s difficulty level
@@ -105,6 +116,8 @@ public class BlockHeader {
 
     private final byte[] ummRoot;
 
+    protected byte[] extensionData;
+
     /**
      * The mgp for a tx to be included in the block.
      */
@@ -112,10 +125,10 @@ public class BlockHeader {
     private final int uncleCount;
 
     /* Indicates if this block header cannot be changed */
-    private volatile boolean sealed;
+    protected volatile boolean sealed;
 
     /* Holds calculated block hash */
-    private Keccak256 hash;
+    protected Keccak256 hash;
 
     /* Indicates if the block was mined according to RSKIP-92 rules */
     private final boolean useRskip92Encoding;
@@ -123,8 +136,8 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private final boolean includeForkDetectionData;
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+    protected BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
@@ -135,8 +148,8 @@ public class BlockHeader {
         this.coinbase = coinbase;
         this.stateRoot = stateRoot;
         this.txTrieRoot = txTrieRoot;
+        this.extensionData = extensionData;
         this.receiptTrieRoot = receiptTrieRoot;
-        this.logsBloom = logsBloom;
         this.difficulty = difficulty;
         this.number = number;
         this.gasLimit = gasLimit;
@@ -156,6 +169,11 @@ public class BlockHeader {
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
+
+    public abstract void setExtension(BlockHeaderExtension extension);
+
+    // contains the logs bloom or the hash of the extension depending on version
+    public byte[] getExtensionData() { return this.extensionData; }
 
     @VisibleForTesting
     public boolean isSealed() {
@@ -228,11 +246,6 @@ public class BlockHeader {
         this.txTrieRoot = stateRoot;
     }
 
-
-    public byte[] getLogsBloom() {
-        return logsBloom;
-    }
-
     public BlockDifficulty getDifficulty() {
         // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
         // give a different value than the original.
@@ -297,41 +310,36 @@ public class BlockHeader {
         return extraData;
     }
 
-    public void setLogsBloom(byte[] logsBloom) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter logs bloom");
-        }
-        this.hash = null;
-
-        this.logsBloom = logsBloom;
-    }
-
     public Keccak256 getHash() {
         if (this.hash == null) {
-            this.hash = new Keccak256(HashUtil.keccak256(getEncoded()));
+            this.hash = new Keccak256(HashUtil.keccak256(getEncodedForHash()));
         }
 
         return this.hash;
     }
 
-    public byte[] getFullEncoded() {
-        // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
-        // calculating RSKIP92 block hashes
-        return this.getEncoded(true, true);
-    }
 
-    public byte[] getEncoded() {
-        // the encoded block header used for calculating block hashes including RSKIP92
-        return this.getEncoded(true, !useRskip92Encoding);
-    }
+    // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
+    // calculating RSKIP92 block hashes
+    public byte[] getFullEncoded() { return this.getEncoded(true, true); }
+    // the encoded block header used for calculating block hashes including RSKIP92
+    public byte[] getEncoded() { return this.getEncoded(true, !useRskip92Encoding); }
+    public byte[] getEncodedCompressed() { return this.getEncoded(true, true, true); }
+    public byte[] getEncodedForHash() { return this.getEncoded(true, !useRskip92Encoding, true); }
 
     @Nullable
     public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
     }
 
+    /**
+     * note: being also used by powpeg
+     */
     public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
+        return this.getEncoded(withMergedMiningFields, withMerkleProofAndCoinbase, false);
+    }
+
+    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean compressed) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
@@ -351,7 +359,7 @@ public class BlockHeader {
 
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
-        byte[] logsBloom = RLP.encodeElement(this.logsBloom);
+        byte[] logsBloomField = RLP.encodeElement(compressed ? this.getExtensionData() : this.getLogsBloom());
         byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
@@ -361,7 +369,7 @@ public class BlockHeader {
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
         byte[] mgp = RLP.encodeSignedCoinNonNullZero(this.minimumGasPrice);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
+                stateRoot, txTrieRoot, receiptTrieRoot, logsBloomField, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
 
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
@@ -370,6 +378,8 @@ public class BlockHeader {
         if (this.ummRoot != null) {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
+
+        this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
@@ -381,8 +391,14 @@ public class BlockHeader {
                 fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
             }
         }
-
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    }
+
+    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+        short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
+        if (txExecutionSublistsEdges != null) {
+            fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
     }
 
     /**
@@ -448,6 +464,7 @@ public class BlockHeader {
         toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
+        toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -594,7 +611,7 @@ public class BlockHeader {
      * @return The computed hash for merged mining
      */
     private byte[] getBaseHashForMergedMining() {
-        byte[] encodedBlock = getEncoded(false, false);
+        byte[] encodedBlock = getEncoded(false, false, true);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
         if (isUMMBlock()) {

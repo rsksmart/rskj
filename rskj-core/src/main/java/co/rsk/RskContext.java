@@ -477,9 +477,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
-                    getRskSystemProperties().getActivationConfig(),
                     getRepositoryLocator(),
-                    getTransactionExecutorFactory()
+                    getTransactionExecutorFactory(),
+                    getRskSystemProperties()
             );
         }
 
@@ -1089,7 +1089,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getActivationConfig(),
                     rskSystemProperties.getNetworkConstants()
             );
-            blockValidationRule = new BlockValidatorRule(
+            blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
                     new BlockUnclesValidationRule(
@@ -1116,7 +1116,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     blockTimeStampValidationRule,
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
-                    getForkDetectionDataRule()
+                    getForkDetectionDataRule(),
+                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig())
             );
         }
 
