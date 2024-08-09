@@ -1,7 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
-import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
+import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,7 +53,7 @@ class PegUtilsAllUTXOsToFedAreAboveMinimumPeginValueTest {
         List<BtcECKey> activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
         );
-        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activeFedSigners);
+        activeFederation = createP2shErpFederation(bridgeMainnetConstants.getFederationConstants(), activeFedSigners);
 
         activeFedWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
         liveFedsWallet = new BridgeBtcWallet(context, Arrays.asList(activeFederation, retiringFederation));

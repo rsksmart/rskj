@@ -12,7 +12,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.InMemoryStorage;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
@@ -170,7 +170,7 @@ class WhitelistStorageProviderImplTest {
         List<OneOffWhiteListEntry> oneOffWhiteListEntries = Collections.singletonList(oneOffWhiteListEntry);
         Pair<List<OneOffWhiteListEntry>, Integer> pairValue = Pair.of(oneOffWhiteListEntries, 100);
 
-        inMemoryStorage.safeSaveToRepository(
+        inMemoryStorage.saveToRepository(
             LOCK_ONE_OFF.getKey(),
             pairValue,
             BridgeSerializationUtils::serializeOneOffLockWhitelist
@@ -181,7 +181,7 @@ class WhitelistStorageProviderImplTest {
         UnlimitedWhiteListEntry unlimitedWhiteListEntry = createUnlimitedWhiteListEntry(btcAddress);
         List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = Collections.singletonList(unlimitedWhiteListEntry);
 
-        inMemoryStorage.safeSaveToRepository(
+        inMemoryStorage.saveToRepository(
             WhitelistStorageIndexKey.LOCK_UNLIMITED.getKey(),
             unlimitedWhiteListEntries,
             BridgeSerializationUtils::serializeUnlimitedLockWhitelist
@@ -198,7 +198,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     private Map<Address, OneOffWhiteListEntry> getAddressFromOneOffStorageEntry() {
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.safeGetFromRepository(
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData = inMemoryStorage.getFromRepository(
             LOCK_ONE_OFF.getKey(),
             data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters)
         );
@@ -206,7 +206,7 @@ class WhitelistStorageProviderImplTest {
     }
 
     private Map<Address, UnlimitedWhiteListEntry> getAddressFromUnlimitedStorageEntry() {
-        return inMemoryStorage.safeGetFromRepository(
+        return inMemoryStorage.getFromRepository(
             LOCK_UNLIMITED.getKey(),
             data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(
                 data,

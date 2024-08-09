@@ -79,7 +79,7 @@ class ReleaseBtcTest extends BridgePerformanceTestCase {
                         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                                 (Repository) environment.getBenchmarkedRepository(),
                                 PrecompiledContracts.BRIDGE_ADDR,
-                                constants.getBridgeConstants(),
+                                constants.getBridgeConstants().getBtcParams(),
                                 activationConfig.forBlock(0)
                         );
                         ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
@@ -121,7 +121,7 @@ class ReleaseBtcTest extends BridgePerformanceTestCase {
                             BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                                     (Repository) environment.getBenchmarkedRepository(),
                                     PrecompiledContracts.BRIDGE_ADDR,
-                                    constants.getBridgeConstants(),
+                                    constants.getBridgeConstants().getBtcParams(),
                                     activationConfig.forBlock(0)
                             );
                             ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
