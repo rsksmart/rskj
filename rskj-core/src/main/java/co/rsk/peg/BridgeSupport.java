@@ -173,11 +173,6 @@ public class BridgeSupport {
         return checkpoints;
     }
 
-    @VisibleForTesting
-    ActivationConfig.ForBlock getActivations() {
-        return this.activations;
-    }
-
     public void save() throws IOException {
         provider.save();
         feePerKbSupport.save();

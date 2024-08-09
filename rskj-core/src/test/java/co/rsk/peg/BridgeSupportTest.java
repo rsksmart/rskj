@@ -126,16 +126,6 @@ class BridgeSupportTest {
     }
 
     @Test
-    void activations_is_set() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP124)).thenReturn(true);
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder.withActivations(activations).build();
-
-        assertTrue(bridgeSupport.getActivations().isActive(ConsensusRule.RSKIP124));
-    }
-
-    @Test
     void getFeePerKb() {
         Coin feePerKb = Coin.valueOf(10_000L);
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
