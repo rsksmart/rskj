@@ -19,21 +19,22 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.types.bytes.BytesSlice;
+
 /**
  * @author Roman Mandeleil
  * @since 21.04.14
  */
 public class RLPItem implements RLPElement {
 
-    private final byte[] rlpData;
+    private final BytesSlice rlpData;
 
-    public RLPItem(byte[] rlpData) {
+    public RLPItem(BytesSlice rlpData) {
         this.rlpData = rlpData;
     }
 
-    @Override
-    public byte[] getRLPData() {
-        if (rlpData.length == 0) {
+    protected BytesSlice getRLPBytes() {
+        if (rlpData.length() == 0) {
             return null;
         }
 
@@ -41,7 +42,17 @@ public class RLPItem implements RLPElement {
     }
 
     @Override
+    public byte[] getRLPData() {
+        BytesSlice rlpBytes = getRLPBytes();
+        if (rlpBytes == null) {
+            return null;
+        }
+
+        return rlpBytes.copyArray();
+    }
+
+    @Override
     public byte[] getRLPRawData() {
-        return rlpData;
+        return rlpData.copyArray();
     }
 }
