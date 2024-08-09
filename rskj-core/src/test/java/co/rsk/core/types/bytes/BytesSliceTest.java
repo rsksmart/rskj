@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BytesSliceTest {
 
     @Test
-    void testBytesLength() {
+        void testBytesLength() {
         assertEquals(0, Bytes.of(new byte[]{}).slice(0, 0).length());
         assertEquals(0, Bytes.of(new byte[]{1}).slice(0, 0).length());
         assertEquals(1, Bytes.of(new byte[]{1}).slice(0, 1).length());
@@ -41,14 +41,18 @@ class BytesSliceTest {
 
     @Test
     void testBytesAt() {
-        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{}).slice(0, 0).byteAt(0));
-        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1}).slice(0, 1).byteAt(1));
-        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1}).slice(0, 1).byteAt(-1));
-        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1,2,3}).slice(1, 2).byteAt(1));
         assertEquals(1, Bytes.of(new byte[]{1}).slice(0, 1).byteAt(0));
         assertEquals(2, Bytes.of(new byte[]{1,2}).slice(0, 2).byteAt(1));
         assertEquals(2, Bytes.of(new byte[]{1,2,3}).slice(1, 2).byteAt(0));
         assertEquals(4, Bytes.of(new byte[]{1,2,3,4}).slice(2, 4).byteAt(1));
+    }
+
+    @Test
+    void testBytesAtIndexOutOfBoundsException() {
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{}).slice(0, 0).byteAt(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1}).slice(0, 1).byteAt(1));
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1}).slice(0, 1).byteAt(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1,2,3}).slice(1, 2).byteAt(1));
     }
 
     @Test
@@ -115,6 +119,14 @@ class BytesSliceTest {
     }
 
     private static void checkArraycopy(Functions.Action5<Object, Integer, Object, Integer, Integer> fun) {
+        /*
+            'fun' signature:
+            @src – the source array.
+            @srcPos – starting position in the source array.
+            @dest – the destination array.
+            @destPos – starting position in the destination data.
+            @length – the number of array elements to be copied.
+        */
         byte[] dest = new byte[3];
         byte[] origin = new byte[]{1,2,3,4,5};
 
@@ -139,6 +151,26 @@ class BytesSliceTest {
 
     private static <T> void checkCopyOfRange(Functions.Function3<T, Integer, Integer, byte[]> fun,
                                              Functions.Function3<byte[], Integer, Integer, T> slicer) {
+        /*
+            'fun' signature:
+            @original – the array from which a range is to be copied
+            @from – the initial index of the range to be copied, inclusive
+            @to – the final index of the range to be copied, exclusive. (This index may lie outside the array.)
+
+            @return a new array containing the specified range from the original array, truncated or padded with zeros
+            to obtain the required length
+        */
+
+        /*
+            'slicer' signature:
+            @original – the array from which a range is to be copied
+            @from – the initial index of the range to be copied, inclusive
+            @to – the final index of the range to be copied, exclusive. (This index may lie outside the array.)
+
+            @return a new entity containing the specified range from the original array, truncated or padded with zeros
+            to obtain the required length
+        */
+
         byte[] bArray =  new byte[]{1, 2, 3, 4, 5, 6};
 
         assertEquals(bArray.length, fun.apply(slicer.apply(bArray, 0, 6), 0, 6).length);
