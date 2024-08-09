@@ -45,7 +45,6 @@ class ActivationConfigTest {
             "    arrowhead600: 0",
             "    arrowhead631: 0",
             "    lovell700: 0",
-            "    tbd000: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
@@ -122,7 +121,9 @@ class ActivationConfigTest {
             "    rskip412: arrowhead600",
             "    rskip415: arrowhead600",
             "    rskip417: arrowhead600",
-            "    rskip00: tbd000",
+            "    rskip432: lovell700",
+            "    rskip434: arrowhead631",
+            "    rskip428: lovell700",
             "}"
     ));
 
