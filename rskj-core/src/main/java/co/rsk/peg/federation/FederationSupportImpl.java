@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
@@ -393,7 +392,7 @@ public class FederationSupportImpl implements FederationSupport {
         ABICallVoteResult result;
         try {
             result = executeVoteFederationChangeFunction(true, callSpec, eventLogger);
-        } catch (IOException | BridgeIllegalArgumentException e) {
+        } catch (BridgeIllegalArgumentException e) {
             logger.warn("[voteFederationChange] Unexpected federation change vote exception: {}", e.getMessage());
             result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR.getCode());
         }
@@ -417,7 +416,7 @@ public class FederationSupportImpl implements FederationSupport {
             ABICallSpec winnerSpec = winnerSpecOptional.get();
             try {
                 result = executeVoteFederationChangeFunction(false, winnerSpec, eventLogger);
-            } catch (IOException | BridgeIllegalArgumentException e) {
+            } catch (BridgeIllegalArgumentException e) {
                 logger.warn("[voteFederationChange] Unexpected federation change vote exception: {}", e.getMessage());
                 return FederationChangeResponseCode.GENERIC_ERROR.getCode();
             } finally {
@@ -433,7 +432,7 @@ public class FederationSupportImpl implements FederationSupport {
         return Arrays.stream(FederationChangeFunction.values()).noneMatch(fedChangeFunction -> fedChangeFunction.getKey().equals(calledFunction));
     }
 
-    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec, BridgeEventLogger eventLogger) throws IOException, BridgeIllegalArgumentException {
+    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec, BridgeEventLogger eventLogger) throws BridgeIllegalArgumentException {
         // Try to do a dry-run and only register the vote if the
         // call would be successful
         ABICallVoteResult result;
@@ -745,7 +744,7 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight(activations);
-        if (thereIsNoNextFederationCreation(nextFederationCreationBlockHeightOpt)) {
+        if (!nextFederationCreationBlockHeightOpt.isPresent()) {
             return;
         }
 
@@ -758,10 +757,6 @@ public class FederationSupportImpl implements FederationSupport {
 
         provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
         provider.clearNextFederationCreationBlockHeight();
-    }
-
-    private boolean thereIsNoNextFederationCreation(Optional<Long> nextFederationCreationBlockHeight) {
-        return !nextFederationCreationBlockHeight.isPresent();
     }
 
     private boolean newFederationShouldNotBeActiveYet(long currentBlockHeight, long nextFederationCreationBlockHeight) {
