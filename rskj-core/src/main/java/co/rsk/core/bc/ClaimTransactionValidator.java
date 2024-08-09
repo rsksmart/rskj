@@ -90,23 +90,26 @@ public class ClaimTransactionValidator {
         byte[] encodedArguments = new byte[]{};
 
         for(Object arg: arguments) {
-            byte[] encodedArg = new byte[]{};
-            if(arg instanceof byte[]) {
-                SolidityType bytes32Type = SolidityType.getType(SolidityType.BYTES32);
-                encodedArg = bytes32Type.encode(arg);
-            } else if(arg instanceof RskAddress) {
-                SolidityType addressType = SolidityType.getType(SolidityType.ADDRESS);
-                byte[] encodedAddress = addressType.encode(((RskAddress) arg).toHexString());
-                encodedArg = org.bouncycastle.util.Arrays.copyOfRange(encodedAddress, 12, encodedAddress.length);
-            } else if(arg instanceof BigInteger) {
-                SolidityType uint256Type = SolidityType.getType(SolidityType.UINT);
-                encodedArg = uint256Type.encode(arg);
-            }
-
+            byte[] encodedArg = encodeArgumentAccordingInstanceType(arg);
             encodedArguments = ByteUtil.merge(encodedArguments, encodedArg);
         }
 
         return encodedArguments;
+    }
+
+    private static byte[] encodeArgumentAccordingInstanceType(Object arg) {
+        if (arg instanceof byte[]) {
+            SolidityType bytes32Type = SolidityType.getType(SolidityType.BYTES32);
+            return bytes32Type.encode(arg);
+        } else if (arg instanceof RskAddress) {
+            SolidityType addressType = SolidityType.getType(SolidityType.ADDRESS);
+            byte[] encodedAddress = addressType.encode(((RskAddress) arg).toHexString());
+            return org.bouncycastle.util.Arrays.copyOfRange(encodedAddress, 12, encodedAddress.length);
+        } else if (arg instanceof BigInteger) {
+            SolidityType uint256Type = SolidityType.getType(SolidityType.UINT);
+            return uint256Type.encode(arg);
+        }
+        return new byte[]{};
     }
 
     public boolean isClaimTx(Transaction tx) {

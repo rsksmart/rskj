@@ -53,7 +53,7 @@ public class ClaimTransactionValidatorTest {
 
     @Test
     public void whenIsClaimTxAndValidIsCalled_shouldReturnTrue() {
-        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
+        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0, 5);
         RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
         ActivationConfig.ForBlock mockedActivationConfig = mock(ActivationConfig.ForBlock.class);
 
@@ -71,11 +71,29 @@ public class ClaimTransactionValidatorTest {
     }
 
     @Test
+    public void whenIsClaimTxAndValidIsCalled_withInsufficientFunds_shouldReturnFalse() {
+        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0, 12);
+        RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
+        ActivationConfig.ForBlock mockedActivationConfig = mock(ActivationConfig.ForBlock.class);
+
+        when(mockedRepository.getBalance(any(RskAddress.class))).thenReturn(Coin.valueOf(1));
+
+        when(mockedRepository.getStorageValue(eq(mockedClaimTx.getReceiveAddress()), any(DataWord.class)))
+                .thenReturn(DataWord.valueOf(1));
+        when(mockedActivationConfig.isActive(ConsensusRule.RSKIP432)).thenReturn(true);
+
+        boolean result = claimTransactionValidator.isClaimTxAndValid(mockedClaimTx, mockedRepository, mockedActivationConfig);
+
+        assertFalse(result);
+    }
+
+
+    @Test
     public void whenIsClaimTxAndSenderCanPayAlongPendingTxIsCalled_withIdenticalNewAndPendingTx_shouldReturnFalse() {
-        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0);
+        Transaction mockedClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 0, 5);
 
         List<Transaction> pendingTransactions = new ArrayList<>();
-        pendingTransactions.add(createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 1));
+        pendingTransactions.add(createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 1, 5));
 
         SignatureCache signatureCache = new ReceivedTxSignatureCache();
         RepositorySnapshot mockedRepository = mock(RepositorySnapshot.class);
@@ -90,8 +108,8 @@ public class ClaimTransactionValidatorTest {
 
     @Test
     public void whenIsClaimTxAndSenderCanPayAlongPendingTxIsCalled_withMultipleClaimTx_shouldCombineLockedAmounts() {
-        Transaction mockedClaimTx = createClaimTx(3, "test".getBytes(StandardCharsets.UTF_8), 0);
-        Transaction mockedPendingClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 1);
+        Transaction mockedClaimTx = createClaimTx(3, "test".getBytes(StandardCharsets.UTF_8), 0, 5);
+        Transaction mockedPendingClaimTx = createClaimTx(10, "preimage".getBytes(StandardCharsets.UTF_8), 1, 5);
 
         List<Transaction> pendingTransactions = new ArrayList<>();
         pendingTransactions.add(mockedPendingClaimTx);
@@ -110,7 +128,7 @@ public class ClaimTransactionValidatorTest {
         assertTrue(result);
     }
 
-    private Transaction createClaimTx(int amount, byte[] preimage, long nonce) {
+    private Transaction createClaimTx(int amount, byte[] preimage, long nonce, int gasLimit) {
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000001000001");
         RskAddress claimAddress = new RskAddress(senderBytes);
 
@@ -125,7 +143,7 @@ public class ClaimTransactionValidatorTest {
         when(claimTx.getSender(any(SignatureCache.class))).thenReturn(claimAddress);
         when(claimTx.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
         when(claimTx.getGasPrice()).thenReturn(Coin.valueOf(1));
-        when(claimTx.getGasLimit()).thenReturn(BigInteger.valueOf(5).toByteArray());
+        when(claimTx.getGasLimit()).thenReturn(BigInteger.valueOf(gasLimit).toByteArray());
         when(claimTx.getReceiveAddress()).thenReturn(new RskAddress(testConstants.getEtherSwapContractAddress()));
         when(claimTx.getData()).thenReturn(callData);
         when(claimTx.getValue()).thenReturn(Coin.ZERO);
