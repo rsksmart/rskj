@@ -2196,7 +2196,7 @@ class FederationSupportImplTest {
     }
 
     @Test
-    void createAndProcessSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException {
+    void createAndProcessSvpFundTransactionWithoutSignatures_savesExpectedTransactionInStorage() throws InsufficientMoneyException {
         // arrange
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
 
