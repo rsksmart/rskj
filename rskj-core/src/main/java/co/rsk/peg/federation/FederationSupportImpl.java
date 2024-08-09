@@ -1,9 +1,9 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.wallet.SendRequest;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationSupportImpl implements FederationSupport {
@@ -746,6 +747,74 @@ public class FederationSupportImpl implements FederationSupport {
     private void logCommitmentWithVotedFederation(BridgeEventLogger eventLogger, Federation federationToBeRetired, Federation votedFederation) {
         eventLogger.logCommitFederation(rskExecutionBlock, federationToBeRetired, votedFederation);
         logger.debug("[logCommitmentWithVotedFederation] Voted federation committed: {}", votedFederation.getAddress());
+    }
+
+    @Override
+    public BtcTransaction createAndSetSvpFundTransactionWithoutSignatures(Coin feePerKb, Wallet activeFederationWallet) throws InsufficientMoneyException {
+        Optional<Federation> proposedFederationOpt = provider.getProposedFederation(constants, activations);
+        if (!proposedFederationOpt.isPresent()) {
+            String message = "Proposed federation should be present when creating SVP fund transaction.";
+            logger.warn(message);
+            throw new IllegalStateException(message);
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        BtcTransaction svpFundTransactionUnsigned = new BtcTransaction(constants.getBtcParams());
+        svpFundTransactionUnsigned.setVersion(BTC_TX_VERSION_2);
+
+        addOutputToProposedFederation(svpFundTransactionUnsigned, proposedFederation, feePerKb);
+
+        // complete tx with input and change output
+        SendRequest sendRequest = createSendRequest(svpFundTransactionUnsigned, feePerKb);
+        activeFederationWallet.completeTx(sendRequest);
+
+        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+        return svpFundTransactionUnsigned;
+    }
+
+    private void addOutputToProposedFederation(BtcTransaction svpFundTransaction, Federation proposedFederation, Coin feePerKb) {
+        long transactionSizeToBeSentFromProposedFederation = calculateTransactionSizeToBeSentFromFederation(proposedFederation);
+        Coin neededValueToSendFromProposedFederation = feePerKb.multiply(transactionSizeToBeSentFromProposedFederation);
+
+        svpFundTransaction.addOutput(neededValueToSendFromProposedFederation, proposedFederation.getAddress());
+    }
+
+    private long calculateTransactionSizeToBeSentFromFederation(Federation federation) {
+        long inputInfo = 36;
+        long outputInfo = 32;
+
+        long scriptSigSize = getFederationScriptSigSize(federation);
+        long txBaseSize = inputInfo + outputInfo + scriptSigSize;
+        long txTotalSize = inputInfo + outputInfo + getFederationTransactionWitnessSize(federation);
+
+        return (3 * txBaseSize + txTotalSize) / 4;
+    }
+
+    private int getFederationScriptSigSize(Federation federation) {
+/*        if (federation.isWrappedSegwit()) // TODO {
+            return 36;
+        }
+        if (federation.isSegwit()) {
+            return 0;
+        }*/
+
+        return getFederationTransactionWitnessSize(federation);
+    }
+
+    private int getFederationTransactionWitnessSize(Federation federation) {
+        int redeemScriptSize = federation.getRedeemScript().getProgram().length;
+        int neededSignaturesSize = 72 * federation.getNumberOfSignaturesRequired();
+        return redeemScriptSize + neededSignaturesSize;
+    }
+
+    private SendRequest createSendRequest(BtcTransaction transaction, Coin feePerKb) {
+        SendRequest sendRequest = SendRequest.forTx(transaction);
+        sendRequest.changeAddress = getActiveFederationAddress();
+        sendRequest.feePerKb = feePerKb;
+        sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sendRequest.recipientsPayFees = false;
+
+        return sendRequest;
     }
 
     /**

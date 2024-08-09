@@ -1,8 +1,8 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.ABICallSpec;
@@ -52,6 +52,8 @@ public interface FederationSupport {
     Optional<Script> getLastRetiredFederationP2SHScript();
 
     void updateFederationCreationBlockHeights();
+
+    BtcTransaction createAndSetSvpFundTransactionWithoutSignatures(Coin feePerKb, Wallet activeFederationWallet) throws InsufficientMoneyException;
 
     void save();
 }

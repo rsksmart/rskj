@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
@@ -68,7 +69,9 @@ import org.ethereum.core.Transaction;
 
 class FederationSupportImplTest {
 
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
+    private static final NetworkParameters mainnetParams = federationMainnetConstants.getBtcParams();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
     private ErpFederation newFederation;
     private StorageAccessor storageAccessor;
@@ -84,6 +87,7 @@ class FederationSupportImplTest {
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
+            .withActivations(allActivations)
             .build();
     }
 
@@ -2108,7 +2112,7 @@ class FederationSupportImplTest {
     @Test
     @Tag("new federation btc utxos")
     void getNewFederationBtcUTXOs_whenSavingUTXOs_returnsNewFederationUTXOs() {
-        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(federationMainnetConstants.getBtcParams(), "address");
+        Address btcAddress = BitcoinTestUtils.createP2PKHAddress(mainnetParams, "address");
         List<UTXO> newFederationUTXOs = BitcoinTestUtils.createUTXOs(10, btcAddress);
 
         storageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), newFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
@@ -2192,6 +2196,68 @@ class FederationSupportImplTest {
     }
 
     @Test
+    void createAndProcessSvpFundTransactionWithoutSignatures_savesExpectedTransactionInStorage() throws InsufficientMoneyException {
+        // arrange
+        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        Coin feePerKb = Coin.valueOf(1000);
+
+        // create the active federation wallet with utxos
+        Federation activeFederation = federationSupport.getActiveFederation();
+        List<UTXO> utxos = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+        Wallet activeFederationWallet =
+            BridgeUtils.getFederationSpendWallet(new Context(mainnetParams), activeFederation, utxos, true, bridgeStorageProvider);
+
+        // act
+        BtcTransaction svpFundTransactionUnsigned = federationSupport.createAndSetSvpFundTransactionWithoutSignatures(feePerKb, activeFederationWallet);
+
+        // assertions
+        // assert hash was saved in storage entry
+        Optional<Sha256Hash> svpFundTransactionHashUnsignedOpt = storageProvider.getSvpFundTxHashUnsigned(allActivations);
+        assertTrue(svpFundTransactionHashUnsignedOpt.isPresent());
+
+        // assert first output was sent to proposed federation with the correct amount
+        TransactionOutput outputToProposedFederation = svpFundTransactionUnsigned.getOutput(0);
+        assertEquals(outputToProposedFederation.getScriptPubKey(), proposedFederation.getP2SHScript());
+        assertEquals(outputToProposedFederation.getValue(), feePerKb.multiply(calculateTransactionSizeToBeSentFromFederation(proposedFederation)));
+
+        // assert second output is the change sent to the active federation
+        TransactionOutput changeOutput = svpFundTransactionUnsigned.getOutput(1);
+        assertEquals(changeOutput.getScriptPubKey(), activeFederation.getP2SHScript());
+    }
+
+    private long calculateTransactionSizeToBeSentFromFederation(Federation federation) {
+        long inputInfo = 36;
+        long outputInfo = 32;
+
+        long scriptSigSize = getFederationScriptSigSize(federation);
+        long txBaseSize = inputInfo + outputInfo + scriptSigSize;
+        long txTotalSize = inputInfo + outputInfo + getFederationTransactionWitnessSize(federation);
+
+        return (3 * txBaseSize + txTotalSize) / 4;
+    }
+
+    private int getFederationScriptSigSize(Federation federation) {
+/*        if (federation.isWrappedSegwit()) // TODO how to do this {
+            return 36;
+        }
+        if (federation.isSegwit()) {
+            return 0;
+        }*/
+
+        return getFederationTransactionWitnessSize(federation);
+    }
+
+    private int getFederationTransactionWitnessSize(Federation federation) {
+        int redeemScriptSize = federation.getRedeemScript().getProgram().length;
+        int neededSignaturesSize = 72 * federation.getNumberOfSignaturesRequired();
+        return redeemScriptSize + neededSignaturesSize;
+    }
+
+    @Test
     @Tag("save")
     void save_callsStorageProviderSave() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2203,7 +2269,7 @@ class FederationSupportImplTest {
             .build();
 
         federationSupport.save();
-        verify(storageProvider).save(federationMainnetConstants.getBtcParams(), activations);
+        verify(storageProvider).save(mainnetParams, activations);
     }
 
     @Nested
@@ -2270,7 +2336,7 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            List<UTXO> utxosToMove = new ArrayList<>(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
+            List<UTXO> utxosToMove = new ArrayList<>(storageProvider.getNewFederationBtcUTXOs(mainnetParams, activations));
 
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
             voteToAddFederatorPublicKeysToPendingFederation();
@@ -2306,7 +2372,7 @@ class FederationSupportImplTest {
                 .withActivations(activations)
                 .build();
 
-            List<UTXO> utxosToMove = new ArrayList<>(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
+            List<UTXO> utxosToMove = new ArrayList<>(storageProvider.getNewFederationBtcUTXOs(mainnetParams, activations));
 
             voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
             voteToAddFederatorPublicKeysToPendingFederation();
@@ -2369,14 +2435,14 @@ class FederationSupportImplTest {
             assertEquals(utxosToMove, oldFederationUTXOs);
 
             // assert new federation utxos were cleaned
-            List<UTXO> newFederationUTXOs = storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations);
+            List<UTXO> newFederationUTXOs = storageProvider.getNewFederationBtcUTXOs(mainnetParams, activations);
             assertTrue(newFederationUTXOs.isEmpty());
         }
 
         private void assertUTXOsWereNotMovedFromNewToOldFederation() {
             // assert old and new federation utxos are still empty
             List<UTXO> oldFederationUTXOs = storageProvider.getOldFederationBtcUTXOs();
-            List<UTXO> newFederationUTXOs = storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations);
+            List<UTXO> newFederationUTXOs = storageProvider.getNewFederationBtcUTXOs(mainnetParams, activations);
 
             assertTrue(oldFederationUTXOs.isEmpty());
             assertTrue(newFederationUTXOs.isEmpty());
