@@ -430,15 +430,16 @@ class BridgeSupportTest {
         @Test
         void createAndProcessSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException, IOException {
             // arrange
-            Coin feePerKb = Coin.valueOf(1000);
-
-            when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
-
+            // arrange bridge support
             bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeMainnetConstants)
                 .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
                 .build();
+
+            // arrange mock responses
+            Coin feePerKb = Coin.valueOf(1000);
+            when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
             Federation activeFederation = new P2shErpFederationBuilder().build();
             when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
