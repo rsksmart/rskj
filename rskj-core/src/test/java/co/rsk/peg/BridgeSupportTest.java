@@ -80,7 +80,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -578,7 +577,7 @@ class BridgeSupportTest {
         assertEquals(outputs.size(), anotherOutputs.size());
 
         int size = outputs.size();
-        for (int i = 0; i < outputs.size(); i++) {
+        for (int i = 0; i < size; i++) {
             TransactionOutput output = outputs.get(i);
             TransactionOutput anotherOutput = anotherOutputs.get(i);
 
