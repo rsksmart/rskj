@@ -45,6 +45,11 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.lockingcap.LockingCapStorageProvider;
+import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.LockingCapSupportImpl;
+import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.storage.*;
@@ -125,6 +130,7 @@ public class BridgeSupportIT {
     private FeePerKbSupport feePerKbSupport;
     private WhitelistSupport whitelistSupport;
     private WhitelistStorageProvider whitelistStorageProvider;
+    private LockingCapSupport lockingCapSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -144,6 +150,13 @@ public class BridgeSupportIT {
             WhitelistMainNetConstants.getInstance(),
             whitelistStorageProvider,
             activations,
+            signatureCache
+        );
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(inMemoryStorage);
+        lockingCapSupport = new LockingCapSupportImpl(
+            lockingCapStorageProvider,
+            activations,
+            LockingCapMainNetConstants.getInstance(),
             signatureCache
         );
     }
@@ -310,6 +323,7 @@ public class BridgeSupportIT {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache

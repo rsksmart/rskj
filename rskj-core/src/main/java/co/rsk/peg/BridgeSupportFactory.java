@@ -27,6 +27,8 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.lockingcap.*;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
@@ -82,7 +84,12 @@ public class BridgeSupportFactory {
 
         FeePerKbSupport feePerKbSupport = getFeePerKbSupportInstance(bridgeStorageAccessor);
         WhitelistSupport whitelistSupport = getWhitelistSupportInstance(bridgeStorageAccessor, activations);
-        FederationSupport federationSupport = getFederationSupportInstance(bridgeStorageAccessor, executionBlock, activations);
+        FederationSupport federationSupport = getFederationSupportInstance(
+            bridgeStorageAccessor,
+            executionBlock,
+            activations
+        );
+        LockingCapSupport lockingCapSupport = getLockingCapSupportInstance(bridgeStorageAccessor, activations);
 
         BridgeEventLogger eventLogger = null;
         if (logs != null) {
@@ -108,6 +115,7 @@ public class BridgeSupportFactory {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache
@@ -137,5 +145,12 @@ public class BridgeSupportFactory {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         return new FederationSupportImpl(federationConstants, federationStorageProvider, rskExecutionBlock, activations);
+    }
+
+    private LockingCapSupport getLockingCapSupportInstance(StorageAccessor bridgeStorageAccessor, ActivationConfig.ForBlock activations) {
+        LockingCapConstants lockingCapConstants = bridgeConstants.getLockingCapConstants();
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+
+        return new LockingCapSupportImpl(lockingCapStorageProvider, activations, lockingCapConstants, signatureCache);
     }
 }

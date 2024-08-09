@@ -3,10 +3,11 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -26,14 +27,13 @@ class LockingCapTest extends BridgePerformanceTestCase {
 
     private static final ECKey authorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("da6a5451bfd74829307ec6d4a8c55174d4859169f162a8ed8fcba8f7636e77cc"));
     private static final ECKey unauthorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("f18ad1e830dd746ba350f4a43b3067e85634b5138a8515246441a453ec7460e9"));
-
-    private static final Coin INITIAL_LOCKING_CAP = (new BridgeRegTestConstants()).getInitialLockingCap();
+    private final LockingCapConstants lockingCapConstants = LockingCapMainNetConstants.getInstance();
 
     private ECKey sender;
 
     @BeforeAll
      static void setupA() {
-        constants = Constants.regtest();
+        constants = Constants.mainnet();
         activationConfig = ActivationConfigsForTest.all();
     }
 
@@ -46,7 +46,7 @@ class LockingCapTest extends BridgePerformanceTestCase {
                 "getLockingCap",
                 2000,
                 stats,
-                (environment, callResult) -> Assertions.assertEquals(INITIAL_LOCKING_CAP, getCoinFromResult(callResult))
+                (environment, callResult) -> Assertions.assertEquals(lockingCapConstants.getInitialValue(), getCoinFromResult(callResult))
         );
         BridgePerformanceTest.addStats(stats);
     }
@@ -58,8 +58,8 @@ class LockingCapTest extends BridgePerformanceTestCase {
         AtomicReference<Long> newValue = new AtomicReference<>();
         executeTestCase(
                 (int executionIndex) -> {
-                    newValue.set(Helper.randomCoin(INITIAL_LOCKING_CAP, 1, 2).getValue());
-                    return Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{ newValue.get().longValue() });
+                    newValue.set(Helper.randomCoin(lockingCapConstants.getInitialValue(), 1, 2).getValue());
+                    return Bridge.INCREASE_LOCKING_CAP.encode(newValue.get());
                 },
                 "increaseLockingCap",
                 2000,
@@ -78,15 +78,15 @@ class LockingCapTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("increaseLockingCap_unauthorized");
         executeTestCase(
                 (int executionIndex) -> {
-                    long newValue = Helper.randomCoin(INITIAL_LOCKING_CAP, 1, 2).getValue();
-                    return Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{ newValue });
+                    long newValue = Helper.randomCoin(lockingCapConstants.getInitialValue(), 1, 2).getValue();
+                    return Bridge.INCREASE_LOCKING_CAP.encode(newValue);
                 },
                 "increaseLockingCap",
                 2000,
                 stats,
                 (environment, callResult) -> {
                     Coin currentLockingCap = Coin.valueOf(((Bridge)environment.getContract()).getLockingCap(null));
-                    Assertions.assertEquals(INITIAL_LOCKING_CAP, currentLockingCap);
+                    Assertions.assertEquals(lockingCapConstants.getInitialValue(), currentLockingCap);
                 }
         );
         BridgePerformanceTest.addStats(stats);

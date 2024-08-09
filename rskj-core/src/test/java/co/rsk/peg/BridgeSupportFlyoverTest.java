@@ -35,6 +35,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
@@ -79,6 +80,7 @@ class BridgeSupportFlyoverTest {
     protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
     private BridgeSupportBuilder bridgeSupportBuilder;
+    private LockingCapSupport lockingCapSupport;
     private WhitelistSupport whitelistSupport;
     private FederationSupportBuilder federationSupportBuilder;
     private ActivationConfig.ForBlock activations;
@@ -91,6 +93,7 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         bridgeSupportBuilder = new BridgeSupportBuilder();
+        lockingCapSupport = mock(LockingCapSupport.class);
         whitelistSupport = mock(WhitelistSupport.class);
         federationSupportBuilder = new FederationSupportBuilder();
     }
@@ -732,8 +735,9 @@ class BridgeSupportFlyoverTest {
         when(federationStorageProvider.getNewFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(activeFederation);
         when(federationStorageProvider.getOldFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
+
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
@@ -772,6 +776,7 @@ class BridgeSupportFlyoverTest {
             .withExecutionBlock(executionBlock)
             .withRepository(repository)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -1865,9 +1870,7 @@ class BridgeSupportFlyoverTest {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -1883,6 +1886,9 @@ class BridgeSupportFlyoverTest {
 
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
+        Coin lockingCap = Coin.COIN;
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCap));
 
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsSpy)
@@ -1900,6 +1906,7 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2072,9 +2079,7 @@ class BridgeSupportFlyoverTest {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2091,6 +2096,9 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        Coin lockingCapValue = Coin.COIN;
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
+
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
@@ -2106,6 +2114,7 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .withFeePerKbSupport(feePerKbSupport)
             .withFederationSupport(federationSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2230,7 +2239,8 @@ class BridgeSupportFlyoverTest {
         // Perform another flyover pegin using the same BtcTx but without witness and no surpassing locking cap this time
         // We expect the pegin gets processed successfully
         btcTx.setWitness(0, null);
-        provider.setLockingCap(lockingCapValue.multiply(3));
+
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue.multiply(3)));
 
         result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
@@ -2287,7 +2297,8 @@ class BridgeSupportFlyoverTest {
 
         Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
+
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2320,6 +2331,7 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2475,7 +2487,8 @@ class BridgeSupportFlyoverTest {
 
         Coin lockingCapValue = Coin.COIN;
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
-        provider.setLockingCap(lockingCapValue);
+
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2508,6 +2521,7 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .withLockingCapSupport(lockingCapSupport)
             .build();
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
@@ -2957,6 +2971,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3028,6 +3043,8 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3040,6 +3057,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3048,7 +3066,7 @@ class BridgeSupportFlyoverTest {
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
+
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
@@ -3121,6 +3139,8 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3133,6 +3153,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3142,7 +3163,7 @@ class BridgeSupportFlyoverTest {
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
+
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
@@ -3228,6 +3249,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3237,9 +3259,9 @@ class BridgeSupportFlyoverTest {
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(
-            Coin.COIN, // The first time we simulate a lower locking cap than the value to register, to force the reimburse
-            Coin.FIFTY_COINS // The next time we simulate a hight locking cap, to verify the user can't attempt to register the already reimbursed tx
-        ).when(bridgeSupport).getLockingCap();
+            Optional.of(Coin.COIN), // The first time we simulate a lower locking cap than the value to register, to force the reimburse
+            Optional.of(Coin.FIFTY_COINS) // The next time we simulate a height locking cap, to verify the user can't attempt to register the already reimbursed tx
+        ).when(lockingCapSupport).getLockingCap();
         doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
@@ -3338,6 +3360,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3449,6 +3472,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             federationSupport,
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3501,6 +3525,7 @@ class BridgeSupportFlyoverTest {
             feePerKbSupport,
             whitelistSupport,
             mock(FederationSupport.class),
+            lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache

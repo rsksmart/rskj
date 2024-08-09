@@ -8,7 +8,6 @@ public enum BridgeStorageIndexKey {
     RELEASE_REQUEST_QUEUE("releaseRequestQueue"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS("releaseTransactionSet"),
     PEGOUTS_WAITING_FOR_SIGNATURES("rskTxsWaitingFS"),
-    LOCKING_CAP_KEY("lockingCap"),
     RELEASE_REQUEST_QUEUE_WITH_TXHASH("releaseRequestQueueWithTxHash"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY("releaseTransactionSetWithTxHash"),
     RECEIVE_HEADERS_TIMESTAMP("receiveHeadersLastTimestamp"),

@@ -23,18 +23,15 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
 import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-
     private static final List<BtcECKey> defaultFederationPublicKeys = Collections.unmodifiableList(Stream.of(
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
@@ -50,6 +47,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
         whitelistConstants = WhitelistRegTestConstants.getInstance();
         federationConstants = new FederationRegTestConstants(federationPublicKeys);
+        lockingCapConstants = LockingCapRegTestConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
@@ -64,23 +62,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
         minimumPeginTxValue = Coin.COIN.div(2);
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
-        initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
-
-        lockingCapIncrementsMultiplier = 2;
-
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 
         maxDepthBlockchainAccepted = 25;
-
-        // Key generated with GenNodeKey using generator 'auth-increase_locking_cap'
-        List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
-            "04450bbaab83ec48b3cb8fbb077c950ee079733041c039a8c4f1539e5181ca1a27589eeaf0fbf430e49d2909f14c767bf6909ad6845831f683416ee12b832e36ed"
-        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
-
-        increaseLockingCapAuthorizer = new AddressBasedAuthorizer(
-            increaseLockingCapAuthorizedKeys,
-            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
-        );
 
         btcHeightWhenBlockIndexActivates = 10;
         maxDepthToSearchBlocksBelowIndexActivation = 5;

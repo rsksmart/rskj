@@ -45,6 +45,8 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
+import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -116,6 +118,7 @@ public class BridgeSupport {
     private final FeePerKbSupport feePerKbSupport;
     private final WhitelistSupport whitelistSupport;
     private final FederationSupport federationSupport;
+    private final LockingCapSupport lockingCapSupport;
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
@@ -138,6 +141,7 @@ public class BridgeSupport {
         FeePerKbSupport feePerKbSupport,
         WhitelistSupport whitelistSupport,
         FederationSupport federationSupport,
+        LockingCapSupport lockingCapSupport,
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
@@ -152,6 +156,7 @@ public class BridgeSupport {
         this.feePerKbSupport = feePerKbSupport;
         this.whitelistSupport = whitelistSupport;
         this.federationSupport = federationSupport;
+        this.lockingCapSupport = lockingCapSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -178,6 +183,7 @@ public class BridgeSupport {
         feePerKbSupport.save();
         whitelistSupport.save();
         federationSupport.save();
+        lockingCapSupport.save();
     }
 
     /**
@@ -2103,14 +2109,7 @@ public class BridgeSupport {
     }
 
     public Coin getLockingCap() {
-        // Before returning the locking cap, check if it was already set
-        if (activations.isActive(ConsensusRule.RSKIP134) && this.provider.getLockingCap() == null) {
-            // Set the initial locking cap value
-            logger.debug("Setting initial locking cap value");
-            this.provider.setLockingCap(bridgeConstants.getInitialLockingCap());
-        }
-
-        return this.provider.getLockingCap();
+        return lockingCapSupport.getLockingCap().orElse(null);
     }
 
     /**
@@ -2122,29 +2121,8 @@ public class BridgeSupport {
         return federationSupport.getActiveFederationRedeemScript();
     }
 
-    public boolean increaseLockingCap(Transaction tx, Coin newCap) {
-        // Only pre-configured addresses can modify locking cap
-        AddressBasedAuthorizer authorizer = bridgeConstants.getIncreaseLockingCapAuthorizer();
-        if (!authorizer.isAuthorized(tx, signatureCache)) {
-            logger.warn("not authorized address tried to increase locking cap. Address: {}", tx.getSender(signatureCache));
-            return false;
-        }
-        // new locking cap must be bigger than current locking cap
-        Coin currentLockingCap = this.getLockingCap();
-        if (newCap.compareTo(currentLockingCap) < 0) {
-            logger.warn("attempted value doesn't increase locking cap. Attempted: {}", newCap.value);
-            return false;
-        }
-        Coin maxLockingCap = currentLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
-        if (newCap.compareTo(maxLockingCap) > 0) {
-            logger.warn("attempted value increases locking cap above its limit. Attempted: {}", newCap.value);
-            return false;
-        }
-
-        logger.info("increased locking cap: {}", newCap.value);
-        this.provider.setLockingCap(newCap);
-
-        return true;
+    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws LockingCapIllegalArgumentException {
+        return lockingCapSupport.increaseLockingCap(tx, newLockingCap);
     }
 
     public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
@@ -2758,16 +2736,16 @@ public class BridgeSupport {
     }
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {
-        if (!activations.isActive(ConsensusRule.RSKIP134)) {
+        Optional<Coin> lockingCap = lockingCapSupport.getLockingCap();
+        if (!lockingCap.isPresent()) {
             return true;
         }
 
         Coin fedCurrentFunds = getBtcLockedInFederation();
-        Coin lockingCap = this.getLockingCap();
         logger.trace("Evaluating locking cap for: TxId {}. Value to lock {}. Current funds {}. Current locking cap {}", btcTx.getHash(true), totalAmount, fedCurrentFunds, lockingCap);
         Coin fedUTXOsAfterThisLock = fedCurrentFunds.add(totalAmount);
         // If the federation funds (including this new UTXO) are smaller than or equals to the current locking cap, we are fine.
-        if (fedUTXOsAfterThisLock.compareTo(lockingCap) <= 0) {
+        if (fedUTXOsAfterThisLock.compareTo(lockingCap.get()) <= 0) {
             return true;
         }
 
