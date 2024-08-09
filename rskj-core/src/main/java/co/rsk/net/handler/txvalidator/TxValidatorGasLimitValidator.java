@@ -21,10 +21,9 @@ package co.rsk.net.handler.txvalidator;
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -33,8 +32,9 @@ import java.math.BigInteger;
  * Also Checks that the transaction gas limit is not higher than the max allowed value
  */
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
+
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
 
         if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {

@@ -51,7 +51,6 @@ import org.mockito.Mockito;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -249,7 +248,9 @@ public class BlockChainBuilder {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                transactionExecutorFactory
+                transactionExecutorFactory,
+                config.getNetworkConstants(),
+                signatureCache
         );
         BlockChainImpl blockChain = new BlockChainLoader(
                 blockStore,

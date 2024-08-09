@@ -18,6 +18,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.bouncycastle.util.BigIntegers;
@@ -27,6 +28,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,15 +62,14 @@ public class TxPendingValidator {
         validatorSteps.add(new TxNotNullValidator());
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
         validatorSteps.add(new TxValidatorGasLimitValidator());
-        validatorSteps.add(new TxValidatorAccountStateValidator());
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
-        validatorSteps.add(new TxValidatorAccountBalanceValidator());
+        validatorSteps.add(new TxValidatorAccountBalanceValidator(constants, signatureCache));
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
-    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
+    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state, RepositorySnapshot repositorySnapshot) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
@@ -85,8 +86,14 @@ public class TxPendingValidator {
             return TransactionValidationResult.withError(String.format("transaction's size is higher than defined maximum: %s > %s", tx.getSize(), TX_MAX_SIZE));
         }
 
+        ValidationArgs validationArgs = new ValidationArgs(
+                state,
+                repositorySnapshot,
+                activationConfig.forBlock(bestBlockNumber)
+        );
+
         for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
+            TransactionValidationResult validationResult = step.validate(tx, validationArgs, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
                 logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
                 return validationResult;
