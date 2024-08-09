@@ -2,6 +2,8 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.wallet.SendRequest;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
@@ -29,7 +31,6 @@ import java.time.Instant;
 import java.util.*;
 
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationSupportImpl implements FederationSupport {
@@ -749,7 +750,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
-    public BtcTransaction createAndSetSvpFundTransactionWithoutSignatures(Coin feePerKb) throws InsufficientMoneyException {
+    public BtcTransaction createAndSetSvpFundTransactionWithoutSignatures(Coin feePerKb, Wallet activeFederationWallet) throws InsufficientMoneyException {
         Optional<Federation> proposedFederationOpt = provider.getProposedFederation(constants, activations);
         if (!proposedFederationOpt.isPresent()) {
             String message = "Proposed federation should be present when creating SVP fund transaction.";
@@ -758,42 +759,24 @@ public class FederationSupportImpl implements FederationSupport {
         }
         Federation proposedFederation = proposedFederationOpt.get();
 
-        BtcTransaction svpFundTransaction = new BtcTransaction(constants.getBtcParams());
-        svpFundTransaction.setVersion(BTC_TX_VERSION_2);
+        BtcTransaction svpFundTransactionUnsigned = new BtcTransaction(constants.getBtcParams());
+        svpFundTransactionUnsigned.setVersion(BTC_TX_VERSION_2);
 
+        addOutputToProposedFederation(svpFundTransactionUnsigned, proposedFederation, feePerKb);
+
+        // complete tx with input and change output
+        SendRequest sendRequest = createSendRequest(svpFundTransactionUnsigned, feePerKb);
+        activeFederationWallet.completeTx(sendRequest);
+
+        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+        return svpFundTransactionUnsigned;
+    }
+
+    private void addOutputToProposedFederation(BtcTransaction svpFundTransaction, Federation proposedFederation, Coin feePerKb) {
         long transactionSizeToBeSentFromProposedFederation = calculateTransactionSizeToBeSentFromFederation(proposedFederation);
         Coin neededValueToSendFromProposedFederation = feePerKb.multiply(transactionSizeToBeSentFromProposedFederation);
 
-        List<UTXO> availableUTXOs = getActiveFederationBtcUTXOs();
-        UTXO selectedUTXO = getUtxoWithEnoughValue(availableUTXOs, neededValueToSendFromProposedFederation, feePerKb);
-
-        // add input
-        Script scriptSig = createBaseInputScriptThatSpendsFromTheFederation(getActiveFederation());
-        svpFundTransaction.addInput(selectedUTXO.getHash(), selectedUTXO.getIndex(), scriptSig);
-
-        // add proposed federation and change outputs
         svpFundTransaction.addOutput(neededValueToSendFromProposedFederation, proposedFederation.getAddress());
-        Coin change = selectedUTXO.getValue().minus(neededValueToSendFromProposedFederation);
-        svpFundTransaction.addOutput(change, getActiveFederationAddress());
-
-        provider.setSvpFundTxHashUnsigned(svpFundTransaction.getHash());
-        return svpFundTransaction;
-    }
-
-    private UTXO getUtxoWithEnoughValue(List<UTXO> availableUTXOs, Coin valueNeededToBeCovered, Coin feePerKb) throws InsufficientMoneyException {
-        long transactionSizeToBeSentFromActiveFederation = calculateTransactionSizeToBeSentFromFederation(getActiveFederation());
-        Coin minimumChangeAllowed = feePerKb.multiply(transactionSizeToBeSentFromActiveFederation);
-
-        for (UTXO utxo : availableUTXOs) {
-            Coin value = utxo.getValue();
-            Coin change = value.minus(valueNeededToBeCovered);
-
-            if (change.isGreaterThan(minimumChangeAllowed)) {
-                return utxo;
-            }
-        }
-
-        throw new InsufficientMoneyException(valueNeededToBeCovered.add(minimumChangeAllowed));
     }
 
     private long calculateTransactionSizeToBeSentFromFederation(Federation federation) {
@@ -808,7 +791,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private int getFederationScriptSigSize(Federation federation) {
-/*        if (federation.isWrappedSegwit()) // TODO how to do this {
+/*        if (federation.isWrappedSegwit()) // TODO {
             return 36;
         }
         if (federation.isSegwit()) {
@@ -822,6 +805,16 @@ public class FederationSupportImpl implements FederationSupport {
         int redeemScriptSize = federation.getRedeemScript().getProgram().length;
         int neededSignaturesSize = 72 * federation.getNumberOfSignaturesRequired();
         return redeemScriptSize + neededSignaturesSize;
+    }
+
+    private SendRequest createSendRequest(BtcTransaction transaction, Coin feePerKb) {
+        SendRequest sendRequest = SendRequest.forTx(transaction);
+        sendRequest.changeAddress = getActiveFederationAddress();
+        sendRequest.feePerKb = feePerKb;
+        sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sendRequest.recipientsPayFees = false;
+
+        return sendRequest;
     }
 
     /**

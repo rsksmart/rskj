@@ -974,9 +974,11 @@ public class BridgeSupport {
         savePegoutTxSigHash(svpFundTransaction);
     }
 
-    protected BtcTransaction createSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException {
+    protected BtcTransaction createSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException, IOException {
         Coin feePerKb = feePerKbSupport.getFeePerKb();
-        return federationSupport.createAndSetSvpFundTransactionWithoutSignatures(feePerKb);
+        Wallet activeFederationWallet = getActiveFederationWallet(true);
+
+        return federationSupport.createAndSetSvpFundTransactionWithoutSignatures(feePerKb, activeFederationWallet);
     }
 
     protected void updateFederationCreationBlockHeights() {
