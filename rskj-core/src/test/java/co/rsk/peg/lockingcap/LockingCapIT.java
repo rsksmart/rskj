@@ -1,9 +1,6 @@
 package co.rsk.peg.lockingcap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.net.utils.TransactionUtils;
@@ -14,27 +11,17 @@ import co.rsk.peg.storage.StorageAccessor;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.ethereum.core.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
 class LockingCapIT {
-
     private final LockingCapConstants constants = LockingCapMainNetConstants.getInstance();
     private LockingCapSupport lockingCapSupport;
     private LockingCapStorageProvider lockingCapStorageProvider;
     private SignatureCache signatureCache;
-    private ActivationConfig.ForBlock activations;
     private StorageAccessor bridgeStorageAccessor;
     private Coin currentLockingCap; // it is used to guarantee the value from getLockingCap() contains the value expected
 
@@ -43,6 +30,14 @@ class LockingCapIT {
         bridgeStorageAccessor = new InMemoryStorage();
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+        lockingCapSupport = new LockingCapSupportImpl(
+            lockingCapStorageProvider,
+            activations,
+            constants,
+            signatureCache
+        );
     }
 
     @Test
@@ -50,55 +45,49 @@ class LockingCapIT {
     void increaseLockingCap_prePapyrus200_whenLockingCapIsNotSet_shouldNotSavedNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
         // Previously to the genesis of the Locking Cap
-        activations = ActivationConfigsForTest.wasabi100().forBlock(0);
-        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
+        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0);
+        LockingCapSupport wasabiLockingCapSupport = new LockingCapSupportImpl(
+            lockingCapStorageProvider,
+            wasabiActivations,
+            constants,
+            signatureCache
+        );
 
         // Setting up new Locking Cap value
         Coin newLockingCap = constants.getInitialValue();
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(
+            signatureCache,
+            LockingCapCaller.FIRST_AUTHORIZED.getRskAddress()
+        );
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
+        boolean isIncreased = wasabiLockingCapSupport.increaseLockingCap(tx, newLockingCap);
 
         // Assert
-        assertFalse(isIncrease);
+        assertFalse(isIncreased);
     }
 
     @Test
     @Order(0)
     void getInitialValue_whenFirstTimeGettingLockingCap_shouldReturnInitialValue() {
-        // Arrange
-        activations = ActivationConfigsForTest.all().forBlock(0);
-        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
         // The first time the Locking Cap is requested, it should return the initial value
-        Coin initialValue = constants.getInitialValue();
-        currentLockingCap = initialValue;
+        Coin expectedLockingCap = constants.getInitialValue();
 
         // Actual / Assert
-        assertLockingCapValue(initialValue);
+        assertLockingCapValue(expectedLockingCap);
     }
 
     @Test
     @Order(1)
     void increaseLockingCap_whenNewValueIsGreaterThanCurrentLockingCap_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
-        Coin newLockingCap = currentLockingCap.add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Coin newLockingCap = currentLockingCap.add(Coin.COIN);
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
-        if (isIncrease){
-            lockingCapSupport.save();
-            currentLockingCap = newLockingCap;
-        }
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        assertTrue(isIncreased);
         assertLockingCapValue(newLockingCap);
     }
 
@@ -106,48 +95,27 @@ class LockingCapIT {
     @Order(2)
     void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsLessThanPreviousValue_shouldNotSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
-        Coin newLockingCap = currentLockingCap.subtract(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Coin newLockingCap = currentLockingCap.subtract(Coin.COIN);
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        assertFalse(isIncreased);
         assertLockingCapValue(currentLockingCap);
-        assertFalse(isIncrease);
     }
 
     @Test
     @Order(3)
     void increaseLockingCap_whenPreviousValueExistsInStorageAndNewLockingCapIsGreaterThanPreviousValue_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
-        Coin newLockingCap = currentLockingCap.add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Coin newLockingCap = currentLockingCap.add(Coin.COIN);
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
-        if (isIncrease){
-            lockingCapSupport.save();
-            currentLockingCap = newLockingCap;
-        }
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        assertTrue(isIncreased);
         assertLockingCapValue(newLockingCap);
     }
 
@@ -155,147 +123,147 @@ class LockingCapIT {
     @Order(4)
     void increaseLockingCap_whenAnUnauthorizedCallerRequestToIncreaseLockingCapValue_shouldNotSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
-        Coin newLockingCap = currentLockingCap.add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.UNAUTHORIZED.getRskAddress());
+        Coin newLockingCap = currentLockingCap.add(Coin.COIN);
+        Transaction tx = TransactionUtils.getTransactionFromCaller(
+            signatureCache,
+            LockingCapCaller.UNAUTHORIZED.getRskAddress()
+        );
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
+        boolean isIncreased = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        assertFalse(isIncreased);
         assertLockingCapValue(currentLockingCap);
-        assertFalse(isIncrease);
     }
 
     @Test
     @Order(5)
-    void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_shouldNotSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
+    void increaseLockingCap_whenSecondAuthorizedCallerRequestToIncreaseLockingCapValue_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
-        Coin maxLockingCapVoteValueAllowed = currentLockingCap.multiply(constants.getIncrementsMultiplier());
-        Coin newLockingCap = maxLockingCapVoteValueAllowed.add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Coin newLockingCap = currentLockingCap.add(Coin.COIN);
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap, LockingCapCaller.SECOND_AUTHORIZED);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        assertLockingCapValue(currentLockingCap);
-        assertFalse(isIncrease);
+        assertTrue(isIncreased);
+        assertLockingCapValue(newLockingCap);
     }
 
     @Test
     @Order(6)
-    void increaseLockingCap_whenNewLockingCapIsEqualToMaxLockingCap_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
+    void increaseLockingCap_whenThirdAuthorizedCallerRequestToIncreaseLockingCapValue_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
-        Coin newLockingCap = currentLockingCap.multiply(constants.getIncrementsMultiplier());
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Coin newLockingCap = currentLockingCap.add(Coin.COIN);
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
-        if (isIncrease){
-            lockingCapSupport.save();
-            currentLockingCap = newLockingCap;
-        }
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap, LockingCapCaller.THIRD_AUTHORIZED);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        assertTrue(isIncreased);
         assertLockingCapValue(newLockingCap);
     }
 
     @Test
     @Order(7)
-    void increaseLockingCap_whenNewLockingCapIsZero_shouldThrowLockingCapIllegalArgumentException() {
+    void increaseLockingCap_whenNewLockingCapIsGreaterThanMaxLockingCap_shouldNotSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
+        Coin maxLockingCapVoteValueAllowed = currentLockingCap.multiply(constants.getIncrementsMultiplier());
+        Coin newLockingCap = maxLockingCapVoteValueAllowed.add(Coin.SATOSHI);
 
-        // Setting up new Locking Cap value
-        Coin newLockingCap = Coin.ZERO;
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        // Act
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap);
 
-        // Actual / Assert
-        assertThrows(LockingCapIllegalArgumentException.class, () -> lockingCapSupport.increaseLockingCap(tx, newLockingCap));
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        // Assert
+        assertFalse(isIncreased);
         assertLockingCapValue(currentLockingCap);
     }
 
     @Test
     @Order(8)
-    void increaseLockingCap_whenNewLockingCapIsNegative_shouldThrowLockingCapIllegalArgumentException() {
+    void increaseLockingCap_whenNewLockingCapIsEqualToMaxLockingCap_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
+        Coin newLockingCap = currentLockingCap.multiply(constants.getIncrementsMultiplier());
 
-        // Setting up new Locking Cap value
-        Coin newLockingCap = Coin.NEGATIVE_SATOSHI;
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        // Act
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap);
 
-        // Actual / Assert
-        assertThrows(LockingCapIllegalArgumentException.class, () -> lockingCapSupport.increaseLockingCap(tx, newLockingCap));
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        assertLockingCapValue(currentLockingCap);
+        // Assert
+        assertTrue(isIncreased);
+        assertLockingCapValue(newLockingCap);
     }
 
     @Test
     @Order(9)
+    void increaseLockingCap_whenNewLockingCapIsZero_shouldThrowLockingCapIllegalArgumentException() {
+        // Arrange
+        Coin newLockingCap = Coin.ZERO;
+
+        // Actual / Assert
+        assertThrows(
+            LockingCapIllegalArgumentException.class,
+            () -> voteToIncreaseLockingCap(newLockingCap)
+        );
+        assertLockingCapValue(currentLockingCap);
+    }
+
+    @Test
+    @Order(10)
+    void increaseLockingCap_whenNewLockingCapIsNegative_shouldThrowLockingCapIllegalArgumentException() {
+        // Arrange
+        Coin newLockingCap = Coin.NEGATIVE_SATOSHI;
+
+        // Actual / Assert
+        assertThrows(
+            LockingCapIllegalArgumentException.class,
+            () -> voteToIncreaseLockingCap(newLockingCap)
+        );
+        assertLockingCapValue(currentLockingCap);
+    }
+
+    @Test
+    @Order(11)
     void increaseLockingCap_whenNewValueIsEqualToCurrentValue_shouldSaveNewLockingCapValue() throws LockingCapIllegalArgumentException {
         // Arrange
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
-        // Ensure the value is the same as the one saved in the storage
-        assertLockingCapValue(currentLockingCap);
-
-        // Setting up new Locking Cap value
         Coin newLockingCap = currentLockingCap;
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
 
         // Act
-        boolean isIncrease = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
-        if (isIncrease){
-            lockingCapSupport.save();
-            currentLockingCap = newLockingCap;
-        }
+        boolean isIncreased = voteToIncreaseLockingCap(newLockingCap);
 
         // Assert
-        // Recreate LockingCapStorageProvider to clear cached value and make sure it was saved in the storage
-        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+        assertTrue(isIncreased);
         assertLockingCapValue(newLockingCap);
     }
 
+    private boolean voteToIncreaseLockingCap(Coin valueToVote) throws LockingCapIllegalArgumentException {
+        return voteToIncreaseLockingCap(valueToVote, LockingCapCaller.FIRST_AUTHORIZED);
+    }
+
+    private boolean voteToIncreaseLockingCap(Coin valueToVote, LockingCapCaller caller) throws LockingCapIllegalArgumentException {
+        Transaction tx = TransactionUtils.getTransactionFromCaller(
+            signatureCache,
+            caller.getRskAddress()
+        );
+
+        boolean result = lockingCapSupport.increaseLockingCap(tx, valueToVote);
+        lockingCapSupport.save();
+
+        return result;
+    }
+
     private void assertLockingCapValue(Coin expectedLockingCap) {
+        // Recreate LockingCapStorageProvider to clear cached value and make sure it is fetched from the storage
+        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+
         // Act
         Optional<Coin> actualLockingCap = lockingCapSupport.getLockingCap();
 
         // Assert
         assertTrue(actualLockingCap.isPresent());
         assertEquals(expectedLockingCap, actualLockingCap.get());
+
+        // Save the current Locking Cap value to be used in the next test
+        currentLockingCap = actualLockingCap.get();
     }
 }
