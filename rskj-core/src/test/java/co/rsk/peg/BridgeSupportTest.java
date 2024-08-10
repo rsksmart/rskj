@@ -567,7 +567,7 @@ class BridgeSupportTest {
         void increaseLockingCap() throws VMException {
             // Arrange
             Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+            Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
             when(lockingCapSupport.increaseLockingCap(tx, newLockingCap)).thenReturn(true);
             when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(newLockingCap));
 
