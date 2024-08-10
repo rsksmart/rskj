@@ -84,7 +84,7 @@ class LockingCapSupportImplTest {
         throws LockingCapIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -99,7 +99,7 @@ class LockingCapSupportImplTest {
         throws LockingCapIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().subtract(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -121,7 +121,7 @@ class LockingCapSupportImplTest {
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
 
         Coin newLockingCap = previousLockingCap.add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -143,7 +143,7 @@ class LockingCapSupportImplTest {
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
 
         Coin newLockingCap = expectedLockingCap.subtract(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -181,7 +181,7 @@ class LockingCapSupportImplTest {
 
         Coin maxLockingCapVoteValueAllowed = expectedLockingCap.multiply(constants.getIncrementsMultiplier());
         Coin newLockingCap = maxLockingCapVoteValueAllowed.add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -204,7 +204,7 @@ class LockingCapSupportImplTest {
 
         // The new locking cap is the maximum value that can be set
         Coin newLockingCap = previousLockingCap.multiply(constants.getIncrementsMultiplier());
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -219,7 +219,7 @@ class LockingCapSupportImplTest {
         throws LockingCapIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue();
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -233,7 +233,7 @@ class LockingCapSupportImplTest {
     void increaseLockingCap_whenNewLockingCapIsZero_shouldReturnFalse() {
         // Arrange
         Coin newLockingCap = Coin.ZERO;
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act / Assert
         assertThrows(LockingCapIllegalArgumentException.class, () -> lockingCapSupport.increaseLockingCap(tx, newLockingCap));
@@ -244,7 +244,7 @@ class LockingCapSupportImplTest {
     void increaseLockingCap_whenNewLockingCapIsNegative_shouldReturnFalse() {
         // Arrange
         Coin newLockingCap = Coin.NEGATIVE_SATOSHI;
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act / Assert
         assertThrows(LockingCapIllegalArgumentException.class, () -> lockingCapSupport.increaseLockingCap(tx, newLockingCap));
@@ -258,7 +258,7 @@ class LockingCapSupportImplTest {
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
 
         // Act
         boolean actualResult = lockingCapSupport.increaseLockingCap(tx, newLockingCap);
@@ -273,7 +273,7 @@ class LockingCapSupportImplTest {
         throws LockingCapIllegalArgumentException {
         // Arrange
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
         lockingCapSupport.increaseLockingCap(tx, newLockingCap);
 
         // Act
@@ -293,7 +293,7 @@ class LockingCapSupportImplTest {
         activations = ActivationConfigsForTest.wasabi100().forBlock(0);
         lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, constants, signatureCache);
         Coin newLockingCap = constants.getInitialValue().add(Coin.SATOSHI);
-        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.AUTHORIZED.getRskAddress());
+        Transaction tx = TransactionUtils.getTransactionFromCaller(signatureCache, LockingCapCaller.FIRST_AUTHORIZED.getRskAddress());
         lockingCapSupport.increaseLockingCap(tx, newLockingCap);
 
         // Act
