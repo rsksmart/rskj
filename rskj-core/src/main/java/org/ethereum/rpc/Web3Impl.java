@@ -195,8 +195,12 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String web3_clientVersion() {
+        String javaVersion = System.getProperty("java.version");
+        String javaMajorVersion = javaVersion.startsWith("1.") ? javaVersion.split("\\.")[1] : javaVersion.split("\\.")[0];
+        String formattedJavaVersion = "Java" + javaMajorVersion;
+
         String clientVersion = CLIENT_VERSION_PREFIX + "/" + config.projectVersion() + "/" +
-                System.getProperty("os.name") + "/Java1.8/" +
+                System.getProperty("os.name") + "/" + formattedJavaVersion + "/" +
                 config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
