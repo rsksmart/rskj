@@ -181,8 +181,8 @@ class BridgeStorageProviderTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("save fund tx hash unsigned tests")
-    class SaveSvpFundTxHashUnsignedTests {
+    @Tag("save, set and get svp fund transaction hash unsigned tests")
+    class SvpFundTxHashUnsignedTests {
         private final Sha256Hash svpFundTxHash = BitcoinTestUtils.createHash(123_456_789);
         private Repository repository;
         private BridgeStorageProvider bridgeStorageProvider;
@@ -233,21 +233,6 @@ class BridgeStorageProviderTest {
             // Assert
             byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
             assertNull(actualSvpFundTxHashSerialized);
-        }
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("get fund transaction hash unsigned tests")
-    class GetSvpFundTxHashUnsignedTests {
-        private final Sha256Hash svpFundTxHash = BitcoinTestUtils.createHash(123_456_789);
-        private Repository repository;
-        private BridgeStorageProvider bridgeStorageProvider;
-
-        @BeforeEach
-        void setup() {
-            repository = createRepository();
-            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
         }
 
         @Test
