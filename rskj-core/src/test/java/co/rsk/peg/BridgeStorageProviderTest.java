@@ -53,8 +53,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -73,6 +72,7 @@ class BridgeStorageProviderTest {
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final NetworkParameters testnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+    private final NetworkParameters mainnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
     private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -177,6 +177,63 @@ class BridgeStorageProviderTest {
         assertEquals(tx1.getHash(), signatures.get(hash1).getHash());
         assertEquals(tx2.getHash(), signatures.get(hash2).getHash());
         assertEquals(tx3.getHash(), signatures.get(hash3).getHash());
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save fund tx hash unsigned tests")
+    class SaveSvpFundTxHashUnsignedTests {
+        private final Sha256Hash svpFundTxHash = BitcoinTestUtils.createHash(123_456_789);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_preLovell700_shouldNotSaveInStorage() throws IOException {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_postLovell700_shouldSaveInStorage() throws IOException {
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpFundTxHashSerialized = BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash);
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertArrayEquals(svpFundTxHashSerialized, actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() throws IOException {
+            // Initially setting a valid hash in storage
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(null);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpFundTxHashSerialized);
+        }
     }
 
     @Test
