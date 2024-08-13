@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static java.util.Objects.isNull;
 
-import co.rsk.bitcoinj.core.Sha256Hash;
 import java.math.BigInteger;
 import java.util.*;
 import org.ethereum.util.RLP;
@@ -1092,7 +1091,7 @@ class FederationStorageProviderImplTests {
             federationStorageProvider.getProposedFederation(federationConstants, allActivations);
 
             // saving in the repo another fed to make sure the cached value is the one being returned
-            Federation anotherFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());;
+            Federation anotherFederation = FederationTestUtils.getErpFederation(federationConstants.getBtcParams());
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), anotherFederation.getFormatVersion(), BridgeSerializationUtils::serializeInteger);
             bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), anotherFederation, BridgeSerializationUtils::serializeFederation);
 
