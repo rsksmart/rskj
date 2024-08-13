@@ -109,9 +109,16 @@ class HandshakeHandlerTest {
 
     @Test
     void shouldConnectWithSnapCapability() throws Exception {
-        simulateHandshakeStartedByPeer(Arrays.asList(new Capability(SNAP, (byte) SNAP_VERSION), new Capability(RSK, EthVersion.UPPER)));
+        simulateHandshakeStartedByPeer(Arrays.asList(new Capability(SNAP, SNAP_VERSION), new Capability(RSK, EthVersion.UPPER)));
         // this will only happen when an exception is raised
         assertTrue(ch.isOpen());
+    }
+
+    @Test
+    void shouldDisconnectWithSnapCapabilityIfRskCapabilityIsMissing() throws Exception {
+        simulateHandshakeStartedByPeer(Arrays.asList(new Capability(SNAP, SNAP_VERSION)));
+        // this will only happen when an exception is raised
+        assertFalse(ch.isOpen());
     }
 
     // This is sort of an integration test. It interacts with the handshake handler and multiple other objects to

@@ -55,7 +55,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
         }
 
         if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
-            allCapabilities.add(new Capability(SNAP, (byte) SNAP_VERSION));
+            allCapabilities.add(new Capability(SNAP, SNAP_VERSION));
         }
 
         this.config = config;
