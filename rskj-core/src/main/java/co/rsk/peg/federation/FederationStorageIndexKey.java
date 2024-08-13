@@ -26,7 +26,6 @@ public enum FederationStorageIndexKey {
     OLD_FEDERATION_FORMAT_VERSION("oldFederationFormatVersion"),
     PENDING_FEDERATION_FORMAT_VERSION("pendingFederationFormatVersion"),
     PROPOSED_FEDERATION_FORMAT_VERSION("proposedFederationFormatVersion"),
-    SVP_FUND_TX_HASH_UNSIGNED("svpFundTxHashUnsigned")
     ;
 
     private final String key;
