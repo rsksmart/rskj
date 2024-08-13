@@ -1,7 +1,6 @@
 package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -46,9 +45,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
 
     private Script lastRetiredFederationP2SHScript;
-
-    private Sha256Hash svpFundTxHashUnsigned;
-    private boolean isSvpFundTxHashUnsignedSet = false;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -330,34 +326,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
-    public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
-        this.svpFundTxHashUnsigned = hash;
-        this.isSvpFundTxHashUnsignedSet = true;
-    }
-
-    @Override
-    public Optional<Sha256Hash> getSvpFundTxHashUnsigned(ActivationConfig.ForBlock activations) {
-
-        if (!activations.isActive(RSKIP419)) {
-            return Optional.empty();
-        }
-
-        if (svpFundTxHashUnsigned != null) {
-            return Optional.of(svpFundTxHashUnsigned);
-        }
-
-        // Return empty if the svp fund tx hash unsigned was explicitly set to null
-        if (isSvpFundTxHashUnsignedSet) {
-            return Optional.empty();
-        }
-
-        svpFundTxHashUnsigned = bridgeStorageAccessor.getFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
-
-        return Optional.ofNullable(svpFundTxHashUnsigned);
-
-    }
-
-    @Override
     public void save(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         saveNewFederationBtcUTXOs(networkParameters, activations);
         saveOldFederationBtcUTXOs();
@@ -375,8 +343,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveNextFederationCreationBlockHeight(activations);
 
         saveLastRetiredFederationP2SHScript(activations);
-
-        saveSvpFundTxHashUnsigned(activations);
     }
 
     private void saveNewFederationBtcUTXOs(NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
@@ -461,20 +427,6 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
         saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), formatVersion);
         bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
-    }
-
-    private void saveSvpFundTxHashUnsigned(ActivationConfig.ForBlock activations) {
-
-        if (!activations.isActive(RSKIP419) || !isSvpFundTxHashUnsignedSet) {
-            return;
-        }
-
-        byte[] data = Optional.ofNullable(svpFundTxHashUnsigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
-
-        bridgeStorageAccessor.saveToRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
-
     }
 
     @Nullable
