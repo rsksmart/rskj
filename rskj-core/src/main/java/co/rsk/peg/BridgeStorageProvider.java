@@ -77,6 +77,9 @@ public class BridgeStorageProvider {
 
     private Set<Sha256Hash> pegoutTxSigHashes;
 
+    private Sha256Hash svpFundTxHashUnsigned;
+    private boolean isSvpFundTxHashUnsignedSet = false;
+
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
@@ -520,6 +523,41 @@ public class BridgeStorageProvider {
         ));
     }
 
+    public Optional<Sha256Hash> getSvpFundTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpFundTxHashUnsigned != null) {
+            return Optional.of(svpFundTxHashUnsigned);
+        }
+
+        // Return empty if the svp fund tx hash unsigned was explicitly set to null
+        if (isSvpFundTxHashUnsignedSet) {
+            return Optional.empty();
+        }
+
+        svpFundTxHashUnsigned = safeGetFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        return Optional.ofNullable(svpFundTxHashUnsigned);
+    }
+
+    public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
+        this.svpFundTxHashUnsigned = hash;
+        this.isSvpFundTxHashUnsignedSet = true;
+    }
+
+    private void saveSvpFundTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419) || !isSvpFundTxHashUnsignedSet) {
+            return;
+        }
+
+        byte[] data = Optional.ofNullable(svpFundTxHashUnsigned)
+            .map(BridgeSerializationUtils::serializeSha256Hash)
+            .orElse(null);
+
+        repository.addStorageBytes(contractAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -542,6 +580,8 @@ public class BridgeStorageProvider {
         saveNextPegoutHeight();
 
         savePegoutTxSigHashes();
+
+        saveSvpFundTxHashUnsigned();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
