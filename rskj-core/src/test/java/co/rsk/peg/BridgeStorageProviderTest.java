@@ -49,8 +49,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -69,6 +68,7 @@ class BridgeStorageProviderTest {
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final NetworkParameters testnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+    private final NetworkParameters mainnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
     private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -173,6 +173,211 @@ class BridgeStorageProviderTest {
         assertEquals(tx1.getHash(), signatures.get(hash1).getHash());
         assertEquals(tx2.getHash(), signatures.get(hash2).getHash());
         assertEquals(tx3.getHash(), signatures.get(hash3).getHash());
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp fund transaction hash unsigned tests")
+    class SvpFundTxHashUnsignedTests {
+        private final Sha256Hash svpFundTxHash = BitcoinTestUtils.createHash(123_456_789);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_preLovell700_shouldNotSaveInStorage() throws IOException {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_postLovell700_shouldSaveInStorage() throws IOException {
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpFundTxHashSerialized = BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash);
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertArrayEquals(svpFundTxHashSerialized, actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() throws IOException {
+            // Initially setting a valid hash in storage
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(null);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_preLovell700_shouldReturnEmpty() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Manually setting the value in storage to then assert that pre fork the method doesn't access the storage
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenThereIsNoSvpFundTxHashUnsignedSavedNorSet_shouldReturnEmpty() {
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashSetButNotSavedToStorage_shouldReturnTheHash() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenDifferentHashIsInStorageAndAnotherIsSetButNotSaved_shouldReturnTheSetHash() {
+            // Arrange
+            Sha256Hash anotherSvpFundTxHash = BitcoinTestUtils.createHash(987_654_321);
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(anotherSvpFundTxHash));
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenStorageIsNotEmptyAndHashSetToNullButNotSaved_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(null);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashSetAndSaved_shouldReturnTheHash() throws IOException {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashDirectlySavedInStorage_shouldReturnTheHash() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenSetToNull_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(null);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashIsNullInStorage_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), null);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenNullHashIsSetAndSaved_shouldReturnEmpty() throws IOException {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(null);
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashIsCached_shouldReturnTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Setting a different hash in storage to make sure that when calling the method again it returns the cached one, not this one
+            Sha256Hash anotherSvpFundTxHash = BitcoinTestUtils.createHash(987_654_321);
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(anotherSvpFundTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
     }
 
     @Test
