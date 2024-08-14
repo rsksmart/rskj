@@ -1,7 +1,6 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -46,6 +45,8 @@ public interface FederationSupport {
     int getPendingFederationSize();
     byte[] getPendingFederatorBtcPublicKey(int index);
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
+
+    Optional<Federation> getProposedFederation();
 
     int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger);
     long getActiveFederationCreationBlockHeight();

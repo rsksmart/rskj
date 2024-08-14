@@ -48,6 +48,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
+        spendableValueFromProposedFederation = Coin.valueOf(250_000);
+
         btcHeightWhenBlockIndexActivates = 2_039_594;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 

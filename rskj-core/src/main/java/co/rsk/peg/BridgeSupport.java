@@ -962,6 +962,72 @@ public class BridgeSupport {
         updateFederationCreationBlockHeights();
     }
 
+    protected void processSvpFundTransactionWithoutSignatures(Transaction rskTx) throws IOException, InsufficientMoneyException {
+        BtcTransaction svpFundTransactionUnsigned = createSvpFundTransactionWithoutSignatures();
+
+        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+        performPegoutActions(svpFundTransactionUnsigned, rskTx.getHash());
+    }
+
+    protected BtcTransaction createSvpFundTransactionWithoutSignatures() throws IOException, InsufficientMoneyException {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+        if (!proposedFederationOpt.isPresent()) {
+            String message = "Proposed federation should be present when creating SVP fund transaction.";
+            logger.warn(message);
+            throw new IllegalStateException(message);
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
+        Coin feePerKb = feePerKbSupport.getFeePerKb();
+        Wallet activeFederationWallet = getActiveFederationWallet(true);
+
+        BtcTransaction svpFundTransactionUnsigned = new BtcTransaction(bridgeConstants.getBtcParams());
+        svpFundTransactionUnsigned.setVersion(BTC_TX_VERSION_2);
+
+        svpFundTransactionUnsigned.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
+        // complete tx with input and change output
+        SendRequest sendRequest = completeSvpSpendTransactionRequestToSend(svpFundTransactionUnsigned, feePerKb);
+        activeFederationWallet.completeTx(sendRequest);
+
+        return svpFundTransactionUnsigned;
+    }
+
+    private SendRequest completeSvpSpendTransactionRequestToSend(BtcTransaction transaction, Coin feePerKb) {
+        SendRequest sendRequest = SendRequest.forTx(transaction);
+        sendRequest.changeAddress = getActiveFederationAddress();
+        sendRequest.feePerKb = feePerKb;
+        sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sendRequest.recipientsPayFees = false;
+
+        return sendRequest;
+    }
+
+    private void performPegoutActions(BtcTransaction pegoutTransaction, Keccak256 rskTxHash) throws IOException {
+        addPegoutToPegoutsWaitingForConfirmations(pegoutTransaction, rskTxHash);
+        savePegoutTxSigHash(pegoutTransaction);
+        logReleaseRequested(rskTxHash.getBytes(), pegoutTransaction);
+        logPegoutTransactionCreated(pegoutTransaction);
+    }
+
+    private void addPegoutToPegoutsWaitingForConfirmations(BtcTransaction pegoutTransaction, Keccak256 rskTxHash) throws IOException {
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        pegoutsWaitingForConfirmations.add(pegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+    }
+
+    private void logReleaseRequested(byte[] rskTxHashSerialized, BtcTransaction pegoutTransaction) {
+        eventLogger.logReleaseBtcRequested(rskTxHashSerialized, pegoutTransaction, getPegoutAmount(pegoutTransaction));
+    }
+
+    private Coin getPegoutAmount(BtcTransaction pegout) {
+        return pegout.getOutput(0).getValue();
+    }
+
+    private void logPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
+        List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
+        eventLogger.logPegoutTransactionCreated(pegoutTransaction.getHash(), outpointValues);
+    }
+
     protected void updateFederationCreationBlockHeights() {
         federationSupport.updateFederationCreationBlockHeights();
     }

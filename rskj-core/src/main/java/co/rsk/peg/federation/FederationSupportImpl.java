@@ -1,8 +1,6 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
@@ -368,6 +366,11 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return getFederationMemberPublicKeyOfType(currentPendingFederation.getMembers(), index, keyType, "Federator");
+    }
+
+    @Override
+    public Optional<Federation> getProposedFederation() {
+        return provider.getProposedFederation(constants, activations);
     }
 
     @Override

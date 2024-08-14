@@ -48,6 +48,8 @@ public abstract class BridgeConstants {
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
 
+    protected Coin spendableValueFromProposedFederation;
+
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
     protected long minSecondsBetweenCallsReceiveHeader;
@@ -103,6 +105,8 @@ public abstract class BridgeConstants {
     public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
+
+    public Coin getSpendableValueFromProposedFederation() { return spendableValueFromProposedFederation; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 

@@ -62,6 +62,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
         minimumPeginTxValue = Coin.COIN.div(2);
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
+        spendableValueFromProposedFederation = Coin.valueOf(250_000);
+
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
 
         maxDepthBlockchainAccepted = 25;
