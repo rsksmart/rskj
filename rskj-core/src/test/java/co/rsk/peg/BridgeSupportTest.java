@@ -692,7 +692,7 @@ class BridgeSupportTest {
 
             assertSvpTxSigHashWasSaved();
 
-            assertLogReleaseRequested(bridgeMainNetConstants.getSpendableValueFromProposedFederation());
+            assertLogReleaseRequested();
 
             assertLogPegoutTransactionCreated();
         }
@@ -725,9 +725,10 @@ class BridgeSupportTest {
             assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(svpFunTransactionUnsignedSigHash));
         }
 
-        private void assertLogReleaseRequested(Coin requestedPegoutAmount) {
+        private void assertLogReleaseRequested() {
             List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, rskTxHash.getBytes(), svpFundTransactionHashUnsigned.getBytes());
 
+            Coin requestedPegoutAmount = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
             byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedPegoutAmount.getValue());
 
             assertEventWasEmittedWithExpectedTopics(encodedTopics);
