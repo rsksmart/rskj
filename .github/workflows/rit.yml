@@ -3,15 +3,26 @@ on:
     branches:
       - "master"
       - "*-rc"
-  pull_request:
+  issue_comment:
+    types:
+      - created
+      - edited
+  release:
+    types:
+      - created
+      - edited
+      - published
 
 jobs:
   rootstock-integration-tests:
+    name: Rootstock Integration Tests
+    if: contains(github.event.issue.pull_request)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Rootstock Integration Tests
+      - name: Test execution
+        if: contains(github.event.comment.body, '/pipeline:run')
         uses: rsksmart/rootstock-integration-tests@v1
         with:
-          rskj-branch: master
-          powpeg-node-branch: master
+          rskj-branch: master # todo: change it to get the branch from the PR
+          powpeg-node-branch: master # todo: change it to get the branch from a comment in the PR
