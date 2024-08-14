@@ -92,26 +92,32 @@ import static co.rsk.peg.PegTestUtils.createUTXO;
 class BridgeSupportTest {
     private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
     private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
+
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
     private final FederationConstants federationConstantsMainnet = bridgeMainNetConstants.getFederationConstants();
+
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
 
     private Block rskExecutionBlock;
     private List<LogInfo> logs;
-    private BridgeEventLogger bridgeEventLogger;
+
     private BridgeStorageProvider bridgeStorageProvider;
     private BridgeSupportBuilder bridgeSupportBuilder;
     private BridgeSupport bridgeSupport;
+
     private WhitelistStorageProvider whitelistStorageProvider;
-    private LockingCapStorageProvider lockingCapStorageProvider;
-    private FederationSupportBuilder federationSupportBuilder;
-    private FeePerKbSupport feePerKbSupport;
-    private FederationSupport federationSupport;
     private WhitelistSupport whitelistSupport;
+
+    private LockingCapStorageProvider lockingCapStorageProvider;
     private LockingCapSupport lockingCapSupport;
+
+    private FederationSupportBuilder federationSupportBuilder;
+    private FederationSupport federationSupport;
+
+    private FeePerKbSupport feePerKbSupport;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -566,8 +572,8 @@ class BridgeSupportTest {
             long rskExecutionBlockNumber = 1000L;
             when(rskExecutionBlock.getNumber()).thenReturn(rskExecutionBlockNumber);
 
-            federationSupport = mock(FederationSupport.class);
             activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+            federationSupport = mock(FederationSupport.class);
             when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
             when(federationSupport.getActiveFederationAddress()).thenReturn(activeFederation.getAddress());
 
@@ -584,7 +590,7 @@ class BridgeSupportTest {
             Keccak256 rskTxHash = PegTestUtils.createHash3(1);
             when(rskTx.getHash()).thenReturn(rskTxHash);
 
-            bridgeEventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activationsAfterForks, logs, signatureCache);
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activationsAfterForks, logs, signatureCache);
 
             bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeMainNetConstants)
