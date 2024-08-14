@@ -603,7 +603,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void createSvpFundTransactionWithoutSignatures_createsExpectedSvpFundTransaction() throws InsufficientMoneyException, IOException {
+        void createSvpFundTransactionWithoutSignatures_createsExpectedSvpFundTransaction() throws InsufficientMoneyException {
             svpFundTransactionUnsigned = bridgeSupport.createSvpFundTransactionWithoutSignatures(proposedFederation);
 
             assertSvpFundTransactionHasExpectedInputsAndOutputs();
