@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 
+
 /**
  * Created by ajlopez on 15/04/2020.
  */
@@ -166,5 +167,40 @@ class VmDslTest {
 
         short oldGas = ByteBuffer.wrap(callTransactionReceiptOld.getGasUsed()).getShort();
         Assertions.assertTrue(newGas < oldGas);
+    }
+
+    @Test
+    void testInitCodeSizeValidationSuccessWithoutInitcodeViaCreateOpcode() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_without_initcode_cost.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode2", "b03");
+    }
+
+    @Test
+    void testInitCodeSizeValidationSuccessViaCreateOpcode() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_without_initcode_cost.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode2", "b03");
+    }
+
+    private void assertTransactionExecutedWithSuccessAndWasAddedToBlock(World world, String transactionName, String blockName) {
+        Transaction contractTransaction = world.getTransactionByName(transactionName);
+        Assertions.assertNotNull(contractTransaction);
+        Block bestBlock = world.getBlockByName(blockName);
+        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
     }
 }
