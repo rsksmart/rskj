@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - "master"
+      - "*-rc"
+  pull_request:
+
+jobs:
+  rootstock-integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Rootstock Integration Tests
+        uses: rsksmart/rootstock-integration-tests@v1
+        with:
+          rskj-branch: master
+          powpeg-node-branch: master
