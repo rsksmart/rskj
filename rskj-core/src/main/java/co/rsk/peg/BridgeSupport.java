@@ -280,7 +280,7 @@ public class BridgeSupport {
      * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = federationSupport.getActiveFederationBtcUTXOs();
 
@@ -301,12 +301,12 @@ public class BridgeSupport {
      * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
-    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) throws IOException {
+    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
         Federation federation = getRetiringFederation();
         if (federation == null) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
@@ -963,21 +963,20 @@ public class BridgeSupport {
     }
 
     protected void processSvpFundTransactionWithoutSignatures(Transaction rskTx) throws IOException, InsufficientMoneyException {
-        BtcTransaction svpFundTransactionUnsigned = createSvpFundTransactionWithoutSignatures();
-
-        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
-        performPegoutActions(svpFundTransactionUnsigned, rskTx.getHash());
-    }
-
-    protected BtcTransaction createSvpFundTransactionWithoutSignatures() throws IOException, InsufficientMoneyException {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (!proposedFederationOpt.isPresent()) {
-            String message = "Proposed federation should be present when creating SVP fund transaction.";
+            String message = "Proposed federation should be present when processing SVP fund transaction.";
             logger.warn(message);
             throw new IllegalStateException(message);
         }
         Federation proposedFederation = proposedFederationOpt.get();
 
+        BtcTransaction svpFundTransactionUnsigned = createSvpFundTransactionWithoutSignatures(proposedFederation);
+        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+        performPegoutActions(svpFundTransactionUnsigned, rskTx.getHash(), getSvpFundTxSentAmount(proposedFederation, svpFundTransactionUnsigned.getOutputs()));
+    }
+
+    protected BtcTransaction createSvpFundTransactionWithoutSignatures(Federation proposedFederation) throws InsufficientMoneyException {
         Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
         Coin feePerKb = feePerKbSupport.getFeePerKb();
         Wallet activeFederationWallet = getActiveFederationWallet(true);
@@ -1003,10 +1002,29 @@ public class BridgeSupport {
         return sendRequest;
     }
 
-    private void performPegoutActions(BtcTransaction pegoutTransaction, Keccak256 rskTxHash) throws IOException {
+    private static Coin getSvpFundTxSentAmount(Federation proposedFederation, List<TransactionOutput> pegoutTransactionOutputs) {
+        // pegout value "requested" from proposed federation is the value actually sent
+        // since the active federation is paying for the fees
+
+        Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
+        Optional<TransactionOutput> outputToProposedFederationOpt = pegoutTransactionOutputs.stream()
+            .filter(output -> output.getScriptPubKey().equals(proposedFederationScriptPubKey))
+            .findFirst();
+
+        if (!outputToProposedFederationOpt.isPresent()) {
+            String message = "The output for the proposed federation should be present in the svp fund transaction.";
+            logger.warn(message);
+            throw new IllegalStateException(message);
+        }
+        TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
+
+        return outputToProposedFederation.getValue();
+    }
+
+    private void performPegoutActions(BtcTransaction pegoutTransaction, Keccak256 rskTxHash, Coin requestedPegoutAmount) throws IOException {
         addPegoutToPegoutsWaitingForConfirmations(pegoutTransaction, rskTxHash);
         savePegoutTxSigHash(pegoutTransaction);
-        logReleaseRequested(rskTxHash.getBytes(), pegoutTransaction);
+        logReleaseRequested(rskTxHash.getBytes(), pegoutTransaction, requestedPegoutAmount);
         logPegoutTransactionCreated(pegoutTransaction);
     }
 
@@ -1015,12 +1033,8 @@ public class BridgeSupport {
         pegoutsWaitingForConfirmations.add(pegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
     }
 
-    private void logReleaseRequested(byte[] rskTxHashSerialized, BtcTransaction pegoutTransaction) {
-        eventLogger.logReleaseBtcRequested(rskTxHashSerialized, pegoutTransaction, getPegoutAmount(pegoutTransaction));
-    }
-
-    private Coin getPegoutAmount(BtcTransaction pegout) {
-        return pegout.getOutput(0).getValue();
+    private void logReleaseRequested(byte[] rskTxHashSerialized, BtcTransaction pegoutTransaction, Coin requestedPegoutAmount) {
+        eventLogger.logReleaseBtcRequested(rskTxHashSerialized, pegoutTransaction, requestedPegoutAmount);
     }
 
     private void logPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
@@ -2097,7 +2111,7 @@ public class BridgeSupport {
         return liveFederations;
     }
 
-    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) throws BridgeIllegalArgumentException {
+    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         return federationSupport.voteFederationChange(tx, callSpec, signatureCache, eventLogger);
     }
 
@@ -2599,7 +2613,7 @@ public class BridgeSupport {
             Keccak256 derivationHash,
             FlyoverFederationInformation flyoverFederationInformation,
             List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
@@ -2610,7 +2624,7 @@ public class BridgeSupport {
         Keccak256 derivationHash,
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);

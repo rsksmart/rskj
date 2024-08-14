@@ -146,8 +146,8 @@ class BridgeSupportTest {
         bridgeSupportBuilder = new BridgeSupportBuilder();
 
         StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
         lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
 
         feePerKbSupport = mock(FeePerKbSupport.class);
@@ -557,7 +557,6 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp tests")
     class SvpTests {
-
         private Federation activeFederation;
         private Federation proposedFederation;
 
@@ -604,8 +603,8 @@ class BridgeSupportTest {
         }
 
         @Test
-        void createSvpFundTransactionWithoutSignatures() throws InsufficientMoneyException, IOException {
-            svpFundTransactionUnsigned = bridgeSupport.createSvpFundTransactionWithoutSignatures();
+        void createSvpFundTransactionWithoutSignatures_createsExpectedSvpFundTransaction() throws InsufficientMoneyException, IOException {
+            svpFundTransactionUnsigned = bridgeSupport.createSvpFundTransactionWithoutSignatures(proposedFederation);
 
             assertSvpFundTransactionHasExpectedInputsAndOutputs();
         }
@@ -629,12 +628,12 @@ class BridgeSupportTest {
         private void assertOutputsAreToProposedFederationAndChange() {
             List<TransactionOutput> outputs = svpFundTransactionUnsigned.getOutputs();
 
-            assertOneOutputWasSentToProposedFederation(outputs);
+            assertOneOutputWasSentToProposedFederationWithExpectedAmount(outputs);
             assertOneOutputIsChange(outputs);
             assertEquals(2, outputs.size());
         }
 
-        private void assertOneOutputWasSentToProposedFederation(List<TransactionOutput> outputs) {
+        private void assertOneOutputWasSentToProposedFederationWithExpectedAmount(List<TransactionOutput> outputs) {
             Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
             Optional<TransactionOutput> outputToProposedFederationOpt = outputs.stream()
                 .filter(output -> output.getScriptPubKey().equals(proposedFederationScriptPubKey))
@@ -643,7 +642,6 @@ class BridgeSupportTest {
 
             TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
             assertEquals(outputToProposedFederation.getValue(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
-
         }
 
         private void assertOneOutputIsChange(List<TransactionOutput> outputs) {
@@ -655,7 +653,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void processSvpFundTransactionWithoutSignatures_savesTheHashInStorageEntryAndAddsItToPegouts() throws Exception {
+        void processSvpFundTransactionWithoutSignatures_savesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // act
             bridgeSupport.processSvpFundTransactionWithoutSignatures(rskTx);
             bridgeStorageProvider.save(); // to save the tx sig hash
@@ -664,8 +662,8 @@ class BridgeSupportTest {
             assertSvpFundTxHashUnsignedWasSavedInStorage();
 
             Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = getPegoutEntries();
-            assertEquals(1, pegoutEntries.size());
-            assertPegoutActionsWerePerformed(pegoutEntries, svpFundTransactionHashUnsigned, rskTx.getHash());
+            assertPegoutActionsWerePerformed(pegoutEntries, svpFundTransactionHashUnsigned, rskTx.getHash(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
+            assertEquals(1, pegoutEntries.size()); // we expect just one pegout in map
         }
 
         private void assertSvpFundTxHashUnsignedWasSavedInStorage() {
@@ -681,12 +679,12 @@ class BridgeSupportTest {
         return pegoutsWaitingForConfirmations.getEntries();
     }
 
-    private void assertPegoutActionsWerePerformed(Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries, Sha256Hash pegoutTransactionHash, Keccak256 rskTxHash) throws IOException {
+    private void assertPegoutActionsWerePerformed(Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries, Sha256Hash pegoutTransactionHash, Keccak256 rskTxHash, Coin requestedPegoutAmount) {
         BtcTransaction pegoutTransaction = assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutEntries, pegoutTransactionHash, rskTxHash);
 
         assertPegoutTxSigHashWasSaved(pegoutTransaction);
 
-        assertLogReleaseRequested(rskTxHash.getBytes(), pegoutTransaction);
+        assertLogReleaseRequested(rskTxHash.getBytes(), pegoutTransaction, requestedPegoutAmount);
 
         assertLogPegoutTransactionCreated(pegoutTransaction);
     }
@@ -717,12 +715,11 @@ class BridgeSupportTest {
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTransactionSigHash));
     }
 
-    private void assertLogReleaseRequested(byte[] rskTxHashSerialized, BtcTransaction pegoutTransaction) {
+    private void assertLogReleaseRequested(byte[] rskTxHashSerialized, BtcTransaction pegoutTransaction, Coin requestedPegoutAmount) {
         Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
         List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, rskTxHashSerialized, pegoutTransactionHash.getBytes());
 
-        Coin amount = pegoutTransaction.getOutput(0).getValue();
-        byte[] encodedData = getEncodedData(releaseRequestedEvent, amount.getValue());
+        byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedPegoutAmount.getValue());
 
         assertEventWasEmittedWithExpectedTopics(encodedTopics);
         assertEventWasEmittedWithExpectedData(encodedData);
