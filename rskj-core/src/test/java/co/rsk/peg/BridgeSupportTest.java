@@ -655,7 +655,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void processSvpFundTransactionWithoutSignatures_whenProposedFederationDoesNotExist_throwsIllegalStateException() throws Exception {
+        void processSvpFundTransactionWithoutSignatures_whenProposedFederationDoesNotExist_throwsIllegalStateException() {
             // arrange
             when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
 
