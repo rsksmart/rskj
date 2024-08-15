@@ -18,38 +18,58 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.PegTestUtils.createUTXO;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.net.utils.TransactionUtils;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.utils.TransactionUtils;
+import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.constants.*;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.*;
 import co.rsk.peg.lockingcap.*;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
-import co.rsk.peg.storage.*;
-import co.rsk.peg.bitcoin.*;
-import co.rsk.peg.btcLockSender.*;
-import co.rsk.peg.federation.*;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
-import co.rsk.peg.pegininstructions.*;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
+import co.rsk.peg.pegininstructions.*;
+import co.rsk.peg.storage.*;
+import co.rsk.peg.utils.*;
 import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
-import co.rsk.util.HexUtils;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.util.HexUtils;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -57,7 +77,7 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -66,27 +86,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
-import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.PegTestUtils.createUTXO;
-
 class BridgeSupportTest {
+    private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+    private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
+
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
@@ -563,6 +566,218 @@ class BridgeSupportTest {
 
             // Assert
             assertEquals(expectedLockingCap, actualLockingCap);
+        }
+
+        @Nested
+        @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+        @Tag("svp tests")
+        class SvpTests {
+            private Federation activeFederation;
+            private Federation proposedFederation;
+
+            private BtcTransaction svpFundTransactionUnsigned;
+            private Sha256Hash svpFundTransactionHashUnsigned;
+
+            private Transaction rskTx;
+            private Keccak256 rskTxHash;
+
+            @BeforeEach
+            void setUp() {
+                long rskExecutionBlockNumber = 1000L;
+                long rskExecutionBlockTimestamp = 10L;
+                BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                    .setNumber(rskExecutionBlockNumber)
+                    .setTimestamp(rskExecutionBlockTimestamp)
+                    .build();
+                rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
+
+                activeFederation = FederationTestUtils.getErpFederation(federationConstantsMainnet.getBtcParams());
+                federationSupport = mock(FederationSupport.class);
+                when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
+                when(federationSupport.getActiveFederationAddress()).thenReturn(activeFederation.getAddress());
+
+                List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+                when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(activeFederationUTXOs);
+
+                proposedFederation = new P2shErpFederationBuilder().build();
+                when(federationSupport.getProposedFederation()).thenReturn(Optional.of(proposedFederation));
+
+                Coin feePerKb = Coin.valueOf(1000);
+                when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
+
+                rskTx = mock(Transaction.class);
+                rskTxHash = PegTestUtils.createHash3(1);
+                when(rskTx.getHash()).thenReturn(rskTxHash);
+
+                BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activationsAfterForks, logs, signatureCache);
+
+                bridgeSupport = bridgeSupportBuilder
+                    .withBridgeConstants(bridgeMainNetConstants)
+                    .withEventLogger(bridgeEventLogger)
+                    .withProvider(bridgeStorageProvider)
+                    .withActivations(activationsAfterForks)
+                    .withFederationSupport(federationSupport)
+                    .withFeePerKbSupport(feePerKbSupport)
+                    .withExecutionBlock(rskExecutionBlock)
+                    .build();
+            }
+
+            @Test
+            void processSvpFundTransactionWithoutSignatures_whenProposedFederationDoesNotExist_throwsIllegalStateException() {
+                // arrange
+                when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
+
+                // act & assert
+                IllegalStateException exception = assertThrows(IllegalStateException.class,
+                    () -> bridgeSupport.processSvpFundTransactionWithoutSignatures(rskTx));
+
+                String expectedMessage = "Proposed federation should be present when processing SVP fund transaction.";
+                assertEquals(expectedMessage, exception.getMessage());
+            }
+
+            @Test
+            void processSvpFundTransactionWithoutSignatures_createsExpectedTransactionAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+                // act
+                bridgeSupport.processSvpFundTransactionWithoutSignatures(rskTx);
+                bridgeStorageProvider.save(); // to save the tx sig hash
+
+                // assert
+                assertSvpFundTxHashUnsignedWasSavedInStorage();
+
+                assertReleaseWasSettled();
+
+                assertSvpFundTransactionHasExpectedInputsAndOutputs();
+            }
+
+            private void assertSvpFundTxHashUnsignedWasSavedInStorage() {
+                Optional<Sha256Hash> svpFundTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+                assertTrue(svpFundTransactionHashUnsignedOpt.isPresent());
+
+                svpFundTransactionHashUnsigned = svpFundTransactionHashUnsignedOpt.get();
+            }
+
+            private void assertReleaseWasSettled() throws IOException {
+                assertSvpFundTxUnsignedWasAddedToPegoutsWaitingForConfirmations();
+
+                assertSvpTxSigHashWasSaved();
+
+                assertLogReleaseRequested();
+
+                assertLogPegoutTransactionCreated();
+            }
+
+            private void assertSvpFundTxUnsignedWasAddedToPegoutsWaitingForConfirmations() throws IOException {
+                PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+                Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
+
+                assertEquals(1, pegoutEntries.size());
+
+                // the pegout should be the fund tx
+                Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutEntries.iterator();
+                PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
+
+                BtcTransaction pegoutTransaction = pegoutEntry.getBtcTransaction();
+                assertEquals(pegoutTransaction.getHash(), svpFundTransactionHashUnsigned);
+                assertEquals(pegoutEntry.getPegoutCreationRskBlockNumber(), rskExecutionBlock.getNumber());
+                assertEquals(pegoutEntry.getPegoutCreationRskTxHash(), rskTxHash);
+
+                svpFundTransactionUnsigned = pegoutTransaction;
+            }
+
+            private void assertSvpTxSigHashWasSaved() {
+                Optional<Sha256Hash> svpFundTransactionUnsignedSigHashOpt = BitcoinUtils.getFirstInputSigHash(svpFundTransactionUnsigned);
+                assertTrue(svpFundTransactionUnsignedSigHashOpt.isPresent());
+
+                Sha256Hash svpFunTransactionUnsignedSigHash = svpFundTransactionUnsignedSigHashOpt.get();
+                assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(svpFunTransactionUnsignedSigHash));
+            }
+
+            private void assertLogReleaseRequested() {
+                List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, rskTxHash.getBytes(), svpFundTransactionHashUnsigned.getBytes());
+
+                Coin requestedPegoutAmount = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
+                byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedPegoutAmount.getValue());
+
+                assertEventWasEmittedWithExpectedTopics(encodedTopics);
+                assertEventWasEmittedWithExpectedData(encodedData);
+            }
+
+            private void assertLogPegoutTransactionCreated() {
+                byte[] svpFundTransactionHashUnsignedSerialized = svpFundTransactionHashUnsigned.getBytes();
+                List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, svpFundTransactionHashUnsignedSerialized);
+
+                List<Coin> outpointValues = extractOutpointValues(svpFundTransactionUnsigned);
+                byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
+                byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
+
+                assertEventWasEmittedWithExpectedTopics(encodedTopics);
+                assertEventWasEmittedWithExpectedData(encodedData);
+            }
+
+            private void assertSvpFundTransactionHasExpectedInputsAndOutputs() {
+                assertInputsAreFromActiveFederation();
+
+                assertOutputsAreToProposedFederationAndChange();
+            }
+
+            private void assertInputsAreFromActiveFederation() {
+                Script activeFederationScriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+                List<TransactionInput> inputs = svpFundTransactionUnsigned.getInputs();
+
+                for (TransactionInput input : inputs) {
+                    assertEquals(activeFederationScriptSig, input.getScriptSig());
+                }
+            }
+
+            private void assertOutputsAreToProposedFederationAndChange() {
+                List<TransactionOutput> outputs = svpFundTransactionUnsigned.getOutputs();
+
+                assertOneOutputWasSentToProposedFederationWithExpectedAmount(outputs);
+                assertOneOutputIsChange(outputs);
+                assertEquals(2, outputs.size());
+            }
+
+            private void assertOneOutputWasSentToProposedFederationWithExpectedAmount(List<TransactionOutput> outputs) {
+                Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
+                Optional<TransactionOutput> outputToProposedFederationOpt = outputs.stream()
+                    .filter(output -> output.getScriptPubKey().equals(proposedFederationScriptPubKey))
+                    .findFirst();
+                assertTrue(outputToProposedFederationOpt.isPresent());
+
+                TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
+                assertEquals(outputToProposedFederation.getValue(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
+            }
+
+            private void assertOneOutputIsChange(List<TransactionOutput> outputs) {
+                Script activeFederationScriptPubKey = activeFederation.getP2SHScript();
+                Optional<TransactionOutput> changeOutputOpt = outputs.stream()
+                    .filter(output -> output.getScriptPubKey().equals(activeFederationScriptPubKey))
+                    .findFirst();
+                assertTrue(changeOutputOpt.isPresent());
+            }
+        }
+
+        private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
+            Optional<LogInfo> topicOpt = logs.stream()
+                .filter(log -> log.getTopics().equals(expectedTopics))
+                .findFirst();
+            assertTrue(topicOpt.isPresent());
+        }
+
+        private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
+            Optional<LogInfo> data = logs.stream()
+                .filter(log -> Arrays.equals(log.getData(), expectedData))
+                .findFirst();
+            assertTrue(data.isPresent());
+        }
+
+        private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
+            byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
+            return LogInfo.byteArrayToList(encodedTopicsInBytes);
+        }
+
+        private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
+            return bridgeEvent.encodeEventData(args);
         }
 
         @Test
