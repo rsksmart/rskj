@@ -371,6 +371,11 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public Optional<Federation> getProposedFederation() {
+        return provider.getProposedFederation(constants, activations);
+    }
+
+    @Override
     public int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger) {
         String calledFunction = callSpec.getFunction();
         // Must be on one of the allowed functions
