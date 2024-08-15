@@ -47,6 +47,40 @@ class BridgeConstantsTest {
         }
     }
 
+    private static Stream<Arguments> minimumPegoutTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), Coin.valueOf(400_000)),
+            Arguments.of(BridgeTestNetConstants.getInstance(), Coin.valueOf(250_000)),
+            Arguments.of(new BridgeRegTestConstants(), Coin.valueOf(250_000))
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("minimumPegoutTxValueArgProvider")
+    void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedMinimumPegoutTxValue){
+        Coin minimumPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
+        assertEquals(expectedMinimumPegoutTxValue, minimumPegoutTxValue);
+    }
+
+    private static Stream<Arguments> spendableValueFromProposedFederationArgProvider() {
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
+
+        return Stream.of(
+            Arguments.of(bridgeMainnetConstants, bridgeMainnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeTestnetConstants, bridgeTestnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeRegtestConstants, bridgeRegtestConstants.getMinimumPegoutTxValue().multiply(2))
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("spendableValueFromProposedFederationArgProvider")
+    void getSpendableValueFromProposedFederation(BridgeConstants bridgeConstants, Coin expectedSpendableValueFromProposedFederation){
+        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
+        assertEquals(expectedSpendableValueFromProposedFederation, spendableValueFromProposedFederation);
+    }
+
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), 837589),
