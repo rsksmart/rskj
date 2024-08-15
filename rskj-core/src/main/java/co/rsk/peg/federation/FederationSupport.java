@@ -6,13 +6,12 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.ABICallSpec;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
-
-import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 
 public interface FederationSupport {
 
@@ -46,6 +45,8 @@ public interface FederationSupport {
     int getPendingFederationSize();
     byte[] getPendingFederatorBtcPublicKey(int index);
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
+
+    Optional<Federation> getProposedFederation();
 
     int voteFederationChange(
         Transaction tx,
