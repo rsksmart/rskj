@@ -30,8 +30,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         minimumPeginTxValue = Coin.valueOf(500_000);
         minimumPegoutTxValue = Coin.valueOf(400_000);
 
-        spendableValueFromProposedFederation = Coin.valueOf(400_000);
-
         btcHeightWhenBlockIndexActivates = 696_022;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
