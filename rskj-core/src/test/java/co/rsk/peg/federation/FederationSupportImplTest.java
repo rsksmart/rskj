@@ -81,9 +81,11 @@ class FederationSupportImplTest {
     void setUp() {
         storageAccessor = new InMemoryStorage();
         storageProvider = new FederationStorageProviderImpl(storageAccessor);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
+            .withActivations(activations)
             .build();
     }
 
@@ -3472,6 +3474,28 @@ class FederationSupportImplTest {
         }
     }
 
+    @Test
+    void getProposedFederation_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // act
+        Optional<Federation> actualProposedFederation = federationSupport.getProposedFederation();
+
+        // assert
+        assertFalse(actualProposedFederation.isPresent());
+    }
+
+    @Test
+    void getProposedFederation_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederation() {
+        // arrange
+        Federation proposedFederation = new P2shErpFederationBuilder().build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        //act
+        Optional<Federation> actualProposedFederation = federationSupport.getProposedFederation();
+
+        // assert
+        assertTrue(actualProposedFederation.isPresent());
+        assertEquals(proposedFederation, actualProposedFederation.get());
+    }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
