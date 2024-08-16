@@ -411,6 +411,7 @@ public class RskSystemProperties extends SystemProperties {
     public boolean isServerSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.server.enabled");}
     public boolean isClientSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.client.enabled");}
 
+    @Override
     public List<String> peerCapabilities() {
         List<String> capabilities = super.peerCapabilities();
 

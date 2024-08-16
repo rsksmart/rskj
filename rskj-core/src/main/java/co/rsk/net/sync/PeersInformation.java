@@ -199,7 +199,7 @@ public class PeersInformation implements SnapshotPeersInformation {
     @Override
     public List<Peer> getBestSnapPeerCandidates() {
         return getBestCandidatesStream()
-                .filter(this::isSnapPeerCandidateOrCapable)
+                .filter(entry -> entry.getKey().isSnapCapable())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
