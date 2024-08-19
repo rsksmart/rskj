@@ -1,9 +1,72 @@
 plugins {
     id 'application'
+    id 'checkstyle'
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
+
+checkstyle {
+    toolVersion = '8.45'
+    configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
+}
+
+
+// Start time for Checkstyle checks
+def checkstyleStartTime = '2024-08-19 09:52:59 EST'
+
+def getModifiedFiles(File baseDir, String timestampString) {
+    def dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
+    Date timestamp = dateFormat.parse(timestampString)
+
+    def modifiedFiles = []
+    fileTree(baseDir).matching {
+        include '**/*.java'
+    }.each { File file ->
+        if (file.lastModified() > timestamp.time) {
+            modifiedFiles.add(file)
+        }
+    }
+
+    return modifiedFiles
+}
+
+def configureCheckstyleTask(Checkstyle task, File sourceDir, String timestampString) {
+    def newFiles = getModifiedFiles(sourceDir, timestampString)
+    task.source = files(newFiles)
+    task.classpath = files(
+            sourceSets.main.output.classesDirs,
+            sourceSets.main.output.resourcesDir
+    )
+    task.reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.withType(Checkstyle).configureEach { Checkstyle task ->
+    switch (task.name) {
+        case 'checkstyleMain':
+            configureCheckstyleTask(task, file('src/main/java'), checkstyleStartTime)
+            break
+        case 'checkstyleTest':
+            configureCheckstyleTask(task, file('src/test/java'), checkstyleStartTime)
+            break
+        case 'checkstyleIntegrationTest':
+            configureCheckstyleTask(task, file('src/integrationTest/java'), checkstyleStartTime)
+            break
+        case 'checkstyleJmh':
+            configureCheckstyleTask(task, file('src/jmh/java'), checkstyleStartTime)
+            break
+    }
+}
+
+checkstyleMain.mustRunAfter clean
+checkstyleTest.mustRunAfter clean
+
+checkstyleMain.dependsOn 'classes'
+checkstyleTest.dependsOn 'testClasses'
+
 
 configurations {
     jmh
@@ -252,8 +315,6 @@ javadoc {
     options.encoding = "UTF-8"
 }
 
-def generatedResources = "$buildDir/generated-resources"
-
 publishing {
     publications {
         rskj(MavenPublication) {
@@ -275,8 +336,9 @@ task generateResources {
     def buildInfoFile = 'build-info.properties'
 
     doLast {
-        mkdir generatedResources
-        def generated = new File(generatedResources as String, buildInfoFile)
+        def generatedDir = new File(buildDir, 'generatedResources')
+        mkdir(generatedDir)
+        def generated = new File(generatedDir, buildInfoFile)
         def commitHash = gitCommitHash()
         def currentBranch = gitCurrentBranch()
         generated.text = """
@@ -297,7 +359,7 @@ task javadocJar(type: Jar) {
 }
 
 jar {
-    dependsOn 'generateResources'
+    dependsOn generateResources
     def commitHash = gitCommitHash()
     def currentBranch = gitCurrentBranch()
     manifest {
@@ -306,7 +368,7 @@ jar {
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
-    from generatedResources
+    from new File(buildDir, 'generatedResources') // Reference the generated resources directory
 }
 
 task generatePom(dependsOn: jar) {
@@ -416,4 +478,9 @@ static def amendPathIfNeeded(details) {
         def newPath = originalFile.parentFile.name + "/" + jarName + "_" + originalFile.name
         details.path = newPath
     }
+}
+
+tasks.named('check').configure {
+    dependsOn 'checkstyleMain'
+    dependsOn 'checkstyleTest'
 }
