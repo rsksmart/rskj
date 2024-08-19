@@ -11,11 +11,8 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
@@ -200,13 +197,5 @@ public class PegUtils {
             default:
                 return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
         }
-    }
-
-    public static Script getFederationWithFlyoverPrefixScriptPubKey(Keccak256 flyoverPrefixHash, Federation federation) {
-        Sha256Hash flyoverDerivationArgumentHash = Sha256Hash.wrap(flyoverPrefixHash.getBytes());
-        Script proposedFederationWithFlyoverPrefixRedeemScript =
-            FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(federation.getRedeemScript(), flyoverDerivationArgumentHash);
-
-        return ScriptBuilder.createP2SHOutputScript(proposedFederationWithFlyoverPrefixRedeemScript);
     }
 }
