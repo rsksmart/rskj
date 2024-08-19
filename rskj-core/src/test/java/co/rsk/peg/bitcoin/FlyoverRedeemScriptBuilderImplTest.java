@@ -20,13 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class FlyoverRedeemScriptBuilderImplTest {
     private static final Sha256Hash zeroHash = Sha256Hash.ZERO_HASH;
     private static final int OP_DROP_CODE = 117;
-    private final FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
     private Script redeemScript;
+    private FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder;
 
     @BeforeEach
     void setUp() {
         Federation federation = new P2shErpFederationBuilder().build();
         redeemScript = federation.getRedeemScript();
+        flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
     }
 
     @ParameterizedTest
