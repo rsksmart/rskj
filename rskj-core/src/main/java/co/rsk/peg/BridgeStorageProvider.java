@@ -542,6 +542,24 @@ public class BridgeStorageProvider {
         return Optional.ofNullable(svpFundTxHashUnsigned);
     }
 
+    public Optional<Sha256Hash> getSvpFundTxHashSigned() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpFundTxHashSigned != null) {
+            return Optional.of(svpFundTxHashSigned);
+        }
+
+        // Return empty if the svp fund tx hash unsigned was explicitly set to null
+        if (isSvpFundTxHashSignedSet) {
+            return Optional.empty();
+        }
+
+        svpFundTxHashSigned = safeGetFromRepository(SVP_FUND_TX_HASH_SIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        return Optional.ofNullable(svpFundTxHashSigned);
+    }
+
     public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
         this.svpFundTxHashUnsigned = hash;
         this.isSvpFundTxHashUnsignedSet = true;
