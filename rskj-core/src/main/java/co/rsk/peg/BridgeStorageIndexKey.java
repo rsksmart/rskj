@@ -24,6 +24,7 @@ public enum BridgeStorageIndexKey {
     PEGOUT_TX_SIG_HASH("pegoutTxSigHash"),
 
     SVP_FUND_TX_HASH_UNSIGNED("svpFundTxHashUnsigned"),
+    SVP_FUND_TX_HASH_SIGNED("svpFundTxHashSigned"),
     ;
 
     private final String key;
