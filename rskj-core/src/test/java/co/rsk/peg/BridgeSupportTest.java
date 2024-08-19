@@ -551,8 +551,6 @@ class BridgeSupportTest {
         private BtcTransaction svpFundTransactionUnsigned;
         private Sha256Hash svpFundTransactionHashUnsigned;
 
-        private List<TransactionOutput> svpFundTransactionUnsignedOutputs;
-
         private Transaction rskTx;
         private Keccak256 rskTxHash;
 
@@ -630,17 +628,16 @@ class BridgeSupportTest {
 
         private void assertSvpReleaseWasSettled() throws IOException {
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-            Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
-
-            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutEntries, svpFundTransactionHashUnsigned, rskTxHash);
-            getSvpFundTransactionFromPegoutsMap(pegoutEntries);
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, svpFundTransactionHashUnsigned, rskTxHash);
+            getSvpFundTransactionFromPegoutsMap(pegoutsWaitingForConfirmations);
 
             assertPegoutTxSigHashWasSaved(svpFundTransactionUnsigned);
             assertLogReleaseRequested(rskTxHash, svpFundTransactionHashUnsigned, bridgeMainNetConstants.getSpendableValueFromProposedFederation());
             assertLogPegoutTransactionCreated(svpFundTransactionUnsigned);
         }
 
-        private void getSvpFundTransactionFromPegoutsMap(Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries) {
+        private void getSvpFundTransactionFromPegoutsMap(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
+            Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
             assertEquals(1, pegoutEntries.size());
             // we now know that the only present pegout is the fund tx
             Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutEntries.iterator();
@@ -652,10 +649,12 @@ class BridgeSupportTest {
         private void assertSvpFundTransactionHasExpectedInputsAndOutputs() {
             assertInputsAreFromActiveFederation();
 
-            svpFundTransactionUnsignedOutputs = svpFundTransactionUnsigned.getOutputs();
-            assertOneOutputIsChange();
-            assertOneOutputIsToProposedFederationWithExpectedAmount();
-            assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount();
+            List<TransactionOutput> svpFundTransactionUnsignedOutputs = svpFundTransactionUnsigned.getOutputs();
+            int svpFundTransactionUnsignedOutputsExpectedSize = 3;
+            assertEquals(svpFundTransactionUnsignedOutputsExpectedSize, svpFundTransactionUnsignedOutputs.size());
+            assertOneOutputIsChange(svpFundTransactionUnsignedOutputs);
+            assertOneOutputIsToProposedFederationWithExpectedAmount(svpFundTransactionUnsignedOutputs);
+            assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(svpFundTransactionUnsignedOutputs);
         }
 
         private void assertInputsAreFromActiveFederation() {
@@ -667,41 +666,44 @@ class BridgeSupportTest {
             }
         }
 
-        private void assertOneOutputIsChange() {
+        private void assertOneOutputIsChange(List<TransactionOutput> transactionOutputs) {
             Script activeFederationScriptPubKey = activeFederation.getP2SHScript();
 
-            Optional<TransactionOutput> changeOutputOpt = svpFundTransactionUnsignedOutputs.stream()
-                .filter(output -> output.getScriptPubKey().equals(activeFederationScriptPubKey))
-                .findFirst();
+            Optional<TransactionOutput> changeOutputOpt = searchForOutput(transactionOutputs, activeFederationScriptPubKey);
             assertTrue(changeOutputOpt.isPresent());
         }
 
-        private void assertOneOutputIsToProposedFederationWithExpectedAmount() {
+        private void assertOneOutputIsToProposedFederationWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
             Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
-            Optional<TransactionOutput> outputToProposedFederationOpt = searchForOutput(proposedFederationScriptPubKey);
+
+            Optional<TransactionOutput> outputToProposedFederationOpt = searchForOutput(svpFundTransactionUnsignedOutputs, proposedFederationScriptPubKey);
             assertTrue(outputToProposedFederationOpt.isPresent());
 
             TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
             assertEquals(outputToProposedFederation.getValue(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
         }
 
-        private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount() {
-            Script proposedFederationWithFlyoverPrefixScriptPubKey = PegUtils.getFederationWithFlyoverPrefixScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation);
-            Optional<TransactionOutput> outputToProposedFederationWithFlyoverPrefixOpt = searchForOutput(proposedFederationWithFlyoverPrefixScriptPubKey);
+        private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
+            FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
+            Script redeemScriptWithFlyoverPrefix = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+            Script proposedFederationWithFlyoverPrefixScriptPubKey = ScriptBuilder.createP2SHOutputScript(redeemScriptWithFlyoverPrefix);
+
+            Optional<TransactionOutput> outputToProposedFederationWithFlyoverPrefixOpt = searchForOutput(svpFundTransactionUnsignedOutputs, proposedFederationWithFlyoverPrefixScriptPubKey);
             assertTrue(outputToProposedFederationWithFlyoverPrefixOpt.isPresent());
 
             TransactionOutput outputToProposedFederationWithFlyoverPrefix = outputToProposedFederationWithFlyoverPrefixOpt.get();
             assertEquals(outputToProposedFederationWithFlyoverPrefix.getValue(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
         }
 
-        private Optional<TransactionOutput> searchForOutput(Script outputScriptPubKey) {
-            return svpFundTransactionUnsignedOutputs.stream()
+        private Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
+            return transactionOutputs.stream()
                 .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
                 .findFirst();
         }
     }
 
-    private void assertPegoutWasAddedToPegoutsWaitingForConfirmations(Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash) {
+    private void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash) {
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
         Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
             .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
                 entry.getPegoutCreationRskBlockNumber().equals(rskExecutionBlock.getNumber()) &&

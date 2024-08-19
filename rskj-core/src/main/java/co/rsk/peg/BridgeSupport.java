@@ -32,6 +32,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -979,6 +980,59 @@ public class BridgeSupport {
         processConfirmedPegouts(rskTx);
 
         updateFederationCreationBlockHeights();
+    }
+
+    protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+        if (!proposedFederationOpt.isPresent()) {
+            String message = "Proposed federation should be present when processing SVP fund transaction.";
+            logger.warn(message);
+            throw new IllegalStateException(message);
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
+        BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
+
+        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTx.getHash(), spendableValueFromProposedFederation);
+    }
+
+    private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws IOException, InsufficientMoneyException {
+        Wallet activeFederationWallet = getActiveFederationWallet(true);
+
+        BtcTransaction svpFundTransaction = new BtcTransaction(bridgeConstants.getBtcParams());
+        svpFundTransaction.setVersion(BTC_TX_VERSION_2);
+
+        // add outputs to proposed fed and proposed fed with flyover prefix
+        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
+
+        Script proposedFederationWithFlyoverPrefixScriptPubKey = getRedeemScriptWithFlyoverPrefixScriptPubKey(proposedFederation.getRedeemScript());
+        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixScriptPubKey);
+
+        // complete tx with input and change output
+        SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);
+        activeFederationWallet.completeTx(sendRequest);
+
+        return svpFundTransaction;
+    }
+
+    private Script getRedeemScriptWithFlyoverPrefixScriptPubKey(Script federationRedeemScript) {
+        FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
+        Script federationRedeemScriptWithFlyoverPrefix = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), federationRedeemScript);
+
+        return ScriptBuilder.createP2SHOutputScript(federationRedeemScriptWithFlyoverPrefix);
+    }
+
+    private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
+        SendRequest sendRequest = SendRequest.forTx(transaction);
+        sendRequest.changeAddress = getActiveFederationAddress();
+        sendRequest.feePerKb = feePerKbSupport.getFeePerKb();
+        sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+        sendRequest.recipientsPayFees = false;
+
+        return sendRequest;
     }
 
     protected void updateFederationCreationBlockHeights() {
