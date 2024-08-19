@@ -1,10 +1,11 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
+import org.ethereum.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,7 +19,7 @@ import static co.rsk.peg.bitcoin.FlyoverRedeemScriptCreationException.Reason.INV
 import static org.junit.jupiter.api.Assertions.*;
 
 class FlyoverRedeemScriptBuilderImplTest {
-    private static final Sha256Hash zeroHash = Sha256Hash.ZERO_HASH;
+    private static final Keccak256 zeroHash = Keccak256.ZERO_HASH;
     private static final int OP_DROP_CODE = 117;
     private Script redeemScript;
     private FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder;
@@ -32,7 +33,7 @@ class FlyoverRedeemScriptBuilderImplTest {
 
     @ParameterizedTest
     @MethodSource("invalidDerivationHashArgsProvider")
-    void addFlyoverDerivationHashToRedeemScript_withInvalidDerivationHash_shouldThrowFlyoverRedeemScriptCreationException(Sha256Hash flyoverDerivationHash) {
+    void addFlyoverDerivationHashToRedeemScript_withInvalidPrefix_shouldThrowFlyoverRedeemScriptCreationException(Keccak256 flyoverDerivationHash) {
         FlyoverRedeemScriptCreationException exception = assertThrows(FlyoverRedeemScriptCreationException.class,
             () -> flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript));
 
@@ -47,35 +48,37 @@ class FlyoverRedeemScriptBuilderImplTest {
     }
 
     @Test
-    void addFlyoverDerivationHashToRedeemScript_withValidDerivationHash_shouldReturnRedeemScriptWithFlyoverPrefix() {
+    void addFlyoverDerivationHashToRedeemScript_shouldReturnRedeemScriptWithFlyoverDerivationHash() {
         // arrange
-        Sha256Hash flyoverDerivationHash = BitcoinTestUtils.createHash(1);
+        Keccak256 flyoverDerivationHash = TestUtils.generateHash("hash");
 
         // act
-        Script redeemScriptWithFlyoverPrefix = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript);
+        Script redeemScriptWithFlyoverDerivationHash = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript);
 
         // assert
-        List<ScriptChunk> originalRedeemScriptChunks = getOriginalRedeemScriptChunks(redeemScriptWithFlyoverPrefix);
+        List<ScriptChunk> originalRedeemScriptChunks = getOriginalRedeemScriptChunks(redeemScriptWithFlyoverDerivationHash);
         assertEquals(redeemScript.getChunks(), originalRedeemScriptChunks);
 
-        List<ScriptChunk> flyoverPrefixChunks = getFlyoverChunks(redeemScriptWithFlyoverPrefix);
-        assertArrayEquals(flyoverDerivationHash.getBytes(), flyoverPrefixChunks.get(0).data);
-        assertEquals(OP_DROP_CODE, flyoverPrefixChunks.get(1).opcode);
+        List<ScriptChunk> flyoverChunks = getFlyoverChunks(redeemScriptWithFlyoverDerivationHash);
+        ScriptChunk flyoverDerivationHashChunk = flyoverChunks.get(0);
+        ScriptChunk opDropChunk = flyoverChunks.get(1);
+        assertArrayEquals(flyoverDerivationHash.getBytes(), flyoverDerivationHashChunk.data);
+        assertEquals(OP_DROP_CODE, opDropChunk.opcode);
     }
 
     private List<ScriptChunk> getOriginalRedeemScriptChunks(Script redeemScript) {
         List<ScriptChunk> redeemScriptChunks = redeemScript.getChunks();
-        int firstChunkAfterFlyoverIndex = 2;
-        int lastChunkIndex = redeemScriptChunks.size();
+        int firstOriginalChunkIndex = 2;
+        int lastOriginalChunkIndex = redeemScriptChunks.size();
 
-        return redeemScriptChunks.subList(firstChunkAfterFlyoverIndex, lastChunkIndex);
+        return redeemScriptChunks.subList(firstOriginalChunkIndex, lastOriginalChunkIndex);
     }
 
     private List<ScriptChunk> getFlyoverChunks(Script redeemScript) {
         List<ScriptChunk> redeemScriptChunks = redeemScript.getChunks();
-        int firstFlyoverChunk = 0;
-        int lastFlyoverChunk = 2;
+        int firstFlyoverChunkIndex = 0;
+        int lastFlyoverChunkIndex = 2;
 
-        return redeemScriptChunks.subList(firstFlyoverChunk, lastFlyoverChunk);
+        return redeemScriptChunks.subList(firstFlyoverChunkIndex, lastFlyoverChunkIndex);
     }
 }

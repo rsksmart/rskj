@@ -1,9 +1,9 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.crypto.Keccak256;
 
 public interface FlyoverRedeemScriptBuilder {
-    Script addFlyoverDerivationHashToRedeemScript(Sha256Hash flyoverDerivationHash, Script redeemScript);
+    Script addFlyoverDerivationHashToRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript);
 
 }

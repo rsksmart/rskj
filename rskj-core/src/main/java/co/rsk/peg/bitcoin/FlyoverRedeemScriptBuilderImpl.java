@@ -1,8 +1,8 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.crypto.Keccak256;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,11 +11,10 @@ import static java.util.Objects.isNull;
 
 public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(FlyoverRedeemScriptBuilderImpl.class);
-    private static final Sha256Hash zeroHash = Sha256Hash.ZERO_HASH;
+    private static final Keccak256 zeroHash = Keccak256.ZERO_HASH;
     private static final int OP_DROP_CODE = 117;
 
-    @Override
-    public Script addFlyoverDerivationHashToRedeemScript(Sha256Hash flyoverDerivationHash, Script redeemScript) {
+    public Script addFlyoverDerivationHashToRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
         validateFlyoverDerivationHash(flyoverDerivationHash);
 
         ScriptBuilder scriptBuilder = new ScriptBuilder();
@@ -27,7 +26,7 @@ public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilde
             .build();
     }
 
-    private void validateFlyoverDerivationHash(Sha256Hash flyoverDerivationHash) {
+    private void validateFlyoverDerivationHash(Keccak256 flyoverDerivationHash) {
         if (isNull(flyoverDerivationHash) || flyoverDerivationHash.equals(zeroHash)) {
             String message = "Provided flyover derivation hash is invalid.";
             logger.warn("[validateFlyoverDerivationHash] {} {}", message, flyoverDerivationHash);
