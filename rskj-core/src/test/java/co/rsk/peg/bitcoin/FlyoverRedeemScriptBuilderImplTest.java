@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.bitcoin.FlyoverRedeemScriptCreationException.Reason.INVALID_FLYOVER_DERIVATION_HASH;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_FLYOVER_DERIVATION_HASH;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FlyoverRedeemScriptBuilderImplTest {
@@ -32,7 +32,7 @@ class FlyoverRedeemScriptBuilderImplTest {
     @ParameterizedTest
     @MethodSource("invalidDerivationHashArgsProvider")
     void addFlyoverDerivationHashToRedeemScript_withInvalidPrefix_shouldThrowFlyoverRedeemScriptCreationException(Keccak256 flyoverDerivationHash) {
-        FlyoverRedeemScriptCreationException exception = assertThrows(FlyoverRedeemScriptCreationException.class,
+        RedeemScriptCreationException exception = assertThrows(RedeemScriptCreationException.class,
             () -> flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript));
 
         assertEquals(INVALID_FLYOVER_DERIVATION_HASH, exception.getReason());
