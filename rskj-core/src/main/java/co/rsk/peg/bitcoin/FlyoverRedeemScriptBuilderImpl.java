@@ -7,7 +7,7 @@ import co.rsk.crypto.Keccak256;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static co.rsk.peg.bitcoin.FlyoverRedeemScriptCreationException.Reason.INVALID_FLYOVER_DERIVATION_HASH;
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_FLYOVER_DERIVATION_HASH;
 import static java.util.Objects.isNull;
 
 public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilder {
@@ -29,7 +29,7 @@ public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilde
         if (isNull(flyoverDerivationHash) || flyoverDerivationHash.equals(Keccak256.ZERO_HASH)) {
             String message = String.format("Provided flyover derivation hash %s is invalid.", flyoverDerivationHash);
             logger.warn("[validateFlyoverDerivationHash] {}", message);
-            throw new FlyoverRedeemScriptCreationException(message, INVALID_FLYOVER_DERIVATION_HASH);
+            throw new RedeemScriptCreationException(message, INVALID_FLYOVER_DERIVATION_HASH);
         }
     }
 }
