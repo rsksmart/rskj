@@ -20,6 +20,7 @@ package co.rsk.peg.constants;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
@@ -105,6 +106,8 @@ public abstract class BridgeConstants {
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
 
     public Coin getSpendableValueFromProposedFederation() { return minimumPegoutTxValue.multiply(2); }
+
+    public Keccak256 getProposedFederationFlyoverPrefix() { return new Keccak256("0000000000000000000000000000000000000000000000000000000000000001"); }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 

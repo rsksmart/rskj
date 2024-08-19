@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.*;
 import co.rsk.peg.feeperkb.constants.*;
 import co.rsk.peg.lockingcap.constants.*;
@@ -57,7 +58,7 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("minimumPegoutTxValueArgProvider")
-    void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedMinimumPegoutTxValue){
+    void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedMinimumPegoutTxValue) {
         Coin minimumPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
         assertEquals(expectedMinimumPegoutTxValue, minimumPegoutTxValue);
     }
@@ -76,9 +77,25 @@ class BridgeConstantsTest {
 
     @ParameterizedTest()
     @MethodSource("spendableValueFromProposedFederationArgProvider")
-    void getSpendableValueFromProposedFederation(BridgeConstants bridgeConstants, Coin expectedSpendableValueFromProposedFederation){
+    void getSpendableValueFromProposedFederation(BridgeConstants bridgeConstants, Coin expectedSpendableValueFromProposedFederation) {
         Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
         assertEquals(expectedSpendableValueFromProposedFederation, spendableValueFromProposedFederation);
+    }
+
+    private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
+
+        return Stream.of(bridgeMainnetConstants, bridgeTestnetConstants, bridgeRegtestConstants);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("bridgeConstantsArgProvider")
+    void getProposedFederationFlyoverPrefix(BridgeConstants bridgeConstants) {
+        Keccak256 expectedProposedFederationFlyoverPrefix = new Keccak256("0000000000000000000000000000000000000000000000000000000000000001");
+
+        assertEquals(expectedProposedFederationFlyoverPrefix, bridgeConstants.getProposedFederationFlyoverPrefix());
     }
 
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
