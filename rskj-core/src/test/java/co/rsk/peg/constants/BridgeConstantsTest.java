@@ -82,7 +82,7 @@ class BridgeConstantsTest {
         assertEquals(expectedSpendableValueFromProposedFederation, spendableValueFromProposedFederation);
     }
 
-    private static Stream<BridgeConstants> proposedFederationFlyoverPrefixArgProvider() {
+    private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
         BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
@@ -91,7 +91,7 @@ class BridgeConstantsTest {
     }
 
     @ParameterizedTest()
-    @MethodSource("proposedFederationFlyoverPrefixArgProvider")
+    @MethodSource("bridgeConstantsArgProvider")
     void getProposedFederationFlyoverPrefix(BridgeConstants bridgeConstants) {
         Keccak256 expectedProposedFederationFlyoverPrefix = new Keccak256("0000000000000000000000000000000000000000000000000000000000000001");
 
