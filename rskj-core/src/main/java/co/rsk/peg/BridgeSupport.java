@@ -22,6 +22,7 @@ import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.findWitnessCommitment;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
+import static java.util.Objects.isNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -1090,38 +1091,15 @@ public class BridgeSupport {
             selectedUTXOs.size()
         );
 
-        // Add the TX to the release set
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            Coin amountMigrated = selectedUTXOs.stream()
-                .map(UTXO::getValue)
-                .reduce(Coin.ZERO, Coin::add);
-            pegoutsWaitingForConfirmations.add(migrationTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-            // Log the Release request
-            logger.debug(
-                "[migrateFunds] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
-                rskTxHash,
-                migrationTransaction.getHash(),
-                amountMigrated
-            );
-            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), migrationTransaction, amountMigrated);
-        } else {
-            pegoutsWaitingForConfirmations.add(migrationTransaction, rskExecutionBlock.getNumber());
-        }
-
-        // Store pegoutTxSigHash to be able to identify the tx type
-        savePegoutTxSigHash(migrationTransaction);
+        Coin amountMigrated = selectedUTXOs.stream()
+            .map(UTXO::getValue)
+            .reduce(Coin.ZERO, Coin::add);
+        settleReleaseRequest(pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
 
         // Mark UTXOs as spent
         availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
             utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
         ));
-
-        if (!activations.isActive(RSKIP428)) {
-            return;
-        }
-
-        List<Coin> outpointValues = extractOutpointValues(migrationTransaction);
-        eventLogger.logPegoutTransactionCreated(migrationTransaction.getHash(), outpointValues);
     }
 
     /**
@@ -1167,24 +1145,63 @@ public class BridgeSupport {
         }
     }
 
-    private void addToPegoutsWaitingForConfirmations(
-        BtcTransaction generatedTransaction,
-        PegoutsWaitingForConfirmations pegoutWaitingForConfirmations,
-        Keccak256 pegoutCreationRskTxHash,
-        Coin amount
-    ) {
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            // Add the TX
-            pegoutWaitingForConfirmations.add(generatedTransaction, rskExecutionBlock.getNumber(), pegoutCreationRskTxHash);
-            // For a short time period, there could be items in the pegout request queue that don't have the pegoutCreationRskTxHash
-            // (these are pegouts created right before the consensus rule activation, that weren't processed before its activation)
-            // We shouldn't generate the event for those pegouts
-            if (pegoutCreationRskTxHash != null) {
-                eventLogger.logReleaseBtcRequested(pegoutCreationRskTxHash.getBytes(), generatedTransaction, amount);
-            }
-        } else {
-            pegoutWaitingForConfirmations.add(generatedTransaction, rskExecutionBlock.getNumber());
+    private void settleReleaseRequest(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
+        savePegoutTxSigHash(pegoutTransaction);
+        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
+        logPegoutTransactionCreated(pegoutTransaction);
+    }
+
+    private void addPegoutToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash) {
+        long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
+
+        if (!activations.isActive(RSKIP146)) {
+            pegoutsWaitingForConfirmations.add(pegoutTransaction, rskExecutionBlockNumber);
+            return;
         }
+        pegoutsWaitingForConfirmations.add(pegoutTransaction, rskExecutionBlockNumber, releaseCreationTxHash);
+    }
+
+    private void savePegoutTxSigHash(BtcTransaction pegoutTx) {
+        if (!activations.isActive(ConsensusRule.RSKIP379)){
+            return;
+        }
+        Optional<Sha256Hash> pegoutTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        if (!pegoutTxSigHash.isPresent()){
+            throw new IllegalStateException(String.format("SigHash could not be obtained from btc tx %s", pegoutTx.getHash()));
+        }
+        provider.setPegoutTxSigHash(pegoutTxSigHash.get());
+    }
+
+    private void logReleaseRequested(Keccak256 releaseCreationTxHash, BtcTransaction pegoutTransaction, Coin requestedAmount) {
+        if (!activations.isActive(ConsensusRule.RSKIP146)) {
+            return;
+        }
+        // For a short time period, there could be items in the pegout request queue
+        // that were created but not processed before the consensus rule activation
+        // These pegouts won't have the pegoutCreationRskTxHash,
+        // so we shouldn't generate the event for them
+        if (isNull(releaseCreationTxHash)) {
+            return;
+        }
+
+        logger.debug(
+            "[logReleaseRequested] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
+            releaseCreationTxHash, pegoutTransaction.getHash(), requestedAmount
+        );
+
+        byte[] rskTxHashSerialized = releaseCreationTxHash.getBytes();
+        eventLogger.logReleaseBtcRequested(rskTxHashSerialized, pegoutTransaction, requestedAmount);
+    }
+
+    private void logPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
+        if (!activations.isActive(RSKIP428)) {
+            return;
+        }
+
+        List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
+        Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
+        eventLogger.logPegoutTransactionCreated(pegoutTransactionHash, outpointValues);
     }
 
     private void processPegoutsIndividually(
@@ -1214,7 +1231,8 @@ public class BridgeSupport {
             }
 
             BtcTransaction generatedTransaction = result.getBtcTx();
-            addToPegoutsWaitingForConfirmations(generatedTransaction, pegoutsWaitingForConfirmations, pegoutRequest.getRskTxHash(), pegoutRequest.getAmount());
+            Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
+            settleReleaseRequest(pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
@@ -1276,9 +1294,9 @@ public class BridgeSupport {
                 result.getBtcTx().getHash(), result.getResponseCode());
 
             BtcTransaction batchPegoutTransaction = result.getBtcTx();
-            addToPegoutsWaitingForConfirmations(batchPegoutTransaction,
-                pegoutsWaitingForConfirmations, rskTx.getHash(), totalPegoutValue);
-            savePegoutTxSigHash(batchPegoutTransaction);
+            Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
+
+            settleReleaseRequest(pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
@@ -1291,11 +1309,6 @@ public class BridgeSupport {
             eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
                 pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
-            if (activations.isActive(RSKIP428)) {
-                List<Coin> outpointValues = extractOutpointValues(batchPegoutTransaction);
-                eventLogger.logPegoutTransactionCreated(batchPegoutTransaction.getHash(), outpointValues);
-            }
-
             adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
         }
 
@@ -1305,17 +1318,6 @@ public class BridgeSupport {
             provider.setNextPegoutHeight(nextPegoutHeight);
             logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
         }
-    }
-
-    private void savePegoutTxSigHash(BtcTransaction pegoutTx) {
-        if (!activations.isActive(ConsensusRule.RSKIP379)){
-            return;
-        }
-        Optional<Sha256Hash> pegoutTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
-        if (!pegoutTxSigHash.isPresent()){
-            throw new IllegalStateException(String.format("SigHash could not be obtained from btc tx %s", pegoutTx.getHash()));
-        }
-        provider.setPegoutTxSigHash(pegoutTxSigHash.get());
     }
 
     /**
@@ -2783,17 +2785,6 @@ public class BridgeSupport {
         }
 
         BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), refundPegoutTransaction, totalAmount);
-        } else {
-            provider.getPegoutsWaitingForConfirmations().add(refundPegoutTransaction, rskExecutionBlock.getNumber());
-        }
-
-        if (activations.isActive(RSKIP428)) {
-            List<Coin> outpointValues = extractOutpointValues(refundPegoutTransaction);
-            eventLogger.logPegoutTransactionCreated(refundPegoutTransaction.getHash(), outpointValues);
-        }
 
         logger.info(
             "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
@@ -2801,6 +2792,15 @@ public class BridgeSupport {
             rskTxHash,
             totalAmount
         );
+
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        settleReleaseRejection(pegoutsWaitingForConfirmations, refundPegoutTransaction, rskTxHash, totalAmount);
+    }
+
+    private void settleReleaseRejection(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
+        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
+        logPegoutTransactionCreated(pegoutTransaction);
     }
 
     private void generateRejectionRelease(
