@@ -18,7 +18,11 @@
 package co.rsk.peg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -28,17 +32,40 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.trie.Trie;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
-import co.rsk.peg.federation.*;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -48,6 +75,12 @@ class MinimumPegValueTest {
 
   private static final Coin MINIMUM_PEGIN_VALUE = Coin.valueOf(100_000L);
   private static final Coin MINIMUM_PEGOUT_VALUE = Coin.valueOf(80_000L);
+
+  private static final BigInteger NONCE = new BigInteger("0");
+  private static final BigInteger GAS_PRICE = new BigInteger("100");
+  private static final BigInteger GAS_LIMIT = new BigInteger("1000");
+  private static final String DATA = "80af2871";
+  private static final ECKey SENDER = new ECKey();
 
   private ActivationConfig.ForBlock activations;
   private NetworkParameters networkParameters;
@@ -163,13 +196,42 @@ class MinimumPegValueTest {
     assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
   }
 
+  @ParameterizedTest()
+  @MethodSource("providePegMinimumParameters")
+  void whenReleaseBtcCalledWithMinimumPegoutValue_shouldLogReleaseBtcRequestReceived(Coin feePerKb) throws IOException {
+    BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+    when(bridgeConstants.getBtcParams()).thenReturn(bridgeMainNetConstants.getBtcParams());
+    when(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee())
+        .thenReturn(bridgeMainNetConstants.getMinimumPegoutValuePercentageToReceiveAfterFee());
+    when(bridgeConstants.getMinimumPegoutTxValue()).thenReturn(MINIMUM_PEGOUT_VALUE);
+
+    List<LogInfo> logInfo = new ArrayList<>();
+    SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+    BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(
+        bridgeConstants, activations, logInfo, signatureCache));
+
+    FeePerKbSupport feePerKbSupport = mock(FeePerKbSupportImpl.class);
+    when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
+
+    BridgeSupport bridgeSupport = initBridgeSupport(
+        bridgeConstants, eventLogger, activations, signatureCache, feePerKbSupport);
+
+    bridgeSupport.releaseBtc(buildReleaseRskTx(MINIMUM_PEGOUT_VALUE));
+
+    verify(eventLogger).logReleaseBtcRequestReceived(any(), any(), any());
+  }
+
   private static Stream<Arguments> providePegMinimumParameters() {
     return Stream.of(
         // current feePerKb value
         Arguments.of(Coin.valueOf(24_000L)),
         // maximum feePerKb value that allows all cases to succeed
-        Arguments.of(Coin.valueOf(81_423L)));
+        Arguments.of(Coin.valueOf(24_750L)));
   }
+
+  /**********************************
+   * ------- UTILS ------- *
+   *********************************/
 
   private Address getAddress(int pk) {
     return BtcECKey.fromPrivate(BigInteger.valueOf(pk))
@@ -182,5 +244,50 @@ class MinimumPegValueTest {
 
   private ReleaseRequestQueue.Entry createTestEntry(int addressPk, Coin amount) {
     return new ReleaseRequestQueue.Entry(getAddress(addressPk), amount);
+  }
+
+  private BridgeSupport initBridgeSupport(BridgeConstants bridgeConstants, BridgeEventLogger eventLogger,
+      ActivationConfig.ForBlock activations, SignatureCache signatureCache, FeePerKbSupport feePerKbSupport) {
+    Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+
+    StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+    FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+    UTXO utxo = new UTXO(getUTXOHash("utxo"), 0, Coin.COIN.multiply(2), 1, false, federation.getP2SHScript());
+    federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations).add(utxo);
+    federationStorageProvider.setNewFederation(federation);
+
+    FederationSupport federationSupport = new FederationSupportBuilder()
+        .withFederationConstants(bridgeConstants.getFederationConstants())
+        .withFederationStorageProvider(federationStorageProvider)
+        .build();
+
+    BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR,
+        networkParameters, activations);
+
+    return new BridgeSupportBuilder()
+        .withBridgeConstants(bridgeConstants)
+        .withProvider(provider)
+        .withRepository(repository)
+        .withEventLogger(eventLogger)
+        .withActivations(activations)
+        .withSignatureCache(signatureCache)
+        .withFederationSupport(federationSupport)
+        .withFeePerKbSupport(feePerKbSupport)
+        .build();
+  }
+
+  private Transaction buildReleaseRskTx(Coin coin) {
+    Transaction releaseTx = Transaction
+        .builder()
+        .nonce(NONCE)
+        .gasPrice(GAS_PRICE)
+        .gasLimit(GAS_LIMIT)
+        .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
+        .data(Hex.decode(DATA))
+        .chainId(Constants.MAINNET_CHAIN_ID)
+        .value(co.rsk.core.Coin.fromBitcoin(coin).asBigInteger())
+        .build();
+    releaseTx.sign(SENDER.getPrivKeyBytes());
+    return releaseTx;
   }
 }
