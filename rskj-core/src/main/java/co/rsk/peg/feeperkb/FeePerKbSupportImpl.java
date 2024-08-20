@@ -16,19 +16,19 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
     private static final Logger logger = LoggerFactory.getLogger(FeePerKbSupportImpl.class);
     private static final String SET_FEE_PER_KB_ABI_FUNCTION = "setFeePerKb";
 
-    private final FeePerKbStorageProvider provider;
-    private final FeePerKbConstants feePerKbConstants;
+    private final FeePerKbStorageProvider storageProvider;
+    private final FeePerKbConstants constants;
 
-    public FeePerKbSupportImpl(FeePerKbConstants feePerKbConstants, FeePerKbStorageProvider provider) {
-        this.provider = provider;
-        this.feePerKbConstants = feePerKbConstants;
+    public FeePerKbSupportImpl(FeePerKbConstants constants, FeePerKbStorageProvider storageProvider) {
+        this.storageProvider = storageProvider;
+        this.constants = constants;
     }
 
     @Override
     public Coin getFeePerKb() {
-        Optional<Coin> currentFeePerKb = provider.getFeePerKb();
+        Optional<Coin> currentFeePerKb = storageProvider.getFeePerKb();
 
-        return currentFeePerKb.orElseGet(feePerKbConstants::getGenesisFeePerKb);
+        return currentFeePerKb.orElseGet(constants::getGenesisFeePerKb);
     }
 
     @Override
@@ -36,8 +36,8 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
 
         logger.info("[voteFeePerKbChange] Voting new fee per kb value: {}", feePerKb);
 
-        AddressBasedAuthorizer authorizer = feePerKbConstants.getFeePerKbChangeAuthorizer();
-        Coin maxFeePerKb = feePerKbConstants.getMaxFeePerKb();
+        AddressBasedAuthorizer authorizer = constants.getFeePerKbChangeAuthorizer();
+        Coin maxFeePerKb = constants.getMaxFeePerKb();
 
         if (!authorizer.isAuthorized(tx, signatureCache)) {
             logger.warn("[voteFeePerKbChange] Unauthorized signature.");
@@ -54,7 +54,7 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
             return FeePerKbResponseCode.EXCESSIVE_FEE_VOTED.getCode();
         }
 
-        ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
+        ABICallElection feePerKbElection = storageProvider.getFeePerKbElection(authorizer);
         ABICallSpec feeVote = new ABICallSpec(SET_FEE_PER_KB_ABI_FUNCTION, new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
         boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender(signatureCache));
         if (!successfulVote) {
@@ -87,7 +87,7 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
         }
 
         logger.info("[voteFeePerKbChange] Fee per kb changed to {}", winnerFee);
-        provider.setFeePerKb(winnerFee);
+        storageProvider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
 
         return FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode();
@@ -95,6 +95,6 @@ public class FeePerKbSupportImpl implements FeePerKbSupport {
 
     @Override
     public void save() {
-        provider.save();
+        storageProvider.save();
     }
 }

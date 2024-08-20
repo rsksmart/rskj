@@ -197,9 +197,9 @@ public abstract class SystemProperties {
                     );
                     break;
                 case "regtest":
-                    constants = Constants.regtestWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants = getGenesisFederationPublicKeys()
+                        .map(Constants::regtestWithFederation)
+                        .orElseGet(Constants::regtest);
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));

@@ -277,7 +277,7 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                BridgeRegTestConstants.getInstance(),
+                new BridgeRegTestConstants(),
                 new BlockDifficulty(new BigInteger("550000000"))
         );
     }

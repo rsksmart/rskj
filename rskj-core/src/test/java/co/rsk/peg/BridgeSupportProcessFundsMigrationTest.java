@@ -7,13 +7,12 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -120,17 +119,18 @@ class BridgeSupportProcessFundsMigrationTest {
         ActivationConfig.ForBlock activations,
         boolean inMigrationAge
     ) throws IOException {
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
-        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
-        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
+        Federation oldFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
+        long federationActivationAge = federationConstants.getFederationActivationAge(activations);
 
         long federationCreationBlockNumber = 5L;
         long federationInMigrationAgeHeight = federationCreationBlockNumber + federationActivationAge +
-            bridgeConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
+            federationConstants.getFundsMigrationAgeSinceActivationBegin() + 1;
         long federationPastMigrationAgeHeight = federationCreationBlockNumber +
             federationActivationAge +
-            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
+            federationConstants.getFundsMigrationAgeSinceActivationEnd(activations) + 1;
 
         FederationArgs newFederationArgs = new FederationArgs(
             FederationTestUtils.getFederationMembers(1),
@@ -143,8 +143,10 @@ class BridgeSupportProcessFundsMigrationTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
-        when(provider.getOldFederation()).thenReturn(oldFederation);
-        when(provider.getNewFederation()).thenReturn(newFederation);
+
+        FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
+        when(federationStorageProvider.getOldFederation(federationConstants, activations)).thenReturn(oldFederation);
+        when(federationStorageProvider.getNewFederation(federationConstants, activations)).thenReturn(newFederation);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -154,6 +156,14 @@ class BridgeSupportProcessFundsMigrationTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(rskCurrentBlock)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
@@ -161,6 +171,7 @@ class BridgeSupportProcessFundsMigrationTest {
             .withExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .withFeePerKbSupport(feePerKbSupport)
+            .withFederationSupport(federationSupport)
             .build();
 
         List<UTXO> sufficientUTXOsForMigration = new ArrayList<>();
@@ -170,7 +181,7 @@ class BridgeSupportProcessFundsMigrationTest {
             Coin.COIN,
             oldFederation.getAddress()
         ));
-        when(provider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration);
+        when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration);
 
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
         bridgeSupport.updateCollections(updateCollectionsTx);
@@ -180,9 +191,9 @@ class BridgeSupportProcessFundsMigrationTest {
 
         assertTrue(sufficientUTXOsForMigration.isEmpty());
         if (inMigrationAge){
-            verify(provider, never()).setOldFederation(null);
+            verify(federationStorageProvider, never()).setOldFederation(null);
         } else {
-            verify(provider, times(1)).setOldFederation(null);
+            verify(federationStorageProvider, times(1)).setOldFederation(null);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {

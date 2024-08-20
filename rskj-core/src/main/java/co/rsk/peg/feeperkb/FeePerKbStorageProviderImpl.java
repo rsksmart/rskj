@@ -8,8 +8,8 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 
 import java.util.Optional;
 
-import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
-import static co.rsk.peg.storage.FeePerKbStorageIndexKey.FEE_PER_KB;
+import static co.rsk.peg.feeperkb.FeePerKbStorageIndexKey.FEE_PER_KB_ELECTION;
+import static co.rsk.peg.feeperkb.FeePerKbStorageIndexKey.FEE_PER_KB;
 
 public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
     private final StorageAccessor bridgeStorageAccessor;
@@ -30,7 +30,7 @@ public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
             return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
+        bridgeStorageAccessor.saveToRepository(FEE_PER_KB.getKey(), feePerKb, BridgeSerializationUtils::serializeCoin);
     }
 
     @Override
@@ -39,7 +39,7 @@ public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
             return Optional.of(feePerKb);
         }
 
-        feePerKb = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
+        feePerKb = bridgeStorageAccessor.getFromRepository(FEE_PER_KB.getKey(), BridgeSerializationUtils::deserializeCoin);
         return Optional.ofNullable(feePerKb);
     }
 
@@ -48,7 +48,7 @@ public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
             return;
         }
 
-        bridgeStorageAccessor.safeSaveToRepository(FEE_PER_KB_ELECTION.getKey(), feePerKbElection, BridgeSerializationUtils::serializeElection);
+        bridgeStorageAccessor.saveToRepository(FEE_PER_KB_ELECTION.getKey(), feePerKbElection, BridgeSerializationUtils::serializeElection);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class FeePerKbStorageProviderImpl implements FeePerKbStorageProvider {
             return feePerKbElection;
         }
 
-        feePerKbElection = bridgeStorageAccessor.safeGetFromRepository(FEE_PER_KB_ELECTION.getKey(), data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
+        feePerKbElection = bridgeStorageAccessor.getFromRepository(FEE_PER_KB_ELECTION.getKey(), data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
         return feePerKbElection;
     }
 
