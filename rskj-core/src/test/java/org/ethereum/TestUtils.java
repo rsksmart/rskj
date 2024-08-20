@@ -19,6 +19,9 @@
 
 package org.ethereum;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
@@ -291,4 +294,9 @@ public final class TestUtils {
         }
     }
 
+    public static RskAddress mockAddress(String addr) {
+        RskAddress mock = mock(RskAddress.class);
+        when(mock.getBytes()).thenReturn(Hex.decode(addr));
+        return mock;
+    }
 }

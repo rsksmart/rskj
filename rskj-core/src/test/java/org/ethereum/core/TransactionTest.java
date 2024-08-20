@@ -55,11 +55,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -138,7 +134,7 @@ class TransactionTest {
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
                 ByteUtil.toHexString(key.getAddress()));
 
-        System.out.println(tx.toString());
+        System.out.println(tx);
     }
 
     @Disabled
@@ -470,7 +466,7 @@ class TransactionTest {
 
         List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")) {
             @Override
-            protected ProgramResult executeTransaction(Transaction tx) {
+            protected ProgramResult executeTransaction() {
                 // first emulating the constant call (Ethereum.callConstantFunction)
                 // to ensure it doesn't affect the final state
 
@@ -512,7 +508,7 @@ class TransactionTest {
                 }
 
                 // now executing the JSON test transaction
-                return super.executeTransaction(tx);
+                return super.executeTransaction();
             }
         }.setstateTestUSeREMASC(true).runImpl();
         Assertions.assertTrue(res.isEmpty(), res.toString());
@@ -806,7 +802,7 @@ class TransactionTest {
         }
     }
 
-    private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
+    private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) {
         return createTx(sender, receiveAddress, data, 0, repository.getNonce(new RskAddress(sender.getAddress())));
     }
 
