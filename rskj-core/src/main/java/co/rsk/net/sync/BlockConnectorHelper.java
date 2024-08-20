@@ -43,7 +43,7 @@ public class BlockConnectorHelper {
 
         blockAndDifficultiesList.sort(new BlockAndDiffComparator());
         Block child = null;
-        logger.info("Start connecting Blocks. To connect from {} to {} - Total: {}",
+        logger.info("Start connecting blocks ranging from {} to {} - Total: {}",
                 blockAndDifficultiesList.get(0).getKey().getNumber(),
                 blockAndDifficultiesList.get(blockAndDifficultiesList.size() - 1).getKey().getNumber(),
                 blockAndDifficultiesList.size());

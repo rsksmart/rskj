@@ -41,7 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class SnapSyncState extends BaseSyncState {
 
-    private static final Logger logger = LoggerFactory.getLogger("snapSyncState");
+    private static final Logger logger = LoggerFactory.getLogger("SnapSyncState");
 
     private final SnapshotProcessor snapshotProcessor;
 
