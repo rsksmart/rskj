@@ -102,8 +102,8 @@ class BridgeStorageProviderTest {
 
     @Test
     void createSaveAndRecreateInstanceWithProcessedHashes() throws IOException {
-        Sha256Hash hash1 = PegTestUtils.createHash();
-        Sha256Hash hash2 = PegTestUtils.createHash();
+        Sha256Hash hash1 = BitcoinTestUtils.createHash(1);
+        Sha256Hash hash2 = BitcoinTestUtils.createHash(2);
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -218,23 +218,30 @@ class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
 
-        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_REQUEST_QUEUE.getKey()))).
-            thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_REQUEST_QUEUE.getKey()))).thenReturn(
+            BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Collections.singletonList(oldEntry))))
+        );
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams,
-            activations);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+            repositoryMock,
+            mockAddress("aabbccdd"),
+            testnetBtcParams,
+            activations
+        );
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
-        releaseRequestQueue.add(Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+        releaseRequestQueue.add(
+            Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
             Coin.COIN,
-            PegTestUtils.createHash3(0));
+            PegTestUtils.createHash3(0)
+        );
 
         ReleaseRequestQueue result = storageProvider.getReleaseRequestQueue();
 
-        Assertions.assertEquals(2, result.getEntries().size());
-        Assertions.assertEquals(result.getEntries().get(0), oldEntry);
-        Assertions.assertEquals(result.getEntries().get(1), newEntry);
+        assertEquals(2, result.getEntries().size());
+        assertEquals(result.getEntries().get(0), oldEntry);
+        assertEquals(result.getEntries().get(1), newEntry);
     }
 
     @Test
@@ -248,10 +255,9 @@ class BridgeStorageProviderTest {
                 Coin.COIN)));
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
-        releaseRequestQueue.add(Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
-            Coin.COIN);
+        releaseRequestQueue.add(Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"), Coin.COIN);
 
-        doAnswer((i) -> {
+        doAnswer(i -> {
             List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), testnetBtcParams);
             Assertions.assertEquals(oldEntriesList, entries);
             return true;
@@ -268,22 +274,21 @@ class BridgeStorageProviderTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
-        ReleaseRequestQueue.Entry newEntry =
-            new ReleaseRequestQueue.Entry(
-                Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
-                Coin.COIN,
-                PegTestUtils.createHash3(0)
-            );
+        ReleaseRequestQueue.Entry newEntry = new ReleaseRequestQueue.Entry(
+            Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+            Coin.COIN,
+            PegTestUtils.createHash3(0)
+        );
 
-        ReleaseRequestQueue.Entry oldEntry =
-            new ReleaseRequestQueue.Entry(
-                Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
-                Coin.COIN
-            );
+        ReleaseRequestQueue.Entry oldEntry = new ReleaseRequestQueue.Entry(
+            Address.fromBase58((new BridgeRegTestConstants()).getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+            Coin.COIN
+        );
 
         Repository repositoryMock = mock(Repository.class);
-        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_REQUEST_QUEUE.getKey()))).
-            thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_REQUEST_QUEUE.getKey()))).thenReturn(
+            BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Collections.singletonList(oldEntry))))
+        );
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activations);
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
@@ -293,15 +298,15 @@ class BridgeStorageProviderTest {
             PegTestUtils.createHash3(0)
         );
 
-        doAnswer((i) -> {
+        doAnswer(i -> {
             List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), testnetBtcParams);
-            Assertions.assertEquals(entries, new ArrayList<>(Arrays.asList(oldEntry)));
+            Assertions.assertEquals(entries, new ArrayList<>(Collections.singletonList(oldEntry)));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE.getKey()), any(byte[].class));
 
-        doAnswer((i) -> {
+        doAnswer(i -> {
             List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), testnetBtcParams, true);
-            Assertions.assertEquals(entries, new ArrayList<>(Arrays.asList(newEntry)));
+            Assertions.assertEquals(entries, new ArrayList<>(Collections.singletonList(newEntry)));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey()), any(byte[].class));
 
@@ -348,18 +353,25 @@ class BridgeStorageProviderTest {
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey())))
             .thenReturn(BridgeSerializationUtils.serializePegoutsWaitingForConfirmations(new PegoutsWaitingForConfirmations(oldEntriesSet)));
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
-            testnetBtcParams, activations);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+            repositoryMock,
+            mockAddress("aabbccdd"),
+            testnetBtcParams,
+            activations
+        );
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
 
-        pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(testnetBtcParams, PegTestUtils.createHash(0)),
+        pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(
+            testnetBtcParams,
+            BitcoinTestUtils.createHash(0)),
             1L,
-            PegTestUtils.createHash3(0));
+            PegTestUtils.createHash3(0)
+        );
 
         PegoutsWaitingForConfirmations result = storageProvider.getPegoutsWaitingForConfirmations();
 
-        Assertions.assertEquals(2, result.getEntries().size());
+        assertEquals(2, result.getEntries().size());
     }
 
     @Test
@@ -374,7 +386,7 @@ class BridgeStorageProviderTest {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
         pegoutsWaitingForConfirmations.add(new BtcTransaction(testnetBtcParams), 1L);
 
-        doAnswer((i) -> {
+        doAnswer(i -> {
             Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries();
             Assertions.assertEquals(oldEntriesSet, entries);
             return true;
@@ -407,17 +419,20 @@ class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), testnetBtcParams, activations);
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = storageProvider.getPegoutsWaitingForConfirmations();
 
-        pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(testnetBtcParams, PegTestUtils.createHash(1)),
+        pegoutsWaitingForConfirmations.add(new SimpleBtcTransaction(
+            testnetBtcParams,
+            BitcoinTestUtils.createHash(1)),
             1L,
-            PegTestUtils.createHash3(0));
+            PegTestUtils.createHash3(0)
+        );
 
-        doAnswer((i) -> {
+        doAnswer(i -> {
             Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams).getEntries();
             Assertions.assertEquals(entries, oldEntriesSet);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey()), any(byte[].class));
 
-        doAnswer((i) -> {
+        doAnswer(i -> {
             Set<PegoutsWaitingForConfirmations.Entry> entries = BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(i.getArgument(2), testnetBtcParams, true).getEntries();
             Assertions.assertEquals(entries, newEntriesSet);
             return true;
@@ -706,7 +721,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveCoinBaseInformation_before_RSKIP143() throws IOException {
+    void saveCoinBaseInformation_before_RSKIP143() {
         Repository repository = mock(Repository.class);
 
         Sha256Hash hash = Sha256Hash.ZERO_HASH;
@@ -735,7 +750,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveCoinBaseInformation_after_RSKIP143() throws IOException {
+    void saveCoinBaseInformation_after_RSKIP143() {
         Repository repository = mock(Repository.class);
 
         Sha256Hash hash = Sha256Hash.ZERO_HASH;
@@ -799,7 +814,7 @@ class BridgeStorageProviderTest {
 
     @Test
     void getBtcBestBlockHashByHeight_afterRskip199() {
-        Sha256Hash blockHash = PegTestUtils.createHash(2);
+        Sha256Hash blockHash = BitcoinTestUtils.createHash(2);
         byte[] serializedHash = BridgeSerializationUtils.serializeSha256Hash(blockHash);
 
         Repository repository = mock(Repository.class);
@@ -820,9 +835,9 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveBtcBlocksIndex_beforeRskip199() throws IOException {
+    void saveBtcBlocksIndex_beforeRskip199() {
         int blockHeight = 100;
-        Sha256Hash blockHash = PegTestUtils.createHash(2);
+        Sha256Hash blockHash = BitcoinTestUtils.createHash(2);
         byte[] serializedHash = BridgeSerializationUtils.serializeSha256Hash(blockHash);
 
         DataWord storageKey = DataWord.fromLongString("btcBlockHeight-" + blockHeight);
@@ -847,11 +862,11 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveBtcBlocksIndex_afterRskip199() throws IOException {
+    void saveBtcBlocksIndex_afterRskip199() {
         int blockHeight = 100;
         DataWord storageKey = DataWord.fromLongString("btcBlockHeight-" + blockHeight);
 
-        Sha256Hash blockHash = PegTestUtils.createHash(2);
+        Sha256Hash blockHash = BitcoinTestUtils.createHash(2);
         byte[] serializedHash = BridgeSerializationUtils.serializeSha256Hash(blockHash);
 
         Repository repository = mock(Repository.class);
@@ -904,7 +919,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
-        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
@@ -925,7 +940,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
-        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(2);
 
         when(repository.getStorageBytes(
             bridgeAddress,
@@ -951,7 +966,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
-        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(2);
 
         when(repository.getStorageBytes(
             bridgeAddress,
@@ -977,7 +992,7 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
-        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(2);
 
         when(repository.getStorageBytes(
             bridgeAddress,
@@ -999,11 +1014,11 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveDerivationArgumentsScriptHash_afterRSKIP176_ok() throws IOException {
+    void saveDerivationArgumentsScriptHash_afterRSKIP176_ok() {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
-        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -1028,7 +1043,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveDerivationArgumentsScriptHash_afterRSKIP176_nullBtcTxHash_notSaved() throws IOException {
+    void saveDerivationArgumentsScriptHash_afterRSKIP176_nullBtcTxHash_notSaved() {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
@@ -1050,11 +1065,10 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveDerivationArgumentsScriptHash_afterRSKIP176_nullDerivationHash_notSaved()
-        throws IOException {
+    void saveDerivationArgumentsScriptHash_afterRSKIP176_nullDerivationHash_notSaved() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash btcTxHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(1);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -1074,11 +1088,11 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveDerivationArgumentsScriptHash_beforeRSKIP176_ok() throws IOException {
+    void saveDerivationArgumentsScriptHash_beforeRSKIP176_ok() {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
-        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
+        Sha256Hash btcTxHash = BitcoinTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
@@ -1231,7 +1245,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveFlyoverFederationInformation_afterRSKIP176_ok() throws IOException {
+    void saveFlyoverFederationInformation_afterRSKIP176_ok() {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(2);
@@ -1264,7 +1278,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveFlyoverFederationInformation_beforeRSKIP176_ok() throws IOException {
+    void saveFlyoverFederationInformation_beforeRSKIP176_ok() {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(2);
@@ -1297,7 +1311,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveFlyoverFederationInformation_alreadySet_dont_set_again() throws IOException {
+    void saveFlyoverFederationInformation_alreadySet_dont_set_again() {
         Repository repository = mock(Repository.class);
 
         Keccak256 derivationHash = PegTestUtils.createHash3(2);
@@ -1377,7 +1391,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveReceiveHeadersLastTimestamp_before_RSKIP200() throws IOException {
+    void saveReceiveHeadersLastTimestamp_before_RSKIP200() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -1396,7 +1410,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveReceiveHeadersLastTimestamp_after_RSKIP200() throws IOException {
+    void saveReceiveHeadersLastTimestamp_after_RSKIP200() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -1416,7 +1430,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    void saveReceiveHeadersLastTimestamp_not_set() throws IOException {
+    void saveReceiveHeadersLastTimestamp_not_set() {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -1560,7 +1574,11 @@ class BridgeStorageProviderTest {
 
     private BtcTransaction createTransaction() {
         BtcTransaction tx = new BtcTransaction(testnetBtcParams);
-        tx.addInput(PegTestUtils.createHash(), transactionOffset++, ScriptBuilder.createInputScript(new TransactionSignature(BigInteger.ONE, BigInteger.TEN)));
+        tx.addInput(
+            BitcoinTestUtils.createHash(1),
+            transactionOffset++,
+            ScriptBuilder.createInputScript(new TransactionSignature(BigInteger.ONE, BigInteger.TEN))
+        );
 
         return tx;
     }

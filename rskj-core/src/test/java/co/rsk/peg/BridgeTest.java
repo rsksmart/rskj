@@ -682,7 +682,7 @@ class BridgeTest {
     }
 
     @Test
-    void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
+    void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -708,8 +708,8 @@ class BridgeTest {
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
-            PegTestUtils.createHash(1),
-            PegTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
             1,
             Utils.encodeCompactBits(networkParameters.getMaxTarget()),
             1,
@@ -782,8 +782,8 @@ class BridgeTest {
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
-            PegTestUtils.createHash(1),
-            PegTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
             1,
             Utils.encodeCompactBits(networkParameters.getMaxTarget()),
             1,
@@ -859,7 +859,7 @@ class BridgeTest {
     }
 
     @Test
-    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
             null,
@@ -891,7 +891,7 @@ class BridgeTest {
     }
 
     @Test
-    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
             null,
@@ -1086,7 +1086,7 @@ class BridgeTest {
     }
 
     @Test
-    void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws VMException {
+    void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder

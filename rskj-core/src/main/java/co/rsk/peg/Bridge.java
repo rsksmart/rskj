@@ -462,7 +462,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return !activations.isActive(RSKIP417);
     }
 
-    private void teardown() throws IOException {
+    private void teardown() {
         bridgeSupport.save();
     }
 
@@ -903,7 +903,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
-    public Integer createFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer createFederation(Object[] args) {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -912,7 +912,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKey(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer addFederatorPublicKey(Object[] args) {
         logger.trace("addFederatorPublicKey");
 
         byte[] publicKeyBytes;
@@ -929,7 +929,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKeyMultikey(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer addFederatorPublicKeyMultikey(Object[] args) {
         logger.trace("addFederatorPublicKeyMultikey");
 
         byte[] btcPublicKeyBytes = (byte[]) args[0];
@@ -945,7 +945,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer commitFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer commitFederation(Object[] args) {
         logger.trace("commitFederation");
 
         byte[] hash;
@@ -962,7 +962,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer rollbackFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer rollbackFederation(Object[] args) {
         logger.trace("rollbackFederation");
 
         return bridgeSupport.voteFederationChange(

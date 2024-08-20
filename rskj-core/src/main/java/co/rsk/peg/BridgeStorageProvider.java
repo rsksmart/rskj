@@ -373,15 +373,15 @@ public class BridgeStorageProvider {
             return Optional.empty();
         }
 
-        FlyoverFederationInformation flyoverFederationInformation = this.safeGetFromRepository(
+        FlyoverFederationInformation flyoverFederationInformationInStorage = this.safeGetFromRepository(
             getStorageKeyForFlyoverFederationInformation(flyoverFederationRedeemScriptHash),
             data -> BridgeSerializationUtils.deserializeFlyoverFederationInformation(data, flyoverFederationRedeemScriptHash)
         );
-        if (flyoverFederationInformation == null) {
+        if (flyoverFederationInformationInStorage == null) {
             return Optional.empty();
         }
 
-        return Optional.of(flyoverFederationInformation);
+        return Optional.of(flyoverFederationInformationInStorage);
     }
 
     public void setFlyoverFederationInformation(FlyoverFederationInformation flyoverFederationInformation) {
@@ -520,7 +520,7 @@ public class BridgeStorageProvider {
         ));
     }
 
-    public void save() throws IOException {
+    public void save() {
         saveBtcTxHashesAlreadyProcessed();
 
         saveReleaseRequestQueue();

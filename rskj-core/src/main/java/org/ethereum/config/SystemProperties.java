@@ -20,7 +20,6 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.config.ConfigLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;

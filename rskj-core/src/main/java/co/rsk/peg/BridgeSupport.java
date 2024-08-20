@@ -34,10 +34,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
@@ -72,9 +69,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.InternalTransaction;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.*;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -178,7 +173,7 @@ public class BridgeSupport {
         return checkpoints;
     }
 
-    public void save() throws IOException {
+    public void save() {
         provider.save();
         feePerKbSupport.save();
         whitelistSupport.save();
@@ -277,10 +272,9 @@ public class BridgeSupport {
      * Get the wallet for the currently active federation
      * @return A BTC wallet for the currently active federation
      *
-     * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = federationSupport.getActiveFederationBtcUTXOs();
 
@@ -298,15 +292,14 @@ public class BridgeSupport {
      * or null if there's currently no retiring federation
      * @return A BTC wallet for the currently active federation
      *
-     * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
-    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) throws IOException {
+    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
         Federation federation = getRetiringFederation();
         if (federation == null) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
@@ -639,7 +632,7 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -765,7 +758,7 @@ public class BridgeSupport {
     /*
       Add the btcTx outputs that send btc to the federation(s) to the UTXO list
      */
-    private void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
+    private void saveNewUTXOs(BtcTransaction btcTx) {
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
@@ -978,9 +971,11 @@ public class BridgeSupport {
             long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
             logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
             if (hasMinimumFundsToMigrate(retiringFederationWallet)){
+                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
                 logger.info(
                     "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                    retiringFederationWallet.getBalance().toFriendlyString()
+                    retiringFederationBalanceInFriendlyFormat
                 );
 
                 migrateFunds(
@@ -994,9 +989,11 @@ public class BridgeSupport {
 
         if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
+                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
                 logger.info(
                     "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
-                    retiringFederationWallet.getBalance().toFriendlyString()
+                    retiringFederationBalanceInFriendlyFormat
                 );
 
                 try {
@@ -2031,7 +2028,7 @@ public class BridgeSupport {
         return liveFederations;
     }
 
-    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) throws BridgeIllegalArgumentException {
+    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         return federationSupport.voteFederationChange(tx, callSpec, signatureCache, eventLogger);
     }
 
@@ -2533,7 +2530,7 @@ public class BridgeSupport {
             Keccak256 derivationHash,
             FlyoverFederationInformation flyoverFederationInformation,
             List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
@@ -2544,7 +2541,7 @@ public class BridgeSupport {
         Keccak256 derivationHash,
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
@@ -2597,14 +2594,12 @@ public class BridgeSupport {
                 }
 
                 List<UTXO> selectedUTXOs = originWallet
-                        .getUTXOProvider().getOpenTransactionOutputs(originWallet.getWatchedAddresses()).stream()
-                        .filter(utxo ->
-                                migrationBtcTx.getInputs().stream().anyMatch(input ->
-                                        input.getOutpoint().getHash().equals(utxo.getHash()) &&
-                                                input.getOutpoint().getIndex() == utxo.getIndex()
-                                )
-                        )
-                        .collect(Collectors.toList());
+                    .getUTXOProvider()
+                    .getOpenTransactionOutputs(originWallet.getWatchedAddresses())
+                    .stream()
+                    .filter(utxo -> migrationBtcTx.getInputs().stream().anyMatch(input ->
+                        input.getOutpoint().getHash().equals(utxo.getHash()) && input.getOutpoint().getIndex() == utxo.getIndex()
+                    )).collect(Collectors.toList());
 
                 return Pair.of(migrationBtcTx, selectedUTXOs);
             } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
@@ -2848,7 +2843,7 @@ public class BridgeSupport {
         return true;
     }
 
-    private Coin computeTotalAmountSent(BtcTransaction btcTx) throws IOException {
+    private Coin computeTotalAmountSent(BtcTransaction btcTx) {
         // Compute the total amount sent. Value could have been sent both to the
         // currently active federation and to the currently retiring federation.
         // Add both amounts up in that case.

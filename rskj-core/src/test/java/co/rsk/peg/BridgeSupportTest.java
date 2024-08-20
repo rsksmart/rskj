@@ -516,7 +516,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void save_callsFederationSupportSave() throws IOException {
+        void save_callsFederationSupportSave() {
             bridgeSupport.save();
             verify(federationSupport).save();
         }
