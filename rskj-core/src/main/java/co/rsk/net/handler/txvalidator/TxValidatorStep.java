@@ -20,10 +20,9 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -32,6 +31,5 @@ import java.math.BigInteger;
  */
 public interface TxValidatorStep {
 
-    TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
-
+    TransactionValidationResult validate(Transaction tx, ValidationArgs validationArgs, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
 }

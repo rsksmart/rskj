@@ -94,7 +94,8 @@ public enum ConsensusRule {
     RSKIP415("rskip415"),
     RSKIP417("rskip417"),
     RSKIP428("rskip428"),
-    RSKIP434("rskip434")
+    RSKIP434("rskip434"),
+    RSKIP432("rskip432"), // From RSKIP-432 RbtcSwap
     ;
 
     private String configKey;

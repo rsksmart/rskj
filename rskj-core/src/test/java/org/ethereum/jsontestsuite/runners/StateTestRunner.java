@@ -146,26 +146,29 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction);
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         blockchain = new BlockChainImpl(
-            blockStore,
-            null,
-            null,
-            null,
-            null,
-            new BlockExecutor(
-                config.getActivationConfig(),
-                new RepositoryLocator(trieStore, stateRootHandler),
-                new TransactionExecutorFactory(
-                    config,
-                    blockStore,
-                    null,
-                    blockFactory,
-                    new ProgramInvokeFactoryImpl(),
-                    precompiledContracts,
-                    new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-            ),
-            stateRootHandler
+                blockStore,
+                null,
+                null,
+                null,
+                null,
+                new BlockExecutor(
+                        config.getActivationConfig(),
+                        new RepositoryLocator(trieStore, stateRootHandler),
+                        new TransactionExecutorFactory(
+                                config,
+                                blockStore,
+                                null,
+                                blockFactory,
+                                new ProgramInvokeFactoryImpl(),
+                                precompiledContracts,
+                                signatureCache
+                        ),
+                        config.getNetworkConstants(),
+                        signatureCache
+                ),
+                stateRootHandler
         );
 
         env = EnvBuilder.build(stateTestCase.getEnv());

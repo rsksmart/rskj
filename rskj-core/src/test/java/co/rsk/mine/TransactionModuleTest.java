@@ -590,7 +590,9 @@ class TransactionModuleTest {
                 config.getActivationConfig(),
                 repositoryLocator,
 //                stateRootHandler,
-                this.transactionExecutorFactory
+                this.transactionExecutorFactory,
+                config.getNetworkConstants(),
+                signatureCache
         );
 
         MinerServer minerServer = new MinerServerImpl(

@@ -165,7 +165,9 @@ public class TestRunner {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
-                        transactionExecutorFactory
+                        transactionExecutorFactory,
+                        config.getNetworkConstants(),
+                        blockTxSignatureCache
                 ),
                 stateRootHandler
         );

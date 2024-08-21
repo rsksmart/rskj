@@ -21,6 +21,7 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.ClaimTransactionValidator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -99,6 +100,9 @@ public class TransactionExecutor {
     private final SignatureCache signatureCache;
 
     private boolean localCall = false;
+    private boolean txWasPaid = false;
+
+    private final ClaimTransactionValidator claimTransactionValidator;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -124,6 +128,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
+        this.claimTransactionValidator = new ClaimTransactionValidator(signatureCache, constants);
     }
 
     /**
@@ -167,17 +172,11 @@ public class TransactionExecutor {
         }
 
 
-        Coin totalCost = tx.getValue();
-
-        if (basicTxCost > 0 ) {
-            // add gas cost only for priced transactions
-            Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            totalCost = totalCost.add(txGasCost);
-        }
+        Coin totalCost = getTxTotalCost();
 
         Coin senderBalance = track.getBalance(tx.getSender(signatureCache));
 
-        if (!isCovers(senderBalance, totalCost)) {
+        if (!isCovers(senderBalance, totalCost) && !claimTransactionValidator.isClaimTxAndValid(tx, track, activations)) {
 
             logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
             logger.warn("Transaction Data: {}", tx);
@@ -271,11 +270,13 @@ public class TransactionExecutor {
 
             track.increaseNonce(tx.getSender(signatureCache));
 
-            long txGasLimit = GasCost.toGas(tx.getGasLimit());
-            Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
+            Coin totalCost = getTxTotalCost();
+            Coin senderBalance = track.getBalance(tx.getSender(signatureCache));
 
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+            if(isCovers(senderBalance, totalCost)) {
+                payTransaction();
+                txWasPaid = true;
+            }
         }
 
         if (tx.isContractCreation()) {
@@ -502,6 +503,9 @@ public class TransactionExecutor {
     }
 
     private void finalization() {
+        if(!txWasPaid) {
+            payTransaction();
+        }
         // RSK if local call gas balances must not be changed
         if (localCall) {
             // there's no need to save any change
@@ -682,4 +686,24 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
+
+    private void payTransaction() {
+        long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
+        track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
+
+        logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+    }
+
+    private Coin getTxTotalCost() {
+        long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        Coin totalCost = tx.getValue();
+
+        if (basicTxCost > 0 ) {
+            Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
+            totalCost = totalCost.add(txGasCost);
+        }
+
+        return totalCost;
+    }
 }

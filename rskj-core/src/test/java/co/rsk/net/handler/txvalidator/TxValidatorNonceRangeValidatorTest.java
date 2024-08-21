@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.ValidationArgs;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -41,9 +42,11 @@ class TxValidatorNonceRangeValidatorTest {
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(1));
 
         TxValidatorNonceRangeValidator tvnrv = new TxValidatorNonceRangeValidator(1);
-        Assertions.assertFalse(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertTrue(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assertions.assertFalse(tvnrv.validate(tx3, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        ValidationArgs va = new ValidationArgs(as, null, null);
+
+        Assertions.assertFalse(tvnrv.validate(tx1, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvnrv.validate(tx2, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvnrv.validate(tx3, va, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -62,7 +65,9 @@ class TxValidatorNonceRangeValidatorTest {
         for (int i = 0; i < 7; i++) {
             Transaction tx = txs[i];
             long txNonce = tx.getNonceAsInteger().longValue();
-            boolean isValid = tvnrv.validate(tx, as, null, null, Long.MAX_VALUE, false).transactionIsValid();
+            ValidationArgs va = new ValidationArgs(as, null, null);
+
+            boolean isValid = tvnrv.validate(tx, va, null, null, Long.MAX_VALUE, false).transactionIsValid();
             Assertions.assertEquals(isValid, txNonce >= 1 && txNonce <= 5); // only valid if tx nonce is in the range [1; 5]
         }
     }
