@@ -546,6 +546,7 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp tests")
     class SvpTests {
+        private final Coin spendableValueFromProposedFederation = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
         private BridgeSupport bridgeSupport;
 
         private Federation activeFederation;
@@ -611,6 +612,21 @@ class BridgeSupportTest {
         }
 
         @Test
+        void processSvpFundTransactionWithoutSignatures_whenThereAreNoEnoughUTXOs_throwsInsufficientMoneyException() {
+            // arrange
+            List<UTXO> insufficientUtxos = new ArrayList<>();
+            when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(insufficientUtxos);
+
+            // act & assert
+            InsufficientMoneyException exception = assertThrows(InsufficientMoneyException.class,
+                () -> bridgeSupport.processSvpFundTransactionUnsigned(rskTx));
+
+            String totalNeededValueInBtc = spendableValueFromProposedFederation.multiply(2).toFriendlyString();
+            String expectedMessage = String.format("Insufficient money,  missing %s", totalNeededValueInBtc);
+            assertEquals(expectedMessage, exception.getMessage());
+        }
+
+        @Test
         void processSvpFundTransactionWithoutSignatures_createsExpectedTransactionAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // act
             bridgeSupport.processSvpFundTransactionUnsigned(rskTx);
@@ -632,21 +648,22 @@ class BridgeSupportTest {
         private void assertSvpReleaseWasSettled() throws IOException {
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
             assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, svpFundTransactionHashUnsigned, rskTxHash);
-            getSvpFundTransactionFromPegoutsMap(pegoutsWaitingForConfirmations);
+
+            svpFundTransactionUnsigned = getSvpFundTransactionFromPegoutsMap(pegoutsWaitingForConfirmations);
 
             assertPegoutTxSigHashWasSaved(svpFundTransactionUnsigned);
-            assertLogReleaseRequested(rskTxHash, svpFundTransactionHashUnsigned, bridgeMainNetConstants.getSpendableValueFromProposedFederation());
+            assertLogReleaseRequested(rskTxHash, svpFundTransactionHashUnsigned, spendableValueFromProposedFederation);
             assertLogPegoutTransactionCreated(svpFundTransactionUnsigned);
         }
 
-        private void getSvpFundTransactionFromPegoutsMap(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
+        private BtcTransaction getSvpFundTransactionFromPegoutsMap(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
             Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
             assertEquals(1, pegoutEntries.size());
             // we now know that the only present pegout is the fund tx
             Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutEntries.iterator();
             PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
-            svpFundTransactionUnsigned = pegoutEntry.getBtcTransaction();
+            return pegoutEntry.getBtcTransaction();
         }
 
         private void assertSvpFundTransactionHasExpectedInputsAndOutputs() {
@@ -683,7 +700,7 @@ class BridgeSupportTest {
             assertTrue(outputToProposedFederationOpt.isPresent());
 
             TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
-            assertEquals(outputToProposedFederation.getValue(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
+            assertEquals(outputToProposedFederation.getValue(), spendableValueFromProposedFederation);
         }
 
         private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
@@ -695,7 +712,7 @@ class BridgeSupportTest {
             assertTrue(outputToProposedFederationWithFlyoverPrefixOpt.isPresent());
 
             TransactionOutput outputToProposedFederationWithFlyoverPrefix = outputToProposedFederationWithFlyoverPrefixOpt.get();
-            assertEquals(outputToProposedFederationWithFlyoverPrefix.getValue(), bridgeMainNetConstants.getSpendableValueFromProposedFederation());
+            assertEquals(outputToProposedFederationWithFlyoverPrefix.getValue(), spendableValueFromProposedFederation);
         }
 
         private Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
