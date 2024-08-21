@@ -22,6 +22,8 @@ package org.ethereum.net.client;
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.p2p.HelloMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,8 @@ import static org.ethereum.net.eth.EthVersion.fromCode;
  * Created by Anton Nashatyrev on 13.10.2015.
  */
 public class ConfigCapabilitiesImpl implements ConfigCapabilities{
+
+    private static final Logger logger = LoggerFactory.getLogger("capabilities - dummy");
 
     private final RskSystemProperties config;
 
@@ -54,8 +58,13 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
             }
         }
 
+        logger.debug("isServerSnapshotSyncEnabled? : "+config.isServerSnapshotSyncEnabled());
+        logger.debug("allCapabilities.stream().anyMatch(Capability::isRSK)??? : "+ allCapabilities.stream().anyMatch(Capability::isRSK));
+
         if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
             allCapabilities.add(new Capability(SNAP, SNAP_VERSION));
+            logger.debug("Added SNAP capability. SIZE " + allCapabilities.size() + " ----- "+ allCapabilities.stream()
+                    .anyMatch(capability -> SNAP.equals(capability.getName())));
         }
 
         this.config = config;
