@@ -29,6 +29,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
+import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
@@ -461,7 +462,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return !activations.isActive(RSKIP417);
     }
 
-    private void teardown() throws IOException {
+    private void teardown() {
         bridgeSupport.save();
     }
 
@@ -902,7 +903,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
-    public Integer createFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer createFederation(Object[] args) {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -911,7 +912,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKey(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer addFederatorPublicKey(Object[] args) {
         logger.trace("addFederatorPublicKey");
 
         byte[] publicKeyBytes;
@@ -928,7 +929,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKeyMultikey(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer addFederatorPublicKeyMultikey(Object[] args) {
         logger.trace("addFederatorPublicKeyMultikey");
 
         byte[] btcPublicKeyBytes = (byte[]) args[0];
@@ -944,7 +945,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer commitFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer commitFederation(Object[] args) {
         logger.trace("commitFederation");
 
         byte[] hash;
@@ -961,7 +962,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer rollbackFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer rollbackFederation(Object[] args) {
         logger.trace("rollbackFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -1163,13 +1164,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("increaseLockingCap");
-
         Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
-        if (newLockingCap.getValue() <= 0) {
-            throw new BridgeIllegalArgumentException("Locking cap must be bigger than zero");
+        try {
+            return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+        } catch (LockingCapIllegalArgumentException e) {
+            throw new BridgeIllegalArgumentException(e);
         }
-
-        return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
     }
 
     public void registerBtcCoinbaseTransaction(Object[] args) throws VMException {
