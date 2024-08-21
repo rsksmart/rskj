@@ -1008,8 +1008,8 @@ public class BridgeSupport {
         // add outputs to proposed fed and proposed fed with flyover prefix
         svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
 
-        Script proposedFederationWithFlyoverPrefixScriptPubKey = getRedeemScriptWithFlyoverPrefixScriptPubKey(proposedFederation.getRedeemScript());
-        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixScriptPubKey);
+        Address proposedFederationWithFlyoverPrefixAddress = getProposedFederationWithFlyoverPrefixAddress(proposedFederation.getRedeemScript());
+        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
         SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);
@@ -1018,11 +1018,12 @@ public class BridgeSupport {
         return svpFundTransaction;
     }
 
-    private Script getRedeemScriptWithFlyoverPrefixScriptPubKey(Script federationRedeemScript) {
+    private Address getProposedFederationWithFlyoverPrefixAddress(Script federationRedeemScript) {
         FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
-        Script federationRedeemScriptWithFlyoverPrefix = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), federationRedeemScript);
+        Script federationWithFlyoverPrefixRedeemScript = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), federationRedeemScript);
+        Script federationWithFlyoverPrefixP2SHScript = ScriptBuilder.createP2SHOutputScript(federationWithFlyoverPrefixRedeemScript);
 
-        return ScriptBuilder.createP2SHOutputScript(federationRedeemScriptWithFlyoverPrefix);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), federationWithFlyoverPrefixP2SHScript);
     }
 
     private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
