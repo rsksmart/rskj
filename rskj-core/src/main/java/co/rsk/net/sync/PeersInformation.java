@@ -209,6 +209,7 @@ public class PeersInformation implements SnapshotPeersInformation {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList()).size());
 
+
         return getBestCandidatesStream()
                 .filter(entry -> entry.getKey().isSnapCapable())
                 .map(Map.Entry::getKey)
