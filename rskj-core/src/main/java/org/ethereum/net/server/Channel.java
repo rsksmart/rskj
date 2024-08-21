@@ -96,7 +96,6 @@ public class Channel implements Peer {
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
         this.stats = new Stats();
-        logger.debug("dummy Channel capabilities: {}", capabilities);
         this.isSnapCapable = capabilities.stream()
                 .anyMatch(capability -> Capability.SNAP.equals(capability.getName()));
     }
@@ -284,7 +283,6 @@ public class Channel implements Peer {
 
     @Override
     public boolean isSnapCapable() {
-        logger.debug("dummy isSnapCapable - "+ isSnapCapable);
         return isSnapCapable;
     }
 

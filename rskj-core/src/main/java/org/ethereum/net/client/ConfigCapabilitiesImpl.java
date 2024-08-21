@@ -59,7 +59,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
                 allCapabilities.add(new Capability(RSK, v.getCode()));
             }
         }
-        if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
+        if ((config.isServerSnapshotSyncEnabled() || config.isClientSnapshotSyncEnabled()) && allCapabilities.stream().anyMatch(Capability::isRSK)) {
             allCapabilities.add(new Capability(SNAP, SNAP_VERSION));
             logger.debug("Added SNAP capability. SIZE " + allCapabilities.size() + " ----- "+ allCapabilities.stream()
                     .anyMatch(capability -> SNAP.equals(capability.getName())));
@@ -81,7 +81,6 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
                 ret.add(capability);
             }
         }
-        logger.debug("dummy - ConfigCapabilitiesImpl: {}", new ArrayList<>(allCapabilities));
         return new ArrayList<>(allCapabilities);
     }
 

@@ -251,13 +251,17 @@ public class SnapshotProcessor implements InternalService {
         long lastRequiredBlock = state.getLastBlock().getNumber() - BLOCKS_REQUIRED;
         List<Block> blocksFromResponse = responseMessage.getBlocks();
         logger.debug("CLIENT - Processing snap blocks response. Receiving from block {} to block {} Objective: {}.", blocksFromResponse.get(0).getNumber(), blocksFromResponse.get(blocksFromResponse.size() - 1).getNumber(), lastRequiredBlock);
+        logger.debug("dummy - lastRequiredBlock  "+ lastRequiredBlock);
+        logger.debug("dummy - Processing snap blocks response. Receiving from block {} to block {} Objective: {}.", blocksFromResponse.get(0).getNumber(), blocksFromResponse.get(blocksFromResponse.size() - 1).getNumber(), lastRequiredBlock);
         List<BlockDifficulty> difficultiesFromResponse = responseMessage.getDifficulties();
 
         for (int i = 0; i < blocksFromResponse.size(); i++) {
             state.addBlock(new ImmutablePair<>(blocksFromResponse.get(i), difficultiesFromResponse.get(i)));
         }
         long nextChunk = blocksFromResponse.get(0).getNumber();
+        logger.debug("dummy next chunk: {}",nextChunk);
         logger.debug("CLIENT - SnapBlock - nexChunk : {} - lastRequired {}, missing {}", nextChunk, lastRequiredBlock, nextChunk - lastRequiredBlock);
+        logger.debug("dummy: nextChunk   "+ nextChunk + "    lastRequiredBlock  "+ lastRequiredBlock);
         if (nextChunk > lastRequiredBlock) {
             requestBlocksChunk(sender, nextChunk);
         } else {
@@ -330,6 +334,7 @@ public class SnapshotProcessor implements InternalService {
         long totalChunkTime = System.currentTimeMillis() - startChunk;
 
         logger.debug("SERVER - Sending state chunk from {} of {} bytes to node {}, totalTime {}ms", request.getFrom(), chunkBytes.length, sender.getPeerNodeID(), totalChunkTime);
+        logger.debug("dummy - responseMessage.isComplete()?:  "+ responseMessage.isComplete());
         sender.sendMessage(responseMessage);
     }
 
@@ -345,6 +350,7 @@ public class SnapshotProcessor implements InternalService {
             logger.debug("CLIENT - State chunk dequeued from: {} - expected: {}", nextMessage.getFrom(), nextExpectedFrom);
             if (nextMessage.getFrom() == nextExpectedFrom) {
                 try {
+                    logger.debug("dummy    _  !message.isComplete()   "+ !queue.peek().isComplete());
                     processOrderedStateChunkResponse(state, peer, queue.poll());
                     state.setNextExpectedFrom(nextExpectedFrom + chunkSize * CHUNK_ITEM_SIZE);
                 } catch (Exception e) {
@@ -376,6 +382,7 @@ public class SnapshotProcessor implements InternalService {
 
     private void processOrderedStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage message) throws Exception {
         logger.debug("CLIENT - Processing State chunk received from {} to {}", message.getFrom(), message.getTo());
+        logger.debug("dummy - Processing State chunk received from {} to {}", message.getFrom(), message.getTo());
         peersInformation.getOrRegisterPeer(peer);
         state.onNewChunk();
 
@@ -423,6 +430,7 @@ public class SnapshotProcessor implements InternalService {
             postRootNodes.add(node);
         }
 
+        logger.debug("dummy INSIDE processOrderedStateChunkResponse    _  !message.isComplete()   "+ !message.isComplete());
         if (TrieDTOInOrderRecoverer.verifyChunk(state.getRemoteRootHash(), preRootNodes, nodes, postRootNodes)) {
             state.getAllNodes().addAll(nodes);
             state.setStateSize(state.getStateSize().add(BigInteger.valueOf(trieElements.size())));
@@ -431,6 +439,7 @@ public class SnapshotProcessor implements InternalService {
                 executeNextChunkRequestTask(state, peer);
             } else {
                 boolean result = rebuildStateAndSave(state);
+                logger.debug("dummy -  SNAPSHOT SYNC FINISHED");
                 logger.info("CLIENT - Snapshot sync finished {}! ", result ? "successfully" : "with errors");
                 stopSyncing(state);
             }
