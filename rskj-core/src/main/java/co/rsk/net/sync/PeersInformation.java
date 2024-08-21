@@ -28,6 +28,8 @@ import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -49,6 +51,8 @@ import java.util.stream.Stream;
  *     things such as the underlying communication channel.
  */
 public class PeersInformation implements SnapshotPeersInformation {
+
+    private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor - dummy");
 
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final int MAX_SIZE_FAILURE_RECORDS = 10;
@@ -198,6 +202,13 @@ public class PeersInformation implements SnapshotPeersInformation {
 
     @Override
     public List<Peer> getBestSnapPeerCandidates() {
+        logger.debug("getBestSnapPeer without checking if its capable size: - " + getBestCandidatesStream().collect(Collectors.toList()).size());
+        logger.debug("getBestSnapPeer without checking if its capable VALUE: - " + getBestCandidatesStream().collect(Collectors.toList()));
+        logger.debug("getBestSnapPeer WITH CAPABILITY size: - " + getBestCandidatesStream()
+                .filter(entry -> entry.getKey().isSnapCapable())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList()).size());
+
         return getBestCandidatesStream()
                 .filter(entry -> entry.getKey().isSnapCapable())
                 .map(Map.Entry::getKey)
