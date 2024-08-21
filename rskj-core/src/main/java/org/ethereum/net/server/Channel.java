@@ -282,6 +282,7 @@ public class Channel implements Peer {
 
     @Override
     public boolean isSnapCapable() {
+        logger.debug("dummy isSnapCapable - "+ isSnapCapable);
         return isSnapCapable;
     }
 
