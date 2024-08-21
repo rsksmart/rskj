@@ -339,9 +339,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 task = this.queue.poll(1, TimeUnit.SECONDS);
 
                 loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
-                loggerMessageProcess.debug("dummy - " + config.peerCapabilities().size());
-                loggerMessageProcess.debug("dummy - CAP 0:    "+config.peerCapabilities().get(0));
-                loggerMessageProcess.debug("dummy - isServerSnapEnabled:    "+config.isServerSnapshotSyncEnabled());
 
                 if (task != null) {
                     addTracingKeys(task.getNodeMsgTraceInfo());
