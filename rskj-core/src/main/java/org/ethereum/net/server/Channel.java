@@ -52,6 +52,7 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -95,6 +96,7 @@ public class Channel implements Peer {
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
         this.stats = new Stats();
+        logger.debug("dummy Channel capabilities: {}", capabilities);
         this.isSnapCapable = capabilities.stream()
                 .anyMatch(capability -> Capability.SNAP.equals(capability.getName()));
     }

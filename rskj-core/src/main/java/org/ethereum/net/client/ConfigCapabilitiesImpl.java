@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -41,7 +42,7 @@ import static org.ethereum.net.eth.EthVersion.fromCode;
  */
 public class ConfigCapabilitiesImpl implements ConfigCapabilities{
 
-    private static final Logger logger = LoggerFactory.getLogger("capabilities - dummy");
+    private static final Logger logger = LoggerFactory.getLogger("net");
 
     private final RskSystemProperties config;
 
@@ -80,7 +81,8 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
                 ret.add(capability);
             }
         }
-        return allCapabilities.stream().collect(Collectors.toList());
+        logger.debug("dummy - ConfigCapabilitiesImpl: {}", new ArrayList<>(allCapabilities));
+        return new ArrayList<>(allCapabilities);
     }
 
     /**
