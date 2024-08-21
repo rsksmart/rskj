@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BytesSliceTest {
 
     @Test
-        void testBytesLength() {
+    void testBytesLength() {
         assertEquals(0, Bytes.of(new byte[]{}).slice(0, 0).length());
         assertEquals(0, Bytes.of(new byte[]{1}).slice(0, 0).length());
         assertEquals(1, Bytes.of(new byte[]{1}).slice(0, 1).length());
