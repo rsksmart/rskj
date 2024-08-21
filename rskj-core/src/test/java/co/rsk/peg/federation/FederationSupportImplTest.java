@@ -2198,7 +2198,7 @@ class FederationSupportImplTest {
     @Test
     void getProposedFederation_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederation() {
         // arrange
-        Federation proposedFederation = new P2shErpFederationBuilder().build();
+        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
         storageProvider.setProposedFederation(proposedFederation);
 
         //act

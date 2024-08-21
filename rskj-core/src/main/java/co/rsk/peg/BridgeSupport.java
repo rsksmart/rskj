@@ -37,7 +37,6 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
@@ -999,7 +998,7 @@ public class BridgeSupport {
         settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTx.getHash(), spendableValueFromProposedFederation);
     }
 
-    private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws IOException, InsufficientMoneyException {
+    private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
 
         BtcTransaction svpFundTransaction = new BtcTransaction(bridgeConstants.getBtcParams());
