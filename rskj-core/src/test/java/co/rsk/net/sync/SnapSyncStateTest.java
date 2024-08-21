@@ -18,29 +18,35 @@
  */
 package co.rsk.net.sync;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.messages.SnapBlocksResponseMessage;
 import co.rsk.net.messages.SnapStateChunkResponseMessage;
 import co.rsk.net.messages.SnapStatusResponseMessage;
+import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.core.Block;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class SnapSyncStateTest {
@@ -56,8 +62,8 @@ class SnapSyncStateTest {
     private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler, snapshotProcessor, syncConfiguration, listener);
 
     @BeforeEach
-    void setUp(){
-        reset(syncEventsHandler,peersInformation, snapshotProcessor);
+    void setUp() {
+        reset(syncEventsHandler, peersInformation, snapshotProcessor);
     }
 
     @AfterEach
@@ -66,7 +72,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenOnEnterWasCalledAndNotRunningYet_thenSyncingStartsWithTestObjectAsParameter(){
+    void givenOnEnterWasCalledAndNotRunningYet_thenSyncingStartsWithTestObjectAsParameter() {
         //given-when
         underTest.onEnter();
         //then
@@ -74,7 +80,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenFinishWasCalledTwice_thenStopSyncingOnlyOnce(){
+    void givenFinishWasCalledTwice_thenStopSyncingOnlyOnce() {
         //given-when
         underTest.setRunning();
         underTest.finish();
@@ -84,7 +90,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenOnEnterWasCalledTwice_thenSyncingStartsOnlyOnce(){
+    void givenOnEnterWasCalledTwice_thenSyncingStartsOnlyOnce() {
         //given-when
         underTest.onEnter();
         underTest.onEnter();
@@ -93,7 +99,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenOnMessageTimeOutCalled_thenSyncingStops(){
+    void givenOnMessageTimeOutCalled_thenSyncingStops() {
         //given-when
         underTest.setRunning();
         underTest.onMessageTimeOut();
@@ -102,7 +108,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenNewChunk_thenTimerIsReset(){
+    void givenNewChunk_thenTimerIsReset() {
         //given
         underTest.timeElapsed = Duration.ofMinutes(1);
         assertThat(underTest.timeElapsed, greaterThan(Duration.ZERO));
@@ -114,7 +120,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenTickIsCalledBeforeTimeout_thenTimerIsUpdated_andNoTimeoutHappens(){
+    void givenTickIsCalledBeforeTimeout_thenTimerIsUpdated_andNoTimeoutHappens() {
         //given
         Duration elapsedTime = Duration.ofMillis(10);
         underTest.timeElapsed = Duration.ZERO;
@@ -123,7 +129,7 @@ class SnapSyncStateTest {
         //then
         assertThat(underTest.timeElapsed, equalTo(elapsedTime));
         verify(syncEventsHandler, never()).stopSyncing();
-        verify(syncEventsHandler, never()).onErrorSyncing(any(),any(),any(),any());
+        verify(syncEventsHandler, never()).onErrorSyncing(any(), any(), any(), any());
     }
 
     @Test
@@ -145,7 +151,7 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenFinishIsCalled_thenSyncEventHandlerStopsSync(){
+    void givenFinishIsCalled_thenSyncEventHandlerStopsSync() {
         //given-when
         underTest.setRunning();
         underTest.finish();
@@ -219,10 +225,86 @@ class SnapSyncStateTest {
         assertEquals(msg, jobArg.getValue().getMsg());
     }
 
+    @Test
+    void testSetAndGetLastBlock() {
+        Block mockBlock = mock(Block.class);
+        underTest.setLastBlock(mockBlock);
+        assertEquals(mockBlock, underTest.getLastBlock());
+    }
+
+    @Test
+    void testSetAndGetStateChunkSize() {
+        BigInteger expectedSize = BigInteger.valueOf(100L);
+        underTest.setStateChunkSize(expectedSize);
+        assertEquals(expectedSize, underTest.getStateChunkSize());
+    }
+
+    @Test
+    void testSetAndGetStateSize() {
+        BigInteger expectedSize = BigInteger.valueOf(1000L);
+        underTest.setStateSize(expectedSize);
+        assertEquals(expectedSize, underTest.getStateSize());
+    }
+
+    @Test
+    void testGetChunkTaskQueue() {
+        Queue<ChunkTask> queue = underTest.getChunkTaskQueue();
+        assertNotNull(queue);
+    }
+
+    @Test
+    void testSetAndGetNextExpectedFrom() {
+        long expectedValue = 100L;
+        underTest.setNextExpectedFrom(expectedValue);
+        assertEquals(expectedValue, underTest.getNextExpectedFrom());
+    }
+
     private static void doCountDownOnQueueEmpty(SyncMessageHandler.Listener listener, CountDownLatch latch) {
         doAnswer(invocation -> {
             latch.countDown();
             return null;
         }).when(listener).onQueueEmpty();
     }
+
+    @Test
+    void testGetSnapStateChunkQueue() {
+        PriorityQueue<SnapStateChunkResponseMessage> queue = underTest.getSnapStateChunkQueue();
+        assertNotNull(queue);
+    }
+
+    @Test
+    void testSetAndGetLastBlockDifficulty() {
+        BlockDifficulty mockBlockDifficulty = mock(BlockDifficulty.class);
+        underTest.setLastBlockDifficulty(mockBlockDifficulty);
+        assertEquals(mockBlockDifficulty, underTest.getLastBlockDifficulty());
+    }
+
+    @Test
+    void testSetAndGetRemoteRootHash() {
+        byte[] mockRootHash = new byte[]{1, 2, 3};
+        underTest.setRemoteRootHash(mockRootHash);
+        assertArrayEquals(mockRootHash, underTest.getRemoteRootHash());
+    }
+
+    @Test
+    void testSetAndGetRemoteTrieSize() {
+        long expectedSize = 12345L;
+        underTest.setRemoteTrieSize(expectedSize);
+        assertEquals(expectedSize, underTest.getRemoteTrieSize());
+    }
+
+    @Test
+    void testConnectBlocks() {
+        BlockConnectorHelper blockConnectorHelper = mock(BlockConnectorHelper.class);
+        Pair<Block, BlockDifficulty> mockBlockPair = mock(Pair.class);
+        underTest.addBlock(mockBlockPair);
+        ArgumentCaptor<List<Pair<Block, BlockDifficulty>>> captor = ArgumentCaptor.forClass(List.class);
+
+        underTest.connectBlocks(blockConnectorHelper);
+
+        verify(blockConnectorHelper, times(1)).startConnecting(captor.capture());
+        assertTrue(captor.getValue().contains(mockBlockPair));
+    }
+
+
 }
