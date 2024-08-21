@@ -51,7 +51,7 @@ class VoteFederationChangeTest {
     private static final long RSK_EXECUTION_BLOCK_TIMESTAMP = 10L;
     private static final PendingFederation pendingFederationToBe = new PendingFederation(FederationTestUtils.getFederationMembers(9));
 
-    private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private FederationSupport federationSupport;
     private ActivationConfig.ForBlock activations;
     private List<LogInfo> logs;
