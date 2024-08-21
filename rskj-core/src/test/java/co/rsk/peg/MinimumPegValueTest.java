@@ -73,9 +73,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class MinimumPegValueTest {
 
-  private static final Coin MINIMUM_PEGIN_VALUE = Coin.valueOf(100_000L);
-  private static final Coin MINIMUM_PEGOUT_VALUE = Coin.valueOf(80_000L);
-
   private static final BigInteger NONCE = new BigInteger("0");
   private static final BigInteger GAS_PRICE = new BigInteger("100");
   private static final BigInteger GAS_LIMIT = new BigInteger("1000");
@@ -97,13 +94,14 @@ class MinimumPegValueTest {
 
   @ParameterizedTest()
   @MethodSource("providePegMinimumParameters")
-  void whenOneInputofMinPeginValueAndOneOutputOfMinPegoutValue_shouldBuildTransactionSuccessfully(Coin feePerKb) {
+  void whenOneInputofMinPeginValueAndOneOutputOfMinPegoutValue_shouldBuildTransactionSuccessfully(
+      Coin feePerKb, Coin minimumPeginValue, Coin minimumPegoutValue) {
     // list of peg-out requests with the given minimum peg-out value
     List<ReleaseRequestQueue.Entry> entries = Arrays.asList(
-        createTestEntry(1000, MINIMUM_PEGOUT_VALUE));
+        createTestEntry(1000, minimumPegoutValue));
     // list of utxos that contains one utxo with the minimum peg-in value
     List<UTXO> utxos = Arrays.asList(
-        new UTXO(getUTXOHash("utxo"), 0, MINIMUM_PEGIN_VALUE, 0, false, federation.getP2SHScript()));
+        new UTXO(getUTXOHash("utxo"), 0, minimumPeginValue, 0, false, federation.getP2SHScript()));
     // the federation wallet, with flyover support
     Wallet fedWallet = BridgeUtils.getFederationSpendWallet(
         new Context(networkParameters),
@@ -129,15 +127,15 @@ class MinimumPegValueTest {
   @ParameterizedTest()
   @MethodSource("providePegMinimumParameters")
   void whenOneInputOfTenTimesMinPeginValueAndTenOutputsOfMinPegoutValue_shouldBuildTransactionSuccessfully(
-      Coin feePerKb) {
+      Coin feePerKb, Coin minimumPeginValue, Coin minimumPegoutValue) {
     // list of peg-out requests with the given minimum peg-out value
     List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      entries.add(createTestEntry(1000 + i, MINIMUM_PEGOUT_VALUE));
+      entries.add(createTestEntry(1000 + i, minimumPegoutValue));
     }
     // list of utxos that contains one utxo with ten times the minimum peg-in value
     List<UTXO> utxos = Arrays.asList(
-        new UTXO(getUTXOHash("utxo"), 0, MINIMUM_PEGIN_VALUE.times(10), 0, false, federation.getP2SHScript()));
+        new UTXO(getUTXOHash("utxo"), 0, minimumPeginValue.times(10), 0, false, federation.getP2SHScript()));
     // the federation wallet, with flyover support
     Wallet fedWallet = BridgeUtils.getFederationSpendWallet(
         new Context(networkParameters),
@@ -162,17 +160,18 @@ class MinimumPegValueTest {
 
   @ParameterizedTest()
   @MethodSource("providePegMinimumParameters")
-  void whenTenInputOfMinPeginValueAndTenOutputsOfMinPegoutValue_shouldBuildTransactionSuccessfully(Coin feePerKb) {
+  void whenTenInputOfMinPeginValueAndTenOutputsOfMinPegoutValue_shouldBuildTransactionSuccessfully(
+      Coin feePerKb, Coin minimumPeginValue, Coin minimumPegoutValue) {
     // list of peg-out requests with the given minimum peg-out value
     List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      entries.add(createTestEntry(1000 + i, MINIMUM_PEGOUT_VALUE));
+      entries.add(createTestEntry(1000 + i, minimumPegoutValue));
     }
     // list of utxos that contains ten utxos with the minimum peg-in value
     List<UTXO> utxos = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
       utxos.add(
-          new UTXO(getUTXOHash("utxo" + i), 0, MINIMUM_PEGIN_VALUE, 0, false, federation.getP2SHScript()));
+          new UTXO(getUTXOHash("utxo" + i), 0, minimumPeginValue, 0, false, federation.getP2SHScript()));
     }
     // the federation wallet, with flyover support
     Wallet fedWallet = BridgeUtils.getFederationSpendWallet(
@@ -198,12 +197,13 @@ class MinimumPegValueTest {
 
   @ParameterizedTest()
   @MethodSource("providePegMinimumParameters")
-  void whenReleaseBtcCalledWithMinimumPegoutValue_shouldLogReleaseBtcRequestReceived(Coin feePerKb) throws IOException {
+  void whenReleaseBtcCalledWithMinimumPegoutValue_shouldLogReleaseBtcRequestReceived(
+      Coin feePerKb, Coin minimumPeginValue, Coin minimumPegoutValue) throws IOException {
     BridgeConstants bridgeConstants = mock(BridgeConstants.class);
     when(bridgeConstants.getBtcParams()).thenReturn(bridgeMainNetConstants.getBtcParams());
     when(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee())
         .thenReturn(bridgeMainNetConstants.getMinimumPegoutValuePercentageToReceiveAfterFee());
-    when(bridgeConstants.getMinimumPegoutTxValue()).thenReturn(MINIMUM_PEGOUT_VALUE);
+    when(bridgeConstants.getMinimumPegoutTxValue()).thenReturn(minimumPegoutValue);
 
     List<LogInfo> logInfo = new ArrayList<>();
     SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
@@ -216,17 +216,24 @@ class MinimumPegValueTest {
     BridgeSupport bridgeSupport = initBridgeSupport(
         bridgeConstants, eventLogger, activations, signatureCache, feePerKbSupport);
 
-    bridgeSupport.releaseBtc(buildReleaseRskTx(MINIMUM_PEGOUT_VALUE));
+    bridgeSupport.releaseBtc(buildReleaseRskTx(minimumPegoutValue));
 
     verify(eventLogger).logReleaseBtcRequestReceived(any(), any(), any());
   }
 
   private static Stream<Arguments> providePegMinimumParameters() {
     return Stream.of(
-        // current feePerKb value
-        Arguments.of(Coin.valueOf(24_000L)),
-        // maximum feePerKb value that allows all cases to succeed
-        Arguments.of(Coin.valueOf(24_750L)));
+        // 0.001 BTC - 0.0008 BTC: current feePerKb value
+        Arguments.of(Coin.valueOf(24_000L), Coin.valueOf(100_000L), Coin.valueOf(80_000L)),
+        // 0.001 BTC - 0.0008 BTC: maximum feePerKb value that allows all cases to
+        // succeed
+        Arguments.of(Coin.valueOf(24_750L), Coin.valueOf(100_000L), Coin.valueOf(80_000L)),
+
+        // 0.0025 BTC - 0.002 BTC: current feePerKb value
+        Arguments.of(Coin.valueOf(24_000L), Coin.valueOf(250_000L), Coin.valueOf(200_000L)),
+        // 0.0025 BTC - 0.002 BTC: maximum feePerKb value that allows all cases to
+        // succeed
+        Arguments.of(Coin.valueOf(61_750L), Coin.valueOf(250_000L), Coin.valueOf(200_000L)));
   }
 
   /**********************************
