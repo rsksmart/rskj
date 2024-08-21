@@ -1,39 +1,52 @@
 plugins {
     id 'application'
     id 'checkstyle'
+    id 'com.github.sherter.google-java-format' version '0.9'
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
+
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormat
+import com.github.sherter.googlejavaformatgradleplugin.VerifyGoogleJavaFormat
 
 checkstyle {
     toolVersion = '8.45'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
 }
 
-
-// Start time for Checkstyle checks
-def checkstyleStartTime = '2024-08-19 09:52:59 EST'
-
-def getModifiedFiles(File baseDir, String timestampString) {
-    def dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
-    Date timestamp = dateFormat.parse(timestampString)
-
-    def modifiedFiles = []
-    fileTree(baseDir).matching {
-        include '**/*.java'
-    }.each { File file ->
-        if (file.lastModified() > timestamp.time) {
-            modifiedFiles.add(file)
-        }
-    }
-
-    return modifiedFiles
+googleJavaFormat {
+    toolVersion = '1.7'
 }
 
-def configureCheckstyleTask(Checkstyle task, File sourceDir, String timestampString) {
-    def newFiles = getModifiedFiles(sourceDir, timestampString)
-    task.source = files(newFiles)
+// Use a static timestamp for filtering
+def staticTimestamp = '2024-08-21T02:17:00'
+
+ext.timestamp = staticTimestamp
+ext.timestampMillis = LocalDateTime.parse(staticTimestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        .toInstant(ZoneOffset.UTC)
+        .toEpochMilli()
+
+
+// Method to filter Java files based on the timestamp
+def getFilteredFiles() {
+    return fileTree('src/main/java').matching {
+        include '**/*.java'
+    }.files.findAll { file ->
+        file.lastModified() > ext.timestampMillis
+    }
+}
+
+def configureCheckstyleTask(Checkstyle task, File sourceDir) {
+    def filteredFiles = fileTree(sourceDir).matching {
+        include '**/*.java'
+    }.files.findAll { file ->
+        file.lastModified() > ext.timestampMillis
+    }
+    task.source = files(filteredFiles)
     task.classpath = files(
             sourceSets.main.output.classesDirs,
             sourceSets.main.output.resourcesDir
@@ -47,16 +60,16 @@ def configureCheckstyleTask(Checkstyle task, File sourceDir, String timestampStr
 tasks.withType(Checkstyle).configureEach { Checkstyle task ->
     switch (task.name) {
         case 'checkstyleMain':
-            configureCheckstyleTask(task, file('src/main/java'), checkstyleStartTime)
+            configureCheckstyleTask(task, file('src/main/java'))
             break
         case 'checkstyleTest':
-            configureCheckstyleTask(task, file('src/test/java'), checkstyleStartTime)
+            configureCheckstyleTask(task, file('src/test/java'))
             break
         case 'checkstyleIntegrationTest':
-            configureCheckstyleTask(task, file('src/integrationTest/java'), checkstyleStartTime)
+            configureCheckstyleTask(task, file('src/integrationTest/java'))
             break
         case 'checkstyleJmh':
-            configureCheckstyleTask(task, file('src/jmh/java'), checkstyleStartTime)
+            configureCheckstyleTask(task, file('src/jmh/java'))
             break
     }
 }
@@ -67,6 +80,26 @@ checkstyleTest.mustRunAfter clean
 checkstyleMain.dependsOn 'classes'
 checkstyleTest.dependsOn 'testClasses'
 
+task formatCode(type: GoogleJavaFormat) {
+    def filteredFiles = getFilteredFiles()
+
+    source = files(filteredFiles)
+    include '**/*.java'
+    exclude '**/*Template.java'
+
+    inputs.files filteredFiles
+    outputs.files filteredFiles
+}
+
+task verifyFormatting(type: VerifyGoogleJavaFormat) {
+    def filteredFiles = getFilteredFiles()
+
+    source = files(filteredFiles)
+    ignoreFailures = true
+
+    inputs.files filteredFiles
+    outputs.files filteredFiles
+}
 
 configurations {
     jmh
