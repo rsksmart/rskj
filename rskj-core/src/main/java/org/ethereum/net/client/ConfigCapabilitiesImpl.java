@@ -61,7 +61,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
         logger.debug("isServerSnapshotSyncEnabled? : "+config.isServerSnapshotSyncEnabled());
         logger.debug("allCapabilities.stream().anyMatch(Capability::isRSK)??? : "+ allCapabilities.stream().anyMatch(Capability::isRSK));
 
-        if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
+        if (config.isServerSnapshotSyncEnabled()) {
             allCapabilities.add(new Capability(SNAP, SNAP_VERSION));
             logger.debug("Added SNAP capability. SIZE " + allCapabilities.size() + " ----- "+ allCapabilities.stream()
                     .anyMatch(capability -> SNAP.equals(capability.getName())));
