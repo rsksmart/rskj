@@ -32,4 +32,5 @@ public interface Peer {
 
     double score(long currentTime, MessageType type);
     void imported(boolean best);
+    boolean isSnapCapable();
 }

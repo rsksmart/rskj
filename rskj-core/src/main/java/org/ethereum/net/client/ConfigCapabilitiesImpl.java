@@ -19,7 +19,7 @@
 
 package org.ethereum.net.client;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.p2p.HelloMessage;
 
@@ -29,6 +29,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import static org.ethereum.net.client.Capability.RSK;
+import static org.ethereum.net.client.Capability.SNAP;
+import static org.ethereum.net.client.Capability.SNAP_VERSION;
 import static org.ethereum.net.eth.EthVersion.fromCode;
 
 /**
@@ -36,23 +38,29 @@ import static org.ethereum.net.eth.EthVersion.fromCode;
  */
 public class ConfigCapabilitiesImpl implements ConfigCapabilities{
 
-    private final SystemProperties config;
+    private final RskSystemProperties config;
 
-    private SortedSet<Capability> allCaps = new TreeSet<>();
+    private SortedSet<Capability> allCapabilities = new TreeSet<>();
 
-    public ConfigCapabilitiesImpl(SystemProperties config) {
+    public ConfigCapabilitiesImpl(RskSystemProperties config) {
         if (config.syncVersion() != null) {
             EthVersion eth = fromCode(config.syncVersion());
             if (eth != null) {
-                allCaps.add(new Capability(RSK, eth.getCode()));
+                allCapabilities.add(new Capability(RSK, eth.getCode()));
             }
         } else {
             for (EthVersion v : EthVersion.supported()) {
-                allCaps.add(new Capability(RSK, v.getCode()));
+                allCapabilities.add(new Capability(RSK, v.getCode()));
             }
         }
+
+        if (config.isServerSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
+            allCapabilities.add(new Capability(SNAP, SNAP_VERSION));
+        }
+
         this.config = config;
     }
+
 
     /**
      * Gets the capabilities listed in 'peer.capabilities' config property
@@ -61,7 +69,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
     public List<Capability> getConfigCapabilities() {
         List<Capability> ret = new ArrayList<>();
         List<String> caps = config.peerCapabilities();
-        for (Capability capability : allCaps) {
+        for (Capability capability : allCapabilities) {
             if (caps.contains(capability.getName())) {
                 ret.add(capability);
             }
