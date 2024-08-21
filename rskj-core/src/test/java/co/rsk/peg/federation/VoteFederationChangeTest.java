@@ -47,8 +47,8 @@ class VoteFederationChangeTest {
     private static final Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
     private static final Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
     private static final CallTransaction.Function commitFederationEvent = BridgeEvents.COMMIT_FEDERATION.getEvent();
-    private static final long rskExecutionBlockNumber = 1000L;
-    private static final long rskExecutionBlockTimestamp = 10L;
+    private static final long RSK_EXECUTION_BLOCK_NUMBER = 1000L;
+    private static final long RSK_EXECUTION_BLOCK_TIMESTAMP = 10L;
     private static final PendingFederation pendingFederationToBe = new PendingFederation(FederationTestUtils.getFederationMembers(9));
 
     private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
@@ -70,8 +70,8 @@ class VoteFederationChangeTest {
         storageProvider = new FederationStorageProviderImpl(inMemoryStorageAccessor);
 
         BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(rskExecutionBlockNumber)
-            .setTimestamp(rskExecutionBlockTimestamp)
+            .setNumber(RSK_EXECUTION_BLOCK_NUMBER)
+            .setTimestamp(RSK_EXECUTION_BLOCK_TIMESTAMP)
             .build();
         rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
 
@@ -292,11 +292,11 @@ class VoteFederationChangeTest {
 
         // Act
         // Voting to add 100 federators to pending federation
-        int EXPECTED_COUNT_OF_MEMBERS = 100;
-        voteAndAssertAddFederatorPublicKeysToPendingFederation(EXPECTED_COUNT_OF_MEMBERS);
+        int expectedCountOfMembers = 100;
+        voteAndAssertAddFederatorPublicKeysToPendingFederation(expectedCountOfMembers);
 
         // Assert
-        assertEquals(EXPECTED_COUNT_OF_MEMBERS, federationSupport.getPendingFederationSize());
+        assertEquals(expectedCountOfMembers, federationSupport.getPendingFederationSize());
     }
 
 
@@ -427,7 +427,7 @@ class VoteFederationChangeTest {
         // arrange
         Federation activeFederation = federationSupport.getActiveFederation();
         Federation federationBuiltFromPendingFederation =
-            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(rskExecutionBlockTimestamp), rskExecutionBlockNumber, federationMainnetConstants, activations);
+            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP), RSK_EXECUTION_BLOCK_NUMBER, federationMainnetConstants, activations);
 
         voteAndAssertCreateEmptyPendingFederation();
         voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
@@ -454,11 +454,11 @@ class VoteFederationChangeTest {
 
     private void voteAndAssertAddFederationMembersPublicKeysToPendingFederation(List<FederationMember> federationMembers) {
         for (FederationMember federationMember : federationMembers) {
-            BtcECKey federatorBtcKey = federationMember.getBtcPublicKey();
-            ECKey federatorRskKey = federationMember.getRskPublicKey();
-            ECKey federatorMstKey = federationMember.getMstPublicKey();
+            BtcECKey memberBtcKey = federationMember.getBtcPublicKey();
+            ECKey memberRskKey = federationMember.getRskPublicKey();
+            ECKey memberMstKey = federationMember.getMstPublicKey();
 
-            voteAndAssertAddFederatorPublicKeysToPendingFederation(federatorBtcKey, federatorRskKey, federatorMstKey);
+            voteAndAssertAddFederatorPublicKeysToPendingFederation(memberBtcKey, memberRskKey, memberMstKey);
         }
     }
 
@@ -488,7 +488,7 @@ class VoteFederationChangeTest {
 
         // assert new federation was set as the federation built from the pending one
         Federation federationBuiltFromPendingFederation =
-            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(rskExecutionBlockTimestamp), rskExecutionBlockNumber, federationMainnetConstants, activations);
+            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP), RSK_EXECUTION_BLOCK_NUMBER, federationMainnetConstants, activations);
         Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
         assertEquals(federationBuiltFromPendingFederation, newFederation);
     }
@@ -513,7 +513,7 @@ class VoteFederationChangeTest {
         // assert federation creation block height was set correctly
         Optional<Long> nextFederationCreationBlockHeight = storageProvider.getNextFederationCreationBlockHeight(activations);
         assertTrue(nextFederationCreationBlockHeight.isPresent());
-        assertEquals(rskExecutionBlockNumber, nextFederationCreationBlockHeight.get());
+        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, nextFederationCreationBlockHeight.get());
 
         // assert last retired federation p2sh script was set correctly
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
@@ -642,11 +642,11 @@ class VoteFederationChangeTest {
 
     private void voteAndAssertAddFederatorPublicKeysToPendingFederation(int amountOfMembers) {
         for (int i = 0; i < amountOfMembers; i++) {
-            BtcECKey federatorBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
-            ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
-            ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
+            BtcECKey memberBtcKey = BtcECKey.fromPrivate(BigInteger.valueOf(i + 100));
+            ECKey memberRskKey = ECKey.fromPrivate(BigInteger.valueOf(i + 101));
+            ECKey memberMstKey = ECKey.fromPrivate(BigInteger.valueOf(i + 102));
 
-            voteAndAssertAddFederatorPublicKeysToPendingFederation(federatorBtcKey, federatorRskKey, federatorMstKey);
+            voteAndAssertAddFederatorPublicKeysToPendingFederation(memberBtcKey, memberRskKey, memberMstKey);
         }
     }
 
