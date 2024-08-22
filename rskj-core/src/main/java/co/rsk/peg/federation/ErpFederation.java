@@ -56,7 +56,8 @@ public class ErpFederation extends Federation {
     public Script getDefaultRedeemScript() {
         if (defaultRedeemScript == null) {
             RedeemScriptParser redeemScriptParser = getRedeemScriptParser();
-            defaultRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+            List<ScriptChunk> defaultRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
+            defaultRedeemScript = new ScriptBuilder().addChunks(defaultRedeemScriptChunks).build();
         }
         return defaultRedeemScript;
     }
