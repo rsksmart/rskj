@@ -230,8 +230,7 @@ public class PegUtilsLegacy {
                         return false;
                     }
 
-                    Script inputRedeeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputRedeeemScript);
+                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
                     if (outputScript.equals(retiredFederationP2SHScript)) {
                         return false;
                     }
