@@ -78,12 +78,12 @@ public class PegUtilsLegacy {
                 continue;
             }
 
-            Script redeemScript = redeemScriptOptional.get();
+            List<ScriptChunk> redeemScriptChunks = redeemScriptOptional.get().getChunks();
             if (activations.isActive(ConsensusRule.RSKIP201)) {
-                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
+                // Extract standard redeem script chunks since the registered utxo could be from a fast bridge or erp federation
                 RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
                 try {
-                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    redeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
                 } catch (ScriptException e) {
                     logger.debug("[isPegOutTx] There is no redeem script", e);
                     // There is no redeem script
@@ -91,6 +91,7 @@ public class PegUtilsLegacy {
                 }
             }
 
+            Script redeemScript = new ScriptBuilder().addChunks(redeemScriptChunks).build();
             Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
             if (Arrays.stream(fedStandardP2shScripts).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
                 return true;
@@ -222,12 +223,15 @@ public class PegUtilsLegacy {
                         logger.warn("[isValidPegInTx] {}", message);
                         throw new ScriptException(message);
                     }
-                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+
+                    List<ScriptChunk> inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
+                    Script inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
                     if (activeFederations.stream().anyMatch(federation -> getFederationStandardRedeemScript(federation).equals(inputStandardRedeemScript))) {
                         return false;
                     }
 
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
+                    Script inputRedeeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
+                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputRedeeemScript);
                     if (outputScript.equals(retiredFederationP2SHScript)) {
                         return false;
                     }
