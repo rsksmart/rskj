@@ -418,7 +418,7 @@ public class RskSystemProperties extends SystemProperties {
     public List<String> peerCapabilities() {
         List<String> capabilities = super.peerCapabilities();
 
-        if (isServerSnapshotSyncEnabled()) {
+        if (isSnapshotSyncEnabled()) {
             capabilities.add(Capability.SNAP);
         }
 
@@ -552,6 +552,10 @@ public class RskSystemProperties extends SystemProperties {
             throw new RskConfigurationException("Invalid gasPriceCalculatorType: " + value);
         }
         return gasCalculatorType;
+    }
+
+    public boolean isSnapshotSyncEnabled(){
+        return isServerSnapshotSyncEnabled() || isClientSnapshotSyncEnabled();
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {
