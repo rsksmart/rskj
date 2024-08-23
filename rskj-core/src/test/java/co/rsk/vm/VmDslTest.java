@@ -35,7 +35,7 @@ import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -54,28 +54,28 @@ class VmDslTest {
 
         Block block = world.getBlockByName("b02");
 
-        Assertions.assertNotNull(block);
+        assertNotNull(block);
         Assertions.assertEquals(1, block.getTransactionsList().size());
 
         Transaction creationTransaction = world.getTransactionByName("tx01");
 
-        Assertions.assertNotNull(creationTransaction);
+        assertNotNull(creationTransaction);
 
         DataWord counterValue = world
                 .getRepositoryLocator()
                 .snapshotAt(block.getHeader())
                 .getStorageValue(creationTransaction.getContractAddress(), DataWord.ZERO);
 
-        Assertions.assertNotNull(counterValue);
+        assertNotNull(counterValue);
         Assertions.assertEquals(200, counterValue.intValue());
 
         TransactionReceipt transactionReceipt = world.getTransactionReceiptByName("tx02");
 
-        Assertions.assertNotNull(transactionReceipt);
+        assertNotNull(transactionReceipt);
 
         byte[] status = transactionReceipt.getStatus();
 
-        Assertions.assertNotNull(status);
+        assertNotNull(status);
         Assertions.assertEquals(1, status.length);
         Assertions.assertEquals(1, status[0]);
     }
@@ -91,12 +91,12 @@ class VmDslTest {
 
         Block block = world.getBlockByName("b02");
 
-        Assertions.assertNotNull(block);
+        assertNotNull(block);
         Assertions.assertEquals(1, block.getTransactionsList().size());
 
         Transaction creationTransaction = world.getTransactionByName("tx01");
 
-        Assertions.assertNotNull(creationTransaction);
+        assertNotNull(creationTransaction);
 
         DataWord counterValue = world
                 .getRepositoryLocator()
@@ -107,11 +107,11 @@ class VmDslTest {
 
         TransactionReceipt transactionReceipt = world.getTransactionReceiptByName("tx02");
 
-        Assertions.assertNotNull(transactionReceipt);
+        assertNotNull(transactionReceipt);
 
         byte[] status = transactionReceipt.getStatus();
 
-        Assertions.assertNotNull(status);
+        assertNotNull(status);
         Assertions.assertEquals(0, status.length);
     }
 
@@ -125,49 +125,49 @@ class VmDslTest {
         processor.processCommands(parser);
 
         Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
+        assertNotNull(block2);
         Assertions.assertEquals(1, block2.getTransactionsList().size());
 
         Transaction creationTransactionNew = world.getTransactionByName("txCreateNew");
-        Assertions.assertNotNull(creationTransactionNew);
+        assertNotNull(creationTransactionNew);
         TransactionReceipt creationTransactionReceiptNew = world.getTransactionReceiptByName("txCallNew");
-        Assertions.assertNotNull(creationTransactionReceiptNew);
+        assertNotNull(creationTransactionReceiptNew);
         byte[] statusCreationNew = creationTransactionReceiptNew.getStatus();
-        Assertions.assertNotNull(statusCreationNew);
+        assertNotNull(statusCreationNew);
         Assertions.assertEquals(1, statusCreationNew.length);
         Assertions.assertEquals(1, statusCreationNew[0]);
 
         Transaction callTransactionNew = world.getTransactionByName("txCallNew");
-        Assertions.assertNotNull(callTransactionNew);
+        assertNotNull(callTransactionNew);
         TransactionReceipt callTransactionReceiptNew = world.getTransactionReceiptByName("txCallNew");
-        Assertions.assertNotNull(callTransactionReceiptNew);
+        assertNotNull(callTransactionReceiptNew);
         byte[] statusCallNew = callTransactionReceiptNew.getStatus();
-        Assertions.assertNotNull(statusCallNew);
+        assertNotNull(statusCallNew);
         Assertions.assertEquals(1, statusCallNew.length);
         Assertions.assertEquals(1, statusCallNew[0]);
 
         short newGas = ByteBuffer.wrap(callTransactionReceiptNew.getGasUsed()).getShort();
 
         Block block4 = world.getBlockByName("b04");
-        Assertions.assertNotNull(block4);
+        assertNotNull(block4);
         Assertions.assertEquals(1, block4.getTransactionsList().size());
 
 
         Transaction creationTransactionOld = world.getTransactionByName("txCreateOld");
-        Assertions.assertNotNull(creationTransactionOld);
+        assertNotNull(creationTransactionOld);
         TransactionReceipt creationTransactionReceiptOld = world.getTransactionReceiptByName("txCreateOld");
-        Assertions.assertNotNull(creationTransactionReceiptOld);
+        assertNotNull(creationTransactionReceiptOld);
         byte[] statusCreationOld = creationTransactionReceiptNew.getStatus();
-        Assertions.assertNotNull(statusCreationOld);
+        assertNotNull(statusCreationOld);
         Assertions.assertEquals(1, statusCreationOld.length);
         Assertions.assertEquals(1, statusCreationOld[0]);
 
         Transaction callTransactionOld = world.getTransactionByName("txCallOld");
-        Assertions.assertNotNull(callTransactionOld);
+        assertNotNull(callTransactionOld);
         TransactionReceipt callTransactionReceiptOld = world.getTransactionReceiptByName("txCallOld");
-        Assertions.assertNotNull(callTransactionReceiptOld);
+        assertNotNull(callTransactionReceiptOld);
         byte[] statusCallOld = callTransactionReceiptOld.getStatus();
-        Assertions.assertNotNull(statusCallOld);
+        assertNotNull(statusCallOld);
         Assertions.assertEquals(1, statusCallOld.length);
         Assertions.assertEquals(1, statusCallOld[0]);
 
@@ -186,8 +186,8 @@ class VmDslTest {
 
         processor.processCommands(parser);
 
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCode", "b02", true);
     }
 
     @Test
@@ -199,8 +199,8 @@ class VmDslTest {
 
         processor.processCommands(parser);
 
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCode", "b02", true);
     }
 
     @Test
@@ -214,8 +214,10 @@ class VmDslTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        Exception ex = assertThrows(RuntimeException.class, () -> processor.processCommands(parser));
-        assertTrue(ex.getMessage().contains("Maximum contract size allowed 24576 but actual 49174")); // It will fail due to max contract size, but not due initcode size
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate", "b02", true);
     }
 
     @Test
@@ -227,8 +229,8 @@ class VmDslTest {
 
         processor.processCommands(parser);
 
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate", "b02", false);
     }
 
     @Test
@@ -242,8 +244,8 @@ class VmDslTest {
 
         processor.processCommands(parser);
 
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCodeCreate2", "b02");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate2", "b02", true);
     }
 
     @Test
@@ -255,8 +257,8 @@ class VmDslTest {
 
         processor.processCommands(parser);
 
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCodeCreate2", "b02");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate2", "b02", true);
     }
 
     @Test
@@ -270,8 +272,10 @@ class VmDslTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        Exception ex = assertThrows(RuntimeException.class, () -> processor.processCommands(parser));
-        assertTrue(ex.getMessage().contains("Maximum contract size allowed 24576 but actual 49174")); // It will fail due to max contract size, but not due initcode size
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate2", "b02", true);
     }
 
     @Test
@@ -283,14 +287,27 @@ class VmDslTest {
 
         processor.processCommands(parser);
 
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCodeCreate2", "b02");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate2", "b02", false);
     }
 
-    private void assertTransactionExecutedWithSuccessAndWasAddedToBlock(World world, String transactionName, String blockName) {
+    private void assertTransactionExecutedWasAddedToBlockWithExpectedStatus(World world, String transactionName, String blockName, boolean withSuccess) {
         Transaction contractTransaction = world.getTransactionByName(transactionName);
-        Assertions.assertNotNull(contractTransaction);
+        assertNotNull(contractTransaction);
         Block bestBlock = world.getBlockByName(blockName);
         Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+        if(withSuccess) {
+            TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(transactionName);
+            assertNotNull(contractTransactionReceipt);
+            byte[] status = contractTransactionReceipt.getStatus();
+            assertNotNull(status);
+            assertEquals(1, status.length);
+            assertEquals(1, status[0]);
+        } else {
+            TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(transactionName);
+            assertNotNull(contractTransactionReceipt);
+            byte[] status = contractTransactionReceipt.getStatus();
+            Assertions.assertEquals(0, status.length);
+        }
     }
 }
