@@ -45,28 +45,4 @@ block_connect b02
 assert_best b02
 
 # Assert balance after have created the contract via opcode create
-assert_balance acc1 9261001
-
-# deploy contract compiled with 0.8.20
-transaction_build txCreateContractViaOpCode2
-    sender acc1
-    nonce 2
-    contract txCreateContractFactory   # created in txCreateContractFactory
-    value 0
-    data 13a0432e
-    gas 1000000
-    build
-
-block_build b03
-    parent b02
-    gasLimit 6500000
-    transactions txCreateContractViaOpCode2
-    build
-
-block_connect b03
-
-# Assert best block
-assert_best b03
-
-# Assert balance after have created the contract via opcode create2
-assert_balance acc1 9021290
+assert_balance acc1 9260999

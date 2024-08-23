@@ -26,12 +26,11 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.util.ListArrayUtil;
-import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -51,9 +50,7 @@ import java.security.SignatureException;
 import java.util.Objects;
 
 import static co.rsk.util.ListArrayUtil.getLength;
-import static java.lang.Math.ceil;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 /**
  * A transaction (formally, T) is a single cryptographically
@@ -66,7 +63,7 @@ import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
-    private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
+    private static final Logger logger = LoggerFactory.getLogger(org.ethereum.core.Transaction.class);
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
@@ -174,7 +171,7 @@ public class Transaction {
         return new TransactionBuilder();
     }
 
-    public Transaction toImmutableTransaction() {
+    public org.ethereum.core.Transaction toImmutableTransaction() {
         return new ImmutableTransaction(this.getEncoded());
     }
 
@@ -210,7 +207,7 @@ public class Transaction {
         long zeroVals = getLength(this.getData()) - nonZeroes;
 
         long transactionCost = this.isContractCreation()
-                ? GasCost.TRANSACTION_CREATE_CONTRACT + getTxInitCodeCost(activations)
+                ? GasCost.TRANSACTION_CREATE_CONTRACT + InitcodeCostCalculator.getInstance().calculateCost(this.getData(), activations)
                 : GasCost.TRANSACTION;
 
         long txNonZeroDataCost = getTxNonZeroDataCost(activations);
@@ -218,12 +215,6 @@ public class Transaction {
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
     }
 
-    public long getTxInitCodeCost(ActivationConfig.ForBlock activations) {
-        if( activations.isActive(ConsensusRule.RSKIP438) ) {
-            return  INITCODE_WORD_COST  *  (long) Math.ceil((double) getLength(this.getData()) / 32);
-        }
-        return 0;
-    }
 
     public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
         int initCodeSize = getLength(this.getData());
@@ -537,11 +528,11 @@ public class Transaction {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof Transaction)) {
+        if (!(obj instanceof org.ethereum.core.Transaction)) {
             return false;
         }
 
-        Transaction tx = (Transaction) obj;
+        org.ethereum.core.Transaction tx = (org.ethereum.core.Transaction) obj;
 
         return Objects.equals(this.getHash(), tx.getHash());
     }

@@ -49,14 +49,10 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -490,49 +486,11 @@ class TransactionTest {
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
         Constants constants = Mockito.mock(Constants.class);
+        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
 
         assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
-    }
-
-    @ParameterizedTest
-    @MethodSource("initCodeCostInputArguments")
-    void testTransactionInitCodeCostCalculation(long expectedCost, byte[] rawData) {
-        // given
-        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
-        byte[] gasPrice = Hex.decode("09184e72a000"); // 10000000000000
-        byte[] gas = Hex.decode("03e8");           // 1000
-        byte[] receiveAddress = null;
-
-        Transaction transaction = Transaction.builder()
-                .nonce(BigIntegers.asUnsignedByteArray(BigInteger.ZERO))
-                .gasPrice(gasPrice)
-                .gasLimit(gas)
-                .destination(receiveAddress)
-                .data(rawData)
-                .build();
-
-        transaction.sign(senderPrivKey);
-        byte[] payload = transaction.getEncoded();
-
-        Transaction tx = new ImmutableTransaction(payload);
-
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
-        // when
-        long initCodeCost = tx.getTxInitCodeCost(activations);
-
-        // then
-        assertEquals(expectedCost, initCodeCost);
-    }
-
-    private static Stream<Arguments> initCodeCostInputArguments() {
-        return Stream.of(
-                Arguments.of(2,  new byte[]{0, 1, 2, 3}),
-                Arguments.of(4, Hex.decode("fd5fa123fd5fa123a31231000076890afd5fa123a31231000076890afd5fa123a31231000076890a")),
-                Arguments.of(6, Hex.decode("fd5fa123a31231000076890abcfff41239123912323123fd5fa123afd5fa12fd5fa123a31231000076890afd5fa123a31231000076890a3a31231000076890a31231000076890a"))
-        );
     }
 }
 

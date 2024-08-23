@@ -453,6 +453,10 @@ public class Program {
     }
 
     private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress, boolean isCreate2) {
+        // [1] FETCH THE CODE FROM THE MEMORY
+        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+       validateInitcodeSize(programCode);
+
         if (getCallDeep() == getMaxDepth()) {
             logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
             stackPushZero();
@@ -465,9 +469,6 @@ public class Program {
             return;
         }
 
-        // [1] FETCH THE CODE FROM THE MEMORY
-        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
-
         if (isLogEnabled) {
             logger.info("creating a new contract inside contract run: [{}]", senderAddress);
         }
@@ -475,7 +476,6 @@ public class Program {
         //  actual gas subtract
         long gasLimit = getRemainingGas();
         spendGas(gasLimit, "internal call");
-
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
@@ -533,6 +533,7 @@ public class Program {
                             programResult.getException());
                 }
 
+                //TODO: Delete this commented code? Doesn't seem to be missed since it's being like this since 2019.
                 // The programResult is empty and internalTx was not created so we skip this part
                 /*if (internalTx == null) {
                     throw new NullPointerException();
@@ -572,6 +573,18 @@ public class Program {
 
         // REFUND THE REMAIN GAS
         refundRemainingGas(gasLimit, programResult);
+    }
+
+    private void validateInitcodeSize(byte[] programCode) {
+        int initCodeSize = getLength(programCode);
+
+        if(activations.isActive(ConsensusRule.RSKIP438)
+                && initCodeSize > Constants.getMaxInitCodeSize()) {
+            throw ExceptionHelper.tooLargeInitcodeSize(
+                    this,
+                    Constants.getMaxInitCodeSize(),
+                    initCodeSize);
+        }
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
@@ -862,8 +875,6 @@ public class Program {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
         }
-
-
 
         // 3. APPLY RESULTS: childResult.getHReturn() into out_memory allocated
         byte[] buffer = childResult.getHReturn();
@@ -1608,7 +1619,7 @@ public class Program {
             return new RuntimeException(format("Maximum contract size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
         }
 
-        public static RuntimeException tooLargeInitCodeSize(@Nonnull Program program, int maxSize, int actualSize) {
+        public static RuntimeException tooLargeInitcodeSize(@Nonnull Program program, int maxSize, int actualSize) {
             return new RuntimeException(format("Maximum initcode size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
         }
 

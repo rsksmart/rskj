@@ -18,10 +18,12 @@
 
 package co.rsk.vm;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -31,6 +33,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -166,12 +172,27 @@ class VmDslTest {
         Assertions.assertEquals(1, statusCallOld[0]);
 
         short oldGas = ByteBuffer.wrap(callTransactionReceiptOld.getGasUsed()).getShort();
-        Assertions.assertTrue(newGas < oldGas);
+        assertTrue(newGas < oldGas);
     }
 
     @Test
-    void testInitCodeSizeValidationSuccessWithoutInitcodeViaCreateOpcode() throws FileNotFoundException, DslProcessorException {
+    void testInitCodeSizeValidationSuccessWithoutInitcodeCostViaCreateOpcodeCREATE() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
         DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_without_initcode_cost.txt");
+        World world = new World(rskip438Disabled);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
+    }
+
+    @Test
+    void testInitCodeSizeValidationSuccessWithInitCodeCostViaCreateOpcodeCREATE() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_with_initcode_cost.txt");
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -180,12 +201,26 @@ class VmDslTest {
 
         assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
         assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode2", "b03");
     }
 
     @Test
-    void testInitCodeSizeValidationSuccessViaCreateOpcode() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_without_initcode_cost.txt");
+    void testInitCodeSizeValidationDoesntFailIfRSKIP438DeactivatedViaCREATE() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
+
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_with_higher_initcode_size_rskip_NOT_ACTIVE.txt");
+        World world = new World(rskip438Disabled);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        Exception ex = assertThrows(RuntimeException.class, () -> processor.processCommands(parser));
+        assertTrue(ex.getMessage().contains("Maximum contract size allowed 24576 but actual 49174")); // It will fail due to max contract size, but not due initcode size
+    }
+
+    @Test
+    void testInitCodeSizeValidationFailIfRSKIP438ActivatedViaCREATE() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_with_higher_initcode_size_rskip_ACTIVE.txt");
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -194,7 +229,62 @@ class VmDslTest {
 
         assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
         assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode", "b02");
-        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCode2", "b03");
+    }
+
+    @Test
+    void testInitCodeSizeValidationSuccessWithoutInitcodeCostViaCreateOpcodeCREATE2() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_without_initcode_cost.txt");
+        World world = new World(rskip438Disabled);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCodeCreate2", "b02");
+    }
+
+    @Test
+    void testInitCodeSizeValidationSuccessWithInitCodeCostViaCreateOpcodeCREATE2() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_with_initcode_cost.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCodeCreate2", "b02");
+    }
+
+    @Test
+    void testInitCodeSizeValidationDoesntFailIfRSKIP438DeactivatedViaCREATE2() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
+
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_with_higher_initcode_size_rskip_NOT_ACTIVE.txt");
+        World world = new World(rskip438Disabled);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        Exception ex = assertThrows(RuntimeException.class, () -> processor.processCommands(parser));
+        assertTrue(ex.getMessage().contains("Maximum contract size allowed 24576 but actual 49174")); // It will fail due to max contract size, but not due initcode size
+    }
+
+    @Test
+    void testInitCodeSizeValidationFailIfRSKIP438ActivatedViaCREATE2() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_with_higher_initcode_size_rskip_ACTIVE.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        processor.processCommands(parser);
+
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractFactory", "b01");
+        assertTransactionExecutedWithSuccessAndWasAddedToBlock(world, "txCreateContractViaOpCodeCreate2", "b02");
     }
 
     private void assertTransactionExecutedWithSuccessAndWasAddedToBlock(World world, String transactionName, String blockName) {

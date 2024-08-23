@@ -19,7 +19,7 @@ contract Storage {
 
 end
 
-account_new acc1 10000000
+account_new acc1 30000000
 
 # deploy contract compiled with 0.8.20
 transaction_build txCreateContract
@@ -41,5 +41,5 @@ block_connect b01
 # Assert best block
 assert_best b01
 
-# check sender balance, it should pay the total cost of contract creation with initcode size cost, because contract creation succeeds
+# check sender balance, it should not pay the total cost of contract creation with initcode size cost, because contract creation succeeds
 assert_balance acc1 5300000

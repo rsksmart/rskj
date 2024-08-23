@@ -27,6 +27,7 @@ import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
+import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
@@ -759,7 +760,7 @@ public class VM {
     }
 
     private long computeDataCopyGas() {
-        DataWord size = stack.get(stack.size() - 3);
+        DataWord size = getCodeSize();
         long copySize = Program.limitToMaxLong(size);
         checkSizeArgument(copySize);
         long newMemSize = memNeeded(stack.peek(), copySize);
@@ -847,7 +848,7 @@ public class VM {
                 newMemSize = memNeeded(stack.get(stack.size() - 2), copySize);
                 gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, copySize));
             } else {
-                size = stack.get(stack.size() - 3);
+                size = getCodeSize();
                 copySize = Program.limitToMaxLong(size);
                 checkSizeArgument(copySize);
                 newMemSize = memNeeded(stack.peek(), copySize);
@@ -1440,17 +1441,18 @@ public class VM {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
-        DataWord size;
+        DataWord codeSize;
         long sizeLong;
         long newMemSize ;
 
         if (computeGas) {
             gasCost = GasCost.CREATE;
-            size = stack.get(stack.size() - 3);
-            sizeLong = Program.limitToMaxLong(size);
+            codeSize = getCodeSize();
+            sizeLong = Program.limitToMaxLong(codeSize);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
-            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0))
+                    + InitcodeCostCalculator.getInstance().calculateCost(codeSize.getData(), program.getActivations());
 
             spendOpCodeGas();
         }
@@ -1470,13 +1472,17 @@ public class VM {
         program.step();
     }
 
+    private DataWord getCodeSize() {
+        return stack.get(stack.size() - 3);
+    }
+
     protected void doCREATE2(){
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas){
-            long codeSize = stack.get(stack.size() - 3).longValueSafe();
+            long codeSize = getCodeSize().longValueSafe();
             gasCost = GasCost.calculateTotal(
                     GasCost.add(
                             GasCost.CREATE,
@@ -1484,7 +1490,7 @@ public class VM {
                     ),
                     GasCost.SHA3_WORD,
                     GasCost.add(codeSize, 31) / 32
-            );
+            ) + InitcodeCostCalculator.getInstance().calculateCost(getCodeSize().getData(), program.getActivations());
             spendOpCodeGas();
         }
 
