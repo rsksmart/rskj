@@ -34,10 +34,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.federation.*;
@@ -45,6 +42,8 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
+import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -70,9 +69,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.InternalTransaction;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.*;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,6 +113,7 @@ public class BridgeSupport {
     private final FeePerKbSupport feePerKbSupport;
     private final WhitelistSupport whitelistSupport;
     private final FederationSupport federationSupport;
+    private final LockingCapSupport lockingCapSupport;
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
@@ -138,6 +136,7 @@ public class BridgeSupport {
         FeePerKbSupport feePerKbSupport,
         WhitelistSupport whitelistSupport,
         FederationSupport federationSupport,
+        LockingCapSupport lockingCapSupport,
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
@@ -152,6 +151,7 @@ public class BridgeSupport {
         this.feePerKbSupport = feePerKbSupport;
         this.whitelistSupport = whitelistSupport;
         this.federationSupport = federationSupport;
+        this.lockingCapSupport = lockingCapSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -173,11 +173,12 @@ public class BridgeSupport {
         return checkpoints;
     }
 
-    public void save() throws IOException {
+    public void save() {
         provider.save();
         feePerKbSupport.save();
         whitelistSupport.save();
         federationSupport.save();
+        lockingCapSupport.save();
     }
 
     /**
@@ -271,10 +272,9 @@ public class BridgeSupport {
      * Get the wallet for the currently active federation
      * @return A BTC wallet for the currently active federation
      *
-     * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = federationSupport.getActiveFederationBtcUTXOs();
 
@@ -292,15 +292,14 @@ public class BridgeSupport {
      * or null if there's currently no retiring federation
      * @return A BTC wallet for the currently active federation
      *
-     * @throws IOException
      * @param shouldConsiderFlyoverUTXOs
      */
-    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
+    protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         return getRetiringFederationWallet(shouldConsiderFlyoverUTXOs, retiringFederationBtcUTXOs.size());
     }
 
-    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) throws IOException {
+    private Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs, int utxosSizeLimit) {
         Federation federation = getRetiringFederation();
         if (federation == null) {
             logger.debug("[getRetiringFederationWallet] No retiring federation found");
@@ -633,7 +632,7 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -759,7 +758,7 @@ public class BridgeSupport {
     /*
       Add the btcTx outputs that send btc to the federation(s) to the UTXO list
      */
-    private void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
+    private void saveNewUTXOs(BtcTransaction btcTx) {
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
@@ -972,9 +971,11 @@ public class BridgeSupport {
             long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
             logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
             if (hasMinimumFundsToMigrate(retiringFederationWallet)){
+                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
                 logger.info(
                     "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                    retiringFederationWallet.getBalance().toFriendlyString()
+                    retiringFederationBalanceInFriendlyFormat
                 );
 
                 migrateFunds(
@@ -988,9 +989,11 @@ public class BridgeSupport {
 
         if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
+                Coin retiringFederationBalance = retiringFederationWallet.getBalance();
+                String retiringFederationBalanceInFriendlyFormat = retiringFederationBalance.toFriendlyString();
                 logger.info(
                     "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
-                    retiringFederationWallet.getBalance().toFriendlyString()
+                    retiringFederationBalanceInFriendlyFormat
                 );
 
                 try {
@@ -2025,7 +2028,7 @@ public class BridgeSupport {
         return liveFederations;
     }
 
-    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) throws BridgeIllegalArgumentException {
+    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         return federationSupport.voteFederationChange(tx, callSpec, signatureCache, eventLogger);
     }
 
@@ -2103,14 +2106,7 @@ public class BridgeSupport {
     }
 
     public Coin getLockingCap() {
-        // Before returning the locking cap, check if it was already set
-        if (activations.isActive(ConsensusRule.RSKIP134) && this.provider.getLockingCap() == null) {
-            // Set the initial locking cap value
-            logger.debug("Setting initial locking cap value");
-            this.provider.setLockingCap(bridgeConstants.getInitialLockingCap());
-        }
-
-        return this.provider.getLockingCap();
+        return lockingCapSupport.getLockingCap().orElse(null);
     }
 
     /**
@@ -2122,29 +2118,8 @@ public class BridgeSupport {
         return federationSupport.getActiveFederationRedeemScript();
     }
 
-    public boolean increaseLockingCap(Transaction tx, Coin newCap) {
-        // Only pre-configured addresses can modify locking cap
-        AddressBasedAuthorizer authorizer = bridgeConstants.getIncreaseLockingCapAuthorizer();
-        if (!authorizer.isAuthorized(tx, signatureCache)) {
-            logger.warn("not authorized address tried to increase locking cap. Address: {}", tx.getSender(signatureCache));
-            return false;
-        }
-        // new locking cap must be bigger than current locking cap
-        Coin currentLockingCap = this.getLockingCap();
-        if (newCap.compareTo(currentLockingCap) < 0) {
-            logger.warn("attempted value doesn't increase locking cap. Attempted: {}", newCap.value);
-            return false;
-        }
-        Coin maxLockingCap = currentLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
-        if (newCap.compareTo(maxLockingCap) > 0) {
-            logger.warn("attempted value increases locking cap above its limit. Attempted: {}", newCap.value);
-            return false;
-        }
-
-        logger.info("increased locking cap: {}", newCap.value);
-        this.provider.setLockingCap(newCap);
-
-        return true;
+    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws LockingCapIllegalArgumentException {
+        return lockingCapSupport.increaseLockingCap(tx, newLockingCap);
     }
 
     public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
@@ -2555,7 +2530,7 @@ public class BridgeSupport {
             Keccak256 derivationHash,
             FlyoverFederationInformation flyoverFederationInformation,
             List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverFederationInformation(flyoverFederationInformation);
         federationSupport.getActiveFederationBtcUTXOs().addAll(utxosList);
@@ -2566,7 +2541,7 @@ public class BridgeSupport {
         Keccak256 derivationHash,
         FlyoverFederationInformation flyoverRetiringFederationInformation,
         List<UTXO> utxosList
-    ) throws IOException {
+    ) {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
         federationSupport.getRetiringFederationBtcUTXOs().addAll(utxosList);
@@ -2619,14 +2594,12 @@ public class BridgeSupport {
                 }
 
                 List<UTXO> selectedUTXOs = originWallet
-                        .getUTXOProvider().getOpenTransactionOutputs(originWallet.getWatchedAddresses()).stream()
-                        .filter(utxo ->
-                                migrationBtcTx.getInputs().stream().anyMatch(input ->
-                                        input.getOutpoint().getHash().equals(utxo.getHash()) &&
-                                                input.getOutpoint().getIndex() == utxo.getIndex()
-                                )
-                        )
-                        .collect(Collectors.toList());
+                    .getUTXOProvider()
+                    .getOpenTransactionOutputs(originWallet.getWatchedAddresses())
+                    .stream()
+                    .filter(utxo -> migrationBtcTx.getInputs().stream().anyMatch(input ->
+                        input.getOutpoint().getHash().equals(utxo.getHash()) && input.getOutpoint().getIndex() == utxo.getIndex()
+                    )).collect(Collectors.toList());
 
                 return Pair.of(migrationBtcTx, selectedUTXOs);
             } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
@@ -2758,16 +2731,16 @@ public class BridgeSupport {
     }
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {
-        if (!activations.isActive(ConsensusRule.RSKIP134)) {
+        Optional<Coin> lockingCap = lockingCapSupport.getLockingCap();
+        if (!lockingCap.isPresent()) {
             return true;
         }
 
         Coin fedCurrentFunds = getBtcLockedInFederation();
-        Coin lockingCap = this.getLockingCap();
         logger.trace("Evaluating locking cap for: TxId {}. Value to lock {}. Current funds {}. Current locking cap {}", btcTx.getHash(true), totalAmount, fedCurrentFunds, lockingCap);
         Coin fedUTXOsAfterThisLock = fedCurrentFunds.add(totalAmount);
         // If the federation funds (including this new UTXO) are smaller than or equals to the current locking cap, we are fine.
-        if (fedUTXOsAfterThisLock.compareTo(lockingCap) <= 0) {
+        if (fedUTXOsAfterThisLock.compareTo(lockingCap.get()) <= 0) {
             return true;
         }
 
@@ -2870,7 +2843,7 @@ public class BridgeSupport {
         return true;
     }
 
-    private Coin computeTotalAmountSent(BtcTransaction btcTx) throws IOException {
+    private Coin computeTotalAmountSent(BtcTransaction btcTx) {
         // Compute the total amount sent. Value could have been sent both to the
         // currently active federation and to the currently retiring federation.
         // Add both amounts up in that case.

@@ -899,24 +899,23 @@ class FederationSupportImplTest {
         @Test
         @Tag("getActiveFederationCreationBlockHeight")
         void getActiveFederationCreationBlockHeight_beforeRSKIP186_returnsZero() {
-            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+            ActivationConfig.ForBlock activationsPreIris = ActivationConfigsForTest.papyrus200().forBlock(0L);
 
-            federationSupport = federationSupportBuilder
+            FederationSupport federationSupportPreIris = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
-                .withActivations(activations)
+                .withActivations(activationsPreIris)
                 .build();
 
-            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
-            assertThat(activeFederationCreationBlockHeight, is(0L));
+            long activeFederationCreationBlockHeightPreIris = federationSupportPreIris.getActiveFederationCreationBlockHeight();
+            assertThat(activeFederationCreationBlockHeightPreIris, is(0L));
         }
 
         @Test
         @Tag("getActiveFederationCreationBlockHeight")
         void getActiveFederationCreationBlockHeight_withNextAndActiveFederationCreationBlockHeightsUnset_returnsZero() {
-            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
-            assertThat(activeFederationCreationBlockHeight, is(0L));
+            long activeFedCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFedCreationBlockHeight, is(0L));
         }
 
         @Test
@@ -924,8 +923,8 @@ class FederationSupportImplTest {
         void getActiveFederationCreationBlockHeight_withNextFederationCreationBlockHeightUnsetAndActiveFederationCreationBlockHeightSet_returnsActiveFederationCreationBlockHeight() {
             storageProvider.setActiveFederationCreationBlockHeight(activeFederationCreationBlockHeight);
 
-            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
-            assertThat(activeFederationCreationBlockHeight, is(activeFederationCreationBlockHeight));
+            long activeFedCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFedCreationBlockHeight, is(activeFederationCreationBlockHeight));
         }
 
         @ParameterizedTest
@@ -947,8 +946,8 @@ class FederationSupportImplTest {
                 .build();
             storageProvider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
 
-            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
-            assertThat(activeFederationCreationBlockHeight, is(expectedActiveFederationCreationBlockHeight));
+            long activeFedCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFedCreationBlockHeight, is(expectedActiveFederationCreationBlockHeight));
         }
 
         private Stream<Arguments> newFederationCreationBlockHeightAndCurrentBlockAndActivationsArgs() {
@@ -982,8 +981,8 @@ class FederationSupportImplTest {
             storageProvider.setActiveFederationCreationBlockHeight(activeFederationCreationBlockHeight);
             storageProvider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
 
-            long activeFederationCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
-            assertThat(activeFederationCreationBlockHeight, is(expectedActiveFederationCreationBlockHeight));
+            long activeFedCreationBlockHeight = federationSupport.getActiveFederationCreationBlockHeight();
+            assertThat(activeFedCreationBlockHeight, is(expectedActiveFederationCreationBlockHeight));
         }
 
         private Stream<Arguments> newAndActiveFederationCreationBlockHeightsAndCurrentBlockAndActivationsArgs() {
@@ -1041,16 +1040,17 @@ class FederationSupportImplTest {
         @Test
         @Tag("updateFederationCreationBlockHeights")
         void updateFederationCreationBlockHeights_beforeRSKIP186_doesNothing() {
-            ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
-            federationSupport = federationSupportBuilder
+            ActivationConfig.ForBlock activationsPreIris = ActivationConfigsForTest.papyrus200().forBlock(0L);
+            FederationSupport federationSupportPreIris = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
-                .withActivations(activations)
+                .withActivations(activationsPreIris)
                 .build();
 
-            federationSupport.updateFederationCreationBlockHeights();
-            assertFalse(storageProvider.getActiveFederationCreationBlockHeight(activations).isPresent());
+            federationSupportPreIris.updateFederationCreationBlockHeights();
+            Optional<Long> activeFederationCreationBlockHeight = storageProvider.getActiveFederationCreationBlockHeight(activationsPreIris);
+
+            assertFalse(activeFederationCreationBlockHeight.isPresent());
         }
 
         @Test
@@ -2606,7 +2606,7 @@ class FederationSupportImplTest {
             ECKey federatorRskKey = ECKey.fromPrivate(BigInteger.valueOf(200));
             ECKey federatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(300));
 
-            ECKey differentFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(400));;
+            ECKey differentFederatorMstKey = ECKey.fromPrivate(BigInteger.valueOf(400));
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2704,7 +2704,7 @@ class FederationSupportImplTest {
         @Test
         void voteFederationChange_add100Members_returnsSuccessResponseCodeAndFedSize100() {
             // Arrange
-            int EXPECTED_COUNT_OF_MEMBERS = 100;
+            final int EXPECTED_COUNT_OF_MEMBERS = 100;
 
             Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
             Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(signatureCache, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
@@ -2760,7 +2760,7 @@ class FederationSupportImplTest {
             List<DataWord> commitFederationEncodedTopics = LogInfo.byteArrayToList(commitFederationEventTopic);
             DataWord expectedCommitTopic = commitFederationEncodedTopics.get(0);
 
-            int EXPECTED_COUNT_OF_MEMBERS = 10;
+            final int EXPECTED_COUNT_OF_MEMBERS = 10;
 
             // Voting add new fed member with m of n authorizers
             Set<String> expectedPubKeys = new HashSet<>();
@@ -2866,9 +2866,12 @@ class FederationSupportImplTest {
             // Voting commit new fed with m of n authorizers
             federationSupport.voteFederationChange(firstAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
 
-            Exception exception = assertThrows(Exception.class, () -> {
-                federationSupport.voteFederationChange(secondAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
-            });
+            Exception exception = assertThrows(Exception.class, () -> federationSupport.voteFederationChange(
+                secondAuthorizedTx,
+                commitFederationAbiCallSpec,
+                signatureCache,
+                bridgeEventLogger
+            ));
 
             assertEquals("The script size is 525, that is above the maximum allowed.", exception.getMessage());
         }
@@ -3076,6 +3079,90 @@ class FederationSupportImplTest {
             assertArrayEquals(expectedBtcECKey.getPubKey(), actualBtcECkey);
             assertArrayEquals(expectedRskKey.getPubKey(true), actualRskKey);
             assertArrayEquals(expectedMstKey.getPubKey(true), actualMstKey);
+        }
+
+        @Test
+        void voteFederationChange_addFederatorPublicKeyPreWasabi_returnsSuccessfulResponseCode() {
+            ActivationConfig.ForBlock activationsPreWasabi = ActivationConfigsForTest.orchid().forBlock(0L);
+
+            FederationSupport federationSupportPreWasabi = federationSupportBuilder
+                .withFederationConstants(federationMainnetConstants)
+                .withFederationStorageProvider(storageProvider)
+                .withActivations(activationsPreWasabi)
+                .build();
+
+            // Arrange
+            BtcECKey federatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress()
+            );
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress()
+            );
+
+            voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
+
+            ABICallSpec addFederatorMultiKeyAbiCallSpec = new ABICallSpec(
+                FederationChangeFunction.ADD.getKey(),
+                new byte[][]{federatorBtcECKey.getPubKey()}
+            );
+
+            // Act
+
+            // Voting add new fed with m of n authorizers
+            int firstVoteAddFederatorMultiKeyResult = federationSupportPreWasabi.voteFederationChange(
+                firstAuthorizedTx,
+                addFederatorMultiKeyAbiCallSpec,
+                signatureCache,
+                bridgeEventLogger
+            );
+            int secondVoteAddFederatorMultiKeyResult = federationSupportPreWasabi.voteFederationChange(
+                secondAuthorizedTx,
+                addFederatorMultiKeyAbiCallSpec,
+                signatureCache,
+                bridgeEventLogger
+            );
+
+            // Assert
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteAddFederatorMultiKeyResult);
+            assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteAddFederatorMultiKeyResult);
+        }
+
+        @Test
+        void voteFederationChange_addFederatorPublicKeyPostWasabi_ThrowsIllegalStateException() {
+            // Arrange
+            BtcECKey federatorBtcECKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+
+            Transaction firstAuthorizedTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress()
+            );
+            Transaction secondAuthorizedTx = TransactionUtils.getTransactionFromCaller(
+                signatureCache,
+                FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress()
+            );
+
+            voteToCreateFederation(firstAuthorizedTx, secondAuthorizedTx);
+
+            ABICallSpec addFederatorMultiKeyAbiCallSpec = new ABICallSpec(
+                FederationChangeFunction.ADD.getKey(),
+                new byte[][]{federatorBtcECKey.getPubKey()}
+            );
+
+            // Act and assert
+            Exception exception = assertThrows(
+                IllegalStateException.class,
+                () -> federationSupport.voteFederationChange(
+                    firstAuthorizedTx,
+                    addFederatorMultiKeyAbiCallSpec,
+                    signatureCache,
+                    bridgeEventLogger
+                )
+            );
+            assertEquals("The \"add\" function is disabled.", exception.getMessage());
         }
 
         private void voteToCreateFederation(Transaction firstAuthorizedTx, Transaction secondAuthorizedTx) {

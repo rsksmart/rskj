@@ -20,7 +20,6 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.peg.constants.BridgeDevNetConstants;
 import co.rsk.config.ConfigLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -180,9 +179,7 @@ public abstract class SystemProperties {
                     constants = Constants.testnet(getActivationConfig());
                     break;
                 case "devnet":
-                    constants = Constants.devnetWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants = Constants.devnetWithFederation();
                     break;
                 case "regtest":
                     constants = getGenesisFederationPublicKeys()

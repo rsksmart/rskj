@@ -62,8 +62,6 @@ public class BridgeStorageProvider {
     private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
 
-    private Coin lockingCap;
-
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
@@ -250,26 +248,6 @@ public class BridgeStorageProvider {
         safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
-    public void saveLockingCap() {
-        if (activations.isActive(RSKIP134)) {
-            safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
-        }
-    }
-
-    public void setLockingCap(Coin lockingCap) {
-        this.lockingCap = lockingCap;
-    }
-
-    public Coin getLockingCap() {
-        if (activations.isActive(RSKIP134)) {
-            if (this.lockingCap == null) {
-                this.lockingCap = safeGetFromRepository(LOCKING_CAP_KEY, BridgeSerializationUtils::deserializeCoin);
-            }
-            return this.lockingCap;
-        }
-        return null;
-    }
-
     public CoinbaseInformation getCoinbaseInformation(Sha256Hash blockHash) {
         if (!activations.isActive(RSKIP143)) {
             return null;
@@ -395,15 +373,15 @@ public class BridgeStorageProvider {
             return Optional.empty();
         }
 
-        FlyoverFederationInformation flyoverFederationInformation = this.safeGetFromRepository(
+        FlyoverFederationInformation flyoverFederationInformationInStorage = this.safeGetFromRepository(
             getStorageKeyForFlyoverFederationInformation(flyoverFederationRedeemScriptHash),
             data -> BridgeSerializationUtils.deserializeFlyoverFederationInformation(data, flyoverFederationRedeemScriptHash)
         );
-        if (flyoverFederationInformation == null) {
+        if (flyoverFederationInformationInStorage == null) {
             return Optional.empty();
         }
 
-        return Optional.of(flyoverFederationInformation);
+        return Optional.of(flyoverFederationInformationInStorage);
     }
 
     public void setFlyoverFederationInformation(FlyoverFederationInformation flyoverFederationInformation) {
@@ -542,14 +520,12 @@ public class BridgeStorageProvider {
         ));
     }
 
-    public void save() throws IOException {
+    public void save() {
         saveBtcTxHashesAlreadyProcessed();
 
         saveReleaseRequestQueue();
         savePegoutsWaitingForConfirmations();
         savePegoutsWaitingForSignatures();
-
-        saveLockingCap();
 
         saveHeightBtcTxHashAlreadyProcessed();
 

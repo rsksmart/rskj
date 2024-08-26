@@ -2,20 +2,13 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeMethods;
-import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
+import org.junit.jupiter.api.*;
 
 @Disabled
 class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerformanceTestCase {
@@ -42,28 +35,28 @@ class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerformanceTes
         );
 
         executeAndAverage("hasBtcBlockCoinbaseTransactionInformation-sucess",
-                times,
-                getABIEncoder(Sha256Hash.ZERO_HASH),
-                storageInitializer,
-                Helper.getZeroValueValueTxBuilderFromFedMember(),
-                Helper.getRandomHeightProvider(10),
-                stats,
-                (environment, callResult) -> Assertions.assertTrue((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
+            times,
+            getABIEncoder(Sha256Hash.ZERO_HASH),
+            storageInitializer,
+            Helper.getZeroValueValueTxBuilderFromFedMember(),
+            Helper.getRandomHeightProvider(10),
+            stats,
+            (environment, callResult) -> Assertions.assertTrue((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
     }
 
     private void hasBtcBlockCoinbaseTransactionInformation_unsuccess(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForTest(
-                Sha256Hash.ZERO_HASH
+            Sha256Hash.ZERO_HASH
         );
 
         executeAndAverage("hasBtcBlockCoinbaseTransactionInformation-unsucess",
-                times,
-                getABIEncoder(Sha256Hash.of(new byte[]{1})),
-                storageInitializer,
-                Helper.getZeroValueValueTxBuilderFromFedMember(),
-                Helper.getRandomHeightProvider(10),
-                stats,
-                (environment, callResult) -> Assertions.assertFalse((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
+            times,
+            getABIEncoder(Sha256Hash.of(new byte[]{1})),
+            storageInitializer,
+            Helper.getZeroValueValueTxBuilderFromFedMember(),
+            Helper.getRandomHeightProvider(10),
+            stats,
+            (environment, callResult) -> Assertions.assertFalse((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
     }
 
     private ABIEncoder getABIEncoder(Sha256Hash blockHash) {
@@ -79,12 +72,7 @@ class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerformanceTes
             witnessRoot = Sha256Hash.ZERO_HASH;
             CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessRoot);
             provider.setCoinbaseInformation(blockHash, coinbaseInformation);
-
-            try{
-                provider.save();
-            } catch (IOException e) {
-                throw new RuntimeException();
-            }
+            provider.save();
         };
     }
 }
