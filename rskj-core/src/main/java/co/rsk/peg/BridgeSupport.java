@@ -856,7 +856,7 @@ public class BridgeSupport {
     }
 
     private void emitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
-        eventLogger.logReleaseBtcRequestRejected(senderAddress.toHexString(), value, reason);
+        eventLogger.logReleaseBtcRequestRejected(senderAddress, value, reason);
     }
 
     /**

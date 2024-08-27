@@ -462,7 +462,7 @@ class BridgeEventLoggerImplTest {
         Coin amount = Coin.COIN;
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
 
-        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS.toString(), amount, reason);
+        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS, amount, reason);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
