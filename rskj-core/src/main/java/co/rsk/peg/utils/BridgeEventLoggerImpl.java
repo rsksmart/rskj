@@ -219,9 +219,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason) {
+    public void logReleaseBtcRequestRejected(RskAddress sender, Coin amount, RejectedPegoutReason reason) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender.toHexString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
         byte[] encodedData = event.encodeEventData(amount.getValue(), reason.getValue());
 

@@ -75,11 +75,11 @@ public enum BridgeEvents {
             }
     ),
     RELEASE_REQUEST_REJECTED("release_request_rejected",
-            new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256)),
-                    new CallTransaction.Param(false, Fields.REASON, SolidityType.getType(SolidityType.INT256))
-            }
+        new CallTransaction.Param[]{
+            new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
+            new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256)),
+            new CallTransaction.Param(false, Fields.REASON, SolidityType.getType(SolidityType.INT256))
+        }
     ),
     BATCH_PEGOUT_CREATED("batch_pegout_created",
         new CallTransaction.Param[]{
