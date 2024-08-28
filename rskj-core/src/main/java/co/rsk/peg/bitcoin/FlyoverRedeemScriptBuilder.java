@@ -5,5 +5,4 @@ import co.rsk.crypto.Keccak256;
 
 public interface FlyoverRedeemScriptBuilder {
     Script addFlyoverDerivationHashToRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript);
-
 }

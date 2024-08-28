@@ -13,6 +13,7 @@ import static java.util.Objects.isNull;
 public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(FlyoverRedeemScriptBuilderImpl.class);
 
+    @Override
     public Script addFlyoverDerivationHashToRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
         validateFlyoverDerivationHash(flyoverDerivationHash);
 
