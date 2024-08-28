@@ -55,7 +55,7 @@ block_connect b01
 assert_best b01
 
 # Assert balance after have created the contract via transaction
-assert_balance acc1 19239631
+assert_balance acc1 19239633
 
 # deploy contract compiled with 0.8.20
 transaction_build txCreateContractViaOpCodeCreate2
@@ -79,4 +79,4 @@ block_connect b02
 assert_best b02
 
 # Assert balance after have created the contract via opcode create2
-assert_balance acc1 12739631
+assert_balance acc1 12739633

@@ -38,9 +38,9 @@ public class InitcodeCostCalculator implements CostCalculator{
     }
 
     @Override
-    public long calculateCost(byte[] data, ActivationConfig.ForBlock activations) {
+    public long calculateCost(int dataLength, ActivationConfig.ForBlock activations) {
         if( activations.isActive(ConsensusRule.RSKIP438) ) {
-            return  INITCODE_WORD_COST  *  (long) Math.ceil((double) getLength(data) / 32);
+            return  INITCODE_WORD_COST  *  (long) Math.ceil(dataLength / 32);
         }
         return 0;
     }

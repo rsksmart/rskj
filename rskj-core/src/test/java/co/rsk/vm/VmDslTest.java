@@ -180,19 +180,19 @@ class VmDslTest {
         TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_without_initcode_cost.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_without_initcode_cost_rskip_NOT_ACTIVE.txt");
         World world = new World(rskip438Disabled);
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
         processor.processCommands(parser);
 
         assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractFactory", "b01", true);
-        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCode", "b02", true);
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContractViaOpCodeCreate", "b02", true);
     }
 
     @Test
     void testInitCodeSizeValidationSuccessWithInitCodeCostViaCreateOpcodeCREATE() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_with_initcode_cost.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create_opcode_test_with_initcode_cost_rskip_ACTIVE.txt");
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -238,7 +238,7 @@ class VmDslTest {
         TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_without_initcode_cost.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_without_initcode_cost_rskip_NOT_ACTIVE.txt");
         World world = new World(rskip438Disabled);
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
@@ -250,7 +250,7 @@ class VmDslTest {
 
     @Test
     void testInitCodeSizeValidationSuccessWithInitCodeCostViaCreateOpcodeCREATE2() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_with_initcode_cost.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/create2_opcode_test_with_initcode_cost_rskip_ACTIVE.txt");
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);

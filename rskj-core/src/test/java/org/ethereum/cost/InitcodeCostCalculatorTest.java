@@ -45,7 +45,7 @@ class InitcodeCostCalculatorTest {
   ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
   Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
   // when
-  long initCodeCost = InitcodeCostCalculator.getInstance().calculateCost(rawData, activations);
+  long initCodeCost = InitcodeCostCalculator.getInstance().calculateCost(rawData.length, activations);
 
   // then
   assertEquals(expectedCost, initCodeCost);

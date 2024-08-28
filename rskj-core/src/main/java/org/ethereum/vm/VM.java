@@ -1452,7 +1452,7 @@ public class VM {
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
             gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0))
-                    + InitcodeCostCalculator.getInstance().calculateCost(codeSize.getData(), program.getActivations());
+                    + InitcodeCostCalculator.getInstance().calculateCost(codeSize.intValue(), program.getActivations());
 
             spendOpCodeGas();
         }
@@ -1476,21 +1476,25 @@ public class VM {
         return stack.get(stack.size() - 3);
     }
 
+    private DataWord getCode() {
+        return stack.get(stack.size() - 3);
+    }
+
     protected void doCREATE2(){
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas){
-            long codeSize = getCodeSize().longValueSafe();
+            DataWord codeSize = getCodeSize();
             gasCost = GasCost.calculateTotal(
                     GasCost.add(
                             GasCost.CREATE,
-                            calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0)
+                            calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize.longValue()), 0)
                     ),
                     GasCost.SHA3_WORD,
-                    GasCost.add(codeSize, 31) / 32
-            ) + InitcodeCostCalculator.getInstance().calculateCost(getCodeSize().getData(), program.getActivations());
+                    GasCost.add(codeSize.longValue(), 31) / 32
+            ) + InitcodeCostCalculator.getInstance().calculateCost( codeSize.intValue(), program.getActivations());
             spendOpCodeGas();
         }
 

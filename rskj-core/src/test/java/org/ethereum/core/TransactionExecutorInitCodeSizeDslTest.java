@@ -34,7 +34,7 @@ public class TransactionExecutorInitCodeSizeDslTest {
 
     @Test
     void testInitCodeSizeValidationSuccess() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_activated.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_ACTIVE.txt");
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -87,7 +87,7 @@ public class TransactionExecutorInitCodeSizeDslTest {
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
 
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_deactivated.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_NOT_ACTIVE.txt");
         World world = new World(rskip438Disabled);
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -102,7 +102,7 @@ public class TransactionExecutorInitCodeSizeDslTest {
 
     @Test
     void testInitCodeSizeValidationFails() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_higher_initcode_size_rskip_activated.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_higher_initcode_size_rskip_ACTIVE.txt");
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -121,7 +121,7 @@ public class TransactionExecutorInitCodeSizeDslTest {
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
 
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_higher_initcode_size_rskip_deactivated.txt");
+        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_higher_initcode_size_rskip_NOT_ACTIVE.txt");
         World world = new World(rskip438Disabled);
 
         WorldDslProcessor processor = new WorldDslProcessor(world);

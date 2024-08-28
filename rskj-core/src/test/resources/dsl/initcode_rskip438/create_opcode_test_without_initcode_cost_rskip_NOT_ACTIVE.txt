@@ -58,7 +58,7 @@ assert_best b01
 assert_balance acc1 9500539
 
 # deploy contract compiled with 0.8.20
-transaction_build txCreateContractViaOpCode
+transaction_build txCreateContractViaOpCodeCreate
     sender acc1
     nonce 1
     contract txCreateContractFactory   # created in txCreateContractFactory
@@ -70,7 +70,7 @@ transaction_build txCreateContractViaOpCode
 block_build b02
     parent b01
     gasLimit 6500000
-    transactions txCreateContractViaOpCode
+    transactions txCreateContractViaOpCodeCreate
     build
 
 block_connect b02
