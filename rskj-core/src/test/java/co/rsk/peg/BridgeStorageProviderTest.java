@@ -194,7 +194,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpFundTxHashUnsigned_preLovell700_shouldNotSaveInStorage() throws IOException {
+        void saveSvpFundTxHashUnsigned_preLovell700_shouldNotSaveInStorage() {
             // Arrange
             ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
             bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
@@ -209,7 +209,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpFundTxHashUnsigned_postLovell700_shouldSaveInStorage() throws IOException {
+        void saveSvpFundTxHashUnsigned_postLovell700_shouldSaveInStorage() {
             // Act
             bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
             bridgeStorageProvider.save();
@@ -221,7 +221,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpFundTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() throws IOException {
+        void saveSvpFundTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
             // Initially setting a valid hash in storage
             bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
             bridgeStorageProvider.save();
@@ -299,7 +299,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void getSvpFundTxHashUnsigned_whenHashSetAndSaved_shouldReturnTheHash() throws IOException {
+        void getSvpFundTxHashUnsigned_whenHashSetAndSaved_shouldReturnTheHash() {
             // Arrange
             bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
             bridgeStorageProvider.save();
@@ -350,7 +350,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void getSvpFundTxHashUnsigned_whenNullHashIsSetAndSaved_shouldReturnEmpty() throws IOException {
+        void getSvpFundTxHashUnsigned_whenNullHashIsSetAndSaved_shouldReturnEmpty() {
             // Arrange
             bridgeStorageProvider.setSvpFundTxHashUnsigned(null);
             bridgeStorageProvider.save();
@@ -400,7 +400,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpFundTxHashSigned_preLovell700_shouldNotSaveInStorage() throws IOException {
+        void saveSvpFundTxHashSigned_preLovell700_shouldNotSaveInStorage() {
             // Arrange
             ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
             bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
@@ -415,7 +415,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpFundTxHashSigned_postLovell700_shouldSaveInStorage() throws IOException {
+        void saveSvpFundTxHashSigned_postLovell700_shouldSaveInStorage() {
             // Act
             bridgeStorageProvider.setSvpFundTxHashSigned(svpFundTxHash);
             bridgeStorageProvider.save();
@@ -427,7 +427,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpFundTxHashSigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() throws IOException {
+        void saveSvpFundTxHashSigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
             // Initially setting a valid hash in storage
             bridgeStorageProvider.setSvpFundTxHashSigned(svpFundTxHash);
             bridgeStorageProvider.save();
