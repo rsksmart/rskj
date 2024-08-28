@@ -47,7 +47,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import co.rsk.bitcoinj.core.UTXO;
 
 class FederationStorageProviderImplTests {
-
     private static final int STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION = STANDARD_MULTISIG_FEDERATION.getFormatVersion();
     private static final int NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION = NON_STANDARD_ERP_FEDERATION.getFormatVersion();
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = P2SH_ERP_FEDERATION.getFormatVersion();
@@ -56,10 +55,11 @@ class FederationStorageProviderImplTests {
 
     private static final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private static final NetworkParameters regtestBtcParams = bridgeConstantsRegtest.getBtcParams();
-    private static ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
     private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationConstants = bridgeConstants.getFederationConstants();
     private static final NetworkParameters networkParameters = federationConstants.getBtcParams();
+
+    private static ActivationConfig.ForBlock activations;
 
     private static Stream<Arguments> provideFederationAndFormatArguments() {
         return Stream.of(
@@ -74,6 +74,11 @@ class FederationStorageProviderImplTests {
             Arguments.of(INVALID_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build()),
             Arguments.of(EMPTY_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build())
         );
+    }
+
+    @BeforeEach
+    void setup() {
+        activations = mock(ActivationConfig.ForBlock.class);
     }
 
     @ParameterizedTest
@@ -158,8 +163,6 @@ class FederationStorageProviderImplTests {
         PendingFederation expectedFederation
     ) {
         // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -184,14 +187,10 @@ class FederationStorageProviderImplTests {
     }
 
     @Test
-    void getPendingFederation_whenStorageVersionIsNotAvailable_deserializeFromBtcKeysOnly(
-    ) {
-
+    void getPendingFederation_whenStorageVersionIsNotAvailable_deserializeFromBtcKeysOnly() {
         PendingFederation expectedFederation = new PendingFederationBuilder().build();
 
         // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -248,8 +247,6 @@ class FederationStorageProviderImplTests {
     @Test
     void getPendingFederation_nullPendingFederationInStorage_returnsNull() {
         // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
@@ -289,7 +286,6 @@ class FederationStorageProviderImplTests {
     @Test
     void saveNewFederation_before_RSKIP123_should_not_save_null() {
         Repository repository = mock(Repository.class);
-        activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
 
         // Act
@@ -454,7 +450,7 @@ class FederationStorageProviderImplTests {
 
     @Test
     void getNewFederationBtcUTXOs_calledTwice_returnCachedUtxos() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
+        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0);
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
@@ -467,7 +463,7 @@ class FederationStorageProviderImplTests {
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are as expected
-        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
+        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, wasabiActivations);
         assertEquals(1, actualUtxos.size());
         assertEquals(expectedUtxos, actualUtxos);
 
@@ -476,7 +472,7 @@ class FederationStorageProviderImplTests {
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, extraUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are still the same as the original expected utxos since it is returning the cached utxos
-        List<UTXO> actualUtxosAfterSecondGet = federationStorageProvider.getNewFederationBtcUTXOs(null, activations);
+        List<UTXO> actualUtxosAfterSecondGet = federationStorageProvider.getNewFederationBtcUTXOs(null, wasabiActivations);
         assertEquals(1, actualUtxosAfterSecondGet.size());
         assertEquals(expectedUtxos, actualUtxosAfterSecondGet);
 
@@ -616,7 +612,7 @@ class FederationStorageProviderImplTests {
     @Test
     void getNextFederationCreationBlockHeight_preIris300_storageIsNotAccessedAndReturnsEmpty() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         // Putting some value in the storage just to then assert that before fork, the storage won't be accessed.
@@ -629,13 +625,13 @@ class FederationStorageProviderImplTests {
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
         // Assert
-        assertEquals(Optional.empty(), federationStorageProvider.getNextFederationCreationBlockHeight(activations));
+        assertEquals(Optional.empty(), federationStorageProvider.getNextFederationCreationBlockHeight(papyrusActivations));
     }
 
     @Test
     void getNextFederationCreationBlockHeight_postIris300_getsValueFromStorage() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         long expectedValue = 1_000_000L;
@@ -644,7 +640,7 @@ class FederationStorageProviderImplTests {
 
         // Act
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(irisActivations);
 
         // Assert
         assertTrue(actualValue.isPresent());
@@ -653,7 +649,7 @@ class FederationStorageProviderImplTests {
         // Setting in storage a different value to assert that calling the method again should return cached value
         storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), RLP.encodeBigInteger(BigInteger.valueOf(2_000_000L)));
 
-        Optional<Long> actualCachedValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+        Optional<Long> actualCachedValue = federationStorageProvider.getNextFederationCreationBlockHeight(irisActivations);
 
         assertTrue(actualCachedValue.isPresent());
         assertEquals(expectedValue, actualCachedValue.get());
@@ -662,14 +658,14 @@ class FederationStorageProviderImplTests {
     @Test
     void getNextFederationCreationBlockHeight_postIris300AndNoValueInStorage_returnsEmpty() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         storageAccessor.saveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(), null);
 
         // Act
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
-        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(activations);
+        Optional<Long> actualValue = federationStorageProvider.getNextFederationCreationBlockHeight(irisActivations);
 
         // Assert
         assertFalse(actualValue.isPresent());
