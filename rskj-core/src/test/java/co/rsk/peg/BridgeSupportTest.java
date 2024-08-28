@@ -89,13 +89,22 @@ class BridgeSupportTest {
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
+    private final FederationConstants federationConstantsMainnet = bridgeMainNetConstants.getFederationConstants();
+
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
+
     private BridgeSupportBuilder bridgeSupportBuilder;
-    private WhitelistSupport whitelistSupport;
+
     private WhitelistStorageProvider whitelistStorageProvider;
-    private FederationSupportBuilder federationSupportBuilder;
+    private WhitelistSupport whitelistSupport;
+
     private LockingCapSupport lockingCapSupport;
+
+    private FederationSupportBuilder federationSupportBuilder;
+    private FederationSupport federationSupport;
+
+    private FeePerKbSupport feePerKbSupport;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -106,34 +115,48 @@ class BridgeSupportTest {
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-    protected ActivationConfig.ForBlock activationsBeforeForks;
-    protected ActivationConfig.ForBlock activationsAfterForks;
+    private ActivationConfig.ForBlock activationsBeforeForks;
+    private ActivationConfig.ForBlock activationsAfterForks;
 
-    protected SignatureCache signatureCache;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
         bridgeSupportBuilder = new BridgeSupportBuilder();
-        StorageAccessor inMemoryStorageAccessor = new InMemoryStorage();
-        whitelistStorageProvider = new WhitelistStorageProviderImpl(inMemoryStorageAccessor);
+
+        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
+        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+
+        feePerKbSupport = mock(FeePerKbSupport.class);
+        federationSupportBuilder = new FederationSupportBuilder();
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsMainnet)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activationsAfterForks)
+            .build();
         whitelistSupport = new WhitelistSupportImpl(
             WhitelistMainNetConstants.getInstance(),
             whitelistStorageProvider,
-            mock(ActivationConfig.ForBlock.class),
+            activationsAfterForks,
             signatureCache
         );
-        federationSupportBuilder = new FederationSupportBuilder();
-        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(inMemoryStorageAccessor);
-        lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, mock(ActivationConfig.ForBlock.class), LockingCapMainNetConstants.getInstance(), signatureCache);
+        lockingCapSupport = new LockingCapSupportImpl(
+            lockingCapStorageProvider,
+            activationsAfterForks,
+            LockingCapMainNetConstants.getInstance(),
+            signatureCache
+        );
     }
 
     @Test
     void getFeePerKb() {
         Coin feePerKb = Coin.valueOf(10_000L);
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -147,7 +170,6 @@ class BridgeSupportTest {
 
     @Test
     void voteFeePerKbChange_success() {
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.voteFeePerKbChange(any(), any(), any())).thenReturn(1);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -245,9 +267,6 @@ class BridgeSupportTest {
             BridgeConstants bridgeConstantsMainNet = BridgeMainNetConstants.getInstance();
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
             ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-            FederationSupport federationSupport = federationSupportBuilder
-                .withFederationConstants(bridgeConstantsMainNet.getFederationConstants())
-                .build();
 
             bridgeSupport = bridgeSupportBuilder
                 .withWhitelistSupport(whitelistSupport)
@@ -500,7 +519,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void voteFederationChange() throws BridgeIllegalArgumentException {
+        void voteFederationChange() {
             Transaction tx = mock(Transaction.class);
             ABICallSpec callSpec = mock(ABICallSpec.class);
             int result = 1;
@@ -662,12 +681,12 @@ class BridgeSupportTest {
         Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
         Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
 
-        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
+        BridgeStorageProvider bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProviderMock.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
-            .withProvider(bridgeStorageProvider)
+            .withProvider(bridgeStorageProviderMock)
             .withActivations(activations)
             .build();
 
@@ -683,12 +702,12 @@ class BridgeSupportTest {
         Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
         Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
 
-        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
+        BridgeStorageProvider bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProviderMock.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
-            .withProvider(bridgeStorageProvider)
+            .withProvider(bridgeStorageProviderMock)
             .withActivations(activations)
             .build();
 
