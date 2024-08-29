@@ -80,6 +80,8 @@ public class BridgeStorageProvider {
     private boolean isSvpFundTxHashUnsignedSet = false;
     private Sha256Hash svpFundTxHashSigned;
     private boolean isSvpFundTxHashSignedSet = false;
+    private Sha256Hash svpSpendTxHashUnsigned;
+    private boolean isSvpSpendTxHashUnsignedSet = false;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -594,6 +596,23 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(contractAddress, SVP_FUND_TX_HASH_SIGNED.getKey(), data);
     }
 
+    public void setSvpSpendTxHashUnsigned(Sha256Hash hash) {
+        this.svpSpendTxHashUnsigned = hash;
+        this.isSvpSpendTxHashUnsignedSet = true;
+    }
+
+    private void saveSvpSpendTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419) || !isSvpSpendTxHashUnsignedSet) {
+            return;
+        }
+
+        byte[] data = Optional.ofNullable(svpSpendTxHashUnsigned)
+            .map(BridgeSerializationUtils::serializeSha256Hash)
+            .orElse(null);
+
+        repository.addStorageBytes(contractAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), data);
+    }
+
     public void save() {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -619,6 +638,7 @@ public class BridgeStorageProvider {
 
         saveSvpFundTxHashUnsigned();
         saveSvpFundTxHashSigned();
+        saveSvpSpendTxHashUnsigned();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
