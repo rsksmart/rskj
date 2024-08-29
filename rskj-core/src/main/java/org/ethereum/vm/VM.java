@@ -1476,10 +1476,6 @@ public class VM {
         return stack.get(stack.size() - 3);
     }
 
-    private DataWord getCode() {
-        return stack.get(stack.size() - 3);
-    }
-
     protected void doCREATE2(){
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
