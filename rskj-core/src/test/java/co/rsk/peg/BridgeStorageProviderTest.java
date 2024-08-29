@@ -629,6 +629,63 @@ class BridgeStorageProviderTest {
         }
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp spend transaction hash unsigned tests")
+    class SvpSpendTxHashUnsignedTests {
+        private final Sha256Hash svpSpendTxHash = BitcoinTestUtils.createHash(123_456_789);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void saveSvpSpendTxHashUnsigned_preLovell700_shouldNotSaveInStorage() throws IOException {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpSpendTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpSpendTxHashUnsigned_postLovell700_shouldSaveInStorage() throws IOException {
+            // Act
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpSpendTxHashSerialized = BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash);
+            byte[] actualSvpSpendTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey());
+            assertArrayEquals(svpSpendTxHashSerialized, actualSvpSpendTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpSpendTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() throws IOException {
+            // Initially setting a valid hash in storage
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(null);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpSpendTxHashSerialized);
+        }
+    }
+
     @Test
     void getReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
