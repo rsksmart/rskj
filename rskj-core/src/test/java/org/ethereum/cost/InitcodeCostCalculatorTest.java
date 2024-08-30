@@ -33,24 +33,24 @@ import static org.mockito.Mockito.mock;
 
 class InitcodeCostCalculatorTest {
 
- @ParameterizedTest
- @MethodSource("initCodeCostInputArguments")
- void testTransactionInitCodeCostCalculation(long expectedCost, byte[] rawData) {
-  // given
-  ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-  Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
-  // when
-  long initCodeCost = InitcodeCostCalculator.getInstance().calculateCost(rawData.length, activations);
+    @ParameterizedTest
+    @MethodSource("initCodeCostInputArguments")
+    void testTransactionInitCodeCostCalculation(long expectedCost, byte[] rawData) {
+        // given
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP438));
+        // when
+        long initCodeCost = InitcodeCostCalculator.getInstance().calculateCost(rawData.length, activations);
 
-  // then
-  assertEquals(expectedCost, initCodeCost);
- }
+        // then
+        assertEquals(expectedCost, initCodeCost);
+    }
 
- private static Stream<Arguments> initCodeCostInputArguments() {
-  return Stream.of(
-          Arguments.of(2,  new byte[]{0, 1, 2, 3}),
-          Arguments.of(4, Hex.decode("fd5fa123fd5fa123a31231000076890afd5fa123a31231000076890afd5fa123a31231000076890a")),
-          Arguments.of(6, Hex.decode("fd5fa123a31231000076890abcfff41239123912323123fd5fa123afd5fa12fd5fa123a31231000076890afd5fa123a31231000076890a3a31231000076890a31231000076890a"))
-  );
- }
+    private static Stream<Arguments> initCodeCostInputArguments() {
+        return Stream.of(
+                Arguments.of(2, new byte[]{0, 1, 2, 3}),
+                Arguments.of(4, Hex.decode("fd5fa123fd5fa123a31231000076890afd5fa123a31231000076890afd5fa123a31231000076890a")),
+                Arguments.of(6, Hex.decode("fd5fa123a31231000076890abcfff41239123912323123fd5fa123afd5fa12fd5fa123a31231000076890afd5fa123a31231000076890a3a31231000076890a31231000076890a"))
+        );
+    }
 }
