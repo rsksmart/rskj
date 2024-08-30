@@ -540,7 +540,8 @@ public class BridgeStorageProvider {
             return Optional.empty();
         }
 
-        svpFundTxHashUnsigned = safeGetFromRepository(SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        svpFundTxHashUnsigned = safeGetFromRepository(
+            SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
         return Optional.ofNullable(svpFundTxHashUnsigned);
     }
 
@@ -558,8 +559,28 @@ public class BridgeStorageProvider {
             return Optional.empty();
         }
 
-        svpFundTxHashSigned = safeGetFromRepository(SVP_FUND_TX_HASH_SIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        svpFundTxHashSigned = safeGetFromRepository(
+            SVP_FUND_TX_HASH_SIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
         return Optional.ofNullable(svpFundTxHashSigned);
+    }
+
+    public Optional<Sha256Hash> getSvpSpendTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpSpendTxHashUnsigned != null) {
+            return Optional.of(svpSpendTxHashUnsigned);
+        }
+
+        // Return empty if the svp spend tx hash unsigned was explicitly set to null
+        if (isSvpSpendTxHashUnsignedSet) {
+            return Optional.empty();
+        }
+
+        svpSpendTxHashUnsigned = safeGetFromRepository(
+            SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        return Optional.ofNullable(svpSpendTxHashUnsigned);
     }
 
     public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
