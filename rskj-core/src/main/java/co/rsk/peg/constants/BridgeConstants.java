@@ -21,9 +21,8 @@ package co.rsk.peg.constants;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
-
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -34,6 +33,7 @@ public abstract class BridgeConstants {
     protected FeePerKbConstants feePerKbConstants;
     protected WhitelistConstants whitelistConstants;
     protected FederationConstants federationConstants;
+    protected LockingCapConstants lockingCapConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -47,14 +47,6 @@ public abstract class BridgeConstants {
     protected Coin minimumPeginTxValue;
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
-
-    protected AddressBasedAuthorizer federationChangeAuthorizer;
-
-    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
-
-    protected Coin initialLockingCap;
-
-    protected int lockingCapIncrementsMultiplier;
 
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
@@ -81,6 +73,8 @@ public abstract class BridgeConstants {
     public WhitelistConstants getWhitelistConstants() { return whitelistConstants; }
 
     public FederationConstants getFederationConstants() { return federationConstants; }
+
+    public LockingCapConstants getLockingCapConstants() { return lockingCapConstants; }
 
     public String getBtcParamsString() {
         return btcParamsString;
@@ -109,12 +103,6 @@ public abstract class BridgeConstants {
     public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
-
-    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
-
-    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
-
-    public Coin getInitialLockingCap() { return initialLockingCap; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 

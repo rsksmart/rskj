@@ -192,9 +192,7 @@ public abstract class SystemProperties {
                     constants = Constants.testnet(getActivationConfig());
                     break;
                 case "devnet":
-                    constants = Constants.devnetWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants = Constants.devnetWithFederation();
                     break;
                 case "regtest":
                     constants = getGenesisFederationPublicKeys()

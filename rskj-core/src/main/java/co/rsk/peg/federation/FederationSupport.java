@@ -47,7 +47,12 @@ public interface FederationSupport {
     byte[] getPendingFederatorBtcPublicKey(int index);
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
-    int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger);
+    int voteFederationChange(
+        Transaction tx,
+        ABICallSpec callSpec,
+        SignatureCache signatureCache,
+        BridgeEventLogger eventLogger
+    );
     long getActiveFederationCreationBlockHeight();
     Optional<Script> getLastRetiredFederationP2SHScript();
 
