@@ -30,107 +30,90 @@ import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 public class TransactionExecutorInitCodeSizeDslTest {
 
     @Test
-    void testInitCodeSizeValidationSuccess() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_ACTIVE.txt");
-        World world = new World();
+    void testInitCodeSizeTransactionCreationValidationSuccessWithRSKIPActivated() throws FileNotFoundException, DslProcessorException {
+        World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_success_with_rskip_activated.txt", new TestSystemProperties());
 
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-
-        processor.processCommands(parser);
-
-        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
-        Assertions.assertNotNull(contractCreationTransaction);
-        Block bestBlock = world.getBlockByName("b01");
-        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", true);
     }
 
     @Test
-    void testInitCodeSizeValidationFailsDueNotEnoughGas() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_just_enough_gas.txt");
-        World world = new World();
+    void testInitCodeSizeTransactionCreationValidationFailsNotEnoughGas() throws FileNotFoundException, DslProcessorException {
+        World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_fails_not_enough_gas.txt", new TestSystemProperties());
 
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-
-        processor.processCommands(parser);
-
-        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
-        Assertions.assertNotNull(contractCreationTransaction);
-        Block bestBlock = world.getBlockByName("b01");
-        Assertions.assertEquals(0, bestBlock.getTransactionsList().size());
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", false);
     }
 
     @Test
-    void testInitCodeSizeValidationDoesntFailDueNotEnoughGasIfRSKIPNotActivated() throws FileNotFoundException, DslProcessorException {
+    void testInitCodeSizeTransactionCreationValidationDoesntFailDueNotEnoughGasIfRSKIPNotActivated() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
 
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_just_enough_gas_without_rskip_activated.txt");
-        World world = new World(rskip438Disabled);
+        World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_doesnt_fails_due_not_enough_gas_with_rskip_deactivated.txt", rskip438Disabled);
 
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-
-        processor.processCommands(parser);
-
-        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
-        Assertions.assertNotNull(contractCreationTransaction);
-        Block bestBlock = world.getBlockByName("b01");
-        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", true);
     }
 
     @Test
-    void testInitCodeSizeValidationWithRSKIP438Deactivated() throws FileNotFoundException, DslProcessorException {
+    void testInitCodeSizeTransactionCreationValidationSuccessWithRSKIP438Deactivated() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
 
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_success_rskip_NOT_ACTIVE.txt");
-        World world = new World(rskip438Disabled);
+        World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_success_with_rskip_deactivated.txt", rskip438Disabled);
 
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-
-        processor.processCommands(parser);
-
-        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
-        Assertions.assertNotNull(contractCreationTransaction);
-        Block bestBlock = world.getBlockByName("b01");
-        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", true);
     }
 
     @Test
-    void testInitCodeSizeValidationFails() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_higher_initcode_size_rskip_ACTIVE.txt");
-        World world = new World();
-
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-
-        processor.processCommands(parser);
-
-        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
-        Assertions.assertNotNull(contractCreationTransaction);
-        Block bestBlock = world.getBlockByName("b01");
-        Assertions.assertEquals(0, bestBlock.getTransactionsList().size());
+    void testInitCodeSizeTransactionCreationValidationFailsWithRSKIPActiveWithInitcodeSizeMaxReached() throws FileNotFoundException, DslProcessorException {
+        World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_fails_with_rskip_active_with_initcode_size_max_reached.txt",  new TestSystemProperties());
+      
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", false);
     }
 
     @Test
-    void testInitCodeSizeValidationDoesntFailIfRSKIP438Deactivated() throws FileNotFoundException, DslProcessorException {
+    void testInitCodeSizeTransactionCreationValidationSuccessWithRSKIPDeactivatedWithInitcodeSizeMaxReached() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
+        World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_success_with_rskip_deactivated_with_initcode_size_max_reached.txt", rskip438Disabled);
 
-        DslParser parser = DslParser.fromResource("dsl/initcode_rskip438/tx_test_higher_initcode_size_rskip_NOT_ACTIVE.txt");
+        assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", true);
+    }
+
+    private static World createWorldAndProcessIt(String resourceName, TestSystemProperties rskip438Disabled) throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource(resourceName);
         World world = new World(rskip438Disabled);
-
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
         processor.processCommands(parser);
+        return world;
+    }
 
-        Transaction contractCreationTransaction = world.getTransactionByName("txCreateContract");
-        Assertions.assertNotNull(contractCreationTransaction);
-        Block bestBlock = world.getBlockByName("b01");
-        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+    private void assertTransactionExecutedWasAddedToBlockWithExpectedStatus(World world, String transactionName, String blockName, boolean withSuccess) {
+        Transaction contractTransaction = world.getTransactionByName(transactionName);
+        assertNotNull(contractTransaction);
+        Block bestBlock = world.getBlockByName(blockName);
+        if(withSuccess) {
+            Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
+            TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(transactionName);
+            assertNotNull(contractTransactionReceipt);
+            byte[] status = contractTransactionReceipt.getStatus();
+            assertNotNull(status);
+            assertEquals(1, status.length);
+            assertEquals(1, status[0]);
+        } else {
+            Assertions.assertEquals(0, bestBlock.getTransactionsList().size());
+            TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(transactionName);
+            assertNull(contractTransactionReceipt);
+        }
     }
 }
