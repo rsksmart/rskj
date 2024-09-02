@@ -82,6 +82,7 @@ public class BridgeStorageProvider {
     private boolean isSvpFundTxHashSignedSet = false;
     private Sha256Hash svpSpendTxHashUnsigned;
     private boolean isSvpSpendTxHashUnsignedSet = false;
+    private Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
 
     public BridgeStorageProvider(
         Repository repository,
