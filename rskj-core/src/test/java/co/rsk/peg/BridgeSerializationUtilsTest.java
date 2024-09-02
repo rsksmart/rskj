@@ -18,6 +18,22 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.peg.PegTestUtils.createRandomBtcECKeys;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -27,6 +43,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -54,7 +71,6 @@ import org.ethereum.util.RLPList;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -62,19 +78,125 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 class BridgeSerializationUtilsTest {
+
+    private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+    private static final Address ADDRESS = Address.fromBase58(NETWORK_PARAMETERS, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL");
+    private static final Address OTHER_ADDRESS = Address.fromBase58(NETWORK_PARAMETERS, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599");
+
+    @Test
+    void serializeAndDeserializeSingleEntry_whenValidData_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction input = new BtcTransaction(NETWORK_PARAMETERS);
+        input.addOutput(Coin.FIFTY_COINS, ADDRESS);
+
+        Keccak256 key = createHash3(1);
+        BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
+        tx.addInput(input.getOutput(0));
+        tx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedEntry = BridgeSerializationUtils.serializeSingleEntry(new AbstractMap.SimpleEntry<>(key, tx));
+        Map.Entry<Keccak256, BtcTransaction> deserializedEntry = BridgeSerializationUtils.deserializeSingleEntry(serializedEntry, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(serializedEntry);
+        assertTrue(serializedEntry.length > 0);
+
+        assertNotNull(deserializedEntry);
+        assertEquals(key, deserializedEntry.getKey());
+        assertArrayEquals(tx.bitcoinSerialize(), deserializedEntry.getValue().bitcoinSerialize());
+    }
+
+    @Test
+    void deserializeSingleEntry_whenNullData_shouldReturnEmptyResult() {
+        // Arrange
+        byte[] data = null;
+        
+        // Act
+        Map.Entry<Keccak256, BtcTransaction> result =
+            BridgeSerializationUtils.deserializeSingleEntry(data, NETWORK_PARAMETERS, false);
+        
+        // Assert
+        assertNotNull(result);
+        assertNull(result.getKey());
+        assertNull(result.getValue());
+    }
+
+    @Test
+    void deserializeSingleEntry_whenEmptyData_shouldReturnEmptyResult() {
+        // Arrange
+        byte[] data = new byte[0];
+        
+        // Act
+        Map.Entry<Keccak256, BtcTransaction> result =
+            BridgeSerializationUtils.deserializeSingleEntry(data, NETWORK_PARAMETERS, false);
+        
+        // Assert
+        assertNotNull(result);
+        assertNull(result.getKey());
+        assertNull(result.getValue());
+    }
+
+    @Test
+    void serializeAndDeserializeMap_whenValidEntries_shouldReturnEqualsResults() {
+        // Arrange
+        SortedMap<Keccak256, BtcTransaction> map = new TreeMap<>();
+
+        BtcTransaction input = new BtcTransaction(NETWORK_PARAMETERS);
+        input.addOutput(Coin.FIFTY_COINS, ADDRESS);
+
+        Keccak256 key1 = createHash3(1);
+        BtcTransaction tx1 = new BtcTransaction(NETWORK_PARAMETERS);
+        tx1.addInput(input.getOutput(0));
+        tx1.addOutput(Coin.COIN, OTHER_ADDRESS);
+        Keccak256 key2 = createHash3(2);
+        BtcTransaction tx2 = new BtcTransaction(NETWORK_PARAMETERS);
+        tx2.addInput(input.getOutput(0));
+        tx2.addOutput(Coin.COIN.multiply(10), OTHER_ADDRESS);
+        
+        map.put(key1, tx1);
+        map.put(key2, tx2);
+
+        // Act
+        byte[] serializedMap = BridgeSerializationUtils.serializeMap(map);
+        SortedMap<Keccak256, BtcTransaction> deserializedMap = 
+            BridgeSerializationUtils.deserializeMap(serializedMap, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(serializedMap);
+        assertTrue(serializedMap.length > 0);
+
+        assertEquals(map, deserializedMap);
+    }
+
+    @Test
+    void deserializeMap_whenNullData_shouldReturnEmptyResult() {
+        // Arrange
+        byte[] data = null;
+        
+        // Act
+        SortedMap<Keccak256, BtcTransaction> result =
+            BridgeSerializationUtils.deserializeMap(data, NETWORK_PARAMETERS, false);
+        
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void deserializeMap_whenEmptyData_shouldReturnEmptyResult() {
+        // Arrange
+        byte[] data = new byte[0];
+        
+        // Act
+        SortedMap<Keccak256, BtcTransaction> result =
+            BridgeSerializationUtils.deserializeMap(data, NETWORK_PARAMETERS, false);
+        
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
 
     @Test
     void serializeMapOfHashesToLong() {
