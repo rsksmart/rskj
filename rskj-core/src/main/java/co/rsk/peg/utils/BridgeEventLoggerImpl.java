@@ -18,30 +18,24 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.bitcoin.UtxoUtils;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
-
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.*;
 
 /**
  * Responsible for logging events triggered by BridgeContract.
@@ -57,7 +51,12 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private final List<LogInfo> logs;
     private final ActivationConfig.ForBlock activations;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
+    public BridgeEventLoggerImpl(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        List<LogInfo> logs,
+        SignatureCache signatureCache) {
+
         this.activations = activations;
         this.bridgeConstants = bridgeConstants;
         this.signatureCache = signatureCache;
@@ -219,11 +218,13 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestRejected(RskAddress sender, Coin amount, RejectedPegoutReason reason) {
+    public void logReleaseBtcRequestRejected(RskAddress sender, co.rsk.core.Coin amount, RejectedPegoutReason reason) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender.toHexString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(amount.getValue(), reason.getValue());
+        byte[] encodedData = activations.isActive(ConsensusRule.RSKIP427) ?
+            event.encodeEventData(amount.asBigInteger(), reason.getValue()) :
+            event.encodeEventData(amount.toBitcoin().getValue(), reason.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
