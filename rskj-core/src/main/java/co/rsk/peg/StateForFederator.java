@@ -40,7 +40,7 @@ public class StateForFederator {
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
         byte[] encodedWaitingForSign = rlpList.get(0).getRLPData();
 
-        this.rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);
+        this.rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(encodedWaitingForSign, parameters, false);
     }
 
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
@@ -48,7 +48,7 @@ public class StateForFederator {
     }
 
     public byte[] getEncoded() {
-        byte[] encodedWaitingForSign = BridgeSerializationUtils.serializeMap(this.rskTxsWaitingForSignatures);
+        byte[] encodedWaitingForSign = BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(this.rskTxsWaitingForSignatures);
         return RLP.encodeList(encodedWaitingForSign);
     }
 }
