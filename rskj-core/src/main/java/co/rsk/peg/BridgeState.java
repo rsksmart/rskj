@@ -111,7 +111,7 @@ public class BridgeState {
     public byte[] getEncoded() throws IOException {
         byte[] rlpBtcBlockchainBestChainHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.btcBlockchainBestChainHeight));
         byte[] rlpActiveFederationBtcUTXOs = RLP.encodeElement(BridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs));
-        byte[] rlpRskTxsWaitingForSignatures = RLP.encodeElement(BridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures));
+        byte[] rlpRskTxsWaitingForSignatures = RLP.encodeElement(BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignatures));
         byte[] serializedReleaseRequestQueue = shouldUsePapyrusEncoding(this.activations) ?
                 BridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(releaseRequestQueue):
                 BridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue);
@@ -133,7 +133,7 @@ public class BridgeState {
         byte[] btcUTXOsBytes = rlpList.get(1).getRLPData();
         List<UTXO> btcUTXOs = BridgeSerializationUtils.deserializeUTXOList(btcUTXOsBytes);
         byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(2).getRLPData();
-        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
         byte[] releaseRequestQueueBytes = rlpList.get(3).getRLPData();
         ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
         byte[] pegoutsWaitingForConfirmationsBytes = rlpList.get(4).getRLPData();
