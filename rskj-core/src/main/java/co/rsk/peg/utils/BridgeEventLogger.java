@@ -67,7 +67,7 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
-    default void logReleaseBtcRequestRejected(RskAddress sender, Coin amount, RejectedPegoutReason reason) {
+    default void logReleaseBtcRequestRejected(RskAddress sender, co.rsk.core.Coin amount, RejectedPegoutReason reason) {
         throw new UnsupportedOperationException();
     }
 
