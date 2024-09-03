@@ -6,9 +6,7 @@ on:
     branches:
       - "**"
   push:
-    branches:
-      - "master"
-      - "*-rc"
+    branches: ["master", "*-rc"]
   workflow_dispatch:
     inputs:
       rit-branch:
@@ -50,14 +48,14 @@ jobs:
 
       - name: Checkout rskj Repository
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.7
         with:
           repository: rsksmart/rskj
           ref: ${{ env.RSKJ_BRANCH }}
           fetch-depth: 1
 
       - name: Checkout Rootstock Integration Tests Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.7
         with:
           repository: rsksmart/rootstock-integration-tests
           ref: ${{ env.RIT_BRANCH }}
@@ -68,6 +66,3 @@ jobs:
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
-
-      - name: Notify on Status
-        run: echo "Rootstock Integration Tests pipeline triggered"
