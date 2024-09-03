@@ -24,12 +24,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
-import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -61,36 +61,30 @@ class BridgeEventLoggerImplTest {
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
+    private static final BtcTransaction BTC_TRANSACTION = new BtcTransaction(NETWORK_PARAMETERS);
     private static final RskAddress RSK_ADDRESS = new RskAddress("0x0000000000000000000000000000000000000000");
-    private final ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+    private static final Keccak256 RSK_TX_HASH = RskTestUtils.createHash(1);
 
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
-    private BtcTransaction btcTxMock;
-    private BtcTransaction btcTx;
     private SignatureCache signatureCache;
 
     @BeforeEach
     void setup() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         eventLogs = new LinkedList<>();
         eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, eventLogs, signatureCache);
-        btcTxMock = mock(BtcTransaction.class);
-        btcTx = new BtcTransaction(NETWORK_PARAMETERS);
     }
 
     @Test
     void logLockBtc() {
-        Address senderAddress = mock(Address.class);
-        when(senderAddress.toString()).thenReturn("mixzLp4xx5bUsHuYUEyPpL42BzEDp8kSTv");
-
-        // Mock btc transaction
-        when(btcTxMock.getHash()).thenReturn(BitcoinTestUtils.createHash(0));
-
+        Address senderAddress = Address.fromBase58(NETWORK_PARAMETERS, "1MvSMVpP6PY6XZtxenGXoFcH575JUWkzoP");
         Coin amount = Coin.SATOSHI;
 
         // Act
-        eventLogger.logLockBtc(RSK_ADDRESS, btcTxMock, senderAddress, amount);
+        eventLogger.logLockBtc(RSK_ADDRESS, BTC_TRANSACTION, senderAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -99,7 +93,7 @@ class BridgeEventLoggerImplTest {
             0,
             BridgeEvents.LOCK_BTC.getEvent(),
             new Object[]{RSK_ADDRESS.toString()},
-            new Object[]{btcTxMock.getHash().getBytes(), senderAddress.toString(), amount.getValue()}
+            new Object[]{BTC_TRANSACTION.getHash().getBytes(), senderAddress.toString(), amount.getValue()}
         );
     }
 
@@ -110,14 +104,10 @@ class BridgeEventLoggerImplTest {
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d")
         );
-
-        // Mock btc transaction
-        when(btcTxMock.getHash()).thenReturn(BitcoinTestUtils.createHash(0));
-
         Coin amount = Coin.SATOSHI;
 
         // Act
-        eventLogger.logLockBtc(RSK_ADDRESS, btcTxMock, senderAddress, amount);
+        eventLogger.logLockBtc(RSK_ADDRESS, BTC_TRANSACTION, senderAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -126,21 +116,17 @@ class BridgeEventLoggerImplTest {
             0,
             BridgeEvents.LOCK_BTC.getEvent(),
             new Object[]{RSK_ADDRESS.toString()},
-            new Object[]{btcTxMock.getHash().getBytes(), "3L4zu4GWVVSfAWCPbP3RqkJUvxpiiQebPX", amount.getValue()}
+            new Object[]{BTC_TRANSACTION.getHash().getBytes(), "3L4zu4GWVVSfAWCPbP3RqkJUvxpiiQebPX", amount.getValue()}
         );
     }
 
     @Test
     void logPeginBtc() {
-        // Mock btc transaction
-        BtcTransaction mockedTx = mock(BtcTransaction.class);
-        when(mockedTx.getHash()).thenReturn(BitcoinTestUtils.createHash(0));
-
         Coin amount = Coin.SATOSHI;
         int protocolVersion = 1;
 
         // Act
-        eventLogger.logPeginBtc(RSK_ADDRESS, mockedTx, amount, protocolVersion);
+        eventLogger.logPeginBtc(RSK_ADDRESS, BTC_TRANSACTION, amount, protocolVersion);
 
         // Assert log size
         assertEquals(1, eventLogs.size());
@@ -153,7 +139,7 @@ class BridgeEventLoggerImplTest {
 
         // Assert log topics
         assertEquals(3, logResult.getTopics().size());
-        byte[][] topics = event.encodeEventTopics(RSK_ADDRESS.toString(), mockedTx.getHash().getBytes());
+        byte[][] topics = event.encodeEventTopics(RSK_ADDRESS.toString(), BTC_TRANSACTION.getHash().getBytes());
         for (int i=0; i<topics.length; i++) {
             assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
         }
@@ -191,8 +177,8 @@ class BridgeEventLoggerImplTest {
         ECKey rskKey = ECKey.fromPrivate(Hex.decode("000000000000000000000000000000000000000000000000000000000000015f")); // 351
         ECKey mstKey = ECKey.fromPrivate(Hex.decode("0000000000000000000000000000000000000000000000000000000000000160")); // 352
 
-        String addressDerivedFromBtcKey = "dbc29273d4de3d5645e308c7e629d28d4499b3d3";
-        String addressDerivedFromRskKey = "74891a05ad4d7ec87c1cffe9bd00bb4e1382b586";
+        RskAddress addressDerivedFromBtcKey = new RskAddress(ECKey.fromPrivate(btcKey.getPrivKeyBytes()).getAddress());
+        RskAddress addressDerivedFromRskKey = new RskAddress(rskKey.getAddress());
 
         FederationMember singleKeyFedMember = new FederationMember(
             btcKey,
@@ -216,24 +202,25 @@ class BridgeEventLoggerImplTest {
 
     @ParameterizedTest()
     @MethodSource("logAddSignatureArgProvider")
-    void logAddSignature(ActivationConfig.ForBlock activations, FederationMember federationMember, String expectedRskAddress) {
+    void logAddSignature(ActivationConfig.ForBlock activations, FederationMember federationMember, RskAddress expectedRskAddress) {
         // Arrange
-        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, eventLogs, signatureCache);
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            activations,
+            eventLogs,
+            signatureCache
+        );
         BtcECKey federatorBtcPubKey = federationMember.getBtcPublicKey();
-        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
-
-        BtcTransaction pegoutTx = mock(BtcTransaction.class);
-        when(pegoutTx.getHash()).thenReturn(BitcoinTestUtils.createHash(1));
 
         // Act
-        bridgeEventLogger.logAddSignature(federationMember, pegoutTx, rskTxHash.getBytes());
+        bridgeEventLogger.logAddSignature(federationMember, BTC_TRANSACTION, RSK_TX_HASH.getBytes());
 
         // Assert
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
 
         CallTransaction.Function bridgeEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
-        Object[] eventTopics = new Object[]{rskTxHash.getBytes(), expectedRskAddress};
+        Object[] eventTopics = new Object[]{RSK_TX_HASH.getBytes(), expectedRskAddress.toString()};
         Object[] eventParams = new Object[]{federatorBtcPubKey.getPubKey()};
 
         assertEvent(eventLogs, 0, bridgeEvent, eventTopics, eventParams);
@@ -241,21 +228,31 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logReleaseBtc() {
-        // Setup Btc transaction
-        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
-
         // Act
-        eventLogger.logReleaseBtc(btcTx, rskTxHash.getBytes());
+        eventLogger.logReleaseBtc(BTC_TRANSACTION, RSK_TX_HASH.getBytes());
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_BTC.getEvent(), new Object[]{rskTxHash.getBytes()}, new Object[]{btcTx.bitcoinSerialize()});
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.RELEASE_BTC.getEvent(),
+            new Object[]{RSK_TX_HASH.getBytes()},
+            new Object[]{BTC_TRANSACTION.bitcoinSerialize()}
+        );
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void logCommitFederation(boolean isRSKIP383Active) {
-        when(activations.isActive(ConsensusRule.RSKIP383)).thenReturn(isRSKIP383Active);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        if (!isRSKIP383Active) {
+            eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
+        }
+
+        long federationActivationAgePreRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(hopActivations);
+        long federationActivationAgePostRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(lovellActivations);
 
         // Setup parameters for test method call
         Instant creationTime = Instant.ofEpochMilli(15005L);
@@ -272,7 +269,12 @@ class BridgeEventLoggerImplTest {
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
         NetworkParameters btcParams = BRIDGE_CONSTANTS.getBtcParams();
-        FederationArgs oldFedArgs = new FederationArgs(oldFederationMembers, creationTime, 15L, btcParams);
+        FederationArgs oldFedArgs = new FederationArgs(
+            oldFederationMembers,
+            creationTime,
+            15L,
+            btcParams
+        );
 
         Federation oldFederation = FederationFactory.buildStandardMultiSigFederation(oldFedArgs);
 
@@ -282,22 +284,28 @@ class BridgeEventLoggerImplTest {
             BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
-        FederationArgs newFedArgs = new FederationArgs(newFederationMembers, creationTime, 15L, btcParams);
+        FederationArgs newFedArgs = new FederationArgs(
+            newFederationMembers,
+            creationTime,
+            15L,
+            btcParams
+        );
 
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFedArgs);
 
         // Act
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
-
         commonAssertLogs(eventLogs);
-
         assertTopics(1, eventLogs);
+
         // Assert log data
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(activations);
+        long newFedActivationBlockNumber = isRSKIP383Active ?
+            executionBlock.getNumber() + federationActivationAgePostRskip383 :
+            executionBlock.getNumber() + federationActivationAgePreRskip383;
 
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
@@ -319,65 +327,62 @@ class BridgeEventLoggerImplTest {
 
         // assert fed activation has different values before and after RSKIP383 respectively
         if (isRSKIP383Active){
-            ActivationConfig.ForBlock activationsForLegacyFedActivationAge = mock(ActivationConfig.ForBlock.class);
-            when(activationsForLegacyFedActivationAge.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
-
-            long legacyFedActivationBlockNumber = executionBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(activationsForLegacyFedActivationAge);
-
+            long legacyFedActivationBlockNumber = executionBlock.getNumber() + federationActivationAgePreRskip383;
             assertNotEquals(loggedFedActivationBlockNumber, legacyFedActivationBlockNumber);
         } else {
-            ActivationConfig.ForBlock activationsForDefaultFedActivationAge = mock(ActivationConfig.ForBlock.class);
-            when(activationsForDefaultFedActivationAge.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
-
-            long defaultFedActivationBlockNumber = executionBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(activationsForDefaultFedActivationAge);
+            long defaultFedActivationBlockNumber = executionBlock.getNumber() + federationActivationAgePostRskip383;
             assertNotEquals(loggedFedActivationBlockNumber, defaultFedActivationBlockNumber);
         }
     }
 
     @Test
     void logReleaseBtcRequested() {
-        Keccak256 rskTxHash = PegTestUtils.createHash3(0);
         Coin amount = Coin.SATOSHI;
 
-        eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, amount);
+        eventLogger.logReleaseBtcRequested(RSK_TX_HASH.getBytes(), BTC_TRANSACTION, amount);
 
         commonAssertLogs(eventLogs);
-
         assertTopics(3, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUESTED.getEvent(), new Object[]{rskTxHash.getBytes(), btcTx.getHash().getBytes()}, new Object[]{amount.getValue()});
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.RELEASE_REQUESTED.getEvent(),
+            new Object[]{RSK_TX_HASH.getBytes(), BTC_TRANSACTION.getHash().getBytes()},
+            new Object[]{amount.getValue()}
+        );
     }
 
     @Test
     void logRejectedPegin() {
-        eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+        eventLogger.logRejectedPegin(BTC_TRANSACTION, RejectedPeginReason.PEGIN_CAP_SURPASSED);
 
-        Assertions.assertEquals(1, eventLogs.size());
+        assertEquals(1, eventLogs.size());
         LogInfo entry = eventLogs.get(0);
 
-        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+        assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
 
         // Assert address that made the log
         LogInfo result = eventLogs.get(0);
-        Assertions.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
+        assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
 
         // Assert log topics
-        Assertions.assertEquals(2, result.getTopics().size());
+        assertEquals(2, result.getTopics().size());
         CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
 
-        byte[][] topics = event.encodeEventTopics(btcTx.getHash().getBytes());
+        byte[][] topics = event.encodeEventTopics(BTC_TRANSACTION.getHash().getBytes());
 
         for (int i=0; i<topics.length; i++) {
-            Assertions.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
+            assertArrayEquals(topics[i], result.getTopics().get(i).getData());
         }
 
         // Assert log data
-        Assertions.assertArrayEquals(event.encodeEventData(RejectedPeginReason.PEGIN_CAP_SURPASSED.getValue()), result.getData());
+        assertArrayEquals(event.encodeEventData(RejectedPeginReason.PEGIN_CAP_SURPASSED.getValue()), result.getData());
     }
 
     @Test
     void logUnrefundablePegin() {
         // Setup event logger
-        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+        eventLogger.logUnrefundablePegin(BTC_TRANSACTION, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
 
         assertEquals(1, eventLogs.size());
         LogInfo entry = eventLogs.get(0);
@@ -392,7 +397,7 @@ class BridgeEventLoggerImplTest {
         assertEquals(2, result.getTopics().size());
         CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
 
-        byte[][] topics = event.encodeEventTopics(btcTx.getHash().getBytes());
+        byte[][] topics = event.encodeEventTopics(BTC_TRANSACTION.getHash().getBytes());
 
         for (int i=0; i<topics.length; i++) {
             assertArrayEquals(topics[i], result.getTopics().get(i).getData());
@@ -405,11 +410,11 @@ class BridgeEventLoggerImplTest {
         );
     }
 
-
     @Test
     void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
-        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
-        String sender = "0x00000000000000000000000000000000000000";
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
+        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
+
         Address btcRecipientAddress = new Address(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
@@ -417,7 +422,7 @@ class BridgeEventLoggerImplTest {
         );
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS.toString(), btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -425,15 +430,13 @@ class BridgeEventLoggerImplTest {
             eventLogs,
             0,
             BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent(),
-            new Object[]{sender},
+            new Object[]{RSK_ADDRESS.toString()},
             new Object[]{btcRecipientAddress.getHash160(), amount.value}
         );
     }
 
     @Test
     void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
-        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
-        String sender = "0x00000000000000000000000000000000000000";
         Address btcRecipientAddress = new Address(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
@@ -441,7 +444,7 @@ class BridgeEventLoggerImplTest {
         );
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS.toString(), btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -449,18 +452,17 @@ class BridgeEventLoggerImplTest {
             eventLogs,
             0,
             BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(),
-            new Object[]{sender},
+            new Object[]{RSK_ADDRESS.toString()},
             new Object[]{btcRecipientAddress.toString(), amount.value}
         );
     }
 
     @Test
     void testLogReleaseBtcRequestRejected() {
-        String sender = "0x00000000000000000000000000000000000000";
         Coin amount = Coin.COIN;
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
 
-        eventLogger.logReleaseBtcRequestRejected(sender, amount, reason);
+        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS.toString(), amount, reason);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -468,57 +470,77 @@ class BridgeEventLoggerImplTest {
             eventLogs,
             0,
             BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(),
-            new Object[]{sender},
+            new Object[]{RSK_ADDRESS.toString()},
             new Object[]{amount.value, reason.getValue()}
         );
     }
 
     @Test
     void logBatchPegoutCreated() {
-        List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
+        List<Keccak256> rskTxHashes = Arrays.asList(
+            RskTestUtils.createHash(0),
+            RskTestUtils.createHash(1),
+            RskTestUtils.createHash(2)
+        );
 
-        eventLogger.logBatchPegoutCreated(btcTx.getHash(), rskTxHashes);
+        eventLogger.logBatchPegoutCreated(BTC_TRANSACTION.getHash(), rskTxHashes);
 
         commonAssertLogs(eventLogs);
-
         assertTopics(2, eventLogs);
-
-        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(),
+            new Object[]{BTC_TRANSACTION.getHash().getBytes()},
+            new Object[]{serializeRskTxHashes(rskTxHashes)}
+        );
     }
 
     @Test
     void logBatchPegoutCreatedWithWitness() {
-        List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
+        List<Keccak256> rskTxHashes = Arrays.asList(
+            RskTestUtils.createHash(0),
+            RskTestUtils.createHash(1),
+            RskTestUtils.createHash(2)
+        );
 
         TransactionWitness txWitness = new TransactionWitness(1);
 
-        btcTx.addInput(
-                Sha256Hash.ZERO_HASH,
-                0, ScriptBuilder.createInputScript(null, new BtcECKey())
+        BTC_TRANSACTION.addInput(
+            Sha256Hash.ZERO_HASH,
+            0,
+            ScriptBuilder.createInputScript(null, new BtcECKey())
         );
 
         txWitness.setPush(0, new byte[]{ 0x1 });
-        btcTx.setWitness(0, txWitness);
-        eventLogger.logBatchPegoutCreated(btcTx.getHash(true), rskTxHashes);
+        BTC_TRANSACTION.setWitness(0, txWitness);
+        eventLogger.logBatchPegoutCreated(BTC_TRANSACTION.getHash(true), rskTxHashes);
 
         commonAssertLogs(eventLogs);
-
         assertTopics(2, eventLogs);
-
-        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash(true).getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
-
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(),
+            new Object[]{BTC_TRANSACTION.getHash(true).getBytes()},
+            new Object[]{serializeRskTxHashes(rskTxHashes)}
+        );
     }
 
     @Test
     void logPegoutConfirmed() {
         long pegoutCreationRskBlockNumber = 50;
-        eventLogger.logPegoutConfirmed(btcTx.getHash(), pegoutCreationRskBlockNumber);
+        eventLogger.logPegoutConfirmed(BTC_TRANSACTION.getHash(), pegoutCreationRskBlockNumber);
 
         commonAssertLogs(eventLogs);
-
         assertTopics(2, eventLogs);
-
-        assertEvent(eventLogs, 0, BridgeEvents.PEGOUT_CONFIRMED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{pegoutCreationRskBlockNumber});
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.PEGOUT_CONFIRMED.getEvent(),
+            new Object[]{BTC_TRANSACTION.getHash().getBytes()},
+            new Object[]{pegoutCreationRskBlockNumber}
+        );
     }
 
     private static Stream<Arguments> logPegoutTransactionCreatedValidArgProvider() {
@@ -569,7 +591,6 @@ class BridgeEventLoggerImplTest {
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
-
     private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
         final LogInfo log = logs.get(index);
         assertEquals(LogInfo.byteArrayToList(event.encodeEventTopics(topics)), log.getTopics());
@@ -597,9 +618,15 @@ class BridgeEventLoggerImplTest {
 
         byte[] serializedRskTxHashes = new byte[rskTxHashesLength];
         int copyPos = 0;
-        for (byte[] rskTxHash : rskTxHashesList) {
-            System.arraycopy(rskTxHash, 0, serializedRskTxHashes, copyPos, rskTxHash.length);
-            copyPos += rskTxHash.length;
+        for (byte[] serializedRskTxHash : rskTxHashesList) {
+            System.arraycopy(
+                serializedRskTxHash,
+                0,
+                serializedRskTxHashes,
+                copyPos,
+                serializedRskTxHash.length
+            );
+            copyPos += serializedRskTxHash.length;
         }
 
         return serializedRskTxHashes;
