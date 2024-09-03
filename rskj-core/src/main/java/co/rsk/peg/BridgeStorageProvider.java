@@ -579,7 +579,7 @@ public class BridgeStorageProvider {
         }
 
         svpSpendTxHashUnsigned = safeGetFromRepository(
-            SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+            SVP_SPEND_TX_HASH.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
         return Optional.ofNullable(svpSpendTxHashUnsigned);
     }
 
@@ -631,7 +631,7 @@ public class BridgeStorageProvider {
             .map(BridgeSerializationUtils::serializeSha256Hash)
             .orElse(null);
 
-        repository.addStorageBytes(contractAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), data);
+        repository.addStorageBytes(contractAddress, SVP_SPEND_TX_HASH.getKey(), data);
     }
 
     public void save() {
