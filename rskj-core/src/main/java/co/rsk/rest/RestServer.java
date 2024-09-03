@@ -67,7 +67,7 @@ public class RestServer implements InternalService {
             logger.error("REST server couldn't be started", e);
             Thread.currentThread().interrupt();
         } finally {
-            shutdown();
+            stop();
         }
 
     }

@@ -47,24 +47,24 @@ public class RestServerDispatcher {
                 .filter(module -> uri.startsWith(module.getUri())).findFirst().orElse(null);
 
         if (restModule == null) {
-            logger.info("Handler Not Found.");
+            logger.debug("Handler Not Found.");
             return RestUtils.createNotFoundResponse();
         }
 
         if (restModule.isActive()) {
-            logger.info("Dispatching request.");
+            logger.debug("Dispatching request.");
             DefaultFullHttpResponse response = restModule.processRequest(uri, request.method());
 
             if (response != null) {
-                logger.info("Returning response.");
+                logger.debug("Returning response.");
                 return response;
             }
 
-            logger.info("Request received but module could not process it.");
+            logger.debug("Request received but module could not process it.");
             return RestUtils.createNotFoundResponse();
         }
 
-        logger.info("Request received but module is disabled.");
+        logger.debug("Request received but module is disabled.");
         return RestUtils.createNotFoundResponse();
 
     }
