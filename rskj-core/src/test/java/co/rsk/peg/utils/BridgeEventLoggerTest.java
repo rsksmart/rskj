@@ -88,7 +88,7 @@ class BridgeEventLoggerTest {
     @Test
     void testLogReleaseBtcRequestRejected() {
         RskAddress sender = new RskAddress("0x0000000000000000000000000000000000000000");
-        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000L);
+        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT; // Any reason, just testing the call to the method
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestRejected(
             sender,
