@@ -62,7 +62,7 @@ class BridgeEventLoggerImplTest {
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final BtcTransaction BTC_TRANSACTION = new BtcTransaction(NETWORK_PARAMETERS);
-    private static final RskAddress RSK_ADDRESS = new RskAddress("0x0000000000000000000000000000000000000000");
+    private static final RskAddress RSK_ADDRESS = new RskAddress("0x0000000000000000000000000000000000000101");
     private static final Keccak256 RSK_TX_HASH = RskTestUtils.createHash(1);
 
     private List<LogInfo> eventLogs;
@@ -458,8 +458,11 @@ class BridgeEventLoggerImplTest {
     }
 
     @Test
-    void testLogReleaseBtcRequestRejected() {
-        Coin amount = Coin.COIN;
+    void testLogReleaseBtcRequestRejected_preRSKIP427_logAmountAsSatoshis() {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0);
+        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, arrowheadActivations, eventLogs, signatureCache);
+
+        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
 
         eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS, amount, reason);
@@ -471,7 +474,25 @@ class BridgeEventLoggerImplTest {
             0,
             BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(),
             new Object[]{RSK_ADDRESS.toString()},
-            new Object[]{amount.value, reason.getValue()}
+            new Object[]{amount.toBitcoin().getValue(), reason.getValue()}
+        );
+    }
+
+    @Test
+    void testLogReleaseBtcRequestRejected_postRSKIP427_logAmountAsWeis() {
+        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
+        RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
+
+        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS, amount, reason);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(),
+            new Object[]{RSK_ADDRESS.toString()},
+            new Object[]{amount.asBigInteger(), reason.getValue()}
         );
     }
 
