@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.createHash3;
-import static co.rsk.peg.PegTestUtils.createRandomBtcECKeys;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
@@ -80,24 +79,26 @@ import java.util.stream.Collectors;
 
 class BridgeSerializationUtilsTest {
 
-    private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-    private static final Address ADDRESS = Address.fromBase58(NETWORK_PARAMETERS, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL");
-    private static final Address OTHER_ADDRESS = Address.fromBase58(NETWORK_PARAMETERS, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599");
+    private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+    private static final Address ADDRESS = Address.fromBase58(NETWORK_PARAMETERS, "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
+    private static final Address OTHER_ADDRESS = Address.fromBase58(NETWORK_PARAMETERS, "3NWYFKUegmqAjoW8aMhSLNVW2jy4MiA2eS");
 
     @Test
     void serializeAndDeserializeSingleEntry_whenValidData_shouldReturnEqualResults() {
         // Arrange
-        BtcTransaction input = new BtcTransaction(NETWORK_PARAMETERS);
-        input.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        BtcTransaction prevTx = new BtcTransaction(NETWORK_PARAMETERS);
+        prevTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
 
         Keccak256 key = createHash3(1);
         BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
-        tx.addInput(input.getOutput(0));
+        tx.addInput(prevTx.getOutput(0));
         tx.addOutput(Coin.COIN, OTHER_ADDRESS);
 
         // Act
-        byte[] serializedEntry = BridgeSerializationUtils.serializeSingleEntry(new AbstractMap.SimpleEntry<>(key, tx));
-        Map.Entry<Keccak256, BtcTransaction> deserializedEntry = BridgeSerializationUtils.deserializeSingleEntry(serializedEntry, NETWORK_PARAMETERS, false);
+        byte[] serializedEntry = 
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(new AbstractMap.SimpleEntry<>(key, tx));
+        Map.Entry<Keccak256, BtcTransaction> deserializedEntry =
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(serializedEntry, NETWORK_PARAMETERS, false);
 
         // Assert
         assertNotNull(serializedEntry);
@@ -115,7 +116,7 @@ class BridgeSerializationUtilsTest {
         
         // Act
         Map.Entry<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeSingleEntry(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS, false);
         
         // Assert
         assertNotNull(result);
@@ -130,7 +131,7 @@ class BridgeSerializationUtilsTest {
         
         // Act
         Map.Entry<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeSingleEntry(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS, false);
         
         // Assert
         assertNotNull(result);
@@ -143,25 +144,25 @@ class BridgeSerializationUtilsTest {
         // Arrange
         SortedMap<Keccak256, BtcTransaction> map = new TreeMap<>();
 
-        BtcTransaction input = new BtcTransaction(NETWORK_PARAMETERS);
-        input.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        BtcTransaction prevTx = new BtcTransaction(NETWORK_PARAMETERS);
+        prevTx.addOutput(Coin.COIN.multiply(5), ADDRESS);
 
         Keccak256 key1 = createHash3(1);
         BtcTransaction tx1 = new BtcTransaction(NETWORK_PARAMETERS);
-        tx1.addInput(input.getOutput(0));
+        tx1.addInput(prevTx.getOutput(0));
         tx1.addOutput(Coin.COIN, OTHER_ADDRESS);
         Keccak256 key2 = createHash3(2);
         BtcTransaction tx2 = new BtcTransaction(NETWORK_PARAMETERS);
-        tx2.addInput(input.getOutput(0));
+        tx2.addInput(prevTx.getOutput(0));
         tx2.addOutput(Coin.COIN.multiply(10), OTHER_ADDRESS);
         
         map.put(key1, tx1);
         map.put(key2, tx2);
 
         // Act
-        byte[] serializedMap = BridgeSerializationUtils.serializeMap(map);
+        byte[] serializedMap = BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(map);
         SortedMap<Keccak256, BtcTransaction> deserializedMap = 
-            BridgeSerializationUtils.deserializeMap(serializedMap, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(serializedMap, NETWORK_PARAMETERS, false);
 
         // Assert
         assertNotNull(serializedMap);
@@ -177,7 +178,7 @@ class BridgeSerializationUtilsTest {
         
         // Act
         SortedMap<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeMap(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, NETWORK_PARAMETERS, false);
         
         // Assert
         assertNotNull(result);
@@ -191,7 +192,7 @@ class BridgeSerializationUtilsTest {
         
         // Act
         SortedMap<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeMap(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, NETWORK_PARAMETERS, false);
         
         // Assert
         assertNotNull(result);
