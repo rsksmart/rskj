@@ -7,11 +7,9 @@ plugins {
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormat
 import com.github.sherter.googlejavaformatgradleplugin.VerifyGoogleJavaFormat
+import java.nio.file.Paths
 
 checkstyle {
     toolVersion = '8.45'
@@ -22,32 +20,74 @@ googleJavaFormat {
     toolVersion = '1.7'
 }
 
-// Use a static timestamp for filtering
-def staticTimestamp = '2024-08-21T02:17:00'
-
+// Define static timestamp
+def staticTimestamp = '2024-09-03T02:17:00'
 ext.timestamp = staticTimestamp
-ext.timestampMillis = LocalDateTime.parse(staticTimestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        .toInstant(ZoneOffset.UTC)
-        .toEpochMilli()
 
-
-// Method to filter Java files based on the timestamp
 def getFilteredFiles() {
-    return fileTree('src/main/java').matching {
-        include '**/*.java'
-    }.files.findAll { file ->
-        file.lastModified() > ext.timestampMillis
+    def timestamp = ext.timestamp
+
+    def commandLog = [
+            'git', 'log', '--since=' + timestamp, '--name-only', '--pretty=format:', '--abbrev-commit'
+    ]
+    def commandDiff = [
+            'git', 'diff', '--name-only'
+    ]
+    def commandStaged = [
+            'git', 'diff', '--cached', '--name-only'
+    ]
+
+    def outputLog = new ByteArrayOutputStream()
+    def outputDiff = new ByteArrayOutputStream()
+    def outputStaged = new ByteArrayOutputStream()
+
+    exec {
+        commandLine commandLog
+        standardOutput = outputLog
+        errorOutput = outputLog
+        ignoreExitValue = true
     }
+
+    exec {
+        commandLine commandDiff
+        standardOutput = outputDiff
+        errorOutput = outputDiff
+        ignoreExitValue = true
+    }
+
+    exec {
+        commandLine commandStaged
+        standardOutput = outputStaged
+        errorOutput = outputStaged
+        ignoreExitValue = true
+    }
+
+    def committedFiles = outputLog.toString().trim().split('\n').toList().unique()
+    def uncommittedFiles = outputDiff.toString().trim().split('\n').toList().unique()
+    def stagedFiles = outputStaged.toString().trim().split('\n').toList().unique()
+
+    def allFiles = committedFiles + uncommittedFiles + stagedFiles
+    allFiles = allFiles.unique().findAll { file -> file }
+
+    allFiles = allFiles.findAll { file ->
+        file.endsWith('.java')
+    }
+
+    return allFiles.collect { file -> Paths.get(file).toAbsolutePath().toFile() }
 }
 
+// Method to configure Checkstyle tasks
 def configureCheckstyleTask(Checkstyle task, File sourceDir) {
-    def filteredFiles = fileTree(sourceDir).matching {
-        include '**/*.java'
-    }.files.findAll { file ->
-        file.lastModified() > ext.timestampMillis
+    def sourceDirPath = sourceDir.toPath().normalize()
+    def files = getFilteredFiles()
+    def filteredFiles = files.findAll { file ->
+        def filePath = file.toPath().normalize()
+        def isUnderSourceDir = filePath.startsWith(sourceDirPath) && !filePath.equals(sourceDirPath)
+        isUnderSourceDir
     }
-    task.source = files(filteredFiles)
-    task.classpath = files(
+
+    task.source = project.files(filteredFiles)
+    task.classpath = project.files(
             sourceSets.main.output.classesDirs,
             sourceSets.main.output.resourcesDir
     )
@@ -57,6 +97,7 @@ def configureCheckstyleTask(Checkstyle task, File sourceDir) {
     }
 }
 
+// Configure each Checkstyle task explicitly
 tasks.withType(Checkstyle).configureEach { Checkstyle task ->
     switch (task.name) {
         case 'checkstyleMain':
@@ -73,12 +114,6 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             break
     }
 }
-
-checkstyleMain.mustRunAfter clean
-checkstyleTest.mustRunAfter clean
-
-checkstyleMain.dependsOn 'classes'
-checkstyleTest.dependsOn 'testClasses'
 
 task formatCode(type: GoogleJavaFormat) {
     def filteredFiles = getFilteredFiles()
