@@ -1,28 +1,35 @@
 plugins {
     id 'application'
     id 'checkstyle'
-    id 'com.github.sherter.google-java-format' version '0.9'
+    id "com.diffplug.spotless" version "6.13.0"
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormat
-import com.github.sherter.googlejavaformatgradleplugin.VerifyGoogleJavaFormat
 import java.nio.file.Paths
+
+// Define static timestamp
+def staticTimestamp = '2024-09-03T02:17:00'
+ext.timestamp = staticTimestamp
+
+def filteredFiles = getFilteredFiles()
 
 checkstyle {
     toolVersion = '8.45'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
 }
 
-googleJavaFormat {
-    toolVersion = '1.7'
+spotless {
+    java {
+        googleJavaFormat()
+        indentWithTabs(2)
+        indentWithSpaces(4)
+        target filteredFiles
+
+    }
 }
 
-// Define static timestamp
-def staticTimestamp = '2024-09-03T02:17:00'
-ext.timestamp = staticTimestamp
 
 def getFilteredFiles() {
     def timestamp = ext.timestamp
@@ -80,13 +87,13 @@ def getFilteredFiles() {
 def configureCheckstyleTask(Checkstyle task, File sourceDir) {
     def sourceDirPath = sourceDir.toPath().normalize()
     def files = getFilteredFiles()
-    def filteredFiles = files.findAll { file ->
+    def filteredFilesCheckstyle = files.findAll { file ->
         def filePath = file.toPath().normalize()
         def isUnderSourceDir = filePath.startsWith(sourceDirPath) && !filePath.equals(sourceDirPath)
         isUnderSourceDir
     }
 
-    task.source = project.files(filteredFiles)
+    task.source = project.files(filteredFilesCheckstyle)
     task.classpath = project.files(
             sourceSets.main.output.classesDirs,
             sourceSets.main.output.resourcesDir
@@ -113,27 +120,6 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             configureCheckstyleTask(task, file('src/jmh/java'))
             break
     }
-}
-
-task formatCode(type: GoogleJavaFormat) {
-    def filteredFiles = getFilteredFiles()
-
-    source = files(filteredFiles)
-    include '**/*.java'
-    exclude '**/*Template.java'
-
-    inputs.files filteredFiles
-    outputs.files filteredFiles
-}
-
-task verifyFormatting(type: VerifyGoogleJavaFormat) {
-    def filteredFiles = getFilteredFiles()
-
-    source = files(filteredFiles)
-    ignoreFailures = true
-
-    inputs.files filteredFiles
-    outputs.files filteredFiles
 }
 
 configurations {
@@ -212,6 +198,7 @@ tasks.withType(Javadoc) {
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
     maven {
         url "https://deps.rsklabs.io"
     }
