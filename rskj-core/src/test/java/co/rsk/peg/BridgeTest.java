@@ -77,8 +77,8 @@ class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Script activePowpegRedeemScript = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants).getRedeemScript();
-        when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
+            bridgeMainNetConstants.getFederationConstants()).getRedeemScript();
+        when(bridgeSupportMock.getActiveFederationRedeemScript()).thenReturn(
             Optional.of(activePowpegRedeemScript)
         );
 
@@ -153,7 +153,7 @@ class BridgeTest {
     @ParameterizedTest()
     @MethodSource("lockingCapValues")
     void increaseLockingCap_after_RSKIP134_activation(long newLockingCapValue) throws VMException {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
         CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -183,29 +183,17 @@ class BridgeTest {
     }
 
     @Test
-    void increaseLockingCap_invalidParameter() {
-        ActivationConfig activationConfig = ActivationConfigsForTest.papyrus200();
-        CallTransaction.Function increaseLockingCapFunction = BridgeMethods.INCREASE_LOCKING_CAP.getFunction();
-
+    void increaseLockingCap_whenNewLockingCapIsInvalidParameter_shouldThrowVMException() {
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
             .build();
-
-        // Uses the proper signature but with no argument
-        // The solidity decoder in the Bridge will convert the undefined argument as 0,
-        // but the initial validation in the method will reject said value
-        final byte[] noArgumentData = increaseLockingCapFunction.encodeSignature();
-        assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
 
         // Uses the proper signature but appends invalid data type
         // This will be rejected by the solidity decoder in the Bridge directly
         final byte[] invalidTypeData = ByteUtil.merge(increaseLockingCapFunction.encodeSignature(), Hex.decode("ab"));
         assertThrows(VMException.class, () -> bridge.execute(invalidTypeData));
-
-        // Uses the proper signature and data type, but with an invalid value
-        // This will be rejected by the initial validation in the method
-        final byte[] invalidValueData = increaseLockingCapFunction.encode(-1);
-        assertThrows(VMException.class, () -> bridge.execute(invalidValueData));
 
         // Uses the proper signature and data type, but with a value that exceeds the long max value
         final byte[] aboveMaxLengthData = ByteUtil.merge(
@@ -213,6 +201,54 @@ class BridgeTest {
             Hex.decode("0000000000000000000000000000000000000000000000080000000000000000")
         );
         assertThrows(VMException.class, () -> bridge.execute(aboveMaxLengthData));
+    }
+
+    @Test
+    void increaseLockingCap_whenNoArgumentsInTheMethodSignature_shouldThrowVMException() {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        // No arguments signature
+        final byte[] noArgumentData = increaseLockingCapFunction.encodeArguments();
+
+        // Act / Assert
+        assertThrows(VMException.class, () -> bridge.execute(noArgumentData));
+    }
+
+    @Test
+    void increaseLockingCap_whenNewLockingCapIsNegativeValue_shouldThrowVMException() {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        // When new LockingCap is a negative value
+        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.NEGATIVE_SATOSHI.getValue());
+
+        // Act / Assert
+        assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
+    }
+
+    @Test
+    void increaseLockingCap_whenNewLockingCapIsZeroValue_shouldThrowVMException() {
+        // Arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        CallTransaction.Function increaseLockingCapFunction = Bridge.INCREASE_LOCKING_CAP;
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .build();
+
+        // When new LockingCap is a zero value
+        final byte[] negativeValueData = increaseLockingCapFunction.encodeArguments(Coin.ZERO.getValue());
+
+        // Act / Assert
+        assertThrows(VMException.class, () -> bridge.execute(negativeValueData));
     }
 
     @Test
@@ -646,7 +682,7 @@ class BridgeTest {
     }
 
     @Test
-    void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
+    void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -672,8 +708,8 @@ class BridgeTest {
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
-            PegTestUtils.createHash(1),
-            PegTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
             1,
             Utils.encodeCompactBits(networkParameters.getMaxTarget()),
             1,
@@ -746,8 +782,8 @@ class BridgeTest {
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
             networkParameters,
             1,
-            PegTestUtils.createHash(1),
-            PegTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
+            BitcoinTestUtils.createHash(1),
             1,
             Utils.encodeCompactBits(networkParameters.getMaxTarget()),
             1,
@@ -764,8 +800,7 @@ class BridgeTest {
     void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(
-            bridgeMainNetConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants.getFederationConstants());
 
         when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
         when(bridgeSupportMock.getActiveFederation()).thenReturn(genesisFederation);
@@ -824,7 +859,7 @@ class BridgeTest {
     }
 
     @Test
-    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
             null,
@@ -856,7 +891,7 @@ class BridgeTest {
     }
 
     @Test
-    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
             null,
@@ -1051,7 +1086,7 @@ class BridgeTest {
     }
 
     @Test
-    void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws VMException {
+    void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() {
         ActivationConfig activationConfig = ActivationConfigsForTest.iris300();
 
         Bridge bridge = bridgeBuilder
@@ -1527,7 +1562,7 @@ class BridgeTest {
 
         Address federationAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationAddress()).thenReturn(federationAddress);
+        when(bridgeSupportMock.getActiveFederationAddress()).thenReturn(federationAddress);
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
             .activationConfig(activationConfig)
@@ -1544,7 +1579,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationAddress();
+            verify(bridgeSupportMock, times(1)).getActiveFederationAddress();
         }
     }
 
@@ -1571,7 +1606,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationCreationBlockNumber();
+            verify(bridgeSupportMock, times(1)).getActiveFederationCreationBlockNumber();
         }
     }
 
@@ -1582,7 +1617,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
+        when(bridgeSupportMock.getActiveFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
             .activationConfig(activationConfig)
@@ -1599,7 +1634,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationCreationTime();
+            verify(bridgeSupportMock, times(1)).getActiveFederationCreationTime();
         }
     }
 
@@ -1626,7 +1661,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationSize();
+            verify(bridgeSupportMock, times(1)).getActiveFederationSize();
         }
     }
 
@@ -1653,7 +1688,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederationThreshold();
+            verify(bridgeSupportMock, times(1)).getActiveFederationThreshold();
         }
     }
 
@@ -1680,7 +1715,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getFederatorPublicKey(federatorIndex);
+            verify(bridgeSupportMock, times(1)).getActiveFederatorBtcPublicKey(federatorIndex);
         }
     }
 
@@ -1710,7 +1745,7 @@ class BridgeTest {
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
                 bridge.execute(data);
-                verify(bridgeSupportMock, times(1)).getFederatorPublicKeyOfType(
+                verify(bridgeSupportMock, times(1)).getActiveFederatorPublicKeyOfType(
                     federatorIndex,
                     keyType
                 );
@@ -1951,7 +1986,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getPendingFederatorPublicKey(federatorIndex);
+            verify(bridgeSupportMock, times(1)).getPendingFederatorBtcPublicKey(federatorIndex);
         }
     }
 
@@ -2057,7 +2092,7 @@ class BridgeTest {
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
+        when(bridgeSupportMock.getActiveFederationCreationTime()).thenReturn(Instant.ofEpochSecond(100_000L));
         Bridge bridge = bridgeBuilder
             .transaction(rskTxMock)
             .activationConfig(activationConfig)
@@ -2155,7 +2190,7 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         } else {
             bridge.execute(data);
-            verify(bridgeSupportMock, times(1)).getRetiringFederatorPublicKey(federatorIndex);
+            verify(bridgeSupportMock, times(1)).getRetiringFederatorBtcPublicKey(federatorIndex);
         }
     }
 
@@ -2293,7 +2328,7 @@ class BridgeTest {
         Integer[] activeMemberPKs = new Integer[]{ 100, 200, 300, 400, 500, 600 };
         Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
         Script activePowpegRedeemScript = activeFederation.getRedeemScript();
-        when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(Optional.of(activePowpegRedeemScript));
+        when(bridgeSupportMock.getActiveFederationRedeemScript()).thenReturn(Optional.of(activePowpegRedeemScript));
 
         Bridge bridge = bridgeBuilder
             .activationConfig(activationConfig)
@@ -2311,7 +2346,7 @@ class BridgeTest {
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
                 bridge.execute(data);
-                verify(bridgeSupportMock, times(1)).getActivePowpegRedeemScript();
+                verify(bridgeSupportMock, times(1)).getActiveFederationRedeemScript();
             }
         } else {
             // Pre RSKIP293 this method is not enabled, should fail for all message types

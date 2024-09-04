@@ -17,6 +17,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
@@ -92,6 +93,7 @@ public class PegUtils {
         BridgeConstants bridgeConstants,
         Federation activeFederation,
         Federation retiringFederation,
+        Script retiredFederationP2SHScript,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
@@ -100,7 +102,8 @@ public class PegUtils {
         if (retiringFederation != null){
             liveFeds.add(retiringFederation);
         }
-        Wallet liveFederationsWallet = new BridgeBtcWallet(Context.getOrCreate(bridgeConstants.getBtcParams()), liveFeds);
+        Context context = Context.getOrCreate(bridgeConstants.getBtcParams());
+        Wallet liveFederationsWallet = new BridgeBtcWallet(context, liveFeds);
 
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -117,11 +120,11 @@ public class PegUtils {
             );
         } else {
             Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
+            FederationConstants federationConstants = bridgeConstants.getFederationConstants();
             Address oldFederationAddress = Address.fromBase58(
                 bridgeConstants.getBtcParams(),
-                bridgeConstants.getOldFederationAddress()
+                federationConstants.getOldFederationAddress()
             );
-            Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,

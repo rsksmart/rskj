@@ -18,25 +18,22 @@
 
 package co.rsk.peg.constants;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.util.List;
-
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-
-import java.time.Instant;
 
 public abstract class BridgeConstants {
     protected String btcParamsString;
 
     protected FeePerKbConstants feePerKbConstants;
-
-    protected List<BtcECKey> genesisFederationPublicKeys;
-    protected Instant genesisFederationCreationTime;
+    protected WhitelistConstants whitelistConstants;
+    protected FederationConstants federationConstants;
+    protected LockingCapConstants lockingCapConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
@@ -51,33 +48,11 @@ public abstract class BridgeConstants {
     protected Coin legacyMinimumPegoutTxValue;
     protected Coin minimumPegoutTxValue;
 
-    protected long federationActivationAge;
-    protected long federationActivationAgeLegacy;
-
-    protected long fundsMigrationAgeSinceActivationBegin;
-    protected long fundsMigrationAgeSinceActivationEnd;
-    protected long specialCaseFundsMigrationAgeSinceActivationEnd;
-
-    protected AddressBasedAuthorizer federationChangeAuthorizer;
-
-    protected AddressBasedAuthorizer lockWhitelistChangeAuthorizer;
-
-    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
-
-    protected Coin initialLockingCap;
-
-    protected int lockingCapIncrementsMultiplier;
-
     protected int btcHeightWhenBlockIndexActivates;
     protected int maxDepthToSearchBlocksBelowIndexActivation;
     protected long minSecondsBetweenCallsReceiveHeader;
 
     protected int maxDepthBlockchainAccepted;
-
-    protected long erpFedActivationDelay;
-    protected List<BtcECKey> erpFedPubKeysList;
-
-    protected String oldFederationAddress;
 
     protected int minimumPegoutValuePercentageToReceiveAfterFee;
 
@@ -95,16 +70,14 @@ public abstract class BridgeConstants {
 
     public FeePerKbConstants getFeePerKbConstants() { return feePerKbConstants; }
 
+    public WhitelistConstants getWhitelistConstants() { return whitelistConstants; }
+
+    public FederationConstants getFederationConstants() { return federationConstants; }
+
+    public LockingCapConstants getLockingCapConstants() { return lockingCapConstants; }
+
     public String getBtcParamsString() {
         return btcParamsString;
-    }
-
-    public List<BtcECKey> getGenesisFederationPublicKeys() {
-        return genesisFederationPublicKeys;
-    }
-
-    public Instant getGenesisFederationCreationTime() {
-        return genesisFederationCreationTime;
     }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
@@ -131,49 +104,11 @@ public abstract class BridgeConstants {
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
 
-    public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
-        return activations.isActive(ConsensusRule.RSKIP383)? federationActivationAge: federationActivationAgeLegacy;
-    }
-
-    public long getFundsMigrationAgeSinceActivationBegin() {
-        return fundsMigrationAgeSinceActivationBegin;
-    }
-
-    public long getFundsMigrationAgeSinceActivationEnd(ActivationConfig.ForBlock activations) {
-        if (activations.isActive(ConsensusRule.RSKIP357) && !activations.isActive(ConsensusRule.RSKIP374)){
-            return specialCaseFundsMigrationAgeSinceActivationEnd;
-        }
-
-        return fundsMigrationAgeSinceActivationEnd;
-    }
-
-    public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
-
-    public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() { return lockWhitelistChangeAuthorizer; }
-
-    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
-
-    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
-
-    public Coin getInitialLockingCap() { return initialLockingCap; }
-
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
     public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
 
     public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
-
-    public long getErpFedActivationDelay() {
-        return erpFedActivationDelay;
-    }
-
-    public List<BtcECKey> getErpFedPubKeysList() {
-        return erpFedPubKeysList;
-    }
-
-    public String getOldFederationAddress() {
-        return oldFederationAddress;
-    }
 
     public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 

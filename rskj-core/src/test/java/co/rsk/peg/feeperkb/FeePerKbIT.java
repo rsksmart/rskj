@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.InMemoryStorage;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.storage.StorageAccessor;

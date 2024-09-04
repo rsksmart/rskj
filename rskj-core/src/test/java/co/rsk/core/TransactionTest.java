@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -101,11 +102,11 @@ class TransactionTest {
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
                 ByteUtil.toHexString(key.getAddress()));
 
-        System.out.println(tx.toString());
+        System.out.println(tx);
     }
 
     @Test  /* achieve public key of the sender */
-    void testSenderShouldChangeWhenReSigningTx() throws Exception {
+    void testSenderShouldChangeWhenReSigningTx() {
         BigInteger value = new BigInteger("1000000000000000000000");
 
         byte[] privateKey = HashUtil.keccak256("cat".getBytes());
@@ -145,7 +146,7 @@ class TransactionTest {
         // Verify sender changed
         assertNotEquals(sender, newSender);
 
-        System.out.println(tx.toString());
+        System.out.println(tx);
     }
 
     @Test
@@ -244,7 +245,7 @@ class TransactionTest {
         // Why? I don't know. Maybe just to test if the returned value is the correct one.
         List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")) {
             @Override
-            protected ProgramResult executeTransaction(Transaction tx) {
+            protected ProgramResult executeTransaction() {
                 // first emulating the constant call (Ethereum.callConstantFunction)
                 // to ensure it doesn't affect the final state
 
@@ -287,7 +288,7 @@ class TransactionTest {
                 }
 
                 // now executing the JSON test transaction
-                return super.executeTransaction(tx);
+                return super.executeTransaction();
             }
         }.setstateTestUSeREMASC(true).runImpl();
         Assertions.assertTrue(res.isEmpty(), res.toString());
@@ -448,8 +449,9 @@ class TransactionTest {
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
         Constants constants = Mockito.mock(Constants.class);
+        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Mockito.doReturn(false).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP400));
+        Mockito.doReturn(false).when(activations).isActive(ConsensusRule.RSKIP400);
 
         Assertions.assertEquals(21068L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
@@ -460,8 +462,9 @@ class TransactionTest {
         Transaction txInBlock = new ImmutableTransaction(bytes);
 
         Constants constants = Mockito.mock(Constants.class);
+        Mockito.doReturn(BridgeMainNetConstants.getInstance()).when(constants).getBridgeConstants();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        Mockito.doReturn(true).when(activations).isActive(Mockito.eq(ConsensusRule.RSKIP400));
+        Mockito.doReturn(true).when(activations).isActive(ConsensusRule.RSKIP400);
 
         Assertions.assertEquals(21016L, txInBlock.transactionCost(constants, activations, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }

@@ -1,4 +1,4 @@
-package co.rsk.peg.storage;
+package co.rsk.peg.feeperkb;
 
 import org.ethereum.vm.DataWord;
 

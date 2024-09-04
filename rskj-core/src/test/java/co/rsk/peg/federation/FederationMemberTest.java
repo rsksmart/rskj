@@ -18,6 +18,10 @@
 
 package co.rsk.peg.federation;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
@@ -48,18 +52,18 @@ class FederationMemberTest {
 
     @Test
     void testEquals_basic() {
-        Assertions.assertEquals(member, member);
+        assertEquals(member, member);
 
-        Assertions.assertNotEquals(null, member);
-        Assertions.assertNotEquals(member, new Object());
-        Assertions.assertNotEquals("something else", member);
+        assertNotEquals(null, member);
+        assertNotEquals(member, new Object());
+        assertNotEquals("something else", member);
     }
 
     @Test
     void testEquals_sameKeys() {
         FederationMember otherMember = new FederationMember(btcKey, rskKey, mstKey);
 
-        Assertions.assertEquals(member, otherMember);
+        assertEquals(member, otherMember);
     }
 
     @Test
@@ -76,44 +80,41 @@ class FederationMemberTest {
                 ECKey.fromPublicOnly(mstKey.getPubKey(true))
         );
 
-        Assertions.assertEquals(compressedMember, uncompressedMember);
-        Assertions.assertEquals(uncompressedMember, compressedMember);
+        assertEquals(compressedMember, uncompressedMember);
+        assertEquals(uncompressedMember, compressedMember);
     }
 
     @Test
     void testEquals_differentBtcKey() {
         FederationMember otherMember = new FederationMember(new BtcECKey(), rskKey, mstKey);
 
-        Assertions.assertNotEquals(member, otherMember);
+        assertNotEquals(member, otherMember);
     }
 
     @Test
     void testEquals_differentRskKey() {
         FederationMember otherMember = new FederationMember(btcKey, new ECKey(), mstKey);
 
-        Assertions.assertNotEquals(member, otherMember);
+        assertNotEquals(member, otherMember);
     }
 
     @Test
     void testEquals_differentMstKey() {
         FederationMember otherMember = new FederationMember(btcKey, rskKey, new ECKey());
 
-        Assertions.assertNotEquals(member, otherMember);
+        assertNotEquals(member, otherMember);
     }
 
     @Test
     void keyType_byValue() {
-        Assertions.assertEquals(FederationMember.KeyType.BTC, FederationMember.KeyType.byValue("btc"));
-        Assertions.assertEquals(FederationMember.KeyType.RSK, FederationMember.KeyType.byValue("rsk"));
-        Assertions.assertEquals(FederationMember.KeyType.MST, FederationMember.KeyType.byValue("mst"));
+        assertEquals(FederationMember.KeyType.BTC, FederationMember.KeyType.byValue("btc"));
+        assertEquals(FederationMember.KeyType.RSK, FederationMember.KeyType.byValue("rsk"));
+        assertEquals(FederationMember.KeyType.MST, FederationMember.KeyType.byValue("mst"));
     }
 
     @Test
     void keyType_byValueInvalid() {
-        try {
-            FederationMember.KeyType.byValue("whatever");
-            Assertions.fail();
-        } catch (IllegalArgumentException e) {}
+        assertThrows(IllegalArgumentException.class, () -> FederationMember.KeyType.byValue("whatever"));
     }
 
     @Test
@@ -121,6 +122,6 @@ class FederationMemberTest {
         byte[] serializedMember = member.serialize();
         FederationMember deserializedSerializedMember = FederationMember.deserialize(serializedMember);
 
-        Assertions.assertEquals(deserializedSerializedMember, member);
+        assertEquals(deserializedSerializedMember, member);
     }
 }
