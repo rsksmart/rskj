@@ -252,17 +252,17 @@ public class Constants {
         );
     }
 
-    public static Constants devnetWithFederation(List<BtcECKey> federationPublicKeys) {
+    public static Constants devnetWithFederation() {
         return new Constants(
-                DEVNET_CHAIN_ID,
-                false,
-                14,
-                new BlockDifficulty(BigInteger.valueOf(131072)),
-                new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
-                BigInteger.valueOf(50),
-                540,
-                new BridgeDevNetConstants(federationPublicKeys),
-                new BlockDifficulty(new BigInteger("550000000")),
+            DEVNET_CHAIN_ID,
+            false,
+            14,
+            new BlockDifficulty(BigInteger.valueOf(131072)),
+            new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
+            BigInteger.valueOf(50),
+            540,
+            new BridgeDevNetConstants(),
+            new BlockDifficulty(new BigInteger("550000000")),
                 6_800_000L
         );
     }
@@ -292,7 +292,7 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                BridgeRegTestConstants.getInstance(),
+                new BridgeRegTestConstants(),
                 new BlockDifficulty(new BigInteger("550000000")),
                 1_000_000L
         );

@@ -101,6 +101,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
@@ -821,6 +822,9 @@ class Web3ImplTest {
 
         String blockNumberAsHex = "0x" + Long.toHexString(block1.getNumber());
         assertEquals(blockNumberAsHex, tr.getBlockNumber());
+
+        String effectiveGasPrice = "0x" + tx.getGasPrice().asBigInteger();
+        assertEquals(effectiveGasPrice, tr.getEffectiveGasPrice());
 
         String rawTransactionReceipt = web3.rsk_getRawTransactionReceiptByHash(hashString);
         String expectedRawTxReceipt = "0xf9010c01825208b9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c082520801";

@@ -29,6 +29,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
+import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
@@ -37,6 +38,7 @@ import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.WhitelistResponseCode;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
@@ -70,7 +72,7 @@ import java.util.stream.Collectors;
  */
 public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
-    private static final Logger logger = LoggerFactory.getLogger("bridge");
+    private static final Logger logger = LoggerFactory.getLogger(Bridge.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     // No parameters
@@ -206,10 +208,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH.getFunction();
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
-
-    public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
-    public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
-    public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
 
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
@@ -464,7 +462,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return !activations.isActive(RSKIP417);
     }
 
-    private void teardown() throws IOException {
+    private void teardown() {
         bridgeSupport.save();
     }
 
@@ -774,26 +772,26 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public String getFederationAddress(Object[] args) {
         logger.trace("getFederationAddress");
 
-        return bridgeSupport.getFederationAddress().toBase58();
+        return bridgeSupport.getActiveFederationAddress().toBase58();
     }
 
     public Integer getFederationSize(Object[] args) {
         logger.trace("getFederationSize");
 
-        return bridgeSupport.getFederationSize();
+        return bridgeSupport.getActiveFederationSize();
     }
 
     public Integer getFederationThreshold(Object[] args) {
         logger.trace("getFederationThreshold");
 
-        return bridgeSupport.getFederationThreshold();
+        return bridgeSupport.getActiveFederationThreshold();
     }
 
     public byte[] getFederatorPublicKey(Object[] args) {
         logger.trace("getFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        return bridgeSupport.getFederatorPublicKey(index);
+        return bridgeSupport.getActiveFederatorBtcPublicKey(index);
     }
 
     public byte[] getFederatorPublicKeyOfType(Object[] args) throws VMException {
@@ -809,19 +807,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new VMException("Exception in getFederatorPublicKeyOfType", e);
         }
 
-        return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
+        return bridgeSupport.getActiveFederatorPublicKeyOfType(index, keyType);
     }
 
     public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
 
         // Return the creation time in milliseconds from the epoch
-        return bridgeSupport.getFederationCreationTime().toEpochMilli();
+        return bridgeSupport.getActiveFederationCreationTime().toEpochMilli();
     }
 
     public long getFederationCreationBlockNumber(Object[] args) {
         logger.trace("getFederationCreationBlockNumber");
-        return bridgeSupport.getFederationCreationBlockNumber();
+        return bridgeSupport.getActiveFederationCreationBlockNumber();
     }
 
     public String getRetiringFederationAddress(Object[] args) {
@@ -853,7 +851,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKey(index);
+        byte[] publicKey = bridgeSupport.getRetiringFederatorBtcPublicKey(index);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found or there's no retiring federation
@@ -905,7 +903,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
-    public Integer createFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer createFederation(Object[] args) {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -914,7 +912,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKey(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer addFederatorPublicKey(Object[] args) {
         logger.trace("addFederatorPublicKey");
 
         byte[] publicKeyBytes;
@@ -931,7 +929,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKeyMultikey(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer addFederatorPublicKeyMultikey(Object[] args) {
         logger.trace("addFederatorPublicKeyMultikey");
 
         byte[] btcPublicKeyBytes = (byte[]) args[0];
@@ -947,7 +945,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer commitFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer commitFederation(Object[] args) {
         logger.trace("commitFederation");
 
         byte[] hash;
@@ -964,7 +962,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer rollbackFederation(Object[] args) throws BridgeIllegalArgumentException {
+    public Integer rollbackFederation(Object[] args) {
         logger.trace("rollbackFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -973,17 +971,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public byte[] getPendingFederationHash(Object[] args) {
+    public byte[] getPendingFederationHashSerialized(Object[] args) {
         logger.trace("getPendingFederationHash");
 
-        byte[] hash = bridgeSupport.getPendingFederationHash();
+        Keccak256 hash = bridgeSupport.getPendingFederationHash();
 
         if (hash == null) {
             // Empty array is returned when pending federation is not present
             return new byte[]{};
         }
 
-        return hash;
+        return hash.getBytes();
     }
 
     public Integer getPendingFederationSize(Object[] args) {
@@ -996,7 +994,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getPendingFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
-        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKey(index);
+        byte[] publicKey = bridgeSupport.getPendingFederatorBtcPublicKey(index);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
@@ -1056,20 +1054,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in getLockWhitelistEntryByAddress", e);
-            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
+            logger.warn("[getLockWhitelistEntryByAddress] Error while parsing the provided address. {}", e.getMessage());
+            return WhitelistResponseCode.INVALID_ADDRESS_FORMAT.getCode();
         }
 
         LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
 
         if (entry == null) {
             // Empty string is returned when address is not found
-            return LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE;
+            logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
+            return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
         }
 
         return entry.getClass() == OneOffWhiteListEntry.class ?
-                ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
-                LOCK_WHITELIST_UNLIMITED_MODE_CODE;
+            ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
+            WhitelistResponseCode.UNLIMITED_MODE.getCode();
     }
 
     public Integer addOneOffLockWhitelistAddress(Object[] args) {
@@ -1081,7 +1080,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
             maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
-            logger.warn("Exception in addOneOffLockWhitelistAddress", e);
+            logger.warn("[addOneOffLockWhitelistAddress] Error while parsing the provided address and max value. {}", e.getMessage());
             return 0;
         }
 
@@ -1095,7 +1094,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in addUnlimitedLockWhitelistAddress", e);
+            logger.warn("[addUnlimitedLockWhitelistAddress] Exception in addUnlimitedLockWhitelistAddress", e);
             return 0;
         }
 
@@ -1109,7 +1108,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in removeLockWhitelistAddress", e);
+            logger.warn("[removeLockWhitelistAddress] Error while parsing the provided address. {}", e.getMessage());
             return 0;
         }
 
@@ -1119,6 +1118,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
+
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
     }
 
@@ -1153,7 +1153,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public byte[] getActivePowpegRedeemScript(Object[] args) {
         logger.debug("[getActivePowpegRedeemScript] started");
         try {
-            Optional<Script> redeemScript = bridgeSupport.getActivePowpegRedeemScript();
+            Optional<Script> redeemScript = bridgeSupport.getActiveFederationRedeemScript();
             logger.debug("[getActivePowpegRedeemScript] finished");
             return redeemScript.orElse(new Script(new byte[]{})).getProgram();
         } catch (Exception ex) {
@@ -1164,13 +1164,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("increaseLockingCap");
-
         Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
-        if (newLockingCap.getValue() <= 0) {
-            throw new BridgeIllegalArgumentException("Locking cap must be bigger than zero");
+        try {
+            return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+        } catch (LockingCapIllegalArgumentException e) {
+            throw new BridgeIllegalArgumentException(e);
         }
-
-        return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
     }
 
     public void registerBtcCoinbaseTransaction(Object[] args) throws VMException {

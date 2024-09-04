@@ -20,9 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -39,15 +39,14 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static co.rsk.peg.federation.FederationFormatVersion.*;
 
 /**
  * Created by mario on 20/04/17.
@@ -103,7 +102,7 @@ public class BridgeSerializationUtils {
         return map;
     }
 
-    public static byte[] serializeUTXOList(List<UTXO> list) throws IOException {
+    public static byte[] serializeUTXOList(List<UTXO> list) {
         int nutxos = list.size();
 
         byte[][] bytes = new byte[nutxos][];
@@ -113,13 +112,15 @@ public class BridgeSerializationUtils {
             try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
                 utxo.serializeToStream(ostream);
                 bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+            } catch (IOException ioe) {
+                throw new SerializationException(String.format("Unable to serialize UTXO %s from UTXOs list %s", utxo, list), ioe);
             }
         }
 
         return RLP.encodeList(bytes);
     }
 
-    public static List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
+    public static List<UTXO> deserializeUTXOList(byte[] data) {
         List<UTXO> list = new ArrayList<>();
 
         if (data == null || data.length == 0) {
@@ -133,8 +134,12 @@ public class BridgeSerializationUtils {
         for (int k = 0; k < nutxos; k++) {
             byte[] utxoBytes = rlpList.get(k).getRLPData();
             InputStream istream = new ByteArrayInputStream(utxoBytes);
-            UTXO utxo = new UTXO(istream);
-            list.add(utxo);
+            try {
+                UTXO utxo = new UTXO(istream);
+                list.add(utxo);
+            } catch (IOException ioe) {
+                throw new SerializationException(String.format("Unable to deserialize %d th UTXO %s", k, Arrays.toString(data)), ioe);
+            }
         }
 
         return list;
@@ -303,6 +308,38 @@ public class BridgeSerializationUtils {
             FederationMember::serialize
         );
     }
+    public static Federation deserializeFederationAccordingToVersion(
+        byte[] data,
+        int version,
+        FederationConstants federationConstants,
+        ActivationConfig.ForBlock activations
+    ) {
+        NetworkParameters networkParameters = federationConstants.getBtcParams();
+        if (version == STANDARD_MULTISIG_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+                data,
+                networkParameters
+            );
+        }
+        if (version == NON_STANDARD_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeNonStandardErpFederation(
+                data,
+                federationConstants,
+                activations
+            );
+        }
+        if (version == P2SH_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeP2shErpFederation(
+                data,
+                federationConstants
+            );
+        }
+        // To keep backwards compatibility
+        return BridgeSerializationUtils.deserializeStandardMultisigFederation(
+            data,
+            networkParameters
+        );
+    }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
     public static StandardMultisigFederation deserializeStandardMultisigFederation(
@@ -317,35 +354,35 @@ public class BridgeSerializationUtils {
     }
     public static ErpFederation deserializeNonStandardErpFederation(
         byte[] data,
-        BridgeConstants bridgeConstants,
+        FederationConstants federationConstants,
         ActivationConfig.ForBlock activations
     ) {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
-            bridgeConstants.getBtcParams(),
+            federationConstants.getBtcParams(),
             FederationMember::deserialize
         );
 
         FederationArgs federationArgs = federation.getArgs();
-        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
 
         return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
     }
 
     public static ErpFederation deserializeP2shErpFederation(
         byte[] data,
-        BridgeConstants bridgeConstants
+        FederationConstants federationConstants
     ) {
         Federation federation = deserializeStandardMultisigFederationWithDeserializer(
             data,
-            bridgeConstants.getBtcParams(),
+            federationConstants.getBtcParams(),
             FederationMember::deserialize
         );
 
         FederationArgs federationArgs = federation.getArgs();
-        List<BtcECKey> erpPubKeys = bridgeConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeConstants.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
 
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }

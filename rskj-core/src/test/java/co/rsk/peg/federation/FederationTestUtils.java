@@ -21,25 +21,19 @@ package co.rsk.peg.federation;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.constants.FederationConstants;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import co.rsk.peg.constants.BridgeConstants;
 import org.ethereum.crypto.ECKey;
 
 public final class FederationTestUtils {
@@ -60,7 +54,7 @@ public final class FederationTestUtils {
 
         FederationArgs federationArgs = new FederationArgs(
             fedMember,
-            ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant(),
+            Instant.ofEpochMilli(0),
             0,
             networkParameters
         );
@@ -77,7 +71,7 @@ public final class FederationTestUtils {
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
-            ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+            Instant.ofEpochMilli(0),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
@@ -86,18 +80,24 @@ public final class FederationTestUtils {
         );
     }
 
-    public static Federation getGenesisFederation(BridgeConstants bridgeConstants) {
+    public static Federation getGenesisFederation(FederationConstants federationConstants) {
         final long GENESIS_FEDERATION_CREATION_BLOCK_NUMBER = 1L;
-        final List<BtcECKey> genesisFederationPublicKeys = bridgeConstants.getGenesisFederationPublicKeys();
+        final List<BtcECKey> genesisFederationPublicKeys = federationConstants.getGenesisFederationPublicKeys();
         final List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
-        final Instant genesisFederationCreationTime = bridgeConstants.getGenesisFederationCreationTime();
-        final FederationArgs federationArgs = new FederationArgs(federationMembers, genesisFederationCreationTime, GENESIS_FEDERATION_CREATION_BLOCK_NUMBER, bridgeConstants.getBtcParams());
+        final Instant genesisFederationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        final FederationArgs federationArgs = new FederationArgs(
+            federationMembers,
+            genesisFederationCreationTime,
+            GENESIS_FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants.getBtcParams()
+        );
+
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
     public static List<FederationMember> getFederationMembers(int memberCount) {
         List<FederationMember> result = new ArrayList<>();
-        for (int i = 1; i <= memberCount; i++) {
+        for (long i = 1; i <= memberCount; i++) {
             result.add(new FederationMember(
                 BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)),
                 ECKey.fromPrivate(BigInteger.valueOf((i) * 101)),
@@ -105,6 +105,7 @@ public final class FederationTestUtils {
             ));
         }
         result.sort(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR);
+
         return result;
     }
 
@@ -123,12 +124,24 @@ public final class FederationTestUtils {
     }
 
     public static List<FederationMember> getFederationMembersWithKeys(List<BtcECKey> pks) {
-        return pks.stream().map(pk -> getFederationMemberWithKey(pk)).collect(Collectors.toList());
+        return pks.stream().map(FederationTestUtils::getFederationMemberWithKey).collect(Collectors.toList());
     }
 
     public static FederationMember getFederationMemberWithKey(BtcECKey pk) {
         ECKey ethKey = ECKey.fromPublicOnly(pk.getPubKey());
         return new FederationMember(pk, ethKey, ethKey);
+    }
+
+    public static ErpFederation createP2shErpFederation(FederationConstants federationConstants, List<BtcECKey> federationKeys) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        List<FederationMember> fedMembers = getFederationMembersWithBtcKeys(federationKeys);
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        NetworkParameters btcParams = federationConstants.getBtcParams();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+
+        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
+        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     public static void spendFromErpFed(
@@ -160,8 +173,7 @@ public final class FederationTestUtils {
 
         int totalSigners = signers.size();
         List<BtcECKey.ECDSASignature> allSignatures = new ArrayList<>();
-        for (int i = 0; i < totalSigners; i++) {
-            BtcECKey keyToSign = signers.get(i);
+        for (BtcECKey keyToSign : signers) {
             BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
             allSignatures.add(signature);
         }

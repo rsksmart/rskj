@@ -46,13 +46,13 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("getStateForBtcReleaseClient");
 
         executeAndAverage(
-                "getStateForBtcReleaseClient",
-                200,
-                (int executionIndex) -> Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT.encode(),
-                getInitializer(),
-                Helper.getZeroValueRandomSenderTxBuilder(),
-                Helper.getRandomHeightProvider(10),
-                stats
+            "getStateForBtcReleaseClient",
+            200,
+            (int executionIndex) -> Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT.encode(),
+            getInitializer(),
+            Helper.getZeroValueRandomSenderTxBuilder(),
+            Helper.getRandomHeightProvider(10),
+            stats
         );
 
         Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
@@ -74,7 +74,7 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
             }
 
             int numTxs = Helper.randomInRange(minNumTxs, maxNumTxs);
-            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
             for (int i = 0; i < numTxs; i++) {
                 BtcTransaction releaseTx = new BtcTransaction(networkParameters);
 
@@ -91,10 +91,9 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                     BtcTransaction inputTx = new BtcTransaction(networkParameters);
                     inputTx.addOutput(inputAmount, genesisFederation.getAddress());
                     releaseTx
-                            .addInput(inputTx.getOutput(0))
-                            .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation));
+                        .addInput(inputTx.getOutput(0))
+                        .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(genesisFederation));
                 }
-
 
                 Keccak256 rskTxHash = TestUtils.generateHash("rskTxHash");
                 txsWaitingForSignatures.put(rskTxHash, releaseTx);
