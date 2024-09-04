@@ -48,21 +48,21 @@ jobs:
 
       - name: Checkout rskj Repository
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
         with:
           repository: rsksmart/rskj
           ref: ${{ env.RSKJ_BRANCH }}
           fetch-depth: 1
 
       - name: Checkout Rootstock Integration Tests Repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
         with:
           repository: rsksmart/rootstock-integration-tests
           ref: ${{ env.RIT_BRANCH }}
           fetch-depth: 0
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@v1
+        uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
