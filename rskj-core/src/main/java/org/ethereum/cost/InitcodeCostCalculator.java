@@ -22,7 +22,6 @@ package org.ethereum.cost;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-import static co.rsk.util.ListArrayUtil.getLength;
 import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 public class InitcodeCostCalculator implements CostCalculator {
