@@ -390,6 +390,10 @@ public class Program {
         return memory.read(offset, size);
     }
 
+    public void memoryCopy(DataWord dst, DataWord src, DataWord length) {
+        memory.copy(dst.longValue(), src.longValue(), length.longValue());
+    }
+
     /**
      * Allocates extra memory in the program for
      * a specified size, calculated from a given offset
