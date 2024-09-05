@@ -61,14 +61,14 @@ class FederationStorageProviderImplTests {
         return Stream.of(
             Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, P2shErpFederationBuilder.builder().build()),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createNonStandardErpFederation()),
-            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new StandardMultiSigFederationBuilder().build()),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, StandardMultiSigFederationBuilder.builder().build()),
             Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, null),
             Arguments.of(INVALID_FEDERATION_FORMAT, null),
             Arguments.of(EMPTY_FEDERATION_FORMAT, null),
-            Arguments.of(INVALID_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build()),
-            Arguments.of(EMPTY_FEDERATION_FORMAT, new StandardMultiSigFederationBuilder().build())
+            Arguments.of(INVALID_FEDERATION_FORMAT, StandardMultiSigFederationBuilder.builder().build()),
+            Arguments.of(EMPTY_FEDERATION_FORMAT, StandardMultiSigFederationBuilder.builder().build())
         );
     }
 
@@ -263,7 +263,7 @@ class FederationStorageProviderImplTests {
         ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0L);
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
-        Federation standardFederation = new StandardMultiSigFederationBuilder().build();
+        Federation standardFederation = StandardMultiSigFederationBuilder.builder().build();
         Federation nonStandardFederation = createNonStandardErpFederation();
         Federation ps2hErpFederation = P2shErpFederationBuilder.builder().build();
 
