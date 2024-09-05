@@ -977,7 +977,7 @@ public class BridgeSupport {
     private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
 
-        BtcTransaction svpFundTransaction = new BtcTransaction(bridgeConstants.getBtcParams());
+        BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
         svpFundTransaction.setVersion(BTC_TX_VERSION_2);
 
         // add outputs to proposed fed and proposed fed with flyover prefix
@@ -1000,7 +1000,7 @@ public class BridgeSupport {
         );
         Script federationWithFlyoverPrefixP2SHScript = ScriptBuilder.createP2SHOutputScript(federationWithFlyoverPrefixRedeemScript);
 
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), federationWithFlyoverPrefixP2SHScript);
+        return Address.fromP2SHScript(networkParameters, federationWithFlyoverPrefixP2SHScript);
     }
 
     private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
