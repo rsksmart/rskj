@@ -306,7 +306,7 @@ class BridgeSupportTest {
         BridgeSupportBuilder bridgeSupportBuilder = new BridgeSupportBuilder();
         BridgeSupport bridgeSupport;
 
-        Federation federation = new P2shErpFederationBuilder().build();
+        Federation federation = P2shErpFederationBuilder.builder().build();
 
         @BeforeEach
         void setUp() {

@@ -59,7 +59,7 @@ class FederationStorageProviderImplTests {
 
     private static Stream<Arguments> provideFederationAndFormatArguments() {
         return Stream.of(
-            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, new P2shErpFederationBuilder().build()),
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, P2shErpFederationBuilder.builder().build()),
             Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, createNonStandardErpFederation()),
             Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new StandardMultiSigFederationBuilder().build()),
             Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, null),
@@ -265,7 +265,7 @@ class FederationStorageProviderImplTests {
 
         Federation standardFederation = new StandardMultiSigFederationBuilder().build();
         Federation nonStandardFederation = createNonStandardErpFederation();
-        Federation ps2hErpFederation = new P2shErpFederationBuilder().build();
+        Federation ps2hErpFederation = P2shErpFederationBuilder.builder().build();
 
         return Stream.of(
             // When iris is not active, should allow to save any fed type but not the version
@@ -865,7 +865,7 @@ class FederationStorageProviderImplTests {
         // Arrange
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
-        Script expectedScript = new P2shErpFederationBuilder().build().getDefaultP2SHScript();
+        Script expectedScript = P2shErpFederationBuilder.builder().build().getDefaultP2SHScript();
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);

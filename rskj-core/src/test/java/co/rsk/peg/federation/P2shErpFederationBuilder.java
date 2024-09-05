@@ -22,7 +22,7 @@ public class P2shErpFederationBuilder {
     private long creationBlockNumber;
     private NetworkParameters networkParameters;
 
-    public P2shErpFederationBuilder() {
+    private P2shErpFederationBuilder() {
         this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
         );
@@ -33,6 +33,10 @@ public class P2shErpFederationBuilder {
         this.creationTime = Instant.ofEpochMilli(10L);
         this.creationBlockNumber = 1L;
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+    }
+
+    public static P2shErpFederationBuilder builder() {
+        return new P2shErpFederationBuilder();
     }
 
     public P2shErpFederationBuilder withMembersBtcPublicKeys(List<BtcECKey> btcPublicKeys) {
