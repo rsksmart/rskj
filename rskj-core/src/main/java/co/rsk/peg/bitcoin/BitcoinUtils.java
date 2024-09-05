@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,5 +61,32 @@ public class BitcoinUtils {
             );
             return Optional.empty();
         }
+    }
+
+    public static Script removeSignaturesFromErpScriptSig(Script scriptSig) {
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+
+        ScriptBuilder builder = new ScriptBuilder();
+
+        int op0ChunkIndex = 0;
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+        int opIfElseChunkIndex = redeemScriptChunkIndex - 1;
+
+        ScriptChunk op0Chunk = scriptSigChunks.get(op0ChunkIndex);
+        builder.addChunk(op0Chunk);
+
+        int signaturesStartIndex = op0ChunkIndex + 1;
+        int signaturesEndIndex = opIfElseChunkIndex - 1;
+        for (int i = signaturesStartIndex; i <= signaturesEndIndex ; i++) {
+            byte[] data = new byte[0];
+            builder.data(data);
+        }
+
+        ScriptChunk opIfElseChunk = scriptSigChunks.get(opIfElseChunkIndex);
+        builder.addChunk(opIfElseChunk);
+        ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
+        builder.addChunk(redeemScriptChunk);
+
+        return builder.build();
     }
 }
