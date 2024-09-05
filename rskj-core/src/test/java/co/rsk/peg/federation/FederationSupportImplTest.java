@@ -1952,7 +1952,7 @@ class FederationSupportImplTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class PendingFederationTestsWithNonNullFederation {
 
-        PendingFederation pendingFederation = new PendingFederationBuilder().build();
+        PendingFederation pendingFederation = PendingFederationBuilder.builder().build();
 
         @BeforeEach
         void setUp() {
@@ -2035,7 +2035,7 @@ class FederationSupportImplTest {
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
-            PendingFederation pendingFederationWithRskKeys = new PendingFederationBuilder()
+            PendingFederation pendingFederationWithRskKeys = PendingFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .build();
             storageProvider.setPendingFederation(pendingFederationWithRskKeys);
@@ -2069,7 +2069,7 @@ class FederationSupportImplTest {
             List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
             );
-            PendingFederation pendingFederationWithRskAndMstKeys = new PendingFederationBuilder()
+            PendingFederation pendingFederationWithRskAndMstKeys = PendingFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .withMembersMstPublicKeys(mstECKeys)
                 .build();

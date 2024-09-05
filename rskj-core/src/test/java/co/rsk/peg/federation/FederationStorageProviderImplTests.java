@@ -146,9 +146,9 @@ class FederationStorageProviderImplTests {
 
     private static Stream<Arguments> providePendingFederationAndFormatArguments() {
         return Stream.of(
-            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build()),
-            Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build()),
-            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, new PendingFederationBuilder().build())
+            Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, PendingFederationBuilder.builder().build()),
+            Arguments.of(NON_STANDARD_ERP_FEDERATION_FORMAT_VERSION, PendingFederationBuilder.builder().build()),
+            Arguments.of(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION, PendingFederationBuilder.builder().build())
         );
     }
 
@@ -184,7 +184,7 @@ class FederationStorageProviderImplTests {
 
     @Test
     void getPendingFederation_whenStorageVersionIsNotAvailable_deserializeFromBtcKeysOnly() {
-        PendingFederation expectedFederation = new PendingFederationBuilder().build();
+        PendingFederation expectedFederation = PendingFederationBuilder.builder().build();
 
         // Arrange
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
@@ -214,7 +214,7 @@ class FederationStorageProviderImplTests {
     void getPendingFederation_previouslySet_returnsCachedPendingFederation() {
 
         // Arrange
-        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        PendingFederation expectedPendingFederation = PendingFederationBuilder.builder().build();
 
         // Act
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(null);
@@ -771,7 +771,7 @@ class FederationStorageProviderImplTests {
     void savePendingFederation_preWasabi_shouldBeSavedInStorageSerializedFromBtcKeysOnly() {
         // Arrange
         ActivationConfig.ForBlock orchidActivation = ActivationConfigsForTest.orchid().forBlock(0L);
-        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        PendingFederation expectedPendingFederation = PendingFederationBuilder.builder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationStorageProvider.setPendingFederation(expectedPendingFederation);
@@ -795,7 +795,7 @@ class FederationStorageProviderImplTests {
     void savePendingFederation_postWasabi_shouldBeSavedInStorageWithFormatVersion() {
         // Arrange
         ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0L);
-        PendingFederation expectedPendingFederation = new PendingFederationBuilder().build();
+        PendingFederation expectedPendingFederation = PendingFederationBuilder.builder().build();
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
         federationStorageProvider.setPendingFederation(expectedPendingFederation);

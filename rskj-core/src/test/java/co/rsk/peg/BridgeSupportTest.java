@@ -478,7 +478,7 @@ class BridgeSupportTest {
 
         @Test
         void getPendingFederationHash() {
-            PendingFederation pendingFederation = new PendingFederationBuilder().build();
+            PendingFederation pendingFederation = PendingFederationBuilder.builder().build();
             Keccak256 hash = pendingFederation.getHash();
 
             when(federationSupport.getPendingFederationHash()).thenReturn(hash);
