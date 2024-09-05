@@ -981,6 +981,19 @@ public class BridgeSupport {
         updateFederationCreationBlockHeights();
     }
 
+    private boolean svpIsOngoing() {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+
+        if (!proposedFederationOpt.isPresent()) {
+            return false;
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
+            + bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
+        return rskExecutionBlock.getNumber() <= validationPeriodEndBlock;
+    }
+
     protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (!proposedFederationOpt.isPresent()) {
