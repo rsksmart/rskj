@@ -64,29 +64,29 @@ public class BitcoinUtils {
     }
 
     public static Script removeSignaturesFromErpScriptSig(Script scriptSig) {
-        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+        ScriptBuilder scriptBuilder = new ScriptBuilder();
 
-        ScriptBuilder builder = new ScriptBuilder();
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
 
         int op0ChunkIndex = 0;
         int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
         int opIfElseChunkIndex = redeemScriptChunkIndex - 1;
 
         ScriptChunk op0Chunk = scriptSigChunks.get(op0ChunkIndex);
-        builder.addChunk(op0Chunk);
+        scriptBuilder.addChunk(op0Chunk);
 
         int signaturesStartIndex = op0ChunkIndex + 1;
         int signaturesEndIndex = opIfElseChunkIndex - 1;
         for (int i = signaturesStartIndex; i <= signaturesEndIndex ; i++) {
             byte[] data = new byte[0];
-            builder.data(data);
+            scriptBuilder.data(data);
         }
 
         ScriptChunk opIfElseChunk = scriptSigChunks.get(opIfElseChunkIndex);
-        builder.addChunk(opIfElseChunk);
+        scriptBuilder.addChunk(opIfElseChunk);
         ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
-        builder.addChunk(redeemScriptChunk);
+        scriptBuilder.addChunk(redeemScriptChunk);
 
-        return builder.build();
+        return scriptBuilder.build();
     }
 }
