@@ -36,7 +36,7 @@ class BitcoinUtilsTest {
         while (!sigs.isEmpty()){
             BtcECKey pubKey = keys.pollFirst();
             BtcECKey.ECDSASignature signature = sigs.getFirst();
-            if(pubKey.verify(sigHash, signature)){
+            if (pubKey.verify(sigHash, signature)) {
                 sigs.pollFirst();
             }
             if (sigs.size() > keys.size()) {
@@ -67,7 +67,7 @@ class BitcoinUtilsTest {
 
     @ParameterizedTest
     @MethodSource("pegoutOrMigrationArgProvider")
-    void test_getFirstInputSigHash_pegout_or_migration(String btcTxHex) {
+    void getFirstInputSigHash_pegout_or_migration(String btcTxHex) {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
         TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
@@ -79,7 +79,7 @@ class BitcoinUtilsTest {
         assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertEquals(signatures.size(), redeemScriptParser.getM());
+        assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
@@ -141,7 +141,7 @@ class BitcoinUtilsTest {
         assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertEquals(signatures.size(), redeemScriptParser.getM());
+        assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
@@ -246,7 +246,7 @@ class BitcoinUtilsTest {
 
         // Assert
         assertTrue(redeemScript.isPresent());
-        Assertions.assertEquals(expectedRedeemScript, redeemScript.get());
+        assertEquals(expectedRedeemScript, redeemScript.get());
     }
 
     @Test
@@ -373,11 +373,19 @@ class BitcoinUtilsTest {
         transaction.addOutput(Coin.COIN, destinationAddress);
         Sha256Hash transactionWithoutSignaturesHash = transaction.getHash();
 
-        List<BtcECKey> keysToSign =
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // using private keys from federation declared above
+        List<BtcECKey> keysToSign = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01",
+            "member02",
+            "member03",
+            "member04",
+            "member05"
+ }, true); // using private keys from federation declared above
         List<TransactionInput> inputs = transaction.getInputs();
         for (TransactionInput input : inputs) {
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, inputs.indexOf(input), keysToSign);
+            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(                ansaction,
+                inputs.indexOf(input),
+                keysToSign
+            );
         }
 
         // act
