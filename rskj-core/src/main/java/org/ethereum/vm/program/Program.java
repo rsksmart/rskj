@@ -215,10 +215,6 @@ public class Program {
         return traceListenerAware;
     }
 
-    public byte getOp(int pc) {
-        return (getLength(ops) <= pc) ? 0 : ops[pc];
-    }
-
     public byte getCurrentOp() {
         return isEmpty(ops) ? 0 : ops[pc];
     }
@@ -1338,7 +1334,7 @@ public class Program {
         if (nextPC.occupyMoreThan(4)) {
             throw ExceptionHelper.badJumpDestination(this, -1);
         }
-        int ret = nextPC.intValue(); // could be negative
+        int ret = nextPC.intValue(); // NOSONAR // could be negative
         if (ret < 0 || ret >= jumpdestSet.size() || !jumpdestSet.get(ret)) {
             throw ExceptionHelper.badJumpDestination(this, ret);
         }
