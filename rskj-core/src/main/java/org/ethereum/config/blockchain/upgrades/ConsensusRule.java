@@ -95,7 +95,8 @@ public enum ConsensusRule {
     RSKIP417("rskip417"),
     RSKIP428("rskip428"),
     RSKIP434("rskip434"),
-    RSKIP438("rskip438")
+    RSKIP438("rskip438"),
+    RSKIP445("rskip445") // From EIP-5656 MCOPY instruction
     ;
 
     private String configKey;
