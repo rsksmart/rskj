@@ -112,6 +112,9 @@ public class Memory implements ProgramListenerAware {
         }
     }
 
+    public void copy(long dst, long src, long length) {
+        // TODO -> Implement me
+    }
 
     public void extendAndWrite(int address, int allocSize, byte[] data) {
         extend(address, allocSize);
