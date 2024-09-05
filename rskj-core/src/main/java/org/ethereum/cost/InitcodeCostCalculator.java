@@ -26,7 +26,7 @@ import static co.rsk.util.ListArrayUtil.getLength;
 import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 public class InitcodeCostCalculator implements CostCalculator {
-    private static InitcodeCostCalculator INSTANCE;
+    private static final InitcodeCostCalculator INSTANCE = new InitcodeCostCalculator();
 
     private InitcodeCostCalculator() {}
 
@@ -39,7 +39,7 @@ public class InitcodeCostCalculator implements CostCalculator {
 
     @Override
     public long calculateCost(byte[] data, ActivationConfig.ForBlock activations) {
-        if ( activations.isActive(ConsensusRule.RSKIP438) ) {
+        if ( dataLength > 0 && activations.isActive(ConsensusRule.RSKIP438) ) {
             return  INITCODE_WORD_COST  *  ( (long) Math.ceil( ( (double) getLength(data) ) / 32 ) );
         }
         return 0;

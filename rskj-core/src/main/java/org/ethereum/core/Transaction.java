@@ -63,7 +63,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
-    private static final Logger logger = LoggerFactory.getLogger(org.ethereum.core.Transaction.class);
+    private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
