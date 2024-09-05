@@ -22,11 +22,10 @@ package org.ethereum.cost;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-import static co.rsk.util.ListArrayUtil.getLength;
 import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 public class InitcodeCostCalculator implements CostCalculator {
-    private static final InitcodeCostCalculator INSTANCE = new InitcodeCostCalculator();
+    private static InitcodeCostCalculator INSTANCE;
 
     private InitcodeCostCalculator() {}
 
@@ -38,9 +37,9 @@ public class InitcodeCostCalculator implements CostCalculator {
     }
 
     @Override
-    public long calculateCost(byte[] data, ActivationConfig.ForBlock activations) {
+    public long calculateCost(int dataLength, ActivationConfig.ForBlock activations) {
         if ( dataLength > 0 && activations.isActive(ConsensusRule.RSKIP438) ) {
-            return  INITCODE_WORD_COST  *  ( (long) Math.ceil( ( (double) getLength(data) ) / 32 ) );
+            return  INITCODE_WORD_COST  *  ( (long) Math.ceil( ( (double) dataLength ) / 32 ) );
         }
         return 0;
     }
