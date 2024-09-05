@@ -760,7 +760,7 @@ public class VM {
     }
 
     private long computeDataCopyGas() {
-        DataWord size = getCodeSize();
+        DataWord size = stack.get(stack.size() - 3);
         long copySize = Program.limitToMaxLong(size);
         checkSizeArgument(copySize);
         long newMemSize = memNeeded(stack.peek(), copySize);
@@ -848,7 +848,7 @@ public class VM {
                 newMemSize = memNeeded(stack.get(stack.size() - 2), copySize);
                 gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, copySize));
             } else {
-                size = getCodeSize();
+                size = stack.get(stack.size() - 3);
                 copySize = Program.limitToMaxLong(size);
                 checkSizeArgument(copySize);
                 newMemSize = memNeeded(stack.peek(), copySize);
@@ -1447,7 +1447,7 @@ public class VM {
 
         if (computeGas) {
             gasCost = GasCost.CREATE;
-            codeSize = getCodeSize();
+            codeSize = stack.get(stack.size() - 3);
             sizeLong = Program.limitToMaxLong(codeSize);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
@@ -1472,17 +1472,13 @@ public class VM {
         program.step();
     }
 
-    private DataWord getCodeSize() {
-        return stack.get(stack.size() - 3);
-    }
-
     protected void doCREATE2(){
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas){
-            DataWord codeSize = getCodeSize();
+            DataWord codeSize = stack.get(stack.size() - 3);
             gasCost = GasCost.calculateTotal(
                     GasCost.add(
                             GasCost.CREATE,
