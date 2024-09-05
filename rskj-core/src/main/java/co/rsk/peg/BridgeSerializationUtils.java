@@ -61,29 +61,35 @@ public class BridgeSerializationUtils {
         throw new IllegalAccessError("Utility class, do not instantiate it");
     }
 
-    public static byte[] serializeRskTxWaitingForSignatures(Map.Entry<Keccak256, BtcTransaction> entry) {
-        byte[][] entryBytes = serializeRskTxWaitingForSignaturesEntry(entry);
-        return RLP.encodeList(entryBytes);
+    public static byte[] serializeRskTxWaitingForSignatures(
+          Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
+        byte[][] serializedRskTxWaitingForSignaturesEntry =
+            serializeRskTxWaitingForSignaturesEntry(rskTxWaitingForSignaturesEntry);
+        return RLP.encodeList(serializedRskTxWaitingForSignaturesEntry);
     }
 
-    public static byte[] serializeRskTxsWaitingForSignatures(SortedMap<Keccak256, BtcTransaction> map) {
-        int ntxs = map.size();
-        byte[][] bytes = new byte[ntxs * 2][];
+    public static byte[] serializeRskTxsWaitingForSignatures(
+          SortedMap<Keccak256, BtcTransaction> rskTxWaitingForSignaturesMap) {
+        int numberOfRskTxsWaitingForSignatures = rskTxWaitingForSignaturesMap.size();
+        byte[][] serializedRskTxWaitingForSignaturesMap = new byte[numberOfRskTxsWaitingForSignatures * 2][];
         int n = 0;
 
-        for (Map.Entry<Keccak256, BtcTransaction> entry : map.entrySet()) {
-            byte[][] entryBytes = serializeRskTxWaitingForSignaturesEntry(entry);
-            bytes[n++] = entryBytes[0];
-            bytes[n++] = entryBytes[1];
+        for (Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry : rskTxWaitingForSignaturesMap.entrySet()) {
+            byte[][] serializedRskTxWaitingForSignaturesEntry = serializeRskTxWaitingForSignaturesEntry(rskTxWaitingForSignaturesEntry);
+            serializedRskTxWaitingForSignaturesMap[n++] = serializedRskTxWaitingForSignaturesEntry[0];
+            serializedRskTxWaitingForSignaturesMap[n++] = serializedRskTxWaitingForSignaturesEntry[1];
         }
 
-        return RLP.encodeList(bytes);
+        return RLP.encodeList(serializedRskTxWaitingForSignaturesMap);
     }
 
-    private static byte[][] serializeRskTxWaitingForSignaturesEntry(Map.Entry<Keccak256, BtcTransaction> entry) {
-        byte[] keyBytes = RLP.encodeElement(entry.getKey().getBytes());
-        byte[] valueBytes = RLP.encodeElement(entry.getValue().bitcoinSerialize());
-        return new byte[][] { keyBytes, valueBytes };
+    private static byte[][] serializeRskTxWaitingForSignaturesEntry(
+          Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
+        byte[] serializedRskTxWaitingForSignaturesEntryKey =
+            RLP.encodeElement(rskTxWaitingForSignaturesEntry.getKey().getBytes());
+        byte[] serializedRskTxWaitingForSignaturesEntryValue =
+            RLP.encodeElement(rskTxWaitingForSignaturesEntry.getValue().bitcoinSerialize());
+        return new byte[][] { serializedRskTxWaitingForSignaturesEntryKey, serializedRskTxWaitingForSignaturesEntryValue };
     }
 
     public static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignatures(
@@ -99,22 +105,23 @@ public class BridgeSerializationUtils {
 
     public static SortedMap<Keccak256, BtcTransaction> deserializeRskTxsWaitingForSignatures(
             byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
-        SortedMap<Keccak256, BtcTransaction> map = new TreeMap<>();
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignaturesMap = new TreeMap<>();
 
         if (data == null || data.length == 0) {
-            return map;
+            return rskTxsWaitingForSignaturesMap;
         }
 
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
-        int ntxs = rlpList.size() / 2;
+        int numberOfRskTxsWaitingForSignatures = rlpList.size() / 2;
 
-        for (int k = 0; k < ntxs; k++) {
-            Map.Entry<Keccak256, BtcTransaction> entry =
+        for (int k = 0; k < numberOfRskTxsWaitingForSignatures; k++) {
+            Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry =
                 deserializeRskTxWaitingForSignaturesEntry(rlpList, k, networkParameters, noInputsTxs);
-            map.put(entry.getKey(), entry.getValue());
+            rskTxsWaitingForSignaturesMap.put(
+                rskTxWaitingForSignaturesEntry.getKey(), rskTxWaitingForSignaturesEntry.getValue());
         }
 
-        return map;
+        return rskTxsWaitingForSignaturesMap;
     }
   
     private static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignaturesEntry(
@@ -123,11 +130,11 @@ public class BridgeSerializationUtils {
         byte[] payload = rlpList.get(index * 2 + 1).getRLPData();
         BtcTransaction tx;
 
-        if (!noInputsTxs) {
-            tx = new BtcTransaction(networkParameters, payload);
-        } else {
+        if (noInputsTxs) {
             tx = new BtcTransaction(networkParameters);
             tx.parseNoInputs(payload);
+        } else {
+            tx = new BtcTransaction(networkParameters, payload);
         }
 
         return new AbstractMap.SimpleEntry<>(rskTxHash, tx);
