@@ -1436,6 +1436,44 @@ public class VM {
         program.step();
     }
 
+    protected void doMCOPY() {
+
+        /*
+
+        TODO -> Implement Gas Usage
+
+            Per yellow paper terminology, it should be considered part of the W_copy group of opcodes, and follow the gas calculation for W_copy in the yellow paper. While the calculation in the yellow paper should be considered the final word, for reference, as of time of this writing, that currently means its gas cost is:
+
+            words_copied = (length + 31) // 32
+            g_verylow    = 3
+            g_copy       = 3 * words_copied + memory_expansion_cost
+            gas_cost     = g_verylow + g_copy
+
+        */
+
+        /*
+
+        if (computeGas) {
+            long newMemSize = memNeeded(stack.peek(), 32);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
+            spendOpCodeGas();
+        }
+
+        */
+
+        // EXECUTION PHASE
+        DataWord dst = program.stackPop();
+        DataWord src = program.stackPop();
+        DataWord length = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = "dst: " + dst + " src: " + src + " length: " + length;
+        }
+
+        program.memoryCopy(dst, src, length); // TODO -> IMPLEMENT ME
+        program.step();
+    }
+
     protected void doCREATE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException(program);
@@ -1992,6 +2030,12 @@ public class VM {
             break;
             case OpCodes.OP_JUMPDEST: doJUMPDEST();
             break;
+            case OpCodes.OP_MCOPY:
+                if (!activations.isActive(RSKIP445)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doMCOPY();
+                break;
             case OpCodes.OP_CREATE: doCREATE();
             break;
             case OpCodes.OP_CREATE2:
