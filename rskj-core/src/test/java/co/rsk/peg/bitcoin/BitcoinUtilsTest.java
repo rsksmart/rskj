@@ -1,18 +1,12 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.P2shErpFederationBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -307,6 +302,70 @@ class BitcoinUtilsTest {
             // Assert
             Assertions.assertTrue(redeemScript.isPresent());
             Assertions.assertEquals(expectedRedeemScript, redeemScript.get());
+        }
+    }
+
+    @Test
+    void removeSignaturesFromTransaction_whenTransactionIsSegwit_shouldThrowIllegalArgumentException() {
+        // arrange
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        transaction.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness transactionWitness = new TransactionWitness(1);
+        transactionWitness.setPush(0, new byte[]{});
+        transaction.setWitness(0, transactionWitness);
+
+        // act & assert
+        IllegalArgumentException exception =
+            Assertions.assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromNonSegwitTransaction(transaction));
+        Assertions.assertEquals("Removing signatures from SegWit transactions is not allowed.", exception.getMessage());
+    }
+
+    @Test
+    void removeSignaturesFromTransaction_whenTransactionIsLegacy_shouldRemoveSignaturesFromScriptSig() {
+        // arrange
+        Federation federation = new P2shErpFederationBuilder().build();
+        Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
+        
+        BtcTransaction transactionWithoutSignatures = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+
+        for (int i = 0; i < federation.getNumberOfSignaturesRequired(); i++) {
+            BtcECKey key = new BtcECKey();
+            addSignaturesToInput(transaction, 0, Collections.singletonList(key));
+        }
+
+        // act
+        BitcoinUtils.removeSignaturesFromNonSegwitTransaction(transaction);
+
+        // assert
+        Assertions.assertEquals(transactionWithoutSignatures, transaction);
+    }
+
+    private void addSignaturesToInput(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+        if (transaction.getWitness(inputIndex).getPushCount() == 0) {
+            addSignaturesToInputScriptSig(transaction, inputIndex, keys);
+        }
+    }
+
+    private void addSignaturesToInputScriptSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+        TransactionInput input = transaction.getInput(inputIndex);
+        Script inputScriptSig = input.getScriptSig();
+
+        List<ScriptChunk> scriptSigChunks = inputScriptSig.getChunks();
+        ScriptChunk redeemScriptChunk = scriptSigChunks.get(scriptSigChunks.size() - 1);
+        Script redeemScript = new Script(redeemScriptChunk.data);
+
+        for (BtcECKey key : keys) {
+            Sha256Hash sigHash = transaction.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
+            BtcECKey.ECDSASignature sig = key.sign(sigHash);
+            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+            byte[] txSigEncoded = txSig.encodeToBitcoin();
+
+            inputScriptSig =
+                ScriptBuilder.updateScriptWithSignature(inputScriptSig, txSigEncoded, keys.indexOf(key), 1, 1);
+            input.setScriptSig(inputScriptSig);
         }
     }
 }

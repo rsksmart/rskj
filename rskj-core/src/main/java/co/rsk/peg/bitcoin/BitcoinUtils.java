@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,5 +58,27 @@ public class BitcoinUtils {
             );
             return Optional.empty();
         }
+    }
+
+    public static void removeSignaturesFromNonSegwitTransaction(BtcTransaction transaction) {
+        if (transaction.hasWitness()) {
+            throw new IllegalArgumentException("Removing signatures from SegWit transactions is not allowed.");
+        }
+
+        for (TransactionInput input : transaction.getInputs()) {
+            Script scriptSigWithoutSignatures = removeSignaturesFromInputScriptSig(input.getScriptSig());
+            input.setScriptSig(scriptSigWithoutSignatures);
+        }
+    }
+
+    private static Script removeSignaturesFromInputScriptSig(Script scriptSig) {
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+        ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
+        Script redeemScript = new Script(redeemScriptChunk.data);
+
+        Script p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        return p2shScript.createEmptyInputScript(null, redeemScript);
     }
 }
