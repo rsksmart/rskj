@@ -3128,14 +3128,12 @@ class Web3ImplTest {
 
     //Chain Param Object creations
     private class ChainParams {
-        private final World world;
         private final Web3Impl web3;
         private final String accountAddress;
         private final Block block;
         private CallArguments argsForCall; // for call tests could be null
 
         private ChainParams(World world, String accountAddress, Block block) {
-            this.world = world;
             this.web3 = createWeb3(world);
             this.accountAddress = accountAddress;
             this.block = block;
