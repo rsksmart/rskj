@@ -57,6 +57,11 @@ class FederationStorageProviderImplTests {
 
     private static ActivationConfig.ForBlock activations;
 
+    @BeforeEach
+    void setup() {
+        activations = ActivationConfigsForTest.all().forBlock(0L);
+    }
+
     private static Stream<Arguments> provideFederationAndFormatArguments() {
         return Stream.of(
             Arguments.of(P2SH_ERP_FEDERATION_FORMAT_VERSION, P2shErpFederationBuilder.builder().build()),
@@ -70,11 +75,6 @@ class FederationStorageProviderImplTests {
             Arguments.of(INVALID_FEDERATION_FORMAT, StandardMultiSigFederationBuilder.builder().build()),
             Arguments.of(EMPTY_FEDERATION_FORMAT, StandardMultiSigFederationBuilder.builder().build())
         );
-    }
-
-    @BeforeEach
-    void setup() {
-        activations = mock(ActivationConfig.ForBlock.class);
     }
 
     @ParameterizedTest
@@ -124,15 +124,15 @@ class FederationStorageProviderImplTests {
         Federation obtainedFederation = federationStorageProvider.getOldFederation(federationConstants, activations);
 
         // Directly saving a null federation in storage to then assert that the method returns the cached federation
-        if(nonNull(expectedFederation)) {
+        if (nonNull(expectedFederation)) {
             storageAccessor.saveToRepository(OLD_FEDERATION_KEY.getKey(), null);
         }
 
         // Assert
+        assertEquals(expectedFederation, obtainedFederation);
 
         // Call the method again and assert the same cached federation is returned
         assertEquals(obtainedFederation, federationStorageProvider.getOldFederation(federationConstants, activations));
-        assertEquals(expectedFederation, obtainedFederation);
     }
 
     @Test
@@ -159,8 +159,6 @@ class FederationStorageProviderImplTests {
         PendingFederation expectedFederation
     ) {
         // Arrange
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
-
         StorageAccessor storageAccessor = new InMemoryStorage();
         byte[] federationFormatSerialized = getFederationFormatSerialized(federationFormat);
         storageAccessor.saveToRepository(PENDING_FEDERATION_FORMAT_VERSION.getKey(), federationFormatSerialized);
@@ -187,7 +185,7 @@ class FederationStorageProviderImplTests {
         PendingFederation expectedFederation = PendingFederationBuilder.builder().build();
 
         // Arrange
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+        activations = ActivationConfigsForTest.orchid().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         byte[] federationFormatSerialized = getFederationFormatSerialized(INVALID_FEDERATION_FORMAT);
@@ -243,7 +241,7 @@ class FederationStorageProviderImplTests {
     @Test
     void getPendingFederation_nullPendingFederationInStorage_returnsNull() {
         // Arrange
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+        activations = ActivationConfigsForTest.orchid().forBlock(0L);
 
         StorageAccessor storageAccessor = new InMemoryStorage();
         byte[] federationFormatSerialized = getFederationFormatSerialized(STANDARD_MULTISIG_FEDERATION_FORMAT_VERSION);
@@ -282,7 +280,7 @@ class FederationStorageProviderImplTests {
     @Test
     void saveNewFederation_before_RSKIP123_should_not_save_null() {
         Repository repository = mock(Repository.class);
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+        activations = ActivationConfigsForTest.orchid().forBlock(0L);
 
         // Act
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
@@ -929,7 +927,7 @@ class FederationStorageProviderImplTests {
             federationArgs,
             erpPubKeys,
             activationDelay,
-            activations
+            ActivationConfigsForTest.all().forBlock(0L)
         );
     }
 
@@ -950,11 +948,11 @@ class FederationStorageProviderImplTests {
     }
 
     private byte[] getSerializedFederation(Federation federation, int federationFormat) {
-        if(isNull(federation)) {
+        if (isNull(federation)) {
             return null;
         }
 
-        if(federationFormat == INVALID_FEDERATION_FORMAT || federationFormat == EMPTY_FEDERATION_FORMAT) {
+        if (federationFormat == INVALID_FEDERATION_FORMAT || federationFormat == EMPTY_FEDERATION_FORMAT) {
             return BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
         }
 

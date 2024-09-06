@@ -71,7 +71,7 @@ class BridgeEventLoggerImplTest {
 
     @BeforeEach
     void setup() {
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         eventLogs = new LinkedList<>();

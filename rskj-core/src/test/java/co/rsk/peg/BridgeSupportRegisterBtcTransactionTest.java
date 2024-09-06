@@ -549,15 +549,14 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(whitelistStorageProvider.getLockWhitelist(activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
-        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
-        FederationSupport federationSupport = federationSupportBuilder
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(activations)
             .withRskExecutionBlock(rskExecutionBlock)
             .build();
 
-        return new BridgeSupportBuilder()
+        return BridgeSupportBuilder.builder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeMainnetConstants)
             .withRepository(repository)
@@ -2624,8 +2623,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
-        FederationSupport federationSupport = federationSupportBuilder
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeRegTestConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskExecutionBlock)
@@ -2633,7 +2631,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             .build();
 
         // act
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBtcBlockStoreFactory(mockFactory)
             .withBridgeConstants(bridgeRegTestConstants)
             .withProvider(provider)

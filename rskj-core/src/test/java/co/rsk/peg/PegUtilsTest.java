@@ -556,7 +556,7 @@ class PegUtilsTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder().build();
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder().build();
         Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,

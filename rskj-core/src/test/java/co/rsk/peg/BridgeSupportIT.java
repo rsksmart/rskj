@@ -101,8 +101,8 @@ import org.mockito.quality.Strictness;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class BridgeSupportIT {
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
-    private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
-    public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
+    private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
+    private static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -118,14 +118,15 @@ public class BridgeSupportIT {
         BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
     );
 
+    private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+
     private BridgeConstants bridgeConstants;
     private FederationConstants federationConstants;
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
     private ActivationConfig.ForBlock activations;
 
-    private BridgeSupportBuilder bridgeSupportBuilder;
-    private FederationSupportBuilder federationSupportBuilder;
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
     private WhitelistSupport whitelistSupport;
@@ -139,8 +140,6 @@ public class BridgeSupportIT {
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeSupportBuilder = new BridgeSupportBuilder();
-        federationSupportBuilder = new FederationSupportBuilder();
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
@@ -1031,7 +1030,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            contractAddress,
+            BRIDGE_ADDRESS,
             bridgeConstants.getBtcParams(),
             activationsBeforeForks
         );
@@ -1083,7 +1082,7 @@ public class BridgeSupportIT {
         Context btcContext = new Context(btcParams);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            contractAddress,
+            BRIDGE_ADDRESS,
             bridgeConstants.getBtcParams(),
             activationsBeforeForks
         );
@@ -1450,7 +1449,7 @@ public class BridgeSupportIT {
         Context btcContext = new Context(btcParams);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            contractAddress,
+            BRIDGE_ADDRESS,
             bridgeConstants.getBtcParams(),
             activationsBeforeForks
         );
@@ -1548,7 +1547,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            contractAddress,
+            BRIDGE_ADDRESS,
             bridgeConstants.getBtcParams(),
             activationsBeforeForks
         );
@@ -1683,7 +1682,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            contractAddress,
+            BRIDGE_ADDRESS,
             bridgeConstants.getBtcParams(),
             activationsBeforeForks
         );
@@ -1929,7 +1928,7 @@ public class BridgeSupportIT {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
-            contractAddress,
+            BRIDGE_ADDRESS,
             bridgeConstants.getBtcParams(),
             activationsBeforeForks
         );

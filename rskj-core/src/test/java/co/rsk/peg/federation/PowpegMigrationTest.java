@@ -238,7 +238,7 @@ class PowpegMigrationTest {
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -327,7 +327,7 @@ class PowpegMigrationTest {
             Block legacyFedActivationBlock = mock(Block.class);
             doReturn(legacyFedActivationBlockNumber).when(legacyFedActivationBlock).getNumber();
 
-            bridgeSupport = new BridgeSupportBuilder()
+            bridgeSupport = BridgeSupportBuilder.builder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
@@ -344,13 +344,13 @@ class PowpegMigrationTest {
             assertNull(bridgeSupport.getRetiringFederation());
         }
 
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(activationBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -415,13 +415,13 @@ class PowpegMigrationTest {
         // Adding 1 as the migration is exclusive
         doReturn(blockNumber).when(migrationBlock).getNumber();
 
-        federationSupport = new FederationSupportBuilder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(migrationBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -575,13 +575,13 @@ class PowpegMigrationTest {
             bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
-        federationSupport = new FederationSupportBuilder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(migrationFinishingBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -615,13 +615,13 @@ class PowpegMigrationTest {
             bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
-        federationSupport = new FederationSupportBuilder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(migrationFinishedBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -797,14 +797,14 @@ class PowpegMigrationTest {
             // Adding 1 as the migration is exclusive
             doReturn(blockNumber).when(nextPegoutEventBlock).getNumber();
 
-            FederationSupport federationSupport = new FederationSupportBuilder()
+            FederationSupport federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(bridgeConstants.getFederationConstants())
                 .withFederationStorageProvider(federationStorageProvider)
                 .withRskExecutionBlock(nextPegoutEventBlock)
                 .withActivations(activations)
                 .build();
 
-            bridgeSupport = new BridgeSupportBuilder()
+            bridgeSupport = BridgeSupportBuilder.builder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
@@ -879,12 +879,12 @@ class PowpegMigrationTest {
         // Adding 1 as the migration is exclusive
         doReturn(blockNumber).when(confirmedPegoutBlock).getNumber();
 
-         FederationSupport federationSupport = new FederationSupportBuilder()
+         FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)

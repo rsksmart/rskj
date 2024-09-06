@@ -23,9 +23,17 @@ public class P2shErpFederationBuilder {
     private NetworkParameters networkParameters;
 
     private P2shErpFederationBuilder() {
-        this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
-        );
+        this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01",
+            "member02",
+            "member03",
+            "member04",
+            "member05",
+            "member06",
+            "member07",
+            "member08",
+            "member09"
+        }, true);
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
         this.erpPublicKeys = FederationMainNetConstants.getInstance().getErpFedPubKeysList();
@@ -96,12 +104,10 @@ public class P2shErpFederationBuilder {
             membersMstPublicKeys = new ArrayList<>(membersRskPublicKeys);
         }
 
-        return IntStream.range(0, membersBtcPublicKeys.size())
-            .mapToObj(i -> new FederationMember(
-                membersBtcPublicKeys.get(i),
-                membersRskPublicKeys.get(i),
-                membersMstPublicKeys.get(i)
-            ))
-            .collect(Collectors.toList());
+        return IntStream.range(0, membersBtcPublicKeys.size()).mapToObj(i -> new FederationMember(
+            membersBtcPublicKeys.get(i),
+            membersRskPublicKeys.get(i),
+            membersMstPublicKeys.get(i)
+        )).collect(Collectors.toList());
     }
 }

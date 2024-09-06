@@ -88,7 +88,7 @@ class BridgeSupportAddSignatureTest {
     void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
-        bridgeSupportBuilder = new BridgeSupportBuilder();
+        bridgeSupportBuilder = BridgeSupportBuilder.builder();
         whitelistSupport = mock(WhitelistSupport.class);
         lockingCapSupport = mock(LockingCapSupport.class);
     }

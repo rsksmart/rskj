@@ -113,7 +113,7 @@ class BridgeSupportReleaseBtcTest {
         utxo = buildUTXO();
         provider = initProvider(repository, activationMock);
         federationStorageProvider = initFederationStorageProvider(repository, activationMock);
-        bridgeSupportBuilder = new BridgeSupportBuilder();
+        bridgeSupportBuilder = BridgeSupportBuilder.builder();
         feePerKbSupport = mock(FeePerKbSupportImpl.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(bridgeConstants.getFeePerKbConstants().getGenesisFeePerKb());
         bridgeSupport = spy(initBridgeSupport(eventLogger, activationMock));
@@ -231,8 +231,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         bridgeSupport.releaseBtc(releaseTx);
 
@@ -243,7 +243,7 @@ class BridgeSupportReleaseBtcTest {
         verify(repository, never()).transfer(any(), any(), any());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        verify(eventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
             any(byte[].class),
             any(BtcTransaction.class),
             any(Coin.class)
@@ -257,8 +257,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         bridgeSupport.releaseBtc(releaseTx);
 
@@ -272,13 +272,13 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(3, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
             any(byte[].class),
             any(BtcTransaction.class),
             any(Coin.class)
         );
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger, times(1)).logUpdateCollections(any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
 
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
@@ -294,8 +294,8 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
 
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         bridgeSupport.releaseBtc(releaseTx);
 
@@ -309,14 +309,14 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(3, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequested(
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(
             any(byte[].class),
             any(BtcTransaction.class),
             any(Coin.class)
         );
 
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger, times(1)).logUpdateCollections(any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
 
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
@@ -331,8 +331,8 @@ class BridgeSupportReleaseBtcTest {
 
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx(Coin.ZERO);
         bridgeSupport.releaseBtc(releaseTx);
@@ -345,11 +345,11 @@ class BridgeSupportReleaseBtcTest {
 
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
 
         assertEquals(1, logInfo.size());
 
-        verify(eventLogger, times(1)).logUpdateCollections(any());
+        verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -357,10 +357,9 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
-
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx(Coin.ZERO);
         bridgeSupport.releaseBtc(releaseTx);
@@ -379,9 +378,9 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(2, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
-        verify(eventLogger, times(1)).logUpdateCollections(any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
     }
 
 
@@ -392,8 +391,8 @@ class BridgeSupportReleaseBtcTest {
 
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx_fromContract(Coin.COIN);
         bridgeSupport.releaseBtc(releaseTx);
@@ -409,11 +408,11 @@ class BridgeSupportReleaseBtcTest {
 
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
         assertEquals(2, logInfo.size());
 
-        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
-        verify(eventLogger, times(1)).logUpdateCollections(any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -423,8 +422,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache);
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache);
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx_fromContract(Coin.COIN);
         try {
@@ -442,8 +441,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
         Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValue()).div(2);
@@ -460,7 +459,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
@@ -476,8 +475,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
         Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValue()).div(2);
@@ -494,7 +493,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
@@ -509,8 +508,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
         Coin middle = bridgeConstants.getLegacyMinimumPegoutTxValue().subtract(bridgeConstants.getMinimumPegoutTxValue()).div(2);
@@ -525,8 +524,8 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
     @Test
@@ -536,8 +535,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         // Get a value exactly to legacy minimum
         Coin value = bridgeConstants.getLegacyMinimumPegoutTxValue();
@@ -549,8 +548,8 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(bridgeEventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
     @Test
@@ -560,8 +559,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         // Get a value exactly to current minimum
         Coin value = bridgeConstants.getMinimumPegoutTxValue();
@@ -575,7 +574,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
@@ -591,8 +590,8 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
-        bridgeSupport = initBridgeSupport(eventLogger, activationMock);
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo, signatureCache));
+        bridgeSupport = initBridgeSupport(bridgeEventLogger, activationMock);
 
         // Get a value exactly to current minimum
         Coin value = bridgeConstants.getMinimumPegoutTxValue();
@@ -606,7 +605,7 @@ class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(bridgeEventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
 
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
@@ -665,16 +664,16 @@ class BridgeSupportReleaseBtcTest {
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
 
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "one"), Coin.COIN),
             new ReleaseRequestQueue.Entry(BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "two"), Coin.COIN))
         ));
-        when(provider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
+        when(bridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(new PegoutsWaitingForConfirmations(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstants)
-            .withProvider(provider)
+            .withProvider(bridgeStorageProvider)
             .withActivations(activationMock)
             .build();
 
@@ -682,11 +681,11 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         // assert pegouts were not batched
-        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
 
-        verify(provider, never()).getNextPegoutHeight();
-        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+        verify(bridgeStorageProvider, never()).getNextPegoutHeight();
+        verify(bridgeStorageProvider, never()).setNextPegoutHeight(any(Long.class));
     }
 
     @Test
@@ -854,7 +853,7 @@ class BridgeSupportReleaseBtcTest {
 
         federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(activationMock)
@@ -1147,7 +1146,7 @@ class BridgeSupportReleaseBtcTest {
 
         utxos.add(PegTestUtils.createUTXO(4, 3, Coin.COIN.multiply(1), genesisFederation.getAddress()));
         when(federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activationMock)).thenReturn(utxos);
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(activationMock)
@@ -1347,7 +1346,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .build();

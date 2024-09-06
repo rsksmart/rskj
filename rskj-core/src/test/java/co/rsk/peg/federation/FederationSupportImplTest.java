@@ -70,7 +70,7 @@ class FederationSupportImplTest {
     private ErpFederation newFederation;
     private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
-    private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private FederationSupport federationSupport;
     private SignatureCache signatureCache;
 

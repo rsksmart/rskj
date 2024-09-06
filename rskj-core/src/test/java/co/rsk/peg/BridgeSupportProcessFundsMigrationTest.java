@@ -156,15 +156,14 @@ class BridgeSupportProcessFundsMigrationTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
-        FederationSupport federationSupport = federationSupportBuilder
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .build();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)

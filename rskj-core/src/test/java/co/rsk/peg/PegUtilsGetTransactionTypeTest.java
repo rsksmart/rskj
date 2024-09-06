@@ -1734,7 +1734,7 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withActivations(activations)
             .build();
@@ -1794,7 +1794,7 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withActivations(activations)
             .build();
@@ -1868,7 +1868,7 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withActivations(activations)
             .build();
@@ -1942,7 +1942,7 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withActivations(activations)
             .build();
@@ -2022,7 +2022,7 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withActivations(activations)
             .build();
