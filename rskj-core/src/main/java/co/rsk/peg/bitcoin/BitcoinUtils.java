@@ -76,9 +76,11 @@ public class BitcoinUtils {
 
     private static Script removeSignaturesFromInputScriptSig(Script scriptSig) {
         List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+
         int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
         ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
         Script redeemScript = new Script(redeemScriptChunk.data);
+
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         return p2shScript.createEmptyInputScript(null, redeemScript);
     }
