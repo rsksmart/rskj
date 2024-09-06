@@ -1,10 +1,6 @@
 name: Rootstock Integration Tests
 
 on:
-  pull_request:
-    types: [opened, reopened]
-    branches:
-      - "**"
   push:
     branches: ["master", "*-rc"]
   workflow_dispatch:
@@ -32,12 +28,8 @@ jobs:
           RIT_BRANCH="${{ github.event.inputs.rit-branch || 'main' }}"
           POWPEG_BRANCH="${{ github.event.inputs.powpeg-branch || 'master' }}"
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            RSKJ_BRANCH="${{ github.event.pull_request.head.ref }}"
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            if [[ "${{ github.ref }}" == refs/heads/*-rc ]]; then
-              RSKJ_BRANCH="${{ github.ref }}"
-            fi
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/*-rc" ]]; then
+            RSKJ_BRANCH="${{ github.ref }}"
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             RSKJ_BRANCH="${{ github.ref_name }}"
           fi
@@ -46,23 +38,9 @@ jobs:
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
 
-      - name: Checkout rskj Repository
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
-        with:
-          repository: rsksmart/rskj
-          ref: ${{ env.RSKJ_BRANCH }}
-          fetch-depth: 1
-
-      - name: Checkout Rootstock Integration Tests Repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
-        with:
-          repository: rsksmart/rootstock-integration-tests
-          ref: ${{ env.RIT_BRANCH }}
-          fetch-depth: 0
-
       - name: Run Rootstock Integration Tests
         uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
+          rit-branch: ${{ env.RIT_BRANCH }}
