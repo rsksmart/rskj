@@ -171,7 +171,7 @@ public class Transaction {
         return new TransactionBuilder();
     }
 
-    public org.ethereum.core.Transaction toImmutableTransaction() {
+    public Transaction toImmutableTransaction() {
         return new ImmutableTransaction(this.getEncoded());
     }
 
@@ -528,11 +528,11 @@ public class Transaction {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof org.ethereum.core.Transaction)) {
+        if (!(obj instanceof Transaction)) {
             return false;
         }
 
-        org.ethereum.core.Transaction tx = (org.ethereum.core.Transaction) obj;
+        Transaction tx = (Transaction) obj;
 
         return Objects.equals(this.getHash(), tx.getHash());
     }

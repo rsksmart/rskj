@@ -1643,11 +1643,11 @@ public class Program {
             return new StackTooSmallException("Expected stack size %d but actual %d, tx: %s", expectedSize, actualSize, extractTxHash(program));
         }
 
-        public static RuntimeException tooLargeContractSize(@Nonnull Program program, int maxSize, int actualSize) {
+        public static RuntimeException tooLargeContractSize(@Nonnull Program program, long maxSize, long actualSize) {
             return new RuntimeException(format("Maximum contract size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
         }
 
-        public static RuntimeException tooLargeInitCodeSize(@Nonnull Program program, int maxSize, int actualSize) {
+        public static RuntimeException tooLargeInitCodeSize(@Nonnull Program program, long maxSize, long actualSize) {
             return new RuntimeException(format("Maximum initcode size allowed %d but actual was %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
         }
 

@@ -25,14 +25,11 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import static org.ethereum.vm.GasCost.INITCODE_WORD_COST;
 
 public class InitcodeCostCalculator implements CostCalculator {
-    private static InitcodeCostCalculator INSTANCE;
+    private static InitcodeCostCalculator INSTANCE = new InitcodeCostCalculator();
 
     private InitcodeCostCalculator() {}
 
     public static InitcodeCostCalculator getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new InitcodeCostCalculator();
-        }
         return INSTANCE;
     }
 

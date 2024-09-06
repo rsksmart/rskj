@@ -85,9 +85,9 @@ class ConstantsTest {
     @Test
     void maxInitcodeSizeTest() {
         //given
-        int maxInitCodeSizeExpected = 49152;
+        long maxInitCodeSizeExpected = 49152L;
         //when
-        int maxInitCodeSize = Constants.getMaxInitCodeSize();
+        long maxInitCodeSize = Constants.getMaxInitCodeSize();
         //then
         assertEquals(maxInitCodeSizeExpected, maxInitCodeSize);
     }

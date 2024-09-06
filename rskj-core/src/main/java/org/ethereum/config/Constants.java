@@ -48,8 +48,8 @@ public class Constants {
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5L * 60;  // 5 mins
     private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 120L * 60; // 120 mins
-    private static final int MAX_CONTRACT_SIZE = 0x6000;
-    private static final int MAX_INITCODE_SIZE = 2 * MAX_CONTRACT_SIZE;
+    private static final long MAX_CONTRACT_SIZE = 0x6000;
+    private static final long MAX_INITCODE_SIZE = 2 * MAX_CONTRACT_SIZE;
 
     private final byte chainId;
     private final boolean seedCowAccounts;
@@ -215,11 +215,11 @@ public class Constants {
         return TRANSACTION_GAS_CAP;
     }
 
-    public static int getMaxContractSize() {
+    public static long getMaxContractSize() {
         return MAX_CONTRACT_SIZE;
     }
 
-    public static int getMaxInitCodeSize() {
+    public static long getMaxInitCodeSize() {
         return MAX_INITCODE_SIZE;
     }
 
