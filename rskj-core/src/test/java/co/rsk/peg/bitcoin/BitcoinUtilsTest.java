@@ -317,7 +317,7 @@ class BitcoinUtilsTest {
         // act & assert
         IllegalArgumentException exception =
             Assertions.assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromNonSegwitTransaction(transaction));
-        Assertions.assertEquals("SegWit transactions does not have signatures.", exception.getMessage());
+        Assertions.assertEquals("Removing signatures from SegWit transactions is not allowed.", exception.getMessage());
     }
 
     @Test
@@ -328,6 +328,7 @@ class BitcoinUtilsTest {
 
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
+        
         BtcTransaction transactionWithoutSignatures = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
 
         for (int i = 0; i < federation.getNumberOfSignaturesRequired(); i++) {

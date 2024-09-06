@@ -65,7 +65,7 @@ public class BitcoinUtils {
 
     public static void removeSignaturesFromNonSegwitTransaction(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
-            throw new IllegalArgumentException("SegWit transactions does not have signatures.");
+            throw new IllegalArgumentException("Removing signatures from SegWit transactions is not allowed.");
         }
 
         for (TransactionInput input : transaction.getInputs()) {
