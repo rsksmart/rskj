@@ -23,5 +23,5 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 public interface CostCalculator {
 
-    long calculateCost(int dataLength, ActivationConfig.ForBlock activations);
+    long calculateCost(long dataLength, ActivationConfig.ForBlock activations);
 }

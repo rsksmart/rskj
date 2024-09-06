@@ -207,7 +207,7 @@ public class Transaction {
         long zeroVals = getLength(this.getData()) - nonZeroes;
 
         long transactionCost = this.isContractCreation()
-                ? GasCost.TRANSACTION_CREATE_CONTRACT + InitcodeCostCalculator.getInstance().calculateCost(this.getData().length, activations)
+                ? GasCost.add(GasCost.TRANSACTION_CREATE_CONTRACT, InitcodeCostCalculator.getInstance().calculateCost(this.getData().length, activations))
                 : GasCost.TRANSACTION;
 
         long txNonZeroDataCost = getTxNonZeroDataCost(activations);

@@ -75,7 +75,7 @@ public class TransactionExecutorInitCodeSizeDslTest {
     @Test
     void testInitCodeSizeTransactionCreationValidationFailsWithRSKIPActiveWithInitcodeSizeMaxReached() throws FileNotFoundException, DslProcessorException {
         World world = createWorldAndProcessIt("dsl/initcode_size_rskip438/tx_creation_validation_fails_with_rskip_active_with_initcode_size_max_reached.txt",  new TestSystemProperties());
-
+      
         assertTransactionExecutedWasAddedToBlockWithExpectedStatus(world, "txCreateContract", "b01", false);
     }
 
