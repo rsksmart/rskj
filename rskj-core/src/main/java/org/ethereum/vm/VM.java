@@ -1452,7 +1452,7 @@ public class VM {
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
             gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
-            gasCost = GasCost.add(gasCost, InitcodeCostCalculator.getInstance().calculateCost((int) sizeLong, program.getActivations()));
+            gasCost = GasCost.add(gasCost, InitcodeCostCalculator.getInstance().calculateCost(sizeLong, program.getActivations()));
 
             spendOpCodeGas();
         }
@@ -1487,7 +1487,7 @@ public class VM {
                     GasCost.SHA3_WORD,
                     GasCost.add(codeSize, 31) / 32
             ) ;
-            gasCost = GasCost.add(gasCost, InitcodeCostCalculator.getInstance().calculateCost((int) codeSize, program.getActivations()));
+            gasCost = GasCost.add(gasCost, InitcodeCostCalculator.getInstance().calculateCost(codeSize, program.getActivations()));
             spendOpCodeGas();
         }
 
