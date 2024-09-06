@@ -1,7 +1,6 @@
 package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
