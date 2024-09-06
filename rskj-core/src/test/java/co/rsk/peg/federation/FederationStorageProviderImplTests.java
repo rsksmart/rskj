@@ -444,7 +444,6 @@ class FederationStorageProviderImplTests {
 
     @Test
     void getNewFederationBtcUTXOs_calledTwice_returnCachedUtxos() {
-        ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0);
         StorageAccessor storageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
 
@@ -457,7 +456,7 @@ class FederationStorageProviderImplTests {
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, expectedUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are as expected
-        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, wasabiActivations);
+        List<UTXO> actualUtxos = federationStorageProvider.getNewFederationBtcUTXOs(networkParameters, activations);
         assertEquals(1, actualUtxos.size());
         assertEquals(expectedUtxos, actualUtxos);
 
@@ -466,7 +465,7 @@ class FederationStorageProviderImplTests {
         storageAccessor.saveToRepository(newFederationBtcUtxosKey, extraUtxos, BridgeSerializationUtils::serializeUTXOList);
 
         // Get utxos from method and check they are still the same as the original expected utxos since it is returning the cached utxos
-        List<UTXO> actualUtxosAfterSecondGet = federationStorageProvider.getNewFederationBtcUTXOs(null, wasabiActivations);
+        List<UTXO> actualUtxosAfterSecondGet = federationStorageProvider.getNewFederationBtcUTXOs(null, activations);
         assertEquals(1, actualUtxosAfterSecondGet.size());
         assertEquals(expectedUtxos, actualUtxosAfterSecondGet);
 
