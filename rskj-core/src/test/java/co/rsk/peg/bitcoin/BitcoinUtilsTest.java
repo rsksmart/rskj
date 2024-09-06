@@ -1,7 +1,6 @@
 package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -333,7 +332,7 @@ class BitcoinUtilsTest {
 
         for (int i = 0; i < federation.getNumberOfSignaturesRequired(); i++) {
             BtcECKey key = new BtcECKey();
-            addSignaturesToInput(transaction, 0, Collections.singletonList(key));
+            BitcoinTestUtils.addSignaturesToInput(transaction, 0, Collections.singletonList(key));
         }
 
         // act
@@ -341,31 +340,5 @@ class BitcoinUtilsTest {
 
         // assert
         Assertions.assertEquals(transactionWithoutSignatures, transaction);
-    }
-
-    private void addSignaturesToInput(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
-        if (transaction.getWitness(inputIndex).getPushCount() == 0) {
-            addSignaturesToInputScriptSig(transaction, inputIndex, keys);
-        }
-    }
-
-    private void addSignaturesToInputScriptSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
-        TransactionInput input = transaction.getInput(inputIndex);
-        Script inputScriptSig = input.getScriptSig();
-
-        List<ScriptChunk> scriptSigChunks = inputScriptSig.getChunks();
-        ScriptChunk redeemScriptChunk = scriptSigChunks.get(scriptSigChunks.size() - 1);
-        Script redeemScript = new Script(redeemScriptChunk.data);
-
-        for (BtcECKey key : keys) {
-            Sha256Hash sigHash = transaction.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
-            BtcECKey.ECDSASignature sig = key.sign(sigHash);
-            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
-            byte[] txSigEncoded = txSig.encodeToBitcoin();
-
-            inputScriptSig =
-                ScriptBuilder.updateScriptWithSignature(inputScriptSig, txSigEncoded, keys.indexOf(key), 1, 1);
-            input.setScriptSig(inputScriptSig);
-        }
     }
 }
