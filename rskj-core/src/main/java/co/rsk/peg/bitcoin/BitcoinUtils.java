@@ -63,30 +63,23 @@ public class BitcoinUtils {
         }
     }
 
-    public static Script removeSignaturesFromErpScriptSig(Script scriptSig) {
-        ScriptBuilder scriptBuilder = new ScriptBuilder();
-
-        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
-
-        int op0ChunkIndex = 0;
-        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
-        int opIfElseChunkIndex = redeemScriptChunkIndex - 1;
-
-        ScriptChunk op0Chunk = scriptSigChunks.get(op0ChunkIndex);
-        scriptBuilder.addChunk(op0Chunk);
-
-        int signaturesStartIndex = op0ChunkIndex + 1;
-        int signaturesEndIndex = opIfElseChunkIndex - 1;
-        for (int i = signaturesStartIndex; i <= signaturesEndIndex ; i++) {
-            byte[] data = new byte[0];
-            scriptBuilder.data(data);
+    public static void removeSignaturesFromNonSegwitTransaction(BtcTransaction transaction) {
+        if (transaction.hasWitness()) {
+            throw new IllegalArgumentException("SegWit transactions does not have signatures.");
         }
 
-        ScriptChunk opIfElseChunk = scriptSigChunks.get(opIfElseChunkIndex);
-        scriptBuilder.addChunk(opIfElseChunk);
-        ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
-        scriptBuilder.addChunk(redeemScriptChunk);
+        for (TransactionInput input : transaction.getInputs()) {
+            Script scriptSigWithoutSignatures = removeSignaturesFromInputScriptSig(input.getScriptSig());
+            input.setScriptSig(scriptSigWithoutSignatures);
+        }
+    }
 
-        return scriptBuilder.build();
+    private static Script removeSignaturesFromInputScriptSig(Script scriptSig) {
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+        ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
+        Script redeemScript = new Script(redeemScriptChunk.data);
+        Script p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        return p2shScript.createEmptyInputScript(null, redeemScript);
     }
 }
