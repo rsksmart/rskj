@@ -85,7 +85,29 @@ class DslFilesTest {
         BigInteger gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed());
 
         Assertions.assertNotEquals(BigInteger.ZERO, gasUsed);
-        // According to TestRPC and geth, the gas used is 0x010c2d
+        Assertions.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("fd5f")), gasUsed);
+    }
+
+    @Test
+    void runCreate01ResourceBeforeActivationOfRSKIP438() throws FileNotFoundException, DslProcessorException {
+        TestSystemProperties rskip438Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
+        DslParser parser = DslParser.fromResource("dsl/create01.txt");
+        World world = new World(rskip438Disabled);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        Assertions.assertNotNull(transaction);
+
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
+
+        Assertions.assertNotNull(txinfo);
+        BigInteger gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed());
+
+        Assertions.assertEquals(BigInteger.valueOf(64857), gasUsed);
         Assertions.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("fd59")), gasUsed);
     }
 
