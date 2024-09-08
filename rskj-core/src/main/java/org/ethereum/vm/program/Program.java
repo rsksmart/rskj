@@ -34,28 +34,56 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
-import org.ethereum.vm.*;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
+import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.MessageCall.MsgType;
+import org.ethereum.vm.OpCode;
+import org.ethereum.vm.PrecompiledContractArgs;
+import org.ethereum.vm.PrecompiledContractArgsBuilder;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
+import org.ethereum.vm.VM;
 import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.invoke.*;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.program.invoke.SuicideInvoke;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
-import org.ethereum.vm.trace.*;
+import org.ethereum.vm.trace.DetailedProgramTrace;
+import org.ethereum.vm.trace.EmptyProgramTrace;
+import org.ethereum.vm.trace.ProgramTrace;
+import org.ethereum.vm.trace.ProgramTraceListener;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
-import static co.rsk.util.ListArrayUtil.*;
+import static co.rsk.util.ListArrayUtil.getLength;
+import static co.rsk.util.ListArrayUtil.isEmpty;
+import static co.rsk.util.ListArrayUtil.nullToEmpty;
 import static java.lang.String.format;
-import static org.ethereum.util.BIUtil.*;
+import static org.ethereum.util.BIUtil.isNotCovers;
+import static org.ethereum.util.BIUtil.isPositive;
+import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -453,6 +481,10 @@ public class Program {
     }
 
     private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress, boolean isCreate2) {
+        // [1] FETCH THE CODE FROM THE MEMORY
+        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+       validateInitcodeSize(programCode);
+
         if (getCallDeep() == getMaxDepth()) {
             logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
             stackPushZero();
@@ -465,9 +497,6 @@ public class Program {
             return;
         }
 
-        // [1] FETCH THE CODE FROM THE MEMORY
-        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
-
         if (isLogEnabled) {
             logger.info("creating a new contract inside contract run: [{}]", senderAddress);
         }
@@ -475,7 +504,6 @@ public class Program {
         //  actual gas subtract
         long gasLimit = getRemainingGas();
         spendGas(gasLimit, "internal call");
-
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
@@ -533,6 +561,7 @@ public class Program {
                             programResult.getException());
                 }
 
+                //TODO: Delete this commented code? Doesn't seem to be missed since it's being like this since 2019.
                 // The programResult is empty and internalTx was not created so we skip this part
                 /*if (internalTx == null) {
                     throw new NullPointerException();
@@ -572,6 +601,18 @@ public class Program {
 
         // REFUND THE REMAIN GAS
         refundRemainingGas(gasLimit, programResult);
+    }
+
+    private void validateInitcodeSize(byte[] programCode) {
+        int initCodeSize = getLength(programCode);
+
+        if(activations.isActive(ConsensusRule.RSKIP438)
+                && initCodeSize > Constants.getMaxInitCodeSize()) {
+            throw ExceptionHelper.tooLargeInitCodeSize(
+                    this,
+                    Constants.getMaxInitCodeSize(),
+                    initCodeSize);
+        }
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
@@ -862,8 +903,6 @@ public class Program {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
         }
-
-
 
         // 3. APPLY RESULTS: childResult.getHReturn() into out_memory allocated
         byte[] buffer = childResult.getHReturn();
@@ -1604,8 +1643,12 @@ public class Program {
             return new StackTooSmallException("Expected stack size %d but actual %d, tx: %s", expectedSize, actualSize, extractTxHash(program));
         }
 
-        public static RuntimeException tooLargeContractSize(@Nonnull Program program, int maxSize, int actualSize) {
+        public static RuntimeException tooLargeContractSize(@Nonnull Program program, long maxSize, long actualSize) {
             return new RuntimeException(format("Maximum contract size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
+        }
+
+        public static RuntimeException tooLargeInitCodeSize(@Nonnull Program program, long maxSize, long actualSize) {
+            return new RuntimeException(format("Maximum initcode size allowed %d but actual was %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
         }
 
         public static AddressCollisionException addressCollisionException(@Nonnull Program program, RskAddress address) {

@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2022 RSK Labs Ltd.
+ * Copyright (C) 2024 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,15 +17,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.vm;
+package org.ethereum.cost;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
-class ProgramTestLogsOffOffTest extends ProgramTest {
+public interface CostCalculator {
 
-    @BeforeEach
-    void beforeEach() {
-        setUp(false, false);
-    }
-
+    long calculateCost(long dataLength, ActivationConfig.ForBlock activations);
 }
