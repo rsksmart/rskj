@@ -3,6 +3,9 @@ name: Rootstock Integration Tests
 on:
   push:
     branches: ["master", "*-rc"]
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches: ["master", "*-rc"]
   workflow_dispatch:
     inputs:
       rit-branch:
@@ -32,6 +35,8 @@ jobs:
             RSKJ_BRANCH="${{ github.ref }}"
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             RSKJ_BRANCH="${{ github.ref_name }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RSKJ_BRANCH="${{ github.head_ref }}"
           fi
 
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
