@@ -315,7 +315,7 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigScriptSig(transaction));
+            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction));
         Assertions.assertEquals("Removing signatures from SegWit transactions is not allowed.", exception.getMessage());
     }
 
@@ -326,12 +326,12 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigScriptSig(transaction));
+            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction));
         Assertions.assertEquals("Cannot remove signatures from transaction inputs of a transaction without inputs.", exception.getMessage());
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionInputsDoNotHaveP2shMultiSigScriptSig_shouldThrowIllegalArgumentException() {
+    void removeSignaturesFromTransaction_whenTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         BtcECKey pubKey = new BtcECKey();
@@ -340,12 +340,12 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigScriptSig(transaction));
-        Assertions.assertEquals("Cannot remove signatures from transaction inputs that does not have p2sh multisig script sig.", exception.getMessage());
+            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction));
+        Assertions.assertEquals("Cannot remove signatures from transaction inputs that does not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldRemoveSignaturesFromScriptSig() {
+    void removeSignaturesFromTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldRemoveSignatures() {
         // arrange
         Federation federation = new P2shErpFederationBuilder().build();
         Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -361,7 +361,7 @@ class BitcoinUtilsTest {
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigScriptSig(transaction);
+        BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction);
 
         // assert
         Assertions.assertEquals(transactionWithoutSignaturesCopy, transaction);

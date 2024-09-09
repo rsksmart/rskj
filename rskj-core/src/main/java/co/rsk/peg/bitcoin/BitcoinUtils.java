@@ -63,7 +63,7 @@ public class BitcoinUtils {
         }
     }
 
-    public static void removeSignaturesFromTransactionWithInputsWithP2shMultiSigScriptSig(BtcTransaction transaction) {
+    public static void removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             throw new IllegalArgumentException("Removing signatures from SegWit transactions is not allowed.");
         }
@@ -76,7 +76,7 @@ public class BitcoinUtils {
             Optional<Script> inputRedeemScriptOpt = extractRedeemScriptFromInput(input);
 
             if (!inputRedeemScriptOpt.isPresent()) {
-                throw new IllegalArgumentException("Cannot remove signatures from transaction inputs that does not have p2sh multisig script sig.");
+                throw new IllegalArgumentException("Cannot remove signatures from transaction inputs that does not have p2sh multisig input script.");
             }
 
             Script inputRedeemScript = inputRedeemScriptOpt.get();

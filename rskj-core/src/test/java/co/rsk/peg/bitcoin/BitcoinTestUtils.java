@@ -129,11 +129,11 @@ public class BitcoinTestUtils {
 
     public static void signTransactionInputFromMultiSigWithKeys(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         if (transaction.getWitness(inputIndex).getPushCount() == 0) {
-            signLegacyTransactionInputWithP2shMultiSigScriptSig(transaction, inputIndex, keys);
+            signLegacyTransactionInputWithP2shMultiSigInputScript(transaction, inputIndex, keys);
         }
     }
 
-    private static void signLegacyTransactionInputWithP2shMultiSigScriptSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+    private static void signLegacyTransactionInputWithP2shMultiSigInputScript(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
         Optional<Script> inputRedeemScriptOpt = BitcoinUtils.extractRedeemScriptFromInput(input);
