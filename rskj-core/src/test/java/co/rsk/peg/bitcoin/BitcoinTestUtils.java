@@ -137,10 +137,10 @@ public class BitcoinTestUtils {
         TransactionInput input = transaction.getInput(inputIndex);
 
         Optional<Script> inputRedeemScriptOpt = BitcoinUtils.extractRedeemScriptFromInput(input);
-
         if (!inputRedeemScriptOpt.isPresent()) {
             throw new IllegalArgumentException("Cannot sign inputs that are not from a multisig");
         }
+
         Script inputRedeemScript = inputRedeemScriptOpt.get();
         Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
         Script inputScriptSig = input.getScriptSig();
