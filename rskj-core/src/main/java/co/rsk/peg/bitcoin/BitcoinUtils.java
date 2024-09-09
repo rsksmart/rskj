@@ -45,13 +45,13 @@ public class BitcoinUtils {
             return Optional.empty();
         }
 
-        byte[] program = chunks.get(chunks.size() - 1).data;
-        if (program == null) {
+        byte[] redeemScriptProgram = chunks.get(chunks.size() - 1).data;
+        if (redeemScriptProgram == null) {
             return Optional.empty();
         }
 
         try {
-            Script redeemScript = new Script(program);
+            Script redeemScript = new Script(redeemScriptProgram);
             return Optional.of(redeemScript);
         } catch (ScriptException e) {
             logger.debug(
@@ -63,25 +63,26 @@ public class BitcoinUtils {
         }
     }
 
-    public static void removeSignaturesFromNonSegwitTransaction(BtcTransaction transaction) {
+    public static void removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             throw new IllegalArgumentException("Removing signatures from SegWit transactions is not allowed.");
         }
 
-        for (TransactionInput input : transaction.getInputs()) {
-            Script scriptSigWithoutSignatures = removeSignaturesFromInputScriptSig(input.getScriptSig());
-            input.setScriptSig(scriptSigWithoutSignatures);
+        if (transaction.getInputs().isEmpty()) {
+            throw new IllegalArgumentException("Cannot remove signatures from transaction inputs of a transaction without inputs.");
         }
-    }
 
-    private static Script removeSignaturesFromInputScriptSig(Script scriptSig) {
-        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+        for (TransactionInput input : transaction.getInputs()) {
+            Optional<Script> inputRedeemScriptOpt = extractRedeemScriptFromInput(input);
 
-        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
-        ScriptChunk redeemScriptChunk = scriptSigChunks.get(redeemScriptChunkIndex);
-        Script redeemScript = new Script(redeemScriptChunk.data);
+            if (!inputRedeemScriptOpt.isPresent()) {
+                throw new IllegalArgumentException("Cannot remove signatures from transaction inputs that does not have p2sh multisig input script.");
+            }
 
-        Script p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-        return p2shScript.createEmptyInputScript(null, redeemScript);
+            Script inputRedeemScript = inputRedeemScriptOpt.get();
+            Script p2shScript = ScriptBuilder.createP2SHOutputScript(inputRedeemScript);
+            Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
+            input.setScriptSig(emptyInputScript);
+        }
     }
 }
