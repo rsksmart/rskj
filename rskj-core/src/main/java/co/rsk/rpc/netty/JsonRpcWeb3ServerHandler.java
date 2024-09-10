@@ -26,6 +26,7 @@ import co.rsk.rpc.exception.JsonRpcResponseLimitError;
 import co.rsk.rpc.exception.JsonRpcThrowableError;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.exc.StreamConstraintsException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -89,11 +90,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             LOGGER.error(invalidReqMsg, e);
             responseContent = buildErrorContent(ErrorResolver.JsonError.INVALID_REQUEST.code, e.getMessage());
             responseCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
-        } catch (StackOverflowError e) {
-            String stackOverflowErrorMsg = "Invalid request";
-            LOGGER.error(stackOverflowErrorMsg, e);
+        } catch (StackOverflowError | StreamConstraintsException e) {
+            String invalidReqMsg = "Invalid request";
+            LOGGER.error(invalidReqMsg, e);
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
-            responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
+            responseContent = buildErrorContent(errorCode, invalidReqMsg);
             responseCode = errorCode;
         } catch (JsonRpcThrowableError e) {
             LOGGER.error(e.getMessage(), e);
