@@ -65,21 +65,29 @@ public class BitcoinUtils {
 
     public static void removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
-            throw new IllegalArgumentException("Removing signatures from SegWit transactions is not allowed.");
+            String message = "Removing signatures from SegWit transactions is not allowed.";
+            logger.error(message);
+            throw new IllegalArgumentException(message);
         }
 
         if (transaction.getInputs().isEmpty()) {
-            throw new IllegalArgumentException("Cannot remove signatures from transaction inputs of a transaction without inputs.");
+            String message = "Cannot remove signatures from transaction inputs of a transaction without inputs.";
+            logger.error(message);
+            throw new IllegalArgumentException(message);
         }
 
         for (TransactionInput input : transaction.getInputs()) {
             Optional<Script> inputRedeemScriptOpt = extractRedeemScriptFromInput(input);
 
-            if (!inputRedeemScriptOpt.isPresent()) {
-                throw new IllegalArgumentException("Cannot remove signatures from transaction inputs that does not have p2sh multisig input script.");
-            }
-
-            Script inputRedeemScript = inputRedeemScriptOpt.get();
+            Script inputRedeemScript = Optional.of(inputRedeemScriptOpt)
+                .get()
+                .orElseThrow(
+                    () -> {
+                        String message = "Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.";
+                        logger.error(message);
+                        return new IllegalArgumentException(message);
+                    }
+                );
             Script p2shScript = ScriptBuilder.createP2SHOutputScript(inputRedeemScript);
             Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
             input.setScriptSig(emptyInputScript);

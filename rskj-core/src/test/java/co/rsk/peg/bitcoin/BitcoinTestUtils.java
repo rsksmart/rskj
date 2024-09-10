@@ -14,6 +14,8 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+
 public class BitcoinTestUtils {
 
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
@@ -38,7 +40,7 @@ public class BitcoinTestUtils {
 
     public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
         Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        Script outputScript = createP2SHOutputScript(redeemScript);
 
         return Address.fromP2SHScript(networkParameters, outputScript);
     }
@@ -137,11 +139,10 @@ public class BitcoinTestUtils {
         TransactionInput input = transaction.getInput(inputIndex);
 
         Optional<Script> inputRedeemScriptOpt = BitcoinUtils.extractRedeemScriptFromInput(input);
-        if (!inputRedeemScriptOpt.isPresent()) {
-            throw new IllegalArgumentException("Cannot sign inputs that are not from a multisig");
-        }
+        Script inputRedeemScript = Optional.of(inputRedeemScriptOpt)
+            .get()
+            .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a multisig"));
 
-        Script inputRedeemScript = inputRedeemScriptOpt.get();
         Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
         Script inputScriptSig = input.getScriptSig();
         for (BtcECKey key : keys) {
@@ -149,8 +150,8 @@ public class BitcoinTestUtils {
             TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
             byte[] txSigEncoded = txSig.encodeToBitcoin();
 
-            inputScriptSig =
-                ScriptBuilder.updateScriptWithSignature(inputScriptSig, txSigEncoded, keys.indexOf(key), 1, 1);
+            Script outputScript = createP2SHOutputScript(inputRedeemScript);
+            inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keys.indexOf(key));
             input.setScriptSig(inputScriptSig);
         }
     }

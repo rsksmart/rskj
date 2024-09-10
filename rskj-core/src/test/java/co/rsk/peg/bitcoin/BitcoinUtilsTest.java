@@ -341,7 +341,7 @@ class BitcoinUtilsTest {
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
             () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction));
-        Assertions.assertEquals("Cannot remove signatures from transaction inputs that does not have p2sh multisig input script.", exception.getMessage());
+        Assertions.assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
