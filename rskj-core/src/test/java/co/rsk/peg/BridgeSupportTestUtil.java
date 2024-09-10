@@ -24,14 +24,39 @@ public final class BridgeSupportTestUtil {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
-    public static PartialMerkleTree createValidPmtWithTransactions(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
+    public static void recreateChainAtHeightWithStoredBlockThatHasTransactionsAtHeight(
+        BtcBlockStoreWithCache btcBlockStoreWithCache,
+        int chainHeight,
+        List<Sha256Hash> transactionHashes,
+        int btcBlockThatHasTransactionsHeight,
+        NetworkParameters networkParameters
+    ) throws BlockStoreException {
+
+        // first create the block to have the wanted transactions
+        PartialMerkleTree pmtWithTransactions = createValidPmtWithTransactions(transactionHashes, networkParameters);
+        BtcBlock btcBlockThatHasTransactions = createBtcBlockWithPmt(pmtWithTransactions, networkParameters);
+        // stored it on the chain at wanted height
+        StoredBlock storedBtcBlockThatHasTransactions = new StoredBlock(btcBlockThatHasTransactions, BigInteger.ONE, btcBlockThatHasTransactionsHeight);
+        btcBlockStoreWithCache.put(storedBtcBlockThatHasTransactions);
+        btcBlockStoreWithCache.setMainChainBlock(btcBlockThatHasTransactionsHeight, btcBlockThatHasTransactions.getHash());
+
+        // create and store the new chainHead at wanted chain height
+        Sha256Hash randomTransactionHash = Sha256Hash.of(Hex.decode("aa"));
+        PartialMerkleTree pmt = createValidPmtWithTransactions(Collections.singletonList(randomTransactionHash), networkParameters);
+        BtcBlock chainHeadBlock = createBtcBlockWithPmt(pmt, networkParameters);
+        StoredBlock storedChainHeadBlock = new StoredBlock(chainHeadBlock, BigInteger.TEN, chainHeight);
+        btcBlockStoreWithCache.put(storedChainHeadBlock);
+        btcBlockStoreWithCache.setChainHead(storedChainHeadBlock);
+    }
+
+    private static PartialMerkleTree createValidPmtWithTransactions(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
 
         return new PartialMerkleTree(networkParameters, bits, hashesToAdd, 1);
     }
 
-    public static BtcBlock createBtcBlockWithPmt(PartialMerkleTree pmt, NetworkParameters networkParameters) {
+    private static BtcBlock createBtcBlockWithPmt(PartialMerkleTree pmt, NetworkParameters networkParameters) {
         Sha256Hash prevBlockHash = BitcoinTestUtils.createHash(1);
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
 
@@ -47,21 +72,6 @@ public final class BridgeSupportTestUtil {
         );
     }
 
-    public static void createChainWithBlockStoredAtHeight(BtcBlock btcBlock, BtcBlockStoreWithCache btcBlockStoreWithCache, int btcBlockHeight, int chainHeight, NetworkParameters networkParameters) throws BlockStoreException {
-        // first store our block on the chain at its height
-        StoredBlock storedBtcBlock = new StoredBlock(btcBlock, BigInteger.ONE, btcBlockHeight);
-        btcBlockStoreWithCache.put(storedBtcBlock);
-        btcBlockStoreWithCache.setMainChainBlock(btcBlockHeight, btcBlock.getHash());
-
-        // create the new chain head at final height
-        Sha256Hash randomTransactionHash = Sha256Hash.of(Hex.decode("aa"));
-        PartialMerkleTree pmt = createValidPmtWithTransactions(Collections.singletonList(randomTransactionHash), networkParameters);
-        BtcBlock currentBlock = createBtcBlockWithPmt(pmt, networkParameters);
-        StoredBlock currentStoredBlock = new StoredBlock(currentBlock, BigInteger.TEN, chainHeight);
-        btcBlockStoreWithCache.put(currentStoredBlock);
-        btcBlockStoreWithCache.setChainHead(currentStoredBlock);
-    }
-
     public static void mockChainOfStoredBlocks(BtcBlockStoreWithCache btcBlockStore, BtcBlock targetHeader, int headHeight, int targetHeight) throws BlockStoreException {
         // Simulate that the block is in there by mocking the getter by height,
         // and then simulate that the txs have enough confirmations by setting a high head.
@@ -75,5 +85,4 @@ public final class BridgeSupportTestUtil {
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
     }
-
 }
