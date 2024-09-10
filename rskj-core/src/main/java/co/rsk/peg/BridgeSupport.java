@@ -104,6 +104,7 @@ public class BridgeSupport {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final BridgeConstants bridgeConstants;
+    private final NetworkParameters networkParameters;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
     private final BridgeEventLogger eventLogger;
@@ -145,6 +146,7 @@ public class BridgeSupport {
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
         this.bridgeConstants = bridgeConstants;
+        this.networkParameters = bridgeConstants.getBtcParams();
         this.eventLogger = eventLogger;
         this.btcLockSenderProvider = btcLockSenderProvider;
         this.peginInstructionsProvider = peginInstructionsProvider;
@@ -164,12 +166,12 @@ public class BridgeSupport {
 
     @VisibleForTesting
     InputStream getCheckPoints() {
-        String resourceName = "/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints";
+        String resourceName = "/rskbitcoincheckpoints/" + networkParameters.getId() + ".checkpoints";
         InputStream checkpoints = BridgeSupport.class.getResourceAsStream(resourceName);
         logger.debug("[getCheckPoints] Looking for checkpoint {}. Found? {}", resourceName, checkpoints != null);
         if (checkpoints == null) {
             // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
-            checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+            checkpoints = BridgeSupport.class.getResourceAsStream("/" + networkParameters.getId() + ".checkpoints");
         }
         return checkpoints;
     }
@@ -375,7 +377,7 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Could not validate transaction");
             }
 
-            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+            BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
             btcTx.verify();
             logger.debug("[registerBtcTransaction][rsk tx {}] Btc tx hash without witness {}", rskTxHash, btcTx.getHash(false));
 
@@ -833,8 +835,7 @@ public class BridgeSupport {
         }
 
         Context.propagate(btcContext);
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
+        Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, networkParameters);
         logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
         requestRelease(btcDestinationAddress, pegoutValueInSatoshis, rskTx);
@@ -976,7 +977,7 @@ public class BridgeSupport {
     private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
 
-        BtcTransaction svpFundTransaction = new BtcTransaction(bridgeConstants.getBtcParams());
+        BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
         svpFundTransaction.setVersion(BTC_TX_VERSION_2);
 
         // add outputs to proposed fed and proposed fed with flyover prefix
@@ -997,7 +998,7 @@ public class BridgeSupport {
         Script federationWithFlyoverPrefixRedeemScript = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), federationRedeemScript);
         Script federationWithFlyoverPrefixP2SHScript = ScriptBuilder.createP2SHOutputScript(federationWithFlyoverPrefixRedeemScript);
 
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), federationWithFlyoverPrefixP2SHScript);
+        return Address.fromP2SHScript(networkParameters, federationWithFlyoverPrefixP2SHScript);
     }
 
     private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
@@ -2202,7 +2203,7 @@ public class BridgeSupport {
         Sha256Hash merkleRoot;
 
         try {
-            PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
+            PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, pmtSerialized, 0);
             List<Sha256Hash> hashesInPmt = new ArrayList<>();
             merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
             if (!hashesInPmt.contains(btcTxHash)) {
@@ -2234,7 +2235,7 @@ public class BridgeSupport {
             return;
         }
 
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+        BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
         btcTx.verify();
 
         Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
@@ -2350,7 +2351,7 @@ public class BridgeSupport {
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
         }
 
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+        BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
         btcTx.verify();
 
         Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
@@ -2368,7 +2369,7 @@ public class BridgeSupport {
         }
 
         FlyoverFederationInformation flyoverActiveFederationInformation = createFlyoverFederationInformation(flyoverDerivationHash);
-        Address flyoverActiveFederationAddress = flyoverActiveFederationInformation.getFlyoverFederationAddress(bridgeConstants.getBtcParams());
+        Address flyoverActiveFederationAddress = flyoverActiveFederationInformation.getFlyoverFederationAddress(networkParameters);
         Federation retiringFederation = getRetiringFederation();
         Optional<FlyoverFederationInformation> flyoverRetiringFederationInformation = Optional.empty();
 
@@ -2378,7 +2379,7 @@ public class BridgeSupport {
         if (activations.isActive(RSKIP293) && retiringFederation != null) {
             flyoverRetiringFederationInformation = Optional.of(createFlyoverFederationInformation(flyoverDerivationHash, retiringFederation));
             Address flyoverRetiringFederationAddress = flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(
-                bridgeConstants.getBtcParams()
+                networkParameters
             );
             addresses.add(flyoverRetiringFederationAddress);
             logger.debug("[registerFlyoverBtcTransaction] flyover retiring federation address: {}", flyoverRetiringFederationAddress);
@@ -2399,7 +2400,7 @@ public class BridgeSupport {
 
         Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
             activations,
-            bridgeConstants.getBtcParams(),
+            networkParameters,
             btcContext,
             btcTx,
             addresses
@@ -2431,7 +2432,7 @@ public class BridgeSupport {
 
         List<UTXO> utxosForFlyoverActiveFed = BridgeUtils.getUTXOsSentToAddresses(
             activations,
-            bridgeConstants.getBtcParams(),
+            networkParameters,
             btcContext,
             btcTx,
             Collections.singletonList(flyoverActiveFederationAddress)
@@ -2451,11 +2452,11 @@ public class BridgeSupport {
         if (activations.isActive(RSKIP293) && flyoverRetiringFederationInformation.isPresent()) {
             List<UTXO> utxosForRetiringFed = BridgeUtils.getUTXOsSentToAddresses(
                 activations,
-                bridgeConstants.getBtcParams(),
+                networkParameters,
                 btcContext,
                 btcTx,
                 Collections.singletonList(
-                    flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(bridgeConstants.getBtcParams())
+                    flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(networkParameters)
                 )
             );
 
@@ -2505,7 +2506,7 @@ public class BridgeSupport {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
             List<UTXO> utxosList = BridgeUtils.getUTXOsSentToAddresses(
                 activations,
-                bridgeConstants.getBtcParams(),
+                networkParameters,
                 btcContext,
                 btcTx,
                 addresses
@@ -2617,10 +2618,10 @@ public class BridgeSupport {
     private StoredBlock getLowestBlock() throws IOException {
         InputStream checkpoints = this.getCheckPoints();
         if (checkpoints == null) {
-            BtcBlock genesis = bridgeConstants.getBtcParams().getGenesisBlock();
+            BtcBlock genesis = networkParameters.getGenesisBlock();
             return new StoredBlock(genesis, genesis.getWork(), 0);
         }
-        CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpoints);
+        CheckpointManager manager = new CheckpointManager(networkParameters, checkpoints);
         long time = getActiveFederation().getCreationTime().toEpochMilli();
         // Go back 1 week to match CheckpointManager.checkpoint() behaviour
         time -= 86400 * 7;
@@ -2691,14 +2692,12 @@ public class BridgeSupport {
                 provider,
                 activations
             );
-            NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
-
-            if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
+            if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(networkParameters.getGenesisBlock().getHash())) {
                 // We are building the blockstore for the first time, so we have not set the checkpoints yet.
                 long time = federationSupport.getActiveFederation().getCreationTime().toEpochMilli();
                 InputStream checkpoints = this.getCheckPoints();
                 if (time > 0 && checkpoints != null) {
-                    CheckpointManager.checkpoint(btcParams, checkpoints, this.btcBlockStore, time);
+                    CheckpointManager.checkpoint(networkParameters, checkpoints, this.btcBlockStore, time);
                 }
             }
         }
@@ -2863,7 +2862,6 @@ public class BridgeSupport {
         // Calculates merkleRoot
         Sha256Hash merkleRoot;
         try {
-            NetworkParameters networkParameters = bridgeConstants.getBtcParams();
             merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmtSerialized, btcTxHash);
             if (merkleRoot == null) {
                 return false;
