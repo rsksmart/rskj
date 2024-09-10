@@ -39,9 +39,9 @@ public final class BridgeSupportTestUtil {
         NetworkParameters networkParameters
     ) throws BlockStoreException {
 
-        // first create the block to have the wanted partial merkle tree
+        // first create a block that has the wanted partial merkle tree
         BtcBlock btcBlockWithPmt = createBtcBlockWithPmt(partialMerkleTree, networkParameters);
-        // stored it on the chain at wanted height
+        // store it on the chain at wanted height
         StoredBlock storedBtcBlockThatHasTransactions = new StoredBlock(btcBlockWithPmt, BigInteger.ONE, btcBlockWithPmtHeight);
         btcBlockStoreWithCache.put(storedBtcBlockThatHasTransactions);
         btcBlockStoreWithCache.setMainChainBlock(btcBlockWithPmtHeight, btcBlockWithPmt.getHash());
