@@ -15,6 +15,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
 
 public class BitcoinTestUtils {
 
@@ -138,9 +139,7 @@ public class BitcoinTestUtils {
     private static void signLegacyTransactionInputWithP2shMultiSigInputScript(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
-        Optional<Script> inputRedeemScriptOpt = BitcoinUtils.extractRedeemScriptFromInput(input);
-        Script inputRedeemScript = Optional.of(inputRedeemScriptOpt)
-            .get()
+        Script inputRedeemScript = extractRedeemScriptFromInput(input)
             .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a multisig"));
 
         Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
@@ -150,8 +149,9 @@ public class BitcoinTestUtils {
             TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
             byte[] txSigEncoded = txSig.encodeToBitcoin();
 
+            int keyIndex = inputScriptSig.getSigInsertionIndex(sigHash, key);
             Script outputScript = createP2SHOutputScript(inputRedeemScript);
-            inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keys.indexOf(key));
+            inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
             input.setScriptSig(inputScriptSig);
         }
     }
