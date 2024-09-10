@@ -7,12 +7,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
+
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
 
 public class BitcoinTestUtils {
 
@@ -38,7 +40,7 @@ public class BitcoinTestUtils {
 
     public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
         Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        Script outputScript = createP2SHOutputScript(redeemScript);
 
         return Address.fromP2SHScript(networkParameters, outputScript);
     }
@@ -136,12 +138,9 @@ public class BitcoinTestUtils {
     private static void signLegacyTransactionInputWithP2shMultiSigInputScript(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
-        Optional<Script> inputRedeemScriptOpt = BitcoinUtils.extractRedeemScriptFromInput(input);
-        if (!inputRedeemScriptOpt.isPresent()) {
-            throw new IllegalArgumentException("Cannot sign inputs that are not from a multisig");
-        }
+        Script inputRedeemScript = extractRedeemScriptFromInput(input)
+            .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a multisig"));
 
-        Script inputRedeemScript = inputRedeemScriptOpt.get();
         Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
         Script inputScriptSig = input.getScriptSig();
         for (BtcECKey key : keys) {
@@ -149,8 +148,9 @@ public class BitcoinTestUtils {
             TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
             byte[] txSigEncoded = txSig.encodeToBitcoin();
 
-            inputScriptSig =
-                ScriptBuilder.updateScriptWithSignature(inputScriptSig, txSigEncoded, keys.indexOf(key), 1, 1);
+            int keyIndex = inputScriptSig.getSigInsertionIndex(sigHash, key);
+            Script outputScript = createP2SHOutputScript(inputRedeemScript);
+            inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
             input.setScriptSig(inputScriptSig);
         }
     }
