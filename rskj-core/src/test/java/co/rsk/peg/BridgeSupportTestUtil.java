@@ -24,36 +24,37 @@ public final class BridgeSupportTestUtil {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
-    public static void recreateChainAtHeightWithStoredBlockThatHasTransactionsAtHeight(
+    public static PartialMerkleTree createValidPmtForTransactions(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
+        byte[] relevantNodesBits = new byte[(int)Math.ceil(hashesToAdd.size() / 8.0)];
+        for (int i = 0; i < hashesToAdd.size(); i++) {
+            Utils.setBitLE(relevantNodesBits, i);
+        }
+
+        return PartialMerkleTree.buildFromLeaves(networkParameters, relevantNodesBits, hashesToAdd);
+    }
+
+    public static void recreateChainFromPmt(
         BtcBlockStoreWithCache btcBlockStoreWithCache,
         int chainHeight,
-        List<Sha256Hash> transactionHashes,
-        int btcBlockThatHasTransactionsHeight,
+        PartialMerkleTree partialMerkleTree,
+        int btcBlockWithPmtHeight,
         NetworkParameters networkParameters
     ) throws BlockStoreException {
 
-        // first create the block to have the wanted transactions
-        PartialMerkleTree pmtWithTransactions = createValidPmtWithTransactions(transactionHashes, networkParameters);
-        BtcBlock btcBlockThatHasTransactions = createBtcBlockWithPmt(pmtWithTransactions, networkParameters);
-        // stored it on the chain at wanted height
-        StoredBlock storedBtcBlockThatHasTransactions = new StoredBlock(btcBlockThatHasTransactions, BigInteger.ONE, btcBlockThatHasTransactionsHeight);
-        btcBlockStoreWithCache.put(storedBtcBlockThatHasTransactions);
-        btcBlockStoreWithCache.setMainChainBlock(btcBlockThatHasTransactionsHeight, btcBlockThatHasTransactions.getHash());
+        // first create a block that has the wanted partial merkle tree
+        BtcBlock btcBlockWithPmt = createBtcBlockWithPmt(partialMerkleTree, networkParameters);
+        // store it on the chain at wanted height
+        StoredBlock storedBtcBlockWithPmt = new StoredBlock(btcBlockWithPmt, BigInteger.ONE, btcBlockWithPmtHeight);
+        btcBlockStoreWithCache.put(storedBtcBlockWithPmt);
+        btcBlockStoreWithCache.setMainChainBlock(btcBlockWithPmtHeight, btcBlockWithPmt.getHash());
 
-        // create and store the new chainHead at wanted chain height
-        Sha256Hash randomTransactionHash = Sha256Hash.of(Hex.decode("aa"));
-        PartialMerkleTree pmt = createValidPmtWithTransactions(Collections.singletonList(randomTransactionHash), networkParameters);
+        // create and store a new chainHead at wanted chain height
+        Sha256Hash otherTransactionHash = Sha256Hash.of(Hex.decode("aa"));
+        PartialMerkleTree pmt = createValidPmtForTransactions(Collections.singletonList(otherTransactionHash), networkParameters);
         BtcBlock chainHeadBlock = createBtcBlockWithPmt(pmt, networkParameters);
         StoredBlock storedChainHeadBlock = new StoredBlock(chainHeadBlock, BigInteger.TEN, chainHeight);
         btcBlockStoreWithCache.put(storedChainHeadBlock);
         btcBlockStoreWithCache.setChainHead(storedChainHeadBlock);
-    }
-
-    private static PartialMerkleTree createValidPmtWithTransactions(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
-        byte[] bits = new byte[1];
-        bits[0] = 0x3f;
-
-        return new PartialMerkleTree(networkParameters, bits, hashesToAdd, 1);
     }
 
     private static BtcBlock createBtcBlockWithPmt(PartialMerkleTree pmt, NetworkParameters networkParameters) {
