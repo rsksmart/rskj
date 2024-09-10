@@ -82,6 +82,7 @@ public class BridgeStorageProvider {
     private boolean isSvpFundTxHashSignedSet = false;
     private Sha256Hash svpSpendTxHashUnsigned;
     private boolean isSvpSpendTxHashUnsignedSet = false;
+    private Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -241,7 +242,7 @@ public class BridgeStorageProvider {
 
         pegoutsWaitingForSignatures = getFromRepository(
             PEGOUTS_WAITING_FOR_SIGNATURES,
-                data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, false)
+                data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
         );
         return pegoutsWaitingForSignatures;
     }
@@ -251,7 +252,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
+        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeRskTxsWaitingForSignatures);
     }
 
     public CoinbaseInformation getCoinbaseInformation(Sha256Hash blockHash) {

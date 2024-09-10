@@ -18,6 +18,21 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.PegTestUtils.createHash3;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -27,9 +42,11 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.resources.TestConstants;
@@ -54,6 +71,9 @@ import org.ethereum.util.RLPList;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -62,19 +82,99 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 class BridgeSerializationUtilsTest {
+
+    private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+    private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "first");
+    private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "second");
+
+    @Test
+    void serializeAndDeserializeRskTxWaitingForSignatures_whenValidData_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
+        fundTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+
+        Keccak256 pegoutCreationRskTxHash = createHash3(1);
+        BtcTransaction pegoutTx = new BtcTransaction(NETWORK_PARAMETERS);
+        pegoutTx.addInput(fundTx.getOutput(0));
+        pegoutTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        Map.Entry<Keccak256, BtcTransaction> pegoutTxWaitingForSiganturesEntry =
+            new AbstractMap.SimpleEntry<>(pegoutCreationRskTxHash, pegoutTx);
+        byte[] serializedEntry = 
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(pegoutTxWaitingForSiganturesEntry);
+        Map.Entry<Keccak256, BtcTransaction> deserializedEntry =
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(serializedEntry, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(serializedEntry);
+        assertTrue(serializedEntry.length > 0);
+
+        assertNotNull(deserializedEntry);
+        assertEquals(pegoutCreationRskTxHash, deserializedEntry.getKey());
+        assertArrayEquals(pegoutTx.bitcoinSerialize(), deserializedEntry.getValue().bitcoinSerialize());
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeRskTxWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
+        // Act
+        Map.Entry<Keccak256, BtcTransaction> result =
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(result);
+        assertNull(result.getKey());
+        assertNull(result.getValue());
+    }
+
+    @Test
+    void serializeAndDeserializeRskTxsWaitingForSignatures_whenValidEntries_shouldReturnEqualsResults() {
+        // Arrange
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignaturesMap = new TreeMap<>();
+
+        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
+        fundTx.addOutput(Coin.COIN.multiply(5), ADDRESS);
+
+        Keccak256 pegoutCreationRskTxHash1 = createHash3(1);
+        BtcTransaction pegoutTx1 = new BtcTransaction(NETWORK_PARAMETERS);
+        pegoutTx1.addInput(fundTx.getOutput(0));
+        pegoutTx1.addOutput(Coin.COIN, OTHER_ADDRESS);
+        Keccak256 pegoutCreationRskTxHash2 = createHash3(2);
+        BtcTransaction pegoutTx2 = new BtcTransaction(NETWORK_PARAMETERS);
+        pegoutTx2.addInput(fundTx.getOutput(0));
+        pegoutTx2.addOutput(Coin.COIN.multiply(10), OTHER_ADDRESS);
+        
+        rskTxsWaitingForSignaturesMap.put(pegoutCreationRskTxHash1, pegoutTx1);
+        rskTxsWaitingForSignaturesMap.put(pegoutCreationRskTxHash2, pegoutTx2);
+
+        // Act
+        byte[] serializedRskTxsWaitingForSignaturesMap = 
+            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignaturesMap);
+        SortedMap<Keccak256, BtcTransaction> deserializedRskTxsWaitingForSignaturesMap = 
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(serializedRskTxsWaitingForSignaturesMap, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(serializedRskTxsWaitingForSignaturesMap);
+        assertTrue(serializedRskTxsWaitingForSignaturesMap.length > 0);
+
+        assertEquals(rskTxsWaitingForSignaturesMap, deserializedRskTxsWaitingForSignaturesMap);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeRskTxsWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
+        // Act
+        SortedMap<Keccak256, BtcTransaction> result =
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
 
     @Test
     void serializeMapOfHashesToLong() {
