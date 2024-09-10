@@ -14,10 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 class BitcoinUtilsTest {
@@ -305,6 +302,19 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void removeSignaturesFromTransaction_whenTransactionDoesNotHaveInputs_shouldReturnSameTransaction() {
+        // arrange
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
+
+        // act
+        BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction);
+
+        // assert
+        Assertions.assertEquals(transactionHashBeforeRemovingSignatures, transaction.getHash());
+    }
+
+    @Test
     void removeSignaturesFromTransaction_whenTransactionIsSegwit_shouldThrowIllegalArgumentException() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
@@ -320,17 +330,6 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionDoesNotHaveInputs_shouldThrowIllegalArgumentException() {
-        // arrange
-        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-
-        // act & assert
-        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction));
-        Assertions.assertEquals("Cannot remove signatures from transaction inputs of a transaction without inputs.", exception.getMessage());
-    }
-
-    @Test
     void removeSignaturesFromTransaction_whenTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
@@ -341,7 +340,7 @@ class BitcoinUtilsTest {
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
             () -> BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction));
-        Assertions.assertEquals("Cannot remove signatures from transaction inputs that does not have p2sh multisig input script.", exception.getMessage());
+        Assertions.assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
@@ -353,17 +352,20 @@ class BitcoinUtilsTest {
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, scriptSig);
-        BtcTransaction transactionWithoutSignaturesCopy = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+        transaction.addOutput(Coin.COIN, destinationAddress);
+        Sha256Hash transactionWithoutSignaturesHash = transaction.getHash();
 
-        for (int i = 0; i < federation.getNumberOfSignaturesRequired(); i++) {
-            BtcECKey key = new BtcECKey();
-            BitcoinTestUtils.signTransactionInputFromMultiSigWithKeys(transaction, 0, Collections.singletonList(key));
+        List<BtcECKey> keysToSign =
+            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // using private keys from federation declared above
+        List<TransactionInput> inputs = transaction.getInputs();
+        for (TransactionInput input : inputs) {
+            BitcoinTestUtils.signTransactionInputFromMultiSigWithKeys(transaction, inputs.indexOf(input), keysToSign);
         }
 
         // act
         BitcoinUtils.removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(transaction);
 
         // assert
-        Assertions.assertEquals(transactionWithoutSignaturesCopy, transaction);
+        Assertions.assertEquals(transactionWithoutSignaturesHash, transaction.getHash());
     }
 }
