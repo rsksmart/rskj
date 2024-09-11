@@ -1,8 +1,6 @@
 name: Rootstock Integration Tests
 
 on:
-  push:
-    branches: ["master", "*-rc"]
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: ["master", "*-rc"]
