@@ -594,11 +594,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpFundTxHashUnsigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
-
-        repository.addStorageBytes(contractAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
+        safeSaveToRepository(
+            SVP_FUND_TX_HASH_UNSIGNED,
+            svpFundTxHashUnsigned,
+            BridgeSerializationUtils::serializeSha256Hash);
     }
 
     public void setSvpFundTxHashSigned(Sha256Hash hash) {
@@ -611,11 +610,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpFundTxHashSigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
-
-        repository.addStorageBytes(contractAddress, SVP_FUND_TX_HASH_SIGNED.getKey(), data);
+        safeSaveToRepository(
+            SVP_FUND_TX_HASH_SIGNED,
+            svpFundTxHashSigned,
+            BridgeSerializationUtils::serializeSha256Hash);
     }
 
     public void setSvpSpendTxHashUnsigned(Sha256Hash hash) {
@@ -628,11 +626,27 @@ public class BridgeStorageProvider {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpSpendTxHashUnsigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
+        safeSaveToRepository(
+            SVP_SPEND_TX_HASH_UNSIGNED,
+            svpSpendTxHashUnsigned,
+            BridgeSerializationUtils::serializeSha256Hash);
+    }
 
-        repository.addStorageBytes(contractAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), data);
+    private void saveSvpSpendTxWaitingForSignatures() {
+        if (!activations.isActive(RSKIP419)) {
+            return;
+        }
+
+        if (svpSpendTxWaitingForSignatures == null ||
+              svpSpendTxWaitingForSignatures.getKey() == null ||
+              svpSpendTxWaitingForSignatures.getValue() == null) {
+            return;
+        }
+
+        safeSaveToRepository(
+            SVP_SPEND_TX_WAITING_FOR_SIGNATURES,
+            svpSpendTxWaitingForSignatures,
+            BridgeSerializationUtils::serializeRskTxWaitingForSignatures);
     }
 
     public void save() {
@@ -661,6 +675,7 @@ public class BridgeStorageProvider {
         saveSvpFundTxHashUnsigned();
         saveSvpFundTxHashSigned();
         saveSvpSpendTxHashUnsigned();
+        saveSvpSpendTxWaitingForSignatures();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
