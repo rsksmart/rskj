@@ -9,36 +9,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionWitness;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationTestUtils;
+import co.rsk.peg.constants.*;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -729,15 +714,13 @@ class PegUtilsGetTransactionTypeTest {
     @Test
     void anyAddressToAnyAddress_pegin_before_RSKIP379() {
         // Arrange
-        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0L);
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(fingerrootActivations);
 
         BtcTransaction anyToAnyTx = new BtcTransaction(btcMainnetParams);
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(minimumPeginTxValue, new Script(new byte[]{}) );
-
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
@@ -766,8 +749,6 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
             fingerrootActivations,
@@ -787,19 +768,17 @@ class PegUtilsGetTransactionTypeTest {
     @Test
     void unknown_anyAddressToAnyAddress_unknown_after_RSIP379_and_using_pegout_tx_index() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
-        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
+        Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(arrowheadActivations);
 
         BtcTransaction anyToAnyTx = new BtcTransaction(btcMainnetParams);
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(minimumPeginTxValue, new Script(new byte[]{}) );
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
-            activations,
+            arrowheadActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
             activeFederation,
@@ -816,19 +795,17 @@ class PegUtilsGetTransactionTypeTest {
     @Test
     void unknown_anyAddressToAnyAddress_below_minimum_unknown_after_RSIP379_and_using_pegout_tx_index() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
-        Coin belowMinimum = bridgeMainnetConstants.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
+        Coin belowMinimum = bridgeMainnetConstants.getMinimumPeginTxValue(arrowheadActivations).minus(Coin.SATOSHI);
 
         BtcTransaction anyToAnyTx = new BtcTransaction(btcMainnetParams);
         anyToAnyTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
-
         // Act
         PegTxType transactionType = PegUtils.getTransactionType(
-            activations,
+            arrowheadActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
             activeFederation,
@@ -873,10 +850,7 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedType
     ) {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin belowMinimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).div(10);
-
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -909,10 +883,7 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedType
     ) {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin belowMinimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).div(10);
-
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -966,10 +937,7 @@ class PegUtilsGetTransactionTypeTest {
         boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
-
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -998,10 +966,7 @@ class PegUtilsGetTransactionTypeTest {
         boolean shouldUsePegoutTxIndex
     ) {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations).add(Coin.CENT);
-
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction peginTx = new BtcTransaction(btcMainnetParams);
         peginTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -2128,17 +2093,13 @@ class PegUtilsGetTransactionTypeTest {
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
-        final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
             BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
             BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
         );
 
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
-        Federation oldFederation = createFederation(bridgeRegTestConstants, REGTEST_OLD_FEDERATION_PRIVATE_KEYS);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
-
+        Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
         assertEquals(oldFederation.getAddress().toString(), bridgeRegTestConstants.getFederationConstants().getOldFederationAddress());
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
@@ -2150,7 +2111,7 @@ class PegUtilsGetTransactionTypeTest {
         );
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
+        FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
 
         assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.getAddress()));
 
@@ -2203,8 +2164,6 @@ class PegUtilsGetTransactionTypeTest {
         PegTxType expectedType
     ) {
         // Arrange
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
         Script lastRetiredFederationP2SHScript = retiredFed.getDefaultP2SHScript();
 
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
@@ -2272,14 +2231,10 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         Context.propagate(new Context(btcMainnetParams));
 
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-
         List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
         Federation retiredFederation = createFederation(bridgeMainnetConstants, fedKeys);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants.getFederationConstants());
-
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
         migrationTx.addInput(
