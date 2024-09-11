@@ -246,13 +246,13 @@ class BridgeEventLoggerImplTest {
     @ValueSource(booleans = {false, true})
     void logCommitFederation(boolean isRSKIP383Active) {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
-        ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
         if (!isRSKIP383Active) {
             eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
         }
 
         long federationActivationAgePreRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(hopActivations);
-        long federationActivationAgePostRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(lovellActivations);
+        long federationActivationAgePostRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(allActivations);
 
         // Setup parameters for test method call
         Instant creationTime = Instant.ofEpochMilli(15005L);

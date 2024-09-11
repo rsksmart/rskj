@@ -280,12 +280,12 @@ class FederationStorageProviderImplTests {
     @Test
     void saveNewFederation_before_RSKIP123_should_not_save_null() {
         Repository repository = mock(Repository.class);
-        activations = ActivationConfigsForTest.orchid().forBlock(0L);
+        ActivationConfig.ForBlock orchidActivations = ActivationConfigsForTest.orchid().forBlock(0L);
 
         // Act
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(null);
-        federationStorageProvider.save(regtestBtcParams, activations);
+        federationStorageProvider.save(regtestBtcParams, orchidActivations);
 
         verify(repository, never()).addStorageBytes(
             any(),
