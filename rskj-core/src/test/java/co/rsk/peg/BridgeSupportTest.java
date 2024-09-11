@@ -1820,7 +1820,6 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
 
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         when(provider.getReleaseRequestQueue())
@@ -1846,7 +1845,7 @@ class BridgeSupportTest {
             .value(DUST_AMOUNT)
             .build();
 
-        FederationSupport federationSupport = federationSupportBuilder
+        federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(rskCurrentBlock)
@@ -6574,24 +6573,17 @@ class BridgeSupportTest {
             height + bridgeConstantsRegtest.getBtc2RskMinimumAcceptableConfirmations(),
             height
         );
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        BridgeSupport bridgeSupport = new BridgeSupport(
-            bridgeConstantsRegtest,
-            mockBridgeStorageProvider,
-            mock(BridgeEventLogger.class),
-            new BtcLockSenderProvider(),
-            new PeginInstructionsProvider(),
-            mock(Repository.class),
-            mock(Block.class),
-            mock(Context.class),
-            feePerKbSupport,
-            whitelistSupport,
-            mock(FederationSupport.class),
-            lockingCapSupport,
-            btcBlockStoreFactory,
-            mock(ActivationConfig.ForBlock.class),
-            signatureCache
-        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withProvider(mockBridgeStorageProvider)
+            .withBtcLockSenderProvider(new BtcLockSenderProvider())
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .withFeePerKbSupport(feePerKbSupport)
+            .withWhitelistSupport(whitelistSupport)
+            .withLockingCapSupport(lockingCapSupport)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withSignatureCache(signatureCache)
+            .build();
 
         assertTrue(bridgeSupport.validationsForRegisterBtcTransaction(
             tx.getHash(),
@@ -6727,22 +6719,18 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        try {
-            bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0);
-            fail(); // Should have thrown a RegisterBtcTransactionException
-        } catch (Exception e) {
-            // Assert
-            assertInstanceOf(RegisterBtcTransactionException.class, e);
-            assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
-        }
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+            btcTx,
+            PegTestUtils.createHash3(1),
+            0
+        ));
+        assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
     }
 
     @Test
     void processPegIn_errorParsingPeginInstructions_afterRskip170_refundSender() throws IOException, PeginInstructionsException {
         // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
-
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
         Repository repository = createRepository();
 
         BtcECKey srcKey1 = new BtcECKey();
@@ -6775,7 +6763,7 @@ class BridgeSupportTest {
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
-            .withActivations(activations)
+            .withActivations(irisActivations)
             .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -6784,7 +6772,7 @@ class BridgeSupportTest {
             .withRepository(repository)
             .withBtcLockSenderProvider(btcLockSenderProvider)
             .withPeginInstructionsProvider(peginInstructionsProvider)
-            .withActivations(activations)
+            .withActivations(irisActivations)
             .withSignatureCache(signatureCache)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
@@ -6875,8 +6863,8 @@ class BridgeSupportTest {
             activationsAfterForks
         );
 
-        long timeStamp_old = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() * 2L);
-        doReturn(Optional.of(timeStamp_old)).when(provider).getReceiveHeadersLastTimestamp();
+        long timeStampOld = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() * 2L);
+        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestamp();
 
         StoredBlock storedBlock2 = mock(StoredBlock.class);
         when(storedBlock.build(btcBlock2)).thenReturn(storedBlock2);
@@ -6916,8 +6904,8 @@ class BridgeSupportTest {
             activationsAfterForks
         );
 
-        long timeStamp_old = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() / 2L);
-        doReturn(Optional.of(timeStamp_old)).when(provider).getReceiveHeadersLastTimestamp();
+        long timeStampOld = executionBlockMock.getTimestamp() - (bridgeConstantsRegtest.getMinSecondsBetweenCallsToReceiveHeader() / 2L);
+        doReturn(Optional.of(timeStampOld)).when(provider).getReceiveHeadersLastTimestamp();
 
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
@@ -7165,7 +7153,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCachePreRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns an exception and does not save the block
-            Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
+            final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
             assertThat(bridgeSupportPreRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_UNEXPECTED_EXCEPTION));
             assertNull(btcBlockStoreWithCachePreRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
@@ -7208,7 +7196,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCachePostRSKIP434.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
-            Integer RECEIVE_HEADER_SUCCESSFUL = 0;
+            final Integer RECEIVE_HEADER_SUCCESSFUL = 0;
             assertThat(bridgeSupportPostRSKIP434.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
             assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(blockWithTooMuchWork.getHash()));
         }
@@ -7266,7 +7254,7 @@ class BridgeSupportTest {
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849137ToStore.getHeader().getHash());
 
             // assert receive header returns successful response and saves the block
-            Integer RECEIVE_HEADER_SUCCESSFUL = 0;
+            final Integer RECEIVE_HEADER_SUCCESSFUL = 0;
             assertThat(bridgeSupport.receiveHeader(blockWithTooMuchWork), is(RECEIVE_HEADER_SUCCESSFUL));
             assertNotNull(btcBlockStoreWithCache.get(blockWithTooMuchWork.getHash()));
         }
@@ -7609,9 +7597,7 @@ class BridgeSupportTest {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstants);
 
-        ActivationConfig.ForBlock preRSKIP271_activations = mock(ActivationConfig.ForBlock.class);
-        when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
-        when(preRSKIP271_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
         FederationArgs p2shFedArgs = new FederationArgs(members, Instant.now(), 1L, bridgeConstants.getBtcParams());
         Federation p2shFed =
@@ -7620,42 +7606,42 @@ class BridgeSupportTest {
         return Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
             Arguments.of(
-                preRSKIP271_activations,
+                irisActivations,
                 standardFederation,
                 0,
                 Coin.valueOf(0L)
             ),
             // active fed is standard and pegoutRequestsCount is equal to one
             Arguments.of(
-                preRSKIP271_activations,
+                irisActivations,
                 standardFederation,
                 1,
                 Coin.valueOf(0L)
             ),
             // active fed is standard and there are many pegout requests
             Arguments.of(
-                preRSKIP271_activations,
+                irisActivations,
                 standardFederation,
                 150,
                 Coin.valueOf(0L)
             ),
             // active fed is p2sh and there are zero pegout requests
             Arguments.of(
-                preRSKIP271_activations,
+                irisActivations,
                 p2shFed,
                 0,
                 Coin.valueOf(0L)
             ),
             // active fed is p2sh and there is one pegout request
             Arguments.of(
-                preRSKIP271_activations,
+                irisActivations,
                 p2shFed,
                 1,
                 Coin.valueOf(0L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
-                preRSKIP271_activations,
+                irisActivations,
                 p2shFed,
                 150,
                 Coin.valueOf(0L)
@@ -7671,57 +7657,58 @@ class BridgeSupportTest {
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstants);
 
-        ActivationConfig.ForBlock preRSKIP385_activations = mock(ActivationConfig.ForBlock.class);
-        when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-        when(preRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(false);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
 
         FederationArgs p2shFedArgs = new FederationArgs(members,
             Instant.now(),
             1L,
             bridgeConstants.getBtcParams()
         );
-        Federation p2shFed =
-            FederationFactory.buildP2shErpFederation(p2shFedArgs, federationConstants.getErpFedPubKeysList(), federationConstants.getErpFedActivationDelay());
+        Federation p2shFed = FederationFactory.buildP2shErpFederation(
+            p2shFedArgs,
+            federationConstants.getErpFedPubKeysList(),
+            federationConstants.getErpFedActivationDelay()
+        );
 
         return Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
             Arguments.of(
-                preRSKIP385_activations,
+                hopActivations,
                 standardFederation,
                 0,
                 Coin.valueOf(0L)
             ),
             // active fed is standard and pegoutRequestsCount is equal to one
             Arguments.of(
-                preRSKIP385_activations,
+                hopActivations,
                 standardFederation,
                 1,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 237000L: 68600L)
             ),
             // active fed is standard and there are many pegout requests
             Arguments.of(
-                preRSKIP385_activations,
+                hopActivations,
                 standardFederation,
                 150,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 713800L: 545400L)
             ),
             // active fed is p2sh and there are zero pegout requests
             Arguments.of(
-                preRSKIP385_activations,
+                hopActivations,
                 p2shFed,
                 0,
                 Coin.valueOf(0L)
             ),
             // active fed is p2sh and there is one pegout request
             Arguments.of(
-                preRSKIP385_activations,
+                hopActivations,
                 p2shFed,
                 1,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 161200L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
-                preRSKIP385_activations,
+                hopActivations,
                 p2shFed,
                 150,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 638000L)
@@ -7730,9 +7717,7 @@ class BridgeSupportTest {
     }
 
     private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_post_RSKIP385(BridgeConstants bridgeConstants) {
-        ActivationConfig.ForBlock postRSKIP385_activations = mock(ActivationConfig.ForBlock.class);
-        when(postRSKIP385_activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-        when(postRSKIP385_activations.isActive(ConsensusRule.RSKIP385)).thenReturn(true);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0L);
 
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstants);
@@ -7751,42 +7736,42 @@ class BridgeSupportTest {
         return Stream.of(
             // active fed is standard and pegoutRequestsCount is equal to zero
             Arguments.of(
-                postRSKIP385_activations,
+                fingerrootActivations,
                 standardFederation,
                 0,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 233800L: 65400L)
             ),
             // active fed is standard and pegoutRequestsCount is equal to one
             Arguments.of(
-                postRSKIP385_activations,
+                fingerrootActivations,
                 standardFederation,
                 1,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 237000L: 68600L)
             ),
             // active fed is standard and there are many pegout requests
             Arguments.of(
-                postRSKIP385_activations,
+                fingerrootActivations,
                 standardFederation,
                 150,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 713800L: 545400L)
             ),
             // active fed is p2sh and there are zero pegout requests
             Arguments.of(
-                postRSKIP385_activations,
+                fingerrootActivations,
                 p2shFed,
                 0,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 151400L: 158000L)
             ),
             // active fed is p2sh and there is one pegout request
             Arguments.of(
-                postRSKIP385_activations,
+                fingerrootActivations,
                 p2shFed,
                 1,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 161200L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
-                postRSKIP385_activations,
+                fingerrootActivations,
                 p2shFed,
                 150,
                 Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 638000L)
