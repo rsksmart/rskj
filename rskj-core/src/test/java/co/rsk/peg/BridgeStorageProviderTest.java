@@ -42,6 +42,10 @@ import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -644,7 +648,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpSpendTxHashUnsigned_preLovell700_shouldNotSaveInStorage() throws IOException {
+        void saveSvpSpendTxHashUnsigned_preLovell700_shouldNotSaveInStorage() {
             // Arrange
             ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
             bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
@@ -659,7 +663,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpSpendTxHashUnsigned_postLovell700_shouldSaveInStorage() throws IOException {
+        void saveSvpSpendTxHashUnsigned_postLovell700_shouldSaveInStorage() {
             // Act
             bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
             bridgeStorageProvider.save();
@@ -671,7 +675,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpSpendTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() throws IOException {
+        void saveSvpSpendTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
             // Initially setting a valid hash in storage
             bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
             bridgeStorageProvider.save();
@@ -831,6 +835,83 @@ class BridgeStorageProviderTest {
             // Assert
             assertTrue(svpSpendTxHashUnsigned.isPresent());
             assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp spend transaction waiting for signatures tests")
+    class SvpSpendTxWaitingForSignaturesTests {
+        private final Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+        private final BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
+        private final String fieldName = "svpSpendTxWaitingForSignatures";
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_preLovell700_shouldNotSaveInStorage() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures =
+                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullSvpSpendTxWaitingForSignatures_shouldNotSaveInStorage() {
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures =
+                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_postLovell700AndEmptyEntry_shouldNotSaveInStorage() {
+            // Arrange
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
+                new AbstractMap.SimpleEntry<>(null, null);
+            TestUtils.setInternalState(bridgeStorageProvider, fieldName, svpSpendTxWaitingForSignatures);
+
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures =
+                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_postLovell700_shouldSaveInStorage() {
+            // Arrange
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
+                new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTx);
+            TestUtils.setInternalState(bridgeStorageProvider, fieldName, svpSpendTxWaitingForSignatures);
+
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpSpendTxWaitingForSignaturesSerialized = 
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+            byte[] actualSvpSpendTxWaitingForSignaturesSerialized =
+                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            assertArrayEquals(svpSpendTxWaitingForSignaturesSerialized, actualSvpSpendTxWaitingForSignaturesSerialized);
         }
     }
 
