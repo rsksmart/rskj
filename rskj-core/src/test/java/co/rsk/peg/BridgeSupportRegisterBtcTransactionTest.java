@@ -56,7 +56,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportRegisterBtcTransactionTest {
-
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationMainnetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
@@ -1223,11 +1222,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
 
-        if (activations == fingerrootActivations) {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
-        } else {
-            verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
-        }
+        verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, PEGIN_V1_INVALID_PAYLOAD);
         verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(false), rskExecutionBlock.getNumber());
         assertTrue(retiringFederationUtxos.isEmpty());
     }
@@ -2529,26 +2524,23 @@ class BridgeSupportRegisterBtcTransactionTest {
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
-        final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        final List<BtcECKey> regtestOldFederationPrivateKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
             BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
             BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
         );
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
         when(whitelistStorageProvider.getLockWhitelist(lovell700Activations, btcMainnetParams)).thenReturn(lockWhitelist);
 
-        FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, activations)).thenReturn(activeFederationUtxos);
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
-        Federation oldFederation = createFederation(bridgeRegTestConstants, REGTEST_OLD_FEDERATION_PRIVATE_KEYS);
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
+        Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
         Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
@@ -2561,12 +2553,12 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         when(federationStorageProvider.getLastRetiredFederationP2SHScript(activations)).thenReturn(Optional.ofNullable(inputScript));
 
-        FederationTestUtils.addSignatures(oldFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
+        FederationTestUtils.addSignatures(oldFederation, regtestOldFederationPrivateKeys, migrationTx);
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcRegTestsParams, new byte[]{0x3f}, Collections.singletonList(migrationTx.getHash()), 1);
         Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+        registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
             btcRegTestsParams,
             1,
             BitcoinTestUtils.createHash(1),

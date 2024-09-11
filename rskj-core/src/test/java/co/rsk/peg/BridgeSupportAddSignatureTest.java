@@ -1,5 +1,7 @@
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.lockingcap.LockingCapSupport;
@@ -327,7 +329,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             genesisFederation.getBtcPublicKeys().get(0),
             null,
-            createHash().getBytes()
+            BitcoinTestUtils.createHash(1).getBytes()
         );
         bridgeSupport.save();
 
@@ -355,7 +357,11 @@ class BridgeSupportAddSignatureTest {
             .withRepository(repository)
             .build();
 
-        bridgeSupport.addSignature(new BtcECKey(), null, createHash().getBytes());
+        bridgeSupport.addSignature(
+            new BtcECKey(),
+            null,
+            BitcoinTestUtils.createHash(1).getBytes()
+        );
         bridgeSupport.save();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, bridgeAddress,
@@ -436,7 +442,7 @@ class BridgeSupportAddSignatureTest {
 
         BtcECKey privateKeyToSignWith = REGTEST_FEDERATION_PRIVATE_KEYS.get(indexOfKeyToSignWith);
 
-        List derEncodedSigs;
+        List<byte[]> derEncodedSigs;
 
         if (useValidSignature) {
             Script inputScript = btcTx.getInputs().get(0).getScriptSig();
@@ -719,7 +725,7 @@ class BridgeSupportAddSignatureTest {
         Script redeemScript = new Script(program);
         Sha256Hash sigHash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         BtcECKey.ECDSASignature sig = privateKeyToSignWith.sign(sigHash);
-        List derEncodedSigs = Collections.singletonList(sig.encodeToDER());
+        List<byte[]> derEncodedSigs = Collections.singletonList(sig.encodeToDER());
 
         // Act
         bridgeSupport.addSignature(federationMemberToSignWith.getBtcPublicKey(), derEncodedSigs, rskTxHash.getBytes());
@@ -728,7 +734,13 @@ class BridgeSupportAddSignatureTest {
         commonAssertLogs(eventLogs);
         assertTopics(3, eventLogs);
 
-        assertEvent(eventLogs, 0, BridgeEvents.ADD_SIGNATURE.getEvent(), new Object[]{rskTxHash.getBytes(), expectedRskAddress}, new Object[]{federatorBtcPubKey.getPubKey()});
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.ADD_SIGNATURE.getEvent(),
+            new Object[]{rskTxHash.getBytes(), expectedRskAddress},
+            new Object[]{federatorBtcPubKey.getPubKey()}
+        );
     }
 
     private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
@@ -764,7 +776,7 @@ class BridgeSupportAddSignatureTest {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         Repository repository = createRepository();
 
-        final Keccak256 keccak256 = PegTestUtils.createHash3();
+        final Keccak256 keccak256 = RskTestUtils.createHash(1);
 
         Repository track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, bridgeAddress, btcRegTestParams, activationsBeforeForks);
@@ -815,7 +827,7 @@ class BridgeSupportAddSignatureTest {
         }
         byte[] derEncodedSig = sig.encodeToDER();
 
-        List derEncodedSigs = new ArrayList();
+        List<byte[]> derEncodedSigs = new ArrayList<>();
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
@@ -823,9 +835,9 @@ class BridgeSupportAddSignatureTest {
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
-            X9ECParameters CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1");
-            ECDomainParameters CURVE = new ECDomainParameters(CURVE_PARAMS.getCurve(), CURVE_PARAMS.getG(), CURVE_PARAMS.getN(), CURVE_PARAMS.getH());
-            ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(privateKeysToSignWith.get(0).getPrivKey(), CURVE);
+            X9ECParameters curveParams = CustomNamedCurves.getByName("secp256k1");
+            ECDomainParameters curve = new ECDomainParameters(curveParams.getCurve(), curveParams.getG(), curveParams.getN(), curveParams.getH());
+            ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(privateKeysToSignWith.get(0).getPrivKey(), curve);
             signer.init(true, privKey);
             BigInteger[] components = signer.generateSignature(sighash.getBytes());
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
@@ -836,11 +848,15 @@ class BridgeSupportAddSignatureTest {
         if (privateKeysToSignWith.size() > 1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
             byte[] derEncodedSig2 = sig2.encodeToDER();
-            List derEncodedSigs2 = new ArrayList();
+            List<byte[]> derEncodedSigs2 = new ArrayList<>();
             for (int i = 0; i < numberOfInputsToSign; i++) {
                 derEncodedSigs2.add(derEncodedSig2);
             }
-            bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
+            bridgeSupport.addSignature(
+                findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(1)),
+                derEncodedSigs2,
+                keccak256.getBytes()
+            );
         }
         bridgeSupport.save();
         track.commit();
