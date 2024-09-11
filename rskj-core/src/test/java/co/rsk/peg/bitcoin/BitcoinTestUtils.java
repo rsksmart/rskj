@@ -129,27 +129,28 @@ public class BitcoinTestUtils {
         return flatPubKeys;
     }
 
-    public static void signTransactionInputFromMultiSigWithKeys(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+    public static void signTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         if (transaction.getWitness(inputIndex).getPushCount() == 0) {
-            signLegacyTransactionInputWithP2shMultiSigInputScript(transaction, inputIndex, keys);
+            signLegacyTransactionInputFromP2shMultiSig(transaction, inputIndex, keys);
         }
     }
 
-    private static void signLegacyTransactionInputWithP2shMultiSigInputScript(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+    private static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
         Script inputRedeemScript = extractRedeemScriptFromInput(input)
-            .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a multisig"));
+            .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
 
+        Script outputScript = createP2SHOutputScript(inputRedeemScript);
         Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
         Script inputScriptSig = input.getScriptSig();
+
         for (BtcECKey key : keys) {
             BtcECKey.ECDSASignature sig = key.sign(sigHash);
             TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
             byte[] txSigEncoded = txSig.encodeToBitcoin();
 
             int keyIndex = inputScriptSig.getSigInsertionIndex(sigHash, key);
-            Script outputScript = createP2SHOutputScript(inputRedeemScript);
             inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
             input.setScriptSig(inputScriptSig);
         }
