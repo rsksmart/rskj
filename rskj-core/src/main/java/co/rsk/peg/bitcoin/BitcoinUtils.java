@@ -63,11 +63,7 @@ public class BitcoinUtils {
         }
     }
 
-    public static void removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript(BtcTransaction transaction) {
-        if (transaction.getInputs().isEmpty()) {
-            return;
-        }
-
+    public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             String message = "Removing signatures from SegWit transactions is not allowed.";
             logger.error("[removeSignaturesFromTransactionWithInputsWithP2shMultiSigInputScript] {}", message);
