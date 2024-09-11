@@ -28,8 +28,8 @@ jobs:
         run: |
           # Default values
           RSKJ_BRANCH="master"
-          RIT_BRANCH="${{ github.event.inputs.rit-branch || github.event.inputs['rit-branch'].default }}"
-          POWPEG_BRANCH="${{ github.event.inputs.powpeg-branch || github.event.inputs['powpeg-branch'].default }}"
+          RIT_BRANCH="${{ github.event.inputs.rit-branch || 'main' }}"
+          POWPEG_BRANCH="${{ github.event.inputs.powpeg-branch || 'master' }}"
 
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/*-rc" ]]; then
             RSKJ_BRANCH="${{ github.ref }}"
