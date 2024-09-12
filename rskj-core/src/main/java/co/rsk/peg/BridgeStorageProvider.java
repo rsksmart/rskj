@@ -637,9 +637,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        if (svpSpendTxWaitingForSignatures == null ||
-              svpSpendTxWaitingForSignatures.getKey() == null ||
-              svpSpendTxWaitingForSignatures.getValue() == null) {
+        boolean hasNullKeyOrValue = svpSpendTxWaitingForSignatures != null &&
+            (svpSpendTxWaitingForSignatures.getKey() == null || 
+             svpSpendTxWaitingForSignatures.getValue() == null);
+        if (hasNullKeyOrValue) {
             return;
         }
 
