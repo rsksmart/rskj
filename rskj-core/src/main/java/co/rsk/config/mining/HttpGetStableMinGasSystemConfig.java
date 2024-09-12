@@ -19,6 +19,9 @@ package co.rsk.config.mining;
 
 import com.typesafe.config.Config;
 
+import java.time.Duration;
+import java.util.Objects;
+
 public class HttpGetStableMinGasSystemConfig {
     private static final String URL_PROPERTY = "url";
     private static final String JSON_PATH = "jsonPath";
@@ -26,12 +29,12 @@ public class HttpGetStableMinGasSystemConfig {
 
     private final String url;
     private final String jsonPath;
-    private final int timeout;
+    private final Duration timeout;
 
     public HttpGetStableMinGasSystemConfig(Config config) {
-        this.url = config.getString(URL_PROPERTY);
-        this.jsonPath = config.getString(JSON_PATH);
-        this.timeout = config.getInt(TIMEOUT_PROPERTY);
+        this.url = Objects.requireNonNull(config.getString(URL_PROPERTY));
+        this.jsonPath = Objects.requireNonNull(config.getString(JSON_PATH));
+        this.timeout = Objects.requireNonNull(config.getDuration(TIMEOUT_PROPERTY));
     }
 
     public String getUrl() {
@@ -42,7 +45,7 @@ public class HttpGetStableMinGasSystemConfig {
         return jsonPath;
     }
 
-    public int getTimeout() {
+    public Duration getTimeout() {
         return timeout;
     }
 

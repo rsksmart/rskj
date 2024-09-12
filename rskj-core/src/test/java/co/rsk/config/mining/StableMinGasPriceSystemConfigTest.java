@@ -24,6 +24,8 @@ import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class StableMinGasPriceSystemConfigTest {
@@ -34,7 +36,7 @@ class StableMinGasPriceSystemConfigTest {
     void setUp() {
         Config testConfig = ConfigFactory.parseString(
                 "enabled=true\n" +
-                        "refreshRate=10\n" +
+                        "refreshRate=10 hours\n" +
                         "minStableGasPrice=100\n" +
                         "source={ method=FIXED }"
         );
@@ -43,7 +45,7 @@ class StableMinGasPriceSystemConfigTest {
 
     @Test
     void testGetRefreshRate() {
-        assertEquals(10, config.getRefreshRate());
+        assertEquals(Duration.ofHours(10), config.getRefreshRate());
     }
 
     @Test

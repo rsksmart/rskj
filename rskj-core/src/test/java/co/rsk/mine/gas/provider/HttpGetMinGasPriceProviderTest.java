@@ -23,6 +23,7 @@ import co.rsk.net.http.HttpException;
 import co.rsk.net.http.SimpleHttpClient;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -119,7 +120,7 @@ class HttpGetMinGasPriceProviderTest {
         HttpGetStableMinGasSystemConfig webConfig = createWebStableSystemConfig();
         when(config.getHttpGetConfig()).thenReturn(webConfig);
         when(config.getMinStableGasPrice()).thenReturn(4265280000000L);
-        when(config.getRefreshRate()).thenReturn(30);
+        when(config.getRefreshRate()).thenReturn(Duration.ofSeconds(30));
         return config;
     }
 
@@ -127,7 +128,7 @@ class HttpGetMinGasPriceProviderTest {
         HttpGetStableMinGasSystemConfig config = mock(HttpGetStableMinGasSystemConfig.class);
         when(config.getJsonPath()).thenReturn("/bitcoin/usd");
         when(config.getUrl()).thenReturn("https://rsk.co/price?ids=bitcoin&vs_currencies=usd");
-        when(config.getTimeout()).thenReturn(3000);
+        when(config.getTimeout()).thenReturn(Duration.ofMillis(3000));
         return config;
     }
 
