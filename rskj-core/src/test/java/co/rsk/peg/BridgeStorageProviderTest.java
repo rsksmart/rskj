@@ -870,17 +870,6 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullSvpSpendTxWaitingForSignatures_shouldNotSaveInStorage() {
-            // Act
-            bridgeStorageProvider.save();
-
-            // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures =
-                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
-            assertNull(actualSvpSpendTxWaitingForSignatures);
-        }
-
-        @Test
         void saveSvpSpendTxWaitingForSignatures_postLovell700AndEmptyEntry_shouldNotSaveInStorage() {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
@@ -912,6 +901,24 @@ class BridgeStorageProviderTest {
             byte[] actualSvpSpendTxWaitingForSignaturesSerialized =
                 repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
             assertArrayEquals(svpSpendTxWaitingForSignaturesSerialized, actualSvpSpendTxWaitingForSignaturesSerialized);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullSvpSpendTxWaitingForSignatures_shouldSaveInStorage() {
+            // Initially setting a valid entry in storage
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
+                new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTx);
+            TestUtils.setInternalState(bridgeStorageProvider, fieldName, svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.save();
+
+            // Act
+            TestUtils.setInternalState(bridgeStorageProvider, fieldName, null);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures =
+                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            assertNull(actualSvpSpendTxWaitingForSignatures);
         }
     }
 
