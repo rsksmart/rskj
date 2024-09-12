@@ -882,23 +882,6 @@ class BridgeSupportTest {
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
-        private void assertNewUtxoWasSaved(int activeFederationUtxosSizeBeforeRegisteringTx) {
-            assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
-        }
-
-        private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
-            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
-            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
-
-            long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
-            assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
-        }
-
-        private void assertSvpFundTransactionValuesWereNotUpdated() {
-            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpFundTxHashSigned().isPresent());
-        }
-
         @Test
         void registerBtcTransaction_forSvpFundTransaction_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
@@ -915,6 +898,23 @@ class BridgeSupportTest {
             assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
             assertTransactionWasProcessed(svpFundTransaction.getHash());
             assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        private void assertNewUtxoWasSaved(int activeFederationUtxosSizeBeforeRegisteringTx) {
+            assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        }
+
+        private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
+            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+            long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
+            assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+        }
+
+        private void assertSvpFundTransactionValuesWereNotUpdated() {
+            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashSigned().isPresent());
         }
 
         private void assertSvpFundTransactionValuesWereUpdated() {
