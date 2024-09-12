@@ -546,8 +546,13 @@ class BridgeSupportTest {
         private final Coin spendableValueFromProposedFederation = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
         private final List<LogInfo> logs = new ArrayList<>();
 
-        private BridgeSupport bridgeSupport;
+        private Repository repository;
         private BridgeStorageProvider bridgeStorageProvider;
+
+        private PartialMerkleTree pmtWithTransactions;
+        private int btcBlockWithPmtHeight;
+
+        private BridgeSupport bridgeSupport;
 
         private Federation activeFederation;
         private Federation proposedFederation;
@@ -593,7 +598,7 @@ class BridgeSupportTest {
                 signatureCache
             );
 
-            Repository repository = createRepository();
+            repository = createRepository();
             bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 contractAddress,
@@ -779,7 +784,6 @@ class BridgeSupportTest {
             assertEventWasEmittedWithExpectedData(encodedData);
         }
 
-
         private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
             byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
             return LogInfo.byteArrayToList(encodedTopicsInBytes);
@@ -801,6 +805,196 @@ class BridgeSupportTest {
                 .filter(log -> Arrays.equals(log.getData(), expectedData))
                 .findFirst();
             assertTrue(data.isPresent());
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransaction_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsigned();
+            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
+            setUpForTransactionRegistration(svpFundTransaction);
+
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
+
+            // act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransaction_whenValidationPeriodEnded_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+            // arrange
+            // make rsk execution block to be after validation period ended
+            long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
+                + bridgeMainNetConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
+            long rskExecutionBlockTimestamp = 10L;
+            BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(validationPeriodEndBlock + 1) // adding one more block to ensure validation period is ended
+                .setTimestamp(rskExecutionBlockTimestamp)
+                .build();
+            rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
+
+            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsigned();
+            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
+            setUpForTransactionRegistration(svpFundTransaction);
+
+            // Act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+            // Arrange
+            createAndSaveSvpFundTransactionUnsigned();
+            BtcTransaction pegout = createAndSavePegout();
+            signInputs(pegout); // a transaction trying to be registered should be signed
+            setUpForTransactionRegistration(pegout);
+
+            // Act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(rskTx, pegout.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasProcessed(pegout.getHash());
+            assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransaction_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
+            // Arrange
+            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsigned();
+            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
+            setUpForTransactionRegistration(svpFundTransaction);
+
+            // Act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeStorageProvider.save();
+
+            // Assert
+            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            assertSvpFundTransactionValuesWereUpdated();
+        }
+
+        private void assertNewUtxoWasSaved(int activeFederationUtxosSizeBeforeRegisteringTx) {
+            assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        }
+
+        private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
+            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+            long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
+            assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+        }
+
+        private void assertSvpFundTransactionValuesWereNotUpdated() {
+            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashSigned().isPresent());
+        }
+
+        private void assertSvpFundTransactionValuesWereUpdated() {
+            Optional<Sha256Hash> svpFundTransactionHashSignedOpt = bridgeStorageProvider.getSvpFundTxHashSigned();
+            assertTrue(svpFundTransactionHashSignedOpt.isPresent());
+
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+        }
+
+        private BtcTransaction createAndSaveSvpFundTransactionUnsigned() {
+            BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
+            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
+            addInput(svpFundTransaction, parentTxHash);
+            addOutputChange(svpFundTransaction);
+            savePegoutIndex(svpFundTransaction);
+            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
+
+            return svpFundTransaction;
+        }
+
+        private BtcTransaction createAndSavePegout() {
+            BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
+            addInput(pegout, parentTxHash);
+            addOutputChange(pegout);
+            savePegoutIndex(pegout);
+
+            return pegout;
+        }
+
+        private void addInput(BtcTransaction transaction, Sha256Hash parentTxHash) {
+            // we need to add an input that we can actually sign,
+            // and we know the private keys for the following scriptSig
+            Federation federation = P2shErpFederationBuilder.builder().build();
+            Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
+
+            transaction.addInput(parentTxHash, 0, scriptSig);
+        }
+
+        private void signInputs(BtcTransaction transaction) {
+            List<BtcECKey> keysToSign =
+                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true);
+            List<TransactionInput> inputs = transaction.getInputs();
+            for (TransactionInput input : inputs) {
+                BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, inputs.indexOf(input), keysToSign);
+            }
+        }
+
+        private void addOutputChange(BtcTransaction transaction) {
+            // add output to the active fed
+            Script activeFederationP2SHScript = activeFederation.getP2SHScript();
+            transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
+        }
+
+        private void savePegoutIndex(BtcTransaction pegout) {
+            // save sigHash in pegout index
+            Optional<Sha256Hash> inputSigHash = BitcoinUtils.getFirstInputSigHash(pegout);
+            bridgeStorageProvider.setPegoutTxSigHash(inputSigHash.get());
+        }
+
+        private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
+            bridgeSupport.save();
+        }
+
+        private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
+            // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+            BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activationsAfterForks);
+
+            pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transaction.getHash()), btcMainnetParams);
+            btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+
+            int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+            recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
+
+            bridgeStorageProvider.save();
+
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(activationsAfterForks)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withRepository(repository)
+                .build();
         }
     }
 
