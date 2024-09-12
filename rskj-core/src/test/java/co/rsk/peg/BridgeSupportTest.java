@@ -611,9 +611,6 @@ class BridgeSupportTest {
                 activationsAfterForks
             );
 
-            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
-            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activationsAfterForks);
-
             bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeMainNetConstants)
                 .withProvider(bridgeStorageProvider)
@@ -980,6 +977,9 @@ class BridgeSupportTest {
 
         private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
             // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activationsAfterForks);
+
             pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transaction.getHash()), btcMainnetParams);
             btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
 
