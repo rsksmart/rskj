@@ -92,10 +92,10 @@ class BridgeSupportFlyoverTest {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        bridgeSupportBuilder = new BridgeSupportBuilder();
+        bridgeSupportBuilder = BridgeSupportBuilder.builder();
         lockingCapSupport = mock(LockingCapSupport.class);
         whitelistSupport = mock(WhitelistSupport.class);
-        federationSupportBuilder = new FederationSupportBuilder();
+        federationSupportBuilder = FederationSupportBuilder.builder();
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {

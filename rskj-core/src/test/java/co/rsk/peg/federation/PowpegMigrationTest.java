@@ -145,10 +145,10 @@ class PowpegMigrationTest {
             btcParams
         );
         switch (oldPowPegFederationType) {
-            case nonStandardErp:
+            case NON_STANDARD_ERP:
                 originalPowpeg = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
                 break;
-            case p2shErp:
+            case P2SH_ERP:
                 originalPowpeg = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
                 // TODO: CHECK REDEEMSCRIPT
                 break;
@@ -203,11 +203,11 @@ class PowpegMigrationTest {
         Federation newPowPeg = argumentCaptor.getValue();
         assertEquals(newPowPegAddress, newPowPeg.getAddress());
         switch (newPowPegFederationType) {
-            case nonStandardErp:
+            case NON_STANDARD_ERP:
                 assertSame(ErpFederation.class, newPowPeg.getClass());
                 assertTrue(((ErpFederation) newPowPeg).getErpRedeemScriptBuilder() instanceof NonStandardErpRedeemScriptBuilder);
                 break;
-            case p2shErp:
+            case P2SH_ERP:
                 assertSame(ErpFederation.class, newPowPeg.getClass());
                 assertTrue(((ErpFederation) newPowPeg).getErpRedeemScriptBuilder() instanceof P2shErpRedeemScriptBuilder);
                 // TODO: CHECK REDEEMSCRIPT
@@ -238,7 +238,7 @@ class PowpegMigrationTest {
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -327,7 +327,7 @@ class PowpegMigrationTest {
             Block legacyFedActivationBlock = mock(Block.class);
             doReturn(legacyFedActivationBlockNumber).when(legacyFedActivationBlock).getNumber();
 
-            bridgeSupport = new BridgeSupportBuilder()
+            bridgeSupport = BridgeSupportBuilder.builder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
@@ -344,13 +344,13 @@ class PowpegMigrationTest {
             assertNull(bridgeSupport.getRetiringFederation());
         }
 
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(activationBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -415,13 +415,13 @@ class PowpegMigrationTest {
         // Adding 1 as the migration is exclusive
         doReturn(blockNumber).when(migrationBlock).getNumber();
 
-        federationSupport = new FederationSupportBuilder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(migrationBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -575,13 +575,13 @@ class PowpegMigrationTest {
             bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
-        federationSupport = new FederationSupportBuilder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(migrationFinishingBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -615,13 +615,13 @@ class PowpegMigrationTest {
             bridgeConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
 
-        federationSupport = new FederationSupportBuilder()
+        federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(migrationFinishedBlock)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -677,12 +677,14 @@ class PowpegMigrationTest {
         Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
 
         if (activations.isActive(ConsensusRule.RSKIP377)){
-            if (oldPowPegFederationType == FederationType.nonStandardErp || oldPowPegFederationType == FederationType.p2shErp){
+            if (oldPowPegFederationType == FederationType.NON_STANDARD_ERP
+                || oldPowPegFederationType == FederationType.P2SH_ERP){
                 assertNotEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
             }
             assertEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalPowpeg));
         } else {
-            if (oldPowPegFederationType == FederationType.nonStandardErp || oldPowPegFederationType == FederationType.p2shErp){
+            if (oldPowPegFederationType == FederationType.NON_STANDARD_ERP
+                || oldPowPegFederationType == FederationType.P2SH_ERP){
                 assertEquals(lastRetiredFederationP2SHScript, originalPowpeg.getP2SHScript());
                 assertNotEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalPowpeg));
             } else {
@@ -797,14 +799,14 @@ class PowpegMigrationTest {
             // Adding 1 as the migration is exclusive
             doReturn(blockNumber).when(nextPegoutEventBlock).getNumber();
 
-            FederationSupport federationSupport = new FederationSupportBuilder()
+            FederationSupport federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(bridgeConstants.getFederationConstants())
                 .withFederationStorageProvider(federationStorageProvider)
                 .withRskExecutionBlock(nextPegoutEventBlock)
                 .withActivations(activations)
                 .build();
 
-            bridgeSupport = new BridgeSupportBuilder()
+            bridgeSupport = BridgeSupportBuilder.builder()
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
                 .withEventLogger(bridgeEventLogger)
@@ -879,12 +881,12 @@ class PowpegMigrationTest {
         // Adding 1 as the migration is exclusive
         doReturn(blockNumber).when(confirmedPegoutBlock).getNumber();
 
-         FederationSupport federationSupport = new FederationSupportBuilder()
+         FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .build();
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
             .withEventLogger(bridgeEventLogger)
@@ -1468,11 +1470,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.nonStandardErp,
+            FederationType.NON_STANDARD_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.nonStandardErp,
+            FederationType.NON_STANDARD_ERP,
             newPowpegKeys,
             newPowpegAddress,
             bridgeMainnetConstants,
@@ -1494,11 +1496,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.nonStandardErp,
+            FederationType.NON_STANDARD_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             getMainnetPowpegKeys(), // Using same keys as the original powpeg, should result in a different address since it will create a p2sh erp federation
             newPowpegAddress,
             bridgeMainnetConstants,
@@ -1540,11 +1542,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
             bridgeMainnetConstants,
@@ -1605,11 +1607,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
             bridgeMainnetConstants,
@@ -1653,11 +1655,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
             bridgeMainnetConstants,
@@ -1701,11 +1703,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
             bridgeMainnetConstants,
@@ -1749,11 +1751,11 @@ class PowpegMigrationTest {
         );
 
         testChangePowpeg(
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
             utxos,
-            FederationType.p2shErp,
+            FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
             bridgeMainnetConstants,
@@ -1763,9 +1765,9 @@ class PowpegMigrationTest {
     }
 
     private enum FederationType {
-        nonStandardErp,
-        p2shErp,
-        standardMultisig
+        NON_STANDARD_ERP,
+        P2SH_ERP,
+        STANDARD_MULTISIG
     }
 
     private static Script getFederationDefaultRedeemScript(Federation federation) {
