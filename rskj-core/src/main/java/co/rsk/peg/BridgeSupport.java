@@ -405,6 +405,9 @@ public class BridgeSupport {
                 case PEGOUT_OR_MIGRATION:
                     logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx);
+                    if (svpIsOngoing()) {
+                        processSvpFundTransactionHashSigned(btcTx);
+                    }
                     break;
                 default:
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
@@ -418,6 +421,21 @@ public class BridgeSupport {
                 btcTxHash,
                 e.getMessage()
             );
+        }
+    }
+
+    private void processSvpFundTransactionHashSigned(BtcTransaction transaction) {
+        Optional<Sha256Hash> fundTransactionHashUnsignedOpt = provider.getSvpFundTxHashUnsigned();
+        if (!fundTransactionHashUnsignedOpt.isPresent()) {
+            return;
+        }
+        Sha256Hash fundTransactionHashUnsigned = fundTransactionHashUnsignedOpt.get();
+
+        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopy);
+        if (transactionCopy.getHash().equals(fundTransactionHashUnsigned)) {
+            provider.setSvpFundTxHashSigned(transaction.getHash());
+            provider.setSvpFundTxHashUnsigned(null);
         }
     }
 
