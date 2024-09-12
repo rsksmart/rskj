@@ -33,12 +33,11 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("GasPriceProvider");
     private final String url;
     private final JsonPointer jsonPath;
-    private final int timeout;
     private final SimpleHttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider) {
-        this(config, fallBackProvider, new SimpleHttpClient(config.getHttpGetConfig().getTimeout()));
+        this(config, fallBackProvider, new SimpleHttpClient(config.getHttpGetConfig().getTimeout().toMillis()));
     }
 
     public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider, SimpleHttpClient httpClient) {
@@ -46,7 +45,6 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
         HttpGetStableMinGasSystemConfig httpGetConfig = config.getHttpGetConfig();
         this.url = httpGetConfig.getUrl();
         this.jsonPath = JsonPointer.valueOf(httpGetConfig.getJsonPath());
-        this.timeout = httpGetConfig.getTimeout();
         this.httpClient = httpClient;
         this.objectMapper = new ObjectMapper();
     }
@@ -69,7 +67,7 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
             }
             return objectMapper.readTree(response).at(jsonPath).asLong();
         } catch (Exception e) {
-            logger.error("Error parsing min gas price from web provider: {}", e.getMessage());
+            logger.error("Error parsing min gas price from web provider", e);
             return null;
         }
     }
@@ -90,10 +88,6 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
 
     public String getUrl() {
         return url;
-    }
-
-    public int getTimeout() {
-        return timeout;
     }
 
 }

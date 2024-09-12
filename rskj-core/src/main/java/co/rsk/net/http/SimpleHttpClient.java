@@ -31,8 +31,11 @@ public class SimpleHttpClient {
     private static final String GET_METHOD = "GET";
     private final int timeoutMillis;
 
-    public SimpleHttpClient(int timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
+    public SimpleHttpClient(long timeoutMillis) {
+        if (timeoutMillis > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Timeout value is too large.");
+        }
+        this.timeoutMillis = (int) timeoutMillis;
     }
 
     public String doGet(String targetUrl) throws HttpException {

@@ -22,6 +22,8 @@ import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpGetStableMinGasSystemConfigTest {
@@ -32,7 +34,7 @@ class HttpGetStableMinGasSystemConfigTest {
         Config testConfig = ConfigFactory.parseString(
                 "url=\"http://test.url\"\n" +
                         "jsonPath=testPath\n" +
-                        "timeout=1000\n"
+                        "timeout=1000 milliseconds\n"
         );
         config = new HttpGetStableMinGasSystemConfig(testConfig);
     }
@@ -49,6 +51,6 @@ class HttpGetStableMinGasSystemConfigTest {
 
     @Test
     void testGetTimeout() {
-        assertEquals(1000, config.getTimeout());
+        assertEquals(Duration.ofMillis(1000), config.getTimeout());
     }
 }

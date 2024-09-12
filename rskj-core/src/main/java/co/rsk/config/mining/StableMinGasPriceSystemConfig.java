@@ -20,6 +20,8 @@ package co.rsk.config.mining;
 import co.rsk.mine.gas.provider.MinGasPriceProviderType;
 import com.typesafe.config.Config;
 
+import java.time.Duration;
+
 public class StableMinGasPriceSystemConfig {
     public static final String STABLE_GAS_PRICE_CONFIG_PATH_PROPERTY = "miner.stableGasPrice";
 
@@ -29,7 +31,7 @@ public class StableMinGasPriceSystemConfig {
     private static final String METHOD_PROPERTY = "source.method";
     private static final String PARAMS_PROPERTY = "source.params";
 
-    private final Integer refreshRate;
+    private final Duration refreshRate;
     private final Long minStableGasPrice;
     private final boolean enabled;
     private final MinGasPriceProviderType method;
@@ -37,13 +39,13 @@ public class StableMinGasPriceSystemConfig {
 
     public StableMinGasPriceSystemConfig(Config config) {
         this.enabled = config.hasPath(ENABLED_PROPERTY) && config.getBoolean(ENABLED_PROPERTY);
-        this.refreshRate = this.enabled && config.hasPath(REFRESH_RATE_PROPERTY) ? config.getInt(REFRESH_RATE_PROPERTY) : 0;
+        this.refreshRate = this.enabled && config.hasPath(REFRESH_RATE_PROPERTY) ? config.getDuration(REFRESH_RATE_PROPERTY) : Duration.ZERO;
         this.minStableGasPrice = this.enabled && config.hasPath(MIN_STABLE_GAS_PRICE_PROPERTY) ? config.getLong(MIN_STABLE_GAS_PRICE_PROPERTY) : 0;
         this.method = this.enabled ? config.getEnum(MinGasPriceProviderType.class, METHOD_PROPERTY) : MinGasPriceProviderType.FIXED;
         this.config = config;
     }
 
-    public int getRefreshRate() {
+    public Duration getRefreshRate() {
         return refreshRate;
     }
 

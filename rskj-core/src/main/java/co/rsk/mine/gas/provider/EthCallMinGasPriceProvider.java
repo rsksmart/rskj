@@ -26,6 +26,7 @@ import org.ethereum.rpc.parameters.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -54,11 +55,7 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
 
     @Override
     protected Optional<Long> getBtcExchangeRate() {
-        EthModule ethModule = ethModuleSupplier.get();
-        if (ethModule == null) {
-            logger.error("Could not get eth module");
-            return Optional.empty();
-        }
+        EthModule ethModule = Objects.requireNonNull(ethModuleSupplier.get());
 
         CallArgumentsParam callArguments = new CallArgumentsParam(
                 new HexAddressParam(fromAddress),
