@@ -409,6 +409,9 @@ public class BridgeSupport {
                 case PEGOUT_OR_MIGRATION:
                     logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx);
+                    if (svpIsOngoing()) {
+                        updateSvpFundTransactionValuesIfPossible(btcTx);
+                    }
                     break;
                 default:
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
@@ -423,6 +426,35 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    private void updateSvpFundTransactionValuesIfPossible(BtcTransaction transaction) {
+        Optional<Sha256Hash> svpFundTransactionHashUnsigned = provider.getSvpFundTxHashUnsigned();
+        if (!svpFundTransactionHashUnsigned.isPresent()) {
+            return;
+        }
+
+        if (!isTheSvpFundTransaction(svpFundTransactionHashUnsigned.get(), transaction)) {
+            return;
+        }
+
+        updateSvpFundTransactionValues(transaction);
+    }
+
+    private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
+        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopy);
+
+        return transactionCopy.getHash().equals(svpFundTransactionHashUnsigned);
+    }
+
+    private void updateSvpFundTransactionValues(BtcTransaction transaction) {
+        logger.debug(
+            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
+        );
+
+        provider.setSvpFundTxHashSigned(transaction.getHash());
+        provider.setSvpFundTxHashUnsigned(null);
     }
 
     private Script getLastRetiredFederationP2SHScript() {
