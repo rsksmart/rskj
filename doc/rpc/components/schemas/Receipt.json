@@ -15,7 +15,8 @@
       "to",
       "transactionHash",
       "transactionIndex",
-      "type"
+      "type",
+      "effectiveGasPrice"
     ],
     "properties": {
       "blockHash": {
@@ -78,6 +79,11 @@
         "title": "ReceiptType",
         "description": "is a positive unsigned 8-bit number that represents the type of the transaction.",
         "type": "string"
+      },
+      "effectiveGasPrice": {
+        "title": "ReceiptEffectiveGasPrice",
+        "description": "The actual value per gas deducted on the transaction.",
+        "$ref": "#/components/schemas/IntegerHex"
       },
       "root": {
         "title": "Receipt Root",

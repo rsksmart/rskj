@@ -46,6 +46,8 @@ public class TransactionReceiptDTO {
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
     private String type = TRANSACTION_TYPE;     // is a positive unsigned 8-bit number that represents the type of the transaction.
+    private String effectiveGasPrice;   // The actual value per gas deducted on the transaction.
+
 
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {
         TransactionReceipt receipt = txInfo.getReceipt();
@@ -74,6 +76,7 @@ public class TransactionReceiptDTO {
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
+        effectiveGasPrice = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getGasPrice().getBytes());
     }
 
     public String getTransactionHash() {
@@ -126,5 +129,9 @@ public class TransactionReceiptDTO {
 
     public String getType() {
         return type;
+    }
+
+    public String getEffectiveGasPrice() {
+        return effectiveGasPrice;
     }
 }

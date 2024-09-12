@@ -11,11 +11,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,13 +25,16 @@ import java.util.Collections;
 import java.util.List;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
-import static co.rsk.peg.PegTestUtils.createP2shErpFederation;
+import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class PegUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+    private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
     private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
@@ -40,9 +43,7 @@ class PegUtilsTest {
 
     private BridgeStorageProvider provider;
     private Address userAddress;
-    private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
-    private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
 
@@ -50,15 +51,15 @@ class PegUtilsTest {
     void init() {
         provider = mock(BridgeStorageProvider.class);
         userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
-        retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
         retiringFederation = createFederation(bridgeMainnetConstants, retiringFedSigners);
 
-        activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
         );
-        activeFederation = createP2shErpFederation(bridgeMainnetConstants, activeFedSigners);
+        activeFederation = createP2shErpFederation(federationMainNetConstants, activeFedSigners);
     }
 
     @Test
@@ -69,13 +70,13 @@ class PegUtilsTest {
         BtcTransaction btcTransaction = mock(BtcTransaction.class);
 
         // Act
-        IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
-            PegUtils.getTransactionTypeUsingPegoutIndex(fingerrootActivations, provider, liveFederationWallet, btcTransaction);
-        });
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+            PegUtils.getTransactionTypeUsingPegoutIndex(fingerrootActivations, provider, liveFederationWallet, btcTransaction)
+        );
 
         // Assert
         String expectedMessage = "Can't call this method before RSKIP379 activation";
-        Assertions.assertEquals(expectedMessage, exception.getMessage());
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
     @Test
@@ -96,13 +97,13 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
     @Test
     void test_getTransactionType_pegin_below_minimum_active_fed() {
         // Arrange
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
@@ -119,7 +120,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -140,7 +141,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -164,7 +165,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -188,21 +189,21 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
     void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses() {
         // Arrange
-        Federation retiringFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation retiringFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(signers);
         Instant creationTime = Instant.ofEpochMilli(1000L);
-        List<BtcECKey> erpPubKeys = bridgeMainnetConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeMainnetConstants.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = federationMainNetConstants.getErpFedPubKeysList();
+        long activationDelay = federationMainNetConstants.getErpFedActivationDelay();
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcMainnetParams);
 
         ErpFederation activeFed = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
@@ -223,7 +224,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -244,7 +245,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -268,7 +269,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -291,7 +292,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -316,7 +317,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -351,7 +352,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -377,7 +378,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
     @Test
@@ -413,7 +414,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -440,7 +441,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
@@ -477,7 +478,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -506,14 +507,14 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGIN, pegTxType);
+        assertEquals(PegTxType.PEGIN, pegTxType);
     }
 
     @Test
     void test_getTransactionType_migration_from_retired_fed() {
         // Arrange
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, genesisFederation.getP2SHScript());
@@ -542,7 +543,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
+        assertEquals(PegTxType.PEGOUT_OR_MIGRATION, pegTxType);
     }
 
     @Test
@@ -586,7 +587,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
     @Test
@@ -596,15 +597,15 @@ class PegUtilsTest {
         NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
         Context context = new Context(bridgeTestNetConstants.getBtcParams());
 
-        Federation retiringFederation = FederationTestUtils.getGenesisFederation(bridgeMainnetConstants);
+        Federation retiringFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
         List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(signers);
         Instant creationTime = Instant.ofEpochMilli(1000L);
-        List<BtcECKey> erpPubKeys = bridgeTestNetConstants.getErpFedPubKeysList();
-        long activationDelay = bridgeTestNetConstants.getErpFedActivationDelay();
+        List<BtcECKey> erpPubKeys = federationMainNetConstants.getErpFedPubKeysList();
+        long activationDelay = federationMainNetConstants.getErpFedActivationDelay();
 
         FederationArgs federationArgs =
             new FederationArgs(fedMembers, creationTime, 0L, btcTestNetParams);
@@ -623,7 +624,7 @@ class PegUtilsTest {
         );
 
         // Assert
-        Assertions.assertEquals(PegTxType.UNKNOWN, pegTxType);
+        assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
 }

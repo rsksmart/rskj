@@ -20,8 +20,6 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.peg.constants.BridgeDevNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import com.typesafe.config.Config;
@@ -184,14 +182,12 @@ public abstract class SystemProperties {
                     constants = Constants.testnet(getActivationConfig());
                     break;
                 case "devnet":
-                    constants = Constants.devnetWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants = Constants.devnetWithFederation();
                     break;
                 case "regtest":
-                    constants = Constants.regtestWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants = getGenesisFederationPublicKeys()
+                        .map(Constants::regtestWithFederation)
+                        .orElseGet(Constants::regtest);
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
