@@ -1437,29 +1437,16 @@ public class VM {
     }
 
     protected void doMCOPY() {
-
-        /*
-
-        TODO -> Implement Gas Usage
-
-            Per yellow paper terminology, it should be considered part of the W_copy group of opcodes, and follow the gas calculation for W_copy in the yellow paper. While the calculation in the yellow paper should be considered the final word, for reference, as of time of this writing, that currently means its gas cost is:
-
-            words_copied = (length + 31) // 32
-            g_verylow    = 3
-            g_copy       = 3 * words_copied + memory_expansion_cost
-            gas_cost     = g_verylow + g_copy
-
-        */
-
-        /*
-
         if (computeGas) {
-            long newMemSize = memNeeded(stack.peek(), 32);
-            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
+            // See "Gas Cost" section on EIP 5656
+            // gas cost = 3 * (length + 31) + memory expansion cost + very low
+            long length = stack.get(stack.size() - 3).longValue();
+            long newMemSize = memNeeded(stack.peek(), length);
+            long cost = 3 * (length + 31) + calcMemGas(oldMemSize, newMemSize, 0) + 3; // TODO -> Check copy size
+
+            gasCost = GasCost.add(gasCost, cost);
             spendOpCodeGas();
         }
-
-        */
 
         // EXECUTION PHASE
         DataWord dst = program.stackPop();
