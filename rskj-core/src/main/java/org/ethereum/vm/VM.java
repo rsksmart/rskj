@@ -1470,7 +1470,7 @@ public class VM {
             hint = "dst: " + dst + " src: " + src + " length: " + length;
         }
 
-        program.memoryCopy(dst, src, length); // TODO -> IMPLEMENT ME
+        program.memoryCopy(dst.intValue(), src.intValue(), length.intValue());
         program.step();
     }
 
