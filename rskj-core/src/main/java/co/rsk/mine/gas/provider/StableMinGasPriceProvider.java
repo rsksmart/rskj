@@ -18,26 +18,34 @@
 package co.rsk.mine.gas.provider;
 
 import co.rsk.core.Coin;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
     private static final int ERR_NUM_OF_FAILURES = 20;
+
     private final MinGasPriceProvider fallBackProvider;
     private final long minStableGasPrice;
-    private Long lastMinGasPrice;
-    private long lastUpdateTimeMillis;
-    private int numOfFailures;
     private final long refreshRateInMillis;
+    private final AtomicInteger numOfFailures = new AtomicInteger();
+    private final AtomicReference<Future<Long>> priceFuture = new AtomicReference<>();
+
+    private volatile long lastMinGasPrice;
+    private volatile long lastUpdateTimeMillis;
 
     protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, Duration refreshRate) {
         this.minStableGasPrice = minStableGasPrice;
         this.fallBackProvider = fallBackProvider;
-        this.lastMinGasPrice = 0L;
         this.refreshRateInMillis = refreshRate.toMillis();
     }
 
@@ -45,14 +53,41 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
 
     @Override
     public long getMinGasPrice() {
+        return getMinGasPrice(false);
+    }
+
+    @VisibleForTesting
+    public long getMinGasPrice(boolean wait) {
         long currentTimeMillis = System.currentTimeMillis();
         if (currentTimeMillis - lastUpdateTimeMillis >= refreshRateInMillis) {
-            if (fetchPrice()) {
-                lastUpdateTimeMillis = currentTimeMillis;
+            Future<Long> priceFuture = fetchPriceAsync();
+            if (wait || priceFuture.isDone()) {
+                try {
+                    return priceFuture.get();
+                } catch (InterruptedException e) {
+                    logger.error("Min gas price fetching was interrupted", e);
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    logger.error("Min gas price fetching was failed", e);
+                }
             }
         }
 
-        if (lastMinGasPrice != null && lastMinGasPrice > 0) {
+        return getLastMinGasPrice();
+    }
+
+    @Override
+    public Coin getMinGasPriceAsCoin() {
+        return Coin.valueOf(getMinGasPrice());
+    }
+
+    @VisibleForTesting
+    public Coin getMinGasPriceAsCoin(boolean wait) {
+        return Coin.valueOf(getMinGasPrice(wait));
+    }
+
+    private long getLastMinGasPrice() {
+        if (lastMinGasPrice > 0) {
             return lastMinGasPrice;
         }
 
@@ -66,26 +101,41 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
         return minStableGasPrice / btcValue;
     }
 
-    @Override
-    public Coin getMinGasPriceAsCoin() {
-        return Coin.valueOf(getMinGasPrice());
+    private synchronized Future<Long> fetchPriceAsync() {
+        Future<Long> curFuture = priceFuture.get();
+        if (curFuture != null) {
+            return curFuture;
+        }
+
+        CompletableFuture<Long> newFuture = new CompletableFuture<>();
+        priceFuture.set(newFuture);
+
+        new Thread(() -> {
+            Optional<Long> priceResponse = fetchPriceSync();
+            newFuture.complete(priceResponse.orElse(getLastMinGasPrice()));
+            priceFuture.set(null);
+        }).start();
+
+        return newFuture;
     }
 
-    private boolean fetchPrice() {
+    private Optional<Long> fetchPriceSync() {
         Optional<Long> priceResponse = getBtcExchangeRate();
         if (priceResponse.isPresent() && priceResponse.get() > 0) {
-            lastMinGasPrice = calculateMinGasPriceBasedOnBtcPrice(priceResponse.get());
-            numOfFailures = 0;
-            return true;
+            long result = calculateMinGasPriceBasedOnBtcPrice(priceResponse.get());
+            lastMinGasPrice = result;
+            lastUpdateTimeMillis = System.currentTimeMillis();
+            numOfFailures.set(0);
+            return Optional.of(result);
         }
 
-        numOfFailures++;
-        if (numOfFailures >= ERR_NUM_OF_FAILURES) {
-            logger.error("Gas price was not updated as it was not possible to obtain valid price from provider. Check your provider setup. Number of failed attempts: {}", numOfFailures);
+        int curNumOfFailures = numOfFailures.incrementAndGet();
+        if (curNumOfFailures >= ERR_NUM_OF_FAILURES) {
+            logger.error("Gas price was not updated as it was not possible to obtain valid price from provider. Check your provider setup. Number of failed attempts: {}", curNumOfFailures);
         } else {
-            logger.warn("Gas price was not updated as it was not possible to obtain valid price from provider. Number of failed attempts: {}", numOfFailures);
+            logger.warn("Gas price was not updated as it was not possible to obtain valid price from provider. Number of failed attempts: {}", curNumOfFailures);
         }
 
-        return false;
+        return Optional.empty();
     }
 }

@@ -42,7 +42,7 @@ class StableMinGasPriceProviderTest {
 
     @Test
     void testGetMinGasPrice() {
-        long result = stableMinGasPriceProvider.getMinGasPrice();
+        long result = stableMinGasPriceProvider.getMinGasPrice(true);
         assertEquals(6L, result);
         verify(fallBackProvider, times(0)).getMinGasPrice();
     }
@@ -56,7 +56,7 @@ class StableMinGasPriceProviderTest {
             }
         };
 
-        long result = stableMinGasPriceProvider.getMinGasPrice();
+        long result = stableMinGasPriceProvider.getMinGasPrice(true);
 
         assertEquals(10L, result);
         verify(fallBackProvider, times(1)).getMinGasPrice();
@@ -70,14 +70,14 @@ class StableMinGasPriceProviderTest {
         stableMinGasPriceProvider = spy(new TestStableMingGasPriceProvider(fallBackProvider, 100, Duration.ofSeconds(10)));
 
         stableMinGasPriceProvider.getMinGasPrice();
-        stableMinGasPriceProvider.getMinGasPrice();
+        stableMinGasPriceProvider.getMinGasPrice(true);
 
-        verify(stableMinGasPriceProvider, times(2)).getMinGasPrice();
+        verify(stableMinGasPriceProvider, times(2)).getMinGasPrice(anyBoolean());
         verify(stableMinGasPriceProvider, times(1)).getBtcExchangeRate();
     }
     @Test
     void testGetMinGasPriceAsCoin() {
-        Coin result = stableMinGasPriceProvider.getMinGasPriceAsCoin();
+        Coin result = stableMinGasPriceProvider.getMinGasPriceAsCoin(true);
         assertEquals(Coin.valueOf(6L), result);
     }
 

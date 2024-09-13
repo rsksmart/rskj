@@ -60,9 +60,9 @@ class HttpGetMinGasPriceProviderTest {
         HttpGetMinGasPriceProvider provider = spy(new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient));
 
         provider.getMinGasPrice();
-        provider.getMinGasPrice();
+        provider.getMinGasPrice(true);
 
-        verify(provider, times(2)).getMinGasPrice();
+        verify(provider, times(2)).getMinGasPrice(anyBoolean());
         verify(httpClient, times(1)).doGet(anyString());
     }
 
@@ -77,7 +77,7 @@ class HttpGetMinGasPriceProviderTest {
         StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
         HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
-        Long result = provider.getMinGasPrice();
+        Long result = provider.getMinGasPrice(true);
         verify(fallbackProvider, times(1)).getMinGasPrice();
         assertEquals(10L, result);
     }
@@ -93,7 +93,7 @@ class HttpGetMinGasPriceProviderTest {
         StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
         HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
-        Long result = provider.getMinGasPrice();
+        Long result = provider.getMinGasPrice(true);
         verify(fallbackProvider, times(1)).getMinGasPrice();
         assertEquals(10L, result);
     }
@@ -109,7 +109,7 @@ class HttpGetMinGasPriceProviderTest {
         StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
         HttpGetMinGasPriceProvider provider = new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient);
 
-        Long result = provider.getMinGasPrice();
+        Long result = provider.getMinGasPrice(true);
 
         verify(fallbackProvider, times(1)).getMinGasPrice();
         assertEquals(10L, result);
