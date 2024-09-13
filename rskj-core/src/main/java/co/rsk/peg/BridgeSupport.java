@@ -446,6 +446,10 @@ public class BridgeSupport {
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
+        logger.debug(
+            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
+        );
+
         provider.setSvpFundTxHashSigned(transaction.getHash());
         provider.setSvpFundTxHashUnsigned(null);
     }
