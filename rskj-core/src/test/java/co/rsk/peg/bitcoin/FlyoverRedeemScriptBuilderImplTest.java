@@ -24,7 +24,7 @@ class FlyoverRedeemScriptBuilderImplTest {
 
     @BeforeEach
     void setUp() {
-        Federation federation = new P2shErpFederationBuilder().build();
+        Federation federation = P2shErpFederationBuilder.builder().build();
         redeemScript = federation.getRedeemScript();
         flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
     }
