@@ -390,8 +390,8 @@ public class Program {
         return memory.read(offset, size);
     }
 
-    public void memoryCopy(DataWord dst, DataWord src, DataWord length) {
-        memory.copy(dst.longValue(), src.longValue(), length.longValue());
+    public void memoryCopy(int dst, int src, int length) {
+        memorySave(dst, memoryChunk(src, length));
     }
 
     /**
