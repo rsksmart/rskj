@@ -95,7 +95,7 @@ public class BridgeSerializationUtils {
     public static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignatures(
             byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         if (data == null || data.length == 0) {
-            return new AbstractMap.SimpleEntry<>(null, null);
+            return null;
         }
 
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
