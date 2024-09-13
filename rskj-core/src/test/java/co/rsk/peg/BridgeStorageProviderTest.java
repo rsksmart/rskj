@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeStorageIndexKey.*;
+import static org.ethereum.TestUtils.assertThrows;
 import static org.ethereum.TestUtils.mockAddress;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,7 +42,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -870,14 +870,14 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void saveSvpSpendTxWaitingForSignatures_postLovell700AndEmptyEntry_shouldNotSaveInStorage() {
+        void saveSvpSpendTxWaitingForSignatures_postLovell700AndEmptyEntry_shouldThrowIllegalArgumentException() {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(null, null);
             TestUtils.setInternalState(bridgeStorageProvider, fieldName, svpSpendTxWaitingForSignatures);
 
             // Act
-            bridgeStorageProvider.save();
+            assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
 
             // Assert
             byte[] actualSvpSpendTxWaitingForSignatures =
