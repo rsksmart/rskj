@@ -1,30 +1,19 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
-import java.time.Instant;
-import java.util.List;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.function.Function;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class BridgeUtilsLegacyTest {
+import co.rsk.bitcoinj.core.*;
+import co.rsk.peg.constants.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.junit.jupiter.api.*;
 
+class BridgeUtilsLegacyTest {
     private ActivationConfig.ForBlock activations;
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
@@ -455,56 +444,9 @@ class BridgeUtilsLegacyTest {
         ));
     }
 
-    @Test
-    void calculatePegoutTxSize_before_rskip_271() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
-        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(), 0, btcParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-
-        int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
-
-        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
-        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .02;
-
-        Assertions.assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void calculatePegoutTxSize_after_rskip_271() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-
-        FederationArgs federationArgs = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(), 0, btcParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2));
-    }
-
-    @Test
-    void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
-        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(), 0, btcParams);
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0));
-    }
-
-    private class SimpleBtcTransaction {
-        private BtcTransaction btcTransaction;
-        private Address destinationAddress;
+    private static class SimpleBtcTransaction {
+        private final BtcTransaction btcTransaction;
+        private final Address destinationAddress;
 
         public SimpleBtcTransaction(BtcTransaction btcTransaction, Address destinationAddress) {
             this.btcTransaction = btcTransaction;

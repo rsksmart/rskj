@@ -17,7 +17,6 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
@@ -870,7 +869,7 @@ public class BridgeSupport {
     private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
-            int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
+            int pegoutSize = PegUtils.getRegularPegoutTxSize(activations, getActiveFederation());
             Coin feePerKB = getFeePerKb();
             // The pegout transaction has a cost related to its size and the current feePerKB
             // The actual cost cannot be asserted exactly so the calculation is approximated
@@ -2214,10 +2213,13 @@ public class BridgeSupport {
         return 0;
     }
 
+    /**
+     * Returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
+     * where N is the number of peg-outs requests waiting in the queue
+     * @return the estimated fees for the next peg-out event
+     * @throws IOException if there is an error getting the queued pegouts count
+     */
     public Coin getEstimatedFeesForNextPegOutEvent() throws IOException {
-        //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
-        //  where N is the number of peg-outs requests waiting in the queue.
-
         final int INPUT_MULTIPLIER = 2; // 2 inputs
 
         int pegoutRequestsCount = getQueuedPegoutsCount();
@@ -2229,13 +2231,18 @@ public class BridgeSupport {
 
         int totalOutputs = pegoutRequestsCount + 2; // N + 2 outputs
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), INPUT_MULTIPLIER, totalOutputs);
+        int pegoutTxSize = PegUtils.calculatePegoutTxSize(
+            activations,
+            getActiveFederation(),
+            INPUT_MULTIPLIER,
+            totalOutputs
+        );
 
         Coin feePerKB = getFeePerKb();
 
         return feePerKB
-                .multiply(pegoutTxSize) // times the size in bytes
-                .divide(1000);
+            .multiply(pegoutTxSize) // times the size in bytes
+            .divide(1000);
     }
 
     public BigInteger registerFlyoverBtcTransaction(

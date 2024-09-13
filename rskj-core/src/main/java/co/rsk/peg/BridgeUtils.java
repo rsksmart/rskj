@@ -589,44 +589,4 @@ public final class BridgeUtils {
 
         return new Address(networkParameters, version, hashBytes);
     }
-
-    public static int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {
-        // A regular peg-out transaction has two inputs and two outputs
-        // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
-        // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
-        // and the op_codes for the corresponding script
-        final int INPUT_MULTIPLIER = 2;
-        final int OUTPUT_MULTIPLIER = 2;
-
-        return calculatePegoutTxSize(
-            activations,
-            federation,
-            INPUT_MULTIPLIER,
-            OUTPUT_MULTIPLIER
-        );
-    }
-
-    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
-
-        if (inputs < 1 || outputs < 1) {
-            throw new IllegalArgumentException("Inputs or outputs should be more than 1");
-        }
-
-        if (!activations.isActive(ConsensusRule.RSKIP271)) {
-            return BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, inputs, outputs);
-        }
-
-        final int SIGNATURE_MULTIPLIER = 72;
-        BtcTransaction pegoutTx = new BtcTransaction(federation.getBtcParams());
-        for (int i = 0; i < inputs; i++) {
-            pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
-        }
-        for (int i = 0; i < outputs; i++) {
-            pegoutTx.addOutput(Coin.ZERO, federation.getAddress());
-        }
-        int baseSize = pegoutTx.bitcoinSerialize().length;
-        int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
-
-        return baseSize + signingSize;
-    }
 }

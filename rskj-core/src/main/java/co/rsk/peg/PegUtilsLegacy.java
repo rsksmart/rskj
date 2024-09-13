@@ -2,28 +2,14 @@ package co.rsk.peg;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
+import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -34,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * Instead use methods in {@link co.rsk.peg.PegUtils}
  */
 @Deprecated
-public class PegUtilsLegacy {
+public final class PegUtilsLegacy {
 
     private static final Logger logger = LoggerFactory.getLogger(PegUtilsLegacy.class);
 
@@ -50,7 +36,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise, returns false.
      */
     @Deprecated
-    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
+    static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
         Script[] federationsP2shScripts = federations.stream()
             .filter(Objects::nonNull)
             .map(PegUtilsLegacy::getFederationStandardP2SHScript)
@@ -69,7 +55,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise, returns false.
      */
     @Deprecated
-    protected static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
+    static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
         int inputsSize = btcTx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             TransactionInput txInput = btcTx.getInput(i);
@@ -101,7 +87,7 @@ public class PegUtilsLegacy {
     }
 
     @Deprecated
-    protected static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
+    static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
 
@@ -132,7 +118,7 @@ public class PegUtilsLegacy {
      * @return true if it is a peg-out. Otherwise returns false.
      */
     @Deprecated
-    protected static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
+    static boolean txIsFromOldFederation(BtcTransaction btcTx, Address oldFederationAddress) {
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
 
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
@@ -155,7 +141,7 @@ public class PegUtilsLegacy {
      * @return true if this is a valid peg-in transaction
      */
     @Deprecated
-    public static boolean isValidPegInTx(
+    static boolean isValidPegInTx(
         BtcTransaction tx,
         Federation federation,
         Wallet federationsWallet,
@@ -184,7 +170,7 @@ public class PegUtilsLegacy {
      * @return true if this is a valid peg-in transaction
      */
     @Deprecated
-    protected static boolean isValidPegInTx(
+    static boolean isValidPegInTx(
         BtcTransaction tx,
         List<Federation> activeFederations,
         Script retiredFederationP2SHScript,
@@ -263,7 +249,7 @@ public class PegUtilsLegacy {
     }
 
     @Deprecated
-    protected static boolean isMigrationTx(
+    static boolean isMigrationTx(
         BtcTransaction btcTx,
         Federation activeFederation,
         Federation retiringFederation,
@@ -307,7 +293,7 @@ public class PegUtilsLegacy {
      * @return PegTxType indicating if the transaction is a peg-in, peg-out/migration, or unknown
      */
     @Deprecated
-    protected static PegTxType getTransactionType(
+    static PegTxType getTransactionType(
         BtcTransaction btcTx,
         Federation activeFederation,
         Federation retiringFederation,
@@ -378,7 +364,7 @@ public class PegUtilsLegacy {
      * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
      */
     @Deprecated
-    protected static boolean isAnyUTXOAmountBelowMinimum(
+    static boolean isAnyUTXOAmountBelowMinimum(
         Coin minimumPegInTxValue,
         BtcTransaction btcTx,
         Wallet wallet
@@ -386,6 +372,39 @@ public class PegUtilsLegacy {
         return btcTx.getWalletOutputs(wallet).stream()
             .anyMatch(transactionOutput -> transactionOutput.getValue().isLessThan(minimumPegInTxValue)
         );
+    }
+
+    @Deprecated
+    static int calculatePegoutTxSize(
+        ActivationConfig.ForBlock activations,
+        Federation federation,
+        int inputs,
+        int outputs
+    ) {
+        if (inputs < 1 || outputs < 1) {
+            throw new IllegalArgumentException("Inputs or outputs should be more than 1");
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP271)) {
+            throw new DeprecatedMethodCallException(
+                "Calling PegUtilsLegacy.calculatePegoutTxSize method after RSKIP271 activation"
+            );
+        }
+
+        final int SIGNATURE_MULTIPLIER = 71;
+        final int OUTPUT_SIZE = 25;
+        // This data accounts for txid+vout+sequence
+        final int INPUT_ADDITIONAL_DATA_SIZE = 40;
+        // This data accounts for the value+index
+        final int OUTPUT_ADDITIONAL_DATA_SIZE = 9;
+        // This data accounts for the version field
+        final int TX_ADDITIONAL_DATA_SIZE = 4;
+        // The added ones are to account for the data size
+        final int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (SIGNATURE_MULTIPLIER + 1) +
+            federation.getRedeemScript().getProgram().length + 1;
+        return TX_ADDITIONAL_DATA_SIZE +
+            (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputs +
+            (OUTPUT_SIZE + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputs;
     }
 
     private static Script getFederationStandardRedeemScript(Federation federation) {

@@ -1,8 +1,10 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -28,6 +30,7 @@ import static co.rsk.peg.PegTestUtils.createFederation;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +39,7 @@ class PegUtilsTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -620,4 +623,118 @@ class PegUtilsTest {
         assertEquals(PegTxType.UNKNOWN, pegTxType);
     }
 
+
+    @Test
+    void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> PegUtils.calculatePegoutTxSize(activations, federation, 0, 0)
+        );
+    }
+
+    @Test
+    void calculatePegoutTxSize_2Inputs_2Outputs() {
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        int inputSize = 2;
+        int outputSize = 2;
+        int pegoutTxSize = PegUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
+        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .01;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    void calculatePegoutTxSize_9Inputs_2Outputs() {
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        int inputSize = 9;
+        int outputSize = 2;
+        int pegoutTxSize = PegUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
+        int origTxSize = 9069; // Data for 9 inputs, 2 outputs From https://www.blockchain.com/btc/tx/15adf52f7b4b7a7e563fca92aec7bbe8149b87fac6941285a181e6fcd799a1cd
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .01;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    void calculatePegoutTxSize_10Inputs_20Outputs() {
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        // Create a pegout tx with 10 inputs and 20 outputs
+        int inputSize = 10;
+        int outputSize = 20;
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
+
+        int pegoutTxSize = PegUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
+        int origTxSize = pegoutTx.bitcoinSerialize().length;
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .02;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    void calculatePegoutTxSize_50Inputs_200Outputs() {
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        // Create a pegout tx with 50 inputs and 200 outputs
+        int inputSize = 50;
+        int outputSize = 200;
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
+
+        int pegoutTxSize = PegUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
+        int origTxSize = pegoutTx.bitcoinSerialize().length;
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .02;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    void getRegularPegoutTxSize_has_proper_calculations() {
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        // Create a pegout tx with two inputs and two outputs
+        int inputs = 2;
+        BtcTransaction pegoutTx = createPegOutTx(Collections.emptyList(), inputs, federation, false);
+
+        for (int inputIndex = 0; inputIndex < inputs; inputIndex++) {
+            Script inputScript = pegoutTx.getInput(inputIndex).getScriptSig();
+
+            Sha256Hash sighash = pegoutTx.hashForSignature(inputIndex, federation.getRedeemScript(), BtcTransaction.SigHash.ALL, false);
+
+            for (int keyIndex = 0; keyIndex < keys.size() - 1; keyIndex++) {
+                BtcECKey key = keys.get(keyIndex);
+                BtcECKey.ECDSASignature sig = key.sign(sighash);
+                TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+                byte[] txSigEncoded = txSig.encodeToBitcoin();
+
+                int sigIndex = inputScript.getSigInsertionIndex(sighash, key);
+                inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
+                pegoutTx.getInput(inputIndex).setScriptSig(inputScript);
+            }
+        }
+
+        int pegoutTxSize = PegUtils.getRegularPegoutTxSize(activations, federation);
+
+        // The difference between the calculated size and a real tx size should be smaller than 10% in any direction
+        int difference = pegoutTx.bitcoinSerialize().length - pegoutTxSize;
+        double tolerance = pegoutTxSize * .1;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
 }

@@ -17,28 +17,35 @@
  */
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.wallet.CoinSelector;
-import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.*;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -52,18 +59,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
 
 class BridgeUtilsTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -129,7 +124,7 @@ class BridgeUtilsTest {
             .chainId(constants.getChainId())
             .value(AMOUNT)
             .build();
-        Assertions.assertThrows(Exception.class, () -> BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get()));
+        assertThrows(Exception.class, () -> BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get()));
     }
 
     @Test
@@ -139,7 +134,7 @@ class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 1);
-        Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -164,7 +159,7 @@ class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 3);
-        Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -181,7 +176,7 @@ class BridgeUtilsTest {
             false
         );
 
-        Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -196,7 +191,7 @@ class BridgeUtilsTest {
             null
         );
 
-        Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -212,7 +207,7 @@ class BridgeUtilsTest {
             nonStandardErpFederation
         );
 
-        Assertions.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -368,7 +363,7 @@ class BridgeUtilsTest {
                 Transaction.builder().build()
             )
         );
-        Assertions.assertTrue(
+        assertTrue(
             BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(
                 Keccak256.ZERO_HASH.getBytes(),
                 0,
@@ -388,17 +383,17 @@ class BridgeUtilsTest {
 
     @Test
     void testIsContractTxInvalidTx() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new ImmutableTransaction(null));
+        assertThrows(IllegalArgumentException.class, () -> new ImmutableTransaction(null));
     }
 
     @Test
     void getCoinFromBigInteger_bigger_than_long_value() {
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtils.getCoinFromBigInteger(new BigInteger("9223372036854775808")));
+        assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtils.getCoinFromBigInteger(new BigInteger("9223372036854775808")));
     }
 
     @Test
     void getCoinFromBigInteger_null_value() {
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtils.getCoinFromBigInteger(null));
+        assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtils.getCoinFromBigInteger(null));
     }
 
     @Test
@@ -408,7 +403,7 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmations_invalid_height() {
-        Assertions.assertThrows(Exception.class, () -> Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null)));
+        assertThrows(Exception.class, () -> Assertions.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null)));
     }
 
     @Test
@@ -418,7 +413,7 @@ class BridgeUtilsTest {
 
     @Test
     void validateHeightAndConfirmation_enough_confirmations() throws Exception {
-        Assertions.assertTrue(BridgeUtils.validateHeightAndConfirmations(
+        assertTrue(BridgeUtils.validateHeightAndConfirmations(
             2,
             5,
             3,
@@ -428,7 +423,7 @@ class BridgeUtilsTest {
 
     @Test
     void calculateMerkleRoot_invalid_pmt() {
-        Assertions.assertThrows(Exception.class, () -> BridgeUtils.calculateMerkleRoot(networkParameters, Hex.decode("ab"), null));
+        assertThrows(Exception.class, () -> BridgeUtils.calculateMerkleRoot(networkParameters, Hex.decode("ab"), null));
     }
 
     @Test
@@ -436,7 +431,7 @@ class BridgeUtilsTest {
         byte[] bits = new byte[1];
         bits[0] = 0x01;
         List<Sha256Hash> hashes = new ArrayList<>();
-        hashes.add(PegTestUtils.createHash(2));
+        hashes.add(BitcoinTestUtils.createHash(2));
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
@@ -460,14 +455,14 @@ class BridgeUtilsTest {
     @Test
     void validateInputsCount_active_rskip() {
         byte[] decode = Hex.decode("00000000000100");
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, true));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(decode, true));
     }
 
     @Test
     void validateInputsCount_inactive_rskip() {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         byte[] btcTxSerialized = tx.bitcoinSerialize();
-        Assertions.assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, false));
+        assertThrows(VerificationException.class, () -> BridgeUtils.validateInputsCount(btcTxSerialized, false));
     }
 
     @Test
@@ -518,7 +513,7 @@ class BridgeUtilsTest {
         boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
 
         // Assert
-        Assertions.assertTrue(isSigned);
+        assertTrue(isSigned);
     }
 
     @Test
@@ -693,7 +688,7 @@ class BridgeUtilsTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             // Should use the legacy method and fail for using testnet script hash
             test_deserializeBtcAddressWithVersion(
                 false,
@@ -728,26 +723,26 @@ class BridgeUtilsTest {
     @Test
     void deserializeBtcAddressWithVersion_null_bytes() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> {
+        assertThrows(BridgeIllegalArgumentException.class, () ->
             BridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstantsRegtest.getBtcParams(),
                 activations,
                 null
-            );
-        });
+            )
+        );
     }
 
     @Test
     void deserializeBtcAddressWithVersion_empty_bytes() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> {
+        assertThrows(BridgeIllegalArgumentException.class, () ->
             BridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstantsRegtest.getBtcParams(),
                 activations,
                 new byte[]{}
-            );
-        });
+            )
+        );
     }
 
     @Test
@@ -774,7 +769,7 @@ class BridgeUtilsTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
+        assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
             true,
             NetworkParameters.ID_MAINNET,
             addressBytes,
@@ -808,7 +803,7 @@ class BridgeUtilsTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
+        assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
             true,
             NetworkParameters.ID_MAINNET,
             addressBytes,
@@ -842,7 +837,7 @@ class BridgeUtilsTest {
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
+        assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
             true,
             NetworkParameters.ID_TESTNET,
             addressBytes,
@@ -871,12 +866,12 @@ class BridgeUtilsTest {
     }
 
     @Test
-    void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() {
         String addressVersionHex = "05"; // Mainnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
+        assertThrows(IllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
             true,
             NetworkParameters.ID_TESTNET,
             addressBytes,
@@ -893,7 +888,7 @@ class BridgeUtilsTest {
         String extraData = "0000aaaaeeee1111ffff";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex).concat(extraData));
 
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
+        assertThrows(BridgeIllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
             true,
             NetworkParameters.ID_TESTNET,
             addressBytes,
@@ -910,7 +905,7 @@ class BridgeUtilsTest {
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
         // Should fail for having less than 21 bytes
-        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
+        assertThrows(BridgeIllegalArgumentException.class, () -> test_deserializeBtcAddressWithVersion(
             true,
             NetworkParameters.ID_TESTNET,
             addressBytes,
@@ -918,277 +913,6 @@ class BridgeUtilsTest {
             new byte[]{},
             ""
         ));
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_ZeroInput_ZeroOutput() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0));
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_2Inputs_2Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        int inputSize = 2;
-        int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
-
-        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
-        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .01;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_9Inputs_2Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        int inputSize = 9;
-        int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
-
-        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
-        int origTxSize = 9069; // Data for 9 inputs, 2 outputs From https://www.blockchain.com/btc/tx/15adf52f7b4b7a7e563fca92aec7bbe8149b87fac6941285a181e6fcd799a1cd
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .01;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_10Inputs_20Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        // Create a pegout tx with 10 inputs and 20 outputs
-        int inputSize = 10;
-        int outputSize = 20;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
-
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
-
-        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
-        int origTxSize = pegoutTx.bitcoinSerialize().length;
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .02;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_50Inputs_200Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        // Create a pegout tx with 50 inputs and 200 outputs
-        int inputSize = 50;
-        int outputSize = 200;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
-
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
-
-        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
-        int origTxSize = pegoutTx.bitcoinSerialize().length;
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .02;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_50Inputs_200Outputs_nonStandardErpFederation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> defaultFederationKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa03")),
-            BtcECKey.fromPrivate(Hex.decode("fa04")),
-            BtcECKey.fromPrivate(Hex.decode("fa05"))
-        );
-        erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        FederationArgs federationArgs = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            networkParameters
-        );
-        ErpFederation nonStandardErpFederation =
-            FederationFactory.buildNonStandardErpFederation(federationArgs, erpFederationPublicKeys, 500L, activations);
-
-        // Create a pegout tx with 50 inputs and 200 outputs
-        int inputSize = 50;
-        int outputSize = 200;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
-
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
-
-        // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
-        int origTxSize = pegoutTx.bitcoinSerialize().length;
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .03;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void testCalculatePegoutTxSize_100Inputs_50Outputs_nonStandardErpFederation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        List<BtcECKey> defaultFederationKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        );
-        defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa03")),
-            BtcECKey.fromPrivate(Hex.decode("fa04")),
-            BtcECKey.fromPrivate(Hex.decode("fa05"))
-        );
-        erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        FederationArgs federationArgs = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
-            Instant.ofEpochMilli(1000L),
-            0L,
-            networkParameters
-        );
-        ErpFederation nonStandardErpFederation =
-            FederationFactory.buildNonStandardErpFederation(federationArgs, erpFederationPublicKeys, 500L, activations);
-
-        // Create a pegout tx with 100 inputs and 50 outputs
-        int inputSize = 100;
-        int outputSize = 50;
-        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
-
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
-
-        // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
-        int origTxSize = pegoutTx.bitcoinSerialize().length;
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .03;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
-    }
-
-    @Test
-    void getRegularPegoutTxSize_has_proper_calculations() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
-        BtcECKey key1 = new BtcECKey();
-        BtcECKey key2 = new BtcECKey();
-        BtcECKey key3 = new BtcECKey();
-        List<BtcECKey> keys = Arrays.asList(key1, key2, key3);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation fed = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        // Create a pegout tx with two inputs and two outputs
-        int inputs = 2;
-        BtcTransaction pegoutTx = createPegOutTx(Collections.emptyList(), inputs, fed, false);
-
-        for (int inputIndex = 0; inputIndex < inputs; inputIndex++) {
-            Script inputScript = pegoutTx.getInput(inputIndex).getScriptSig();
-
-            Sha256Hash sighash = pegoutTx.hashForSignature(inputIndex, fed.getRedeemScript(), BtcTransaction.SigHash.ALL, false);
-
-            for (int keyIndex = 0; keyIndex < keys.size() - 1; keyIndex++) {
-                BtcECKey key = keys.get(keyIndex);
-                BtcECKey.ECDSASignature sig = key.sign(sighash);
-                TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
-                byte[] txSigEncoded = txSig.encodeToBitcoin();
-
-                int sigIndex = inputScript.getSigInsertionIndex(sighash, key);
-                inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
-                pegoutTx.getInput(inputIndex).setScriptSig(inputScript);
-            }
-        }
-
-        int pegoutTxSize = BridgeUtils.getRegularPegoutTxSize(activations, fed);
-
-        // The difference between the calculated size and a real tx size should be smaller than 10% in any direction
-        int difference = pegoutTx.bitcoinSerialize().length - pegoutTxSize;
-        double tolerance = pegoutTxSize * .1;
-        assertTrue(difference < tolerance && difference > -tolerance);
     }
 
     private void test_getSpendWallet(boolean isFlyoverCompatible) throws UTXOProviderException {
@@ -1226,10 +950,10 @@ class BridgeUtilsTest {
 
         assertIsWatching(federation.getAddress(), wallet, networkParameters);
         CoinSelector selector = wallet.getCoinSelector();
-        Assertions.assertEquals(RskAllowUnconfirmedCoinSelector.class, selector.getClass());
+        assertEquals(RskAllowUnconfirmedCoinSelector.class, selector.getClass());
         UTXOProvider utxoProvider = wallet.getUTXOProvider();
-        Assertions.assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
-        Assertions.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
+        assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
+        assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
     }
 
     private void test_getNoSpendWallet(boolean isFlyoverCompatible) {
@@ -1309,29 +1033,27 @@ class BridgeUtilsTest {
 
         btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         btcTx.addOutput(valueToTransfer, activeFederationAddress);
-        totalAmountExpected = Coin.COIN;
-        Assertions.assertEquals(
+        assertEquals(
             totalAmountExpected,
             BridgeUtils.getAmountSentToAddresses(
                 activations,
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                Arrays.asList(activeFederationAddress)
+                Collections.singletonList(activeFederationAddress)
             )
         );
 
         btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         btcTx.addOutput(valueToTransfer, retiringFederationAddress);
-        totalAmountExpected = Coin.COIN;
-        Assertions.assertEquals(
+        assertEquals(
             totalAmountExpected,
             BridgeUtils.getAmountSentToAddresses(
                 activations,
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                Arrays.asList(retiringFederationAddress)
+                Collections.singletonList(retiringFederationAddress)
             )
         );
     }
@@ -1355,7 +1077,7 @@ class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                Arrays.asList(receiver)
+                Collections.singletonList(receiver)
             )
         );
     }
@@ -1383,7 +1105,7 @@ class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                Arrays.asList(receiver)
+                Collections.singletonList(receiver)
             )
         );
     }
@@ -1436,7 +1158,7 @@ class BridgeUtilsTest {
         List<Script> watchedScripts = wallet.getWatchedScripts();
         Assertions.assertEquals(1, watchedScripts.size());
         Script watchedScript = watchedScripts.get(0);
-        Assertions.assertTrue(watchedScript.isPayToScriptHash());
+        assertTrue(watchedScript.isPayToScriptHash());
         Assertions.assertEquals(address.toString(), watchedScript.getToAddress(parameters).toString());
     }
 
@@ -1566,33 +1288,6 @@ class BridgeUtilsTest {
         return btcTx;
     }
 
-    private BtcTransaction createPegOutTx(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-
-        BtcTransaction btcTx = new BtcTransaction(networkParameters);
-
-        TransactionInput transInput = new TransactionInput(
-            networkParameters,
-            btcTx,
-            new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
-        );
-
-        // Add inputs
-        for (int i = 0; i < inputSize; i++) {
-            btcTx.addInput(transInput);
-            // sign input
-            signWithNecessaryKeys(federation, keys, transInput, btcTx);
-        }
-
-        // Add outputs
-        for (int i = 0; i < outputSize; i++) {
-            btcTx.addOutput(Coin.COIN, randomAddress);
-        }
-
-        return btcTx;
-    }
-
     private BtcTransaction createPegOutTx(List<byte[]> signatures, int inputsToAdd) {
         return createPegOutTx(signatures, inputsToAdd, null, false);
     }
@@ -1608,103 +1303,24 @@ class BridgeUtilsTest {
         return privKey;
     }
 
-    private void signWithNecessaryKeys(
-        Federation federation,
-        List<BtcECKey> privateKeys,
-        TransactionInput txIn,
-        BtcTransaction tx) {
-
-        signWithNecessaryKeys(
-            federation,
-            federation.getRedeemScript(),
-            privateKeys,
-            txIn,
-            tx
-        );
-    }
-
-    private void signWithNecessaryKeys(
-        Federation federation,
-        Script federationRedeemScript,
-        List<BtcECKey> privateKeys,
-        TransactionInput txIn,
-        BtcTransaction tx) {
-
-        signWithNKeys(
-            federation,
-            federationRedeemScript,
-            privateKeys,
-            txIn,
-            tx,
-            federation.getNumberOfSignaturesRequired()
-        );
-    }
-
-    private void signWithNKeys(
-        Federation federation,
-        Script federationRedeemScript,
-        List<BtcECKey> privateKeys,
-        TransactionInput txIn,
-        BtcTransaction tx,
-        int numberOfSignatures) {
-
-        Script scriptPubKey = federation.getP2SHScript();
-        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), federationRedeemScript);
-        Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
-
-        txIn.setScriptSig(inputScript);
-
-        Sha256Hash sighash = tx.hashForSignature(
-            0,
-            federationRedeemScript,
-            BtcTransaction.SigHash.ALL,
-            false
-        );
-
-        for (int i = 0; i < numberOfSignatures; i++) {
-            inputScript = signWithOneKey(federation, privateKeys, inputScript, sighash, i);
-        }
-        txIn.setScriptSig(inputScript);
-    }
-
-    private Script signWithOneKey(
-        Federation federation,
-        List<BtcECKey> privateKeys,
-        Script inputScript,
-        Sha256Hash sighash,
-        int federatorIndex) {
-
-        BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
-        BtcECKey federatorPublicKey = federation.getBtcPublicKeys().get(federatorIndex);
-
-        BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
-        TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
-
-        int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
-        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
-
-        return inputScript;
-    }
-
     @Test
     void testValidateFlyoverPeginValue_sent_zero_amount_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
-        Address btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddressReceivingFunds = BitcoinTestUtils.createP2PKHAddress(networkParameters, "receiver");
         Context btcContext = new Context(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.ZERO, btcAddressReceivingFunds);
         /* Send funds also to random addresses in order to assure the method distinguishes that those funds
         were not sent to the given address(normally the federation address */
-        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
-        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
+        btcTx.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(networkParameters, "random1"));
+        btcTx.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(networkParameters, "random2"));
 
-        Assertions.assertEquals(
+        assertEquals(
             FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
             BridgeUtils.validateFlyoverPeginValue(
-                activations,
+                irisActivations,
                 bridgeConstantsRegtest,
                 btcContext,
                 btcTx,
@@ -1715,24 +1331,23 @@ class BridgeUtilsTest {
 
     @Test
     void testValidateFlyoverPeginValue_sent_one_utxo_with_amount_below_minimum_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
 
-        Address addressReceivingFundsBelowMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address addressReceivingFundsAboveMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address addressReceivingFundsBelowMinimum = BitcoinTestUtils.createP2PKHAddress(networkParameters, "below");
+        Address addressReceivingFundsAboveMinimum = BitcoinTestUtils.createP2PKHAddress(networkParameters, "above");
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
 
-        Coin valueBelowMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.SATOSHI);
+        Coin valueBelowMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(irisActivations).minus(Coin.SATOSHI);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(valueBelowMinimum, addressReceivingFundsBelowMinimum);
         btcTx.addOutput(Coin.COIN, addressReceivingFundsAboveMinimum);
 
-        Assertions.assertEquals(
+        assertEquals(
             FlyoverTxResponseCodes.VALID_TX,
             BridgeUtils.validateFlyoverPeginValue(
-                activations,
+                irisActivations,
                 bridgeConstantsRegtest,
                 btcContext,
                 btcTx,
@@ -1754,14 +1369,14 @@ class BridgeUtilsTest {
         btcTx.addOutput(valueBelowMinimum, btcAddressReceivingFunds);
         btcTx.addOutput(Coin.COIN, btcAddressReceivingFunds);
 
-        Assertions.assertEquals(
+        assertEquals(
             FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
                 btcContext,
                 btcTx,
-                Arrays.asList(btcAddressReceivingFunds)
+                Collections.singletonList(btcAddressReceivingFunds)
             )
         );
     }
@@ -1772,8 +1387,8 @@ class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        Address secondBtcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddressReceivingFundsEqualToMin = BitcoinTestUtils.createP2PKHAddress(networkParameters, "first");
+        Address secondBtcAddressReceivingFundsEqualToMin = BitcoinTestUtils.createP2PKHAddress(networkParameters, "second");
 
         Coin minimumPegInTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
 
@@ -1781,7 +1396,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(minimumPegInTxValue, btcAddressReceivingFundsEqualToMin);
         btcTx.addOutput(minimumPegInTxValue, secondBtcAddressReceivingFundsEqualToMin);
 
-        Assertions.assertEquals(
+        assertEquals(
             FlyoverTxResponseCodes.VALID_TX,
             BridgeUtils.validateFlyoverPeginValue(
                 activations,
@@ -1837,7 +1452,7 @@ class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         List<Address> addresses = Collections.singletonList(btcAddress);
-        Assertions.assertThrows(ScriptException.class, () -> BridgeUtils.getUTXOsSentToAddresses(
+        assertThrows(ScriptException.class, () -> BridgeUtils.getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
@@ -1912,7 +1527,7 @@ class BridgeUtilsTest {
             Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters), btcAddress1, btcAddress3)
         );
 
-        Assertions.assertTrue(foundUTXOs.isEmpty());
+        assertTrue(foundUTXOs.isEmpty());
     }
 
     @Test
@@ -2020,9 +1635,9 @@ class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
-            Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters))
+            Collections.singletonList(BitcoinTestUtils.createP2PKHAddress(networkParameters, "random"))
         );
 
-        Assertions.assertTrue(foundUTXOs.isEmpty());
+        assertTrue(foundUTXOs.isEmpty());
     }
 }

@@ -24,6 +24,7 @@ import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -197,5 +198,44 @@ public class PegUtils {
             default:
                 return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
         }
+    }
+
+    static int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {
+        // A regular peg-out transaction has two inputs and two outputs
+        // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
+        // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
+        // and the op_codes for the corresponding script
+        final int INPUT_MULTIPLIER = 2;
+        final int OUTPUT_MULTIPLIER = 2;
+
+        return calculatePegoutTxSize(
+            activations,
+            federation,
+            INPUT_MULTIPLIER,
+            OUTPUT_MULTIPLIER
+        );
+    }
+
+    static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
+        if (inputs < 1 || outputs < 1) {
+            throw new IllegalArgumentException("Inputs or outputs should be more than 1");
+        }
+
+        if (!activations.isActive(ConsensusRule.RSKIP271)) {
+            return PegUtilsLegacy.calculatePegoutTxSize(activations, federation, inputs, outputs);
+        }
+
+        final int SIGNATURE_MULTIPLIER = 72;
+        BtcTransaction pegoutTx = new BtcTransaction(federation.getBtcParams());
+        for (int i = 0; i < inputs; i++) {
+            pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
+        }
+        for (int i = 0; i < outputs; i++) {
+            pegoutTx.addOutput(Coin.ZERO, federation.getAddress());
+        }
+        int baseSize = pegoutTx.bitcoinSerialize().length;
+        int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
+
+        return baseSize + signingSize;
     }
 }

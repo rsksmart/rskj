@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -496,7 +497,7 @@ class PegUtilsLegacyTest {
         Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             activeFederation.getRedeemScript(),
-            Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
+            BitcoinTestUtils.createHash(1)
         );
 
         // Create a tx from the fast bridge fed to the active fed
@@ -506,8 +507,13 @@ class PegUtilsLegacyTest {
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
-        Assertions.assertTrue(isValidPegInTx(tx, activeFederation, federationWallet,
-            bridgeConstantsMainnet, activations));
+        assertTrue(isValidPegInTx(
+            tx,
+            activeFederation,
+            federationWallet,
+            bridgeConstantsMainnet,
+            activations
+        ));
     }
 
     @Test
@@ -518,7 +524,7 @@ class PegUtilsLegacyTest {
         Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             activeFederation.getRedeemScript(),
-            Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
+            BitcoinTestUtils.createHash(1)
         );
 
         // Create a tx from the fast bridge fed to the active fed
@@ -527,8 +533,13 @@ class PegUtilsLegacyTest {
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverRedeemScript);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-        Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
-            bridgeConstantsMainnet, activations));
+        assertFalse(isValidPegInTx(
+            tx,
+            activeFederation,
+            federationWallet,
+            bridgeConstantsMainnet,
+            activations
+        ));
     }
 
     @Test
@@ -552,7 +563,7 @@ class PegUtilsLegacyTest {
         Script redeemScript = nonStandardErpFederation.getRedeemScript();
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             redeemScript,
-            Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
+            BitcoinTestUtils.createHash(1)
         );
 
         // Create a tx from the fast bridge erp fed to the active fed
@@ -562,7 +573,7 @@ class PegUtilsLegacyTest {
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
-        Assertions.assertTrue(isValidPegInTx(
+        assertTrue(isValidPegInTx(
             tx,
             activeFederation,
             federationWallet,
@@ -594,7 +605,7 @@ class PegUtilsLegacyTest {
         );
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpRedeemScript,
-            Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
+            BitcoinTestUtils.createHash(1)
         );
 
         // Create a tx from the fast bridge erp fed to the active fed
@@ -604,7 +615,7 @@ class PegUtilsLegacyTest {
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
-        Assertions.assertFalse(isValidPegInTx(
+        assertFalse(isValidPegInTx(
             tx,
             activeFederation,
             federationWallet,
@@ -723,7 +734,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             retiredFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
         signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
@@ -773,7 +784,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             retiredFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
         signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
@@ -827,7 +838,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             nonStandardErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
         signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
 
@@ -881,7 +892,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             nonStandardErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
         signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
 
@@ -1118,7 +1129,7 @@ class PegUtilsLegacyTest {
     // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
     @Test
     void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
             false,
@@ -1141,7 +1152,7 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             false,
@@ -1165,7 +1176,7 @@ class PegUtilsLegacyTest {
     // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
     @Test
     void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
             true,
@@ -1188,7 +1199,7 @@ class PegUtilsLegacyTest {
 
     @Test
     void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             true,
@@ -1218,7 +1229,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverP2shErpRedeemScript = FastBridgeP2shErpRedeemScriptParser.createFastBridgeP2shErpRedeemScript(
             p2shErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
 
         // Create a tx from the p2sh erp fed
@@ -1718,7 +1729,7 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         BtcTransaction fromRetiringFederationTx = new BtcTransaction(networkParameters);
         fromRetiringFederationTx.addOutput(Coin.COIN, randomAddress);
         TransactionInput fromRetiringFederationTxInput = new TransactionInput(
@@ -1817,8 +1828,7 @@ class PegUtilsLegacyTest {
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
             args
         );
-        List<BtcECKey> federationPrivateKeys = REGTEST_FEDERATION_PRIVATE_KEYS;
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -1829,7 +1839,7 @@ class PegUtilsLegacyTest {
             new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
         );
         pegOutTx1.addInput(pegOutInput1);
-        signWithNecessaryKeys(genesisFederation, federationPrivateKeys, pegOutInput1, pegOutTx1);
+        signWithNecessaryKeys(genesisFederation, REGTEST_FEDERATION_PRIVATE_KEYS, pegOutInput1, pegOutTx1);
 
         assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(genesisFederation), activations));
         assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(genesisFederation, federation2), activations));
@@ -1860,7 +1870,7 @@ class PegUtilsLegacyTest {
         Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         // Create a tx from the fast bridge fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1873,7 +1883,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             flyoverFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
         signWithNecessaryKeys(flyoverFederation, flyoverRedeemScript, flyoverFederationKeys, pegOutInput1, pegOutTx1);
 
@@ -1924,7 +1934,7 @@ class PegUtilsLegacyTest {
         Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         // Create a tx from the erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1990,7 +2000,7 @@ class PegUtilsLegacyTest {
         Federation standardFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         // Create a tx from the fast bridge erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -2003,7 +2013,7 @@ class PegUtilsLegacyTest {
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             nonStandardErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+            BitcoinTestUtils.createHash(2)
         );
         signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
 
@@ -2033,7 +2043,7 @@ class PegUtilsLegacyTest {
     @Test
     void testIsPegOutTx_noRedeemScript() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsMainnet.getBtcParams());
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
 
         BtcTransaction pegOutTx1 = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -2051,7 +2061,7 @@ class PegUtilsLegacyTest {
     @Test
     void testIsPegOutTx_invalidRedeemScript() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsMainnet.getBtcParams());
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
 
         BtcTransaction pegOutTx1 = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
@@ -2069,7 +2079,7 @@ class PegUtilsLegacyTest {
 
     @Test
     void testChangeBetweenFederations() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
         Context btcContext = new Context(networkParameters);
 
         List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")
@@ -2139,9 +2149,9 @@ class PegUtilsLegacyTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
 
-        Address btcAddressReceivingFundsBelowMin = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddressReceivingFundsBelowMin = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random1");
+        Address btcAddressReceivingFundsEqualToMin = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random2");
+        Address btcAddressReceivingFundsAboveMin = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random3");
 
         btcTx.addOutput(valueBelowMinimum, btcAddressReceivingFundsBelowMin);
         btcTx.addOutput(minimumPegInTxValue, btcAddressReceivingFundsEqualToMin);
@@ -2182,49 +2192,31 @@ class PegUtilsLegacyTest {
         );
 
         wallet = new WatchedBtcWallet(new Context(bridgeConstantsRegtest.getBtcParams()));
-        wallet.addWatchedAddresses(Arrays.asList(
-                btcAddressReceivingFundsBelowMin
-            ),
-            now
-        );
+        wallet.addWatchedAddresses(Collections.singletonList(btcAddressReceivingFundsBelowMin), now);
 
-        assertTrue(
-            isAnyUTXOAmountBelowMinimum(
-                minimumPegInTxValue,
-                btcTx,
-                wallet
-            )
-        );
+        assertTrue(isAnyUTXOAmountBelowMinimum(
+            minimumPegInTxValue,
+            btcTx,
+            wallet
+        ));
 
         wallet = new WatchedBtcWallet(new Context(bridgeConstantsRegtest.getBtcParams()));
-        wallet.addWatchedAddresses(Arrays.asList(
-                btcAddressReceivingFundsEqualToMin
-            ),
-            now
-        );
+        wallet.addWatchedAddresses(Collections.singletonList(btcAddressReceivingFundsEqualToMin), now);
 
-        assertFalse(
-            isAnyUTXOAmountBelowMinimum(
-                minimumPegInTxValue,
-                btcTx,
-                wallet
-            )
-        );
+        assertFalse(isAnyUTXOAmountBelowMinimum(
+            minimumPegInTxValue,
+            btcTx,
+            wallet
+        ));
 
         wallet = new WatchedBtcWallet(new Context(bridgeConstantsRegtest.getBtcParams()));
-        wallet.addWatchedAddresses(Arrays.asList(
-                btcAddressReceivingFundsAboveMin
-            ),
-            now
-        );
+        wallet.addWatchedAddresses(Collections.singletonList(btcAddressReceivingFundsAboveMin), now);
 
-        assertFalse(
-            isAnyUTXOAmountBelowMinimum(
-                minimumPegInTxValue,
-                btcTx,
-                wallet
-            )
-        );
+        assertFalse(isAnyUTXOAmountBelowMinimum(
+            minimumPegInTxValue,
+            btcTx,
+            wallet
+        ));
 
         wallet = new WatchedBtcWallet(new Context(bridgeConstantsRegtest.getBtcParams()));
         wallet.addWatchedAddresses(Arrays.asList(
@@ -2246,7 +2238,7 @@ class PegUtilsLegacyTest {
     @Test
     void scriptCorrectlySpends_fromGenesisFederation_ok() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
@@ -2265,7 +2257,7 @@ class PegUtilsLegacyTest {
     @Test
     void scriptCorrectlySpends_invalidScript() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "random");
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
@@ -2376,5 +2368,42 @@ class PegUtilsLegacyTest {
         inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
 
         return inputScript;
+    }
+
+    @Test
+    void calculatePegoutTxSize_before_rskip_271() {
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
+        Federation federation = StandardMultiSigFederationBuilder.builder().build();
+
+        int pegoutTxSize = PegUtilsLegacy.calculatePegoutTxSize(irisActivations, federation, 2, 2);
+
+        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
+        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .02;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    void calculatePegoutTxSize_after_rskip_271() {
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+        Federation federation = StandardMultiSigFederationBuilder.builder().build();
+
+        assertThrows(
+            DeprecatedMethodCallException.class,
+            () -> PegUtilsLegacy.calculatePegoutTxSize(allActivations, federation, 2, 2)
+        );
+    }
+
+    @Test
+    void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
+        ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
+        Federation federation = StandardMultiSigFederationBuilder.builder().build();
+
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> PegUtilsLegacy.calculatePegoutTxSize(irisActivations, federation, 0, 0)
+        );
     }
 }

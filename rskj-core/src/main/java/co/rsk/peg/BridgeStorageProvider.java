@@ -161,10 +161,9 @@ public class BridgeStorageProvider {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
 
         entries.addAll(getFromRepository(
-                RELEASE_REQUEST_QUEUE,
-                data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
-                )
-        );
+            RELEASE_REQUEST_QUEUE,
+            data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
+        ));
 
         if (!activations.isActive(RSKIP146)) {
             releaseRequestQueue = new ReleaseRequestQueue(entries);
@@ -172,11 +171,9 @@ public class BridgeStorageProvider {
         }
 
         entries.addAll(getFromRepository(
-                RELEASE_REQUEST_QUEUE_WITH_TXHASH,
-                data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
-                )
-        );
-
+            RELEASE_REQUEST_QUEUE_WITH_TXHASH,
+            data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
+        ));
         releaseRequestQueue = new ReleaseRequestQueue(entries);
 
         return releaseRequestQueue;

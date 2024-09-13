@@ -3,6 +3,8 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
+import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.peg.federation.Federation;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +15,7 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
-public class BitcoinTestUtils {
+public final class BitcoinTestUtils {
 
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
         List<BtcECKey> keys = Arrays
@@ -30,8 +32,7 @@ public class BitcoinTestUtils {
     }
 
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
-        BtcECKey key = BtcECKey.fromPrivate(
-            HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        BtcECKey key = BtcECKey.fromPrivate(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
         return key.toAddress(networkParameters);
     }
 
@@ -124,5 +125,76 @@ public class BitcoinTestUtils {
         }
 
         return flatPubKeys;
+    }
+
+    public static BtcTransaction createPegOutTx(NetworkParameters networkParameters, int inputSize, int outputSize, Federation federation) {
+        BtcTransaction pegoutTx = new BtcTransaction(networkParameters);
+
+        TransactionInput input = new TransactionInput(
+            networkParameters,
+            pegoutTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+
+        // Add inputs
+        for (int i = 0; i < inputSize; i++) {
+            pegoutTx.addInput(input);
+            // sign input
+            signWithNecessaryKeys(federation, input, pegoutTx);
+        }
+
+        // Add outputs
+        Address receiverAddress = createP2PKHAddress(networkParameters, "receiver");
+        for (int i = 0; i < outputSize; i++) {
+            pegoutTx.addOutput(Coin.COIN, receiverAddress);
+        }
+        // Add a change output for the federation
+        pegoutTx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
+
+        return pegoutTx;
+    }
+
+    private void signWithNKeys(
+        Federation federation,
+        TransactionInput input,
+        BtcTransaction tx) {
+
+        Script scriptPubKey = federation.getP2SHScript();
+        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), federationRedeemScript);
+        Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
+
+        input.setScriptSig(inputScript);
+
+        Sha256Hash sighash = tx.hashForSignature(
+            0,
+            federationRedeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        for (int i = 0; i < numberOfSignatures; i++) {
+            inputScript = signWithOneKey(federation, privateKeys, inputScript, sighash, i);
+        }
+        txIn.setScriptSig(inputScript);
+    }
+
+    private Script signWithOneKey(
+        Federation federation,
+        List<BtcECKey> privateKeys,
+        Script inputScript,
+        Sha256Hash sighash,
+        int federatorIndex) {
+
+        BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
+        BtcECKey federatorPublicKey = federation.getBtcPublicKeys().get(federatorIndex);
+
+        BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
+        TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+
+        int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
+
+        return inputScript;
     }
 }
