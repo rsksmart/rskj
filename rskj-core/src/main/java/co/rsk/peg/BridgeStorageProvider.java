@@ -641,7 +641,8 @@ public class BridgeStorageProvider {
             (svpSpendTxWaitingForSignatures.getKey() == null || 
              svpSpendTxWaitingForSignatures.getValue() == null);
         if (hasNullKeyOrValue) {
-            return;
+            throw new IllegalArgumentException(
+                String.format("Invalid svpSpendTxWaitingForSigantures: %s", svpSpendTxWaitingForSignatures));
         }
 
         safeSaveToRepository(
