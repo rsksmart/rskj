@@ -124,9 +124,7 @@ class BridgeSerializationUtilsTest {
             BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS, false);
 
         // Assert
-        assertNotNull(result);
-        assertNull(result.getKey());
-        assertNull(result.getValue());
+        assertNull(result);
     }
 
     @Test
