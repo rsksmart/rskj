@@ -585,6 +585,22 @@ public class BridgeStorageProvider {
         return Optional.ofNullable(svpSpendTxHashUnsigned);
     }
 
+    public Optional<Map.Entry<Keccak256, BtcTransaction>> getSvpSpendTxWaitingForSignatures() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpSpendTxWaitingForSignatures != null) {
+            return Optional.of(svpSpendTxWaitingForSignatures);
+        }
+
+        svpSpendTxWaitingForSignatures = safeGetFromRepository(
+            SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters, false));
+
+        return Optional.ofNullable(svpSpendTxWaitingForSignatures);
+    }
+
     public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
         this.svpFundTxHashUnsigned = hash;
         this.isSvpFundTxHashUnsignedSet = true;
