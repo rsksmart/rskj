@@ -406,7 +406,7 @@ public class BridgeSupport {
                     logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx);
                     if (svpIsOngoing()) {
-                        processSvpFundTransactionHashSigned(btcTx);
+                        updateSvpFundTransactionValuesIfPossible(btcTx);
                     }
                     break;
                 default:
@@ -424,19 +424,29 @@ public class BridgeSupport {
         }
     }
 
-    private void processSvpFundTransactionHashSigned(BtcTransaction transaction) {
-        Optional<Sha256Hash> fundTransactionHashUnsignedOpt = provider.getSvpFundTxHashUnsigned();
-        if (!fundTransactionHashUnsignedOpt.isPresent()) {
+    private void updateSvpFundTransactionValuesIfPossible(BtcTransaction transaction) {
+        Optional<Sha256Hash> svpFundTransactionHashUnsigned = provider.getSvpFundTxHashUnsigned();
+        if (!svpFundTransactionHashUnsigned.isPresent()) {
             return;
         }
-        Sha256Hash fundTransactionHashUnsigned = fundTransactionHashUnsignedOpt.get();
 
+        if (!isTheSvpFundTransaction(svpFundTransactionHashUnsigned.get(), transaction)) {
+            return;
+        }
+
+        updateSvpFundTransactionValues(transaction);
+    }
+
+    private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
         BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopy);
-        if (transactionCopy.getHash().equals(fundTransactionHashUnsigned)) {
-            provider.setSvpFundTxHashSigned(transaction.getHash());
-            provider.setSvpFundTxHashUnsigned(null);
-        }
+
+        return transactionCopy.getHash().equals(svpFundTransactionHashUnsigned);
+    }
+
+    private void updateSvpFundTransactionValues(BtcTransaction transaction) {
+        provider.setSvpFundTxHashSigned(transaction.getHash());
+        provider.setSvpFundTxHashUnsigned(null);
     }
 
     private Script getLastRetiredFederationP2SHScript() {
