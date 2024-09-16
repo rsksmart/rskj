@@ -844,7 +844,6 @@ class BridgeStorageProviderTest {
     class SvpSpendTxWaitingForSignaturesTests {
         private final Keccak256 rskTxHash = PegTestUtils.createHash3(1);
         private final BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
-        private final String svpSpendTxWaitingForSignaturesField = "svpSpendTxWaitingForSignatures";
         private Repository repository;
         private BridgeStorageProvider bridgeStorageProvider;
 
@@ -874,7 +873,7 @@ class BridgeStorageProviderTest {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(null, null);
-            TestUtils.setInternalState(bridgeStorageProvider, svpSpendTxWaitingForSignaturesField, svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
             assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
@@ -890,7 +889,7 @@ class BridgeStorageProviderTest {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(null, svpSpendTx);
-            TestUtils.setInternalState(bridgeStorageProvider, svpSpendTxWaitingForSignaturesField, svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
             assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
@@ -906,7 +905,7 @@ class BridgeStorageProviderTest {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(rskTxHash, null);
-            TestUtils.setInternalState(bridgeStorageProvider, svpSpendTxWaitingForSignaturesField, svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
             assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
@@ -922,7 +921,7 @@ class BridgeStorageProviderTest {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTx);
-            TestUtils.setInternalState(bridgeStorageProvider, svpSpendTxWaitingForSignaturesField, svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
             bridgeStorageProvider.save();
@@ -940,11 +939,11 @@ class BridgeStorageProviderTest {
             // Initially setting a valid entry in storage
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTx);
-            TestUtils.setInternalState(bridgeStorageProvider, svpSpendTxWaitingForSignaturesField, svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
             bridgeStorageProvider.save();
 
             // Act
-            TestUtils.setInternalState(bridgeStorageProvider, svpSpendTxWaitingForSignaturesField, null);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(null);
             bridgeStorageProvider.save();
 
             // Assert
