@@ -1047,6 +1047,24 @@ public class BridgeSupport {
         return sendRequest;
     }
 
+    protected void processSvpSpendTransactionUnsigned(Transaction rskTx) {
+        Optional<Sha256Hash> svpFundTxHashSignedOpt = provider.getSvpFundTxHashSigned();
+        if (!svpFundTxHashSignedOpt.isPresent()) {
+            return;
+        }
+
+        Sha256Hash svpFundTxHashSigned = svpFundTxHashSignedOpt.get();
+        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxHashSigned);
+
+    }
+
+    private BtcTransaction createSvpSpendTransaction(Sha256Hash svpFundTxHashSigned) {
+        BtcTransaction svpSpendTransaction = new BtcTransaction(networkParameters);
+        svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
+
+        return svpSpendTransaction;
+    }
+
     protected void updateFederationCreationBlockHeights() {
         federationSupport.updateFederationCreationBlockHeights();
     }
