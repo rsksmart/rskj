@@ -25,6 +25,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -42,7 +43,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -842,7 +842,7 @@ class BridgeStorageProviderTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("save, set and get svp spend transaction waiting for signatures tests")
     class SvpSpendTxWaitingForSignaturesTests {
-        private final Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+        private final Keccak256 spendTxCreationHash = RskTestUtils.createHash(1);
         private final BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
         private Repository repository;
         private BridgeStorageProvider bridgeStorageProvider;
@@ -863,56 +863,76 @@ class BridgeStorageProviderTest {
             bridgeStorageProvider.save();
 
             // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures =
-                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
             assertNull(actualSvpSpendTxWaitingForSignatures);
         }
 
         @Test
-        void saveSvpSpendTxWaitingForSignatures_postLovell700AndEmptyEntry_shouldThrowIllegalArgumentException() {
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndEmptyEntry_shouldThrowIllegalArgumentException() {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(null, null);
-            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
-            assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures)
+            );
+
+            bridgeStorageProvider.save();
 
             // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures =
-                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
             assertNull(actualSvpSpendTxWaitingForSignatures);
         }
 
         @Test
-        void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullKeyInEntry_shouldThrowIllegalArgumentException() {
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndNullKeyInEntry_shouldThrowIllegalArgumentException() {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
                 new AbstractMap.SimpleEntry<>(null, svpSpendTx);
-            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
-            assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures)
+            );
+
+            bridgeStorageProvider.save();
 
             // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures =
-                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
             assertNull(actualSvpSpendTxWaitingForSignatures);
         }
 
         @Test
-        void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullValueInEntry_shouldThrowIllegalArgumentException() {
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndNullValueInEntry_shouldThrowIllegalArgumentException() {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
-                new AbstractMap.SimpleEntry<>(rskTxHash, null);
-            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+                new AbstractMap.SimpleEntry<>(spendTxCreationHash, null);
 
             // Act
-            assertThrows(IllegalArgumentException.class, () -> bridgeStorageProvider.save());
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures)
+            );
+
+            bridgeStorageProvider.save();
 
             // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures =
-                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
             assertNull(actualSvpSpendTxWaitingForSignatures);
         }
 
@@ -920,7 +940,7 @@ class BridgeStorageProviderTest {
         void saveSvpSpendTxWaitingForSignatures_postLovell700_shouldSaveInStorage() {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
-                new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTx);
+                new AbstractMap.SimpleEntry<>(spendTxCreationHash, svpSpendTx);
             bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
             // Act
@@ -938,7 +958,7 @@ class BridgeStorageProviderTest {
         void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullSvpSpendTxWaitingForSignatures_shouldSaveInStorage() {
             // Initially setting a valid entry in storage
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
-                new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTx);
+                new AbstractMap.SimpleEntry<>(spendTxCreationHash, svpSpendTx);
             bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
             bridgeStorageProvider.save();
 
@@ -947,8 +967,10 @@ class BridgeStorageProviderTest {
             bridgeStorageProvider.save();
 
             // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures =
-                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
             assertNull(actualSvpSpendTxWaitingForSignatures);
         }
     }
