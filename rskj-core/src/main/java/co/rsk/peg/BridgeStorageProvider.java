@@ -83,6 +83,7 @@ public class BridgeStorageProvider {
     private Sha256Hash svpSpendTxHashUnsigned;
     private boolean isSvpSpendTxHashUnsignedSet = false;
     private Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
+    private boolean isSvpSpendTxWaitingForSignaturesSet = false;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -242,7 +243,7 @@ public class BridgeStorageProvider {
 
         pegoutsWaitingForSignatures = getFromRepository(
             PEGOUTS_WAITING_FOR_SIGNATURES,
-                data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
+            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
         );
         return pegoutsWaitingForSignatures;
     }
@@ -594,11 +595,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpFundTxHashUnsigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
-
-        repository.addStorageBytes(contractAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), data);
+        safeSaveToRepository(
+            SVP_FUND_TX_HASH_UNSIGNED,
+            svpFundTxHashUnsigned,
+            BridgeSerializationUtils::serializeSha256Hash);
     }
 
     public void setSvpFundTxHashSigned(Sha256Hash hash) {
@@ -611,11 +611,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpFundTxHashSigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
-
-        repository.addStorageBytes(contractAddress, SVP_FUND_TX_HASH_SIGNED.getKey(), data);
+        safeSaveToRepository(
+            SVP_FUND_TX_HASH_SIGNED,
+            svpFundTxHashSigned,
+            BridgeSerializationUtils::serializeSha256Hash);
     }
 
     public void setSvpSpendTxHashUnsigned(Sha256Hash hash) {
@@ -628,11 +627,35 @@ public class BridgeStorageProvider {
             return;
         }
 
-        byte[] data = Optional.ofNullable(svpSpendTxHashUnsigned)
-            .map(BridgeSerializationUtils::serializeSha256Hash)
-            .orElse(null);
+        safeSaveToRepository(
+            SVP_SPEND_TX_HASH_UNSIGNED,
+            svpSpendTxHashUnsigned,
+            BridgeSerializationUtils::serializeSha256Hash);
+    }
 
-        repository.addStorageBytes(contractAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), data);
+    public void setSvpSpendTxWaitingForSignatures(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+        boolean hasNullKeyOrValue = svpSpendTxWaitingForSignatures != null &&
+            (svpSpendTxWaitingForSignatures.getKey() == null || svpSpendTxWaitingForSignatures.getValue() == null);
+        if (hasNullKeyOrValue) {
+            throw new IllegalArgumentException(
+                String.format("Invalid svpSpendTxWaitingForSignatures, has null key or value: %s", svpSpendTxWaitingForSignatures)
+            );
+        }
+
+        this.svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignatures;
+        this.isSvpSpendTxWaitingForSignaturesSet = true;
+    }
+
+    private void saveSvpSpendTxWaitingForSignatures() {
+        if (!activations.isActive(RSKIP419) || !isSvpSpendTxWaitingForSignaturesSet) {
+            return;
+        }
+
+        safeSaveToRepository(
+            SVP_SPEND_TX_WAITING_FOR_SIGNATURES,
+            svpSpendTxWaitingForSignatures,
+            BridgeSerializationUtils::serializeRskTxWaitingForSignatures
+        );
     }
 
     public void save() {
@@ -661,6 +684,7 @@ public class BridgeStorageProvider {
         saveSvpFundTxHashUnsigned();
         saveSvpFundTxHashSigned();
         saveSvpSpendTxHashUnsigned();
+        saveSvpSpendTxWaitingForSignatures();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
