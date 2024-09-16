@@ -61,6 +61,21 @@ public class BridgeSerializationUtils {
         throw new IllegalAccessError("Utility class, do not instantiate it");
     }
 
+    public static byte[] serializeBtcTransaction(BtcTransaction btcTransaction) {
+        return RLP.encodeElement(btcTransaction.bitcoinSerialize());
+    }
+
+    public static BtcTransaction deserializeBtcTransaction(byte[] data, NetworkParameters networkParameters) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        RLPElement rlpElement = RLP.decode2(data).get(0);
+        byte[] rawTx = rlpElement.getRLPData();
+
+        return new BtcTransaction(networkParameters, rawTx);
+    }
+
     public static byte[] serializeRskTxWaitingForSignatures(
           Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
         byte[][] serializedRskTxWaitingForSignaturesEntry =
@@ -181,37 +196,6 @@ public class BridgeSerializationUtils {
         }
 
         return list;
-    }
-
-    public static byte[] serializeSet(SortedSet<Sha256Hash> set) {
-        int nhashes = set.size();
-
-        byte[][] bytes = new byte[nhashes][];
-        int n = 0;
-
-        for (Sha256Hash hash : set) {
-            bytes[n++] = RLP.encodeElement(hash.getBytes());
-        }
-
-        return RLP.encodeList(bytes);
-    }
-
-    public static SortedSet<Sha256Hash> deserializeSet(byte[] data) {
-        SortedSet<Sha256Hash> set = new TreeSet<>();
-
-        if (data == null || data.length == 0) {
-            return set;
-        }
-
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        int nhashes = rlpList.size();
-
-        for (int k = 0; k < nhashes; k++) {
-            set.add(Sha256Hash.wrap(rlpList.get(k).getRLPData()));
-        }
-
-        return set;
     }
 
     public static byte[] serializeMapOfHashesToLong(Map<Sha256Hash, Long> map) {

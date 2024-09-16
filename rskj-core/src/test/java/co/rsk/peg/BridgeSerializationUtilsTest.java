@@ -88,6 +88,39 @@ class BridgeSerializationUtilsTest {
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "second");
 
     @Test
+    void serializeAndDeserializeBtcTransaction_whenValidData_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
+        fundTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        fundTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction btcTx = new BtcTransaction(NETWORK_PARAMETERS);
+        btcTx.addInput(fundTx.getOutput(0));
+        btcTx.addInput(fundTx.getOutput(1));
+        btcTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransaction(serializedBtcTransaction, NETWORK_PARAMETERS);
+
+        // Assert
+        assertNotNull(serializedBtcTransaction);
+        assertNotNull(deserializedBtcTransaction);
+        assertEquals(btcTx, deserializedBtcTransaction);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeBtcTransaction_whenInvalidData_shouldReturnNull(byte[] data) {
+        // Act
+        BtcTransaction result = BridgeSerializationUtils.deserializeBtcTransaction(data, NETWORK_PARAMETERS);
+
+        // Assert
+        assertNull(result);
+    }
+
+    @Test
     void serializeAndDeserializeRskTxWaitingForSignatures_whenValidData_shouldReturnEqualResults() {
         // Arrange
         BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
