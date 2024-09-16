@@ -453,7 +453,7 @@ public class BridgeSupport {
             "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
         );
 
-        provider.setSvpFundTxHashSigned(transaction.getHash());
+        provider.setSvpFundTxSigned(transaction);
         provider.setSvpFundTxHashUnsigned(null);
     }
 

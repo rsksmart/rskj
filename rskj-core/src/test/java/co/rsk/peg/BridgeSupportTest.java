@@ -928,12 +928,12 @@ class BridgeSupportTest {
 
         private void assertSvpFundTransactionValuesWereNotUpdated() {
             assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpFundTxHashSigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
         }
 
         private void assertSvpFundTransactionValuesWereUpdated() {
-            Optional<Sha256Hash> svpFundTransactionHashSignedOpt = bridgeStorageProvider.getSvpFundTxHashSigned();
-            assertTrue(svpFundTransactionHashSignedOpt.isPresent());
+            Optional<BtcTransaction> svpFundTransactionSignedOpt = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTransactionSignedOpt.isPresent());
 
             assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
         }
