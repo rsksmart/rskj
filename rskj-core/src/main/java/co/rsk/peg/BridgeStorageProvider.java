@@ -83,7 +83,7 @@ public class BridgeStorageProvider {
     private Sha256Hash svpSpendTxHashUnsigned;
     private boolean isSvpSpendTxHashUnsignedSet = false;
     private Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
-    private boolean isSvpSpendTxWaitingForSignatures = false;
+    private boolean isSvpSpendTxWaitingForSignaturesSet = false;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -636,11 +636,11 @@ public class BridgeStorageProvider {
     public void setSvpSpendTxWaitingForSignatures(
           Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
         this.svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignatures;
-        this.isSvpSpendTxWaitingForSignatures = true;
+        this.isSvpSpendTxWaitingForSignaturesSet = true;
     }
 
     private void saveSvpSpendTxWaitingForSignatures() {
-        if (!activations.isActive(RSKIP419) || !isSvpSpendTxWaitingForSignatures) {
+        if (!activations.isActive(RSKIP419) || !isSvpSpendTxWaitingForSignaturesSet) {
             return;
         }
 
