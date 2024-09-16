@@ -1,11 +1,17 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeStorageIndexKey.PEGOUT_TX_SIG_HASH;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -18,23 +24,11 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
-import java.io.IOException;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.BridgeStorageIndexKey.PEGOUT_TX_SIG_HASH;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 class BridgeStorageProviderPegoutTxIndexTests {
-
     private static final String DUPLICATED_INSERTION_ERROR_MESSAGE = "Given pegout tx sigHash %s already exists in the index. Index entries are considered unique.";
     private static final byte TRUE_VALUE = (byte) 1;
-    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
 
+    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters mainnetBtcParams = bridgeMainnetConstants.getBtcParams();
     private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -188,7 +182,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     }
 
     @Test
-    void hasPegoutTxSigHash_passing_existing_sigHash() throws IOException {
+    void hasPegoutTxSigHash_passing_existing_sigHash() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
@@ -261,7 +255,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
 
     @ParameterizedTest
     @MethodSource("null_sigHash_parameters")
-    void setPegoutTxSigHash_null(boolean isRskip379HardForkActive) throws IOException {
+    void setPegoutTxSigHash_null(boolean isRskip379HardForkActive) {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.arrowhead600().forBlock(0) :
@@ -290,7 +284,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
 
     @ParameterizedTest
     @MethodSource("valid_sigHash_parameters")
-    void setPegoutTxSigHash_non_null(boolean isRskip379HardForkActive, Sha256Hash sigHash) throws IOException {
+    void setPegoutTxSigHash_non_null(boolean isRskip379HardForkActive, Sha256Hash sigHash) {
         // Arrange
         ActivationConfig.ForBlock activations = isRskip379HardForkActive ?
                                                     ActivationConfigsForTest.arrowhead600().forBlock(0) :
@@ -330,7 +324,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
     }
 
     @Test
-    void setPegoutTxSigHash_passing_existing() throws IOException {
+    void setPegoutTxSigHash_passing_existing() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
@@ -391,14 +385,15 @@ class BridgeStorageProviderPegoutTxIndexTests {
             .thenReturn(new byte[]{TRUE_VALUE});
 
         // Try to set again the new sigHash that was persisted into the repository
-        Assertions.assertThrows(IllegalStateException.class, () -> {
-            bridgeStorageProvider.setPegoutTxSigHash(newSigHash);
-
-        }, String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, newSigHash));
+        assertThrows(
+            IllegalStateException.class,
+            () -> bridgeStorageProvider.setPegoutTxSigHash(newSigHash),
+            String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, newSigHash)
+        );
     }
 
     @Test
-    void setPegoutTxSigHash_multiple_sigHash_in_a_single_rsk_tx() throws IOException {
+    void setPegoutTxSigHash_multiple_sigHash_in_a_single_rsk_tx() {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
@@ -425,7 +420,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
             any(),
             any()
         );
-        Mockito.reset(repository);
+        reset(repository);
 
         // Try to set same sigHash, it should allow it to do it.
         bridgeStorageProvider.setPegoutTxSigHash(sigHash);
@@ -448,7 +443,7 @@ class BridgeStorageProviderPegoutTxIndexTests {
             any(),
             any()
         );
-        Mockito.reset(repository);
+        reset(repository);
 
         // Now let's persist pending sigHashes
         bridgeStorageProvider.save();
@@ -463,10 +458,11 @@ class BridgeStorageProviderPegoutTxIndexTests {
             .thenReturn(new byte[]{TRUE_VALUE});
 
         // Try to set again the new sigHash that was persisted into the repository
-        Assertions.assertThrows(IllegalStateException.class, () -> {
-            bridgeStorageProvider.setPegoutTxSigHash(sigHash4);
-
-        }, String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, sigHash4));
+        assertThrows(
+            IllegalStateException.class,
+            () -> bridgeStorageProvider.setPegoutTxSigHash(sigHash4),
+            String.format(DUPLICATED_INSERTION_ERROR_MESSAGE, sigHash4)
+        );
     }
     
     private BridgeStorageProvider createBridgeStorageProvider(Repository repository, ActivationConfig.ForBlock activations) {
