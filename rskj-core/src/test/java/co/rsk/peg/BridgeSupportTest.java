@@ -823,7 +823,7 @@ class BridgeSupportTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(svpFundTransaction.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
         }
@@ -851,7 +851,7 @@ class BridgeSupportTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(svpFundTransaction.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
         }
@@ -870,9 +870,27 @@ class BridgeSupportTest {
             bridgeStorageProvider.save();
 
             // assert
-            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(pegout.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        @Test
+        void registerBtcTransaction_forSvpFundTransactionWithoutChangeOutput_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValuesButNotSaveNewUtxos() throws Exception {
+            // Arrange
+            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsignedWithoutChangeOutput();
+            signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
+            setUpForTransactionRegistration(svpFundTransaction);
+
+            // Act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeStorageProvider.save();
+
+            // Assert
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasProcessed(svpFundTransaction.getHash());
+            assertSvpFundTransactionValuesWereUpdated();
         }
 
         @Test
@@ -888,13 +906,17 @@ class BridgeSupportTest {
             bridgeStorageProvider.save();
 
             // Assert
-            assertNewUtxoWasSaved(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(svpFundTransaction.getHash());
             assertSvpFundTransactionValuesWereUpdated();
         }
 
-        private void assertNewUtxoWasSaved(int activeFederationUtxosSizeBeforeRegisteringTx) {
-            assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        private void addOutputToProposedFederation(BtcTransaction svpFundTransaction) {
+            svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
+        }
+
+        private void assertActiveFederationUtxosSize(int expectedActiveFederationUtxosSize) {
+            assertEquals(expectedActiveFederationUtxosSize, federationSupport.getActiveFederationBtcUTXOs().size());
         }
 
         private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
@@ -917,10 +939,22 @@ class BridgeSupportTest {
             assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
         }
 
+        private BtcTransaction createAndSaveSvpFundTransactionUnsignedWithoutChangeOutput() {
+            BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
+            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
+            addInput(svpFundTransaction, parentTxHash);
+            addOutputToProposedFederation(svpFundTransaction);
+            savePegoutIndex(svpFundTransaction);
+            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
+
+            return svpFundTransaction;
+        }
+
         private BtcTransaction createAndSaveSvpFundTransactionUnsigned() {
             BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
             Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
             addInput(svpFundTransaction, parentTxHash);
+            addOutputToProposedFederation(svpFundTransaction);
             addOutputChange(svpFundTransaction);
             savePegoutIndex(svpFundTransaction);
             saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
