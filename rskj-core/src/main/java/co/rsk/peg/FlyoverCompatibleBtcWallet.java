@@ -47,7 +47,7 @@ public abstract class FlyoverCompatibleBtcWallet extends BridgeBtcWallet {
             RedeemScriptParser parser = RedeemScriptParserFactory.get(fedRedeemScript.getChunks());
             Script flyoverRedeemScript;
 
-            if (parser.getMultiSigType() == MultiSigType.ERP_FED) {
+            if (parser.getMultiSigType() == MultiSigType.NON_STANDARD_ERP_FED) {
                 flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
                     fedRedeemScript,
                     Sha256Hash.wrap(flyoverFederationInformationInstance
