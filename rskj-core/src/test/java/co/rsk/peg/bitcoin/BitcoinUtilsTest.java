@@ -364,7 +364,6 @@ class BitcoinUtilsTest {
     @Test
     void removeSignaturesFromTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldRemoveSignatures() {
         // arrange
-
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
 
