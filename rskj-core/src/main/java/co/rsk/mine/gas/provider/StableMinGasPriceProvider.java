@@ -82,7 +82,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     @VisibleForTesting
-    public Coin getMinGasPriceAsCoin(boolean wait) {
+    Coin getMinGasPriceAsCoin(boolean wait) {
         return Coin.valueOf(getMinGasPrice(wait));
     }
 
@@ -102,9 +102,9 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     private synchronized Future<Long> fetchPriceAsync() {
-        Future<Long> curFuture = priceFuture.get();
-        if (curFuture != null) {
-            return curFuture;
+        Future<Long> future = priceFuture.get();
+        if (future != null) {
+            return future;
         }
 
         CompletableFuture<Long> newFuture = new CompletableFuture<>();
@@ -129,11 +129,11 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
             return Optional.of(result);
         }
 
-        int curNumOfFailures = numOfFailures.incrementAndGet();
-        if (curNumOfFailures >= ERR_NUM_OF_FAILURES) {
-            logger.error("Gas price was not updated as it was not possible to obtain valid price from provider. Check your provider setup. Number of failed attempts: {}", curNumOfFailures);
+        int failedAttempts = numOfFailures.incrementAndGet();
+        if (failedAttempts >= ERR_NUM_OF_FAILURES) {
+            logger.error("Gas price was not updated as it was not possible to obtain valid price from provider. Check your provider setup. Number of failed attempts: {}", failedAttempts);
         } else {
-            logger.warn("Gas price was not updated as it was not possible to obtain valid price from provider. Number of failed attempts: {}", curNumOfFailures);
+            logger.warn("Gas price was not updated as it was not possible to obtain valid price from provider. Number of failed attempts: {}", failedAttempts);
         }
 
         return Optional.empty();
