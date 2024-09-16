@@ -7,6 +7,9 @@ import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilderFactory;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -48,6 +51,7 @@ class PegUtilsLegacyTest {
         BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
         BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
     );
+    private Script nonStandardErpRedeemScript;
 
     @BeforeEach
     void setupConfig() {
@@ -57,6 +61,14 @@ class PegUtilsLegacyTest {
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
+        int defaultThreshold = BitcoinTestUtils.getDefaultPublicKeys().size() / 2 + 1;
+        int emergencyThreshold = federationConstantsMainnet.getErpFedPubKeysList().size() / 2 + 1;
+        ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilder();
+        nonStandardErpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(BitcoinTestUtils.getDefaultPublicKeys(),
+            defaultThreshold,
+            federationConstantsMainnet.getErpFedPubKeysList(),
+            emergencyThreshold,
+            federationConstantsMainnet.getErpFedActivationDelay());
     }
 
     @Test
@@ -580,32 +592,10 @@ class PegUtilsLegacyTest {
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        List<BtcECKey> erpFederationKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02"))
-        );
-        erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        List<FederationMember> erpFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys);
-        FederationArgs args = new FederationArgs(erpFedMembers, creationTime, 0L, networkParameters);
-        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(args);
-
-        ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(
-            activations,
-            networkParameters
-        );
-
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(
-            activeFederation.getBtcPublicKeys(),
-            activeFederation.getNumberOfSignaturesRequired(),
-            standardMultisigFederation.getBtcPublicKeys(),
-            standardMultisigFederation.getNumberOfSignaturesRequired(),
-            500L
-        );
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpRedeemScript,
+            nonStandardErpRedeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
 
@@ -638,33 +628,11 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        FederationArgs args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
-            creationTime,
-            0L,
-            networkParameters
-        );
-        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
-            args
-        );
-
-        ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(
-            activations,
-            networkParameters
-        );
-
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(
-            activeFederation.getBtcPublicKeys(),
-            activeFederation.getNumberOfSignaturesRequired(),
-            standardMultisigFederation.getBtcPublicKeys(),
-            standardMultisigFederation.getNumberOfSignaturesRequired(),
-            500L
-        );
 
         // Create a tx from the erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, erpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, nonStandardErpRedeemScript);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -683,32 +651,11 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         );
         erpFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        FederationArgs args = new FederationArgs(
-            FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
-            creationTime,
-            0L,
-            networkParameters
-        );
-        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
-            args
-        );
-
-        ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(
-            activations,
-            networkParameters
-        );
-
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(
-            activeFederation.getBtcPublicKeys(),
-            activeFederation.getNumberOfSignaturesRequired(),
-            standardMultisigFederation.getBtcPublicKeys(),
-            standardMultisigFederation.getNumberOfSignaturesRequired(),
-            500L
-        );
 
         // Create a tx from the erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, nonStandardErpRedeemScript);
 
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, erpRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
