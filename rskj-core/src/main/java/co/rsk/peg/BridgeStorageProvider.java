@@ -243,7 +243,7 @@ public class BridgeStorageProvider {
 
         pegoutsWaitingForSignatures = getFromRepository(
             PEGOUTS_WAITING_FOR_SIGNATURES,
-                data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
+            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
         );
         return pegoutsWaitingForSignatures;
     }
@@ -633,8 +633,15 @@ public class BridgeStorageProvider {
             BridgeSerializationUtils::serializeSha256Hash);
     }
 
-    public void setSvpSpendTxWaitingForSignatures(
-          Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+    public void setSvpSpendTxWaitingForSignatures(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+        boolean hasNullKeyOrValue = svpSpendTxWaitingForSignatures != null &&
+            (svpSpendTxWaitingForSignatures.getKey() == null || svpSpendTxWaitingForSignatures.getValue() == null);
+        if (hasNullKeyOrValue) {
+            throw new IllegalArgumentException(
+                String.format("Invalid svpSpendTxWaitingForSignatures, has null key or value: %s", svpSpendTxWaitingForSignatures)
+            );
+        }
+
         this.svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignatures;
         this.isSvpSpendTxWaitingForSignaturesSet = true;
     }
@@ -644,18 +651,11 @@ public class BridgeStorageProvider {
             return;
         }
 
-        boolean hasNullKeyOrValue = svpSpendTxWaitingForSignatures != null &&
-            (svpSpendTxWaitingForSignatures.getKey() == null || 
-             svpSpendTxWaitingForSignatures.getValue() == null);
-        if (hasNullKeyOrValue) {
-            throw new IllegalArgumentException(
-                String.format("Invalid svpSpendTxWaitingForSignatures: %s", svpSpendTxWaitingForSignatures));
-        }
-
         safeSaveToRepository(
             SVP_SPEND_TX_WAITING_FOR_SIGNATURES,
             svpSpendTxWaitingForSignatures,
-            BridgeSerializationUtils::serializeRskTxWaitingForSignatures);
+            BridgeSerializationUtils::serializeRskTxWaitingForSignatures
+        );
     }
 
     public void save() {
