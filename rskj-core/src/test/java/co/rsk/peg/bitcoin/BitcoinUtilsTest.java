@@ -1,16 +1,7 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import org.bouncycastle.util.encoders.Hex;
