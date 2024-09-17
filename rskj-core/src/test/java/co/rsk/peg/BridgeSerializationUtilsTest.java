@@ -88,6 +88,94 @@ class BridgeSerializationUtilsTest {
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "second");
 
     @Test
+    void serializeAndDeserializeBtcTransaction_withValidDataAndInputs_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
+        fundTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        fundTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction btcTx = new BtcTransaction(NETWORK_PARAMETERS);
+        btcTx.addInput(fundTx.getOutput(0));
+        btcTx.addInput(fundTx.getOutput(1));
+        btcTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransaction(serializedBtcTransaction, NETWORK_PARAMETERS, true);
+
+        // Assert
+        assertNotNull(serializedBtcTransaction);
+        assertNotNull(deserializedBtcTransaction);
+        assertEquals(btcTx, deserializedBtcTransaction);
+    }
+
+    @Test
+    void serializeAndDeserializeBtcTransaction_withValidDataAndWithoutInputs_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
+        fundTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        fundTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction btcTx = new BtcTransaction(NETWORK_PARAMETERS);
+        btcTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransaction(serializedBtcTransaction, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNotNull(serializedBtcTransaction);
+        assertNotNull(deserializedBtcTransaction);
+        assertEquals(btcTx, deserializedBtcTransaction);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeBtcTransaction_withInvalidData_shouldReturnNull(byte[] data) {
+        // Act
+        BtcTransaction deserializedTxWithInputs = BridgeSerializationUtils.deserializeBtcTransaction(data, NETWORK_PARAMETERS, true);
+        BtcTransaction deserializedTxWithoutInputs = BridgeSerializationUtils.deserializeBtcTransaction(data, NETWORK_PARAMETERS, false);
+
+        // Assert
+        assertNull(deserializedTxWithInputs);
+        assertNull(deserializedTxWithoutInputs);
+    }
+
+    @Test
+    void serializeAndDeserializeSvpFundTransaction_withValidData_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction prevTx = new BtcTransaction(NETWORK_PARAMETERS);
+        prevTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        prevTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction svpFundTx = new BtcTransaction(NETWORK_PARAMETERS);
+        svpFundTx.addInput(prevTx.getOutput(0));
+        svpFundTx.addInput(prevTx.getOutput(1));
+        svpFundTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedSvpFundTransaction = BridgeSerializationUtils.serializeBtcTransaction(svpFundTx);
+        BtcTransaction deserializedSvpFundTransaction = BridgeSerializationUtils.deserializeSvpFundTx(serializedSvpFundTransaction, NETWORK_PARAMETERS);
+
+        // Assert
+        assertNotNull(serializedSvpFundTransaction);
+        assertNotNull(deserializedSvpFundTransaction);
+        assertEquals(svpFundTx, deserializedSvpFundTransaction);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeSvpFundTransaction_withInvalidData_shouldReturnNull(byte[] data) {
+        // Act
+        BtcTransaction result = BridgeSerializationUtils.deserializeSvpFundTx(data, NETWORK_PARAMETERS);
+
+        // Assert
+        assertNull(result);
+    }
+
+    @Test
     void serializeAndDeserializeRskTxWaitingForSignatures_whenValidData_shouldReturnEqualResults() {
         // Arrange
         BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
@@ -104,7 +192,7 @@ class BridgeSerializationUtilsTest {
         byte[] serializedEntry = 
             BridgeSerializationUtils.serializeRskTxWaitingForSignatures(pegoutTxWaitingForSiganturesEntry);
         Map.Entry<Keccak256, BtcTransaction> deserializedEntry =
-            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(serializedEntry, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(serializedEntry, NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(serializedEntry);
@@ -121,7 +209,7 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
         // Act
         Map.Entry<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(result);
@@ -153,7 +241,7 @@ class BridgeSerializationUtilsTest {
         byte[] serializedRskTxsWaitingForSignaturesMap = 
             BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignaturesMap);
         SortedMap<Keccak256, BtcTransaction> deserializedRskTxsWaitingForSignaturesMap = 
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(serializedRskTxsWaitingForSignaturesMap, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(serializedRskTxsWaitingForSignaturesMap, NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(serializedRskTxsWaitingForSignaturesMap);
@@ -168,7 +256,7 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxsWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
         // Act
         SortedMap<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(result);
