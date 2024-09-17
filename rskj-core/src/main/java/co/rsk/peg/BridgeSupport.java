@@ -1018,8 +1018,10 @@ public class BridgeSupport {
     }
 
     private Address getProposedFederationWithFlyoverPrefixAddress(Script federationRedeemScript) {
-        FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
-        Script federationWithFlyoverPrefixRedeemScript = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), federationRedeemScript);
+        Script federationWithFlyoverPrefixRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            bridgeConstants.getProposedFederationFlyoverPrefix(),
+            federationRedeemScript
+        );
         Script federationWithFlyoverPrefixP2SHScript = ScriptBuilder.createP2SHOutputScript(federationWithFlyoverPrefixRedeemScript);
 
         return Address.fromP2SHScript(bridgeConstants.getBtcParams(), federationWithFlyoverPrefixP2SHScript);
