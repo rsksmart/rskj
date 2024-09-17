@@ -562,7 +562,7 @@ public class BridgeStorageProvider {
         }
 
         svpFundTxSigned = safeGetFromRepository(SVP_FUND_TX_SIGNED,
-            data -> BridgeSerializationUtils.deserializeBtcTransaction(data, networkParameters));
+            data -> BridgeSerializationUtils.deserializeSvpFundTx(data, networkParameters));
         return Optional.ofNullable(svpFundTxSigned);
     }
 
