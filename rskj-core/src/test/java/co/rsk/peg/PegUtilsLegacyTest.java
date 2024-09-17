@@ -651,7 +651,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, nonStandardErpRedeemScript);
 
-        Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, erpRedeemScript);
+        Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, nonStandardErpRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
