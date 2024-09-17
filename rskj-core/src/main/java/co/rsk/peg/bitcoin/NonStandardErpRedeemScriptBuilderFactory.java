@@ -13,13 +13,13 @@ public class NonStandardErpRedeemScriptBuilderFactory {
         NetworkParameters networkParameters
     ) {
         if (networkIsTestnet(networkParameters) && !activations.isActive(ConsensusRule.RSKIP284)) {
-            return new NonStandardErpRedeemScriptBuilderHardcoded();
+            return NonStandardErpRedeemScriptBuilderHardcoded.builder();
         }
         if (!activations.isActive(ConsensusRule.RSKIP293)) {
-            return new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
+            return NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.builder();
         }
 
-        return new NonStandardErpRedeemScriptBuilder();
+        return NonStandardErpRedeemScriptBuilder.builder();
     }
 
     private static boolean networkIsTestnet(NetworkParameters networkParameters) {

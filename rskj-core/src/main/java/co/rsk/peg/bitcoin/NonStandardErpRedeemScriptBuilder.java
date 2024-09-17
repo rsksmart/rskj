@@ -14,6 +14,12 @@ import org.slf4j.LoggerFactory;
 public class NonStandardErpRedeemScriptBuilder implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilder.class);
 
+    private NonStandardErpRedeemScriptBuilder() {}
+
+    public static NonStandardErpRedeemScriptBuilder builder() {
+        return new NonStandardErpRedeemScriptBuilder();
+    }
+
     @Override
     public Script of(
         List<BtcECKey> defaultPublicKeys,

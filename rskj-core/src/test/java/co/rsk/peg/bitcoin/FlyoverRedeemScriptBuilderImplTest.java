@@ -1,22 +1,21 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_FLYOVER_DERIVATION_HASH;
+import static org.junit.jupiter.api.Assertions.*;
+
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
+import java.util.List;
+import java.util.stream.Stream;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.List;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_FLYOVER_DERIVATION_HASH;
-import static org.junit.jupiter.api.Assertions.*;
 
 class FlyoverRedeemScriptBuilderImplTest {
     private Script redeemScript;
@@ -26,14 +25,16 @@ class FlyoverRedeemScriptBuilderImplTest {
     void setUp() {
         Federation federation = P2shErpFederationBuilder.builder().build();
         redeemScript = federation.getRedeemScript();
-        flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
+        flyoverRedeemScriptBuilder = FlyoverRedeemScriptBuilderImpl.builder();
     }
 
     @ParameterizedTest
     @MethodSource("invalidDerivationHashArgsProvider")
     void addFlyoverDerivationHashToRedeemScript_withInvalidPrefix_shouldThrowFlyoverRedeemScriptCreationException(Keccak256 flyoverDerivationHash) {
-        RedeemScriptCreationException exception = assertThrows(RedeemScriptCreationException.class,
-            () -> flyoverRedeemScriptBuilder.of(flyoverDerivationHash, redeemScript));
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
+            () -> flyoverRedeemScriptBuilder.of(flyoverDerivationHash, redeemScript)
+        );
 
         assertEquals(INVALID_FLYOVER_DERIVATION_HASH, exception.getReason());
 

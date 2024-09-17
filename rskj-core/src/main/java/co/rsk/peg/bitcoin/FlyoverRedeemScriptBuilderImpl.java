@@ -13,6 +13,12 @@ import org.slf4j.LoggerFactory;
 public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(FlyoverRedeemScriptBuilderImpl.class);
 
+    private FlyoverRedeemScriptBuilderImpl() {}
+
+    public static FlyoverRedeemScriptBuilderImpl builder() {
+        return new FlyoverRedeemScriptBuilderImpl();
+    }
+
     @Override
     public Script of(Keccak256 flyoverDerivationHash, Script redeemScript) {
         validateFlyoverDerivationHash(flyoverDerivationHash);

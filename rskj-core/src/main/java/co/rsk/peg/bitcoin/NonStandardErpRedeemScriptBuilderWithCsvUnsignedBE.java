@@ -15,6 +15,12 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class);
     private static final int CSV_BYTES_NEEDED_LENGTH = 2;
 
+    private NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE() {}
+
+    public static NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE builder() {
+        return new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
+    }
+
     @Override
     public Script of(
         List<BtcECKey> defaultPublicKeys,

@@ -12,6 +12,12 @@ import org.slf4j.LoggerFactory;
 public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
     private static final Logger logger = LoggerFactory.getLogger(P2shErpRedeemScriptBuilder.class);
 
+    private P2shErpRedeemScriptBuilder() {}
+
+    public static P2shErpRedeemScriptBuilder builder() {
+        return new P2shErpRedeemScriptBuilder();
+    }
+
     @Override
     public Script of(
         List<BtcECKey> defaultPublicKeys,
