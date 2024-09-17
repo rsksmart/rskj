@@ -61,10 +61,11 @@ class PegUtilsLegacyTest {
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
-        int defaultThreshold = BitcoinTestUtils.getDefaultPublicKeys().size() / 2 + 1;
+        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
+        int defaultThreshold = activeFederation.getBtcPublicKeys().size() / 2 + 1;
         int emergencyThreshold = federationConstantsMainnet.getErpFedPubKeysList().size() / 2 + 1;
         ErpRedeemScriptBuilder nonStandardErpRedeemScriptBuilder = new NonStandardErpRedeemScriptBuilder();
-        nonStandardErpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(BitcoinTestUtils.getDefaultPublicKeys(),
+        nonStandardErpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(activeFederation.getBtcPublicKeys(),
             defaultThreshold,
             federationConstantsMainnet.getErpFedPubKeysList(),
             emergencyThreshold,
