@@ -721,9 +721,8 @@ class BridgeSupportTest {
         }
 
         private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
-            FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
-            Script redeemScriptWithFlyoverPrefix = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-            Script proposedFederationWithFlyoverPrefixScriptPubKey = ScriptBuilder.createP2SHOutputScript(redeemScriptWithFlyoverPrefix);
+            Script proposedFederationWithFlyoverPrefixScriptPubKey =
+                BridgeUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
 
             Optional<TransactionOutput> outputToProposedFederationWithFlyoverPrefixOpt = searchForOutput(svpFundTransactionUnsignedOutputs, proposedFederationWithFlyoverPrefixScriptPubKey);
             assertTrue(outputToProposedFederationWithFlyoverPrefixOpt.isPresent());

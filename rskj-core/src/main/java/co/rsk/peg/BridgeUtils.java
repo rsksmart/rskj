@@ -19,12 +19,12 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
@@ -249,6 +249,17 @@ public final class BridgeUtils {
      */
     private static Coin getAmountSentToWallet(BtcTransaction btcTx, Wallet wallet) {
         return btcTx.getValueSentToMe(wallet);
+    }
+
+    public static Address getFlyoverAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Script redeemScript) {
+        Script flyoverScriptPubKey = getFlyoverScriptPubKey(flyoverDerivationHash, redeemScript);
+        return Address.fromP2SHScript(networkParameters, flyoverScriptPubKey);
+    }
+
+    public static Script getFlyoverScriptPubKey(Keccak256 flyoverDerivationHash, Script redeemScript) {
+        FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
+        Script flyoverRedeemScript = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript);
+        return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
     }
 
     public static List<UTXO> getUTXOsSentToAddresses(
