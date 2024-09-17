@@ -606,7 +606,7 @@ public class BridgeStorageProvider {
         this.isSvpFundTxSignedSet = true;
     }
 
-    private void saveSvpFundTxHashSigned() {
+    private void saveSvpFundTxSigned() {
         if (!activations.isActive(RSKIP419) || !isSvpFundTxSignedSet) {
             return;
         }
@@ -682,7 +682,7 @@ public class BridgeStorageProvider {
         savePegoutTxSigHashes();
 
         saveSvpFundTxHashUnsigned();
-        saveSvpFundTxHashSigned();
+        saveSvpFundTxSigned();
         saveSvpSpendTxHashUnsigned();
         saveSvpSpendTxWaitingForSignatures();
     }
