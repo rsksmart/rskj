@@ -83,28 +83,122 @@ import java.util.stream.Collectors;
 
 class BridgeSerializationUtilsTest {
 
-    private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-    private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "first");
-    private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMETERS, "second");
+    private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private static final NetworkParameters MAINNET_PARAMETERS = bridgeMainnetConstants.getBtcParams();
+
+    private static final BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+    private static final NetworkParameters TESTNET_PARAMETERS = bridgeTestnetConstants.getBtcParams();
+
+    private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "first");
+    private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
+
+    @Test
+    void serializeAndDeserializeBtcTransaction_withValidDataAndInputs_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction prevTx = new BtcTransaction(MAINNET_PARAMETERS);
+        prevTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        prevTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction btcTx = new BtcTransaction(MAINNET_PARAMETERS);
+        btcTx.addInput(prevTx.getOutput(0));
+        btcTx.addInput(prevTx.getOutput(1));
+        btcTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(serializedBtcTransaction, MAINNET_PARAMETERS);
+
+        // Assert
+        assertNotNull(serializedBtcTransaction);
+        assertNotNull(deserializedBtcTransaction);
+        assertEquals(btcTx, deserializedBtcTransaction);
+    }
+
+    @Test
+    void serializeAndDeserializeBtcTransaction_withValidDataAndWithoutInputs_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction prevTx = new BtcTransaction(MAINNET_PARAMETERS);
+        prevTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        prevTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction btcTx = new BtcTransaction(MAINNET_PARAMETERS);
+        btcTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransactionWithoutInputs(serializedBtcTransaction, MAINNET_PARAMETERS);
+
+        // Assert
+        assertNotNull(serializedBtcTransaction);
+        assertNotNull(deserializedBtcTransaction);
+        assertEquals(btcTx, deserializedBtcTransaction);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeBtcTransaction_withInvalidData_shouldReturnNull(byte[] data) {
+        // Act
+        BtcTransaction deserializedTxWithInputs = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(data, MAINNET_PARAMETERS);
+        BtcTransaction deserializedTxWithoutInputs = BridgeSerializationUtils.deserializeBtcTransactionWithoutInputs(data, MAINNET_PARAMETERS);
+
+        // Assert
+        assertNull(deserializedTxWithInputs);
+        assertNull(deserializedTxWithoutInputs);
+    }
+
+    @Test
+    void serializeAndDeserializeSvpFundTransaction_withValidData_shouldReturnEqualResults() {
+        // Arrange
+        BtcTransaction prevTx = new BtcTransaction(MAINNET_PARAMETERS);
+        prevTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        prevTx.addOutput(Coin.FIFTY_COINS, OTHER_ADDRESS);
+
+        BtcTransaction svpFundTx = new BtcTransaction(MAINNET_PARAMETERS);
+        svpFundTx.addInput(prevTx.getOutput(0));
+        svpFundTx.addInput(prevTx.getOutput(1));
+        svpFundTx.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        // Act
+        byte[] serializedSvpFundTransaction = BridgeSerializationUtils.serializeBtcTransaction(svpFundTx);
+        BtcTransaction deserializedSvpFundTransaction = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(serializedSvpFundTransaction, MAINNET_PARAMETERS);
+
+        // Assert
+        assertNotNull(serializedSvpFundTransaction);
+        assertNotNull(deserializedSvpFundTransaction);
+        assertEquals(svpFundTx, deserializedSvpFundTransaction);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeSvpFundTransaction_withInvalidData_shouldReturnNull(byte[] data) {
+        // Act
+        BtcTransaction result = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(data, MAINNET_PARAMETERS);
+
+        // Assert
+        assertNull(result);
+    }
 
     @Test
     void serializeAndDeserializeRskTxWaitingForSignatures_whenValidData_shouldReturnEqualResults() {
         // Arrange
-        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
-        fundTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
+        BtcTransaction prevTx = new BtcTransaction(MAINNET_PARAMETERS);
+        prevTx.addOutput(Coin.FIFTY_COINS, ADDRESS);
 
         Keccak256 pegoutCreationRskTxHash = createHash3(1);
-        BtcTransaction pegoutTx = new BtcTransaction(NETWORK_PARAMETERS);
-        pegoutTx.addInput(fundTx.getOutput(0));
+        BtcTransaction pegoutTx = new BtcTransaction(MAINNET_PARAMETERS);
+        pegoutTx.addInput(prevTx.getOutput(0));
         pegoutTx.addOutput(Coin.COIN, OTHER_ADDRESS);
 
-        // Act
-        Map.Entry<Keccak256, BtcTransaction> pegoutTxWaitingForSiganturesEntry =
+        Map.Entry<Keccak256, BtcTransaction> pegoutTxWaitingForSignaturesEntry =
             new AbstractMap.SimpleEntry<>(pegoutCreationRskTxHash, pegoutTx);
-        byte[] serializedEntry = 
-            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(pegoutTxWaitingForSiganturesEntry);
+
+        // Act
+        byte[] serializedEntry =
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(pegoutTxWaitingForSignaturesEntry);
         Map.Entry<Keccak256, BtcTransaction> deserializedEntry =
-            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(serializedEntry, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(serializedEntry, MAINNET_PARAMETERS);
 
         // Assert
         assertNotNull(serializedEntry);
@@ -121,7 +215,7 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
         // Act
         Map.Entry<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, MAINNET_PARAMETERS);
 
         // Assert
         assertNull(result);
@@ -132,26 +226,28 @@ class BridgeSerializationUtilsTest {
         // Arrange
         SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignaturesMap = new TreeMap<>();
 
-        BtcTransaction fundTx = new BtcTransaction(NETWORK_PARAMETERS);
-        fundTx.addOutput(Coin.COIN.multiply(5), ADDRESS);
+        BtcTransaction prevTx = new BtcTransaction(MAINNET_PARAMETERS);
+        prevTx.addOutput(Coin.COIN.multiply(5), ADDRESS);
+
+        BtcTransaction pegoutTx1 = new BtcTransaction(MAINNET_PARAMETERS);
+        pegoutTx1.addInput(prevTx.getOutput(0));
+        pegoutTx1.addOutput(Coin.COIN, OTHER_ADDRESS);
+
+        BtcTransaction pegoutTx2 = new BtcTransaction(MAINNET_PARAMETERS);
+        pegoutTx2.addInput(prevTx.getOutput(0));
+        pegoutTx2.addOutput(Coin.COIN.multiply(10), OTHER_ADDRESS);
 
         Keccak256 pegoutCreationRskTxHash1 = createHash3(1);
-        BtcTransaction pegoutTx1 = new BtcTransaction(NETWORK_PARAMETERS);
-        pegoutTx1.addInput(fundTx.getOutput(0));
-        pegoutTx1.addOutput(Coin.COIN, OTHER_ADDRESS);
-        Keccak256 pegoutCreationRskTxHash2 = createHash3(2);
-        BtcTransaction pegoutTx2 = new BtcTransaction(NETWORK_PARAMETERS);
-        pegoutTx2.addInput(fundTx.getOutput(0));
-        pegoutTx2.addOutput(Coin.COIN.multiply(10), OTHER_ADDRESS);
-        
         rskTxsWaitingForSignaturesMap.put(pegoutCreationRskTxHash1, pegoutTx1);
+
+        Keccak256 pegoutCreationRskTxHash2 = createHash3(2);
         rskTxsWaitingForSignaturesMap.put(pegoutCreationRskTxHash2, pegoutTx2);
 
         // Act
         byte[] serializedRskTxsWaitingForSignaturesMap = 
             BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignaturesMap);
         SortedMap<Keccak256, BtcTransaction> deserializedRskTxsWaitingForSignaturesMap = 
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(serializedRskTxsWaitingForSignaturesMap, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(serializedRskTxsWaitingForSignaturesMap, MAINNET_PARAMETERS);
 
         // Assert
         assertNotNull(serializedRskTxsWaitingForSignaturesMap);
@@ -166,7 +262,7 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxsWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
         // Act
         SortedMap<Keccak256, BtcTransaction> result =
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, NETWORK_PARAMETERS, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, MAINNET_PARAMETERS);
 
         // Assert
         assertNotNull(result);
@@ -270,13 +366,12 @@ class BridgeSerializationUtilsTest {
         ));
         Instant creationTime = Instant.ofEpochMilli(0xabcdef);
         long creationBlockNumber = 42L;
-        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         FederationArgs federationArgs = new FederationArgs(
             members,
             creationTime,
             creationBlockNumber,
-            btcParams
+            TESTNET_PARAMETERS
         );
         Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
@@ -317,7 +412,7 @@ class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpFirstElement, rlpSecondElement, rlpKeyList);
 
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, TESTNET_PARAMETERS);
 
         Assertions.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assertions.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
@@ -331,7 +426,7 @@ class BridgeSerializationUtilsTest {
             );
         }
 
-        assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
+        assertEquals(TESTNET_PARAMETERS, deserializedFederation.getBtcParams());
     }
 
     @Test
@@ -346,7 +441,7 @@ class BridgeSerializationUtilsTest {
         boolean thrown = false;
 
         try {
-            BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializeStandardMultisigFederationOnlyBtcKeys(data, TESTNET_PARAMETERS);
         } catch (Exception e) {
             Assertions.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
@@ -422,10 +517,9 @@ class BridgeSerializationUtilsTest {
 
         Instant creationTime = Instant.now();
         long creationBlockNumber = 123;
-        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         FederationArgs federationArgs =
-            new FederationArgs(members, creationTime, creationBlockNumber, btcParams);
+            new FederationArgs(members, creationTime, creationBlockNumber, TESTNET_PARAMETERS);
         Federation testStandardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
         byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testStandardMultisigFederation);
 
@@ -448,8 +542,7 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializeFederation_wrongListSize() {
         byte[] serialized = RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]));
-        NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Exception ex = assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, networkParameters));
+        Exception ex = assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, TESTNET_PARAMETERS));
         Assertions.assertTrue(ex.getMessage().contains("Invalid serialized Federation"));
     }
 
@@ -461,8 +554,7 @@ class BridgeSerializationUtilsTest {
             RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0])))
         );
 
-        NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Exception ex = assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, networkParameters));
+        Exception ex = assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeStandardMultisigFederation(serialized, TESTNET_PARAMETERS));
         Assertions.assertTrue(ex.getMessage().contains("Invalid serialized FederationMember"));
     }
 
@@ -675,7 +767,7 @@ class BridgeSerializationUtilsTest {
 
         LockWhitelist lockWhitelist = new LockWhitelist(
             Arrays.stream(addressesBytes)
-                .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
+                .map(bytes -> new Address(TESTNET_PARAMETERS, bytes))
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
             0);
 
@@ -717,7 +809,7 @@ class BridgeSerializationUtilsTest {
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
             data,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            TESTNET_PARAMETERS
         );
 
         MatcherAssert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
@@ -735,14 +827,14 @@ class BridgeSerializationUtilsTest {
     void deserializeOneOffLockWhitelistAndDisableBlockHeight_null() {
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
             null,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            TESTNET_PARAMETERS
         );
 
         assertNull(deserializedLockWhitelist);
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
             new byte[]{},
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            TESTNET_PARAMETERS
         );
 
         assertNull(deserializedLockWhitelist2);
@@ -750,7 +842,7 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializeDeserializeOneOffLockWhitelistAndDisableBlockHeight() {
-        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters btcParams = TESTNET_PARAMETERS;
         Map<Address, LockWhitelistEntry> whitelist = new HashMap<>();
         Address address = BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams);
         whitelist.put(address, new OneOffWhiteListEntry(address, Coin.COIN));
@@ -774,7 +866,7 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializeAndDeserializeFederationOnlyBtcKeysWithRealRLP() {
-        NetworkParameters networkParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters networkParams = TESTNET_PARAMETERS;
 
         byte[][] publicKeyBytes = new byte[][]{
             BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
@@ -830,13 +922,13 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeRequestQueue_emptyOrNull() {
-        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
-        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(null, TESTNET_PARAMETERS).size());
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(new byte[]{}, TESTNET_PARAMETERS).size());
     }
 
     @Test
     void deserializeRequestQueue_nonEmpty() {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters params = TESTNET_PARAMETERS;
 
         Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
         Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
@@ -867,7 +959,7 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeRequestQueue_nonEmptyOddSize() {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters params = TESTNET_PARAMETERS;
 
         Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
         Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
@@ -886,7 +978,7 @@ class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(rlpItems);
 
         try {
-            BridgeSerializationUtils.deserializeReleaseRequestQueue(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializeReleaseRequestQueue(data, params);
         } catch (RuntimeException e) {
             return;
         }
@@ -920,13 +1012,13 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_emptyOrNull() {
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
-        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(null, TESTNET_PARAMETERS).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(new byte[]{}, TESTNET_PARAMETERS).getEntries().size());
     }
 
     @Test
     void deserializeTransactionSet_nonEmpty() {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters params = TESTNET_PARAMETERS;
 
         BtcTransaction input = new BtcTransaction(params);
         input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
@@ -964,7 +1056,7 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_nonEmpty_withTxHash_fails() {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters params = TESTNET_PARAMETERS;
 
         BtcTransaction input = new BtcTransaction(params);
         input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
@@ -985,7 +1077,7 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void deserializeTransactionSet_nonEmpty_withoutTxHash_fails() {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        NetworkParameters params = TESTNET_PARAMETERS;
 
         BtcTransaction input = new BtcTransaction(params);
         input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
@@ -1010,7 +1102,7 @@ class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(firstItem);
 
         try {
-            BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, TESTNET_PARAMETERS);
         } catch (RuntimeException e) {
             return;
         }
@@ -1226,9 +1318,9 @@ class BridgeSerializationUtilsTest {
 
         BridgeConstants bridgeConstants;
         if (networkId.equals(NetworkParameters.ID_MAINNET)) {
-            bridgeConstants = BridgeMainNetConstants.getInstance();
+            bridgeConstants = bridgeMainnetConstants;
         } else {
-            bridgeConstants = BridgeTestNetConstants.getInstance();
+            bridgeConstants = bridgeTestnetConstants;
         }
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);

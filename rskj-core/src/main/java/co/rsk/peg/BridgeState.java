@@ -133,7 +133,7 @@ public class BridgeState {
         byte[] btcUTXOsBytes = rlpList.get(1).getRLPData();
         List<UTXO> btcUTXOs = BridgeSerializationUtils.deserializeUTXOList(btcUTXOsBytes);
         byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(2).getRLPData();
-        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams());
         byte[] releaseRequestQueueBytes = rlpList.get(3).getRLPData();
         ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
         byte[] pegoutsWaitingForConfirmationsBytes = rlpList.get(4).getRLPData();
