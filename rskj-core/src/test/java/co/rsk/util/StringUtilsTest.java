@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StringUtilsTest {
 
-    private static final String STR_64_CHARS = "ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5";
-    private static final String STR_65_CHARS = STR_64_CHARS + "a";
+    private static final String STR_66_CHARS = "0xee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5";
+    private static final String STR_67_CHARS = STR_66_CHARS + "a";
 
     @Test
     void testTrim() {
@@ -33,11 +33,11 @@ class StringUtilsTest {
         assertEquals("", StringUtils.trim(""));
         assertEquals("a", StringUtils.trim("a"));
 
-        assertEquals(64, STR_64_CHARS.length());
-        assertEquals(65, STR_65_CHARS.length());
+        assertEquals(66, STR_66_CHARS.length());
+        assertEquals(67, STR_67_CHARS.length());
 
-        assertEquals(STR_64_CHARS, StringUtils.trim(STR_64_CHARS));
-        assertEquals(STR_64_CHARS + "...", StringUtils.trim(STR_65_CHARS));
+        assertEquals(STR_66_CHARS, StringUtils.trim(STR_66_CHARS));
+        assertEquals(STR_66_CHARS + "...", StringUtils.trim(STR_67_CHARS));
     }
 
     @Test
