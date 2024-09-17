@@ -593,6 +593,11 @@ public class BridgeStorageProvider {
         if (svpSpendTxWaitingForSignatures != null) {
             return Optional.of(svpSpendTxWaitingForSignatures);
         }
+    
+        // Return empty if the svp spend tx waiting for signatures was explicitly set to null
+        if (isSvpSpendTxWaitingForSignaturesSet) {
+            return Optional.empty();
+        }
 
         svpSpendTxWaitingForSignatures = safeGetFromRepository(
             SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
