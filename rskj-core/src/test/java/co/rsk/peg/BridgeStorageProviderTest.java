@@ -433,7 +433,7 @@ class BridgeStorageProviderTest {
 
         @Test
         void saveSvpFundTxSigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
-            // Initially setting a valid hash in storage
+            // Initially setting a valid tx in storage
             bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
             bridgeStorageProvider.save();
 
@@ -583,17 +583,17 @@ class BridgeStorageProviderTest {
         @Test
         void getSvpFundTxSigned_whenHashIsCached_shouldReturnTheCachedHash() {
             // Arrange
-            // Manually saving a hash in storage to then cache it
+            // Manually saving a tx in storage to then cache it
             repository.addStorageBytes(
                 bridgeAddress,
                 SVP_FUND_TX_SIGNED.getKey(),
                 BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
             );
 
-            // Calling method, so it retrieves the hash from storage and caches it
+            // Calling method, so it retrieves the tx from storage and caches it
             bridgeStorageProvider.getSvpFundTxSigned();
 
-            // Setting a different hash in storage to make sure that when calling the method again it returns the cached one, not this one
+            // Setting a different tx in storage to make sure that when calling the method again it returns the cached one, not this one
             repository.addStorageBytes(
                 bridgeAddress,
                 SVP_FUND_TX_SIGNED.getKey(),
@@ -611,17 +611,17 @@ class BridgeStorageProviderTest {
         @Test
         void getSvpFundTxSigned_whenNullHashIsCached_shouldReturnNewSavedHash() {
             // Arrange
-            // Manually saving a null hash in storage to then cache it
+            // Manually saving a null tx in storage to then cache it
             repository.addStorageBytes(
                 bridgeAddress,
                 SVP_FUND_TX_SIGNED.getKey(),
                 null
             );
 
-            // Calling method, so it retrieves the hash from storage and caches it
+            // Calling method, so it retrieves the tx from storage and caches it
             bridgeStorageProvider.getSvpFundTxSigned();
 
-            // Setting a hash in storage
+            // Setting a tx in storage
             repository.addStorageBytes(
                 bridgeAddress,
                 SVP_FUND_TX_SIGNED.getKey(),
@@ -632,7 +632,7 @@ class BridgeStorageProviderTest {
             Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
 
             // Assert
-            // since null hash was directly saved and not set, method returns new saved hash
+            // since null tx was directly saved and not set, method returns new saved tx
             assertTrue(svpFundTxSigned.isPresent());
             assertEquals(anotherSvpFundTx, svpFundTxSigned.get());
         }
