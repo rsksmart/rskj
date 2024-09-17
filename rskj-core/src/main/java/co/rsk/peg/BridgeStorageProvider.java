@@ -171,7 +171,7 @@ public class BridgeStorageProvider {
         entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE,
                 data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
-                )
+            )
         );
 
         if (!activations.isActive(RSKIP146)) {
@@ -182,7 +182,7 @@ public class BridgeStorageProvider {
         entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE_WITH_TXHASH,
                 data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
-                )
+            )
         );
 
         releaseRequestQueue = new ReleaseRequestQueue(entries);
@@ -208,7 +208,7 @@ public class BridgeStorageProvider {
         }
 
         Set<PegoutsWaitingForConfirmations.Entry> entries = new HashSet<>(getFromRepository(PEGOUTS_WAITING_FOR_CONFIRMATIONS,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
+            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters).getEntries()));
 
         if (!activations.isActive(RSKIP146)) {
             pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
@@ -217,7 +217,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
             PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
+            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
 
@@ -270,7 +270,7 @@ public class BridgeStorageProvider {
         }
 
         CoinbaseInformation coinbaseInformation =
-                safeGetFromRepository(getStorageKeyForCoinbaseInformation(blockHash), BridgeSerializationUtils::deserializeCoinbaseInformation);
+            safeGetFromRepository(getStorageKeyForCoinbaseInformation(blockHash), BridgeSerializationUtils::deserializeCoinbaseInformation);
         coinbaseInformationMap.put(blockHash, coinbaseInformation);
 
         return coinbaseInformation;
@@ -470,12 +470,12 @@ public class BridgeStorageProvider {
     public void setNextPegoutHeight(long nextPegoutHeight) {
         this.nextPegoutHeight = nextPegoutHeight;
     }
-    
+
     protected void saveNextPegoutHeight() {
         if (nextPegoutHeight == null || !activations.isActive(RSKIP271)) {
             return;
         }
-        
+
         safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
     }
 
@@ -494,8 +494,8 @@ public class BridgeStorageProvider {
         );
 
         return data != null &&
-           data.length == 1 &&
-           data[0] == TRUE_VALUE;
+            data.length == 1 &&
+            data[0] == TRUE_VALUE;
     }
 
     public void setPegoutTxSigHash(Sha256Hash sigHash) {
