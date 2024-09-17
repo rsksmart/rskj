@@ -217,7 +217,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
             PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
+            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
 
@@ -243,7 +243,7 @@ public class BridgeStorageProvider {
 
         pegoutsWaitingForSignatures = getFromRepository(
             PEGOUTS_WAITING_FOR_SIGNATURES,
-            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
+            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters)
         );
         return pegoutsWaitingForSignatures;
     }
@@ -470,12 +470,12 @@ public class BridgeStorageProvider {
     public void setNextPegoutHeight(long nextPegoutHeight) {
         this.nextPegoutHeight = nextPegoutHeight;
     }
-    
+
     protected void saveNextPegoutHeight() {
         if (nextPegoutHeight == null || !activations.isActive(RSKIP271)) {
             return;
         }
-        
+
         safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
     }
 
@@ -601,7 +601,7 @@ public class BridgeStorageProvider {
 
         svpSpendTxWaitingForSignatures = safeGetFromRepository(
             SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
-            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters, false));
+            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters));
 
         return Optional.ofNullable(svpSpendTxWaitingForSignatures);
     }
