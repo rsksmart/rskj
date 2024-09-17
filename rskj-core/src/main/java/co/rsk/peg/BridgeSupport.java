@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.findWitnessCommitment;
@@ -1020,7 +1021,8 @@ public class BridgeSupport {
         // add outputs to proposed fed and proposed fed with flyover prefix
         svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
 
-        Address proposedFederationWithFlyoverPrefixAddress = getProposedFederationWithFlyoverPrefixAddress(proposedFederation.getRedeemScript());
+        Address proposedFederationWithFlyoverPrefixAddress =
+            getFlyoverAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
         svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
@@ -1028,16 +1030,6 @@ public class BridgeSupport {
         activeFederationWallet.completeTx(sendRequest);
 
         return svpFundTransaction;
-    }
-
-    private Address getProposedFederationWithFlyoverPrefixAddress(Script federationRedeemScript) {
-        Script federationWithFlyoverPrefixRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
-            bridgeConstants.getProposedFederationFlyoverPrefix(),
-            federationRedeemScript
-        );
-        Script federationWithFlyoverPrefixP2SHScript = ScriptBuilder.createP2SHOutputScript(federationWithFlyoverPrefixRedeemScript);
-
-        return Address.fromP2SHScript(networkParameters, federationWithFlyoverPrefixP2SHScript);
     }
 
     private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
