@@ -33,7 +33,7 @@ class FlyoverRedeemScriptBuilderImplTest {
     @MethodSource("invalidDerivationHashArgsProvider")
     void addFlyoverDerivationHashToRedeemScript_withInvalidPrefix_shouldThrowFlyoverRedeemScriptCreationException(Keccak256 flyoverDerivationHash) {
         RedeemScriptCreationException exception = assertThrows(RedeemScriptCreationException.class,
-            () -> flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript));
+            () -> flyoverRedeemScriptBuilder.of(flyoverDerivationHash, redeemScript));
 
         assertEquals(INVALID_FLYOVER_DERIVATION_HASH, exception.getReason());
 
@@ -51,7 +51,7 @@ class FlyoverRedeemScriptBuilderImplTest {
         Keccak256 flyoverDerivationHash = TestUtils.generateHash("hash");
 
         // act
-        Script redeemScriptWithFlyoverDerivationHash = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript);
+        Script redeemScriptWithFlyoverDerivationHash = flyoverRedeemScriptBuilder.of(flyoverDerivationHash, redeemScript);
 
         // assert
         List<ScriptChunk> originalRedeemScriptChunks = getOriginalRedeemScriptChunks(redeemScriptWithFlyoverDerivationHash);

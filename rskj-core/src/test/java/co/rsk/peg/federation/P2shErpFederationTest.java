@@ -134,7 +134,7 @@ class P2shErpFederationTest {
     void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         assertThrows(IllegalArgumentException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, threshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue)
@@ -147,7 +147,7 @@ class P2shErpFederationTest {
 
         ErpRedeemScriptBuilder builder = new P2shErpRedeemScriptBuilder();
         assertThrows(IllegalArgumentException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, defaultThresholdAboveDefaultKeysSize,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue)
@@ -177,7 +177,7 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         RedeemScriptCreationException builderException = assertThrows(
             RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
@@ -198,7 +198,7 @@ class P2shErpFederationTest {
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         ScriptCreationException exception = assertThrows(
             ScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
@@ -325,7 +325,7 @@ class P2shErpFederationTest {
 
         ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
         Script obtainedRedeemScript =
-            builder.createRedeemScriptFromKeys(
+            builder.of(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue

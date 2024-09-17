@@ -1,28 +1,28 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-
-import static co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils.removeOpCheckMultisig;
 
 public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class);
     private static final int CSV_BYTES_NEEDED_LENGTH = 2;
 
     @Override
-    public Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
-                                             int defaultThreshold,
-                                             List<BtcECKey> emergencyPublicKeys,
-                                             int emergencyThreshold,
-                                             long csvValue) {
-
+    public Script of(
+        List<BtcECKey> defaultPublicKeys,
+        int defaultThreshold,
+        List<BtcECKey> emergencyPublicKeys,
+        int emergencyThreshold,
+        long csvValue
+    ) {
         Script defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
         Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
 
@@ -36,13 +36,13 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
         ScriptValidations.validateScriptSize(redeemScript);
         
         return redeemScript;
-
     }
 
-    private Script createRedeemScriptFromScripts(Script defaultRedeemScript,
-                                                        Script emergencyRedeemScript,
-                                                        byte[] serializedCsvValue) {
-
+    private Script createRedeemScriptFromScripts(
+        Script defaultRedeemScript,
+        Script emergencyRedeemScript,
+        byte[] serializedCsvValue
+    ) {
         ScriptBuilder scriptBuilder = new ScriptBuilder();
         return scriptBuilder
             .op(ScriptOpCodes.OP_NOTIF)

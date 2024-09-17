@@ -118,7 +118,7 @@ class NonStandardErpFederationsTest {
 
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         assertDoesNotThrow(() -> builder
-            .createRedeemScriptFromKeys(
+            .of(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue));
@@ -129,7 +129,7 @@ class NonStandardErpFederationsTest {
     void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         assertThrows(IllegalArgumentException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, threshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue)
@@ -142,7 +142,7 @@ class NonStandardErpFederationsTest {
 
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         assertThrows(IllegalArgumentException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, defaultThresholdAboveDefaultKeysSize,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue)
@@ -197,7 +197,7 @@ class NonStandardErpFederationsTest {
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
         RedeemScriptCreationException exception = assertThrows(
             RedeemScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(
+            () -> builder.of(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue)
@@ -218,7 +218,7 @@ class NonStandardErpFederationsTest {
         ErpRedeemScriptBuilder builder = new NonStandardErpRedeemScriptBuilder();
         ScriptCreationException exception = assertThrows(
             ScriptCreationException.class,
-            () -> builder.createRedeemScriptFromKeys(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
+            () -> builder.of(defaultKeys, defaultThreshold, emergencyKeys, emergencyThreshold, activationDelayValue)
         );
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
@@ -365,7 +365,7 @@ class NonStandardErpFederationsTest {
 
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
         Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
+            .of(defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
             );
@@ -406,7 +406,7 @@ class NonStandardErpFederationsTest {
 
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
         Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(
+            .of(
                 defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
@@ -449,7 +449,7 @@ class NonStandardErpFederationsTest {
 
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
         Script obtainedRedeemScript = builder
-            .createRedeemScriptFromKeys(defaultKeys, defaultThreshold,
+            .of(defaultKeys, defaultThreshold,
                 emergencyKeys, emergencyThreshold,
                 activationDelayValue
             );

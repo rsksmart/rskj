@@ -10,14 +10,15 @@ public class NonStandardErpRedeemScriptBuilderFactory {
 
     public static ErpRedeemScriptBuilder getNonStandardErpRedeemScriptBuilder(
         ActivationConfig.ForBlock activations,
-        NetworkParameters networkParameters) {
-
+        NetworkParameters networkParameters
+    ) {
         if (networkIsTestnet(networkParameters) && !activations.isActive(ConsensusRule.RSKIP284)) {
             return new NonStandardErpRedeemScriptBuilderHardcoded();
         }
         if (!activations.isActive(ConsensusRule.RSKIP293)) {
             return new NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE();
         }
+
         return new NonStandardErpRedeemScriptBuilder();
     }
 

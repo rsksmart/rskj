@@ -25,13 +25,10 @@ public class BitcoinUtils {
         }
         TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
         Optional<Script> redeemScript = extractRedeemScriptFromInput(txInput);
-        if (!redeemScript.isPresent()) {
-            return Optional.empty();
-        }
 
-        return Optional.of(btcTx.hashForSignature(
+        return redeemScript.map(script -> btcTx.hashForSignature(
             FIRST_INPUT_INDEX,
-            redeemScript.get(),
+            script,
             BtcTransaction.SigHash.ALL,
             false
         ));
