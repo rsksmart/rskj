@@ -556,7 +556,7 @@ public class BridgeStorageProvider {
             return Optional.of(svpFundTxSigned);
         }
 
-        // Return empty if the svp fund tx hash unsigned was explicitly set to null
+        // Return empty if the svp fund tx signed was explicitly set to null
         if (isSvpFundTxSignedSet) {
             return Optional.empty();
         }
