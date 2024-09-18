@@ -251,17 +251,6 @@ public final class BridgeUtils {
         return btcTx.getValueSentToMe(wallet);
     }
 
-    public static Address getFlyoverAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Script redeemScript) {
-        Script flyoverScriptPubKey = getFlyoverScriptPubKey(flyoverDerivationHash, redeemScript);
-        return Address.fromP2SHScript(networkParameters, flyoverScriptPubKey);
-    }
-
-    public static Script getFlyoverScriptPubKey(Keccak256 flyoverDerivationHash, Script redeemScript) {
-        FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder = new FlyoverRedeemScriptBuilderImpl();
-        Script flyoverRedeemScript = flyoverRedeemScriptBuilder.addFlyoverDerivationHashToRedeemScript(flyoverDerivationHash, redeemScript);
-        return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-    }
-
     public static List<UTXO> getUTXOsSentToAddresses(
         ActivationConfig.ForBlock activations,
         NetworkParameters networkParameters,

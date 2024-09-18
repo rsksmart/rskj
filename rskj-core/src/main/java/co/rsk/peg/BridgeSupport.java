@@ -17,7 +17,7 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeUtils.getFlyoverAddress;
+import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
