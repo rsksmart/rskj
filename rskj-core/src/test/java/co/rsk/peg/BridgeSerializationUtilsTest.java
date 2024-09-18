@@ -106,7 +106,7 @@ class BridgeSerializationUtilsTest {
 
         // Act
         byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
-        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransaction(serializedBtcTransaction, MAINNET_PARAMETERS, true);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(serializedBtcTransaction, MAINNET_PARAMETERS);
 
         // Assert
         assertNotNull(serializedBtcTransaction);
@@ -126,7 +126,7 @@ class BridgeSerializationUtilsTest {
 
         // Act
         byte[] serializedBtcTransaction = BridgeSerializationUtils.serializeBtcTransaction(btcTx);
-        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransaction(serializedBtcTransaction, MAINNET_PARAMETERS, false);
+        BtcTransaction deserializedBtcTransaction = BridgeSerializationUtils.deserializeBtcTransactionWithoutInputs(serializedBtcTransaction, MAINNET_PARAMETERS);
 
         // Assert
         assertNotNull(serializedBtcTransaction);
@@ -139,8 +139,8 @@ class BridgeSerializationUtilsTest {
     @EmptySource
     void deserializeBtcTransaction_withInvalidData_shouldReturnNull(byte[] data) {
         // Act
-        BtcTransaction deserializedTxWithInputs = BridgeSerializationUtils.deserializeBtcTransaction(data, MAINNET_PARAMETERS, true);
-        BtcTransaction deserializedTxWithoutInputs = BridgeSerializationUtils.deserializeBtcTransaction(data, MAINNET_PARAMETERS, false);
+        BtcTransaction deserializedTxWithInputs = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(data, MAINNET_PARAMETERS);
+        BtcTransaction deserializedTxWithoutInputs = BridgeSerializationUtils.deserializeBtcTransactionWithoutInputs(data, MAINNET_PARAMETERS);
 
         // Assert
         assertNull(deserializedTxWithInputs);
@@ -161,7 +161,7 @@ class BridgeSerializationUtilsTest {
 
         // Act
         byte[] serializedSvpFundTransaction = BridgeSerializationUtils.serializeBtcTransaction(svpFundTx);
-        BtcTransaction deserializedSvpFundTransaction = BridgeSerializationUtils.deserializeSvpFundTx(serializedSvpFundTransaction, MAINNET_PARAMETERS);
+        BtcTransaction deserializedSvpFundTransaction = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(serializedSvpFundTransaction, MAINNET_PARAMETERS);
 
         // Assert
         assertNotNull(serializedSvpFundTransaction);
@@ -174,7 +174,7 @@ class BridgeSerializationUtilsTest {
     @EmptySource
     void deserializeSvpFundTransaction_withInvalidData_shouldReturnNull(byte[] data) {
         // Act
-        BtcTransaction result = BridgeSerializationUtils.deserializeSvpFundTx(data, MAINNET_PARAMETERS);
+        BtcTransaction result = BridgeSerializationUtils.deserializeBtcTransactionWithInputs(data, MAINNET_PARAMETERS);
 
         // Assert
         assertNull(result);
