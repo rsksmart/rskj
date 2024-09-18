@@ -494,8 +494,8 @@ public class BridgeStorageProvider {
         );
 
         return data != null &&
-            data.length == 1 &&
-            data[0] == TRUE_VALUE;
+           data.length == 1 &&
+           data[0] == TRUE_VALUE;
     }
 
     public void setPegoutTxSigHash(Sha256Hash sigHash) {

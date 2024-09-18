@@ -172,7 +172,7 @@ public class BridgeSerializationUtils {
     }
 
     private static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignaturesEntry(
-        RLPList rlpList, int index, NetworkParameters networkParameters) {
+            RLPList rlpList, int index, NetworkParameters networkParameters) {
 
         byte[] rskTxHashData = rlpList.get(index * 2).getRLPData();
         Keccak256 rskTxHash = deserializeRskTxHashFromRLPData(rskTxHashData);
