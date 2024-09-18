@@ -722,10 +722,10 @@ class PowpegMigrationTest {
                 Script inputRedeemScript = new Script(inputScriptChunks.get(inputScriptChunks.size() - 1).data);
 
                 // Get the standard redeem script to compare against, since it could be a flyover redeem script
-                ScriptParserResult result = ScriptParser.parseScriptProgram(inputRedeemScript.getProgram());
-                assertFalse(result.getException().isPresent());
+                List<ScriptChunk> redeemScriptChunks = ScriptParser.parseScriptProgram(
+                    inputRedeemScript.getProgram());
 
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(result.getChunks());
+                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptChunks);
                 List<ScriptChunk> inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
                 Script inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
 
