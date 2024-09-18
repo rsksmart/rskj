@@ -601,7 +601,7 @@ public class BridgeStorageProvider {
 
         svpSpendTxWaitingForSignatures = safeGetFromRepository(
             SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
-            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters, false));
+            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters));
 
         return Optional.ofNullable(svpSpendTxWaitingForSignatures);
     }
