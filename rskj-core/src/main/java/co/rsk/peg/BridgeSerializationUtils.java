@@ -65,7 +65,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeElement(rskTxHash.getBytes());
     }
 
-    private static Keccak256 deserializeRskTxHashFromHashBytes(byte[] hashBytes) {
+    private static Keccak256 deserializeRskTxHashFromHashData(byte[] hashBytes) {
         return new Keccak256(hashBytes);
     }
 
@@ -175,8 +175,9 @@ public class BridgeSerializationUtils {
     private static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignaturesEntry(
             RLPList rlpList, int index, NetworkParameters networkParameters) {
 
-        byte[] rskTxHashData = rlpList.get(index * 2).getRLPData();
-        Keccak256 rskTxHash = deserializeRskTxHashFromHashBytes(rskTxHashData);
+        RLPElement rskTxHashRLPElement = rlpList.get(index * 2);
+        byte[] rskTxHashData = rskTxHashRLPElement.getRLPData();
+        Keccak256 rskTxHash = deserializeRskTxHashFromHashData(rskTxHashData);
 
         RLPElement btcTxRLPElement = rlpList.get(index * 2 + 1);
         byte[] btcRawTx = btcTxRLPElement.getRLPData();
@@ -657,7 +658,7 @@ public class BridgeSerializationUtils {
             Address address = new Address(networkParameters, addressBytes);
             long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
 
-            Keccak256 txHash = deserializeRskTxHashFromHashBytes(rlpList.get(k * 3 + 2).getRLPData());
+            Keccak256 txHash = deserializeRskTxHashFromHashData(rlpList.get(k * 3 + 2).getRLPData());
 
             entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), txHash));
         }
@@ -750,7 +751,7 @@ public class BridgeSerializationUtils {
             BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
 
             long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
-            Keccak256 rskTxHash = deserializeRskTxHashFromHashBytes(rlpList.get(k * 3 + 2).getRLPData());
+            Keccak256 rskTxHash = deserializeRskTxHashFromHashData(rlpList.get(k * 3 + 2).getRLPData());
 
             entries.add(new PegoutsWaitingForConfirmations.Entry(tx, height, rskTxHash));
         }
@@ -839,7 +840,7 @@ public class BridgeSerializationUtils {
         if (rlpList.size() != 2) {
             throw new RuntimeException(String.format("Invalid serialized Fast Bridge Federation: expected 2 value but got %d", rlpList.size()));
         }
-        Keccak256 derivationHash = deserializeRskTxHashFromHashBytes(rlpList.get(0).getRLPData());
+        Keccak256 derivationHash = deserializeRskTxHashFromHashData(rlpList.get(0).getRLPData());
         byte[] federationP2SH = rlpList.get(1).getRLPData();
 
         return new FlyoverFederationInformation(derivationHash, federationP2SH, flyoverScriptHash);
