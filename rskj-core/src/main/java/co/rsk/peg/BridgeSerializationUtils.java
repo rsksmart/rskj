@@ -73,7 +73,15 @@ public class BridgeSerializationUtils {
         return RLP.encodeElement(btcTransaction.bitcoinSerialize());
     }
 
-    public static BtcTransaction deserializeBtcTransaction(
+    public static BtcTransaction deserializeBtcTransactionWithInputs(byte[] serializedTx, NetworkParameters networkParameters) {
+        return deserializeBtcTransaction(serializedTx, networkParameters, true);
+    }
+
+    public static BtcTransaction deserializeBtcTransactionWithoutInputs(byte[] serializedTx, NetworkParameters networkParameters) {
+        return deserializeBtcTransaction(serializedTx, networkParameters, false);
+    }
+
+    private static BtcTransaction deserializeBtcTransaction(
         byte[] serializedTx,
         NetworkParameters networkParameters,
         boolean txHasInputs) {
@@ -84,7 +92,12 @@ public class BridgeSerializationUtils {
 
         RLPElement rawTxElement = RLP.decode2(serializedTx).get(0);
         byte[] rawTx = rawTxElement.getRLPData();
+
         return deserializeBtcTransactionFromRawTx(rawTx, networkParameters, txHasInputs);
+    }
+
+    private static BtcTransaction deserializeBtcTransactionWithInputsFromRawTx(byte[] rawTx, NetworkParameters networkParameters) {
+        return deserializeBtcTransactionFromRawTx(rawTx, networkParameters, true);
     }
 
     private static BtcTransaction deserializeBtcTransactionFromRawTx(
@@ -99,10 +112,6 @@ public class BridgeSerializationUtils {
         }
 
         return new BtcTransaction(networkParameters, rawTx);
-    }
-
-    public static BtcTransaction deserializeSvpFundTx(byte[] serializedTx, NetworkParameters networkParameters) {
-        return deserializeBtcTransaction(serializedTx, networkParameters, true);
     }
 
     public static byte[] serializeRskTxWaitingForSignatures(
@@ -181,7 +190,7 @@ public class BridgeSerializationUtils {
 
         RLPElement btcTxRLPElement = rlpList.get(index * 2 + 1);
         byte[] btcRawTx = btcTxRLPElement.getRLPData();
-        BtcTransaction btcTx = deserializeBtcTransactionFromRawTx(btcRawTx, networkParameters, true);
+        BtcTransaction btcTx = deserializeBtcTransactionWithInputsFromRawTx(btcRawTx, networkParameters);
 
         return new AbstractMap.SimpleEntry<>(rskTxHash, btcTx);
     }
