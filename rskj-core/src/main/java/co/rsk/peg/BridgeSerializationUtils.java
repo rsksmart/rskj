@@ -105,14 +105,14 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializeRskTxWaitingForSignatures(
-        Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
+          Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
         byte[][] serializedRskTxWaitingForSignaturesEntry =
             serializeRskTxWaitingForSignaturesEntry(rskTxWaitingForSignaturesEntry);
         return RLP.encodeList(serializedRskTxWaitingForSignaturesEntry);
     }
 
     public static byte[] serializeRskTxsWaitingForSignatures(
-        SortedMap<Keccak256, BtcTransaction> rskTxWaitingForSignaturesMap) {
+          SortedMap<Keccak256, BtcTransaction> rskTxWaitingForSignaturesMap) {
 
         int numberOfRskTxsWaitingForSignatures = rskTxWaitingForSignaturesMap.size();
         byte[][] serializedRskTxWaitingForSignaturesMap = new byte[numberOfRskTxsWaitingForSignatures * 2][];
@@ -128,7 +128,7 @@ public class BridgeSerializationUtils {
     }
 
     private static byte[][] serializeRskTxWaitingForSignaturesEntry(
-        Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
+          Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignaturesEntry) {
 
         byte[] serializedRskTxWaitingForSignaturesEntryKey =
             serializeRskTxHash(rskTxWaitingForSignaturesEntry.getKey());
@@ -139,7 +139,7 @@ public class BridgeSerializationUtils {
     }
 
     public static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignatures(
-        byte[] data, NetworkParameters networkParameters) {
+            byte[] data, NetworkParameters networkParameters) {
 
         if (data == null || data.length == 0) {
             return null;
@@ -150,7 +150,7 @@ public class BridgeSerializationUtils {
     }
 
     public static SortedMap<Keccak256, BtcTransaction> deserializeRskTxsWaitingForSignatures(
-        byte[] data, NetworkParameters networkParameters) {
+            byte[] data, NetworkParameters networkParameters) {
 
         SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignaturesMap = new TreeMap<>();
 
