@@ -106,7 +106,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           if [ "$GH_EVENT" = pull_request ]; then
-            ./gradlew sonarqube --no-daemon -x build -x test \
+            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
               -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
               -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
               -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
@@ -117,7 +117,7 @@ jobs:
               -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
               -Dsonar.token="$SONAR_TOKEN"
           else
-            ./gradlew sonarqube --no-daemon -x build -x test \
+            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
               -Dsonar.branch.name="$GH_REF" \
               -Dsonar.organization=rsksmart \
               -Dsonar.projectKey=rskj \
