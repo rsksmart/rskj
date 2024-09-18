@@ -78,7 +78,7 @@ class PegUtilsTest {
     @ParameterizedTest
     @MethodSource("derivationHashAndRedeemScriptArgs")
     void getFlyoverAddress_fromRealValues_shouldReturnSameRealAddress(Keccak256 flyoverDerivationHash, Script redeemScript) {
-        Address flyoverAddress = new Address(btcMainnetParams, "33y8JWrSe4byp3DKmy2Mkyykz2dzP8Lmvn");
+        Address flyoverAddress = Address.fromBase58(btcMainnetParams, "33y8JWrSe4byp3DKmy2Mkyykz2dzP8Lmvn");
 
         assertEquals(flyoverAddress, getFlyoverAddress(btcMainnetParams, flyoverDerivationHash, redeemScript));
     }
