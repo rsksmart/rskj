@@ -49,7 +49,7 @@ jobs:
 
             # On lines matching "`$_prefix:...`", replace the lines with the
             # thing in ... and print the result.
-            _branch=$(sed -n "/\`$_prefix:$ALLOWED_BRANCH_CHARACTERS\{1,\}\`/ s/.*\`$_prefix:\($ALLOWED_BRANCH_CHARACTERS\{1,\}\)\`.*/\1/p" "$PR_DESCRIPTION")
+            _branch=$(sed -n "\\,\`$_prefix:$ALLOWED_BRANCH_CHARACTERS\{1,\}\`, s,.*\`$_prefix:\($ALLOWED_BRANCH_CHARACTERS\{1,\}\)\`.*,\1,p" "$PR_DESCRIPTION")
             echo "$_branch"
           }
 
