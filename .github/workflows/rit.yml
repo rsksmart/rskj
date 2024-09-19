@@ -28,69 +28,74 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
-      - name: Fetch Pull Request Description
-        id: fetch-pr-description
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          {
-            echo 'pr_description<<EOF'
-            gh pr view ${{ github.event.pull_request.number }} --json body -q .body
-            echo EOF
-          } >> "$GITHUB_ENV"
-
       - name: Set Branch Variables
         id: set-branch-variables
         env:
-          PR_DESCRIPTION: ${{ env.pr_description }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_event_input_powpeg_branch: ${{ github.event.inputs.powpeg-branch }}
+          github_event_input_rit_branch: ${{ github.event.inputs.rit-branch }}
+          github_event_name: ${{ github.event_name }}
+          github_event_pull_request_number: ${{ github.event.pull_request.number }}
+          github_head_ref: ${{ github.head_ref }}
+          github_ref_name: ${{ github.ref_name }}
         run: |
-          # Default values
-          RSKJ_BRANCH="master"
-        
-          # Set the RSKJ branch
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RSKJ_BRANCH="${{ github.ref_name }}"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            if [[  "$PR_DESCRIPTION" =~ '`'rskj:${{ env.REGEX_PARSE_BRANCH }}'`' ]]; then
-              RSKJ_BRANCH="${BASH_REMATCH[1]}"
-            else
-              RSKJ_BRANCH="${{ github.head_ref }}"
-            fi
-          fi
-        
-          # Set the Powpeg branch
-          if [[ -n "${{ github.event.inputs.powpeg-branch }}" ]]; then
-            POWPEG_BRANCH="${{ github.event.inputs.powpeg-branch }}"
-          elif [[ "$PR_DESCRIPTION" =~ '`'fed:${{ env.REGEX_PARSE_BRANCH }}'`' ]]; then
-            POWPEG_BRANCH="${BASH_REMATCH[1]}"
+          PR_DESCRIPTION=pr-description.txt
+
+          ALLOWED_BRANCH_CHARACTERS='[-./0-9A-Z_a-z]'
+
+          default_rskj_branch=master
+          default_powpeg_branch=master
+          default_rit_branch=main
+
+          get_branch_from_description()
+          {
+            _prefix=$1
+
+            # On lines matching "`$_prefix:...`", replace the lines with the
+            # thing in ... and print the result.
+            _branch=$(sed -n "/\`$_prefix:$ALLOWED_BRANCH_CHARACTERS\{1,\}\`/ s/.*\`$_prefix:\($ALLOWED_BRANCH_CHARACTERS\{1,\}\)\`.*/\1/p" "$PR_DESCRIPTION")
+            echo "$_branch"
+          }
+
+          is_valid_branch_name()
+          {
+            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\{1,\}"
+          }
+
+          if [ "$github_event_name" = workflow_dispatch ]; then
+            RSKJ_BRANCH=$github_ref_name
+            POWPEG_BRANCH=${github_event_inputs_powpeg_branch:-$default_powpeg_branch}
+            RIT_BRANCH=${github_event_inputs_powpeg_branch:-$default_rit_branch}
+          elif [ "$github_event_name" = pull_request ]; then
+            gh pr view "$github_event_pull_request_number" --json body -q .body >"$PR_DESCRIPTION"
+
+            RSKJ_BRANCH=$(get_branch_from_description rskj)
+            : ${RSKJ_BRANCH:=${github_head_ref:-$default_rskj_branch}}
+
+            POWPEG_BRANCH=$(get_branch_from_description fed)
+            : ${POWPEG_BRANCH:=$default_powpeg_branch}
+
+            RIT_BRANCH=$(get_branch_from_description rit)
+            : ${RIT_BRANCH:=$default_rit_branch}
           else
-            POWPEG_BRANCH="master"
+            RSKJ_BRANCH=$default_rskj_branch
+            POWPEG_BRANCH=$default_powpeg_branch
+            RIT_BRANCH=$default_rit_branch
           fi
-          
-          # Set the RIT branch
-          if [[ -n "${{ github.event.inputs.rit-branch }}" ]]; then
-            RIT_BRANCH="${{ github.event.inputs.rit-branch }}"
-          elif [[ "$PR_DESCRIPTION" =~ '`'rit:${{ env.REGEX_PARSE_BRANCH }}'`' ]]; then
-            RIT_BRANCH="${BASH_REMATCH[1]}"
-          else
-            RIT_BRANCH="main"
-          fi
-          
-          if ! [[ "$RIT_BRANCH" =~  ${{ env.VALID_BRANCH_REGEX }} ]]; then
-            echo "Error: Invalid RIT branch name: $RIT_BRANCH"
+
+          if ! is_valid_branch_name "$RSKJ_BRANCH"; then
+            echo "rskj: invalid branch name: $RSKJ_BRANCH" >&2
             exit 1
           fi
-          
-          if ! [[ "$POWPEG_BRANCH" =~  ${{ env.VALID_BRANCH_REGEX }} ]]; then
-            echo "Error: Invalid PowPeg branch name: $POWPEG_BRANCH"
+          if ! is_valid_branch_name "$POWPEG_BRANCH"; then
+            echo "fed: invalid branch name: $POWPEG_BRANCH" >&2
             exit 1
           fi
-          
-          if ! [[ "$RSKJ_BRANCH" =~ ${{ env.VALID_BRANCH_REGEX }} ]]; then
-            echo "Error: Invalid RSKJ branch name: $RSKJ_BRANCH"
+          if ! is_valid_branch_name "$RIT_BRANCH"; then
+            echo "rit: invalid branch name: $RIT_BRANCH" >&2
             exit 1
           fi
-          
+
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
