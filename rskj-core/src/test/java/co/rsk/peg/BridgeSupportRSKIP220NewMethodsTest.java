@@ -61,7 +61,7 @@ class BridgeSupportRSKIP220NewMethodsTest {
 
         when(btcBlockStore.getStoredBlockAtMainChainHeight(height)).thenReturn(new StoredBlock(btcBlock, BigInteger.ONE, height));
 
-        bridgeSupport = new BridgeSupportBuilder()
+        bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withActivations(activationsAfterForks)
