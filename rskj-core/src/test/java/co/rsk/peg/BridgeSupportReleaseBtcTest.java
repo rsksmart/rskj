@@ -1264,17 +1264,290 @@ class BridgeSupportReleaseBtcTest {
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
-        verify(repository, times(1)).transfer(BRIDGE_ADDRESS, senderAddress, pegoutRequestValue);
+        verify(repository, times(1)).transfer(
+            BRIDGE_ADDRESS,
+            senderAddress,
+            pegoutRequestValue
+        );
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, logInfo.size());
 
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
             senderAddress,
             pegoutRequestValue,
             RejectedPegoutReason.FEE_ABOVE_VALUE
         );
+    }
+
+    @Test
+    void low_amount_release_request_rejected_before_rskip427_value_in_satoshis() throws IOException {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        eventLogger = spy(new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            arrowheadActivations,
+            logInfo,
+            signatureCache
+        ));
+        bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
+
+        Coin belowPegoutMinimumValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().minus(Coin.SATOSHI);
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(belowPegoutMinimumValue);
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        verify(repository, times(1)).transfer(
+            BRIDGE_ADDRESS,
+            senderAddress,
+            pegoutRequestValue
+        );
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            senderAddress,
+            pegoutRequestValue,
+            RejectedPegoutReason.LOW_AMOUNT
+        );
+
+        LogInfo firstLog = logInfo.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
+
+        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
+        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+    }
+
+    @Test
+    void low_amount_release_request_rejected_after_rskip427_value_in_weis() throws IOException {
+        List<LogInfo> logInfo = new ArrayList<>();
+        eventLogger = spy(new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            ACTIVATIONS_ALL,
+            logInfo,
+            signatureCache
+        ));
+        bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
+
+        Coin belowPegoutMinimumValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().minus(Coin.SATOSHI);
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(belowPegoutMinimumValue);
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        verify(repository, times(1)).transfer(
+            BRIDGE_ADDRESS,
+            senderAddress,
+            pegoutRequestValue
+        );
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            senderAddress,
+            pegoutRequestValue,
+            RejectedPegoutReason.LOW_AMOUNT
+        );
+
+        LogInfo firstLog = logInfo.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
+
+        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
+        assertEquals(pegoutRequestValue.asBigInteger(), amount);
+    }
+
+    @Test
+    void contract_caller_release_request_rejected_before_rskip427_value_in_satoshis() throws IOException {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        eventLogger = spy(new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            arrowheadActivations,
+            logInfo,
+            signatureCache
+        ));
+        bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
+
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        verify(repository, never()).transfer(any(), any(), any());
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            senderAddress,
+            pegoutRequestValue,
+            RejectedPegoutReason.CALLER_CONTRACT
+        );
+
+        LogInfo firstLog = logInfo.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
+
+        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
+        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+    }
+
+    @Test
+    void contract_caller_release_request_rejected_after_rskip427_value_in_weis() throws IOException {
+        List<LogInfo> logInfo = new ArrayList<>();
+        eventLogger = spy(new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            ACTIVATIONS_ALL,
+            logInfo,
+            signatureCache
+        ));
+        bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
+
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        verify(repository, never()).transfer(any(), any(), any());
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            senderAddress,
+            pegoutRequestValue,
+            RejectedPegoutReason.CALLER_CONTRACT
+        );
+
+        LogInfo firstLog = logInfo.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
+
+        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
+        assertEquals(pegoutRequestValue.asBigInteger(), amount);
+    }
+
+    @Test
+    void fee_above_value_release_request_rejected_before_rskip427_value_in_satoshis() throws IOException {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+
+        List<LogInfo> logInfo = new ArrayList<>();
+        eventLogger = spy(new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            arrowheadActivations,
+            logInfo,
+            signatureCache
+        ));
+        bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
+        // Set a high fee per kb to ensure the resulting pegout is above the min pegout value
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
+
+        int pegoutSize = BridgeUtils.getRegularPegoutTxSize(
+            ACTIVATIONS_ALL,
+            federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, arrowheadActivations)
+        );
+        Coin minValueAccordingToFee = feePerKbSupport.getFeePerKb().div(1000).times(pegoutSize);
+        Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(
+            BRIDGE_CONSTANTS.getMinimumPegoutValuePercentageToReceiveAfterFee()).div(100)
+        );
+
+        Coin pegoutRequestValueWithGapAboveFee = minValueWithGapAboveFee.minus(Coin.SATOSHI);
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(pegoutRequestValueWithGapAboveFee);
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        verify(repository, times(1)).transfer(
+            BRIDGE_ADDRESS,
+            senderAddress,
+            pegoutRequestValue
+        );
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            senderAddress,
+            pegoutRequestValue,
+            RejectedPegoutReason.FEE_ABOVE_VALUE
+        );
+
+        LogInfo firstLog = logInfo.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
+
+        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
+        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+    }
+
+    @Test
+    void fee_above_value_release_request_rejected_after_rskip427_value_in_weis() throws IOException {
+        List<LogInfo> logInfo = new ArrayList<>();
+        eventLogger = spy(new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            ACTIVATIONS_ALL,
+            logInfo,
+            signatureCache
+        ));
+        bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
+        // Set a high fee per kb to ensure the resulting pegout is above the min pegout value
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
+
+        int pegoutSize = BridgeUtils.getRegularPegoutTxSize(
+            ACTIVATIONS_ALL,
+            federationStorageProvider.getNewFederation(FEDERATION_CONSTANTS, ACTIVATIONS_ALL)
+        );
+        Coin minValueAccordingToFee = feePerKbSupport.getFeePerKb().div(1000).times(pegoutSize);
+        Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(
+            BRIDGE_CONSTANTS.getMinimumPegoutValuePercentageToReceiveAfterFee()).div(100)
+        );
+
+        Coin pegoutRequestValueWithGapAboveFee = minValueWithGapAboveFee.minus(Coin.SATOSHI);
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(pegoutRequestValueWithGapAboveFee);
+
+        bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
+
+        RskAddress senderAddress = new RskAddress(SENDER.getAddress());
+
+        verify(repository, times(1)).transfer(
+            BRIDGE_ADDRESS,
+            senderAddress,
+            pegoutRequestValue
+        );
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+
+        assertEquals(1, logInfo.size());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(
+            senderAddress,
+            pegoutRequestValue,
+            RejectedPegoutReason.FEE_ABOVE_VALUE
+        );
+
+        LogInfo firstLog = logInfo.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
+        assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
+
+        BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
+        assertEquals(pegoutRequestValue.asBigInteger(), amount);
     }
 
     /**********************************
@@ -1328,13 +1601,13 @@ class BridgeSupportReleaseBtcTest {
             releaseTransaction.getHash().getBytes(),
             400,
             0,
-            NONCE.toByteArray(),
-            DataWord.valueOf(GAS_PRICE.intValue()),
-            DataWord.valueOf(GAS_LIMIT.intValue()),
-            SENDER.getAddress(),
-            BRIDGE_ADDRESS.getBytes(),
-            co.rsk.core.Coin.fromBitcoin(Coin.COIN).getBytes(),
-            Hex.decode(DATA),
+            releaseTransaction.getNonce(),
+            DataWord.valueOf(releaseTransaction.getGasPrice().asBigInteger().longValue()),
+            DataWord.valueOf(releaseTransaction.getGasLimit()),
+            releaseTransaction.getSender().getBytes(),
+            releaseTransaction.getReceiveAddress().getBytes(),
+            releaseTransaction.getValue().getBytes(),
+            releaseTransaction.getData(),
             "",
             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
