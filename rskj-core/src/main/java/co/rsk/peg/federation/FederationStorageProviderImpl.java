@@ -22,10 +22,11 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationStorageProviderImpl implements FederationStorageProvider {
     private final StorageAccessor bridgeStorageAccessor;
+    private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
+
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
     private Federation newFederation;
-    private HashMap<DataWord, Optional<Integer>> storageVersionEntries;
     private Federation oldFederation;
     private boolean shouldSaveOldFederation = false;
 

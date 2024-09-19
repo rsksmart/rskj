@@ -33,7 +33,7 @@ public class BridgeSupportBuilder {
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
 
-    public BridgeSupportBuilder() {
+    private BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
         this.provider = mock(BridgeStorageProvider.class);
         this.eventLogger = mock(BridgeEventLogger.class);
@@ -48,6 +48,10 @@ public class BridgeSupportBuilder {
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.signatureCache = mock(BlockTxSignatureCache.class);
+    }
+
+    public static BridgeSupportBuilder builder() {
+        return new BridgeSupportBuilder();
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {

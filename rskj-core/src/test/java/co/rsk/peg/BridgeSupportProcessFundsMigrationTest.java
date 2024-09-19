@@ -156,15 +156,14 @@ class BridgeSupportProcessFundsMigrationTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
-        FederationSupport federationSupport = federationSupportBuilder
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .build();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
             .withEventLogger(bridgeEventLogger)
@@ -223,21 +222,21 @@ class BridgeSupportProcessFundsMigrationTest {
 
     private Transaction buildUpdateCollectionsTransaction() {
         final String TO_ADDRESS = "0000000000000000000000000000000000000006";
-        final BigInteger DUST_AMOUNT = new BigInteger("1");
-        final BigInteger NONCE = new BigInteger("0");
-        final BigInteger GAS_PRICE = new BigInteger("100");
-        final BigInteger GAS_LIMIT = new BigInteger("1000");
+        final BigInteger dustAmount = new BigInteger("1");
+        final BigInteger nonce = new BigInteger("0");
+        final BigInteger gasPrice = new BigInteger("100");
+        final BigInteger gasLimit = new BigInteger("1000");
         final String DATA = "80af2871";
 
         return Transaction
             .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
+            .nonce(nonce)
+            .gasPrice(gasPrice)
+            .gasLimit(gasLimit)
             .destination(Hex.decode(TO_ADDRESS))
             .data(Hex.decode(DATA))
             .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
+            .value(dustAmount)
             .build();
     }
 }

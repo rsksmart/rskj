@@ -15,11 +15,15 @@ public class FederationSupportBuilder {
     private Block rskExecutionBlock;
     private ActivationConfig.ForBlock activations;
 
-    public FederationSupportBuilder() {
+    private FederationSupportBuilder() {
         this.federationConstants = mock(FederationConstants.class);
         this.federationStorageProvider = mock(FederationStorageProvider.class);
         this.rskExecutionBlock = mock(Block.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
+    }
+
+    public static FederationSupportBuilder builder() {
+        return new FederationSupportBuilder();
     }
 
     public FederationSupportBuilder withFederationConstants(FederationConstants federationConstants) {
