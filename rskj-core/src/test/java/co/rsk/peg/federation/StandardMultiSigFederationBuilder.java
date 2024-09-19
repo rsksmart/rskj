@@ -3,13 +3,12 @@ package co.rsk.peg.federation;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import org.ethereum.crypto.ECKey;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.ethereum.crypto.ECKey;
 
 public class StandardMultiSigFederationBuilder {
     private List<BtcECKey> membersBtcPublicKeys;
@@ -19,15 +18,27 @@ public class StandardMultiSigFederationBuilder {
     private long creationBlockNumber;
     private NetworkParameters networkParameters;
 
-    public StandardMultiSigFederationBuilder() {
-        this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
-        );
+    private StandardMultiSigFederationBuilder() {
+        this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01",
+            "member02",
+            "member03",
+            "member04",
+            "member05",
+            "member06",
+            "member07",
+            "member08",
+            "member09"
+        }, true);
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
         this.creationTime = Instant.ofEpochMilli(10L);
         this.creationBlockNumber = 1L;
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+    }
+
+    public static StandardMultiSigFederationBuilder builder() {
+        return new StandardMultiSigFederationBuilder();
     }
 
     public StandardMultiSigFederationBuilder withMembersBtcPublicKeys(List<BtcECKey> membersPublicKeys) {

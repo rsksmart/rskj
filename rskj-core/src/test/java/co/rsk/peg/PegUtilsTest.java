@@ -46,7 +46,6 @@ class PegUtilsTest {
     private Federation retiringFederation;
     private Federation activeFederation;
 
-
     @BeforeEach
     void init() {
         provider = mock(BridgeStorageProvider.class);
@@ -103,7 +102,6 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_below_minimum_active_fed() {
         // Arrange
-        Federation activeFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
         Wallet liveFederationWallet = new BridgeBtcWallet(context, Collections.singletonList(activeFederation));
 
         Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(activations);
@@ -195,8 +193,6 @@ class PegUtilsTest {
     @Test
     void test_getTransactionType_pegin_output_to_retiring_fed_and_other_addresses() {
         // Arrange
-        Federation retiringFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
-
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true
         );
@@ -556,7 +552,7 @@ class PegUtilsTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder().build();
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder().build();
         Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
@@ -595,9 +591,6 @@ class PegUtilsTest {
         // Arrange
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
         NetworkParameters btcTestNetParams = bridgeTestNetConstants.getBtcParams();
-        Context context = new Context(bridgeTestNetConstants.getBtcParams());
-
-        Federation retiringFederation = FederationTestUtils.getGenesisFederation(federationMainNetConstants);
 
         List<BtcECKey> signers = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true

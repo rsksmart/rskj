@@ -80,13 +80,13 @@ class BridgeSupportSigHashTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withActivations(activations)
             .build();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withActivations(activations)
@@ -150,14 +150,14 @@ class BridgeSupportSigHashTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .build();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withExecutionBlock(rskCurrentBlock)
@@ -234,14 +234,14 @@ class BridgeSupportSigHashTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
-        FederationSupport federationSupport = new FederationSupportBuilder()
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(rskCurrentBlock)
             .withActivations(activations)
             .build();
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withExecutionBlock(rskCurrentBlock)
