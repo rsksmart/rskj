@@ -596,7 +596,7 @@ class PegUtilsLegacyTest {
             networkParameters
         );
 
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(
+        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.of(
             activeFederation.getBtcPublicKeys(),
             activeFederation.getNumberOfSignaturesRequired(),
             standardMultisigFederation.getBtcPublicKeys(),
@@ -653,7 +653,7 @@ class PegUtilsLegacyTest {
             networkParameters
         );
 
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(
+        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.of(
             activeFederation.getBtcPublicKeys(),
             activeFederation.getNumberOfSignaturesRequired(),
             standardMultisigFederation.getBtcPublicKeys(),
@@ -698,7 +698,7 @@ class PegUtilsLegacyTest {
             networkParameters
         );
 
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.createRedeemScriptFromKeys(
+        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.of(
             activeFederation.getBtcPublicKeys(),
             activeFederation.getNumberOfSignaturesRequired(),
             standardMultisigFederation.getBtcPublicKeys(),
