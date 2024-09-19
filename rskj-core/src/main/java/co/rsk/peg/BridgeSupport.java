@@ -2431,10 +2431,8 @@ public class BridgeSupport {
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash, Federation federation) {
-        FlyoverRedeemScriptBuilderImpl flyoverRedeemScriptBuilder = FlyoverRedeemScriptBuilderImpl.builder();
-
         Script federationRedeemScript = federation.getRedeemScript();
-        Script flyoverRedeemScript = flyoverRedeemScriptBuilder.of(
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             federationRedeemScript
         );

@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
@@ -1494,7 +1495,7 @@ class BridgeUtilsTest {
         }
 
         if (isFlyover) {
-            Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(1);
+            Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
 
             Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
                 flyoverDerivationHash,

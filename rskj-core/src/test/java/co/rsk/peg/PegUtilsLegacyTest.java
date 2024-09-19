@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
@@ -499,7 +500,7 @@ class PegUtilsLegacyTest {
 
         Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
-        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(1);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             activeFederation.getRedeemScript()
@@ -523,7 +524,7 @@ class PegUtilsLegacyTest {
 
         Federation activeFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
-        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(1);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             activeFederation.getRedeemScript()
@@ -757,7 +758,7 @@ class PegUtilsLegacyTest {
         );
         tx.addInput(txInput);
 
-        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(2);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             retiredFederation.getRedeemScript()
@@ -809,7 +810,7 @@ class PegUtilsLegacyTest {
         );
         tx.addInput(txInput);
 
-        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(2);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             retiredFederation.getRedeemScript()
@@ -1256,7 +1257,7 @@ class PegUtilsLegacyTest {
 
         ErpFederation p2shErpFederation = FederationFactory.buildP2shErpFederation(activeFederationArgs, emergencyKeys, activationDelay);
 
-        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(2);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             p2shErpFederation.getRedeemScript()
@@ -1915,7 +1916,7 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(2);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(2);
         Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
             flyoverDerivationHash,
             standardMultisigFederation.getRedeemScript()
