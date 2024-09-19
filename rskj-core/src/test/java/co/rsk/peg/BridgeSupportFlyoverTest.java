@@ -18,12 +18,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
@@ -3481,22 +3481,23 @@ class BridgeSupportFlyoverTest {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Script federationRedeemScript = genesisFederation.getRedeemScript();
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federationRedeemScript,
-            BitcoinTestUtils.createHash(1)
+        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(1);
+
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            federationRedeemScript
         );
 
-        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        Keccak256 derivationHash = PegTestUtils.createHash3(1);
+        Script flyoverP2SHScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
 
         FlyoverFederationInformation expectedFlyoverFederationInformation =
-            new FlyoverFederationInformation(derivationHash,
+            new FlyoverFederationInformation(flyoverDerivationHash,
                 activeFederation.getP2SHScript().getPubKeyHash(),
-                flyoverP2SH.getPubKeyHash()
+                flyoverP2SHScript.getPubKeyHash()
             );
 
         FlyoverFederationInformation obtainedFlyoverFedInfo =
-            bridgeSupport.createFlyoverFederationInformation(derivationHash);
+            bridgeSupport.createFlyoverFederationInformation(flyoverDerivationHash);
 
         assertEquals(
             expectedFlyoverFederationInformation.getFlyoverFederationAddress(btcRegTestParams),
@@ -3534,9 +3535,9 @@ class BridgeSupportFlyoverTest {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            genesisFederation.getRedeemScript(),
-            Sha256Hash.wrap(derivationHash.getBytes())
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            derivationHash,
+            genesisFederation.getRedeemScript()
         );
 
         Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
@@ -3661,13 +3662,14 @@ class BridgeSupportFlyoverTest {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         Script federationRedeemScript = genesisFederation.getRedeemScript();
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federationRedeemScript,
-            BitcoinTestUtils.createHash(1)
+        Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(1);
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            federationRedeemScript
         );
 
-        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        return Address.fromP2SHScript(btcRegTestParams, flyoverP2SH);
+        Script flyoverP2SHScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        return Address.fromP2SHScript(btcRegTestParams, flyoverP2SHScript);
     }
 
     private interface BtcTransactionProvider {
