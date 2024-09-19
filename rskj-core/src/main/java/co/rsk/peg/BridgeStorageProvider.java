@@ -243,7 +243,7 @@ public class BridgeStorageProvider {
 
         pegoutsWaitingForSignatures = getFromRepository(
             PEGOUTS_WAITING_FOR_SIGNATURES,
-            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters, false)
+            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters)
         );
         return pegoutsWaitingForSignatures;
     }
@@ -601,7 +601,7 @@ public class BridgeStorageProvider {
 
         svpSpendTxWaitingForSignatures = safeGetFromRepository(
             SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
-            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters, false));
+            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters));
 
         return Optional.ofNullable(svpSpendTxWaitingForSignatures);
     }
