@@ -15,10 +15,6 @@ on:
         required: false
         default: 'master'
 
-env:
-  REGEX_PARSE_BRANCH: '([a-zA-Z0-9/_-]+)'
-  VALID_BRANCH_REGEX: '^[a-zA-Z0-9._/-]+$'
-
 jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests
