@@ -1,5 +1,6 @@
 package co.rsk.peg.performance;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -159,7 +160,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
             Script federationRedeemScript = genesisFederation.getRedeemScript();
 
             Keccak256 flyoverDerivationHash = getFlyoverDerivationHash(
-                PegTestUtils.createHash3(1),
+                RskTestUtils.createHash(1),
                 AddressesBuilder.userRefundAddress,
                 AddressesBuilder.lpBtcAddress,
                 AddressesBuilder.lbcAddress
