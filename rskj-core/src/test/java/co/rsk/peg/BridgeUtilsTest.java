@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -1493,23 +1494,12 @@ class BridgeUtilsTest {
         }
 
         if (isFlyover) {
-            // Create fast bridge redeem script
-            Sha256Hash derivationArgumentsHash = Sha256Hash.of(new byte[]{1});
-            Script flyoverRedeemScript;
+            Keccak256 flyoverDerivationHash = PegTestUtils.createHash3(1);
 
-            if (federation instanceof ErpFederation) {
-                flyoverRedeemScript =
-                    FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-                        federation.getRedeemScript(),
-                        derivationArgumentsHash
-                    );
-            } else {
-                flyoverRedeemScript =
-                    FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                        federation.getRedeemScript(),
-                        derivationArgumentsHash
-                    );
-            }
+            Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                flyoverDerivationHash,
+                federation.getRedeemScript()
+            );
 
             Script flyoverP2SH = ScriptBuilder
                 .createP2SHOutputScript(flyoverRedeemScript);
