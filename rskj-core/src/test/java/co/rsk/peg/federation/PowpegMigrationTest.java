@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.*;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
@@ -1197,12 +1198,11 @@ class PowpegMigrationTest {
             pos,
             liquidityProviderBtcAddressHash160.length
         );
-        Keccak256 derivationHash = new Keccak256(HashUtil.keccak256(infoToHash));
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            recipientFederation.getRedeemScript(),
-            Sha256Hash.wrap(derivationHash.toHexString())
-            // Parsing to Sha256Hash in order to use helper. Does not change functionality
+        Keccak256 flyoverDerivationHash = new Keccak256(HashUtil.keccak256(infoToHash));
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            recipientFederation.getRedeemScript()
         );
 
         Address recipient = getAddressFromRedeemScript(bridgeConstants, flyoverRedeemScript);
@@ -1260,7 +1260,7 @@ class PowpegMigrationTest {
 
         bridgeSupport.save();
 
-        return Pair.of(peginBtcTx, derivationHash);
+        return Pair.of(peginBtcTx, flyoverDerivationHash);
     }
 
     private BtcTransaction createPegin(
