@@ -69,9 +69,9 @@ class StateForFederatorTest {
 
     private static StateForFederator fromRlpData(byte[] rlpData, NetworkParameters parameters) {
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
-        byte[] encodedWaitingForSign = rlpList.get(0).getRLPData();
+        byte[] encodedRskTxsWaitingForSignatures = rlpList.get(0).getRLPData();
         SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = 
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(encodedWaitingForSign, parameters, false);
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(encodedRskTxsWaitingForSignatures, parameters);
 
         return new StateForFederator(rskTxsWaitingForSignatures);
     }
