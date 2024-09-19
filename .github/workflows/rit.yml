@@ -117,7 +117,7 @@ jobs:
         if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         with:
-          channel-id: 'C8X9Q4PBM' # integration-tests channel
+          channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
             {
               "attachments": [
@@ -134,7 +134,7 @@ jobs:
         if: failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         with:
-          channel-id: 'C8X9Q4PBM' # integration-tests channel
+          channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
             {
               "attachments": [
