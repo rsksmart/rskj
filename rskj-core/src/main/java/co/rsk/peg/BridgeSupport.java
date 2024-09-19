@@ -1681,7 +1681,7 @@ public class BridgeSupport {
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
         StateForFederator stateForFederator = new StateForFederator(provider.getPegoutsWaitingForSignatures());
-        return stateForFederator.getEncoded();
+        return stateForFederator.encodeToRlp();
     }
 
     /**
