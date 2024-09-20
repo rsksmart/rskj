@@ -18,20 +18,16 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.RskTestUtils.createHash;
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
-import java.util.Arrays;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
 class StateForFederatorTest {
@@ -41,8 +37,8 @@ class StateForFederatorTest {
     @Test
     void stateForFederator_whenSerializeAndDeserialize_shouldHaveEqualState() {
         // Arrange
-        Keccak256 rskTxHash1 = createHash3(1);
-        Keccak256 rskTxHash2 = createHash3(2);
+        Keccak256 rskTxHash1 = createHash(1);
+        Keccak256 rskTxHash2 = createHash(2);
 
         BtcTransaction tx1 = new BtcTransaction(NETWORK_PARAMETERS);
         BtcTransaction tx2 = new BtcTransaction(NETWORK_PARAMETERS);
@@ -51,32 +47,39 @@ class StateForFederatorTest {
         rskTxsWaitingForSignatures.put(rskTxHash1, tx1);
         rskTxsWaitingForSignatures.put(rskTxHash2, tx2);
 
-        StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures);
-
         // Act
-        byte[] rlpData = stateForFederator.encodeToRlp();
-        StateForFederator deserializedStateForFederator = fromRlpData(rlpData, NETWORK_PARAMETERS);
+        StateForFederator stateForFederator = 
+            new StateForFederator(rskTxsWaitingForSignatures);
+        StateForFederator deserializedStateForFederator = 
+            new StateForFederator(stateForFederator.encodeToRlp(), NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(deserializedStateForFederator);
-        assertEquals(2, deserializedStateForFederator.getRskTxsWaitingForSignatures().size());
-        assertEquals(tx1, deserializedStateForFederator.getRskTxsWaitingForSignatures().get(rskTxHash1));
-        assertEquals(tx2, deserializedStateForFederator.getRskTxsWaitingForSignatures().get(rskTxHash2));
-        assertTrue(containsRskTxHashes(
-            deserializedStateForFederator.getRskTxsWaitingForSignatures().keySet(),
-            rskTxHash1, rskTxHash2));
+        assertEquals(rskTxsWaitingForSignatures,
+            deserializedStateForFederator.getRskTxsWaitingForSignatures());
     }
 
-    private static StateForFederator fromRlpData(byte[] rlpData, NetworkParameters parameters) {
-        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
-        byte[] encodedRskTxsWaitingForSignatures = rlpList.get(0).getRLPData();
-        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = 
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(encodedRskTxsWaitingForSignatures, parameters);
+    @Test
+    void stateForFederator_whenEmptyMapAndSerializeAndDeserialize_shouldHaveEqualState() {
+        // Arrange
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = new TreeMap<>();
 
-        return new StateForFederator(rskTxsWaitingForSignatures);
+        // Act
+        StateForFederator stateForFederator = 
+            new StateForFederator(rskTxsWaitingForSignatures);
+        StateForFederator deserializedStateForFederator = 
+            new StateForFederator(stateForFederator.encodeToRlp(), NETWORK_PARAMETERS);
+
+        // Assert
+        assertNotNull(deserializedStateForFederator);
+        assertEquals(rskTxsWaitingForSignatures,
+            deserializedStateForFederator.getRskTxsWaitingForSignatures());
     }
-
-    private static boolean containsRskTxHashes(Set<Keccak256> txHashes, Keccak256... requiredHashes) {
-        return Arrays.stream(requiredHashes).allMatch(txHashes::contains);
+    
+    @Test
+    void stateForFederator_whenNullValueAndSerializeAndDeserialize_shouldThrowNullPointerException() {
+        // Assert
+        assertThrows(NullPointerException.class, () -> new StateForFederator(null));
+        assertThrows(NullPointerException.class, () -> new StateForFederator(null, NETWORK_PARAMETERS));
     }
 }
