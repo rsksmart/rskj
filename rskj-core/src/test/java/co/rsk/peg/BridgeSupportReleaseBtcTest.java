@@ -161,7 +161,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    void handmade_release_before_rskip_146_185() throws IOException {
+    void handmade_release_before_rskip_146_185_no_events_emitted() throws IOException {
         ActivationConfig.ForBlock wasabiActivations = ActivationConfigsForTest.wasabi100().forBlock(0L);
 
         bridgeSupport = initBridgeSupport(eventLogger, wasabiActivations);
