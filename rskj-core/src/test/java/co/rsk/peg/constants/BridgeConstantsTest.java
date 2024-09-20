@@ -2,8 +2,6 @@ package co.rsk.peg.constants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.federation.constants.*;
@@ -12,7 +10,7 @@ import co.rsk.peg.lockingcap.constants.*;
 import co.rsk.peg.whitelist.constants.*;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,8 +31,9 @@ class BridgeConstantsTest {
     @MethodSource("minimumPeginTxValueArgProvider")
     void getMinimumPeginTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active){
         // Arrange
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(isRSKIP219Active);
+        ActivationConfig.ForBlock activations = isRSKIP219Active ?
+            ActivationConfigsForTest.all().forBlock(0L) :
+            ActivationConfigsForTest.papyrus200().forBlock(0L);
 
         // Act
         Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
@@ -44,6 +43,36 @@ class BridgeConstantsTest {
             assertEquals(bridgeConstants.minimumPeginTxValue, minimumPeginTxValue);
         } else {
             assertEquals(bridgeConstants.legacyMinimumPeginTxValue, minimumPeginTxValue);
+        }
+    }
+
+    private static Stream<Arguments> minimumPegoutTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), false),
+            Arguments.of(BridgeTestNetConstants.getInstance(), false),
+            Arguments.of(new BridgeRegTestConstants(), false),
+            Arguments.of(BridgeMainNetConstants.getInstance(), true),
+            Arguments.of(BridgeTestNetConstants.getInstance(), true),
+            Arguments.of(new BridgeRegTestConstants(), true)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("minimumPegoutTxValueArgProvider")
+    void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, boolean isRSKIP219Active) {
+        // Arrange
+        ActivationConfig.ForBlock activations = isRSKIP219Active ?
+            ActivationConfigsForTest.all().forBlock(0L) :
+            ActivationConfigsForTest.papyrus200().forBlock(0L);
+
+        // Act
+        Coin minimumPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue(activations);
+
+        // assert
+        if (isRSKIP219Active){
+            assertEquals(bridgeConstants.minimumPegoutTxValue, minimumPegoutTxValue);
+        } else {
+            assertEquals(bridgeConstants.legacyMinimumPegoutTxValue, minimumPegoutTxValue);
         }
     }
 

@@ -100,9 +100,9 @@ public abstract class BridgeConstants {
         return activations.isActive(ConsensusRule.RSKIP219) ? minimumPeginTxValue : legacyMinimumPeginTxValue;
     }
 
-    public Coin getLegacyMinimumPegoutTxValue() { return legacyMinimumPegoutTxValue; }
-
-    public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
+    public Coin getMinimumPegoutTxValue(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP219) ? minimumPegoutTxValue : legacyMinimumPegoutTxValue;
+    }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 
