@@ -8,7 +8,6 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,7 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogLockBtc() {
+    void logLockBtc() {
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logLockBtc(
             mock(RskAddress.class),
             btcTxMock,
@@ -37,7 +36,7 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogPeginBtc() {
+    void logPeginBtc() {
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logPeginBtc(
             mock(RskAddress.class),
             btcTxMock,
@@ -47,7 +46,7 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogReleaseBtcRequested() {
+    void logReleaseBtcRequested() {
         byte[] rskTxHashBytes = rskTxHash.getBytes();
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequested(
             rskTxHashBytes,
@@ -57,7 +56,7 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogRejectedPegin() {
+    void logRejectedPegin() {
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logRejectedPegin(
             btcTxMock,
             RejectedPeginReason.PEGIN_CAP_SURPASSED
@@ -65,7 +64,7 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogUnrefundablePegin() {
+    void logUnrefundablePegin() {
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logUnrefundablePegin(
             btcTxMock,
             UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
@@ -73,8 +72,8 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogReleaseBtcRequestReceived() {
-        RskAddress sender = new RskAddress("0x00000000000000000000000000000000001001");
+    void logReleaseBtcRequestReceived() {
+        RskAddress sender = new RskAddress("0x0000000000000000000000000000000000001101");
         String base58Address = "16SL1Qsw1eyYWM58MFh9KwKYoxYmm3fM1Z";
         Address btcDestinationAddress = Address.fromBase58(
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
@@ -89,7 +88,7 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void testLogReleaseBtcRequestRejected() {
+    void logReleaseBtcRequestRejected() {
         RskAddress sender = new RskAddress("0x0000000000000000000000000000000000020002");
         co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT; // Any reason, just testing the call to the method
