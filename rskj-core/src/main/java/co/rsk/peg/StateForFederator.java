@@ -19,10 +19,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import java.util.Collections;
 import java.util.SortedMap;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 public class StateForFederator {
 
@@ -30,6 +32,12 @@ public class StateForFederator {
 
     public StateForFederator(SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures) {
         this.rskTxsWaitingForSignatures = Collections.unmodifiableSortedMap(rskTxsWaitingForSignatures);
+    }
+
+    public StateForFederator(byte[] rlpData, NetworkParameters networkParameters) {
+        this(
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(
+                decodeRlpToMap(rlpData), networkParameters));
     }
 
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
@@ -45,5 +53,10 @@ public class StateForFederator {
         byte[] serializedRskTxsWaitingForSignatures = 
             BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignatures);
         return RLP.encodeList(serializedRskTxsWaitingForSignatures);
+    }
+
+    private static byte[] decodeRlpToMap(byte[] rlpData) {
+        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
+        return rlpList.get(0).getRLPData();
     }
 }
