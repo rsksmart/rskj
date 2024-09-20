@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -1584,30 +1585,18 @@ class BridgeSupportReleaseBtcTest {
         return releaseTransaction;
     }
 
-    private Transaction buildReleaseRskTx_fromContract(co.rsk.core.Coin coin) {
-        Transaction releaseTransaction = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(BRIDGE_ADDRESS)
-            .data(Hex.decode(DATA))
-            .chainId(Constants.MAINNET_CHAIN_ID)
-            .value(coin)
-            .build();
-        releaseTransaction.sign(SENDER.getPrivKeyBytes());
-
+    private Transaction buildReleaseRskTx_fromContract(co.rsk.core.Coin pegoutRequestValue) {
         return new InternalTransaction(
-            releaseTransaction.getHash().getBytes(),
+            RskTestUtils.createHash(4).getBytes(),
             400,
             0,
-            releaseTransaction.getNonce(),
-            DataWord.valueOf(releaseTransaction.getGasPrice().asBigInteger().longValue()),
-            DataWord.valueOf(releaseTransaction.getGasLimit()),
-            releaseTransaction.getSender().getBytes(),
-            releaseTransaction.getReceiveAddress().getBytes(),
-            releaseTransaction.getValue().getBytes(),
-            releaseTransaction.getData(),
+            NONCE.toByteArray(),
+            DataWord.valueOf(GAS_PRICE.longValue()),
+            DataWord.valueOf(GAS_LIMIT.longValue()),
+            SENDER.getAddress(),
+            BRIDGE_ADDRESS.getBytes(),
+            pegoutRequestValue.getBytes(),
+            Hex.decode(DATA),
             "",
             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
