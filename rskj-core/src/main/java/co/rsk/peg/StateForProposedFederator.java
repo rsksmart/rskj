@@ -23,6 +23,8 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.Objects;
+
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -31,9 +33,10 @@ public class StateForProposedFederator {
     private final Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
 
     public StateForProposedFederator(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
-        this.svpSpendTxWaitingForSignatures = new AbstractMap.SimpleImmutableEntry<>(
-            svpSpendTxWaitingForSignatures.getKey(),
-            svpSpendTxWaitingForSignatures.getValue());
+        Objects.requireNonNull(svpSpendTxWaitingForSignatures);
+
+        this.svpSpendTxWaitingForSignatures = 
+            new AbstractMap.SimpleImmutableEntry<>(svpSpendTxWaitingForSignatures);
     }
 
     public StateForProposedFederator(byte[] rlpData, NetworkParameters networkParameters) {
@@ -58,6 +61,8 @@ public class StateForProposedFederator {
     }
 
     private static byte[] decodeRlpToEntry(byte[] rlpData) {
+        Objects.requireNonNull(rlpData);
+
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
         return rlpList.get(0).getRLPData();
     }
