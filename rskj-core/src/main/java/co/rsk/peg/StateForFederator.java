@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.SortedMap;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -31,6 +32,8 @@ public class StateForFederator {
     private final SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
 
     public StateForFederator(SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures) {
+        Objects.requireNonNull(rskTxsWaitingForSignatures);
+
         this.rskTxsWaitingForSignatures = Collections.unmodifiableSortedMap(rskTxsWaitingForSignatures);
     }
 
@@ -56,6 +59,8 @@ public class StateForFederator {
     }
 
     private static byte[] decodeRlpToMap(byte[] rlpData) {
+        Objects.requireNonNull(rlpData);
+
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
         return rlpList.get(0).getRLPData();
     }

@@ -19,15 +19,13 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createHash;
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
-import java.util.Arrays;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
@@ -57,15 +55,31 @@ class StateForFederatorTest {
 
         // Assert
         assertNotNull(deserializedStateForFederator);
-        assertEquals(2, deserializedStateForFederator.getRskTxsWaitingForSignatures().size());
-        assertEquals(tx1, deserializedStateForFederator.getRskTxsWaitingForSignatures().get(rskTxHash1));
-        assertEquals(tx2, deserializedStateForFederator.getRskTxsWaitingForSignatures().get(rskTxHash2));
-        assertTrue(containsRskTxHashes(
-            deserializedStateForFederator.getRskTxsWaitingForSignatures().keySet(),
-            rskTxHash1, rskTxHash2));
+        assertEquals(rskTxsWaitingForSignatures,
+            deserializedStateForFederator.getRskTxsWaitingForSignatures());
     }
 
-    private static boolean containsRskTxHashes(Set<Keccak256> txHashes, Keccak256... requiredHashes) {
-        return Arrays.stream(requiredHashes).allMatch(txHashes::contains);
+    @Test
+    void stateForFederator_whenEmptyMapAndSerializeAndDeserialize_shouldHaveEqualState() {
+        // Arrange
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = new TreeMap<>();
+
+        // Act
+        StateForFederator stateForFederator = 
+            new StateForFederator(rskTxsWaitingForSignatures);
+        StateForFederator deserializedStateForFederator = 
+            new StateForFederator(stateForFederator.encodeToRlp(), NETWORK_PARAMETERS);
+
+        // Assert
+        assertNotNull(deserializedStateForFederator);
+        assertEquals(rskTxsWaitingForSignatures,
+            deserializedStateForFederator.getRskTxsWaitingForSignatures());
+    }
+    
+    @Test
+    void stateForFederator_whenNullValueAndSerializeAndDeserialize_shouldThrowNullPointerException() {
+        // Assert
+        assertThrows(NullPointerException.class, () -> new StateForFederator(null));
+        assertThrows(NullPointerException.class, () -> new StateForFederator(null, NETWORK_PARAMETERS));
     }
 }
