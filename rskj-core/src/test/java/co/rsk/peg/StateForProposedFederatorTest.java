@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createHash;
+import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -27,44 +28,34 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import java.util.AbstractMap;
 import java.util.Map;
-import java.util.stream.Stream;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 class StateForProposedFederatorTest {
 
     private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
-    @ParameterizedTest
-    @MethodSource("provideSvpSpendTxWaitingForSignatures")
-    void stateForProposedFederator_whenSerializeAndDeserialize_shouldHaveEqualState(
-          Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+    @Test
+    void stateForProposedFederator_whenTxWaitingForSignaturesAndSerializeAndDeserialize_shouldHaveEqualState() {
+        // Arrange
+        Keccak256 rskTxHash = createHash(1);
+        BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
+        Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignatures = new AbstractMap.SimpleEntry<>(rskTxHash, tx);
+
         // Act
         StateForProposedFederator stateForProposedFederator =
-            new StateForProposedFederator(svpSpendTxWaitingForSignatures);
+            new StateForProposedFederator(rskTxWaitingForSignatures);
         StateForProposedFederator deserializedStateForProposedFederator =
             new StateForProposedFederator(stateForProposedFederator.encodeToRlp(), NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(deserializedStateForProposedFederator);
-        assertEquals(svpSpendTxWaitingForSignatures,
-            deserializedStateForProposedFederator.getSvpSpendTxWaitingForSignatures());
+        assertEquals(rskTxWaitingForSignatures, deserializedStateForProposedFederator.getSvpSpendTxWaitingForSignatures());
     }
 
-    private static Stream<Arguments> provideSvpSpendTxWaitingForSignatures() {
-        Keccak256 rskTxHash = createHash(1);
-        BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
-        
-        // Non-null entry
-        Map.Entry<Keccak256, BtcTransaction> nonNullEntry =
-            new AbstractMap.SimpleEntry<>(rskTxHash, tx);
-        
-        // Null entry
-        Map.Entry<Keccak256, BtcTransaction> nullEntry = null;
-
-        return Stream.of(
-            Arguments.of(nonNullEntry),
-            Arguments.of(nullEntry));
+    @Test
+    void stateForProposedFederator_whenNullValueAndSerializeAndDeserialize_shouldThrowNullPointerException() {
+        // Assert
+        assertThrows(NullPointerException.class, () -> new StateForProposedFederator(null));
+        assertThrows(NullPointerException.class, () -> new StateForProposedFederator(null, NETWORK_PARAMETERS));
     }
 }
