@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2024 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,30 +21,32 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
-import java.util.Collections;
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.SortedMap;
+
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-public class StateForFederator {
+public class StateForProposedFederator {
 
-    private final SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
+    private final Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
 
-    public StateForFederator(SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures) {
-        Objects.requireNonNull(rskTxsWaitingForSignatures);
+    public StateForProposedFederator(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+        Objects.requireNonNull(svpSpendTxWaitingForSignatures);
 
-        this.rskTxsWaitingForSignatures = Collections.unmodifiableSortedMap(rskTxsWaitingForSignatures);
+        this.svpSpendTxWaitingForSignatures = 
+            new AbstractMap.SimpleImmutableEntry<>(svpSpendTxWaitingForSignatures);
     }
 
-    public StateForFederator(byte[] rlpData, NetworkParameters networkParameters) {
+    public StateForProposedFederator(byte[] rlpData, NetworkParameters networkParameters) {
         this(
-            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(
-                decodeRlpToMap(rlpData), networkParameters));
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(
+                decodeRlpToEntry(rlpData), networkParameters));
     }
 
-    public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
-        return rskTxsWaitingForSignatures;
+    public Map.Entry<Keccak256, BtcTransaction> getSvpSpendTxWaitingForSignatures() {
+        return svpSpendTxWaitingForSignatures;
     }
 
     /**
@@ -53,12 +55,12 @@ public class StateForFederator {
      * @return The RLP-encoded byte array representing the current state.
      */
     public byte[] encodeToRlp() {
-        byte[] serializedRskTxsWaitingForSignatures = 
-            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignatures);
-        return RLP.encodeList(serializedRskTxsWaitingForSignatures);
+        byte[] serializedSvpSpendTxWaitingForSignatures = 
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+        return RLP.encodeList(serializedSvpSpendTxWaitingForSignatures);
     }
 
-    private static byte[] decodeRlpToMap(byte[] rlpData) {
+    private static byte[] decodeRlpToEntry(byte[] rlpData) {
         Objects.requireNonNull(rlpData);
 
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
