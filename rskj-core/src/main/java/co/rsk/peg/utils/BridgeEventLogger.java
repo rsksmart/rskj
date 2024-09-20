@@ -63,7 +63,7 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
-    default void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
+    default void logReleaseBtcRequestReceived(RskAddress sender, Address btcDestinationAddress, co.rsk.core.Coin amount) {
         throw new UnsupportedOperationException();
     }
 
