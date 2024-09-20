@@ -35,6 +35,7 @@ jobs:
           github_head_ref: ${{ github.head_ref }}
           github_ref_name: ${{ github.ref_name }}
         run: |
+          set -x
           PR_DESCRIPTION=pr-description.txt
 
           ALLOWED_BRANCH_CHARACTERS='[-./0-9A-Z_a-z]'
@@ -57,7 +58,7 @@ jobs:
 
           is_valid_branch_name()
           {
-            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\{1,\}"
+            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\\{1,\\}"
           }
 
           if [ "$github_event_name" = workflow_dispatch ]; then
