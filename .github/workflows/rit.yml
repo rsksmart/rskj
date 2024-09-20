@@ -50,8 +50,8 @@ jobs:
 
             # On lines matching "`$_prefix:...`", replace the lines with the
             # thing in ... and print the result.
-            _search_re='\,`'$_prefix:$ALLOWED_BRANCH_CHARACTERS'\{1,\}`'
-            _replace_re='s,.*`'$_prefix:'\('$ALLOWED_BRANCH_CHARACTERS'\{1,\}\)`.*,\1,p'
+            _search_re='\@`'$_prefix:$ALLOWED_BRANCH_CHARACTERS'\{1,\}`@'
+            _replace_re='s@.*`'$_prefix:'\('$ALLOWED_BRANCH_CHARACTERS'\{1,\}\)`.*@\1@p'
             _branch=$(sed -n "$_search_re $_replace_re" "$PR_DESCRIPTION")
             echo "$_branch"
           }
