@@ -21,6 +21,7 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
+import co.rsk.peg.utils.RejectedPegoutReason;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -197,5 +198,19 @@ public class PegUtils {
             default:
                 return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
         }
+    }
+
+    static boolean isPegoutRequestValueAboveMinimum(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        Coin pegoutRequestValue
+    ) {
+        Coin minPegoutValue = bridgeConstants.getMinimumPegoutTxValue(activations);
+        if (!activations.isActive(ConsensusRule.RSKIP219)) {
+            // For legacy peg-outs the rule stated that the minimum was exclusive
+            return pegoutRequestValue.isGreaterThan(minPegoutValue);
+        }
+
+        return pegoutRequestValue.compareTo(minPegoutValue) >= 0;
     }
 }
