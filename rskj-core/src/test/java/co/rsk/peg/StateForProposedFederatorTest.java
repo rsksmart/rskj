@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.RskTestUtils.createHash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -27,39 +27,44 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import java.util.AbstractMap;
 import java.util.Map;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class StateForProposedFederatorTest {
 
     private static final NetworkParameters NETWORK_PARAMETERS = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
-    @Test
-    void stateForProposedFederator_whenSerializeAndDeserialize_shouldHaveEqualState() {
-        // Arrange
-        Keccak256 rskTxHash = createHash3(1);
-        BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
-
-        Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignatures = new AbstractMap.SimpleEntry<>(rskTxHash, tx);
-
-        StateForProposedFederator stateForProposedFederator = new StateForProposedFederator(rskTxWaitingForSignatures);
-
+    @ParameterizedTest
+    @MethodSource("provideSvpSpendTxWaitingForSignatures")
+    void stateForProposedFederator_whenSerializeAndDeserialize_shouldHaveEqualState(
+          Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
         // Act
-        byte[] rlpData = stateForProposedFederator.encodeToRlp();
-        StateForProposedFederator deserializedStateForProposedFederator = fromRlpData(rlpData, NETWORK_PARAMETERS);
+        StateForProposedFederator stateForProposedFederator =
+            new StateForProposedFederator(svpSpendTxWaitingForSignatures);
+        StateForProposedFederator deserializedStateForProposedFederator =
+            new StateForProposedFederator(stateForProposedFederator.encodeToRlp(), NETWORK_PARAMETERS);
 
         // Assert
         assertNotNull(deserializedStateForProposedFederator);
-        assertEquals(rskTxWaitingForSignatures, deserializedStateForProposedFederator.getRskTxWaitingForSignatures());
+        assertEquals(svpSpendTxWaitingForSignatures,
+            deserializedStateForProposedFederator.getSvpSpendTxWaitingForSignatures());
     }
 
-    private static StateForProposedFederator fromRlpData(byte[] rlpData, NetworkParameters parameters) {
-        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
-        byte[] encodedRskTxsWaitingForSignatures = rlpList.get(0).getRLPData();
-        Map.Entry<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = 
-            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(encodedRskTxsWaitingForSignatures, parameters);
+    private static Stream<Arguments> provideSvpSpendTxWaitingForSignatures() {
+        Keccak256 rskTxHash = createHash(1);
+        BtcTransaction tx = new BtcTransaction(NETWORK_PARAMETERS);
+        
+        // Non-null entry
+        Map.Entry<Keccak256, BtcTransaction> nonNullEntry =
+            new AbstractMap.SimpleEntry<>(rskTxHash, tx);
+        
+        // Null entry
+        Map.Entry<Keccak256, BtcTransaction> nullEntry = null;
 
-        return new StateForProposedFederator(rskTxsWaitingForSignatures);
+        return Stream.of(
+            Arguments.of(nonNullEntry),
+            Arguments.of(nullEntry));
     }
 }
