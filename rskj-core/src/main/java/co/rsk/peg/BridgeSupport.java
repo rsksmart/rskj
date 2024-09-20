@@ -272,7 +272,7 @@ public class BridgeSupport {
      * Get the wallet for the currently active federation
      * @return A BTC wallet for the currently active federation
      *
-     * @param shouldConsiderFlyoverUTXOs
+     * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
     public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         Federation federation = getActiveFederation();
@@ -292,7 +292,7 @@ public class BridgeSupport {
      * or null if there's currently no retiring federation
      * @return A BTC wallet for the currently active federation
      *
-     * @param shouldConsiderFlyoverUTXOs
+     * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
     protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
@@ -349,8 +349,8 @@ public class BridgeSupport {
      * @param btcTxSerialized The raw BTC tx
      * @param height The height of the BTC block that contains the tx
      * @param pmtSerialized The raw partial Merkle tree
-     * @throws BlockStoreException
-     * @throws IOException
+     * @throws BlockStoreException If there's an error while executing validations
+     * @throws IOException If there's an error while processing the tx
      */
     public void registerBtcTransaction(
         Transaction rskTx,
@@ -802,7 +802,7 @@ public class BridgeSupport {
      * The funds will be sent to the bitcoin address controlled by the private key that signed the rsk tx.
      * The amount sent to the bridge in this tx will be the amount sent in the btc network minus fees.
      * @param rskTx The rsk tx being executed.
-     * @throws IOException
+     * @throws IOException If there's an error while processing the release request.
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
         final co.rsk.core.Coin pegoutValueInWeis = rskTx.getValue();
@@ -865,7 +865,7 @@ public class BridgeSupport {
      *
      * @param destinationAddress the destination BTC address.
      * @param value the amount of BTC to release.
-     * @throws IOException
+     * @throws IOException if there's an error while processing the request.
      */
     private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
@@ -2430,17 +2430,18 @@ public class BridgeSupport {
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash, Federation federation) {
-        Script flyoverScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federation.getRedeemScript(),
-            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+        Script federationRedeemScript = federation.getRedeemScript();
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            federationRedeemScript
         );
 
-        Script flyoverScriptHash = ScriptBuilder.createP2SHOutputScript(flyoverScript);
+        Script flyoverP2shOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
 
         return new FlyoverFederationInformation(
             flyoverDerivationHash,
             federation.getP2SHScript().getPubKeyHash(),
-            flyoverScriptHash.getPubKeyHash()
+            flyoverP2shOutputScript.getPubKeyHash()
         );
     }
 

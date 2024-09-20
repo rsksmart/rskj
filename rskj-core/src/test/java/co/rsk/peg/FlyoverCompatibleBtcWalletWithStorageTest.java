@@ -4,16 +4,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
@@ -73,17 +74,19 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
     @Test
     void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
+        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
 
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federation.getRedeemScript(), Sha256Hash.wrap(derivationArgumentsHash.getBytes()));
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            federation.getRedeemScript()
+        );
 
         Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
         byte[] flyoverFederationP2SH = p2SHOutputScript.getPubKeyHash();
 
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
-                derivationArgumentsHash,
+                flyoverDerivationHash,
                 federation.getP2SHScript().getPubKeyHash(),
                 flyoverFederationP2SH);
 
