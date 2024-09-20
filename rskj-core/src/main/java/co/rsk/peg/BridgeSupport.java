@@ -838,19 +838,23 @@ public class BridgeSupport {
         requestRelease(btcDestinationAddress, pegoutValueInWeis, rskTx);
     }
 
-    private void refundAndEmitRejectEvent(co.rsk.core.Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+    private void refundAndEmitRejectEvent(
+        co.rsk.core.Coin releaseRequestedValue,
+        RskAddress senderAddress,
+        RejectedPegoutReason reason
+    ) {
         logger.trace(
             "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
-            value,
+            releaseRequestedValue,
             senderAddress,
             reason
         );
         rskRepository.transfer(
             PrecompiledContracts.BRIDGE_ADDR,
             senderAddress,
-            value
+            releaseRequestedValue
         );
-        emitRejectEvent(value, senderAddress, reason);
+        emitRejectEvent(releaseRequestedValue, senderAddress, reason);
     }
 
     private void emitRejectEvent(co.rsk.core.Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
