@@ -930,10 +930,20 @@ public class BridgeSupport {
                 provider.getReleaseRequestQueue().add(destinationAddress, valueToRelease);
             }
 
+            RskAddress sender = rskTx.getSender(signatureCache);
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender(signatureCache).toHexString(), destinationAddress, valueToRelease);
+                eventLogger.logReleaseBtcRequestReceived(
+                    sender,
+                    destinationAddress,
+                    releaseRequestedValue
+                );
             }
-            logger.info("[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, releaseRequestedValue);
+            logger.info(
+                "[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.",
+                destinationAddress,
+                rskTx,
+                releaseRequestedValue
+            );
         }
     }
 
