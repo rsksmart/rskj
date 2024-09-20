@@ -19,20 +19,31 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
+import java.util.AbstractMap;
 import java.util.Map;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 public class StateForProposedFederator {
 
-    private final Map.Entry<Keccak256, BtcTransaction> rskTxWaitingForSignatures;
+    private final Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
 
-    public StateForProposedFederator(Map.Entry<Keccak256, BtcTransaction> rskTxsWaitingForSignatures) {
-        this.rskTxWaitingForSignatures = rskTxsWaitingForSignatures;
+    public StateForProposedFederator(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+        this.svpSpendTxWaitingForSignatures = new AbstractMap.SimpleImmutableEntry<>(
+            svpSpendTxWaitingForSignatures.getKey(),
+            svpSpendTxWaitingForSignatures.getValue());
     }
 
-    public Map.Entry<Keccak256, BtcTransaction> getRskTxWaitingForSignatures() {
-        return rskTxWaitingForSignatures;
+    public StateForProposedFederator(byte[] rlpData, NetworkParameters networkParameters) {
+        this(
+            BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(
+                decodeRlpToEntry(rlpData), networkParameters));
+    }
+
+    public Map.Entry<Keccak256, BtcTransaction> getSvpSpendTxWaitingForSignatures() {
+        return svpSpendTxWaitingForSignatures;
     }
 
     /**
@@ -41,8 +52,13 @@ public class StateForProposedFederator {
      * @return The RLP-encoded byte array representing the current state.
      */
     public byte[] encodeToRlp() {
-        byte[] serializedRskTxWaitingForSignatures = 
-            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(rskTxWaitingForSignatures);
-        return RLP.encodeList(serializedRskTxWaitingForSignatures);
+        byte[] serializedSvpSpendTxWaitingForSignatures = 
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+        return RLP.encodeList(serializedSvpSpendTxWaitingForSignatures);
+    }
+
+    private static byte[] decodeRlpToEntry(byte[] rlpData) {
+        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
+        return rlpList.get(0).getRLPData();
     }
 }
