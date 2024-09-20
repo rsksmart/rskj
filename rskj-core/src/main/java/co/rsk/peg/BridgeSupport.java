@@ -806,7 +806,6 @@ public class BridgeSupport {
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
         final co.rsk.core.Coin pegoutValueInWeis = rskTx.getValue();
-        final Coin pegoutValueInSatoshis = pegoutValueInWeis.toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
         logger.debug(
             "[releaseBtc] Releasing {} weis from RSK address {} in tx {}",
@@ -822,7 +821,7 @@ public class BridgeSupport {
                 senderAddress
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(pegoutValueInSatoshis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(pegoutValueInWeis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
                 String message = "Contract calling releaseBTC";
@@ -836,25 +835,29 @@ public class BridgeSupport {
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
-        requestRelease(btcDestinationAddress, pegoutValueInSatoshis, rskTx);
+        requestRelease(btcDestinationAddress, pegoutValueInWeis, rskTx);
     }
 
-    private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+    private void refundAndEmitRejectEvent(
+        co.rsk.core.Coin releaseRequestedValue,
+        RskAddress senderAddress,
+        RejectedPegoutReason reason
+    ) {
         logger.trace(
             "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
-            value,
+            releaseRequestedValue,
             senderAddress,
             reason
         );
         rskRepository.transfer(
             PrecompiledContracts.BRIDGE_ADDR,
             senderAddress,
-            co.rsk.core.Coin.fromBitcoin(value)
+            releaseRequestedValue
         );
-        emitRejectEvent(value, senderAddress, reason);
+        emitRejectEvent(releaseRequestedValue, senderAddress, reason);
     }
 
-    private void emitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+    private void emitRejectEvent(co.rsk.core.Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
         eventLogger.logReleaseBtcRequestRejected(senderAddress, value, reason);
     }
 
@@ -864,10 +867,11 @@ public class BridgeSupport {
      * to be processed later.
      *
      * @param destinationAddress the destination BTC address.
-     * @param value the amount of BTC to release.
-     * @throws IOException
+     * @param releaseRequestedValue the amount of RBTC requested to be released.
+     * @throws IOException if there is an error getting the release request queue from storage
      */
-    private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
+    private void requestRelease(Address destinationAddress, co.rsk.core.Coin releaseRequestedValue, Transaction rskTx) throws IOException {
+        Coin valueToRelease = releaseRequestedValue.toBitcoin();
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
             int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
@@ -885,11 +889,11 @@ public class BridgeSupport {
                     .divide(100)
                 ); // add the gap
 
-            // The pegout value should be greater or equals than the max of these two values
+            // The pegout releaseRequestedValue should be greater or equals than the max of these two values
             Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValue().value, requireFundsForFee.value));
 
             // Since Iris the peg-out the rule is that the minimum is inclusive
-            if (value.isLessThan(minValue)) {
+            if (valueToRelease.isLessThan(minValue)) {
                 optionalRejectedPegoutReason = Optional.of(
                     Objects.equals(minValue, requireFundsForFee) ?
                     RejectedPegoutReason.FEE_ABOVE_VALUE:
@@ -898,7 +902,7 @@ public class BridgeSupport {
             }
         } else {
             // For legacy peg-outs the rule stated that the minimum was exclusive
-            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
+            if (!valueToRelease.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
                 optionalRejectedPegoutReason = Optional.of(RejectedPegoutReason.LOW_AMOUNT);
             }
         }
@@ -908,27 +912,27 @@ public class BridgeSupport {
                 "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
                 destinationAddress,
                 rskTx,
-                value,
+                releaseRequestedValue,
                 optionalRejectedPegoutReason.get()
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 refundAndEmitRejectEvent(
-                    value,
+                    releaseRequestedValue,
                     rskTx.getSender(signatureCache),
                     optionalRejectedPegoutReason.get()
                 );
             }
         } else {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
+                provider.getReleaseRequestQueue().add(destinationAddress, valueToRelease, rskTx.getHash());
             } else {
-                provider.getReleaseRequestQueue().add(destinationAddress, value);
+                provider.getReleaseRequestQueue().add(destinationAddress, valueToRelease);
             }
 
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender(signatureCache).toHexString(), destinationAddress, value);
+                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender(signatureCache).toHexString(), destinationAddress, valueToRelease);
             }
-            logger.info("[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+            logger.info("[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, releaseRequestedValue);
         }
     }
 
