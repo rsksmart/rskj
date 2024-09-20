@@ -35,7 +35,6 @@ jobs:
           github_head_ref: ${{ github.head_ref }}
           github_ref_name: ${{ github.ref_name }}
         run: |
-          set -x
           PR_DESCRIPTION=pr-description.txt
 
           ALLOWED_BRANCH_CHARACTERS='[-./0-9A-Z_a-z]'
@@ -64,7 +63,7 @@ jobs:
           if [ "$github_event_name" = workflow_dispatch ]; then
             RSKJ_BRANCH=$github_ref_name
             POWPEG_BRANCH=${github_event_inputs_powpeg_branch:-$default_powpeg_branch}
-            RIT_BRANCH=${github_event_inputs_powpeg_branch:-$default_rit_branch}
+            RIT_BRANCH=${github_event_inputs_rit_branch:-$default_rit_branch}
           elif [ "$github_event_name" = pull_request ]; then
             gh pr view "$github_event_pull_request_number" --json body -q .body >"$PR_DESCRIPTION"
 
