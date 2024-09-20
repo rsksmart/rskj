@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -22,7 +23,7 @@ class BridgeEventLoggerTest {
     void setup() {
         eventLogger = spy(BridgeEventLogger.class);
         btcTxMock = mock(BtcTransaction.class);
-        rskTxHash = PegTestUtils.createHash3(1);
+        rskTxHash = RskTestUtils.createHash(1);
     }
 
     @Test
@@ -73,11 +74,13 @@ class BridgeEventLoggerTest {
 
     @Test
     void testLogReleaseBtcRequestReceived() {
-        String sender = "0x00000000000000000000000000000000000000";
-        String base58Address = "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        RskAddress sender = new RskAddress("0x00000000000000000000000000000000001001");
+        String base58Address = "16SL1Qsw1eyYWM58MFh9KwKYoxYmm3fM1Z";
         Address btcDestinationAddress = Address.fromBase58(
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
-        Coin amount = Coin.COIN;
+            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
+            base58Address
+        );
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestReceived(
             sender,
             btcDestinationAddress,
@@ -87,8 +90,8 @@ class BridgeEventLoggerTest {
 
     @Test
     void testLogReleaseBtcRequestRejected() {
-        RskAddress sender = new RskAddress("0x0000000000000000000000000000000000000000");
-        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
+        RskAddress sender = new RskAddress("0x0000000000000000000000000000000000020002");
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT; // Any reason, just testing the call to the method
         assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestRejected(
             sender,

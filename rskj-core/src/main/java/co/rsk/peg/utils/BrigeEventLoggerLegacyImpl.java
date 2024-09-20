@@ -56,7 +56,12 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
 
-    public BrigeEventLoggerLegacyImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
+    public BrigeEventLoggerLegacyImpl(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        List<LogInfo> logs,
+        SignatureCache signatureCache
+    ) {
         this.bridgeConstants = bridgeConstants;
         this.activations = activations;
         this.signatureCache = signatureCache;
