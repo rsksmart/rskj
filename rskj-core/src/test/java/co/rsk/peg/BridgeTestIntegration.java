@@ -191,14 +191,28 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmation() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction(2, bridgeRegTestConstants.getMinimumPegoutTxValue());
-        BtcTransaction tx2 = createTransaction(3, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN));
-        BtcTransaction tx3 = createTransaction(4, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
+        BtcTransaction tx1 = createTransaction(
+            2,
+            bridgeRegTestConstants.getMinimumPegoutTxValue(activationConfigAll)
+        );
+        BtcTransaction tx2 = createTransaction(
+            3,
+            bridgeRegTestConstants.getMinimumPegoutTxValue(activationConfigAll).add(Coin.MILLICOIN)
+        );
+        BtcTransaction tx3 = createTransaction(
+            4,
+            bridgeRegTestConstants.getMinimumPegoutTxValue(activationConfigAll).add(Coin.MILLICOIN).add(Coin.MILLICOIN)
+        );
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, networkParameters, activationConfig.forBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+            track,
+            PrecompiledContracts.BRIDGE_ADDR,
+            networkParameters,
+            activationConfig.forBlock(0)
+        );
 
         provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
         provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
@@ -210,25 +224,31 @@ public class BridgeTestIntegration {
 
         track = repository.startTracking();
         Transaction rskTx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(AMOUNT)
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(AMOUNT)
+            .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
-                bridgeRegTestConstants,
-                activationConfig,
-                signatureCache);
+            new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
+            bridgeRegTestConstants,
+            activationConfig,
+            signatureCache
+        );
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory, signatureCache);
+        Bridge bridge = new Bridge(
+            PrecompiledContracts.BRIDGE_ADDR,
+            constants,
+            activationConfig,
+            bridgeSupportFactory,
+            signatureCache
+        );
 
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
         World world = new World(blockChainBuilder);
@@ -239,7 +259,12 @@ public class BridgeTestIntegration {
         track.commit();
 
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, networkParameters, activationConfigAll);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            networkParameters,
+            activationConfigAll
+        );
 
         assertEquals(3, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForSignatures().size());
@@ -247,14 +272,28 @@ public class BridgeTestIntegration {
 
     @Test
     void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, VMException {
-        BtcTransaction tx1 = createTransaction(2, bridgeRegTestConstants.getMinimumPegoutTxValue());
-        BtcTransaction tx2 = createTransaction(3, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN));
-        BtcTransaction tx3 = createTransaction(4, bridgeRegTestConstants.getMinimumPegoutTxValue().add(Coin.MILLICOIN).add(Coin.MILLICOIN));
+        BtcTransaction tx1 = createTransaction(
+            2,
+            bridgeRegTestConstants.getMinimumPegoutTxValue(activationConfigAll)
+        );
+        BtcTransaction tx2 = createTransaction(
+            3,
+            bridgeRegTestConstants.getMinimumPegoutTxValue(activationConfigAll).add(Coin.MILLICOIN)
+        );
+        BtcTransaction tx3 = createTransaction(
+            4,
+            bridgeRegTestConstants.getMinimumPegoutTxValue(activationConfigAll).add(Coin.MILLICOIN).add(Coin.MILLICOIN)
+        );
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, networkParameters, activationConfig.forBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+            track,
+            PrecompiledContracts.BRIDGE_ADDR,
+            networkParameters,
+            activationConfig.forBlock(0)
+        );
 
         provider0.getPegoutsWaitingForConfirmations().add(tx1, 1L);
         provider0.getPegoutsWaitingForConfirmations().add(tx2, 2L);
@@ -271,26 +310,32 @@ public class BridgeTestIntegration {
         List<Block> blocks = new BlockGenerator().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
         Transaction rskTx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(AMOUNT)
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(AMOUNT)
+            .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         world.getBlockStore().saveBlock(blocks.get(1), new BlockDifficulty(BigInteger.ONE), true);
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
-                bridgeRegTestConstants,
-                activationConfig,
-                signatureCache);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory, signatureCache);
+            new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
+            bridgeRegTestConstants,
+            activationConfig,
+            signatureCache
+        );
+        Bridge bridge = new Bridge(
+            PrecompiledContracts.BRIDGE_ADDR,
+            constants,
+            activationConfig,
+            bridgeSupportFactory,
+            signatureCache
+        );
         bridge.init(rskTx, blocks.get(9), track, world.getBlockStore(), null, new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
@@ -298,7 +343,12 @@ public class BridgeTestIntegration {
         track.commit();
 
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, networkParameters, activationConfigAll);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            networkParameters,
+            activationConfigAll
+        );
 
         assertEquals(2, provider.getPegoutsWaitingForConfirmations().getEntries().size());
         assertEquals(1, provider.getPegoutsWaitingForSignatures().size());
@@ -310,12 +360,18 @@ public class BridgeTestIntegration {
         Repository track = repository.startTracking();
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
-                bridgeRegTestConstants,
-                activationConfig,
-                signatureCache);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory, signatureCache);
+            new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
+            bridgeRegTestConstants,
+            activationConfig,
+            signatureCache
+        );
+        Bridge bridge = new Bridge(
+            PrecompiledContracts.BRIDGE_ADDR,
+            constants,
+            activationConfig,
+            bridgeSupportFactory,
+            signatureCache
+        );
         bridge.init(null, getGenesisBlock(), track, null, null, null);
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());

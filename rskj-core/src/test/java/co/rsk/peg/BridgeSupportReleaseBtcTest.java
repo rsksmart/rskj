@@ -82,6 +82,8 @@ class BridgeSupportReleaseBtcTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private SignatureCache signatureCache;
     private FeePerKbSupport feePerKbSupport;
+    private Coin minimumPegoutTxValue;
+    private Coin legacyMinimumPegoutTxValue;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -96,6 +98,9 @@ class BridgeSupportReleaseBtcTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.valueOf(5_000L));
         bridgeSupport = spy(initBridgeSupport(eventLogger, ACTIVATIONS_ALL));
         releaseTx = buildReleaseRskTx();
+
+        minimumPegoutTxValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue(ACTIVATIONS_ALL);
+        legacyMinimumPegoutTxValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue(ActivationConfigsForTest.papyrus200().forBlock(0L));
     }
 
     @Test
@@ -263,7 +268,7 @@ class BridgeSupportReleaseBtcTest {
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, arrowheadActivations);
 
-        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(minimumPegoutTxValue);
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
 
         Transaction rskTx = buildUpdateTx();
@@ -305,7 +310,7 @@ class BridgeSupportReleaseBtcTest {
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
-        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(minimumPegoutTxValue);
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
 
         Transaction rskTx = buildUpdateTx();
@@ -453,10 +458,10 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
         // Get a value between old and new minimum pegout values
-        Coin middle = BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue().subtract(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()).div(2);
-        Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(middle);
-        assertTrue(value.isLessThan(BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue()));
-        assertTrue(value.isGreaterThan(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()));
+        Coin middle = legacyMinimumPegoutTxValue.subtract(minimumPegoutTxValue).div(2);
+        Coin value = minimumPegoutTxValue.add(middle);
+        assertTrue(value.isLessThan(legacyMinimumPegoutTxValue));
+        assertTrue(value.isGreaterThan(minimumPegoutTxValue));
         bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
 
         Transaction rskTx = buildUpdateTx();
@@ -491,10 +496,10 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
         // Get a value between old and new minimum pegout values
-        Coin middle = BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue().subtract(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()).div(2);
-        Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(middle);
-        assertTrue(value.isLessThan(BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue()));
-        assertTrue(value.isGreaterThan(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()));
+        Coin middle = legacyMinimumPegoutTxValue.subtract(minimumPegoutTxValue).div(2);
+        Coin value = minimumPegoutTxValue.add(middle);
+        assertTrue(value.isLessThan(legacyMinimumPegoutTxValue));
+        assertTrue(value.isGreaterThan(minimumPegoutTxValue));
         bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
 
         Transaction rskTx = buildUpdateTx();
@@ -521,8 +526,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
         // Get a value exactly to legacy minimum
-        Coin value = BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue();
-        bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
+        bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(legacyMinimumPegoutTxValue)));
 
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
@@ -548,8 +552,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(bridgeEventLogger, irisActivations);
 
         // Get a value exactly to current minimum
-        Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue();
-        bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
+        bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(minimumPegoutTxValue)));
 
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
@@ -581,8 +584,7 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
         // Get a value exactly to current minimum
-        Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue();
-        bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
+        bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(minimumPegoutTxValue)));
 
         Transaction rskTx = buildUpdateTx();
         rskTx.sign(SENDER.getPrivKeyBytes());
@@ -604,7 +606,7 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void release_verify_fee_below_fee_is_rejected() throws IOException {
-        Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(Coin.SATOSHI);
+        Coin value = minimumPegoutTxValue.add(Coin.SATOSHI);
         testPegoutMinimumWithFeeVerificationRejectedByFeeAboveValue(Coin.COIN, co.rsk.core.Coin.fromBitcoin(value));
     }
 
@@ -635,7 +637,7 @@ class BridgeSupportReleaseBtcTest {
 
     @Test
     void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
-        Coin valueBelowMinimum =  BRIDGE_CONSTANTS.getMinimumPegoutTxValue().minus(Coin.SATOSHI);
+        Coin valueBelowMinimum =  minimumPegoutTxValue.minus(Coin.SATOSHI);
         testPegoutMinimumWithFeeVerificationRejectedByLowAmount(
             Coin.MILLICOIN,
             co.rsk.core.Coin.fromBitcoin(valueBelowMinimum)
@@ -1151,7 +1153,7 @@ class BridgeSupportReleaseBtcTest {
 
         Coin valueToRelease = pegoutRequestedValue.toBitcoin();
         assertFalse(valueToRelease.isLessThan(minValueWithGapAboveFee) ||
-            valueToRelease.isLessThan(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()));
+            valueToRelease.isLessThan(minimumPegoutTxValue));
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestedValue));
 
@@ -1272,7 +1274,7 @@ class BridgeSupportReleaseBtcTest {
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
-        Coin belowPegoutMinimumValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().minus(Coin.SATOSHI);
+        Coin belowPegoutMinimumValue = minimumPegoutTxValue.minus(Coin.SATOSHI);
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(belowPegoutMinimumValue);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
@@ -1314,7 +1316,7 @@ class BridgeSupportReleaseBtcTest {
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
-        Coin belowPegoutMinimumValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().minus(Coin.SATOSHI);
+        Coin belowPegoutMinimumValue = minimumPegoutTxValue.minus(Coin.SATOSHI);
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(belowPegoutMinimumValue);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
@@ -1358,7 +1360,7 @@ class BridgeSupportReleaseBtcTest {
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
-        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(minimumPegoutTxValue);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
 
@@ -1395,7 +1397,7 @@ class BridgeSupportReleaseBtcTest {
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
-        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+        co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(minimumPegoutTxValue);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
 
