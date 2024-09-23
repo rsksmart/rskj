@@ -71,6 +71,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -1711,6 +1712,23 @@ public class BridgeSupport {
     public byte[] getStateForBtcReleaseClient() throws IOException {
         StateForFederator stateForFederator = new StateForFederator(provider.getPegoutsWaitingForSignatures());
         return stateForFederator.encodeToRlp();
+    }
+
+   /**
+     * Retrieves the current SVP spend transaction state for the SVP client.
+     * <p>
+     * This method checks if there is an SVP spend transaction waiting for signatures, and if so, it serializes 
+     * the state into RLP format. If no transaction is waiting, it returns an encoded empty RLP list.
+     * </p>
+     *
+     * @return A byte array representing the RLP-encoded state of the SVP spend transaction. If no transaction 
+     *         is waiting, returns an RLP-encoded empty list.
+     */
+    public byte[] getStateForSvpClient() {
+        return provider.getSvpSpendTxWaitingForSignatures()
+            .map(StateForProposedFederator::new)
+            .map(StateForProposedFederator::encodeToRlp)
+            .orElse(RLP.encodedEmptyList());
     }
 
     /**
