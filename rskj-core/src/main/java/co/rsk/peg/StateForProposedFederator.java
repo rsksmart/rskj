@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Objects;
-
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -55,15 +54,13 @@ public class StateForProposedFederator {
      * @return The RLP-encoded byte array representing the current state.
      */
     public byte[] encodeToRlp() {
-        byte[] serializedSvpSpendTxWaitingForSignatures = 
-            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
-        return RLP.encodeList(serializedSvpSpendTxWaitingForSignatures);
+        return BridgeSerializationUtils.serializeRskTxWaitingForSignatures(
+            svpSpendTxWaitingForSignatures);
     }
 
     private static byte[] decodeRlpToEntry(byte[] rlpData) {
         Objects.requireNonNull(rlpData);
 
-        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
-        return rlpList.get(0).getRLPData();
+        return RLP.decode2(rlpData).get(0).getRLPData();
     }
 }
