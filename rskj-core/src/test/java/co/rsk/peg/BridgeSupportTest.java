@@ -1130,7 +1130,9 @@ class BridgeSupportTest {
 
             List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
             assertEquals(1, outputs.size());
-            assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), Coin.valueOf(1_000));
+
+            Coin expectedAmount = Coin.valueOf(1_762L);
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), expectedAmount);
         }
 
         private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
