@@ -78,6 +78,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -722,119 +723,14 @@ class BridgeSupportTest {
         private void assertOneOutputIsToProposedFederationWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
             Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
 
-            Optional<TransactionOutput> outputToProposedFederationOpt = searchForOutput(svpFundTransactionUnsignedOutputs, proposedFederationScriptPubKey);
-            assertTrue(outputToProposedFederationOpt.isPresent());
-
-            TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
-            assertEquals(outputToProposedFederation.getValue(), spendableValueFromProposedFederation);
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationScriptPubKey, spendableValueFromProposedFederation);
         }
 
         private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
             Script proposedFederationWithFlyoverPrefixScriptPubKey =
                 PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
 
-            Optional<TransactionOutput> outputToProposedFederationWithFlyoverPrefixOpt = searchForOutput(
-                svpFundTransactionUnsignedOutputs,
-                proposedFederationWithFlyoverPrefixScriptPubKey
-            );
-            assertTrue(outputToProposedFederationWithFlyoverPrefixOpt.isPresent());
-
-            TransactionOutput outputToProposedFederationWithFlyoverPrefix = outputToProposedFederationWithFlyoverPrefixOpt.get();
-            assertEquals(outputToProposedFederationWithFlyoverPrefix.getValue(), spendableValueFromProposedFederation);
-        }
-
-        private Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
-            return transactionOutputs.stream()
-                .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
-                .findFirst();
-        }
-
-        @Test
-        void processSvpSpendTransaction_whenThereIsNoFundTxHashSigned_shouldNotCreateNorProcessSpendTx() {
-            // act
-            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
-            bridgeStorageProvider.save();
-
-            // assert
-            assertSvpSpendTxHashUnsignedWasNotSavedInStorage();
-            assertThereIsNoSvpSpendTxWaitingForSignatures();
-        }
-
-        private void assertSvpSpendTxHashUnsignedWasNotSavedInStorage() {
-            Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
-            assertFalse(svpSpendTransactionHashUnsignedOpt.isPresent());
-        }
-
-        private void assertThereIsNoSvpSpendTxWaitingForSignatures() {
-            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
-            assertFalse(svpSpendTxWaitingForSignaturesOpt.isPresent());
-        }
-
-        @Test
-        void processSvpSpendTransaction_createsExpectedTransactionAndSavesTheHashInStorageEntryAndInWaitingForSignaturesMapEntry() {
-            // arrange
-            bridgeStorageProvider.setSvpFundTxHashSigned(BitcoinTestUtils.createHash(1));
-            bridgeStorageProvider.save();
-
-            // act
-            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
-            bridgeStorageProvider.save();
-
-            // assert
-            assertSvpSpendTxHashUnsignedWasSavedInStorage();
-            assertSvpSpendTxIsWaitingForSignatures();
-            assertSvpFundTxHashSignedWasRemoved();
-            assertSvpSpendTransactionHasExpectedInputsAndOutputs();
-        }
-
-        private void assertSvpSpendTxHashUnsignedWasSavedInStorage() {
-            Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
-            assertTrue(svpSpendTransactionHashUnsignedOpt.isPresent());
-
-            svpSpendTransactionHashUnsigned = svpSpendTransactionHashUnsignedOpt.get();
-        }
-
-        private void assertSvpSpendTxIsWaitingForSignatures() {
-            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
-            assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
-            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignaturesOpt.get();
-
-            Keccak256 svpSpendTxWaitingForSignaturesRskTxHash = svpSpendTxWaitingForSignatures.getKey();
-            assertEquals(rskTxHash, svpSpendTxWaitingForSignaturesRskTxHash);
-
-            BtcTransaction svpSpendTxWaitingForSignaturesSpendTx = svpSpendTxWaitingForSignatures.getValue();
-            assertEquals(svpSpendTransactionHashUnsigned, svpSpendTxWaitingForSignaturesSpendTx.getHash());
-            svpSpendTransactionUnsigned = svpSpendTxWaitingForSignaturesSpendTx;
-        }
-
-        private void assertSvpFundTxHashSignedWasRemoved() {
-            Optional<Sha256Hash> svpFundTxHashSigned = bridgeStorageProvider.getSvpFundTxHashSigned();
-            assertFalse(svpFundTxHashSigned.isPresent());
-        }
-
-        private void assertSvpSpendTransactionHasExpectedInputsAndOutputs() {
-            assertInputsParentTxHashIsFundTransactionHash(svpSpendTransactionUnsigned.getInputs(), svpFundTransactionHashSigned);
-
-            List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
-            assertEquals(1, outputs.size());
-            assertOneOutputIsToActiveFederationWithExpectedAmount(outputs);
-        }
-
-        private void assertInputsParentTxHashIsFundTransactionHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
-            for (TransactionInput input : inputs) {
-                Sha256Hash inputParentTxHash = input.getParentTransaction().getHash();
-                assertEquals(svpFundTxHashSigned, inputParentTxHash);
-            }
-        }
-
-        private void assertOneOutputIsToActiveFederationWithExpectedAmount(List<TransactionOutput> transactionOutputs) {
-            Script activeFederationScriptPubKey = activeFederation.getP2SHScript();
-
-            Optional<TransactionOutput> expectedOutput = searchForOutput(transactionOutputs, activeFederationScriptPubKey);
-            assertTrue(expectedOutput.isPresent());
-
-            TransactionOutput output = expectedOutput.get();
-            assertTrue(bridgeMainNetConstants.getSpendableValueFromProposedFederation().isGreaterThan(output.getValue())); // the amount sent from the proposed federation is the one received - fees.
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationWithFlyoverPrefixScriptPubKey, spendableValueFromProposedFederation);
         }
 
         private void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash) {
@@ -1154,6 +1050,103 @@ class BridgeSupportTest {
             assertTrue(svpFundTransactionSignedOpt.isPresent());
 
             assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+        }
+
+        @Test
+        void processSvpSpendTransaction_whenThereIsNoProposedFederation_shouldNotCreateNorProcessSpendTx() {
+            // act
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
+            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSpendTransactionValuesWereNotSaved();
+        }
+
+        @Test
+        void processSvpSpendTransaction_whenThereIsNoFundTxSigned_shouldNotCreateNorProcessSpendTx() {
+            // act
+            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSpendTransactionValuesWereNotSaved();
+        }
+
+        private void assertSvpSpendTransactionValuesWereNotSaved() {
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertFalse(svpSpendTxHashUnsigned.isPresent());
+
+            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertFalse(svpSpendTxWaitingForSignatures.isPresent());
+        }
+
+        @Test
+        void processSvpSpendTransaction_createsExpectedTransactionAndSavesTheHashInStorageEntryAndInWaitingForSignaturesMapEntry() {
+            // arrange
+            BtcTransaction svpFundTransaction = createSvpFundTransaction();
+            signInputs(svpFundTransaction);
+
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTransaction);
+            bridgeStorageProvider.save();
+
+            // act
+            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSpendTxHashUnsignedWasSavedInStorage();
+            assertSvpSpendTxIsWaitingForSignatures();
+            assertSvpFundTxSignedWasRemoved();
+            assertSvpSpendTxHasExpectedInputsAndOutputs(svpFundTransaction);
+        }
+
+        private void assertSvpSpendTxHashUnsignedWasSavedInStorage() {
+            Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTransactionHashUnsignedOpt.isPresent());
+
+            svpSpendTransactionHashUnsigned = svpSpendTransactionHashUnsignedOpt.get();
+        }
+
+        private void assertSvpSpendTxIsWaitingForSignatures() {
+            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignaturesOpt.get();
+
+            Keccak256 svpSpendTxWaitingForSignaturesRskTxHash = svpSpendTxWaitingForSignatures.getKey();
+            assertEquals(rskTxHash, svpSpendTxWaitingForSignaturesRskTxHash);
+
+            BtcTransaction svpSpendTxWaitingForSignaturesSpendTx = svpSpendTxWaitingForSignatures.getValue();
+            assertEquals(svpSpendTransactionHashUnsigned, svpSpendTxWaitingForSignaturesSpendTx.getHash());
+            svpSpendTransactionUnsigned = svpSpendTxWaitingForSignaturesSpendTx;
+        }
+
+        private void assertSvpFundTxSignedWasRemoved() {
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertFalse(svpFundTxSigned.isPresent());
+        }
+
+        private void assertSvpSpendTxHasExpectedInputsAndOutputs(BtcTransaction svpFundTxSigned) {
+            assertInputsOutpointHashIsFundTxHash(svpSpendTransactionUnsigned.getInputs(), svpFundTxSigned.getHash());
+
+            List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
+            assertEquals(1, outputs.size());
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), Coin.valueOf(1_000));
+        }
+
+        private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash outpointHash = input.getOutpoint().getHash();
+                assertEquals(svpFundTxHashSigned, outpointHash);
+            }
+        }
+
+        private void assertOutputWasSentToExpectedScriptWithExpectedAmount(List<TransactionOutput> transactionOutputs, Script expectedScriptPubKey, Coin expectedAmount) {
+            Optional<TransactionOutput> expectedOutput = searchForOutput(transactionOutputs, expectedScriptPubKey);
+            assertTrue(expectedOutput.isPresent());
+
+            TransactionOutput output = expectedOutput.get();
+            assertEquals(expectedAmount, output.getValue());
         }
     }
 

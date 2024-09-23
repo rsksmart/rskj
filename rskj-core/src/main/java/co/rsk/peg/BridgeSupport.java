@@ -19,7 +19,9 @@ package co.rsk.peg;
 
 import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
+import static co.rsk.peg.PegUtils.getFlyoverScriptPubKey;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static java.util.Objects.isNull;
@@ -1048,21 +1050,66 @@ public class BridgeSupport {
     }
 
     protected void processSvpSpendTransactionUnsigned(Transaction rskTx) {
-        Optional<Sha256Hash> svpFundTxHashSignedOpt = provider.getSvpFundTxHashSigned();
-        if (!svpFundTxHashSignedOpt.isPresent()) {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+        if (!proposedFederationOpt.isPresent()) {
             return;
         }
+        Federation proposedFederation = proposedFederationOpt.get();
 
-        Sha256Hash svpFundTxHashSigned = svpFundTxHashSignedOpt.get();
-        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxHashSigned);
+        Optional<BtcTransaction> svpFundTxSignedOpt = provider.getSvpFundTxSigned();
+        if (!svpFundTxSignedOpt.isPresent()) {
+            return;
+        }
+        BtcTransaction svpFundTxSigned = svpFundTxSignedOpt.get();
 
+        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        provider.setSvpSpendTxHashUnsigned(svpSpendTransactionUnsigned.getHash());
+        provider.setSvpSpendTxWaitingForSignatures(
+            new AbstractMap.SimpleEntry<>(rskTx.getHash(), svpSpendTransactionUnsigned)
+        );
+        clearSvpFundTxSigned();
     }
 
-    private BtcTransaction createSvpSpendTransaction(Sha256Hash svpFundTxHashSigned) {
+    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
         BtcTransaction svpSpendTransaction = new BtcTransaction(networkParameters);
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
+        addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
+        svpSpendTransaction.addOutput(Coin.valueOf(1_000), federationSupport.getActiveFederationAddress());
+
         return svpSpendTransaction;
+    }
+
+    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        List<TransactionOutput> svpFundTxSignedOutputs = svpFundTxSigned.getOutputs();
+
+        // add input sent to proposed federation
+        TransactionOutput outputToProposedFederation =
+            searchForOutput(svpFundTxSignedOutputs, proposedFederation.getP2SHScript())
+                .orElseThrow(() ->
+                    new IllegalStateException("Svp fund transaction must have an output to the proposed federation.")
+                );
+        svpSpendTransaction.addInput(svpFundTxSigned.getHash(),
+            svpFundTxSignedOutputs.indexOf(outputToProposedFederation),
+            outputToProposedFederation.getScriptPubKey()
+        );
+
+        // add input sent to flyover proposed federation
+        Script flyoverProposedFederationScriptPubKey =
+            getFlyoverScriptPubKey(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+        TransactionOutput outputToFlyoverProposedFederation =
+            searchForOutput(svpFundTxSignedOutputs, flyoverProposedFederationScriptPubKey)
+                .orElseThrow(() ->
+                    new IllegalStateException("Svp fund transaction must have an output to the flyover proposed federation.")
+                );
+        svpSpendTransaction.addInput(svpFundTxSigned.getHash(),
+            svpFundTxSignedOutputs.indexOf(outputToFlyoverProposedFederation),
+            outputToFlyoverProposedFederation.getScriptPubKey()
+        );
+    }
+
+    private void clearSvpFundTxSigned() {
+        provider.setSvpFundTxSigned(null);
     }
 
     protected void updateFederationCreationBlockHeights() {
