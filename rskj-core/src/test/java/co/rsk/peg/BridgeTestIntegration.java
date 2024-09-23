@@ -1247,6 +1247,18 @@ public class BridgeTestIntegration {
     }
 
     @Test
+    void exceptionInGetStateForSvpClient() {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, signatureCache);
+
+        try {
+            bridge.getStateForSvpClient(null);
+            fail();
+        } catch (VMException ex) {
+            assertEquals("Exception in getStateForSvpClient", ex.getMessage());
+        }
+    }
+
+    @Test
     void exceptionInGetStateForDebugging() {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, signatureCache);
 
