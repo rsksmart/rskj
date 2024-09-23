@@ -95,6 +95,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function ADD_SIGNATURE = BridgeMethods.ADD_SIGNATURE.getFunction();
     // Returns a StateForFederator encoded in RLP
     public static final CallTransaction.Function GET_STATE_FOR_BTC_RELEASE_CLIENT = BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT.getFunction();
+    // Returns a StateForProposedFederator encoded in RLP
+    public static final CallTransaction.Function GET_STATE_FOR_SVP_CLIENT = BridgeMethods.GET_STATE_FOR_SVP_CLIENT.getFunction();
     // Returns a BridgeState encoded in RLP
     public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = BridgeMethods.GET_STATE_FOR_DEBUGGING.getFunction();
     // Return the bitcoin blockchain best chain height know by the bridge contract
@@ -636,6 +638,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (Exception e) {
             logger.warn("Exception in getStateForBtcReleaseClient", e);
             throw new VMException("Exception in getStateForBtcReleaseClient", e);
+        }
+    }
+
+    public byte[] getStateForSvpClient(Object[] args) throws VMException {
+        logger.trace("getStateForSvpClient");
+
+        try {
+            return bridgeSupport.getStateForSvpClient();
+        } catch (Exception e) {
+            logger.warn("Exception in getStateForSvpClient", e);
+            throw new VMException("Exception in getStateForSvpClient", e);
         }
     }
 

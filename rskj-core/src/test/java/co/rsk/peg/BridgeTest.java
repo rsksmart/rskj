@@ -2261,6 +2261,38 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
+    void getStateForSvpClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_STATE_FOR_SVP_CLIENT.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
+                !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getStateForSvpClient();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
     void getStateForDebugging(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException, BlockStoreException {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
@@ -3087,11 +3119,12 @@ class BridgeTest {
             ActivationConfigsForTest.iris300(),
             ActivationConfigsForTest.hop400(),
             ActivationConfigsForTest.fingerroot500(),
-            ActivationConfigsForTest.arrowhead600()
+            ActivationConfigsForTest.arrowhead600(),
+            ActivationConfigsForTest.lovell700()
         );
 
         for (MessageCall.MsgType msgType : MessageCall.MsgType.values()) {
-            for(ActivationConfig activationConfig : activationConfigs) {
+            for (ActivationConfig activationConfig : activationConfigs) {
                 argumentsList.add(Arguments.of(msgType, activationConfig));
             }
         }
