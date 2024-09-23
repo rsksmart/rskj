@@ -104,6 +104,15 @@ jobs:
           BUILD_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV
 
+      - name: Sanitize Branch Name
+        id: sanitize-branch-name
+        env:
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        run: |
+          # Delete non-alphanumeric characters and limit to 255 chars which is the branch limit in GitHub
+          SAFE_BRANCH_NAME=$(echo "${GITHUB_HEAD_REF}" | tr -cd '[:alnum:]_-' | cut -c1-255)
+          echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
+
       - name: Run Rootstock Integration Tests
         uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
         with:
@@ -114,6 +123,8 @@ jobs:
       - name: Send Slack Notification on Success
         if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -121,16 +132,16 @@ jobs:
               "attachments": [
                 {
                   "color": "good",
-                  "text": "OK: :+1: Pull request: ${{ github.head_ref }}  - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                  "text": "OK: :+1: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
                 }
               ]
             }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
 
       - name: Send Slack Notification on Failure
         if: failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -138,9 +149,7 @@ jobs:
               "attachments": [
                 {
                   "color": "danger",
-                  "text": "FAILED: :robot_face: *Pull request*: ${{ github.head_ref }}  - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                  "text": "FAILED: :robot_face: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
                 }
               ]
             }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
