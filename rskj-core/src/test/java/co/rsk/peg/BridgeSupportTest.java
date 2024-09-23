@@ -1874,7 +1874,7 @@ class BridgeSupportTest {
         Transaction rskTx = mock(Transaction.class);
         when(rskTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
 
-        FederationSupport federationSupport = federationSupportBuilder
+        federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(executionBlock)
