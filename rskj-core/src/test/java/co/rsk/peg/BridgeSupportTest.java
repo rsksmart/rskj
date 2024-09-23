@@ -811,9 +811,10 @@ class BridgeSupportTest {
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransaction_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+        void registerBtcTransaction_forSvpFundTransactionChange_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsigned();
+            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionWithChange();
+
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
 
@@ -831,7 +832,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransaction_whenValidationPeriodEnded_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
+        void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
             // make rsk execution block to be after validation period ended
             long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
@@ -843,7 +844,7 @@ class BridgeSupportTest {
                 .build();
             rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
 
-            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsigned();
+            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionWithChange();
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
 
@@ -861,8 +862,10 @@ class BridgeSupportTest {
         @Test
         void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
-            createAndSaveSvpFundTransactionUnsigned();
-            BtcTransaction pegout = createAndSavePegout();
+            arrangeSvpFundTransactionWithChange();
+
+            BtcTransaction pegout = createPegout();
+            savePegoutIndex(pegout);
             signInputs(pegout); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(pegout);
 
@@ -878,9 +881,11 @@ class BridgeSupportTest {
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransactionWithoutChangeOutput_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValuesButNotSaveNewUtxos() throws Exception {
+        void registerBtcTransaction_forSvpFundTransactionWithoutChangeOutput_whenSvpPeriodIsOngoing_shouldJustUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
-            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsignedWithoutChangeOutput();
+            BtcTransaction svpFundTransaction = createSvpFundTransaction();
+            saveSvpFundTransactionUnsigned(svpFundTransaction);
+
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
 
@@ -896,9 +901,10 @@ class BridgeSupportTest {
         }
 
         @Test
-        void registerBtcTransaction_forSvpFundTransaction_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
+        void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
-            BtcTransaction svpFundTransaction = createAndSaveSvpFundTransactionUnsigned();
+            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionWithChange();
+
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
 
@@ -913,63 +919,38 @@ class BridgeSupportTest {
             assertSvpFundTransactionValuesWereUpdated();
         }
 
-        private void addOutputToProposedFederation(BtcTransaction svpFundTransaction) {
-            svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
-        }
-
-        private void assertActiveFederationUtxosSize(int expectedActiveFederationUtxosSize) {
-            assertEquals(expectedActiveFederationUtxosSize, federationSupport.getActiveFederationBtcUTXOs().size());
-        }
-
-        private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
-            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
-            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
-
-            long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
-            assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
-        }
-
-        private void assertSvpFundTransactionValuesWereNotUpdated() {
-            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
-        }
-
-        private void assertSvpFundTransactionValuesWereUpdated() {
-            Optional<BtcTransaction> svpFundTransactionSignedOpt = bridgeStorageProvider.getSvpFundTxSigned();
-            assertTrue(svpFundTransactionSignedOpt.isPresent());
-
-            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-        }
-
-        private BtcTransaction createAndSaveSvpFundTransactionUnsignedWithoutChangeOutput() {
-            BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
-            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
-            addInput(svpFundTransaction, parentTxHash);
-            addOutputToProposedFederation(svpFundTransaction);
-            savePegoutIndex(svpFundTransaction);
-            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
-
-            return svpFundTransaction;
-        }
-
-        private BtcTransaction createAndSaveSvpFundTransactionUnsigned() {
-            BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
-            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
-            addInput(svpFundTransaction, parentTxHash);
-            addOutputToProposedFederation(svpFundTransaction);
+        private BtcTransaction arrangeSvpFundTransactionWithChange() {
+            BtcTransaction svpFundTransaction = createSvpFundTransaction();
             addOutputChange(svpFundTransaction);
-            savePegoutIndex(svpFundTransaction);
-            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
+            saveSvpFundTransactionUnsigned(svpFundTransaction);
 
             return svpFundTransaction;
         }
 
-        private BtcTransaction createAndSavePegout() {
+        private BtcTransaction createSvpFundTransaction() {
+            BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
+
+            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
+            addInput(svpFundTransaction, parentTxHash);
+
+            svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
+            Address flyoverProposedFederationAddress =
+                PegUtils.getFlyoverAddress(btcMainnetParams, bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+            svpFundTransaction.addOutput(spendableValueFromProposedFederation, flyoverProposedFederationAddress);
+
+            return svpFundTransaction;
+        }
+
+        private void saveSvpFundTransactionUnsigned(BtcTransaction svpFundTransaction) {
+            savePegoutIndex(svpFundTransaction);
+            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
+        }
+
+        private BtcTransaction createPegout() {
             BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
             Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
             addInput(pegout, parentTxHash);
             addOutputChange(pegout);
-            savePegoutIndex(pegout);
 
             return pegout;
         }
@@ -1032,6 +1013,30 @@ class BridgeSupportTest {
                 .withBtcBlockStoreFactory(btcBlockStoreFactory)
                 .withRepository(repository)
                 .build();
+        }
+
+        private void assertActiveFederationUtxosSize(int expectedActiveFederationUtxosSize) {
+            assertEquals(expectedActiveFederationUtxosSize, federationSupport.getActiveFederationBtcUTXOs().size());
+        }
+
+        private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
+            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+            long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
+            assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+        }
+
+        private void assertSvpFundTransactionValuesWereNotUpdated() {
+            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+        }
+
+        private void assertSvpFundTransactionValuesWereUpdated() {
+            Optional<BtcTransaction> svpFundTransactionSignedOpt = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTransactionSignedOpt.isPresent());
+
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
         }
     }
 
