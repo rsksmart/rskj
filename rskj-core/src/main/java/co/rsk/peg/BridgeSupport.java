@@ -442,10 +442,13 @@ public class BridgeSupport {
     }
 
     private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
-        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopy);
+        if (!transaction.hasWitness()) {
+            BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopy);
+            return transactionCopy.getHash().equals(svpFundTransactionHashUnsigned);
+        }
 
-        return transactionCopy.getHash().equals(svpFundTransactionHashUnsigned);
+        return transaction.getHash().equals(svpFundTransactionHashUnsigned);
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
