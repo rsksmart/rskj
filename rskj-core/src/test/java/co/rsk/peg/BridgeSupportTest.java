@@ -563,7 +563,6 @@ class BridgeSupportTest {
 
         private BtcTransaction svpFundTransactionUnsigned;
         private Sha256Hash svpFundTransactionHashUnsigned;
-        private Sha256Hash svpFundTransactionHashSigned;
 
         private BtcTransaction svpSpendTransactionUnsigned;
         private Sha256Hash svpSpendTransactionHashUnsigned;
