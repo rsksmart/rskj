@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.SortedMap;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 
 public class StateForFederator {
 
@@ -53,15 +52,13 @@ public class StateForFederator {
      * @return The RLP-encoded byte array representing the current state.
      */
     public byte[] encodeToRlp() {
-        byte[] serializedRskTxsWaitingForSignatures = 
-            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignatures);
-        return RLP.encodeList(serializedRskTxsWaitingForSignatures);
+        return BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(
+            rskTxsWaitingForSignatures);
     }
 
     private static byte[] decodeRlpToMap(byte[] rlpData) {
         Objects.requireNonNull(rlpData);
 
-        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
-        return rlpList.get(0).getRLPData();
+        return RLP.decode2(rlpData).get(0).getRLPData();
     }
 }
