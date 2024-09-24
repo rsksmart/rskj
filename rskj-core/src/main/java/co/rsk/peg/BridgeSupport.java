@@ -429,16 +429,9 @@ public class BridgeSupport {
     }
 
     private void updateSvpFundTransactionValuesIfPossible(BtcTransaction transaction) {
-        Optional<Sha256Hash> svpFundTransactionHashUnsigned = provider.getSvpFundTxHashUnsigned();
-        if (!svpFundTransactionHashUnsigned.isPresent()) {
-            return;
-        }
-
-        if (!isTheSvpFundTransaction(svpFundTransactionHashUnsigned.get(), transaction)) {
-            return;
-        }
-
-        updateSvpFundTransactionValues(transaction);
+        provider.getSvpFundTxHashUnsigned()
+            .filter(svpFundTxHashUnsigned -> isTheSvpFundTransaction(svpFundTxHashUnsigned, transaction))
+            .ifPresent(isTheSvpFundTransaction -> updateSvpFundTransactionValues(transaction));
     }
 
     private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
