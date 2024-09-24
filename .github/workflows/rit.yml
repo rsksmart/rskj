@@ -4,7 +4,7 @@ on:
   push:
     branches: ["master", "*-rc"]
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types: [opened, synchronize, reopened]
     branches: ["master", "*-rc"]
   workflow_dispatch:
     inputs:
@@ -42,6 +42,11 @@ jobs:
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ env.RSKJ_BRANCH }}
 
       - name: Run Rootstock Integration Tests
         uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1

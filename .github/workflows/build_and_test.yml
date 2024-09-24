@@ -109,6 +109,7 @@ jobs:
             rskj-core/build/reports/
 
       - name: Run SonarQube analysis
+        if: github.event.pull_request.head.repo.fork != true
         env:
           GH_EVENT: ${{ github.event_name }}
           GH_PR_NUMBER: ${{ github.event.pull_request.number }}
