@@ -6,8 +6,7 @@ import static org.mockito.Mockito.when;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
+
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.crypto.Keccak256;
@@ -120,9 +119,9 @@ class FlyoverCompatibleBtcWallextWithSingleScriptTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             nonStandardErpFederation.getP2SHScript().getPubKeyHash());
 
-        Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            nonStandardErpFederation.getRedeemScript(),
-            Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverFederationInformation.getDerivationHash(),
+            nonStandardErpFederation.getRedeemScript()
         );
 
         Assertions.assertNotNull(redeemData);
