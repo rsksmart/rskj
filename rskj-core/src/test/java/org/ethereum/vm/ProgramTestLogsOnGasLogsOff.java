@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2022 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,20 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.handler;
+package org.ethereum.vm;
 
-import org.ethereum.core.Transaction;
+import org.junit.jupiter.api.BeforeEach;
 
-/**
- * Used to known when a given tx was received by txhandler
- */
-class TxTimestamp {
+class ProgramTestLogsOnGasLogsOff extends ProgramTest {
 
-    long timestamp;
-    Transaction tx;
-
-    TxTimestamp(Transaction tx, long timestamp) {
-        this.timestamp = timestamp;
-        this.tx = tx;
+    @Override
+    @BeforeEach
+    void beforeEach() {
+        setUp(true, false);
     }
+
 }

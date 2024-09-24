@@ -20,11 +20,12 @@ package org.ethereum.vm;
 
 import org.junit.jupiter.api.BeforeEach;
 
-class ProgramTestLogsOnOnTest extends ProgramTest {
+class ProgramTestLogsOffGasLogsOn extends ProgramTest {
 
+    @Override
     @BeforeEach
     void beforeEach() {
-        setUp(true, true);
+        setUp(false, true);
     }
 
 }
