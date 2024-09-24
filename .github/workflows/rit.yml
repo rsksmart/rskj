@@ -1,8 +1,6 @@
 name: Rootstock Integration Tests
 
 on:
-  push:
-    branches: ["master", "*-rc"]
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: ["master", "*-rc"]
@@ -23,25 +21,97 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      - name: Checkout Repository # Step needed to access the PR description using github CLI
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+
       - name: Set Branch Variables
         id: set-branch-variables
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_event_input_powpeg_branch: ${{ github.event.inputs.powpeg-branch }}
+          github_event_input_rit_branch: ${{ github.event.inputs.rit-branch }}
+          github_event_name: ${{ github.event_name }}
+          github_event_pull_request_number: ${{ github.event.pull_request.number }}
+          github_head_ref: ${{ github.head_ref }}
+          github_ref_name: ${{ github.ref_name }}
         run: |
-          # Default values
-          RSKJ_BRANCH="master"
-          RIT_BRANCH="${{ github.event.inputs.rit-branch || 'main' }}"
-          POWPEG_BRANCH="${{ github.event.inputs.powpeg-branch || 'master' }}"
+          PR_DESCRIPTION=pr-description.txt
 
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/*-rc" ]]; then
-            RSKJ_BRANCH="${{ github.ref }}"
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            RSKJ_BRANCH="${{ github.ref_name }}"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            RSKJ_BRANCH="${{ github.head_ref }}"
+          ALLOWED_BRANCH_CHARACTERS='[-./0-9A-Z_a-z]'
+
+          default_rskj_branch=master
+          default_powpeg_branch=master
+          default_rit_branch=main
+
+          get_branch_from_description()
+          {
+            _prefix=$1
+
+            # On lines matching "`$_prefix:...`", replace the lines with the
+            # thing in ... and print the result.
+            _search_re='\@`'$_prefix:$ALLOWED_BRANCH_CHARACTERS'\{1,\}`@'
+            _replace_re='s@.*`'$_prefix:'\('$ALLOWED_BRANCH_CHARACTERS'\{1,\}\)`.*@\1@p'
+            _branch=$(sed -n "$_search_re $_replace_re" "$PR_DESCRIPTION")
+            echo "$_branch"
+          }
+
+          is_valid_branch_name()
+          {
+            echo "$1" | grep -qx "$ALLOWED_BRANCH_CHARACTERS\\{1,\\}"
+          }
+
+          if [ "$github_event_name" = workflow_dispatch ]; then
+            RSKJ_BRANCH=$github_ref_name
+            POWPEG_BRANCH=${github_event_inputs_powpeg_branch:-$default_powpeg_branch}
+            RIT_BRANCH=${github_event_inputs_rit_branch:-$default_rit_branch}
+          elif [ "$github_event_name" = pull_request ]; then
+            gh pr view "$github_event_pull_request_number" --json body -q .body >"$PR_DESCRIPTION"
+
+            RSKJ_BRANCH=$(get_branch_from_description rskj)
+            : ${RSKJ_BRANCH:=${github_head_ref:-$default_rskj_branch}}
+
+            POWPEG_BRANCH=$(get_branch_from_description fed)
+            : ${POWPEG_BRANCH:=$default_powpeg_branch}
+
+            RIT_BRANCH=$(get_branch_from_description rit)
+            : ${RIT_BRANCH:=$default_rit_branch}
+          else
+            RSKJ_BRANCH=$default_rskj_branch
+            POWPEG_BRANCH=$default_powpeg_branch
+            RIT_BRANCH=$default_rit_branch
+          fi
+
+          if ! is_valid_branch_name "$RSKJ_BRANCH"; then
+            echo "rskj: invalid branch name: $RSKJ_BRANCH" >&2
+            exit 1
+          fi
+          if ! is_valid_branch_name "$POWPEG_BRANCH"; then
+            echo "fed: invalid branch name: $POWPEG_BRANCH" >&2
+            exit 1
+          fi
+          if ! is_valid_branch_name "$RIT_BRANCH"; then
+            echo "rit: invalid branch name: $RIT_BRANCH" >&2
+            exit 1
           fi
 
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
+
+      - name: Set Build URL
+        id: set-build-url
+        run: |
+          BUILD_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV
+
+      - name: Sanitize Branch Name
+        id: sanitize-branch-name
+        env:
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+        run: |
+          # Delete non-alphanumeric characters and limit to 255 chars which is the branch limit in GitHub
+          SAFE_BRANCH_NAME=$(echo "${GITHUB_HEAD_REF}" | tr -cd '[:alnum:]_-' | cut -c1-255)
+          echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
         uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
@@ -49,3 +119,37 @@ jobs:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
+
+      - name: Send Slack Notification on Success
+        if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
+        uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+        with:
+          channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
+          payload: |
+            {
+              "attachments": [
+                {
+                  "color": "good",
+                  "text": "OK: :+1: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                }
+              ]
+            }
+
+      - name: Send Slack Notification on Failure
+        if: failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
+        uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+        with:
+          channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
+          payload: |
+            {
+              "attachments": [
+                {
+                  "color": "danger",
+                  "text": "FAILED: :robot_face: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                }
+              ]
+            }
