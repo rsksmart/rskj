@@ -822,7 +822,12 @@ class BridgeSupportTest {
 
             // act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpFundTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
             bridgeStorageProvider.save();
 
             // assert
@@ -850,7 +855,12 @@ class BridgeSupportTest {
 
             // Act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpFundTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
             bridgeStorageProvider.save();
 
             // assert
@@ -871,7 +881,12 @@ class BridgeSupportTest {
 
             // Act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(rskTx, pegout.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegout.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
             bridgeStorageProvider.save();
 
             // assert
@@ -891,7 +906,12 @@ class BridgeSupportTest {
 
             // Act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpFundTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
             bridgeStorageProvider.save();
 
             // Assert
@@ -910,7 +930,12 @@ class BridgeSupportTest {
 
             // Act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
-            bridgeSupport.registerBtcTransaction(rskTx, svpFundTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpFundTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
             bridgeStorageProvider.save();
 
             // Assert
