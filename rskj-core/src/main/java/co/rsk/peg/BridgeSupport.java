@@ -17,10 +17,12 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeUtils.calculatePegoutTxSize;
 import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinUtils.findWitnessCommitment;
+import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static java.util.Objects.isNull;
@@ -1070,6 +1072,92 @@ public class BridgeSupport {
         sendRequest.recipientsPayFees = false;
 
         return sendRequest;
+    }
+
+    protected void processSvpSpendTransactionUnsigned(Transaction rskTx) {
+        federationSupport.getProposedFederation()
+            .ifPresent(proposedFederation -> provider.getSvpFundTxSigned()
+            .ifPresent(svpFundTxSigned -> {
+                BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+                updateSvpSpendTransactionValues(rskTx.getHash(), svpSpendTransactionUnsigned);
+            }));
+    }
+
+    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        BtcTransaction svpSpendTransaction = new BtcTransaction(networkParameters);
+        svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
+
+        addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
+
+        svpSpendTransaction.addOutput(
+            calculateAmountToSendToActiveFederation(proposedFederation),
+            federationSupport.getActiveFederationAddress()
+        );
+
+        return svpSpendTransaction;
+    }
+
+    private Coin calculateAmountToSendToActiveFederation(Federation proposedFederation) {
+        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
+        long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
+
+        return feePerKbSupport.getFeePerKb()
+            .multiply(svpSpendTransactionSize * backupSizePercentage)
+            .divide(1000);
+    }
+
+    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        // TODO update when segwit since the scriptSig changes
+        addInputSentToProposedFederation(svpSpendTransaction, svpFundTxSigned, proposedFederation);
+        addInputSentToFlyoverProposedFederation(svpSpendTransaction, svpFundTxSigned, proposedFederation.getRedeemScript());
+    }
+
+    private void addInputSentToProposedFederation(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        List<TransactionOutput> svpFundTxSignedOutputs = svpFundTxSigned.getOutputs();
+        Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
+        TransactionOutput outputToProposedFederation =
+            searchForOutput(svpFundTxSignedOutputs, proposedFederationOutputScript)
+            .orElseThrow(() ->
+                new IllegalStateException("Svp fund transaction must have an output to the proposed federation.")
+            );
+
+        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+        Script proposedFederationScriptSig = proposedFederationOutputScript.createEmptyInputScript(null, proposedFederationRedeemScript);
+        svpSpendTransaction.addInput(
+            svpFundTxSigned.getHash(),
+            svpFundTxSignedOutputs.indexOf(outputToProposedFederation),
+            proposedFederationScriptSig
+        );
+    }
+
+    private void addInputSentToFlyoverProposedFederation(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Script proposedFederationRedeemScript) {
+        Keccak256 flyoverPrefix = bridgeConstants.getProposedFederationFlyoverPrefix();
+        Script flyoverProposedFederationRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(flyoverPrefix, proposedFederationRedeemScript);
+        Script flyoverProposedFederationScriptPubKey = ScriptBuilder.createP2SHOutputScript(flyoverProposedFederationRedeemScript);
+
+        List<TransactionOutput> svpFundTxSignedOutputs = svpFundTxSigned.getOutputs();
+        TransactionOutput outputToFlyoverProposedFederation =
+            searchForOutput(svpFundTxSignedOutputs, flyoverProposedFederationScriptPubKey)
+            .orElseThrow(() ->
+                new IllegalStateException("Svp fund transaction must have an output to the flyover proposed federation.")
+            );
+
+        Script flyoverProposedFederationEmptyScriptSig =
+            flyoverProposedFederationScriptPubKey.createEmptyInputScript(null, flyoverProposedFederationRedeemScript);
+        svpSpendTransaction.addInput(
+            svpFundTxSigned.getHash(),
+            svpFundTxSignedOutputs.indexOf(outputToFlyoverProposedFederation),
+            flyoverProposedFederationEmptyScriptSig
+        );
+    }
+
+    private void updateSvpSpendTransactionValues(Keccak256 rskTxHash, BtcTransaction svpSpendTransactionUnsigned) {
+        provider.setSvpSpendTxHashUnsigned(svpSpendTransactionUnsigned.getHash());
+        provider.setSvpSpendTxWaitingForSignatures(
+            new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTransactionUnsigned)
+        );
+
+        provider.setSvpFundTxSigned(null);
     }
 
     protected void updateFederationCreationBlockHeights() {
