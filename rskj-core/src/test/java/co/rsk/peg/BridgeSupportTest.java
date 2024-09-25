@@ -549,8 +549,9 @@ class BridgeSupportTest {
         private final Coin spendableValueFromProposedFederation = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
         private final List<LogInfo> logs = new ArrayList<>();
 
-        private BridgeSupport bridgeSupport;
         private BridgeStorageProvider bridgeStorageProvider;
+
+        private BridgeSupport bridgeSupport;
 
         private Federation activeFederation;
         private Federation proposedFederation;
@@ -781,7 +782,6 @@ class BridgeSupportTest {
             assertEventWasEmittedWithExpectedTopics(encodedTopics);
             assertEventWasEmittedWithExpectedData(encodedData);
         }
-
 
         private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
             byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
