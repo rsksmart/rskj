@@ -1,9 +1,11 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -212,5 +214,33 @@ public class PegUtils {
         }
 
         return pegoutRequestValue.compareTo(minPegoutValue) >= 0;
+    }
+
+    static boolean isPegoutRequestValueAboveRequiredFee(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        Coin feePerKB,
+        Federation activeFederation,
+        Coin pegoutRequestValue
+    ) {
+        if (!activations.isActive(RSKIP219)) {
+            // This check is only applied post RSKIP219
+            return true;
+        }
+
+        int pegoutSize = getRegularPegoutTxSize(activations, activeFederation);
+        // The pegout transaction has a cost related to its size and the current feePerKB
+        // The actual cost cannot be asserted exactly so the calculation is approximated
+        // On top of this, the remainder after the fee should be enough for the user to be able to operate
+        // For this, the calculation includes an additional percentage to assert for this
+        Coin fee = feePerKB
+            .multiply(pegoutSize) // times the size in bytes
+            .divide(1000); // Get the s/b
+        Coin minimumValueToReceive = fee
+            .times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee())
+            .divide(100);
+        Coin requiredFundsForFee = fee.add(minimumValueToReceive);
+
+        return pegoutRequestValue.compareTo(requiredFundsForFee) >= 0;
     }
 }

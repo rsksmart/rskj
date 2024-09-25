@@ -726,4 +726,45 @@ class PegUtilsTest {
         // Assert
         assertFalse(isAboveMinimum);
     }
+
+    @Test
+    void isPegoutRequestValueAboveRequiredFee_before_rskip219_returns_true_always() {
+        // Arrange
+        ActivationConfig.ForBlock papyrusActivations = ActivationConfigsForTest.papyrus200().forBlock(0L);
+        // Use a high feePerKb and a low pegout request value
+        // to ensure that the request is always below the required fee
+        Coin feePerKb = Coin.COIN;
+        Coin pegoutRequestValue = Coin.SATOSHI;
+
+        // Act
+        boolean isAboveRequiredFee = PegUtils.isPegoutRequestValueAboveRequiredFee(
+            BRIDGE_CONSTANTS,
+            papyrusActivations,
+            feePerKb,
+            activeFederation,
+            pegoutRequestValue
+        );
+
+        // Assert
+        assertTrue(isAboveRequiredFee);
+    }
+
+    @Test
+    void isPegoutRequestValueAboveRequiredFee_after_rskip219() {
+        // Arrange
+        Coin feePerKb = Coin.COIN;
+        Coin pegoutRequestValue = Coin.SATOSHI;
+
+        // Act
+        boolean isAboveRequiredFee = PegUtils.isPegoutRequestValueAboveRequiredFee(
+            BRIDGE_CONSTANTS,
+            ALL_ACTIVATIONS,
+            feePerKb,
+            activeFederation,
+            pegoutRequestValue
+        );
+
+        // Assert
+        assertTrue(isAboveRequiredFee);
+    }
 }

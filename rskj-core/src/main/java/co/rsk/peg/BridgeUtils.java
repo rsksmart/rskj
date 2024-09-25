@@ -607,7 +607,6 @@ public final class BridgeUtils {
     }
 
     public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
-
         if (inputs < 1 || outputs < 1) {
             throw new IllegalArgumentException("Inputs or outputs should be more than 1");
         }

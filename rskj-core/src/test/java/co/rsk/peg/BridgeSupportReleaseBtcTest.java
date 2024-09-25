@@ -221,10 +221,10 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(bridgeEventLogger, hopActivations);
 
         // Get a value between old and new minimum pegout values
-        Coin middle = BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue().subtract(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()).div(2);
-        Coin value = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().add(middle);
-        assertTrue(value.isLessThan(BRIDGE_CONSTANTS.getLegacyMinimumPegoutTxValue()));
-        assertTrue(value.isGreaterThan(BRIDGE_CONSTANTS.getMinimumPegoutTxValue()));
+        Coin middle = legacyMinimumPegoutTxValue.subtract(minimumPegoutTxValue).div(2);
+        Coin value = minimumPegoutTxValue.add(middle);
+        assertTrue(value.isLessThan(legacyMinimumPegoutTxValue));
+        assertTrue(value.isGreaterThan(minimumPegoutTxValue));
         bridgeSupport.releaseBtc(buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(value)));
 
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
