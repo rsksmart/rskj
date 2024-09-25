@@ -22,7 +22,6 @@ import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT
 import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.PegTestUtils.createUTXO;
-import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -87,9 +86,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 class BridgeSupportTest {
-    private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-    private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
-
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
