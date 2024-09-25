@@ -82,6 +82,12 @@ public class BitcoinUtils {
         }
     }
 
+    public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
+        return transactionOutputs.stream()
+            .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
+            .findFirst();
+    }
+
     public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx) {
         Preconditions.checkState(tx.isCoinBase());
         // If more than one witness commitment, take the last one as the valid one
