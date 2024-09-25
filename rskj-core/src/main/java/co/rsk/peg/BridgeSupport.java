@@ -1049,24 +1049,12 @@ public class BridgeSupport {
     }
 
     protected void processSvpSpendTransactionUnsigned(Transaction rskTx) {
-        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
-        if (!proposedFederationOpt.isPresent()) {
-            return;
-        }
-        Federation proposedFederation = proposedFederationOpt.get();
-
-        Optional<BtcTransaction> svpFundTxSignedOpt = provider.getSvpFundTxSigned();
-        if (!svpFundTxSignedOpt.isPresent()) {
-            return;
-        }
-        BtcTransaction svpFundTxSigned = svpFundTxSignedOpt.get();
-
-        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
-        provider.setSvpSpendTxHashUnsigned(svpSpendTransactionUnsigned.getHash());
-        provider.setSvpSpendTxWaitingForSignatures(
-            new AbstractMap.SimpleEntry<>(rskTx.getHash(), svpSpendTransactionUnsigned)
-        );
-        clearSvpFundTxSigned();
+        federationSupport.getProposedFederation()
+            .ifPresent(proposedFederation -> provider.getSvpFundTxSigned()
+            .ifPresent(svpFundTxSigned -> {
+                BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+                updateSvpSpendTransactionValues(rskTx.getHash(), svpSpendTransactionUnsigned);
+            }));
     }
 
     private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
@@ -1075,10 +1063,10 @@ public class BridgeSupport {
 
         addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
 
+        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
+        long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
         Coin amountToSendToActiveFederation = feePerKbSupport.getFeePerKb()
-            .multiply(
-                calculatePegoutTxSize(activations, proposedFederation, 2, 1)
-            )
+            .multiply(svpSpendTransactionSize * backupSizePercentage)
             .divide(1000);
         svpSpendTransaction.addOutput(amountToSendToActiveFederation, federationSupport.getActiveFederationAddress());
         return svpSpendTransaction;
@@ -1097,7 +1085,7 @@ public class BridgeSupport {
                     new IllegalStateException("Svp fund transaction must have an output to the proposed federation.")
                 );
 
-        // TODO update when segwit
+        // TODO update when segwit since the scriptSig changes
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
         Script proposedFederationScriptSig = proposedFederation.getP2SHScript().createEmptyInputScript(null, proposedFederationRedeemScript);
         svpSpendTransaction.addInput(svpFundTxSigned.getHash(),
@@ -1126,7 +1114,12 @@ public class BridgeSupport {
         );
     }
 
-    private void clearSvpFundTxSigned() {
+    private void updateSvpSpendTransactionValues(Keccak256 rskTxHash, BtcTransaction svpSpendTransactionUnsigned) {
+        provider.setSvpSpendTxHashUnsigned(svpSpendTransactionUnsigned.getHash());
+        provider.setSvpSpendTxWaitingForSignatures(
+            new AbstractMap.SimpleEntry<>(rskTxHash, svpSpendTransactionUnsigned)
+        );
+
         provider.setSvpFundTxSigned(null);
     }
 
