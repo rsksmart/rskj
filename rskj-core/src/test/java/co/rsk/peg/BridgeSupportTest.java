@@ -41,7 +41,6 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.utils.UnrefundablePeginReason;
@@ -58,8 +57,6 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
@@ -78,7 +75,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -90,9 +86,6 @@ import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createUTXO;
 
 class BridgeSupportTest {
-    private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-    private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
-
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
