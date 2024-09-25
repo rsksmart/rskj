@@ -319,20 +319,14 @@ public final class BridgeUtils {
         TransactionInput input = btcTx.getInput(0);
         Script scriptSig = input.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
-        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
-        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
-        MultiSigType multiSigType;
 
         int lastChunk;
+        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
 
-        multiSigType = parser.getMultiSigType();
-
-        if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
-            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
-        ) {
-            lastChunk = chunks.size() - 1;
-        } else {
+        if (isErpType(redeemScript)) {
             lastChunk = chunks.size() - 2;
+        } else {
+            lastChunk = chunks.size() - 1;
         }
 
         for (int i = 1; i < lastChunk; i++) {
@@ -342,6 +336,20 @@ public final class BridgeUtils {
             }
         }
         return unsigned;
+    }
+
+    private static boolean isErpType(Script redeemScript) {
+        List<ScriptChunk> redeemScriptChunks = redeemScript.getChunks();
+        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScriptChunks);
+        MultiSigType multiSigType = parser.getMultiSigType();
+        if (multiSigType == MultiSigType.FLYOVER) {
+            // if it is a flyover tx, it should use the internal redeem script
+            // to validate if it is a standard multisig
+            List<ScriptChunk> internalRedeemScriptChunks = redeemScriptChunks.subList(2, redeemScriptChunks.size());
+            RedeemScriptParser internalParser = RedeemScriptParserFactory.get(internalRedeemScriptChunks);
+            multiSigType = internalParser.getMultiSigType();
+        }
+        return multiSigType == MultiSigType.NON_STANDARD_ERP_FED || multiSigType == MultiSigType.P2SH_ERP_FED;
     }
 
     /**
@@ -365,15 +373,12 @@ public final class BridgeUtils {
             scriptSig = input.getScriptSig();
             chunks = scriptSig.getChunks();
             redeemScript = new Script(chunks.get(chunks.size() - 1).data);
-            parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
-            multiSigType = parser.getMultiSigType();
 
-            if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
-            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
+            if (isErpType(redeemScript)
             ) {
-                lastChunk = chunks.size() - 1;
-            } else {
                 lastChunk = chunks.size() - 2;
+            } else {
+                lastChunk = chunks.size() - 1;
             }
 
             for (int i = 1; i < lastChunk; i++) {
