@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class FederationChangeTest {
+public class BridgeSupportSvpTest {
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
@@ -111,7 +111,7 @@ public class FederationChangeTest {
 
         @BeforeEach
         void setUp() {
-            SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());;
+            SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 allActivations,
@@ -287,11 +287,11 @@ public class FederationChangeTest {
         private void assertLogPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
             Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
             byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, (Object) pegoutTransactionHashSerialized);
+            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
 
             List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
             byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
-            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, (Object) serializedOutpointValues);
+            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
 
             assertEventWasEmittedWithExpectedTopics(encodedTopics);
             assertEventWasEmittedWithExpectedData(encodedData);
