@@ -1063,16 +1063,25 @@ public class BridgeSupport {
 
         addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
 
-        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
-        long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
-        Coin amountToSendToActiveFederation = feePerKbSupport.getFeePerKb()
-            .multiply(svpSpendTransactionSize * backupSizePercentage)
-            .divide(1000);
-        svpSpendTransaction.addOutput(amountToSendToActiveFederation, federationSupport.getActiveFederationAddress());
+        svpSpendTransaction.addOutput(
+            calculateAmountToSendToActiveFederation(proposedFederation),
+            federationSupport.getActiveFederationAddress()
+        );
+
         return svpSpendTransaction;
     }
 
+    private Coin calculateAmountToSendToActiveFederation(Federation proposedFederation) {
+        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
+        long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
+
+        return feePerKbSupport.getFeePerKb()
+            .multiply(svpSpendTransactionSize * backupSizePercentage)
+            .divide(1000);
+    }
+
     private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        // TODO update when segwit since the scriptSig changes
         addInputSentToProposedFederation(svpSpendTransaction, svpFundTxSigned, proposedFederation);
         addInputSentToFlyoverProposedFederation(svpSpendTransaction, svpFundTxSigned, proposedFederation.getRedeemScript());
     }
@@ -1085,7 +1094,6 @@ public class BridgeSupport {
                     new IllegalStateException("Svp fund transaction must have an output to the proposed federation.")
                 );
 
-        // TODO update when segwit since the scriptSig changes
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
         Script proposedFederationScriptSig = proposedFederation.getP2SHScript().createEmptyInputScript(null, proposedFederationRedeemScript);
         svpSpendTransaction.addInput(svpFundTxSigned.getHash(),
