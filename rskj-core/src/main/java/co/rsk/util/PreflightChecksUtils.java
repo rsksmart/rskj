@@ -1,13 +1,15 @@
 package co.rsk.util;
 
 import co.rsk.RskContext;
-import co.rsk.config.NodeCliFlags;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by Nazaret García on 21/01/2021
@@ -25,7 +27,9 @@ import java.util.Arrays;
 public class PreflightChecksUtils {
     private static final Logger logger = LoggerFactory.getLogger(PreflightChecksUtils.class);
 
-    private static final int[] SUPPORTED_JAVA_VERSIONS = {17};
+    public static final Set<Integer> SUPPORTED_JAVA_VERSIONS = Collections.unmodifiableSet(
+            new TreeSet<>(Arrays.asList(17, 21))
+    );
 
     private final RskContext rskContext;
 
@@ -41,10 +45,10 @@ public class PreflightChecksUtils {
     void checkSupportedJavaVersion() throws PreflightCheckException {
         String javaVersion = getJavaVersion();
 
-        int intJavaVersion = getIntJavaVersion(javaVersion);
+        int majorJavaVersion = getMajorJavaVersion(javaVersion);
 
-        if (Arrays.stream(SUPPORTED_JAVA_VERSIONS).noneMatch(v -> intJavaVersion == v)) {
-            String errorMessage = String.format("Invalid Java Version '%s'. Supported versions: %s", intJavaVersion, StringUtils.join(SUPPORTED_JAVA_VERSIONS, ' '));
+        if (!SUPPORTED_JAVA_VERSIONS.contains(majorJavaVersion)) {
+            String errorMessage = String.format("Invalid Java Version '%s'. Supported versions: %s", majorJavaVersion, StringUtils.join(SUPPORTED_JAVA_VERSIONS, ", "));
             logger.error(errorMessage);
             throw new PreflightCheckException(errorMessage);
         }
@@ -63,7 +67,7 @@ public class PreflightChecksUtils {
      * @return the Java version as an int value (8, 9, etc.)
      */
     @VisibleForTesting
-    int getIntJavaVersion(String version) {
+    int getMajorJavaVersion(String version) {
         if (version.startsWith("1.")) {
             version = version.substring(2);
         }
@@ -83,7 +87,7 @@ public class PreflightChecksUtils {
     }
 
     public void runChecks() throws PreflightCheckException {
-        if (!rskContext.getCliArgs().getFlags().contains(NodeCliFlags.SKIP_JAVA_CHECK)) {
+        if (rskContext.getRskSystemProperties().shouldCheckJavaVersion()) {
             checkSupportedJavaVersion();
         }
     }

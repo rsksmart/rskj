@@ -101,7 +101,7 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
 
-    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
+    public static final String PROPERTY_CHECK_JAVA_VERSION = "system.checkJavaVersion";
 
     public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
     public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
@@ -592,8 +592,8 @@ public abstract class SystemProperties {
         return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
     }
 
-    public boolean shouldSkipJavaVersionCheck() {
-        return getBoolean(PROPERTY_SKIP_JAVA_VERSION_CHECK, false);
+    public boolean shouldCheckJavaVersion() {
+        return getBoolean(PROPERTY_CHECK_JAVA_VERSION, true);
     }
 
     public boolean shouldPersistStatesCacheSnapshot() {
