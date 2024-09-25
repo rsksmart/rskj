@@ -34,7 +34,7 @@ import java.nio.file.Path;
 import static org.mockito.Mockito.*;
 
 
-public abstract class ProgramTest {
+public class ProgramTest {
 
     private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
@@ -42,6 +42,11 @@ public abstract class ProgramTest {
     public Path tempDir;
 
     private MockedStatic<LoggerFactory> loggerFactoryMocked;
+
+    @BeforeEach
+    void beforeEach() {
+        setUp(true, true);
+    }
 
     protected void setUp(boolean isLogEnabled, boolean isGasLogEnabled) {
         loggerFactoryMocked = mockStatic(LoggerFactory.class, Mockito.CALLS_REAL_METHODS);
@@ -158,6 +163,14 @@ public abstract class ProgramTest {
         Assertions.assertArrayEquals(
                 new Object[]{LOREM_IPSUM},
                 contract.functions.get("testCopy").decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    void cantCreateContractInitcodeTooLarge() {
+        ProgramResult result = TestContract.bigTest().createContract(tempDir);
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNotNull(result.getException());
+        Assertions.assertTrue(result.getException() instanceof RuntimeException);
     }
 
 }

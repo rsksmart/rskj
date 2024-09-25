@@ -19,9 +19,10 @@ import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
     private final long activationDelay;
+    private final ErpRedeemScriptBuilder erpRedeemScriptBuilder;
+
     private Script defaultRedeemScript;
     private Script defaultP2SHScript;
-    private final ErpRedeemScriptBuilder erpRedeemScriptBuilder;
 
     protected ErpFederation(
         FederationArgs federationArgs,
@@ -64,7 +65,7 @@ public class ErpFederation extends Federation {
     public Script getRedeemScript() {
         if (redeemScript == null) {
             try {
-                redeemScript = erpRedeemScriptBuilder.createRedeemScriptFromKeys(
+                redeemScript = erpRedeemScriptBuilder.of(
                     getBtcPublicKeys(),
                     getNumberOfSignaturesRequired(),
                     erpPubKeys,
@@ -99,5 +100,4 @@ public class ErpFederation extends Federation {
             throw new ErpFederationCreationException(message, NULL_OR_EMPTY_EMERGENCY_KEYS);
         }
     }
-
 }

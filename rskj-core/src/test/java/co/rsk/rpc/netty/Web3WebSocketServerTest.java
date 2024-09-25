@@ -469,11 +469,17 @@ class Web3WebSocketServerTest {
         List<String> messages = new ArrayList<>();
         String content = this.getJsonRpcDummyMessageStr("value");
 
-        for (long i = 0; i < 99_999; i++) {
-            content = String.format("[[[[[[[[[[%s]]]]]]]]]]", content);
+        int depth = 999;
+        StringBuilder sb = new StringBuilder(content.length() + 2*depth);
+        for (long i = 0; i < depth; i++) {
+            sb.append("[");
+        }
+        sb.append(content);
+        for (long i = 0; i < depth; i++) {
+            sb.append("]");
         }
 
-        byte[] msg = content.getBytes();
+        byte[] msg = sb.toString().getBytes();
         String serverPath = "/";
 
         Web3 web3Mock = mock(Web3.class);

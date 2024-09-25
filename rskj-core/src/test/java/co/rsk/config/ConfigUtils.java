@@ -26,7 +26,6 @@ public class ConfigUtils {
                 new RskAddress(coinbaseAddress),
                 0.0,
                 1.0,
-                0,
                 10,
                 7,
                 new GasLimitConfig(3000000, 500000, true),

@@ -164,6 +164,17 @@ public class TransactionExecutor {
             return true;
         }
 
+        if (tx.isInitCodeSizeInvalidForTx(activations)) {
+
+            String errorMessage = String.format("Initcode size for contract is invalid, it exceed the max limit size: initcode size = %d | maxAllowed = %d |  tx = %s", getLength(tx.getData()), Constants.getMaxInitCodeSize(), tx.getHash());
+
+            logger.warn(errorMessage);
+
+            execError(errorMessage);
+
+            return false;
+        }
+
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long gasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
@@ -174,7 +185,6 @@ public class TransactionExecutor {
         if (!nonceIsValid()) {
             return false;
         }
-
 
         Coin totalCost = tx.getValue();
 
@@ -203,6 +213,7 @@ public class TransactionExecutor {
 
         return true;
     }
+
 
     private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
@@ -481,26 +492,28 @@ public class TransactionExecutor {
         int createdContractSize = getLength(program.getResult().getHReturn());
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
         if (gasLeftover < returnDataGasValue) {
-            program.setRuntimeFailure(
+            configureRuntimeExceptionOnProgram(
                     Program.ExceptionHelper.notEnoughSpendingGas(
                             program,
                             "No gas to return just created contract",
                             returnDataGasValue));
-            result = program.getResult();
-            result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
-            program.setRuntimeFailure(
+            configureRuntimeExceptionOnProgram(
                     Program.ExceptionHelper.tooLargeContractSize(
                             program,
                             Constants.getMaxContractSize(),
                             createdContractSize));
-            result = program.getResult();
-            result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
             gasLeftover = GasCost.subtract(gasLeftover,  returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
+    }
+
+    private void configureRuntimeExceptionOnProgram(RuntimeException e) {
+        program.setRuntimeFailure(e);
+        result = program.getResult();
+        result.setHReturn(EMPTY_BYTE_ARRAY);
     }
 
     public TransactionReceipt getReceipt() {

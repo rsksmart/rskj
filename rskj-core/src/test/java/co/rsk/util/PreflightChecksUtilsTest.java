@@ -1,13 +1,16 @@
 package co.rsk.util;
 
 import co.rsk.RskContext;
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.util.RskTestContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,14 +43,14 @@ class PreflightChecksUtilsTest {
         RskContext rskContext = new RskTestContext(tempDir);
         PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
-        Assertions.assertEquals(8, preflightChecksUtils.getIntJavaVersion("1.8.0_275"));
-        Assertions.assertEquals(8, preflightChecksUtils.getIntJavaVersion("1.8.0_72-ea"));
-        Assertions.assertEquals(11, preflightChecksUtils.getIntJavaVersion("11.8.0_71-ea"));
-        Assertions.assertEquals(11, preflightChecksUtils.getIntJavaVersion("11.0"));
-        Assertions.assertEquals(9, preflightChecksUtils.getIntJavaVersion("9"));
-        Assertions.assertEquals(11, preflightChecksUtils.getIntJavaVersion("11"));
-        Assertions.assertEquals(333, preflightChecksUtils.getIntJavaVersion("333"));
-        Assertions.assertEquals(9, preflightChecksUtils.getIntJavaVersion("9-ea"));
+        Assertions.assertEquals(8, preflightChecksUtils.getMajorJavaVersion("1.8.0_275"));
+        Assertions.assertEquals(8, preflightChecksUtils.getMajorJavaVersion("1.8.0_72-ea"));
+        Assertions.assertEquals(11, preflightChecksUtils.getMajorJavaVersion("11.8.0_71-ea"));
+        Assertions.assertEquals(11, preflightChecksUtils.getMajorJavaVersion("11.0"));
+        Assertions.assertEquals(9, preflightChecksUtils.getMajorJavaVersion("9"));
+        Assertions.assertEquals(11, preflightChecksUtils.getMajorJavaVersion("11"));
+        Assertions.assertEquals(333, preflightChecksUtils.getMajorJavaVersion("333"));
+        Assertions.assertEquals(9, preflightChecksUtils.getMajorJavaVersion("9-ea"));
 
         rskContext.close();
     }
@@ -59,56 +62,42 @@ class PreflightChecksUtilsTest {
 
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("16");
 
-        Exception exception = Assertions.assertThrows(PreflightCheckException.class, preflightChecksUtilsSpy::runChecks);
-        Assertions.assertEquals("Invalid Java Version '16'. Supported versions: 8 11 17", exception.getMessage());
-
-        rskContext.close();
-    }
-
-    @Test
-    void runChecks_currentJavaVersionIs17_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(tempDir);
-        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
-
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("17");
-
-        preflightChecksUtilsSpy.runChecks();
-
-        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
-        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("17");
-
-        rskContext.close();
-    }
-
-    @Test
-    void runChecks_currentJavaVersionIs11_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(tempDir);
-        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
-
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("11");
-
-        preflightChecksUtilsSpy.runChecks();
-
-        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
-        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("11");
+        Exception exception = assertThrows(PreflightCheckException.class, preflightChecksUtilsSpy::runChecks);
+        String expectedMsg = "Invalid Java Version '16'. Supported versions: " + StringUtils.join(PreflightChecksUtils.SUPPORTED_JAVA_VERSIONS, ", ");
+        Assertions.assertEquals(expectedMsg, exception.getMessage());
 
         rskContext.close();
     }
 
     @Test
     void runChecks_runAllChecks_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(tempDir);
-        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
+        for (String ver : Arrays.asList("17.0.3", "21.0.1")) {
+            try (RskContext rskContext = new RskTestContext(tempDir)) {
+                PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("17.0.3");
+                when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn(ver);
 
-        preflightChecksUtilsSpy.runChecks();
+                preflightChecksUtilsSpy.runChecks();
 
-        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
-        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("17.0.3");
-        verify(preflightChecksUtilsSpy, times(1)).checkSupportedJavaVersion();
-
-        rskContext.close();
+                verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
+                verify(preflightChecksUtilsSpy, times(1)).getMajorJavaVersion(ver);
+                verify(preflightChecksUtilsSpy, times(1)).checkSupportedJavaVersion();
+            }
+        }
     }
 
+    @Test
+    void runChecks_nextLTS_NotSupportedYet() throws Exception {
+        try (RskContext rskContext = new RskTestContext(tempDir)) {
+            PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
+
+            when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("25.0.2");
+
+            assertThrows(PreflightCheckException.class, preflightChecksUtilsSpy::runChecks);
+
+            verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
+            verify(preflightChecksUtilsSpy, times(1)).getMajorJavaVersion("25.0.2");
+            verify(preflightChecksUtilsSpy, times(1)).checkSupportedJavaVersion();
+        }
+    }
 }

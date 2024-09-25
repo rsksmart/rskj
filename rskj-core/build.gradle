@@ -24,7 +24,7 @@ testing {
     suites {
         integrationTest(JvmTestSuite) {
             dependencies {
-                implementation project
+                implementation project()
             }
         }
     }
@@ -86,8 +86,8 @@ repositories {
     }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 17
+targetCompatibility = 17
 
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
@@ -115,7 +115,7 @@ ext {
             rocksdbJniVer          : '7.10.2',
             slf4jVer               : '1.7.36',
             logbackVer             : '1.2.10',
-            jacksonVer             : '2.13.3',
+            jacksonVer             : '2.15.4',
             commonsLang3Ver        : '3.12.0',
             typesafeConfigVer      : '1.4.2',
             mapdbVer               : '2.0-beta13',
@@ -150,16 +150,17 @@ ext {
     ]
 
     testLibVersions = [
-            junitVer       : '5.8.1',
-            junitSuiteVer  : '1.9.0',
-            mockitoVer     : '4.6.1',
-            awaitilityVer  : '4.2.0',
-            commonsIoVer   : '2.11.0',
-            commonsCodecVer: '1.15',
-            jacksonVer     : '2.13.3',
-            okhttpWsVer    : '2.7.5',
+            junitVer          : '5.10.3',
+            junitSuiteVer     : '1.10.3',
+            mockitoInlineVer  : '5.2.0',
+            mockitoJupiterVer : '5.12.0',
+            awaitilityVer     : '4.2.0',
+            commonsIoVer      : '2.11.0',
+            commonsCodecVer   : '1.15',
+            jacksonVer        : '2.15.4',
+            okhttpWsVer       : '2.7.5',
 
-            rskLllVer      : '0.0.2',
+            rskLllVer        : '0.0.2',
     ]
 
     jmhLibVersions = [
@@ -171,8 +172,8 @@ ext {
             junitLib                : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
             junitParams             : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
             junitSuite              : "org.junit.platform:junit-platform-suite:${testLibVersions.junitSuiteVer}",
-            mockitoLib              : "org.mockito:mockito-inline:${testLibVersions.mockitoVer}",
-            mockitoJupiter          : "org.mockito:mockito-junit-jupiter:${testLibVersions.mockitoVer}",
+            mockitoLib              : "org.mockito:mockito-inline:${testLibVersions.mockitoInlineVer}",
+            mockitoJupiter          : "org.mockito:mockito-junit-jupiter:${testLibVersions.mockitoJupiterVer}",
             awaitilityLib           : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
             commonsIoLib            : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
