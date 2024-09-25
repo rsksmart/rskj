@@ -561,15 +561,16 @@ class PegUtilsLegacyTest {
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
 
         Script redeemScript = nonStandardErpFederation.getRedeemScript();
-        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            redeemScript,
-            Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
+
+        Script flyoverNonStandardRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(1),
+            redeemScript
         );
 
         // Create a tx from the fast bridge erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverErpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverNonStandardRedeemScript);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -603,7 +604,7 @@ class PegUtilsLegacyTest {
             networkParameters
         );
 
-        Script erpRedeemScript = nonStandardErpRedeemScriptBuilder.of(
+        Script nonStandardRedeemScript = nonStandardErpRedeemScriptBuilder.of(
             activeFederation.getBtcPublicKeys(),
             activeFederation.getNumberOfSignaturesRequired(),
             standardMultisigFederation.getBtcPublicKeys(),
@@ -611,16 +612,16 @@ class PegUtilsLegacyTest {
             500L
         );
 
-        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            erpRedeemScript,
-            Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
+        Script flyoverNonStandardRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(1),
+            nonStandardRedeemScript
         );
 
         // Create a tx from the fast bridge erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, flyoverErpRedeemScript);
+        Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, flyoverNonStandardRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
@@ -866,11 +867,12 @@ class PegUtilsLegacyTest {
         );
         tx.addInput(txInput);
 
-        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            nonStandardErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+        Script flyoverNonStandardRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(1),
+            nonStandardErpFederation.getRedeemScript()
         );
-        signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
+
+        signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, retiredFederationKeys, txInput, tx);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -920,11 +922,12 @@ class PegUtilsLegacyTest {
         );
         tx.addInput(txInput);
 
-        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            nonStandardErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+        Script flyoverNonStandardRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(2),
+            nonStandardErpFederation.getRedeemScript()
         );
-        signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
+
+        signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, retiredFederationKeys, txInput, tx);
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
@@ -2048,11 +2051,12 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
-            nonStandardErpFederation.getRedeemScript(),
-            PegTestUtils.createHash(2)
+        Script flyoverNonStandardRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(2),
+            nonStandardErpFederation.getRedeemScript()
         );
-        signWithNecessaryKeys(nonStandardErpFederation, flyoverErpRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
+
+        signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
 
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
