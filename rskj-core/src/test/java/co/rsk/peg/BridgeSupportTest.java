@@ -1005,9 +1005,8 @@ class BridgeSupportTest {
         }
 
         private void savePegoutIndex(BtcTransaction pegout) {
-            // save sigHash in pegout index
-            Optional<Sha256Hash> inputSigHash = BitcoinUtils.getFirstInputSigHash(pegout);
-            bridgeStorageProvider.setPegoutTxSigHash(inputSigHash.get());
+            BitcoinUtils.getFirstInputSigHash(pegout)
+                .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
         }
 
         private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
