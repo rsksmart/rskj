@@ -842,13 +842,10 @@ class BridgeSupportTest {
             // create tx
             BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
 
-            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
-            // we need to add an input that we can actually sign,
-            // and we know the private keys for the following scriptSig
+            // add and sign inputs
             Federation federation = P2shErpFederationBuilder.builder().build();
             Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
-
-            // add and sign inputs
+            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
             svpFundTransaction.addInput(parentTxHash, 0, scriptSig);
             int inputIndex = 0;
             List<BtcECKey> keysToSign =
