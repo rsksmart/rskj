@@ -549,7 +549,6 @@ class BridgeSupportTest {
         private final Coin spendableValueFromProposedFederation = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
         private final List<LogInfo> logs = new ArrayList<>();
 
-        private Repository repository;
         private BridgeStorageProvider bridgeStorageProvider;
 
         private BridgeSupport bridgeSupport;
@@ -598,7 +597,7 @@ class BridgeSupportTest {
                 signatureCache
             );
 
-            repository = createRepository();
+            Repository repository = createRepository();
             bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 contractAddress,
