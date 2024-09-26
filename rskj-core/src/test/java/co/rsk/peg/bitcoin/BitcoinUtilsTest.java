@@ -1,15 +1,17 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.P2shErpFederationBuilder;
-import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
+import co.rsk.peg.federation.*;
+import java.util.*;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,9 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.*;
-import java.util.stream.Stream;
 
 class BitcoinUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
@@ -418,7 +417,7 @@ class BitcoinUtilsTest {
         addInputFromMatchingOutputScript(newTransaction, sourceTransaction, anotherOutputScript);
 
         // assert
-        Assertions.assertEquals(0, newTransaction.getInputs().size());
+        assertEquals(0, newTransaction.getInputs().size());
     }
 
     @Test
@@ -438,7 +437,7 @@ class BitcoinUtilsTest {
         // assert
         TransactionInput newTransactionInput = newTransaction.getInput(0);
         TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
-        Assertions.assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
+        assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
     }
 
     @Test
@@ -467,7 +466,6 @@ class BitcoinUtilsTest {
         for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
             assertEquals(0, chunk.opcode);
         }
-
     }
 
     @Test
@@ -484,8 +482,8 @@ class BitcoinUtilsTest {
         Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), outputScript);
 
         // assert
-        Assertions.assertTrue(transactionOutput.isPresent());
-        Assertions.assertEquals(outputScript, transactionOutput.get().getScriptPubKey());
+        assertTrue(transactionOutput.isPresent());
+        assertEquals(outputScript, transactionOutput.get().getScriptPubKey());
     }
 
     @Test
@@ -506,6 +504,6 @@ class BitcoinUtilsTest {
         Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), anotherOutputScript);
 
         // assert
-        Assertions.assertFalse(transactionOutput.isPresent());
+        assertFalse(transactionOutput.isPresent());
     }
 }
