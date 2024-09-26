@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.core.Coin;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
 
 /**
  * This is the implementation of RSKIP-09
@@ -26,14 +27,15 @@ import co.rsk.core.Coin;
  */
 public class MinimumGasPriceCalculator {
 
-    private final Coin targetMGP;
+    private MinGasPriceProvider minGasPriceProvider;
 
-    public MinimumGasPriceCalculator(Coin targetMGP) {
-        this.targetMGP = targetMGP;
+    public MinimumGasPriceCalculator(MinGasPriceProvider minGasPriceProvider) {
+        this.minGasPriceProvider = minGasPriceProvider;
     }
 
     public Coin calculate(Coin previousMGP) {
         BlockGasPriceRange priceRange = new BlockGasPriceRange(previousMGP);
+        Coin targetMGP = minGasPriceProvider.getMinGasPriceAsCoin();
         if (priceRange.inRange(targetMGP)) {
             return targetMGP;
         }
@@ -44,4 +46,5 @@ public class MinimumGasPriceCalculator {
 
         return priceRange.getLowerLimit();
     }
+
 }

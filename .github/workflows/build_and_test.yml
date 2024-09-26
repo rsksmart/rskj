@@ -13,14 +13,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: openjdk:8-jdk
     steps:
       - uses: actions/checkout@v4
-      - name: Setup System Tools
-        run: |
-          apt update -y
-          apt install -y gnupg2 curl
+
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Verify files
         run: |
@@ -28,21 +29,17 @@ jobs:
           gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
 
       - uses: actions/cache@v4
-        name: Cache Gradle
-        id: cache-gradle
+        name: Cache Gradle Wrapper
+        id: cache-gradle-wrapper
         with:
           path: |
-            .gradle/caches
-            gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
 
-      - name: Get gradle wrapper and build dependencies
-        if: steps.cache-gradle.outputs.cache-hit != 'true'
+      - name: Get Gradle wrapper
+        if: steps.cache-gradle-wrapper.outputs.cache-hit != 'true'
         run: |
           ./configure.sh
-          ./gradlew --no-daemon dependencies
 
       - name: Build
         run: |
@@ -56,36 +53,27 @@ jobs:
             rskj-core/build
 
   smell-test:
-    needs: unit-tests
+    needs: unit-tests-java17
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Java JDK
-        uses: actions/setup-java@v3
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
-      - uses: actions/cache@v4
-        name: Restore Gradle cache
-        id: cache-gradle
+      - uses: actions/cache/restore@v4
+        name: Restore Gradle Wrapper
         with:
           path: |
-            .gradle/caches
-            gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Get gradle wrapper and build dependencies
-        run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            ./configure.sh
-            ./gradlew --no-daemon dependencies
-          fi
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -192,28 +180,20 @@ jobs:
         run: |
           node --unhandled-rejections=strict generateBtcBlocks.js
 
-      - name: Setup Java JDK
-        uses: actions/setup-java@v3
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
-      - uses: actions/cache@v4
-        name: Cache Gradle
-        id: cache-gradle
+      - uses: actions/cache/restore@v4
+        name: Restore Gradle Wrapper
         with:
           path: |
-            .gradle/caches
-            gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Get gradle wrapper and build dependencies
-        if: steps.cache-gradle.outputs.cache-hit != 'true'
-        run: |
-          ./configure.sh
-          ./gradlew --no-daemon dependencies
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -247,35 +227,26 @@ jobs:
           npm test
           kill $rskpid
 
-  unit-tests:
+  unit-tests-java17:
     needs: build
     runs-on: ubuntu-latest
-    container:
-      image: openjdk:8-jdk
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup System Tools
-        run: |
-          apt update -y
-          apt install -y curl
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-      - uses: actions/cache@v4
-        name: Cache Gradle
-        id: cache-gradle
+      - uses: actions/cache/restore@v4
+        name: Restore Gradle Wrapper
         with:
           path: |
-            .gradle/caches
-            gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Get gradle wrapper and build dependencies
-        if: steps.cache-gradle.outputs.cache-hit != 'true'
-        run: |
-          ./configure.sh
-          ./gradlew --no-daemon dependencies
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
 
       - name: Run tests
         run: |
@@ -295,34 +266,51 @@ jobs:
           path: |
             rskj-core/build/reports/
 
-  integration-tests:
+  unit-tests-java21:
+    needs: build
     runs-on: ubuntu-latest
-    container:
-      image: openjdk:8-jdk
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup System Tools
-        run: |
-          apt update -y
-          apt install -y curl
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-      - uses: actions/cache@v4
-        name: Cache Gradle
-        id: cache-gradle
+      - uses: actions/cache/restore@v4
+        name: Restore Gradle Wrapper
         with:
           path: |
-            .gradle/caches
-            gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
 
-      - name: Get gradle wrapper and build dependencies
-        if: steps.cache-gradle.outputs.cache-hit != 'true'
+      - name: Run tests
         run: |
-          ./configure.sh
-          ./gradlew --no-daemon dependencies
+          ./gradlew --no-daemon --stacktrace test
+
+  integration-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - uses: actions/cache/restore@v4
+        name: Restore Gradle Wrapper
+        with:
+          path: |
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
 
       - name: Run tests
         run: |

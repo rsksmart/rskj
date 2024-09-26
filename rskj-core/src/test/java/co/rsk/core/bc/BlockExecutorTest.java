@@ -75,11 +75,12 @@ import static org.mockito.Mockito.*;
  */
 public class BlockExecutorTest {
     private static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
-    private static final TestSystemProperties CONFIG = new TestSystemProperties();
-    private static final ActivationConfig activationConfig = spy(CONFIG.getActivationConfig());
-    private static final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
-    public static final boolean RSKIP_126_IS_ACTIVE = true;
-    private final long MIN_SEQUENTIAL_SET_GAS_LIMIT = Constants.regtest().getMinSequentialSetGasLimit();
+    private static final boolean RSKIP_126_IS_ACTIVE = true;
+    private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = Constants.regtest().getMinSequentialSetGasLimit();
+
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final ActivationConfig activationConfig = spy(config.getActivationConfig());
+    private final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
 
     @TempDir
     public Path tempDir;
@@ -87,13 +88,10 @@ public class BlockExecutorTest {
     private Blockchain blockchain;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
-    private RskSystemProperties cfg;
 
     @BeforeEach
     public void setUp() {
-        cfg = spy(CONFIG);
-        doReturn(activationConfig).when(cfg).getActivationConfig();
-        RskTestFactory objects = new RskTestFactory(tempDir, CONFIG);
+        RskTestFactory objects = new RskTestFactory(tempDir, config);
         blockchain = objects.getBlockchain();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
@@ -362,7 +360,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx3.sign(account.getEcKey().getPrivKeyBytes());
@@ -373,7 +371,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account3.getEcKey().getPrivKeyBytes());
@@ -451,7 +449,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx3.sign(account.getEcKey().getPrivKeyBytes());
@@ -462,7 +460,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account3.getEcKey().getPrivKeyBytes());
@@ -748,7 +746,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(parent.getGasLimit())
                 .destination(receiver.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx.sign(sender.getEcKey().getPrivKeyBytes());
@@ -877,13 +875,7 @@ public class BlockExecutorTest {
         BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
-//        RskSystemProperties cfg = spy(CONFIG);
-
-        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
-        doReturn(activationConfig).when(cfg).getActivationConfig();
-
-        BlockExecutor executor = buildBlockExecutor(trieStore, cfg, activeRskip144, false);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -1016,7 +1008,7 @@ public class BlockExecutorTest {
         Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
-    private static TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {
+    private TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
 
@@ -1037,7 +1029,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account.getEcKey().getPrivKeyBytes());
@@ -1084,7 +1076,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx.sign(account.getEcKey().getPrivKeyBytes());
@@ -1117,7 +1109,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx.sign(account.getEcKey().getPrivKeyBytes());
@@ -1127,7 +1119,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(CONFIG.getNetworkConstants().getChainId())
+                .chainId(config.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account.getEcKey().getPrivKeyBytes());
@@ -1161,7 +1153,7 @@ public class BlockExecutorTest {
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(BigInteger.valueOf(21000))
                     .destination(accounts.get((i + 1) % 2).getAddress())
-                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
             tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
@@ -1203,7 +1195,7 @@ public class BlockExecutorTest {
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(BigInteger.valueOf(21000))
                     .destination(accounts.get(i + nTxs).getAddress())
-                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
             tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
@@ -1244,7 +1236,7 @@ public class BlockExecutorTest {
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(txGasLimit)
                     .destination(accounts.get(i + numberOfTxs).getAddress())
-                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .chainId(config.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
             tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
@@ -1413,7 +1405,7 @@ public class BlockExecutorTest {
     private byte[] calculateTxTrieRoot(List<Transaction> transactions, long blockNumber) {
         return BlockHashesHelper.getTxTrieRoot(
                 transactions,
-                CONFIG.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber)
+                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber)
         );
     }
 
@@ -1455,11 +1447,11 @@ public class BlockExecutorTest {
         return digest.digest();
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store, Boolean activeRskip144, boolean rskip126IsActive) {
-        return buildBlockExecutor(store, CONFIG, activeRskip144, rskip126IsActive);
+    private BlockExecutor buildBlockExecutor(TrieStore store, Boolean activeRskip144, boolean rskip126IsActive) {
+        return buildBlockExecutor(store, config, activeRskip144, rskip126IsActive);
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config, Boolean activeRskip144, Boolean activeRskip126) {
+    private BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config, Boolean activeRskip144, Boolean activeRskip126) {
         RskSystemProperties cfg = spy(config);
         doReturn(activationConfig).when(cfg).getActivationConfig();
         doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());

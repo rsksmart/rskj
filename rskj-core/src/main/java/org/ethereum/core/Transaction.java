@@ -26,11 +26,11 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -49,6 +49,7 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.Objects;
 
+import static co.rsk.util.ListArrayUtil.getLength;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -203,13 +204,24 @@ public class Transaction {
         }
 
         long nonZeroes = this.nonZeroDataBytes();
-        long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
+        long zeroVals = getLength(this.getData()) - nonZeroes;
 
-        long transactionCost = this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION;
+        long transactionCost = this.isContractCreation()
+                ? GasCost.add(GasCost.TRANSACTION_CREATE_CONTRACT, InitcodeCostCalculator.getInstance().calculateCost(getLength(this.getData()), activations))
+                : GasCost.TRANSACTION;
 
         long txNonZeroDataCost = getTxNonZeroDataCost(activations);
 
         return transactionCost + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * txNonZeroDataCost;
+    }
+
+
+    public boolean isInitCodeSizeInvalidForTx(ActivationConfig.ForBlock activations) {
+        int initCodeSize = getLength(this.getData());
+
+        return this.isContractCreation()
+                && activations.isActive(ConsensusRule.RSKIP438)
+                && initCodeSize > Constants.getMaxInitCodeSize();
     }
 
     private static long getTxNonZeroDataCost(ActivationConfig.ForBlock activations) {

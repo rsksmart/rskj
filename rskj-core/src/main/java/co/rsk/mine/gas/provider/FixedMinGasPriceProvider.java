@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2024 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,20 +16,30 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.handler;
+package co.rsk.mine.gas.provider;
 
-import org.ethereum.core.Transaction;
+import co.rsk.core.Coin;
 
-/**
- * Used to known when a given tx was received by txhandler
- */
-class TxTimestamp {
+public class FixedMinGasPriceProvider implements MinGasPriceProvider {
 
-    long timestamp;
-    Transaction tx;
+    private final long minGasPrice;
 
-    TxTimestamp(Transaction tx, long timestamp) {
-        this.timestamp = timestamp;
-        this.tx = tx;
+    public FixedMinGasPriceProvider(long minGasPrice) {
+        this.minGasPrice = minGasPrice;
+    }
+
+    @Override
+    public long getMinGasPrice() {
+        return minGasPrice;
+    }
+
+    @Override
+    public MinGasPriceProviderType getType() {
+        return MinGasPriceProviderType.FIXED;
+    }
+
+    @Override
+    public Coin getMinGasPriceAsCoin() {
+        return Coin.valueOf(minGasPrice);
     }
 }

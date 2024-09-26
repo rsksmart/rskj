@@ -143,6 +143,28 @@ class Web3ImplTest {
     }
 
     @Test
+    void web3_clientVersion_ShouldIncludeJava8() {
+        System.setProperty("java.specification.version", "1.8");
+
+        Web3 web3 = createWeb3();
+
+        String clientVersion = web3.web3_clientVersion();
+
+        assertTrue(clientVersion.contains("Java8"), "Java version is not Java8");
+    }
+
+    @Test
+    void web3_clientVersion_ShouldIncludeJava17() {
+        System.setProperty("java.specification.version", "17");
+
+        Web3 web3 = createWeb3();
+
+        String clientVersion = web3.web3_clientVersion();
+
+        assertTrue(clientVersion.contains("Java17"), "Java version is not Java17");
+    }
+
+    @Test
     void net_version() {
         Web3Impl web3 = createWeb3();
 

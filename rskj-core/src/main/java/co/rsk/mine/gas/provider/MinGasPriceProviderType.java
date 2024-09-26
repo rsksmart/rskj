@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2022 RSK Labs Ltd.
+ * Copyright (C) 2024 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,15 +16,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.vm;
+package co.rsk.mine.gas.provider;
 
-import org.junit.jupiter.api.BeforeEach;
-
-class ProgramTestLogsOffOnTest extends ProgramTest {
-
-    @BeforeEach
-    void beforeEach() {
-        setUp(false, true);
-    }
-
+public enum MinGasPriceProviderType {
+    FIXED,
+    HTTP_GET,
+    ETH_CALL
 }
