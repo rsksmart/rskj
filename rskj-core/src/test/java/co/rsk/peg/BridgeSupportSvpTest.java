@@ -40,6 +40,8 @@ import static org.mockito.Mockito.when;
 
 public class BridgeSupportSvpTest {
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
+    private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -105,8 +107,6 @@ public class BridgeSupportSvpTest {
     @Tag("svp fund transaction creation and processing tests")
     class SvpFundTxCreationAndProcessingTests {
         private final List<LogInfo> logs = new ArrayList<>();
-        private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
-        private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
 
         private BtcTransaction svpFundTransactionUnsigned;
         private Sha256Hash svpFundTransactionHashUnsigned;
@@ -186,8 +186,8 @@ public class BridgeSupportSvpTest {
             svpFundTransactionUnsigned = getSvpFundTransactionFromPegoutsMap(pegoutsWaitingForConfirmations);
 
             assertPegoutTxSigHashWasSaved(svpFundTransactionUnsigned);
-            assertLogReleaseRequested(rskTx.getHash(), svpFundTransactionHashUnsigned);
-            assertLogPegoutTransactionCreated(svpFundTransactionUnsigned);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpFundTransactionHashUnsigned, spendableValueFromProposedFederation);
+            assertLogPegoutTransactionCreated(logs, svpFundTransactionUnsigned);
         }
 
         private BtcTransaction getSvpFundTransactionFromPegoutsMap(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
@@ -257,53 +257,6 @@ public class BridgeSupportSvpTest {
             Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
             assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
         }
-
-        private void assertLogReleaseRequested(Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash) {
-            byte[] releaseCreationTxHashSerialized = releaseCreationTxHash.getBytes();
-            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, releaseCreationTxHashSerialized, pegoutTransactionHashSerialized);
-
-            byte[] encodedData = getEncodedData(releaseRequestedEvent, spendableValueFromProposedFederation.getValue());
-
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
-        }
-
-        private void assertLogPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
-            Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
-            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
-
-            List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
-            byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
-            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
-
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
-        }
-
-        private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-            byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-            return LogInfo.byteArrayToList(encodedTopicsInBytes);
-        }
-
-        private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-            return bridgeEvent.encodeEventData(args);
-        }
-
-        private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-            Optional<LogInfo> topicOpt = logs.stream()
-                .filter(log -> log.getTopics().equals(expectedTopics))
-                .findFirst();
-            assertTrue(topicOpt.isPresent());
-        }
-
-        private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-            Optional<LogInfo> data = logs.stream()
-                .filter(log -> Arrays.equals(log.getData(), expectedData))
-                .findFirst();
-            assertTrue(data.isPresent());
-        }
     }
 
     @Nested
@@ -349,6 +302,11 @@ public class BridgeSupportSvpTest {
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(svpFundTransaction.getHash());
             assertSvpFundTransactionValuesWereNotUpdated();
+        }
+
+        private void assertSvpFundTransactionValuesWereNotUpdated() {
+            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
         }
 
         @Test
@@ -459,6 +417,24 @@ public class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereUpdated();
         }
 
+        private BtcTransaction arrangeSvpFundTransactionUnsignedWithChange() {
+            BtcTransaction svpFundTransaction = recreateSvpFundTransactionUnsigned();
+            addOutputChange(svpFundTransaction);
+            saveSvpFundTransactionUnsigned(svpFundTransaction);
+
+            return svpFundTransaction;
+        }
+
+        private void saveSvpFundTransactionUnsigned(BtcTransaction svpFundTransaction) {
+            savePegoutIndex(svpFundTransaction);
+            saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
+        }
+
+        private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
+            bridgeSupport.save();
+        }
+
         private BtcTransaction createPegout() {
             BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
             Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
@@ -466,6 +442,11 @@ public class BridgeSupportSvpTest {
             addOutputChange(pegout);
 
             return pegout;
+        }
+
+        private void savePegoutIndex(BtcTransaction pegout) {
+            BitcoinUtils.getFirstInputSigHash(pegout)
+                .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
         }
 
         private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
@@ -505,11 +486,6 @@ public class BridgeSupportSvpTest {
             assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
         }
 
-        private void assertSvpFundTransactionValuesWereNotUpdated() {
-            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
-        }
-
         private void assertSvpFundTransactionValuesWereUpdated() {
             Optional<BtcTransaction> svpFundTransactionSignedOpt = bridgeStorageProvider.getSvpFundTxSigned();
             assertTrue(svpFundTransactionSignedOpt.isPresent());
@@ -522,15 +498,25 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp spend transaction creation and processing tests")
     class SvpSpendTxCreationAndProcessingTests {
+        private final List<LogInfo> logs = new ArrayList<>();
         private BtcTransaction svpFundTransaction;
         private Sha256Hash svpSpendTransactionHashUnsigned;
         private BtcTransaction svpSpendTransactionUnsigned;
 
         @BeforeEach
         void setUp() {
+            SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainNetConstants,
+                allActivations,
+                logs,
+                signatureCache
+            );
+
             bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeMainNetConstants)
                 .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
                 .withActivations(allActivations)
                 .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
@@ -568,7 +554,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void processSvpSpendTransaction_createsExpectedTransactionAndSavesTheHashInStorageEntryAndInWaitingForSignaturesMapEntry() {
+        void processSvpSpendTransaction_createsExpectedTransactionAndSavesTheValuesAndLogsExpectedEvents() {
             // arrange
             arrangeSvpFundTransactionSigned();
 
@@ -579,8 +565,13 @@ public class BridgeSupportSvpTest {
             // assert
             assertSvpSpendTxHashUnsignedWasSavedInStorage();
             assertSvpSpendTxIsWaitingForSignatures();
-            assertSvpFundTxSignedWasRemoved();
             assertSvpSpendTxHasExpectedInputsAndOutputs();
+
+            assertSvpFundTxSignedWasRemoved();
+
+            assertLogPegoutTransactionCreated(logs, svpSpendTransactionUnsigned);
+            Coin requestedAmount = Coin.valueOf(1762);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, requestedAmount);
         }
 
         private void arrangeSvpFundTransactionSigned() {
@@ -634,22 +625,6 @@ public class BridgeSupportSvpTest {
         }
     }
 
-    private void assertOutputWasSentToExpectedScriptWithExpectedAmount(List<TransactionOutput> transactionOutputs, Script expectedScriptPubKey, Coin expectedAmount) {
-        Optional<TransactionOutput> expectedOutput = searchForOutput(transactionOutputs, expectedScriptPubKey);
-        assertTrue(expectedOutput.isPresent());
-
-        TransactionOutput output = expectedOutput.get();
-        assertEquals(expectedAmount, output.getValue());
-    }
-
-    private BtcTransaction arrangeSvpFundTransactionUnsignedWithChange() {
-        BtcTransaction svpFundTransaction = recreateSvpFundTransactionUnsigned();
-        addOutputChange(svpFundTransaction);
-        saveSvpFundTransactionUnsigned(svpFundTransaction);
-
-        return svpFundTransaction;
-    }
-
     private BtcTransaction recreateSvpFundTransactionUnsigned() {
         BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
 
@@ -688,18 +663,58 @@ public class BridgeSupportSvpTest {
         transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
     }
 
-    private void saveSvpFundTransactionUnsigned(BtcTransaction svpFundTransaction) {
-        savePegoutIndex(svpFundTransaction);
-        saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
+    private void assertOutputWasSentToExpectedScriptWithExpectedAmount(List<TransactionOutput> transactionOutputs, Script expectedScriptPubKey, Coin expectedAmount) {
+        Optional<TransactionOutput> expectedOutput = searchForOutput(transactionOutputs, expectedScriptPubKey);
+        assertTrue(expectedOutput.isPresent());
+
+        TransactionOutput output = expectedOutput.get();
+        assertEquals(expectedAmount, output.getValue());
     }
 
-    private void savePegoutIndex(BtcTransaction pegout) {
-        BitcoinUtils.getFirstInputSigHash(pegout)
-            .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
+    private void assertLogReleaseRequested(List<LogInfo> logs, Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash, Coin requestedAmount) {
+        byte[] releaseCreationTxHashSerialized = releaseCreationTxHash.getBytes();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, releaseCreationTxHashSerialized, pegoutTransactionHashSerialized);
+
+        byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
-    private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
-        bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
-        bridgeSupport.save();
+    private void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction pegoutTransaction) {
+        Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
+
+        List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
+        byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
+        byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
+        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
+        return LogInfo.byteArrayToList(encodedTopicsInBytes);
+    }
+
+    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
+        return bridgeEvent.encodeEventData(args);
+    }
+
+    private void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
+        Optional<LogInfo> topicOpt = logs.stream()
+            .filter(log -> log.getTopics().equals(expectedTopics))
+            .findFirst();
+        assertTrue(topicOpt.isPresent());
+    }
+
+    private void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
+        Optional<LogInfo> data = logs.stream()
+            .filter(log -> Arrays.equals(log.getData(), expectedData))
+            .findFirst();
+        assertTrue(data.isPresent());
     }
 }
