@@ -379,10 +379,11 @@ class BitcoinUtilsTest {
             "member03",
             "member04",
             "member05"
- }, true); // using private keys from federation declared above
+        }, true); // using private keys from federation declared above
         List<TransactionInput> inputs = transaction.getInputs();
         for (TransactionInput input : inputs) {
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(                ansaction,
+            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(
+                transaction,
                 inputs.indexOf(input),
                 keysToSign
             );
