@@ -1097,7 +1097,7 @@ public class BridgeSupport {
         addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
 
         svpSpendTransaction.addOutput(
-            calculateAmountToSendToActiveFederation(proposedFederation),
+            calculateSvpSpendTxAmount(proposedFederation),
             federationSupport.getActiveFederationAddress()
         );
 
@@ -1112,7 +1112,7 @@ public class BridgeSupport {
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverProposedFederationOutputScript);
     }
 
-    private Coin calculateAmountToSendToActiveFederation(Federation proposedFederation) {
+    private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
         long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
 
