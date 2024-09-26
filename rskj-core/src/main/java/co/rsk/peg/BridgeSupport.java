@@ -22,7 +22,7 @@ import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.PegUtils.getFlyoverScriptPubKey;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromOutputSentToScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static java.util.Objects.isNull;
@@ -1080,6 +1080,14 @@ public class BridgeSupport {
         return svpSpendTransaction;
     }
 
+    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
+        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
+
+        Script flyoverProposedFederationOutputScript = getFlyoverScriptPubKey(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverProposedFederationOutputScript);
+    }
+
     private Coin calculateAmountToSendToActiveFederation(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
         long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
@@ -1087,14 +1095,6 @@ public class BridgeSupport {
         return feePerKbSupport.getFeePerKb()
             .multiply(svpSpendTransactionSize * backupSizePercentage)
             .divide(1000);
-    }
-
-    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
-        Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
-        addInputFromOutputSentToScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
-
-        Script flyoverProposedFederationOutputScript = getFlyoverScriptPubKey(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-        addInputFromOutputSentToScript(svpSpendTransaction, svpFundTxSigned, flyoverProposedFederationOutputScript);
     }
 
     private void updateSvpSpendTransactionValues(Keccak256 rskTxHash, BtcTransaction svpSpendTransactionUnsigned) {
