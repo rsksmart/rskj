@@ -82,17 +82,10 @@ public class BitcoinUtils {
         }
     }
 
-    public static void addInputFromOutputSentToScript(BtcTransaction transaction, BtcTransaction sourceTransaction, Script expectedOutputScript) {
+    public static void addInputFromMatchingOutputScript(BtcTransaction transaction, BtcTransaction sourceTransaction, Script expectedOutputScript) {
         List<TransactionOutput> outputs = sourceTransaction.getOutputs();
-        TransactionOutput matchingOutput = searchForOutput(outputs, expectedOutputScript)
-            .orElseThrow(
-                () -> {
-                    String message = String.format("Transaction must have an output to expected script %s", expectedOutputScript);
-                    logger.error("[addInputFromExpectedOutput] {}", message);
-                    return new IllegalStateException(message);
-                }
-            );
-        transaction.addInput(matchingOutput);
+        searchForOutput(outputs, expectedOutputScript)
+            .ifPresent(transaction::addInput);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {

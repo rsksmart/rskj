@@ -106,13 +106,14 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp fund transaction creation and processing tests")
     class SvpFundTxCreationAndProcessingTests {
-        private final List<LogInfo> logs = new ArrayList<>();
+        private List<LogInfo> logs;
 
         private BtcTransaction svpFundTransactionUnsigned;
         private Sha256Hash svpFundTransactionHashUnsigned;
 
         @BeforeEach
         void setUp() {
+            logs = new ArrayList<>();
             SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
@@ -444,6 +445,12 @@ public class BridgeSupportSvpTest {
             return pegout;
         }
 
+        private void addOutputChange(BtcTransaction transaction) {
+            // add output to the active fed
+            Script activeFederationP2SHScript = activeFederation.getP2SHScript();
+            transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
+        }
+
         private void savePegoutIndex(BtcTransaction pegout) {
             BitcoinUtils.getFirstInputSigHash(pegout)
                 .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
@@ -498,13 +505,14 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp spend transaction creation and processing tests")
     class SvpSpendTxCreationAndProcessingTests {
-        private final List<LogInfo> logs = new ArrayList<>();
+        private List<LogInfo> logs;
         private BtcTransaction svpFundTransaction;
         private Sha256Hash svpSpendTransactionHashUnsigned;
         private BtcTransaction svpSpendTransactionUnsigned;
 
         @BeforeEach
         void setUp() {
+            logs = new ArrayList<>();
             SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
@@ -533,6 +541,7 @@ public class BridgeSupportSvpTest {
 
             // assert
             assertSvpSpendTransactionValuesWereNotSaved();
+            assertSvpSpendTransactionReleaseWasNotLogged();
         }
 
         @Test
@@ -543,6 +552,7 @@ public class BridgeSupportSvpTest {
 
             // assert
             assertSvpSpendTransactionValuesWereNotSaved();
+            assertSvpSpendTransactionReleaseWasNotLogged();
         }
 
         private void assertSvpSpendTransactionValuesWereNotSaved() {
@@ -551,6 +561,10 @@ public class BridgeSupportSvpTest {
 
             Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
             assertFalse(svpSpendTxWaitingForSignatures.isPresent());
+        }
+
+        private void assertSvpSpendTransactionReleaseWasNotLogged() {
+            assertEquals(0, logs.size());
         }
 
         @Test
@@ -567,11 +581,11 @@ public class BridgeSupportSvpTest {
             assertSvpSpendTxIsWaitingForSignatures();
             assertSvpSpendTxHasExpectedInputsAndOutputs();
 
-            assertSvpFundTxSignedWasRemoved();
+            assertSvpFundTxSignedWasRemovedFromStorage();
 
             assertLogPegoutTransactionCreated(logs, svpSpendTransactionUnsigned);
-            Coin requestedAmount = Coin.valueOf(1762);
-            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, requestedAmount);
+            Coin valueSentToActiveFed = Coin.valueOf(1762);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, valueSentToActiveFed);
         }
 
         private void arrangeSvpFundTransactionSigned() {
@@ -602,7 +616,7 @@ public class BridgeSupportSvpTest {
             svpSpendTransactionUnsigned = svpSpendTxWaitingForSignaturesSpendTx;
         }
 
-        private void assertSvpFundTxSignedWasRemoved() {
+        private void assertSvpFundTxSignedWasRemovedFromStorage() {
             Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
             assertFalse(svpFundTxSigned.isPresent());
         }
@@ -655,12 +669,6 @@ public class BridgeSupportSvpTest {
         IntStream.range(0, inputs.size()).forEach(i ->
             BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
         );
-    }
-
-    private void addOutputChange(BtcTransaction transaction) {
-        // add output to the active fed
-        Script activeFederationP2SHScript = activeFederation.getP2SHScript();
-        transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
     }
 
     private void assertOutputWasSentToExpectedScriptWithExpectedAmount(List<TransactionOutput> transactionOutputs, Script expectedScriptPubKey, Coin expectedAmount) {
