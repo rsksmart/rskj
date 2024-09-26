@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromOutputSentToScript;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -11,7 +12,6 @@ import co.rsk.peg.federation.P2shErpFederationBuilder;
 import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -394,6 +394,25 @@ class BitcoinUtilsTest {
 
         // assert
         assertEquals(transactionWithoutSignaturesHash, transaction.getHash());
+    }
+
+    @Test
+    void addInputFromOutputSentToScript_shouldAddInputWithOutpointFromOutput() {
+        // arrange
+        Script redeemScript = new Script(Hex.decode("645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db21026b472f7d59d201ff1f540f111b6eb329e071c30a9d23e3d2bcd128fe73dc254c210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93210357f7ed4c118e581f49cd3b4d9dd1edb4295f4def49d6dcf2faaaaac87a1a0a422103ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f62103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b358887719062103e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff678029959ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68"));
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        // act
+        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
+        addInputFromOutputSentToScript(newTransaction, sourceTransaction, outputScript);
+
+        // assert
+        TransactionInput newTransactionInput = newTransaction.getInput(0);
+        TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
+        Assertions.assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
     }
 
     @Nested
