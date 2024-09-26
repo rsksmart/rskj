@@ -54,13 +54,15 @@ public class StateForProposedFederator {
      * @return The RLP-encoded byte array representing the current state.
      */
     public byte[] encodeToRlp() {
-        return BridgeSerializationUtils.serializeRskTxWaitingForSignatures(
-            svpSpendTxWaitingForSignatures);
+        byte[] serializedSvpSpendTxWaitingForSignatures = 
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+        return RLP.encodeList(serializedSvpSpendTxWaitingForSignatures);
     }
 
     private static byte[] decodeRlpToEntry(byte[] rlpData) {
         Objects.requireNonNull(rlpData);
 
-        return RLP.decode2(rlpData).get(0).getRLPData();
+        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
+        return rlpList.get(0).getRLPData();
     }
 }
