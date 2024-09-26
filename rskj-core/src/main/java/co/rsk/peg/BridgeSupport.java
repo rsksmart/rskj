@@ -1060,8 +1060,8 @@ public class BridgeSupport {
                 Keccak256 rskTxHash = rskTx.getHash();
                 updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
 
-                Coin requestedAmount = svpSpendTransactionUnsigned.getOutput(0).getValue();
-                logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, requestedAmount);
+                Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
+                logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, amountSentToActiveFed);
                 logPegoutTransactionCreated(svpSpendTransactionUnsigned);
             }));
     }

@@ -581,11 +581,11 @@ public class BridgeSupportSvpTest {
             assertSvpSpendTxIsWaitingForSignatures();
             assertSvpSpendTxHasExpectedInputsAndOutputs();
 
-            assertSvpFundTxSignedWasRemoved();
+            assertSvpFundTxSignedWasRemovedFromStorage();
 
             assertLogPegoutTransactionCreated(logs, svpSpendTransactionUnsigned);
-            Coin requestedAmount = Coin.valueOf(1762);
-            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, requestedAmount);
+            Coin valueSentToActiveFed = Coin.valueOf(1762);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, valueSentToActiveFed);
         }
 
         private void arrangeSvpFundTransactionSigned() {
@@ -616,7 +616,7 @@ public class BridgeSupportSvpTest {
             svpSpendTransactionUnsigned = svpSpendTxWaitingForSignaturesSpendTx;
         }
 
-        private void assertSvpFundTxSignedWasRemoved() {
+        private void assertSvpFundTxSignedWasRemovedFromStorage() {
             Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
             assertFalse(svpFundTxSigned.isPresent());
         }
