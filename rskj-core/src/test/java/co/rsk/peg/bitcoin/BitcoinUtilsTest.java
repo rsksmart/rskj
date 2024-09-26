@@ -1,6 +1,8 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -416,7 +418,7 @@ class BitcoinUtilsTest {
         addInputFromMatchingOutputScript(newTransaction, sourceTransaction, anotherOutputScript);
 
         // assert
-        Assertions.assertEquals(0, newTransaction.getInputs().size());
+        assertEquals(0, newTransaction.getInputs().size());
     }
 
     @Test
@@ -436,7 +438,7 @@ class BitcoinUtilsTest {
         // assert
         TransactionInput newTransactionInput = newTransaction.getInput(0);
         TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
-        Assertions.assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
+        assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
     }
 
     @Test
@@ -465,7 +467,6 @@ class BitcoinUtilsTest {
         for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
             assertEquals(0, chunk.opcode);
         }
-
     }
 
     @Test
@@ -482,8 +483,8 @@ class BitcoinUtilsTest {
         Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), outputScript);
 
         // assert
-        Assertions.assertTrue(transactionOutput.isPresent());
-        Assertions.assertEquals(outputScript, transactionOutput.get().getScriptPubKey());
+        assertTrue(transactionOutput.isPresent());
+        assertEquals(outputScript, transactionOutput.get().getScriptPubKey());
     }
 
     @Test
@@ -504,7 +505,7 @@ class BitcoinUtilsTest {
         Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), anotherOutputScript);
 
         // assert
-        Assertions.assertFalse(transactionOutput.isPresent());
+        assertFalse(transactionOutput.isPresent());
     }
 
     @Nested
