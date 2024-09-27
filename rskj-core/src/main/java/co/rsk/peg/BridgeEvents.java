@@ -60,6 +60,12 @@ public enum BridgeEvents {
                     new CallTransaction.Param(false, "activationHeight", SolidityType.getType(SolidityType.INT256))
             }
     ),
+    COMMIT_FEDERATION_FAILED("commit_federation_failed",
+        new CallTransaction.Param[]{
+            new CallTransaction.Param(false, "proposedFederationRedeemScriptSerialized", SolidityType.getType(SolidityType.BYTES)),
+            new CallTransaction.Param(false, "blockNumber", SolidityType.getType(SolidityType.INT256))
+        }
+    ),
     RELEASE_REQUESTED("release_requested",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, "rskTxHash", SolidityType.getType(SolidityType.BYTES32)),
