@@ -850,10 +850,17 @@ public class BridgeSupport {
             senderAddress,
             reason
         );
+
+        // Prior to RSKIP427, the value was converted to BTC before doing the refund
+        // This could cause the original value to be rounded down to fit in satoshis value
+        co.rsk.core.Coin refundValue = activations.isActive(RSKIP427) ?
+            releaseRequestedValue :
+            co.rsk.core.Coin.fromBitcoin(releaseRequestedValue.toBitcoin());
+
         rskRepository.transfer(
             PrecompiledContracts.BRIDGE_ADDR,
             senderAddress,
-            releaseRequestedValue
+            refundValue
         );
         emitRejectEvent(releaseRequestedValue, senderAddress, reason);
     }
