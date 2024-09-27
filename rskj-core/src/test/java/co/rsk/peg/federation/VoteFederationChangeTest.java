@@ -64,7 +64,7 @@ class VoteFederationChangeTest {
         activations = ActivationConfigsForTest.all().forBlock(0L);
 
         logs = new ArrayList<>();
-        bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
+        bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs);
 
         StorageAccessor inMemoryStorageAccessor = new InMemoryStorage();
         storageProvider = new FederationStorageProviderImpl(inMemoryStorageAccessor);
@@ -360,7 +360,7 @@ class VoteFederationChangeTest {
     void voteCommitFederation_preRSKIP186_whenPendingFederationIsSet_shouldPerformLegacyCommitFederationActionsButNotSetFederationChangeInfo() {
         // arrange
         activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
-        bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
+        bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs);
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
@@ -393,7 +393,7 @@ class VoteFederationChangeTest {
     void voteCommitFederation_postRSKIP186_preRSKIP419_whenPendingFederationIsSet_shouldPerformLegacyCommitFederationActions() {
         // arrange
         activations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
-        bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
+        bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs);
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationMainnetConstants)
             .withFederationStorageProvider(storageProvider)
