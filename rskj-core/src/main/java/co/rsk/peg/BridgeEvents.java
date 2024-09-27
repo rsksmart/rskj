@@ -113,8 +113,8 @@ public enum BridgeEvents {
         }
     );
 
-    private String eventName;
-    private CallTransaction.Param[] params;
+    private final String eventName;
+    private final CallTransaction.Param[] params;
 
     BridgeEvents(String eventName, CallTransaction.Param[] params) {
         this.eventName = eventName;
