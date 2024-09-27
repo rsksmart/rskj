@@ -41,7 +41,6 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Responsible for logging events triggered by BridgeContract.
@@ -309,7 +308,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
         List<byte[]> pubKeys = keys.stream()
                 .map(parser)
-                .collect(Collectors.toList());
+                .toList();
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
         byte[] flatPubKeys = new byte[pubKeysLength];
@@ -329,7 +328,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private byte[] serializeRskTxHashes(List<Keccak256> rskTxHashes) {
         List<byte[]> rskTxHashesList = rskTxHashes.stream()
             .map(Keccak256::getBytes)
-            .collect(Collectors.toList());
+            .toList();
         int rskTxHashesLength = rskTxHashesList.stream().mapToInt(key -> key.length).sum();
 
         byte[] serializedRskTxHashes = new byte[rskTxHashesLength];
