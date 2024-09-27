@@ -18,11 +18,14 @@ public class RskTestUtils {
         return new Keccak256(bytes);
     }
 
+    public static ECKey getEcKeyFromSeed(String seed) {
+        byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
+        return ECKey.fromPrivate(serializedSeed);
+    }
+
     public static List<ECKey> getEcKeysFromSeeds(String[] seeds) {
         return Arrays.stream(seeds)
-            .map(seed -> seed.getBytes(StandardCharsets.UTF_8))
-            .map(HashUtil::keccak256)
-            .map(ECKey::fromPrivate)
+            .map(RskTestUtils::getEcKeyFromSeed)
             .collect(Collectors.toList());
     }
 }

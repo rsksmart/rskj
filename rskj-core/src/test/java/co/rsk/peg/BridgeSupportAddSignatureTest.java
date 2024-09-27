@@ -1,66 +1,61 @@
 package co.rsk.peg;
 
-import co.rsk.RskTestUtils;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.feeperkb.FeePerKbSupport;
-import co.rsk.peg.lockingcap.LockingCapSupport;
-import co.rsk.peg.whitelist.WhitelistSupport;
-import java.time.Instant;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.*;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
-
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.crypto.Keccak256;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.core.RskAddress;
-import co.rsk.peg.utils.*;
-import co.rsk.test.builders.BridgeSupportBuilder;
-
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-
 import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
+import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
+import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import static co.rsk.peg.PegTestUtils.*;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.constants.*;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.utils.*;
+import co.rsk.peg.whitelist.WhitelistSupport;
+import co.rsk.test.builders.BridgeSupportBuilder;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Stream;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
+import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportAddSignatureTest {
 
@@ -75,7 +70,7 @@ class BridgeSupportAddSignatureTest {
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
         "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"
-    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
     private final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
     private final Instant creationTime = Instant.ofEpochMilli(1000L);
     private final long creationBlockNumber = 0L;
@@ -549,11 +544,9 @@ class BridgeSupportAddSignatureTest {
         provider.getPegoutsWaitingForSignatures().put(keccak256, t);
         provider.save();
 
-        SignatureCache signatureCache = new ReceivedTxSignatureCache();
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs, signatureCache);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs);
 
         FederationSupport federationSupport = createDefaultFederationSupport(bridgeRegTestConstants.getFederationConstants());
 
@@ -685,8 +678,7 @@ class BridgeSupportAddSignatureTest {
         FederationSupport federationSupport = createFederationSupport(bridgeMainNetConstants.getFederationConstants(), federationStorageProvider, mock(Block.class), activations);
 
         LinkedList<LogInfo> eventLogs = new LinkedList<>();
-        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activations, eventLogs, signatureCache);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activations, eventLogs);
 
         // Build prev btc tx
         BtcTransaction prevTx = new BtcTransaction(btcParams);
@@ -793,12 +785,10 @@ class BridgeSupportAddSignatureTest {
         provider.save();
         track.commit();
 
-        SignatureCache signatureCache = new ReceivedTxSignatureCache();
-
         track = repository.startTracking();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs, signatureCache);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs);
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             track,
             bridgeAddress,

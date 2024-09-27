@@ -114,12 +114,10 @@ public class BridgeSupportSvpTest {
         @BeforeEach
         void setUp() {
             logs = new ArrayList<>();
-            SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 allActivations,
-                logs,
-                signatureCache
+                logs
             );
 
             bridgeSupport = bridgeSupportBuilder
@@ -513,12 +511,10 @@ public class BridgeSupportSvpTest {
         @BeforeEach
         void setUp() {
             logs = new ArrayList<>();
-            SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 allActivations,
-                logs,
-                signatureCache
+                logs
             );
 
             bridgeSupport = bridgeSupportBuilder
