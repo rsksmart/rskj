@@ -37,7 +37,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Responsible for logging events triggered by BridgeContract in RLP format.
@@ -64,7 +63,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     public void logUpdateCollections(RskAddress sender) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
-                "Calling BrigeEventLoggerLegacyImpl.logUpdateCollections method after RSKIP146 activation"
+                "Calling BridgeEventLoggerLegacyImpl.logUpdateCollections method after RSKIP146 activation"
             );
         }
         this.logs.add(
@@ -79,7 +78,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     public void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
-                "Calling BrigeEventLoggerLegacyImpl.logAddSignature method after RSKIP146 activation"
+                "Calling BridgeEventLoggerLegacyImpl.logAddSignature method after RSKIP146 activation"
             );
         }
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
@@ -94,7 +93,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     public void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
-                "Calling BrigeEventLoggerLegacyImpl.logReleaseBtc method after RSKIP146 activation"
+                "Calling BridgeEventLoggerLegacyImpl.logReleaseBtc method after RSKIP146 activation"
             );
         }
         List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
@@ -107,7 +106,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
-                "Calling BrigeEventLoggerLegacyImpl.logCommitFederation method after RSKIP146 activation"
+                "Calling BridgeEventLoggerLegacyImpl.logCommitFederation method after RSKIP146 activation"
             );
         }
         List<DataWord> topics = Collections.singletonList(Bridge.COMMIT_FEDERATION_TOPIC);
@@ -126,6 +125,13 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
 
+    @Override
+    public void logCommitFederationFailure(Block executionBlock, Federation proposedFederation) {
+        throw new UnsupportedOperationException(
+            "Calling BridgeEventLoggerLegacyImpl.logCommitFederationFailure is not allowed, since this event was created after deprecating the class."
+        );
+    }
+
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
         return flatKeys(keys, (k -> RLP.encodeElement(k.getPubKey())));
     }
@@ -133,7 +139,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
         List<byte[]> pubKeys = keys.stream()
             .map(parser)
-            .collect(Collectors.toList());
+            .toList();
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
         byte[] flatPubKeys = new byte[pubKeysLength];
