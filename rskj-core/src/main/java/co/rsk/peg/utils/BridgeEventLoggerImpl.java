@@ -281,8 +281,8 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
         byte[] btcTxHashSerialized = btcTxHash.getBytes();
         byte[][] encodedTopicsSerialized = event.encodeEventTopics(btcTxHashSerialized);
-
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
         byte[] encodedData = event.encodeEventData(pegoutCreationRskBlockNumber);
 
         addLog(encodedTopics, encodedData);
