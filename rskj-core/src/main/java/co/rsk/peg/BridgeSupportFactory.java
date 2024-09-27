@@ -94,9 +94,9 @@ public class BridgeSupportFactory {
         BridgeEventLogger eventLogger = null;
         if (logs != null) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs, signatureCache);
+                eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
             } else {
-                eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstants, activations, logs, signatureCache);
+                eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstants, activations, logs);
             }
         }
 

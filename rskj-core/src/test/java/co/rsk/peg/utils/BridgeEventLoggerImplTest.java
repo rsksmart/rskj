@@ -20,7 +20,6 @@ package co.rsk.peg.utils;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +38,6 @@ import co.rsk.peg.pegin.RejectedPeginReason;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.*;
@@ -67,15 +65,13 @@ class BridgeEventLoggerImplTest {
 
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
-    private SignatureCache signatureCache;
 
     @BeforeEach
     void setup() {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
-        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         eventLogs = new LinkedList<>();
-        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, eventLogs, signatureCache);
+        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, eventLogs);
     }
 
     @Test
@@ -151,12 +147,8 @@ class BridgeEventLoggerImplTest {
 
     @Test
     void logUpdateCollections() {
-        // Setup Rsk transaction
-        Transaction tx = mock(Transaction.class);
-        when(tx.getSender(any(SignatureCache.class))).thenReturn(RSK_ADDRESS);
-
         // Act
-        eventLogger.logUpdateCollections(tx);
+        eventLogger.logUpdateCollections(RSK_ADDRESS);
 
         commonAssertLogs(eventLogs);
         assertTopics(1, eventLogs);
@@ -165,7 +157,7 @@ class BridgeEventLoggerImplTest {
             0,
             BridgeEvents.UPDATE_COLLECTIONS.getEvent(),
             new Object[]{},
-            new Object[]{tx.getSender(signatureCache).toString()}
+            new Object[]{RSK_ADDRESS.toHexString()}
         );
     }
 
@@ -207,8 +199,7 @@ class BridgeEventLoggerImplTest {
         BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             activations,
-            eventLogs,
-            signatureCache
+            eventLogs
         );
         BtcECKey federatorBtcPubKey = federationMember.getBtcPublicKey();
 
@@ -248,7 +239,7 @@ class BridgeEventLoggerImplTest {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
         ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
         if (!isRSKIP383Active) {
-            eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
+            eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs);
         }
 
         long federationActivationAgePreRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(hopActivations);
@@ -413,7 +404,7 @@ class BridgeEventLoggerImplTest {
     @Test
     void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
-        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
+        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs);
 
         Address btcRecipientAddress = new Address(
             NETWORK_PARAMETERS,
@@ -613,7 +604,7 @@ class BridgeEventLoggerImplTest {
     private byte[] serializeRskTxHashes(List<Keccak256> rskTxHashes) {
         List<byte[]> rskTxHashesList = rskTxHashes.stream()
             .map(Keccak256::getBytes)
-            .collect(Collectors.toList());
+            .toList();
         int rskTxHashesLength = rskTxHashesList.stream().mapToInt(key -> key.length).sum();
 
         byte[] serializedRskTxHashes = new byte[rskTxHashesLength];

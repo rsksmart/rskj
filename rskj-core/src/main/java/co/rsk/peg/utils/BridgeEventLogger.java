@@ -25,7 +25,6 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
 import java.util.List;
 
 /**
@@ -35,7 +34,7 @@ import java.util.List;
  */
 public interface BridgeEventLogger {
 
-    void logUpdateCollections(Transaction rskTx);
+    void logUpdateCollections(RskAddress sender);
 
     void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash);
 

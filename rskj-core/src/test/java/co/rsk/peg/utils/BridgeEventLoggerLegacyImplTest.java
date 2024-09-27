@@ -73,7 +73,7 @@ class BridgeEventLoggerLegacyImplTest {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         rskTxHash = PegTestUtils.createHash3(1);
     }
@@ -83,13 +83,10 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Setup Rsk transaction
-        Transaction tx = mock(Transaction.class);
-        RskAddress sender = mock(RskAddress.class);
-        when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
-        when(tx.getSender(any(SignatureCache.class))).thenReturn(sender);
+        RskAddress sender = new RskAddress("0000000000000000000000000000000000001001");
 
         // Act
-        eventLogger.logUpdateCollections(tx);
+        eventLogger.logUpdateCollections(sender);
 
         commonAssertLogs(eventLogs);
         assertTopics(1, eventLogs);
@@ -101,15 +98,15 @@ class BridgeEventLoggerLegacyImplTest {
         }
 
         // Assert log data
-        byte[] encodedData = RLP.encodeElement(tx.getSender(new BlockTxSignatureCache(new ReceivedTxSignatureCache())).getBytes());
+        byte[] encodedData = RLP.encodeElement(sender.getBytes());
         Assertions.assertArrayEquals(encodedData, logResult.getData());
     }
 
     @Test
     void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        Transaction anyTx = any();
-        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
+
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(any(RskAddress.class)));
     }
 
     @Test
