@@ -1,28 +1,27 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
-import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
-
 public class BitcoinTestUtils {
 
+    public static BtcECKey getBtcEcKeyFromSeed(String seed) {
+        byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
+        return BtcECKey.fromPrivate(serializedSeed);
+    }
+
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
-        List<BtcECKey> keys = Arrays
-            .stream(seeds)
-            .map(seed -> BtcECKey.fromPrivate(
-                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
+        List<BtcECKey> keys = Arrays.stream(seeds)
+            .map(BitcoinTestUtils::getBtcEcKeyFromSeed)
             .collect(Collectors.toList());
 
         if (sorted) {
