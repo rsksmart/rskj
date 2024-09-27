@@ -1,5 +1,7 @@
 package co.rsk.peg.bitcoin;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
@@ -365,6 +367,7 @@ class BitcoinUtilsTest {
             System.out.println("Exception type: " + e.getClass().getName());
 
             System.out.println("Key used: " + pubKey);
+            fail();
         }
     }
 
