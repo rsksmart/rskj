@@ -324,6 +324,31 @@ class BridgeEventLoggerImplTest {
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
+    @Test
+    void logCommitFederationFailed() {
+        // arrange
+        Block rskExecutionBlock = arrangeRskExecutionBlock();
+        long executionBlockNumber = rskExecutionBlock.getNumber();
+
+        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
+        byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
+
+        CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+        var topics = new Object[]{};
+        var data = new Object[]{
+            proposedFederationRedeemScriptSerialized,
+            executionBlockNumber
+        };
+
+        // act
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+
+        // assert
+        commonAssertLogs();
+        assertTopics(1);
+        assertEvent(event, topics, data);
+    }
+
     private Block arrangeRskExecutionBlock() {
         long rskExecutionBlockNumber = 15005L;
         long rskExecutionBlockTimestamp = 15L;
