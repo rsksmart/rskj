@@ -5,8 +5,7 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -16,31 +15,21 @@ import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.atLeast;
-
 public class MCopyDslTest {
 
     @Test
     void testMCOPY_whenNotActivated_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
 
-        // Config Spies Setup
+        // Test Config Setup
 
-        TestSystemProperties config = new TestSystemProperties();
-        ActivationConfig activationConfig = config.getActivationConfig();
-
-        TestSystemProperties configSpy = spy(config);
-        ActivationConfig activationConfigSpy = spy(activationConfig);
-
-        doReturn(activationConfigSpy).when(configSpy).getActivationConfig();
-        doReturn(false).when(activationConfigSpy).isActive(eq(ConsensusRule.RSKIP445), anyLong());
+        TestSystemProperties configWithRskip445Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
+        );
 
         // Test Setup
 
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/mCopyNotActivatedTest.txt");
-        World world = new World(configSpy);
+        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testRSKIPNotActivatedTest.txt");
+        World world = new World(configWithRskip445Disabled);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -65,8 +54,6 @@ public class MCopyDslTest {
         Assertions.assertEquals(1, creationStatus.length);
         Assertions.assertEquals(1, creationStatus[0]);
 
-        verify(activationConfigSpy, atLeast(1)).isActive(eq(ConsensusRule.RSKIP445), eq(2L));
-
         // There's one block (b02) containing only 1 transaction
         Block block2 = world.getBlockByName("b02");
         Assertions.assertNotNull(block2);
@@ -90,7 +77,7 @@ public class MCopyDslTest {
     @Test
     void testMCOPY_testCase1_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
 
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/mCopyTestCase1.txt");
+        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testCopying32BytesFromOffset32toOffset0.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
