@@ -1000,7 +1000,7 @@ public class BridgeSupport {
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
 
-        eventLogger.logUpdateCollections(rskTx);
+        logUpdateCollections(rskTx);
 
         processFundsMigration(rskTx);
 
@@ -1009,6 +1009,11 @@ public class BridgeSupport {
         processConfirmedPegouts(rskTx);
 
         updateFederationCreationBlockHeights();
+    }
+
+    private void logUpdateCollections(Transaction rskTx) {
+        RskAddress sender = rskTx.getSender(signatureCache);
+        eventLogger.logUpdateCollections(sender);
     }
 
     private boolean svpIsOngoing() {
