@@ -208,12 +208,7 @@ class BridgeSupportReleaseBtcTest {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
-            hopActivations,
-            logInfo,
-            signatureCache
-        ));
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, logInfo));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, hopActivations);
 
         // Get a value between old and new minimum pegout values
@@ -259,8 +254,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, arrowheadActivations);
 
@@ -301,8 +295,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -346,8 +339,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             papyrusActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
@@ -374,8 +366,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -417,8 +408,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -448,8 +438,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -486,8 +475,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             papyrusActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
@@ -516,8 +504,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             papyrusActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
@@ -543,8 +530,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             irisActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, irisActivations);
 
@@ -576,8 +562,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -1136,8 +1121,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
@@ -1176,8 +1160,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
@@ -1220,8 +1203,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
@@ -1269,8 +1251,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
@@ -1322,8 +1303,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
@@ -1367,8 +1347,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
@@ -1415,8 +1394,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
@@ -1462,8 +1440,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
         // Set a high fee per kb to ensure the resulting pegout is above the min pegout value
@@ -1526,8 +1503,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         // Set a high fee per kb to ensure the resulting pegout is above the min pegout value
