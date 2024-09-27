@@ -48,9 +48,6 @@ import java.util.function.Function;
  * @author martin.medina
  */
 public class BridgeEventLoggerImpl implements BridgeEventLogger {
-
-    private static final byte[] BRIDGE_CONTRACT_ADDRESS_SERIALIZED = PrecompiledContracts.BRIDGE_ADDR.getBytes();
-
     private final BridgeConstants bridgeConstants;
     private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
@@ -346,7 +343,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     private void addLog(List<DataWord> eventEncodedTopics, byte[] eventEncodedData) {
-        LogInfo newLog = new LogInfo(BRIDGE_CONTRACT_ADDRESS_SERIALIZED, eventEncodedTopics, eventEncodedData);
+        RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+        LogInfo newLog = new LogInfo(bridgeContractAddress.getBytes(), eventEncodedTopics, eventEncodedData);
+
         this.logs.add(newLog);
     }
 }
