@@ -43,31 +43,23 @@ import org.ethereum.vm.*;
  */
 public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private final BridgeConstants bridgeConstants;
-    private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
     private final ActivationConfig.ForBlock activations;
 
-    public BridgeEventLoggerImpl(
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations,
-        List<LogInfo> logs,
-        SignatureCache signatureCache) {
-
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
         this.activations = activations;
         this.bridgeConstants = bridgeConstants;
-        this.signatureCache = signatureCache;
         this.logs = logs;
     }
 
     @Override
-    public void logUpdateCollections(Transaction rskTx) {
+    public void logUpdateCollections(RskAddress sender) {
         CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
 
         byte[][] encodedTopicsSerialized = event.encodeEventTopics();
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
-        String rskTxSenderAddress = rskTx.getSender(signatureCache).toString();
-        byte[] encodedData = event.encodeEventData(rskTxSenderAddress);
+        byte[] encodedData = event.encodeEventData(sender.toHexString());
 
         addLog(encodedTopics, encodedData);
     }

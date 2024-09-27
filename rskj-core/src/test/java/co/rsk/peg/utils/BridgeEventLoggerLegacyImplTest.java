@@ -63,12 +63,7 @@ class BridgeEventLoggerLegacyImplTest {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BrigeEventLoggerLegacyImpl(
-            constantsMock,
-            activations,
-            eventLogs,
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-        );
+        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         rskTxHash = RskTestUtils.createHash(1);
     }
@@ -83,7 +78,7 @@ class BridgeEventLoggerLegacyImplTest {
         when(tx.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         // Act
-        eventLogger.logUpdateCollections(tx);
+        eventLogger.logUpdateCollections(sender);
 
         commonAssertLogs(eventLogs);
         assertTopics(1, eventLogs);
@@ -102,8 +97,8 @@ class BridgeEventLoggerLegacyImplTest {
     @Test
     void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        Transaction anyTx = any();
-        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
+
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(any(RskAddress.class)));
     }
 
     @Test
