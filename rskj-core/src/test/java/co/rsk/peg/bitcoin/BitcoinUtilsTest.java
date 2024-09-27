@@ -333,7 +333,7 @@ class BitcoinUtilsTest {
     void removeSignaturesFromTransaction_whenTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        BtcECKey pubKey = new BtcECKey();
+        BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
         Script p2pkhScriptSig = ScriptBuilder.createInputScript(null, pubKey);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
