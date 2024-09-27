@@ -10,7 +10,7 @@ apply plugin: 'jacoco'
 import java.nio.file.Paths
 
 // Define static timestamp
-def staticTimestamp = '2024-09-03T02:17:00'
+def staticTimestamp = '2024-09-27T02:17:00'
 ext.timestamp = staticTimestamp
 
 def filteredFiles = getFilteredFiles()
@@ -71,24 +71,34 @@ def getFilteredFiles() {
     def uncommittedFiles = outputDiff.toString().trim().split('\n').toList().unique()
     def stagedFiles = outputStaged.toString().trim().split('\n').toList().unique()
     def allFiles = committedFiles + uncommittedFiles + stagedFiles
+
     allFiles = allFiles.unique().findAll { file -> file }
+
+    def projectRoot = project.projectDir.toPath().toAbsolutePath()
 
     allFiles = allFiles.findAll { file ->
         file.endsWith('.java')
-    }
+    }.collect { file ->
+        def relativePath = Paths.get(file).subpath(1, Paths.get(file).getNameCount()) // Adjust the subpath as necessary
+        def absolutePath = projectRoot.resolve(relativePath).toFile()
 
-    return allFiles.collect { file -> Paths.get(file).toAbsolutePath().toFile() }
+        return absolutePath.exists() ? absolutePath : null
+    }.findAll { it != null }
+
+    return allFiles
 }
 
-def configureCheckstyleTask(Checkstyle task, File sourceDir) {
-    def sourceDirPath = sourceDir.toPath().normalize()
-    def files = getFilteredFiles()
-    def filteredFilesCheckstyle = files.findAll { file ->
-        def filePath = file.toPath().normalize()
-        def isUnderSourceDir = filePath.startsWith(sourceDirPath) && !filePath.equals(sourceDirPath)
-        isUnderSourceDir
+
+def configureCheckstyleTask(Checkstyle task, String sourceDir) {
+    def filteredFilesCheckstyle = getFilteredFilesForCheckstyle(sourceDir)
+
+   if (!filteredFilesCheckstyle.isEmpty()) {
+        task.source = project.files(filteredFilesCheckstyle)
+    } else {
+        println "No files to assign to Checkstyle for ${sourceDir}. Skipping task."
+        task.enabled = false
     }
-    task.source = project.files(filteredFilesCheckstyle)
+
     task.classpath = project.files(
             sourceSets.main.output.classesDirs,
             sourceSets.main.output.resourcesDir
@@ -102,26 +112,40 @@ def configureCheckstyleTask(Checkstyle task, File sourceDir) {
     }
 }
 
+def getFilteredFilesForCheckstyle(String sourceDir) {
+    def files = getFilteredFiles()
+    return files.findAll { file ->
+        def filePath = file.toPath().normalize()
+        def isJavaFile = filePath.toString().endsWith('.java')
+        def containsSourceSegment = filePath.toString().contains(sourceDir)
+
+        isJavaFile && containsSourceSegment
+    }
+}
+
+
 // Configure each Checkstyle task
 tasks.withType(Checkstyle).configureEach { Checkstyle task ->
-    switch (task.name) {
-        case 'checkstyleMain':
-            configureCheckstyleTask(task, file('src/main/java'))
-            break
-        case 'checkstyleTest':
-            configureCheckstyleTask(task, file('src/test/java'))
-            break
-        case 'checkstyleIntegrationTest':
-            configureCheckstyleTask(task, file('src/integrationTest/java'))
-            break
-        case 'checkstyleJmh':
-            configureCheckstyleTask(task, file('src/jmh/java'))
-            break
+    def sourceDirMapping = [
+            'checkstyleMain': 'src/main/java',
+            'checkstyleTest': 'src/test/java',
+            'checkstyleIntegrationTest': 'src/integrationTest/java',
+            'checkstyleJmh': 'src/jmh/java'
+    ]
+
+    sourceDirMapping.each { taskName, sourceDir ->
+        if (task.name == taskName) {
+            configureCheckstyleTask(task, sourceDir)
+        }
     }
-    if (task.name == 'checkstyleJmh' || task.name == 'checkstyleIntegrationTest') {
+
+    if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest']) {
         task.doFirst {
-            if(!getFilteredFiles().isEmpty()) {
-                task.source = project.files(getFilteredFiles())
+            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java' : 'src/integrationTest/java'
+            def checkstyleFiles = getFilteredFilesForCheckstyle(relevantSourceDir)
+
+            if (!checkstyleFiles.isEmpty()) {
+                task.source = project.files(checkstyleFiles)
             }
         }
     }
