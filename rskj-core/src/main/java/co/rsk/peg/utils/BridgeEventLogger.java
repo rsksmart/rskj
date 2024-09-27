@@ -42,6 +42,8 @@ public interface BridgeEventLogger {
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
 
+    void logCommitFederationFailure(Block executionBlock, Federation proposedFederation);
+
     default void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
         throw new UnsupportedOperationException();
     }
