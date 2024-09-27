@@ -138,6 +138,24 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
+    public void logCommitFederationFailure(Block executionBlock, Federation proposedFederation) {
+        CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics();
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
+        byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
+        long executionBlockNumber = executionBlock.getNumber();
+
+        byte[] encodedData = event.encodeEventData(
+            proposedFederationRedeemScriptSerialized,
+            executionBlockNumber
+        );
+
+        addLog(encodedTopics, encodedData);
+    }
+
+    @Override
     public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
         CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
 
