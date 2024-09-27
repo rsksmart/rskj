@@ -19,6 +19,7 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.DeprecatedMethodCallException;
@@ -28,8 +29,6 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -53,23 +52,16 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
 
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig.ForBlock activations;
-    private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
 
-    public BrigeEventLoggerLegacyImpl(
-        BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations,
-        List<LogInfo> logs,
-        SignatureCache signatureCache
-    ) {
+    public BrigeEventLoggerLegacyImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
         this.bridgeConstants = bridgeConstants;
         this.activations = activations;
-        this.signatureCache = signatureCache;
         this.logs = logs;
     }
 
     @Override
-    public void logUpdateCollections(Transaction rskTx) {
+    public void logUpdateCollections(RskAddress sender) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
                 "Calling BrigeEventLoggerLegacyImpl.logUpdateCollections method after RSKIP146 activation"
@@ -78,7 +70,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
         this.logs.add(
             new LogInfo(BRIDGE_CONTRACT_ADDRESS,
                 Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                RLP.encodeElement(rskTx.getSender(signatureCache).getBytes())
+                RLP.encodeElement(sender.getBytes())
             )
         );
     }
