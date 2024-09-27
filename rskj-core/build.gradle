@@ -37,7 +37,7 @@ test {
         logger.lifecycle("Running test: ${descriptor}")
     }
 
-    jvmArgs '-Xss32m', '-Xmx3G'
+    jvmArgs '-Xss32m', '-Xmx4G'
 
     testLogging {
         events "failed"
@@ -63,7 +63,7 @@ jacocoTestReport {
 task parallelTest(type: Test) {
     useJUnitPlatform()
     //increase heap memory
-    jvmArgs '-Xss64m', '-Xmx3G'
+    jvmArgs '-Xss64m', '-Xmx4G'
     //stop build after the first failing test
     failFast = project.hasProperty("failFast")
     //option to use the half of the available cores (it can be increased but there is no too much difference)
@@ -90,7 +90,7 @@ sourceCompatibility = 17
 targetCompatibility = 17
 
 mainClassName = 'co.rsk.Start'
-applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
+applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-Xmx5G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
 
 tasks.withType(JavaCompile) {
     options.warnings = false
