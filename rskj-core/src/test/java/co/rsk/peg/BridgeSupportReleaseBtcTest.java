@@ -58,6 +58,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BridgeSupportReleaseBtcTest {
@@ -1260,7 +1261,8 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    void low_amount_release_request_rejected_before_lovell_value_in_satoshis() throws IOException {
+    @DisplayName("A rejected pegout due to low amount. Pre lovell, the value is rounded down to the nearest satoshi. Both in the emitted event and the value refunded.")
+    void low_amount_release_request_rejected_before_lovell() throws IOException {
         ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
 
         List<LogInfo> logInfo = new ArrayList<>();
@@ -1274,15 +1276,22 @@ class BridgeSupportReleaseBtcTest {
 
         Coin belowPegoutMinimumValue = BRIDGE_CONSTANTS.getMinimumPegoutTxValue().minus(Coin.SATOSHI);
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(belowPegoutMinimumValue);
+        // Add some extra weis to the value, but less than 1 satoshi.
+        // To ensure that the pegout value is rounded down to fit in satoshis.
+        co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.valueOf(Denomination.satoshisToWeis(1).longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
+        // Pre lovell, the refund should be rounded down to the nearest satoshi.
+        co.rsk.core.Coin expectedRefundValue = pegoutRequestValue.subtract(extraWeis);
         verify(repository, times(1)).transfer(
             BRIDGE_ADDRESS,
             senderAddress,
-            pegoutRequestValue
+            expectedRefundValue
         );
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -1299,12 +1308,15 @@ class BridgeSupportReleaseBtcTest {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
         assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
 
+        // Same case in the log, the value should be rounded down to the nearest satoshi.
         BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+        long expectedAmountLogged = expectedRefundValue.toBitcoin().longValue();
+        assertEquals(expectedAmountLogged, amount.longValue());
     }
 
     @Test
-    void low_amount_release_request_rejected_after_lovell_value_in_weis() throws IOException {
+    @DisplayName("A rejected pegout due to low amount. Post lovell, the pegout value is preserved in weis. Both in the emitted event and the value refunded.")
+    void low_amount_release_request_rejected_after_lovell() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
@@ -1346,7 +1358,8 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    void contract_caller_release_request_rejected_before_lovell_value_in_satoshis() throws IOException {
+    @DisplayName("A pegout from a contract is rejected. Pre lovell, the pegout value is rounded down to the nearest satoshi. Both in the emitted event and the value refunded.")
+    void contract_caller_release_request_rejected_before_lovell() throws IOException {
         ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
 
         List<LogInfo> logInfo = new ArrayList<>();
@@ -1359,11 +1372,17 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+        // Add some extra weis to the value, but less than 1 satoshi.
+        // To ensure that the pegout value is rounded down to fit in satoshis.
+        co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.valueOf(Denomination.satoshisToWeis(1).longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
+        // No refund is made to a contract
         verify(repository, never()).transfer(any(), any(), any());
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -1381,11 +1400,15 @@ class BridgeSupportReleaseBtcTest {
         assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
 
         BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+        // Pre lovell, the logged value should be rounded down to the nearest satoshi.
+        co.rsk.core.Coin expectedLoggedValue = pegoutRequestValue.subtract(extraWeis);
+        long expectedAmountLogged = expectedLoggedValue.toBitcoin().longValue();
+        assertEquals(expectedAmountLogged, amount.longValue());
     }
 
     @Test
-    void contract_caller_release_request_rejected_after_lovell_value_in_weis() throws IOException {
+    @DisplayName("A pegout from a contract is rejected. Post lovell, the pegout value is preserved in weis. Both in the emitted event and the value refunded.")
+    void contract_caller_release_request_rejected_after_lovell() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
@@ -1396,11 +1419,17 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMinimumPegoutTxValue());
+        // Add some extra weis to the value, but less than 1 satoshi.
+        // To ensure that the pegout value is rounded down to fit in satoshis.
+        co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.valueOf(Denomination.satoshisToWeis(1).longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
+        // No refund is made to a contract
         verify(repository, never()).transfer(any(), any(), any());
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -1422,7 +1451,8 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    void fee_above_value_release_request_rejected_before_lovell_value_in_satoshis() throws IOException {
+    @DisplayName("A pegout rejected due to high fees. Pre lovell, the pegout value is rounded down to the nearest satoshi. Both in the emitted event and the value refunded.")
+    void fee_above_value_release_request_rejected_before_lovell() throws IOException {
         ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
 
         List<LogInfo> logInfo = new ArrayList<>();
@@ -1447,15 +1477,22 @@ class BridgeSupportReleaseBtcTest {
 
         Coin pegoutRequestValueWithGapAboveFee = minValueWithGapAboveFee.minus(Coin.SATOSHI);
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(pegoutRequestValueWithGapAboveFee);
+        // Add some extra weis to the value, but less than 1 satoshi.
+        // To ensure that the pegout value is rounded down to fit in satoshis.
+        co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.valueOf(Denomination.satoshisToWeis(1).longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
+        // Pre lovell, the refund should be rounded down to the nearest satoshi.
+        co.rsk.core.Coin expectedRefundValue = pegoutRequestValue.subtract(extraWeis);
         verify(repository, times(1)).transfer(
             BRIDGE_ADDRESS,
             senderAddress,
-            pegoutRequestValue
+            expectedRefundValue
         );
 
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -1472,12 +1509,15 @@ class BridgeSupportReleaseBtcTest {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
         assertArrayEquals(event.encodeSignatureLong(), firstLog.getTopics().get(0).getData());
 
+        // Same case in the log, the value should be rounded down to the nearest satoshi.
         BigInteger amount = (BigInteger) event.decodeEventData(firstLog.getData())[0];
-        assertEquals(pegoutRequestValue.toBitcoin().longValue(), amount.longValue());
+        long expectedAmountLogged = expectedRefundValue.toBitcoin().longValue();
+        assertEquals(expectedAmountLogged, amount.longValue());
     }
 
     @Test
-    void fee_above_value_release_request_rejected_after_lovell_value_in_weis() throws IOException {
+    @DisplayName("A pegout rejected due to high fees. Post lovell, the pegout value is preserved in weis. Both in the emitted event and the value refunded.")
+    void fee_above_value_release_request_rejected_after_lovell() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
@@ -1500,6 +1540,11 @@ class BridgeSupportReleaseBtcTest {
 
         Coin pegoutRequestValueWithGapAboveFee = minValueWithGapAboveFee.minus(Coin.SATOSHI);
         co.rsk.core.Coin pegoutRequestValue = co.rsk.core.Coin.fromBitcoin(pegoutRequestValueWithGapAboveFee);
+        // Add some extra weis to the value, but less than 1 satoshi.
+        // To ensure that the pegout value is rounded down to fit in satoshis.
+        co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.valueOf(Denomination.satoshisToWeis(1).longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
 
