@@ -21,7 +21,6 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
