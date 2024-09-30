@@ -6,7 +6,6 @@ import org.ethereum.crypto.HashUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RskTestUtils {
 
@@ -19,13 +18,13 @@ public class RskTestUtils {
     }
 
     public static ECKey getEcKeyFromSeed(String seed) {
-        byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
-        return ECKey.fromPrivate(serializedSeed);
+        byte[] seedHash = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
+        return ECKey.fromPrivate(seedHash);
     }
 
     public static List<ECKey> getEcKeysFromSeeds(String[] seeds) {
         return Arrays.stream(seeds)
             .map(RskTestUtils::getEcKeyFromSeed)
-            .collect(Collectors.toList());
+            .toList();
     }
 }

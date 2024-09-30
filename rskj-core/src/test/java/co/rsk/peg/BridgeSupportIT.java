@@ -453,7 +453,7 @@ public class BridgeSupportIT {
         tx.sign(key.getPrivKeyBytes());
 
         bridgeSupport.updateCollections(tx);
-        verify(eventLogger, times(1)).logUpdateCollections(sender);
+        verify(eventLogger).logUpdateCollections(sender);
     }
 
     @Test
