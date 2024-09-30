@@ -94,6 +94,17 @@ jobs:
             exit 1
           fi
 
+          # Set the Repo Owner
+          if [ -n "${{ github.event.pull_request.head.repo.owner.login }}" ]; then
+            REPO_OWNER=${{ github.event.pull_request.head.repo.owner.login }}
+          else
+            REPO_OWNER=${{ github.repository_owner }}
+          fi
+
+          echo "Repo Owner: $REPO_OWNER"
+
+          echo "Repo Owner: $REPO_OWNER"
+          echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
@@ -113,29 +124,13 @@ jobs:
           SAFE_BRANCH_NAME=$(echo "${GITHUB_HEAD_REF}" | tr -cd '[:alnum:]_-' | cut -c1-255)
           echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
 
-      - name: Checkout Code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-
-      - name: Print Context Information
-        run: |
-          echo "Event Name: ${{ github.event_name }}"
-          echo "Repository Owner: ${{ github.repository_owner }}"
-          echo "Repository Full Name: ${{ github.repository }}"
-          echo "Head Repository Owner: ${{ github.event.pull_request.head.repo.owner.login }}"
-          echo "Base Repository Owner: ${{ github.event.pull_request.base.repo.owner.login }}"
-          echo "Head Repository Name: ${{ github.event.pull_request.head.repo.name }}"
-          echo "Pull Request Number: ${{ github.event.pull_request.number }}"
-          echo "Branch Ref: ${{ github.ref }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Workflow: ${{ github.workflow }}"
-
       - name: Run Rootstock Integration Tests
         uses: rmoreliovlabs/rootstock-integration-tests@feature/add_repo_owner_input
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
-          repo-owner: ${{ github.repository_owner }}
+          repo-owner: ${{  env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
         if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
