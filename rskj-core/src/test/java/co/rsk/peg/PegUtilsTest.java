@@ -29,8 +29,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.createFederation;
-import static co.rsk.peg.PegUtils.getFlyoverAddress;
-import static co.rsk.peg.PegUtils.getFlyoverScriptPubKey;
+import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -64,6 +63,14 @@ class PegUtilsTest {
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true
         );
         activeFederation = createP2shErpFederation(federationMainNetConstants, activeFedSigners);
+    }
+
+    @ParameterizedTest
+    @MethodSource("derivationHashAndRedeemScriptArgs")
+    void getFlyoverRedeemScript_fromRealValues_shouldReturnSameRealRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
+        Script flyoverRedeemScript = new Script(Hex.decode("20fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d50043975645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68"));
+
+        assertEquals(flyoverRedeemScript, getFlyoverRedeemScript(flyoverDerivationHash, redeemScript));
     }
 
     @ParameterizedTest
