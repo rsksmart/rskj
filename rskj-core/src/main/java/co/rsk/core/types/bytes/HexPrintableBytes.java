@@ -18,6 +18,8 @@
 
 package co.rsk.core.types.bytes;
 
+import org.ethereum.util.ByteUtil;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -70,13 +72,27 @@ public interface HexPrintableBytes extends PrintableBytes {
         return toHexString(0, length());
     }
 
-    default String toHexStringV2(int off, int length) {
-        if (off < 0 || length < 0 || off + length > length()) {
-            throw new IndexOutOfBoundsException("invalid 'off' and/or 'length': " + off + "; " + length);
+    /**
+     * This is a bit optimized version of {@link ByteUtil#toHexString(byte[], int, int)},
+     * which does not use a third-party library.
+     *
+     * @param offset the start index of the bytes to be converted to hexadecimal.
+     *               It must be non-negative and less than the length of the bytes.
+     *               Otherwise, an {@link IndexOutOfBoundsException} will be thrown.
+     * @param length the number of bytes to be converted to hexadecimal.
+     *               It must be non-negative and less than the length of the bytes.
+     *               Otherwise, an {@link IndexOutOfBoundsException} will be thrown.
+     *
+     * @return the hexadecimal representation of the bytes in the range of {@code offset} and {@code length}.
+     */
+    default String toHexStringV2(int offset, int length) {
+        int endIndex = offset + length;
+        if (offset < 0 || length < 0 || endIndex > length()) {
+            throw new IndexOutOfBoundsException("invalid 'offset' and/or 'length': " + offset + "; " + length);
         }
 
         StringBuilder sb = new StringBuilder(length * 2);
-        for (int i = off; i < off + length; i++) {
+        for (int i = offset; i < endIndex; i++) {
             byte b = byteAt(i);
             sb.append(Character.forDigit((b >> 4) & 0xF, 16));
             sb.append(Character.forDigit((b & 0xF), 16));
