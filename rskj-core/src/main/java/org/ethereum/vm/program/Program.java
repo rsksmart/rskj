@@ -29,6 +29,8 @@ import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
@@ -40,6 +42,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.DataWord;
@@ -72,8 +76,10 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -95,7 +101,6 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
-
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -115,6 +120,7 @@ public class Program {
     private final Stack stack;
     private final Memory memory;
     private final Storage storage;
+    private final Map<RskAddress, MutableRepository> transientStorages;
     private byte[] returnDataBuffer;
 
     private final ProgramResult result = new ProgramResult();
@@ -178,6 +184,7 @@ public class Program {
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
+        this.transientStorages = new HashMap<>();
         this.deletedAccountsInBlock = new HashSet<>(deletedAccounts);
         this.signatureCache = signatureCache;
         precompile();
@@ -452,6 +459,16 @@ public class Program {
     public Repository getStorage() {
         return this.storage;
     }
+
+    public MutableRepository getTransientStorage(RskAddress addr) {
+        MutableRepository current = transientStorages.get(addr);
+        if(current == null) {
+            current = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+            transientStorages.put(addr, current);
+        }
+        return current;
+    }
+
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
@@ -985,8 +1002,10 @@ public class Program {
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
     }
 
-    public void transientStorageSave(DataWord key, DataWord address) {
-
+    public void transientStorageSave(DataWord key, DataWord value) {
+        RskAddress addr = getOwnerRskAddress();
+        MutableRepository storage = getTransientStorage(addr);
+        storage.addStorageRow(addr, key, value);
     }
 
     private RskAddress getOwnerRskAddress() {
@@ -1099,8 +1118,11 @@ public class Program {
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
-    public void transientStorageLoad(DataWord address, DataWord key, DataWord value) {
+    public DataWord transientStorageLoad(DataWord key) {
+        RskAddress addr = getOwnerRskAddress();
+        MutableRepository currentTransientStorage = getTransientStorage(addr);
 
+        return currentTransientStorage.getStorageValue(addr, key);
     }
 
     public DataWord getPrevHash() {
