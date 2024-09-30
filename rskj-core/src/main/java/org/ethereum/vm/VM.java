@@ -1326,6 +1326,28 @@ public class VM {
         program.step();
     }
 
+    protected void doTLOAD(){
+
+        DataWord key = program.stackPop();
+        DataWord value = program.stackPop();
+        DataWord address = program.getOwnerAddress();
+
+        if (isLogEnabled) {
+            logger.info("Executing TLOAD with parameters: address={} | key = {} | value = {}", address, key, value);
+        }
+    }
+
+    protected void doTSTORE(){
+
+        DataWord key = program.stackPop();
+        DataWord value = program.stackPop();
+        DataWord address = program.getOwnerAddress();
+
+        if (isLogEnabled) {
+            logger.info("Executing TLOAD with parameters: address={} | key = {} | value = {}", address, key, value);
+        }
+    }
+
     protected void doJUMP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1939,7 +1961,11 @@ public class VM {
             case OpCodes.OP_SLOAD: doSLOAD();
             break;
             case OpCodes.OP_SSTORE: doSSTORE();
-            break;
+                break;
+            case OpCodes.OP_TLOAD: doTLOAD();
+                break;
+            case OpCodes.OP_TSTORE: doTSTORE();
+                break;
             case OpCodes.OP_JUMP: doJUMP();
             break;
             case OpCodes.OP_JUMPI: doJUMPI();
