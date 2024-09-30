@@ -1327,30 +1327,30 @@ public class VM {
     }
 
     protected void doTLOAD(){
-
         DataWord key = program.stackPop();
-        DataWord address = program.getOwnerAddress();
-
         if (isLogEnabled) {
-            logger.info("Executing TLOAD with parameters: address={} | key = {}", address, key);
+            logger.info("Executing TLOAD with parameters: key = {}",  key);
+        }
+        DataWord val = program.transientStorageLoad(key);
+
+        if (val == null) {
+            val = DataWord.ZERO;
         }
 
-        program.transientStorageSave(key, address);
-        // key could be returned to the pool, but storageLoad semantics should be checked
+        program.stackPush(val);
+        // key could be returned to the pool, but transientStorageLoad semantics should be checked
         // to make sure storageLoad always gets a copy, not a reference.
         program.step();
     }
 
     protected void doTSTORE(){
-
+        DataWord address = program.stackPop();
         DataWord value = program.stackPop();
-        DataWord address = program.getOwnerAddress();
-        DataWord key = DataWord.ZERO;
 
         if (isLogEnabled) {
-            logger.info("Executing TSTORE with parameters: address={} | key = {} | value = {}",  address, key, value);
+            logger.info("Executing TSTORE with parameters: address={} | value = {}",  address, value);
         }
-        program.transientStorageLoad(address, key, value);
+        program.transientStorageSave(address, value);
         program.step();
     }
 
@@ -1967,9 +1967,16 @@ public class VM {
             break;
             case OpCodes.OP_SSTORE: doSSTORE();
                 break;
-            case OpCodes.OP_TLOAD: doTLOAD();
+            case OpCodes.OP_TLOAD:
+                if (!activations.isActive(RSKIP446)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doTLOAD();
                 break;
             case OpCodes.OP_TSTORE: doTSTORE();
+                if (!activations.isActive(RSKIP446)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
                 break;
             case OpCodes.OP_JUMP: doJUMP();
             break;
