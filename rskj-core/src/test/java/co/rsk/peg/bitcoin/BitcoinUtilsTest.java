@@ -439,23 +439,32 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void addP2SHEmptyInputScript_shouldAddExpectedScriptSigToInput() {
+    void createBaseP2SHInputScriptThatSpendsFromRedeemScript_shouldCreateExpectedScriptSig() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
 
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        transaction.addInput(transaction.getHash(), 0, redeemScript);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
 
         // act
         TransactionInput input = transaction.getInput(0);
-        addEmptyP2SHInputScript(input, redeemScript);
+        input.setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript));
 
         // assert
         List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
-        int redeemScriptChunksSize = scriptSigChunks.size();
-        int redeemScriptChunkIndex = redeemScriptChunksSize - 1;
-        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data);
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+
+        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+            assertEquals(0, chunk.opcode);
+        }
+
     }
 
     @Test

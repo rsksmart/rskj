@@ -1083,13 +1083,15 @@ public class BridgeSupport {
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
         Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
-        addEmptyP2SHInputScript(svpSpendTransaction.getInput(0), proposedFederationRedeemScript);
+        svpSpendTransaction.getInput(0)
+            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
 
         Script flyoverRedeemScript =
             getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
         Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverOutputScript);
-        addEmptyP2SHInputScript(svpSpendTransaction.getInput(1), flyoverRedeemScript);
+        svpSpendTransaction.getInput(1)
+                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
     }
 
     private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
