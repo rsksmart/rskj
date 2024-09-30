@@ -347,7 +347,6 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private void addLog(List<DataWord> eventEncodedTopics, byte[] eventEncodedData) {
         LogInfo newLog = new LogInfo(BRIDGE_CONTRACT_ADDRESS_SERIALIZED, eventEncodedTopics, eventEncodedData);
-
         this.logs.add(newLog);
     }
 }
