@@ -18,12 +18,10 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.calculatePegoutTxSize;
-import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static co.rsk.peg.PegUtils.getFlyoverScriptPubKey;
+import static co.rsk.peg.PegUtils.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.findWitnessCommitment;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static java.util.Objects.isNull;
@@ -1105,11 +1103,18 @@ public class BridgeSupport {
     }
 
     private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
         Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
+        svpSpendTransaction.getInput(0)
+            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
 
-        Script flyoverProposedFederationOutputScript = getFlyoverScriptPubKey(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverProposedFederationOutputScript);
+        Script flyoverRedeemScript =
+            getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverOutputScript);
+        svpSpendTransaction.getInput(1)
+                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
     }
 
     private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
