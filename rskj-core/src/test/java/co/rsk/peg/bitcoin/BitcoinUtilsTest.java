@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -19,9 +20,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.stream.Stream;
-
-import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 
 class BitcoinUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
@@ -441,6 +439,35 @@ class BitcoinUtilsTest {
         TransactionInput newTransactionInput = newTransaction.getInput(0);
         TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
         Assertions.assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
+    }
+
+    @Test
+    void createBaseP2SHInputScriptThatSpendsFromRedeemScript_shouldCreateExpectedScriptSig() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        // act
+        TransactionInput input = transaction.getInput(0);
+        input.setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript));
+
+        // assert
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+
+        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+            assertEquals(0, chunk.opcode);
+        }
+
     }
 
     @Test
