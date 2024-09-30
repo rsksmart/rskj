@@ -32,6 +32,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.*;
@@ -657,9 +658,11 @@ public class BridgeSupportSvpTest {
         // we need to add an input that we can actually sign,
         // and we know the private keys for the following scriptSig
         Federation federation = P2shErpFederationBuilder.builder().build();
-        Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
-
-        transaction.addInput(parentTxHash, 0, scriptSig);
+        transaction.addInput(
+            parentTxHash,
+            0,
+            createBaseP2SHInputScriptThatSpendsFromRedeemScript(federation.getRedeemScript())
+        );
     }
 
     private void signInputs(BtcTransaction transaction) {
