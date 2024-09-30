@@ -119,7 +119,7 @@ jobs:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
-          repo-owner: ${{ github.actor }}
+          repo-owner: ${{ github.repository_owner }}
 
       - name: Send Slack Notification on Success
         if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
