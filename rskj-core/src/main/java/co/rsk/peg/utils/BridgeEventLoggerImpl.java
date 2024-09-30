@@ -48,30 +48,24 @@ import java.util.function.Function;
  * @author martin.medina
  */
 public class BridgeEventLoggerImpl implements BridgeEventLogger {
-
-    private static final byte[] BRIDGE_CONTRACT_ADDRESS_SERIALIZED = PrecompiledContracts.BRIDGE_ADDR.getBytes();
-
     private final BridgeConstants bridgeConstants;
-    private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
     private final ActivationConfig.ForBlock activations;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
         this.activations = activations;
         this.bridgeConstants = bridgeConstants;
-        this.signatureCache = signatureCache;
         this.logs = logs;
     }
 
     @Override
-    public void logUpdateCollections(Transaction rskTx) {
+    public void logUpdateCollections(RskAddress sender) {
         CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
 
         byte[][] encodedTopicsSerialized = event.encodeEventTopics();
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
-        String rskTxSenderAddress = rskTx.getSender(signatureCache).toString();
-        byte[] encodedData = event.encodeEventData(rskTxSenderAddress);
+        byte[] encodedData = event.encodeEventData(sender.toHexString());
 
         addLog(encodedTopics, encodedData);
     }
@@ -346,7 +340,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     private void addLog(List<DataWord> eventEncodedTopics, byte[] eventEncodedData) {
-        LogInfo newLog = new LogInfo(BRIDGE_CONTRACT_ADDRESS_SERIALIZED, eventEncodedTopics, eventEncodedData);
+        RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+        LogInfo newLog = new LogInfo(bridgeContractAddress.getBytes(), eventEncodedTopics, eventEncodedData);
+
         this.logs.add(newLog);
     }
 }
