@@ -116,6 +116,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
+      - name: Print Context Information
+        run: |
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Repository Owner: ${{ github.repository_owner }}"
+          echo "Repository Full Name: ${{ github.repository }}"
+          echo "Head Repository Owner: ${{ github.event.pull_request.head.repo.owner.login }}"
+          echo "Base Repository Owner: ${{ github.event.pull_request.base.repo.owner.login }}"
+          echo "Head Repository Name: ${{ github.event.pull_request.head.repo.name }}"
+          echo "Pull Request Number: ${{ github.event.pull_request.number }}"
+          echo "Branch Ref: ${{ github.ref }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Workflow: ${{ github.workflow }}"
+
       - name: Run Rootstock Integration Tests
         uses: rmoreliovlabs/rootstock-integration-tests@feature/add_repo_owner_input
         with:
