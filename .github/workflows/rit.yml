@@ -113,6 +113,9 @@ jobs:
           SAFE_BRANCH_NAME=$(echo "${GITHUB_HEAD_REF}" | tr -cd '[:alnum:]_-' | cut -c1-255)
           echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
 
+      - name: Checkout Code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
       - name: Run Rootstock Integration Tests
         uses: rmoreliovlabs/rootstock-integration-tests@feature/add_repo_owner_input
         with:
