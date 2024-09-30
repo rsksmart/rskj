@@ -85,6 +85,13 @@ public class BitcoinUtils {
             .ifPresent(transaction::addInput);
     }
 
+    public static void addEmptyP2SHInputScript(TransactionInput input, Script redeemScript) {
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        Script emptyInputScript = outputScript.createEmptyInputScript(null, redeemScript);
+
+        input.setScriptSig(emptyInputScript);
+    }
+
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
         return transactionOutputs.stream()
             .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))

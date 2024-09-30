@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -19,9 +20,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 import java.util.stream.Stream;
-
-import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 
 class BitcoinUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
@@ -438,6 +436,26 @@ class BitcoinUtilsTest {
         TransactionInput newTransactionInput = newTransaction.getInput(0);
         TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
         Assertions.assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
+    }
+
+    @Test
+    void addP2SHEmptyInputScript_shouldAddExpectedScriptSigToInput() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        transaction.addInput(transaction.getHash(), 0, redeemScript);
+
+        // act
+        TransactionInput input = transaction.getInput(0);
+        addEmptyP2SHInputScript(input, redeemScript);
+
+        // assert
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+        int redeemScriptChunksSize = scriptSigChunks.size();
+        int redeemScriptChunkIndex = redeemScriptChunksSize - 1;
+        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data);
     }
 
     @Test
