@@ -28,6 +28,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.util.TransactionReceiptUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,7 @@ import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TransientStorageDslTest {
 
@@ -45,23 +47,59 @@ public class TransientStorageDslTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String contractCreationTx = "txTestTransientStorageContract";
-        Transaction contractTransaction = world.getTransactionByName("txTestTransientStorageContract");
-        assertNotNull(contractTransaction);
+        String mainContractTransientStorageCreationTxName = "txTestTransientStorageContract";
+        assertTransactionReceiptWithStatus(world, mainContractTransientStorageCreationTxName, "b01", true);
 
-        Block bestBlock = world.getBlockByName("b03");
-        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
-        TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(contractCreationTx);
+        String secondaryContractTransientStorageCreationTxName = "txTestTransientStorageOtherContract";
+        assertTransactionReceiptWithStatus(world, secondaryContractTransientStorageCreationTxName, "b02", true);
 
-        assertNotNull(contractTransactionReceipt);
-        byte[] status = contractTransactionReceipt.getStatus();
-        assertNotNull(status);
-        assertEquals(1, status.length);
-        assertEquals(1, status[0]);
+        String checkingOpcodesTxName = "txTestTransientStorageOpCodes";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, checkingOpcodesTxName, "b03", true);
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "OK", null));
+
+        String checkingOpcodesTxName2 = "txTestTransientStorageOpCodesOtherValue";
+        TransactionReceipt txReceipt2 = assertTransactionReceiptWithStatus(world, checkingOpcodesTxName2, "b04", true);
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt2, "OK", null));
     }
 
     @Test
-    void testTransientStorageOpcodesExecutionsWithRSKIPDeactivated() throws FileNotFoundException, DslProcessorException {
+    void testTransientStorageOpcodesShareMemorySameTransaction() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_contract.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String mainContractTransientStorageCreationTxName = "txTestTransientStorageContract";
+        assertTransactionReceiptWithStatus(world, mainContractTransientStorageCreationTxName, "b01", true);
+
+        String secondaryContractTransientStorageCreationTxName = "txTestTransientStorageOtherContract";
+        assertTransactionReceiptWithStatus(world, secondaryContractTransientStorageCreationTxName, "b02", true);
+
+        String checkingOpcodesTxName = "txTestTransientStorageNestedTransactionShareMemory";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, checkingOpcodesTxName, "b05", true);
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "OK", null));
+    }
+
+    @Test
+    void testTransientStorageOpcodesDoesntShareMemoryFromOtherContract() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_contract.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String mainContractTransientStorageCreationTxName = "txTestTransientStorageContract";
+        assertTransactionReceiptWithStatus(world, mainContractTransientStorageCreationTxName, "b01", true);
+
+        String secondaryContractTransientStorageCreationTxName = "txTestTransientStorageOtherContract";
+        assertTransactionReceiptWithStatus(world, secondaryContractTransientStorageCreationTxName, "b02", true);
+
+        String checkingOpcodesTxName = "txTestTransientStorageNestedTransactionOtherContractDoesntShareMemory";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, checkingOpcodesTxName, "b06", true);
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "ERROR", new String[]{"bytes32"}));
+    }
+
+    @Test
+    void testTransientStorageOpcodesExecutionFailsWithRSKIPDeactivated() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties rskip446Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
@@ -71,19 +109,36 @@ public class TransientStorageDslTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String contractCreationTx = "txTestTransientStorageContract";
-        Transaction contractTransaction = world.getTransactionByName("txTestTransientStorageContract");
-        assertNotNull(contractTransaction);
+        String mainContractTransientStorageCreationTxName = "txTestTransientStorageContract";
+        assertTransactionReceiptWithStatus(world, mainContractTransientStorageCreationTxName, "b01", true);
 
-        Block bestBlock = world.getBlockByName("b03");
-        Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
-        TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(contractCreationTx);
+        String secondaryContractTransientStorageCreationTxName = "txTestTransientStorageOtherContract";
+        assertTransactionReceiptWithStatus(world, secondaryContractTransientStorageCreationTxName, "b02", true);
 
-        assertNotNull(contractTransactionReceipt);
-        byte[] status = contractTransactionReceipt.getStatus();
+        String checkingOpcodesTxName = "txTestTransientStorageOpCodes";
+       assertTransactionReceiptWithStatus(world, checkingOpcodesTxName, "b03", false);
+    }
+
+    private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
+        Transaction txCreation = world.getTransactionByName(txName);
+        assertNotNull(txCreation);
+
+        Block block = world.getBlockByName(blockName);
+        assertEquals(1, block.getTransactionsList().size());
+
+        TransactionReceipt txReceipt = world.getTransactionReceiptByName(txName);
+        assertNotNull(txReceipt);
+
+        byte[] status = txReceipt.getStatus();
         assertNotNull(status);
-        assertEquals(1, status.length);
-        assertEquals(1, status[0]);
+
+        if(withSuccess) {
+            assertEquals(1, status.length);
+            assertEquals(1, status[0]);
+        } else {
+            assertEquals(0, status.length);
+        }
+        return txReceipt;
     }
 
 }

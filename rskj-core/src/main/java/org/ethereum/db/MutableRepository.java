@@ -25,7 +25,11 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.*;
+import co.rsk.trie.IterationElement;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieStore;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -37,7 +41,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
