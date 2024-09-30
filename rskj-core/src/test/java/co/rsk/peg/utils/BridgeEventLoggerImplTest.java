@@ -259,8 +259,8 @@ class BridgeEventLoggerImplTest {
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
         long newFedActivationBlockNumber = isRSKIP383Active ?
-            rskExecutionBlock.getNumber() + federationActivationAgePostRskip383 :
-            rskExecutionBlock.getNumber() + federationActivationAgePreRskip383;
+            rskExecutionBlockNumber + federationActivationAgePostRskip383 :
+            rskExecutionBlockNumber + federationActivationAgePreRskip383;
 
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
