@@ -115,8 +115,8 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[][] encodedTopicsSerialized = event.encodeEventTopics(rskTxHash);
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
-        byte[] rawBtcTx = btcTx.bitcoinSerialize();
-        byte[] encodedData = event.encodeEventData(rawBtcTx);
+        byte[] rawBtcTxSerialized = btcTx.bitcoinSerialize();
+        byte[] encodedData = event.encodeEventData(rawBtcTxSerialized);
 
         addLog(encodedTopics, encodedData);
     }
