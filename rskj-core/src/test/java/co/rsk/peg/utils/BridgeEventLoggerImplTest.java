@@ -334,8 +334,8 @@ class BridgeEventLoggerImplTest {
         byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
 
         CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
-        Object[] topics = {};
-        Object[] data = new Object[]{
+        var topics = new Object[]{};
+        var data = new Object[]{
             proposedFederationRedeemScriptSerialized,
             executionBlockNumber
         };
