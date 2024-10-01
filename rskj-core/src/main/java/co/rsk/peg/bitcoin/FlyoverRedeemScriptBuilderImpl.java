@@ -4,7 +4,6 @@ import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_FL
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_INTERNAL_REDEEM_SCRIPTS;
 import static java.util.Objects.isNull;
 
-import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -52,17 +51,11 @@ public class FlyoverRedeemScriptBuilderImpl implements FlyoverRedeemScriptBuilde
             throw new RedeemScriptCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
         }
 
-        RedeemScriptParser redeemScriptParser;
         try {
-            redeemScriptParser = RedeemScriptParserFactory.get(internalRedeemScript.getChunks());
+            // Check it can be parsed, so it has a valid structure
+            RedeemScriptParserFactory.get(internalRedeemScript.getChunks());
         } catch (Exception e) {
             String message = "Provided redeem script has an invalid structure.";
-            logger.warn("[validateRedeemScript] {}", message);
-            throw new RedeemScriptCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
-        }
-
-        if (redeemScriptParser.getMultiSigType() == RedeemScriptParser.MultiSigType.FLYOVER) {
-            String message = "Provided redeem script cannot be a flyover redeem script.";
             logger.warn("[validateRedeemScript] {}", message);
             throw new RedeemScriptCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
         }
