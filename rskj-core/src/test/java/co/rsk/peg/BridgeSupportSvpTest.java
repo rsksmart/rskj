@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -32,6 +33,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -623,7 +625,10 @@ public class BridgeSupportSvpTest {
         }
 
         private void assertSvpSpendTxHasExpectedInputsAndOutputs() {
-            assertInputsOutpointHashIsFundTxHash(svpSpendTransactionUnsigned.getInputs(), svpFundTransaction.getHash());
+            List<TransactionInput> inputs = svpSpendTransactionUnsigned.getInputs();
+            assertEquals(2, inputs.size());
+            assertInputsHaveExpectedScriptSig(inputs);
+            assertInputsOutpointHashIsFundTxHash(inputs, svpFundTransaction.getHash());
 
             List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
             assertEquals(1, outputs.size());
@@ -632,10 +637,31 @@ public class BridgeSupportSvpTest {
             assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), expectedAmount);
         }
 
+        private void assertInputsHaveExpectedScriptSig(List<TransactionInput> inputs) {
+            TransactionInput inputToProposedFederation = inputs.get(0);
+            Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+            assertInputHasExpectedScriptSig(inputToProposedFederation, proposedFederationRedeemScript);
+
+            TransactionInput inputToFlyoverProposedFederation = inputs.get(1);
+            Script flyoverRedeemScript =
+                getFlyoverRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+            assertInputHasExpectedScriptSig(inputToFlyoverProposedFederation, flyoverRedeemScript);
+        }
+
         private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
             for (TransactionInput input : inputs) {
                 Sha256Hash outpointHash = input.getOutpoint().getHash();
                 assertEquals(svpFundTxHashSigned, outpointHash);
+            }
+        }
+
+        private void assertInputHasExpectedScriptSig(TransactionInput input, Script redeemScript) {
+            List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+            int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+            assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+            for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+                assertEquals(0, chunk.opcode);
             }
         }
     }
