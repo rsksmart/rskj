@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -94,5 +95,34 @@ public class BitcoinUtils {
         return transactionOutputs.stream()
             .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
             .findFirst();
+    }
+
+    public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
+        List<Sha256Hash> sigHashes = new ArrayList<>();
+        List<TransactionInput> inputs = btcTx.getInputs();
+        for (TransactionInput input : inputs) {
+            Sha256Hash sigHash = generateSigHashForP2SHInput(btcTx, inputs.indexOf(input));
+            sigHashes.add(sigHash);
+        }
+        return sigHashes;
+    }
+
+    private static Sha256Hash generateSigHashForP2SHInput(BtcTransaction btcTx, int inputIndex) {
+        TransactionInput input = btcTx.getInput(inputIndex);
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(input);
+        if (redeemScript.isEmpty()) {
+            throw new IllegalArgumentException("Couldn't extract redeem script from p2sh input");
+        }
+
+        return btcTx.hashForSignature(inputIndex, redeemScript.get(), BtcTransaction.SigHash.ALL, false);
+    }
+
+    public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
+        List<byte[]> encodedSignatures = new ArrayList<>();
+        for (Sha256Hash sigHash : sigHashes) {
+            BtcECKey.ECDSASignature signature = signingKey.sign(sigHash);
+            encodedSignatures.add(signature.encodeToDER());
+        }
+        return encodedSignatures;
     }
 }
