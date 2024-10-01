@@ -19,8 +19,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -340,16 +338,7 @@ public final class BridgeUtils {
 
     private static boolean isErpType(Script redeemScript) {
         List<ScriptChunk> redeemScriptChunks = redeemScript.getChunks();
-        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScriptChunks);
-        MultiSigType multiSigType = parser.getMultiSigType();
-        if (multiSigType == MultiSigType.FLYOVER) {
-            // if it is a flyover tx, it should use the internal redeem script
-            // to validate if it is a standard multisig
-            List<ScriptChunk> internalRedeemScriptChunks = redeemScriptChunks.subList(2, redeemScriptChunks.size());
-            RedeemScriptParser internalParser = RedeemScriptParserFactory.get(internalRedeemScriptChunks);
-            multiSigType = internalParser.getMultiSigType();
-        }
-        return multiSigType == MultiSigType.NON_STANDARD_ERP_FED || multiSigType == MultiSigType.P2SH_ERP_FED;
+        return RedeemScriptParserFactory.get(redeemScriptChunks).hasErpFormat();
     }
 
     /**
@@ -365,8 +354,6 @@ public final class BridgeUtils {
         Script scriptSig;
         List<ScriptChunk> chunks;
         Script redeemScript;
-        RedeemScriptParser parser;
-        MultiSigType multiSigType;
 
         int lastChunk;
         for (TransactionInput input : btcTx.getInputs()) {
