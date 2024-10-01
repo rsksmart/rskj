@@ -285,6 +285,15 @@ class BridgeEventLoggerLegacyImplTest {
         );
     }
 
+    @Test
+    void testLogCommitFederationFailure_throwsUnsupportedOperationException() {
+        // Setup event logger
+        activations = ActivationConfigsForTest.all().forBlock(0);
+
+        // Act
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logCommitFederationFailure(mock(Block.class), mock(Federation.class)));
+    }
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
