@@ -332,12 +332,12 @@ public enum OpCode {
     /**
      * (0x5c) Load word from transient storage at address
      */
-    TLOAD(0x5c, 1, 1, SPECIAL_TIER),
+    TLOAD(0x5c, 1, 1,  SPECIAL_TIER), // Will adjust the correct inputs and outputs later
 
     /**
      * (0x5c) Store word from transient storage at address
      */
-    TSTORE(0x5d, 2, 1, SPECIAL_TIER),
+    TSTORE(0x5d, 1, 1, SPECIAL_TIER), // Will adjust the correct inputs and outputs later
 
     /*  Push Operations */
     /**

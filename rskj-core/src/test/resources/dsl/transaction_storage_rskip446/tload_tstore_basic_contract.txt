@@ -1,0 +1,127 @@
+comment
+
+// CONTRACT CODE
+
+pragma solidity ^0.8.24;
+
+contract TestTransientStorage {
+    constructor() {}
+
+    event OK();
+    event ERROR();
+
+    function checkTStore() external {
+        bytes32 valueToSave = 0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f;
+        address contractAddress = address(this);
+        assembly {
+            tstore(contractAddress, valueToSave)  // Use TSTORE to save the value at  the contract address on the transient storage
+        }
+    }
+
+    function checkTLoad() external {
+        bytes32 valueSaved = 0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f;
+        bytes32 valueLoaded;
+        address contractAddress = address(this);
+    assembly {
+            valueLoaded := tload(contractAddress)  // Use TLOAD to load the value into the temporary variable
+        }
+        if (valueLoaded == valueSaved) {
+            emit OK();
+        } else {
+            emit ERROR();
+        }
+    }
+}
+
+// DESCRIPTION
+
+This contract contains two functions: checkTStore and checkTLoad.
+
+* checkTStore simply checks if the transaction finished with success and it's expected to have saved the value on the address
+
+* checkTLoad simply checks if the transaction finished with success and check if the value loaded is the same as the value saved
+
+
+// CONTRACT BYTECODE
+
+608060405234801561000f575f80fd5b5061014a8061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063a36ca99d14610038578063d5ad4e0b14610042575b5f80fd5b61004061004c565b005b61004a61007c565b005b5f7e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f1b90505f30905081815d5050565b5f7e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f1b90505f80309050805c91508282036100e2577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a161010f565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b50505056fea2646970667358221220c97a07f12090a982975e295ffa092efe648f43916b098afb2523daffb7e42df464736f6c63430008180033
+
+// CONTRACT CALL
+
+- checkTStore() -> a36ca99d
+- checkTLoad() -> d5ad4e0b
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TestTransientStorage contract
+transaction_build txTestTransientStorageContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 608060405234801561000f575f80fd5b5061014a8061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063a36ca99d14610038578063d5ad4e0b14610042575b5f80fd5b61004061004c565b005b61004a61007c565b005b5f7e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f1b90505f30905081815d5050565b5f7e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f1b90505f80309050805c91508282036100e2577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a161010f565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b50505056fea2646970667358221220c97a07f12090a982975e295ffa092efe648f43916b098afb2523daffb7e42df464736f6c63430008180033
+    gas 1200000
+    build
+
+# Create block to hold txTestTransientStorageContract transaction
+block_build b01
+    parent g00
+    transactions txTestTransientStorageContract
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Check txTestTransientStorageContract succeded
+assert_tx_success txTestTransientStorageContract
+
+# Create transaction to execute checkTStore() method
+transaction_build txTestTStore
+    sender acc1
+    nonce 1
+    contract txTestTransientStorageContract
+    value 0
+    data a36ca99d
+    gas 30000
+    build
+
+# Create block to hold txTestTStore transaction
+block_build b02
+    parent b01
+    transactions txTestTStore
+    gasLimit 6500000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Create transaction to execute checkTLoad() method
+transaction_build txTestTLoad
+    sender acc1
+    nonce 2
+    contract txTestTransientStorageContract
+    value 0
+    data d5ad4e0b
+    gas 30000
+    build
+
+# Create block to hold txTestTLoad transaction
+block_build b03
+    parent b02
+    transactions txTestTLoad
+    gasLimit 6500000
+    build
+
+# Connect block
+block_connect b03
+
+# Check b02 is best block
+assert_best b03

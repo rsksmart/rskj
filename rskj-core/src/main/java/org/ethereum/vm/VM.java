@@ -1327,24 +1327,19 @@ public class VM {
     }
 
     protected void doTLOAD(){
-
-        DataWord key = program.stackPop();
-        DataWord value = program.stackPop();
         DataWord address = program.getOwnerAddress();
 
         if (isLogEnabled) {
-            logger.info("Executing TLOAD with parameters: address={} | key = {} | value = {}", address, key, value);
+            logger.info("Executing TLOAD with parameters: address={} ",address);
         }
     }
 
     protected void doTSTORE(){
 
-        DataWord key = program.stackPop();
-        DataWord value = program.stackPop();
         DataWord address = program.getOwnerAddress();
 
         if (isLogEnabled) {
-            logger.info("Executing TLOAD with parameters: address={} | key = {} | value = {}", address, key, value);
+            logger.info("Executing TSTORE with parameters: address={} ", address);
         }
     }
 
