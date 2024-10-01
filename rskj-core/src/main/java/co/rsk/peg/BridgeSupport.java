@@ -998,7 +998,7 @@ public class BridgeSupport {
     private boolean svpIsOngoing() {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
 
-        if (!proposedFederationOpt.isPresent()) {
+        if (proposedFederationOpt.isEmpty()) {
             return false;
         }
         Federation proposedFederation = proposedFederationOpt.get();
@@ -1572,13 +1572,21 @@ public class BridgeSupport {
      *
      * @param federatorPublicKey   Federator who is signing
      * @param signatures           1 signature per btc tx input
-     * @param rskTxHash            The id of the rsk tx
+     * @param rskTxHashSerialized            The id of the rsk tx
      */
-    public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
+    public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHashSerialized) throws Exception {
         Context.propagate(btcContext);
+        Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
+
+        if (svpIsOngoing()) {
+            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWFS = provider.getSvpSpendTxWaitingForSignatures();
+            if (svpSpendTxWFS.isPresent()) {
+                addSvpSpendTxSignatureIfPossible(svpSpendTxWFS.get(), rskTxHash, federatorPublicKey, signatures);
+            }
+        }
 
         Optional<Federation> optionalFederation = getFederationFromPublicKey(federatorPublicKey);
-        if (!optionalFederation.isPresent()) {
+        if (optionalFederation.isEmpty()) {
             logger.warn(
                 "[addSignature] Supplied federator btc public key {} does not belong to any of the federators.",
                 federatorPublicKey
@@ -1588,7 +1596,7 @@ public class BridgeSupport {
 
         Federation federation = optionalFederation.get();
         Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(federatorPublicKey);
-        if (!federationMember.isPresent()){
+        if (federationMember.isEmpty()){
             logger.warn(
                 "[addSignature] Supplied federator btc public key {} doest not match any of the federator member btc public keys {}.",
                 federatorPublicKey, federation.getBtcPublicKeys()
@@ -1597,11 +1605,11 @@ public class BridgeSupport {
         }
         FederationMember signingFederationMember = federationMember.get();
 
-        BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(new Keccak256(rskTxHash));
+        BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(rskTxHash);
         if (btcTx == null) {
             logger.warn(
                 "No tx waiting for signature for hash {}. Probably fully signed already.",
-                new Keccak256(rskTxHash)
+                rskTxHash
             );
             return;
         }
@@ -1615,10 +1623,30 @@ public class BridgeSupport {
         }
 
         if (!activations.isActive(ConsensusRule.RSKIP326)) {
-            eventLogger.logAddSignature(signingFederationMember, btcTx, rskTxHash);
+            eventLogger.logAddSignature(signingFederationMember, btcTx, rskTxHashSerialized);
         }
 
-        processSigning(signingFederationMember, signatures, rskTxHash, btcTx, federation);
+        processSigning(signingFederationMember, signatures, rskTxHashSerialized, btcTx, federation);
+    }
+
+    private void addSvpSpendTxSignatureIfPossible(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS, Keccak256 rskTxHash, BtcECKey federatorPublicKey, List<byte[]> signatures) throws IOException {
+        if (!svpSpendTxWFS.getKey().equals(rskTxHash)) {
+            return;
+        }
+        BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+        if (proposedFederationOpt.isEmpty()) {
+            return;
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(federatorPublicKey);
+        if (federationMember.isEmpty()) {
+            return;
+        }
+
+        processSigning(federationMember.get(), signatures, rskTxHash.getBytes(), svpSpendTx, proposedFederation);
     }
 
     private Optional<Federation> getFederationFromPublicKey(BtcECKey federatorPublicKey) {
