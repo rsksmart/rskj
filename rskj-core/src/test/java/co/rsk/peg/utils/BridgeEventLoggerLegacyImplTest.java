@@ -29,6 +29,7 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.RLP;
@@ -282,6 +283,15 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Act
         assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
+    }
+
+    @Test
+    void testLogCommitFederationFailure_throwsUnsupportedOperationException() {
+        // Setup event logger
+        activations = ActivationConfigsForTest.all().forBlock(0);
+
+        // Act
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logCommitFederationFailure(mock(Block.class), mock(Federation.class)));
     }
 
     /**********************************
