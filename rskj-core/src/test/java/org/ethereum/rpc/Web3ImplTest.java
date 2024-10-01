@@ -141,6 +141,28 @@ class Web3ImplTest {
     }
 
     @Test
+    void web3_clientVersion_ShouldIncludeJava8() {
+        System.setProperty("java.specification.version", "1.8");
+
+        Web3 web3 = createWeb3();
+
+        String clientVersion = web3.web3_clientVersion();
+
+        assertTrue(clientVersion.contains("Java8"), "Java version is not Java8");
+    }
+
+    @Test
+    void web3_clientVersion_ShouldIncludeJava17() {
+        System.setProperty("java.specification.version", "17");
+
+        Web3 web3 = createWeb3();
+
+        String clientVersion = web3.web3_clientVersion();
+
+        assertTrue(clientVersion.contains("Java17"), "Java version is not Java17");
+    }
+
+    @Test
     void net_version() {
         Web3Impl web3 = createWeb3();
 
@@ -3097,14 +3119,12 @@ class Web3ImplTest {
 
     //Chain Param Object creations
     private class ChainParams {
-        private final World world;
         private final Web3Impl web3;
         private final String accountAddress;
         private final Block block;
         private CallArguments argsForCall; // for call tests could be null
 
         private ChainParams(World world, String accountAddress, Block block) {
-            this.world = world;
             this.web3 = createWeb3(world);
             this.accountAddress = accountAddress;
             this.block = block;

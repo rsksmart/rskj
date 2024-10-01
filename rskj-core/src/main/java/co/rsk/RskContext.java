@@ -21,6 +21,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.cli.RskCli;
 import co.rsk.config.*;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
@@ -40,6 +41,8 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
+import co.rsk.mine.gas.provider.MinGasPriceProvider;
+import co.rsk.mine.gas.provider.MinGasPriceProviderFactory;
 import co.rsk.net.*;
 import co.rsk.net.discovery.KnownPeersHandler;
 import co.rsk.net.discovery.PeerExplorer;
@@ -254,6 +257,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
+    private MinGasPriceProvider minGasPriceProvider;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
@@ -1851,13 +1855,23 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getMinerClock(),
                     getBlockFactory(),
                     getBlockExecutor(),
-                    new MinimumGasPriceCalculator(Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
+                    new MinimumGasPriceCalculator(getMinGasPriceProvider()),
                     new MinerUtils(),
                     getBlockTxSignatureCache()
             );
         }
 
         return blockToMineBuilder;
+    }
+
+    private MinGasPriceProvider getMinGasPriceProvider() {
+        if (minGasPriceProvider == null) {
+            long minGasPrice = getRskSystemProperties().minerMinGasPrice();
+            StableMinGasPriceSystemConfig stableGasPriceSystemConfig = getRskSystemProperties().getStableGasPriceSystemConfig();
+            minGasPriceProvider = MinGasPriceProviderFactory.create(minGasPrice, stableGasPriceSystemConfig, this::getEthModule);
+        }
+        logger.debug("MinGasPriceProvider type: {}", minGasPriceProvider.getType().name());
+        return minGasPriceProvider;
     }
 
     private BlockNodeInformation getBlockNodeInformation() {
@@ -2168,7 +2182,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.coinbaseAddress(),
                     rskSystemProperties.minerMinFeesNotifyInDollars(),
                     rskSystemProperties.minerGasUnitInDollars(),
-                    rskSystemProperties.minerMinGasPrice(),
                     rskSystemProperties.getNetworkConstants().getUncleListLimit(),
                     rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
                     new GasLimitConfig(
@@ -2177,8 +2190,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             rskSystemProperties.getForceTargetGasLimit()
                     ),
                     rskSystemProperties.isMinerServerFixedClock(),
-                    rskSystemProperties.workSubmissionRateLimitInMills()
-            );
+                    rskSystemProperties.workSubmissionRateLimitInMills());
         }
 
         return miningConfig;

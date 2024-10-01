@@ -254,4 +254,10 @@ public class Utils {
         }
         return result;
     }
+
+    public static String getFormattedJavaVersion(){
+        String javaVersion = System.getProperty("java.specification.version");
+        String javaMajorVersion = javaVersion.replace("1.", "");
+        return String.format("Java%s", javaMajorVersion);
+    }
 }

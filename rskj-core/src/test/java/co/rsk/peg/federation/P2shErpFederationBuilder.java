@@ -22,10 +22,18 @@ public class P2shErpFederationBuilder {
     private long creationBlockNumber;
     private NetworkParameters networkParameters;
 
-    public P2shErpFederationBuilder() {
-        this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
-        );
+    private P2shErpFederationBuilder() {
+        this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01",
+            "member02",
+            "member03",
+            "member04",
+            "member05",
+            "member06",
+            "member07",
+            "member08",
+            "member09"
+        }, true);
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
         this.erpPublicKeys = FederationMainNetConstants.getInstance().getErpFedPubKeysList();
@@ -33,6 +41,10 @@ public class P2shErpFederationBuilder {
         this.creationTime = Instant.ofEpochMilli(10L);
         this.creationBlockNumber = 1L;
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+    }
+
+    public static P2shErpFederationBuilder builder() {
+        return new P2shErpFederationBuilder();
     }
 
     public P2shErpFederationBuilder withMembersBtcPublicKeys(List<BtcECKey> btcPublicKeys) {
@@ -92,12 +104,10 @@ public class P2shErpFederationBuilder {
             membersMstPublicKeys = new ArrayList<>(membersRskPublicKeys);
         }
 
-        return IntStream.range(0, membersBtcPublicKeys.size())
-            .mapToObj(i -> new FederationMember(
-                membersBtcPublicKeys.get(i),
-                membersRskPublicKeys.get(i),
-                membersMstPublicKeys.get(i)
-            ))
-            .collect(Collectors.toList());
+        return IntStream.range(0, membersBtcPublicKeys.size()).mapToObj(i -> new FederationMember(
+            membersBtcPublicKeys.get(i),
+            membersRskPublicKeys.get(i),
+            membersMstPublicKeys.get(i)
+        )).collect(Collectors.toList());
     }
 }

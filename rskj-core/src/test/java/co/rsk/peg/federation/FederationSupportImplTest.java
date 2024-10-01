@@ -70,7 +70,7 @@ class FederationSupportImplTest {
     private ErpFederation newFederation;
     private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
-    private final FederationSupportBuilder federationSupportBuilder = new FederationSupportBuilder();
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private FederationSupport federationSupport;
     private SignatureCache signatureCache;
 
@@ -244,16 +244,13 @@ class FederationSupportImplTest {
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             // create new federation
-            P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
-            newFederation = p2shErpFederationBuilder
-                .build();
+            newFederation = P2shErpFederationBuilder.builder().build();
 
             storageProvider.setNewFederation(newFederation);
             federationSupport = federationSupportBuilder
                 .withFederationConstants(federationMainnetConstants)
                 .withFederationStorageProvider(storageProvider)
                 .build();
-
         }
 
         @Test
@@ -371,7 +368,7 @@ class FederationSupportImplTest {
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
-            newFederation = new P2shErpFederationBuilder()
+            newFederation = P2shErpFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .build();
             storageProvider.setNewFederation(newFederation);
@@ -405,7 +402,7 @@ class FederationSupportImplTest {
             List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
             );
-            newFederation = new P2shErpFederationBuilder()
+            newFederation = P2shErpFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .withMembersMstPublicKeys(mstECKeys)
                 .build();
@@ -447,13 +444,13 @@ class FederationSupportImplTest {
         // create old and new federations
         long oldFederationCreationBlockNumber = 20;
         long newFederationCreationBlockNumber = 65;
-        Federation oldFederation = new P2shErpFederationBuilder()
+        Federation oldFederation = P2shErpFederationBuilder.builder()
             .withCreationBlockNumber(oldFederationCreationBlockNumber)
             .build();
         List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
         );
-        Federation newFederation = new P2shErpFederationBuilder()
+        Federation newFederation = P2shErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(newFederationKeys)
             .withCreationBlockNumber(newFederationCreationBlockNumber)
             .build();
@@ -1212,9 +1209,7 @@ class FederationSupportImplTest {
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
 
             // create new federation
-            P2shErpFederationBuilder p2shErpFederationBuilder = new P2shErpFederationBuilder();
-            newFederation = p2shErpFederationBuilder
-                .build();
+            newFederation = P2shErpFederationBuilder.builder().build();
 
             storageProvider.setNewFederation(newFederation);
             federationSupport = federationSupportBuilder
@@ -1308,13 +1303,13 @@ class FederationSupportImplTest {
         // create old and new federations
         long oldFederationCreationBlockNumber = 20;
         long newFederationCreationBlockNumber = 65;
-        Federation oldFederation = new P2shErpFederationBuilder()
+        Federation oldFederation = P2shErpFederationBuilder.builder()
             .withCreationBlockNumber(oldFederationCreationBlockNumber)
             .build();
         List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
         );
-        Federation newFederation = new P2shErpFederationBuilder()
+        Federation newFederation = P2shErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(newFederationKeys)
             .withCreationBlockNumber(newFederationCreationBlockNumber)
             .build();
@@ -1762,7 +1757,7 @@ class FederationSupportImplTest {
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
-            Federation oldFederationWithRskKeys = new P2shErpFederationBuilder()
+            Federation oldFederationWithRskKeys = P2shErpFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .build();
             storageProvider.setOldFederation(oldFederationWithRskKeys);
@@ -1810,7 +1805,7 @@ class FederationSupportImplTest {
             List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
             );
-            Federation oldFederationWithRskAndMstKeys = new P2shErpFederationBuilder()
+            Federation oldFederationWithRskAndMstKeys = P2shErpFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .withMembersMstPublicKeys(mstECKeys)
                 .build();
@@ -1957,7 +1952,7 @@ class FederationSupportImplTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class PendingFederationTestsWithNonNullFederation {
 
-        PendingFederation pendingFederation = new PendingFederationBuilder().build();
+        PendingFederation pendingFederation = PendingFederationBuilder.builder().build();
 
         @BeforeEach
         void setUp() {
@@ -2040,7 +2035,7 @@ class FederationSupportImplTest {
             List<ECKey> rskECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"rsk01", "rsk02", "rsk03", "rsk04", "rsk05", "rsk06", "rsk07", "rsk08", "rsk09"}
             );
-            PendingFederation pendingFederationWithRskKeys = new PendingFederationBuilder()
+            PendingFederation pendingFederationWithRskKeys = PendingFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .build();
             storageProvider.setPendingFederation(pendingFederationWithRskKeys);
@@ -2074,7 +2069,7 @@ class FederationSupportImplTest {
             List<ECKey> mstECKeys = RskTestUtils.getEcKeysFromSeeds(
                 new String[]{"mst01", "mst02", "mst03", "mst04", "mst05", "mst06", "mst07", "mst08", "mst09"}
             );
-            PendingFederation pendingFederationWithRskAndMstKeys = new PendingFederationBuilder()
+            PendingFederation pendingFederationWithRskAndMstKeys = PendingFederationBuilder.builder()
                 .withMembersRskPublicKeys(rskECKeys)
                 .withMembersMstPublicKeys(mstECKeys)
                 .build();
@@ -2159,8 +2154,7 @@ class FederationSupportImplTest {
             .build();
 
         // get a real p2sh script
-        ErpFederation federation = new P2shErpFederationBuilder()
-            .build();
+        ErpFederation federation = P2shErpFederationBuilder.builder().build();
         Script p2shScript = federation.getDefaultP2SHScript();
 
         storageProvider.setLastRetiredFederationP2SHScript(p2shScript);
@@ -2175,7 +2169,7 @@ class FederationSupportImplTest {
     void clearRetiredFederation_whenHavingOldFederation_removesOldFederation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
-        ErpFederation federation = new P2shErpFederationBuilder().build();
+        ErpFederation federation = P2shErpFederationBuilder.builder().build();
         storageProvider.setOldFederation(federation);
 
         // check the old federation was correctly saved

@@ -5,21 +5,27 @@ import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
     private static final Logger logger = LoggerFactory.getLogger(P2shErpRedeemScriptBuilder.class);
 
-    @Override
-    public Script createRedeemScriptFromKeys(List<BtcECKey> defaultPublicKeys,
-                                             int defaultThreshold,
-                                             List<BtcECKey> emergencyPublicKeys,
-                                             int emergencyThreshold,
-                                             long csvValue) {
+    private P2shErpRedeemScriptBuilder() {}
 
+    public static P2shErpRedeemScriptBuilder builder() {
+        return new P2shErpRedeemScriptBuilder();
+    }
+
+    @Override
+    public Script of(
+        List<BtcECKey> defaultPublicKeys,
+        int defaultThreshold,
+        List<BtcECKey> emergencyPublicKeys,
+        int emergencyThreshold,
+        long csvValue
+    ) {
         Script defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
         Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
 
@@ -34,10 +40,12 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
 
         return redeemScript;
     }
-    private Script createRedeemScriptFromScripts(Script defaultRedeemScript,
-                                     Script emergencyRedeemScript,
-                                     byte[] serializedCsvValue) {
 
+    private Script createRedeemScriptFromScripts(
+        Script defaultRedeemScript,
+        Script emergencyRedeemScript,
+        byte[] serializedCsvValue
+    ) {
         ScriptBuilder scriptBuilder = new ScriptBuilder();
 
         return scriptBuilder

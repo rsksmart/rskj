@@ -63,6 +63,7 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.*;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.Utils;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,8 +196,10 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String web3_clientVersion() {
+        String javaVersion = Utils.getFormattedJavaVersion();
+
         String clientVersion = CLIENT_VERSION_PREFIX + "/" + config.projectVersion() + "/" +
-                System.getProperty("os.name") + "/Java1.8/" +
+                System.getProperty("os.name") + "/" + javaVersion + "/" +
                 config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {

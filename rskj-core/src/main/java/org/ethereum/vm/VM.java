@@ -27,6 +27,7 @@ import co.rsk.rpc.netty.ExecTimeoutContext;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
+import org.ethereum.cost.InitcodeCostCalculator;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
@@ -1440,17 +1441,18 @@ public class VM {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
-        DataWord size;
+        DataWord codeSize;
         long sizeLong;
         long newMemSize ;
 
         if (computeGas) {
             gasCost = GasCost.CREATE;
-            size = stack.get(stack.size() - 3);
-            sizeLong = Program.limitToMaxLong(size);
+            codeSize = stack.get(stack.size() - 3);
+            sizeLong = Program.limitToMaxLong(codeSize);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
             gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
+            gasCost = GasCost.add(gasCost, InitcodeCostCalculator.getInstance().calculateCost(sizeLong, program.getActivations()));
 
             spendOpCodeGas();
         }
@@ -1484,7 +1486,8 @@ public class VM {
                     ),
                     GasCost.SHA3_WORD,
                     GasCost.add(codeSize, 31) / 32
-            );
+            ) ;
+            gasCost = GasCost.add(gasCost, InitcodeCostCalculator.getInstance().calculateCost(codeSize, program.getActivations()));
             spendOpCodeGas();
         }
 

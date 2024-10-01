@@ -31,7 +31,10 @@ import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.TransactionUtils;
-import co.rsk.scoring.*;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoring;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
@@ -1037,41 +1040,37 @@ class NodeMessageHandlerTest {
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
 
-        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
-
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
 
         {
             Logger loggerNonBlock = mock(Logger.class);
-            TestUtils.setFinalStatic(handler, "loggerMessageProcess", loggerNonBlock);
 
             final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
             final Message message1 = new StatusMessage(status);
             NodeMessageHandler.MessageTask task1 = new NodeMessageHandler.MessageTask(sender, message1, 100, new NodeMsgTraceInfo("testMsg", "testSession"));
 
             // fake old start: 1st warn
-            handler.logEnd(task1, System.nanoTime() - Duration.ofSeconds(3).toNanos());
+            NodeMessageHandler.logEnd(task1, System.nanoTime() - Duration.ofSeconds(3).toNanos(), loggerNonBlock);
             verify(loggerNonBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message1.getMessageType()), anyLong());
 
             // fake recent start: still 1 one warn
-            handler.logEnd(task1, System.nanoTime() - Duration.ofMillis(5).toNanos());
+            NodeMessageHandler.logEnd(task1, System.nanoTime() - Duration.ofMillis(5).toNanos(), loggerNonBlock);
             verify(loggerNonBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message1.getMessageType()), anyLong());
         }
 
         {
             Logger loggerBlock = mock(Logger.class);
-            TestUtils.setFinalStatic(handler, "loggerMessageProcess", loggerBlock);
 
             final Message message2 = new BlockMessage(block);
             NodeMessageHandler.MessageTask task2 = new NodeMessageHandler.MessageTask(sender, message2, 100, new NodeMsgTraceInfo("testMsg2", "testSession2"));
 
             // fake old start for block: 1st warn
-            handler.logEnd(task2, System.nanoTime() - Duration.ofSeconds(61).toNanos());
+            NodeMessageHandler.logEnd(task2, System.nanoTime() - Duration.ofSeconds(61).toNanos(), loggerBlock);
             verify(loggerBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message2.getMessageType()), anyLong());
 
             // fake old start for non-block: still 1 warn, Block has higher threshold for warn
-            handler.logEnd(task2, System.nanoTime() - Duration.ofSeconds(3).toNanos());
+            NodeMessageHandler.logEnd(task2, System.nanoTime() - Duration.ofSeconds(3).toNanos(), loggerBlock);
             verify(loggerBlock, times(1)).warn(argThat(s -> s.contains("processing took too much")), eq(message2.getMessageType()), anyLong());
         }
 

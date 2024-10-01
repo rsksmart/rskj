@@ -21,8 +21,7 @@ package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.ConfigLoader;
-import co.rsk.peg.constants.BridgeDevNetConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.config.mining.StableMinGasPriceSystemConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -38,13 +37,7 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -52,12 +45,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -113,7 +101,7 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
 
-    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
+    public static final String PROPERTY_CHECK_JAVA_VERSION = "system.checkJavaVersion";
 
     public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
     public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
@@ -139,10 +127,12 @@ public abstract class SystemProperties {
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
-            logger.trace(
-                    "Config trace: {}",
-                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
-            );
+            if(logger.isTraceEnabled()){
+                logger.trace(
+                        "Config trace: {}",
+                        configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
+                );
+            }
 
             Properties props = new Properties();
             try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
@@ -163,11 +153,11 @@ public abstract class SystemProperties {
             return "-.-.-";
         }
 
-        return versionNumber.replaceAll("'", "");
+        return versionNumber.replace("'", "");
     }
 
     private static String getProjectVersionModifier(Properties props) {
-        return props.getProperty("modifier").replaceAll("\"", "");
+        return props.getProperty("modifier").replace("\"", "");
     }
 
     public Config getConfig() {
@@ -423,8 +413,10 @@ public abstract class SystemProperties {
                 file.getParentFile().mkdirs();
                 try (FileWriter writer = new FileWriter(file)) {
                     props.store(writer, "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                    logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
-                    logger.info("Generated nodeID and its private key stored in {}", file);
+                    if(logger.isInfoEnabled()) {
+                        logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                        logger.info("Generated nodeID and its private key stored in {}", file);
+                    }
                 }
             }
             return props.getProperty("nodeIdPrivateKey");
@@ -522,10 +514,8 @@ public abstract class SystemProperties {
             InetAddress resolvedIp = tryParseIpOrThrow(ipFromService);
             logger.info("Identified public IP: {}", resolvedIp);
             return resolvedIp;
-        } catch (IOException e) {
-            logger.error("Can't get public IP", e);
-        } catch (IllegalArgumentException e) {
-            logger.error("Can't get public IP", e);
+        } catch (IOException | IllegalArgumentException exception) {
+            logger.error("Can't get public IP", exception);
         }
 
         InetAddress bindAddress = getBindAddress();
@@ -610,8 +600,8 @@ public abstract class SystemProperties {
         return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
     }
 
-    public boolean shouldSkipJavaVersionCheck() {
-        return getBoolean(PROPERTY_SKIP_JAVA_VERSION_CHECK, false);
+    public boolean shouldCheckJavaVersion() {
+        return getBoolean(PROPERTY_CHECK_JAVA_VERSION, true);
     }
 
     public boolean shouldPersistStatesCacheSnapshot() {
@@ -785,5 +775,10 @@ public abstract class SystemProperties {
         }
 
         return configFromFiles.getInt(PROPERTY_RPC_MAX_RESPONSE_SIZE);
+    }
+
+    public StableMinGasPriceSystemConfig getStableGasPriceSystemConfig() {
+        Config config = configFromFiles.getConfig(StableMinGasPriceSystemConfig.STABLE_GAS_PRICE_CONFIG_PATH_PROPERTY);
+        return new StableMinGasPriceSystemConfig(config);
     }
 }
