@@ -54,7 +54,7 @@ public class RskErrorResolver implements ErrorResolver {
                     "the method " + method.getName() + " does not exist/is not available",
                     null);
         } else {
-            logger.error("JsonRPC error when for method {} with arguments {}", method, arguments, t);
+            logger.error("JsonRPC error when for method {}", method, t);
             error = new JsonError(JsonRpcError.INTERNAL_ERROR, "Internal server error", null);
         }
         return error;

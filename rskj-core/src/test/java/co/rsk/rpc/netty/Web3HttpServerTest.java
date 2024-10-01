@@ -181,11 +181,17 @@ class Web3HttpServerTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        for (long i = 0; i < 99_999; i++) {
-            content = String.format("[[[[[[[[[[%s]]]]]]]]]]", content);
+        int depth = 998;
+        StringBuilder sb = new StringBuilder(content.length() + 2*depth);
+        for (long i = 0; i < depth; i++) {
+            sb.append("[");
+        }
+        sb.append(content);
+        for (long i = 0; i < depth; i++) {
+            sb.append("]");
         }
 
-        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
+        Response response = sendHugeJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", sb.toString());
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 

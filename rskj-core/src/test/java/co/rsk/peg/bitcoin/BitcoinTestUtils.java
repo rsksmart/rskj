@@ -1,25 +1,27 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import co.rsk.bitcoinj.script.ScriptChunk;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
 public class BitcoinTestUtils {
 
+    public static BtcECKey getBtcEcKeyFromSeed(String seed) {
+        byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
+        return BtcECKey.fromPrivate(serializedSeed);
+    }
+
     public static List<BtcECKey> getBtcEcKeysFromSeeds(String[] seeds, boolean sorted) {
-        List<BtcECKey> keys = Arrays
-            .stream(seeds)
-            .map(seed -> BtcECKey.fromPrivate(
-                HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8))))
+        List<BtcECKey> keys = Arrays.stream(seeds)
+            .map(BitcoinTestUtils::getBtcEcKeyFromSeed)
             .collect(Collectors.toList());
 
         if (sorted) {
@@ -37,7 +39,7 @@ public class BitcoinTestUtils {
 
     public static Address createP2SHMultisigAddress(NetworkParameters networkParameters, List<BtcECKey> keys) {
         Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        Script outputScript = createP2SHOutputScript(redeemScript);
 
         return Address.fromP2SHScript(networkParameters, outputScript);
     }
@@ -108,5 +110,48 @@ public class BitcoinTestUtils {
         );
 
         return tx;
+    }
+
+    public static byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
+        List<byte[]> pubKeys = keys.stream()
+            .map(BtcECKey::getPubKey)
+            .collect(Collectors.toList());
+        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
+
+        byte[] flatPubKeys = new byte[pubKeysLength];
+        int copyPos = 0;
+        for (byte[] key : pubKeys) {
+            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
+            copyPos += key.length;
+        }
+
+        return flatPubKeys;
+    }
+
+    public static void signTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+        if (transaction.getWitness(inputIndex).getPushCount() == 0) {
+            signLegacyTransactionInputFromP2shMultiSig(transaction, inputIndex, keys);
+        }
+    }
+
+    private static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+        TransactionInput input = transaction.getInput(inputIndex);
+
+        Script inputRedeemScript = extractRedeemScriptFromInput(input)
+            .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
+
+        Script outputScript = createP2SHOutputScript(inputRedeemScript);
+        Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
+        Script inputScriptSig = input.getScriptSig();
+
+        for (BtcECKey key : keys) {
+            BtcECKey.ECDSASignature sig = key.sign(sigHash);
+            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+            byte[] txSigEncoded = txSig.encodeToBitcoin();
+
+            int keyIndex = inputScriptSig.getSigInsertionIndex(sigHash, key);
+            inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
+            input.setScriptSig(inputScriptSig);
+        }
     }
 }

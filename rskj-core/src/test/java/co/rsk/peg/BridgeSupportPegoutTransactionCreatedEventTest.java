@@ -104,7 +104,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             activations
         );
 
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withEventLogger(eventLogger)
@@ -179,7 +179,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             rskCurrentBlock,
             activations
         );
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withEventLogger(eventLogger)
@@ -263,7 +263,7 @@ class BridgeSupportPegoutTransactionCreatedEventTest {
             rskCurrentBlock,
             activations
         );
-        BridgeSupport bridgeSupport = new BridgeSupportBuilder()
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
             .withBridgeConstants(bridgeMainnetConstants)
             .withProvider(provider)
             .withEventLogger(eventLogger)

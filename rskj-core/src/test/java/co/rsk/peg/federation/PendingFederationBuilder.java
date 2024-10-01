@@ -13,12 +13,16 @@ public class PendingFederationBuilder {
     private List<ECKey> membersRskPublicKeys;
     private List<ECKey> membersMstPublicKeys;
 
-    public PendingFederationBuilder() {
+    private PendingFederationBuilder() {
         this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true
         );
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
+    }
+
+    public static PendingFederationBuilder builder() {
+        return new PendingFederationBuilder();
     }
 
     public PendingFederationBuilder withMembersBtcPublicKeys(List<BtcECKey> btcPublicKeys) {

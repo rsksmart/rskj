@@ -46,11 +46,12 @@ public final class FederationTestUtils {
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
         );
         final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fb01", "fb02", "fb03"}, true
+            new String[]{"fb01", "fb02", "fb03", "fb04"}, true
         );
 
         List<FederationMember> fedMember = FederationTestUtils.getFederationMembersWithBtcKeys(
-            fedSigners);
+            fedSigners
+        );
 
         FederationArgs federationArgs = new FederationArgs(
             fedMember,
@@ -59,7 +60,7 @@ public final class FederationTestUtils {
             networkParameters
         );
 
-        long erpFedActivationDelay = 100L;
+        long erpFedActivationDelay = 52_560; // Mainnet value
 
         return FederationFactory.buildP2shErpFederation(
             federationArgs,

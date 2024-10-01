@@ -712,7 +712,8 @@ class RemascProcessMinerFeesTest {
 //                remasc.call();
 //            }
 //        }
-        long txCreateContractGasLimit = 46995 + 32000;
+        long initCodeTransactionCost = 10;
+        long txCreateContractGasLimit = 46995 + 32000 + initCodeTransactionCost;
         Transaction txCreateContract = Transaction
                 .builder()
                 .nonce(Coin.valueOf(1))
@@ -745,7 +746,8 @@ class RemascProcessMinerFeesTest {
         repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
-        assertEquals(cowInitialBalance.subtract(Coin.valueOf(txCreateContractGasLimit+txCallRemascGasLimit+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        Coin expectedBalance = cowInitialBalance.subtract(Coin.valueOf(txCreateContractGasLimit+txCallRemascGasLimit+txValue+minerFee));
+        assertEquals(expectedBalance, repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         long originalBlockReward = blockReward;
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
