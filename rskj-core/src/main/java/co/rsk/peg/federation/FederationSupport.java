@@ -105,7 +105,25 @@ public interface FederationSupport {
      *         federation exists.
      */
     Optional<Long> getProposedFederationCreationBlockNumber();
+    Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
+    /**
+     * Retrieves the public key of the specified type for a federator at the given index
+     * from the proposed federation, if it exists.
+     *
+     * <p>
+     * This method checks whether a proposed federation is available and retrieves the
+     * public key for a federator at the specified index. The key type can be of various
+     * types (e.g., BTC, RSK), depending on the key used by the federation member.
+     * </p>
+     *
+     * @param index the zero-based index of the federator in the federation's member list.
+     * @param keyType the type of public key to retrieve (e.g., {@link FederationMember.KeyType#BTC}).
+     * @return an {@link Optional} containing the public key as a byte array if the proposed
+     *         federation and federator at the specified index exist, or an empty {@link Optional}
+     *         if no proposed federation or member at the given index is found.
+     * @throws IndexOutOfBoundsException if the index is out of the federation member list bounds.
+     */
     Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     int voteFederationChange(
