@@ -37,7 +37,6 @@ import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
@@ -55,10 +54,10 @@ class FederationSupportImplTest {
 
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private ErpFederation newFederation;
     private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
-    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private FederationSupport federationSupport;
 
     @BeforeEach
@@ -2284,15 +2283,41 @@ class FederationSupportImplTest {
         assertEquals(creationTime, actualCreationTime.get());
     }
 
+    @Test
+    void getProposedFederationCreationBlockNumber_whenStorageProviderReturnsEmpty_shouldReturnErrorCode() {
+        // Act
+        Optional<Long> actualCreationBlockNumber = federationSupport.getProposedFederationCreationBlockNumber();
+
+        // Assert
+        assertFalse(actualCreationBlockNumber.isPresent());
+    }
+
+    @Test
+    void getProposedFederationCreationBlockNumber_whenStorageProviderReturnsProposedFederation_shouldReturnCreationBlockNumber() {
+        // Arrange
+        long creationBlockNumber = 12345L;
+        Federation proposedFederation = P2shErpFederationBuilder.builder()
+            .withCreationBlockNumber(creationBlockNumber)
+            .build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<Long> actualCreationBlockNumber = federationSupport.getProposedFederationCreationBlockNumber();
+
+        // Assert
+        assertTrue(actualCreationBlockNumber.isPresent());
+        assertEquals(creationBlockNumber, actualCreationBlockNumber.get());
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<ECKey> getMstPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getMstPublicKey)
-            .collect(Collectors.toList());
+            .toList();
     }
 }
