@@ -49,6 +49,7 @@ public interface FederationSupport {
     Optional<Federation> getProposedFederation();
     Optional<Address> getProposedFederationAddress();
     Optional<Integer> getProposedFederationSize();
+    Optional<Instant> getProposedFederationCreationTime();
 
     int voteFederationChange(
         Transaction tx,
