@@ -142,7 +142,7 @@ jobs:
               "attachments": [
                 {
                   "color": "good",
-                  "text": "OK: :+1: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                  "text": "OK: :white_tick: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }} - *${{ github.event.pull_request.title }}*] - PR: ${{ github.event.pull_request.html_url }} - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
                 }
               ]
             }
@@ -159,7 +159,7 @@ jobs:
               "attachments": [
                 {
                   "color": "danger",
-                  "text": "FAILED: :robot_face: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                  "text": "FAILED: :x: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }} - *${{ github.event.pull_request.title }}*] - PR: ${{ github.event.pull_request.html_url }} - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
                 }
               ]
             }
