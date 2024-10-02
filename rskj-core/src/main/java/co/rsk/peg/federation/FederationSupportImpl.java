@@ -366,6 +366,13 @@ public class FederationSupportImpl implements FederationSupport {
     public Optional<Federation> getProposedFederation() {
         return provider.getProposedFederation(constants, activations);
     }
+    
+    @Override
+    public Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        return getProposedFederation()
+            .map(Federation::getMembers)
+            .map(members -> getFederationMemberPublicKeyOfType(members, index, keyType, "Proposed Federator"));
+    }
 
     /**
      * Retrieves the Bitcoin address of the proposed federation, if it exists.
@@ -830,17 +837,20 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     /**
-     * Returns the compressed public key of given type of the member list at the given index
-     * Throws a custom index out of bounds exception when appropiate
-     * @param members the list of federation members
-     * @param index the federator's index (zero-based)
-     * @param keyType the key type
-     * @param errorPrefix the index out of bounds error prefix
-     * @return the federation member's public key
+     * Returns the compressed public key of given type of the member list at the
+     * given index. Throws a custom index out of bounds exception when appropiate.
+     * 
+     * @param members     list of federation members
+     * @param index       federator's index (zero-based)
+     * @param keyType     key type
+     * @param errorPrefix index out of bounds error prefix
+     * @return federation member's public key
      */
-    private byte[] getFederationMemberPublicKeyOfType(List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
+    private byte[] getFederationMemberPublicKeyOfType(
+          List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
         if (index < 0 || index >= members.size()) {
-            throw new IndexOutOfBoundsException(String.format("%s index must be between 0 and %d", errorPrefix, members.size() - 1));
+            throw new IndexOutOfBoundsException(
+                String.format("%s index must be between 0 and %d (found: %d)", errorPrefix, members.size() - 1, index));
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
