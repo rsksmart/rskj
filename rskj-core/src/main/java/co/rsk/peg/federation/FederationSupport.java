@@ -47,6 +47,7 @@ public interface FederationSupport {
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     Optional<Federation> getProposedFederation();
+    Optional<Address> getProposedFederationAddress();
 
     int voteFederationChange(
         Transaction tx,
