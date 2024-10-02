@@ -36,6 +36,8 @@ jobs:
           github_event_pull_request_number: ${{ github.event.pull_request.number }}
           github_head_ref: ${{ github.head_ref }}
           github_ref_name: ${{ github.ref_name }}
+          github_event_pull_request_head_repo_owner_login: ${{ github.event.pull_request.head.repo.owner.login }}
+          github_repository_owner: ${{ github.repository_owner }}
         run: |
           PR_DESCRIPTION=pr-description.txt
 
@@ -97,11 +99,8 @@ jobs:
           fi
 
           # Set the Repo Owner
-          if [ -n "${{ github.event.pull_request.head.repo.owner.login }}" ]; then
-            REPO_OWNER=${{ github.event.pull_request.head.repo.owner.login }}
-          else
-            REPO_OWNER=${{ github.repository_owner }}
-          fi
+          REPO_OWNER="${github_event_pull_request_head_repo_owner_login:-$github_repository_owner}"
+
 
           echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
