@@ -1327,20 +1327,31 @@ public class VM {
     }
 
     protected void doTLOAD(){
+
+        DataWord key = program.stackPop();
         DataWord address = program.getOwnerAddress();
 
         if (isLogEnabled) {
-            logger.info("Executing TLOAD with parameters: address={} ",address);
+            logger.info("Executing TLOAD with parameters: address={} | key = {}", address, key);
         }
+
+        program.transientStorageSave(key, address);
+        // key could be returned to the pool, but storageLoad semantics should be checked
+        // to make sure storageLoad always gets a copy, not a reference.
+        program.step();
     }
 
     protected void doTSTORE(){
 
+        DataWord value = program.stackPop();
         DataWord address = program.getOwnerAddress();
+        DataWord key = DataWord.ZERO;
 
         if (isLogEnabled) {
-            logger.info("Executing TSTORE with parameters: address={} ", address);
+            logger.info("Executing TSTORE with parameters: address={} | key = {} | value = {}",  address, key, value);
         }
+        program.transientStorageLoad(address, key, value);
+        program.step();
     }
 
     protected void doJUMP(){

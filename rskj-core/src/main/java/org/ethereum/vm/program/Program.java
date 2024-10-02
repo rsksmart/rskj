@@ -984,6 +984,10 @@ public class Program {
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
     }
 
+    public void transientStorageSave(DataWord key, DataWord address) {
+
+    }
+
     private RskAddress getOwnerRskAddress() {
         if (rskOwnerAddress == null) {
             rskOwnerAddress = new RskAddress(getOwnerAddress());
@@ -1092,6 +1096,10 @@ public class Program {
 
     public DataWord storageLoad(DataWord key) {
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
+    }
+
+    public void transientStorageLoad(DataWord address, DataWord key, DataWord value) {
+
     }
 
     public DataWord getPrevHash() {

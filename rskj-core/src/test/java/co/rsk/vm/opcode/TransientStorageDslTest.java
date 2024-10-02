@@ -49,7 +49,7 @@ public class TransientStorageDslTest {
         Transaction contractTransaction = world.getTransactionByName("txTestTransientStorageContract");
         assertNotNull(contractTransaction);
 
-        Block bestBlock = world.getBlockByName("b01");
+        Block bestBlock = world.getBlockByName("b03");
         Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
         TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(contractCreationTx);
 
@@ -75,7 +75,7 @@ public class TransientStorageDslTest {
         Transaction contractTransaction = world.getTransactionByName("txTestTransientStorageContract");
         assertNotNull(contractTransaction);
 
-        Block bestBlock = world.getBlockByName("b01");
+        Block bestBlock = world.getBlockByName("b03");
         Assertions.assertEquals(1, bestBlock.getTransactionsList().size());
         TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName(contractCreationTx);
 

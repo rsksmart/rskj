@@ -337,7 +337,7 @@ public enum OpCode {
     /**
      * (0x5c) Store word from transient storage at address
      */
-    TSTORE(0x5d, 1, 1, SPECIAL_TIER), // Will adjust the correct inputs and outputs later
+    TSTORE(0x5d, 2, 0, SPECIAL_TIER), // Will adjust the correct inputs and outputs later
 
     /*  Push Operations */
     /**

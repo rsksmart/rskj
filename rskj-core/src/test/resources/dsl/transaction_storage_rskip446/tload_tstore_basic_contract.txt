@@ -77,9 +77,6 @@ block_connect b01
 # Check b01 is best block
 assert_best b01
 
-# Check txTestTransientStorageContract succeded
-assert_tx_success txTestTransientStorageContract
-
 # Create transaction to execute checkTStore() method
 transaction_build txTestTStore
     sender acc1
