@@ -105,6 +105,7 @@ public interface FederationSupport {
      *         federation exists.
      */
     Optional<Long> getProposedFederationCreationBlockNumber();
+    Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
