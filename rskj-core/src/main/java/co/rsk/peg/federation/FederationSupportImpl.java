@@ -374,6 +374,12 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public Optional<Long> getProposedFederationCreationBlockNumber() {
+        return getProposedFederation()
+            .map(Federation::getCreationBlockNumber);
+    }
+
+    @Override
     public Optional<Integer> getProposedFederationSize() {
         return getProposedFederation()
             .map(Federation::getSize);
