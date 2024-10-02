@@ -2309,6 +2309,29 @@ class FederationSupportImplTest {
         assertEquals(creationBlockNumber, actualCreationBlockNumber.get());
     }
 
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenFederationIsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC);
+
+        // Assert
+        assertFalse(actualPublicKey.isPresent());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederation_shouldReturnPublicKey() {
+        // Arrange
+        FederationMember.KeyType keyType = FederationMember.KeyType.BTC;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
