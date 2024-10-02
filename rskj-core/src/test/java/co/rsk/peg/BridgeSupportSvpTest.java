@@ -712,6 +712,7 @@ public class BridgeSupportSvpTest {
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 assertFederatorDidNotSignInputs(pegoutInputs, pegoutTxSigHashes, key);
             }
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
         }
 
         private void assertLogReleaseBtc(List<LogInfo> logs, Keccak256 rskTxHash, BtcTransaction btcTx) {
@@ -754,7 +755,9 @@ public class BridgeSupportSvpTest {
                 assertTrue(federationMember.isPresent());
                 assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
+
             assertAddSignatureWasNotLogged();
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
         }
 
         @Test
@@ -777,7 +780,16 @@ public class BridgeSupportSvpTest {
                 assertFalse(federationMember.isPresent());
                 assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
+
             assertAddSignatureWasNotLogged();
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+        }
+
+        private void assertFederatorDidNotSignInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
+                assertFalse(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
+            }
         }
 
         private void assertAddSignatureWasNotLogged() {
@@ -802,13 +814,8 @@ public class BridgeSupportSvpTest {
                 assertLogAddSignature(logs, federationMember.get(), rskTxHashSerialized);
                 assertFederatorSignedInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
-        }
 
-        private void assertFederatorDidNotSignInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
-            for (TransactionInput input : inputs) {
-                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
-                assertFalse(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
-            }
+            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
         }
 
         private void arrangeSvpSpendTransaction() {
