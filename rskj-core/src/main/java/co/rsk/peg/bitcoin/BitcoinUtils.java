@@ -97,17 +97,7 @@ public class BitcoinUtils {
             .findFirst();
     }
 
-    public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
-        List<Sha256Hash> sigHashes = new ArrayList<>();
-        List<TransactionInput> inputs = btcTx.getInputs();
-        for (TransactionInput input : inputs) {
-            Sha256Hash sigHash = generateSigHashForP2SHInput(btcTx, inputs.indexOf(input));
-            sigHashes.add(sigHash);
-        }
-        return sigHashes;
-    }
-
-    private static Sha256Hash generateSigHashForP2SHInput(BtcTransaction btcTx, int inputIndex) {
+    public static Sha256Hash generateSigHashForP2SHInput(BtcTransaction btcTx, int inputIndex) {
         TransactionInput input = btcTx.getInput(inputIndex);
         Optional<Script> redeemScript = extractRedeemScriptFromInput(input);
         if (redeemScript.isEmpty()) {

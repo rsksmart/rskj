@@ -36,6 +36,7 @@ import java.util.stream.IntStream;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -48,6 +49,7 @@ public class BridgeSupportSvpTest {
     private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
     private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
     private final CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+    private final CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -344,7 +346,7 @@ public class BridgeSupportSvpTest {
             // Arrange
             arrangeSvpFundTransactionUnsignedWithChange();
 
-            BtcTransaction pegout = createPegout();
+            BtcTransaction pegout = createPegout(proposedFederation.getRedeemScript());
             savePegoutIndex(pegout);
             signInputs(pegout); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(pegout);
@@ -430,21 +432,6 @@ public class BridgeSupportSvpTest {
         private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
             bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
             bridgeSupport.save();
-        }
-
-        private BtcTransaction createPegout() {
-            BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
-            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
-            addInput(pegout, parentTxHash);
-            addOutputChange(pegout);
-
-            return pegout;
-        }
-
-        private void addOutputChange(BtcTransaction transaction) {
-            // add output to the active fed
-            Script activeFederationP2SHScript = activeFederation.getP2SHScript();
-            transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
         }
 
         private void savePegoutIndex(BtcTransaction pegout) {
@@ -653,15 +640,13 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp spend transaction signing tests")
     class SvpSpendTxSigning {
-        private static final List<BtcECKey> PROPOSED_FEDERATION_KEYS =
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
         private static final List<BtcECKey> PROPOSED_FEDERATION_SIGNERS_KEYS =
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true);
+            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // this is needed to have the private keys too
 
         private static final Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
 
         private BtcTransaction svpSpendTx;
-        private List<Sha256Hash> sigHashes;
+        private List<Sha256Hash> svpSpendTxSigHashes;
         private List<LogInfo> logs;
         private BridgeEventLogger bridgeEventLogger;
 
@@ -684,32 +669,60 @@ public class BridgeSupportSvpTest {
                 .withExecutionBlock(rskExecutionBlock)
                 .build();
 
-            proposedFederation = P2shErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(PROPOSED_FEDERATION_KEYS) // this is needed to be able to sign the tx with valid signatures
-                .build();
-
             arrangeSvpSpendTransaction();
-            sigHashes = generateTransactionInputsSigHashes(svpSpendTx);
+
+            svpSpendTxSigHashes = generateTransactionInputsSigHashes(svpSpendTx);
         }
 
         @Test
-        void addSignature_forAnotherTx_shouldNotAddProposedFederatorsSignatures() throws Exception {
-            // arrange
-            Keccak256 anotherRskTxHash = RskTestUtils.createHash(2);
+        void addSignature_forNormalPegout_whenSvpIsOngoing_shouldAddJustActiveFederatorsSignatures() throws Exception {
+            BtcTransaction pegout = createPegout(activeFederation.getRedeemScript());
+            Keccak256 rskTxHash = RskTestUtils.createHash(2);
+            byte[] rskTxHashSerialized = rskTxHash.getBytes();
+
+            SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+            pegoutsWFS.put(rskTxHash, pegout);
+
+            List<BtcECKey> activeFedSigners =
+                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true);
+
+            List<Sha256Hash> pegoutTxSigHashes = generateTransactionInputsSigHashes(pegout);
+
+            // act
+            for (BtcECKey key : activeFedSigners) {
+                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, pegoutTxSigHashes);
+                bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
+            }
+
+            // assert
+            List<TransactionInput> pegoutInputs = pegout.getInputs();
+            for (BtcECKey key : activeFedSigners) {
+                Optional<FederationMember> federationMember = activeFederation.getMemberByBtcPublicKey(key);
+                assertTrue(federationMember.isPresent());
+
+                assertLogAddSignature(logs, federationMember.get(), rskTxHashSerialized);
+
+                assertFederatorSignedInputs(pegoutInputs, pegoutTxSigHashes, key);
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            }
+
+            assertLogReleaseBtc(logs, rskTxHash, pegout);
+            assertLogs(activeFedSigners.size() + 1); // activeFedSigners size for addSignature, +1 for release btc
 
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, sigHashes);
-                byte[] rskTxHashSerialized = anotherRskTxHash.getBytes();
-
-                // act
-                bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
-
-                // assert
-                Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
-                assertTrue(federationMember.isPresent());
-                assertEquals(0, logs.size());
-                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), sigHashes, key);
+                assertFederatorDidNotSignInputs(pegoutInputs, pegoutTxSigHashes, key);
             }
+        }
+
+        private void assertLogReleaseBtc(List<LogInfo> logs, Keccak256 rskTxHash, BtcTransaction btcTx) {
+            byte[] rskTxHashSerialized = rskTxHash.getBytes();
+            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
+
+            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
+            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
         }
 
         @Test
@@ -726,19 +739,22 @@ public class BridgeSupportSvpTest {
                 .withExecutionBlock(rskExecutionBlock)
                 .build();
 
+            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+
+            // act
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, sigHashes);
-                byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
 
-                // act
                 bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
+            }
 
-                // assert
+            // assert
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
                 assertTrue(federationMember.isPresent());
-                assertEquals(0, logs.size());
-                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), sigHashes, key);
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
+            assertAddSignatureWasNotLogged();
         }
 
         @Test
@@ -747,36 +763,44 @@ public class BridgeSupportSvpTest {
             List<BtcECKey> WRONG_KEYS =
                 BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"wrong01", "wrong02", "wrong03", "wrong04", "wrong05"}, true);
 
+            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+
+            // act
             for (BtcECKey key : WRONG_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, sigHashes);
-                byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
-
-                // act
+                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
                 bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
+            }
 
-                // assert
+            // assert
+            for (BtcECKey key : WRONG_KEYS) {
                 Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
                 assertFalse(federationMember.isPresent());
-                assertEquals(0, logs.size());
-                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), sigHashes, key);
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
+            assertAddSignatureWasNotLogged();
+        }
+
+        private void assertAddSignatureWasNotLogged() {
+            assertEquals(0, logs.size());
         }
 
         @Test
         void addSignature_forSvpSpendTx_shouldAddProposedFederatorsSignatures() throws Exception {
             // arrange
+            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+
+            // act
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, sigHashes);
-                byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
-
-                // act
+                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
                 bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
+            }
 
-                // assert
+            // assert
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
                 assertTrue(federationMember.isPresent());
                 assertLogAddSignature(logs, federationMember.get(), rskTxHashSerialized);
-                assertFederatorSignedInputs(svpSpendTx.getInputs(), sigHashes, key);
+                assertFederatorSignedInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
         }
 
@@ -831,6 +855,10 @@ public class BridgeSupportSvpTest {
             assertEventWasEmittedWithExpectedData(logs, encodedData);
         }
 
+        private void assertLogs(int expectedLogs) {
+            assertEquals(expectedLogs, logs.size());
+        }
+
         private void assertFederatorSignedInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
             for (TransactionInput input : inputs) {
                 Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
@@ -865,7 +893,7 @@ public class BridgeSupportSvpTest {
         BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
 
         Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
-        addInput(svpFundTransaction, parentTxHash);
+        addInput(svpFundTransaction, parentTxHash, proposedFederation.getRedeemScript());
 
         svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
         Address flyoverProposedFederationAddress =
@@ -875,15 +903,28 @@ public class BridgeSupportSvpTest {
         return svpFundTransaction;
     }
 
-    private void addInput(BtcTransaction transaction, Sha256Hash parentTxHash) {
-        // we need to add an input that we can actually sign,
-        // and we know the private keys for the following scriptSig
-        Federation federation = P2shErpFederationBuilder.builder().build();
+    private BtcTransaction createPegout(Script redeemScript) {
+        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+        Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
+        addInput(pegout, parentTxHash, redeemScript);
+        addOutputChange(pegout);
+
+        return pegout;
+    }
+
+    private void addInput(BtcTransaction transaction, Sha256Hash parentTxHash, Script redeemScript) {
+        // we need to add an input that we can actually sign
         transaction.addInput(
             parentTxHash,
             0,
-            createBaseP2SHInputScriptThatSpendsFromRedeemScript(federation.getRedeemScript())
+            createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript)
         );
+    }
+
+    private void addOutputChange(BtcTransaction transaction) {
+        // add output to the active fed
+        Script activeFederationP2SHScript = activeFederation.getP2SHScript();
+        transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
     }
 
     private void signInputs(BtcTransaction transaction) {
