@@ -2208,6 +2208,32 @@ class FederationSupportImplTest {
         assertTrue(actualProposedFederation.isPresent());
         assertEquals(proposedFederation, actualProposedFederation.get());
     }
+        
+    @Test
+    void getProposedFederationSize_whenStorageProviderReturnsEmpty_shouldReturnNonExistentCode() {
+        // Arrange
+        int expectedCode = FederationChangeResponseCode.PROPOSED_FEDERATION_NON_EXISTENT.getCode();
+
+        // Act
+        int actualProposedFederationSize = federationSupport.getProposedFederationSize();
+
+        // Assert
+        assertEquals(expectedCode, actualProposedFederationSize);
+    }
+
+    @Test
+    void getProposedFederationSize_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederationSize() {
+        // Arrange
+        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
+        storageProvider.setProposedFederation(proposedFederation);
+        int expectedSize = proposedFederation.getSize();
+
+        // Act
+        int actualProposedFederationSize = federationSupport.getProposedFederationSize();
+
+        // Assert
+        assertEquals(expectedSize, actualProposedFederationSize);
+    }
 
     @Test
     void getProposedFederationAddress_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
