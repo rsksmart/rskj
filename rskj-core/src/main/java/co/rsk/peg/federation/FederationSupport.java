@@ -51,6 +51,7 @@ public interface FederationSupport {
     Optional<Integer> getProposedFederationSize();
     Optional<Instant> getProposedFederationCreationTime();
     Optional<Long> getProposedFederationCreationBlockNumber();
+    Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     int voteFederationChange(
         Transaction tx,
