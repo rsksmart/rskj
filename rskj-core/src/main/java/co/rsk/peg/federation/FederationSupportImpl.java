@@ -370,7 +370,12 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     public Optional<Address> getProposedFederationAddress() {
         return getProposedFederation()
-            .map(Federation::getAddress);
+    }
+
+    @Override
+    public Optional<Long> getProposedFederationCreationBlockNumber() {
+        return getProposedFederation()
+            .map(Federation::getCreationBlockNumber);
     }
 
     @Override
