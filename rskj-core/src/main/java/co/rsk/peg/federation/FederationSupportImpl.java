@@ -370,6 +370,7 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     public Optional<Address> getProposedFederationAddress() {
         return getProposedFederation()
+            .map(Federation::getAddress);
     }
 
     @Override
