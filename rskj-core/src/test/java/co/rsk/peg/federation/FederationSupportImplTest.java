@@ -2188,25 +2188,48 @@ class FederationSupportImplTest {
 
     @Test
     void getProposedFederation_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
-        // act
+        // Act
         Optional<Federation> actualProposedFederation = federationSupport.getProposedFederation();
 
-        // assert
+        // Assert
         assertFalse(actualProposedFederation.isPresent());
     }
 
     @Test
     void getProposedFederation_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederation() {
-        // arrange
+        // Arrange
         Federation proposedFederation = P2shErpFederationBuilder.builder().build();
         storageProvider.setProposedFederation(proposedFederation);
 
-        //act
+        // Act
         Optional<Federation> actualProposedFederation = federationSupport.getProposedFederation();
 
-        // assert
+        // Assert
         assertTrue(actualProposedFederation.isPresent());
         assertEquals(proposedFederation, actualProposedFederation.get());
+    }
+
+    @Test
+    void getProposedFederationAddress_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<Address> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
+
+        // Assert
+        assertFalse(actualProposedFederationAddress.isPresent());
+    }
+
+    @Test
+    void getProposedFederationAddress_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederationAddress() {
+        // Arrange
+        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<Address> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
+
+        // Assert
+        assertTrue(actualProposedFederationAddress.isPresent());
+        assertEquals(proposedFederation.getAddress(), actualProposedFederationAddress.get());
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
