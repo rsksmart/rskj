@@ -242,7 +242,7 @@ public class FederationSupportImpl implements FederationSupport {
     public int getRetiringFederationSize() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         return retiringFederation.getSize();
@@ -252,7 +252,7 @@ public class FederationSupportImpl implements FederationSupport {
     public int getRetiringFederationThreshold() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         return retiringFederation.getNumberOfSignaturesRequired();
@@ -272,7 +272,7 @@ public class FederationSupportImpl implements FederationSupport {
     public long getRetiringFederationCreationBlockNumber() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
         return retiringFederation.getCreationBlockNumber();
     }
@@ -340,7 +340,7 @@ public class FederationSupportImpl implements FederationSupport {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         return currentPendingFederation.getSize();
@@ -379,6 +379,12 @@ public class FederationSupportImpl implements FederationSupport {
     public Optional<Address> getProposedFederationAddress() {
         return getProposedFederation()
             .map(Federation::getAddress);
+    }
+
+    @Override
+    public Optional<Integer> getProposedFederationSize() {
+        return getProposedFederation()
+            .map(Federation::getSize);
     }
 
     @Override
@@ -592,7 +598,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[addFederatorPublicKeyMultikey] Pending federation does not exist.");
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
@@ -632,7 +638,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[commitFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT;
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT;
         }
 
         if (!currentPendingFederation.isComplete()) {
@@ -771,7 +777,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (!pendingFederationExists()) {
             logger.warn("[rollbackFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (dryRun) {
