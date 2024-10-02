@@ -376,6 +376,12 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public Optional<Address> getProposedFederationAddress() {
+        return getProposedFederation()
+            .map(Federation::getAddress);
+    }
+
+    @Override
     public int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger) {
         String calledFunction = callSpec.getFunction();
         // Must be on one of the allowed functions
