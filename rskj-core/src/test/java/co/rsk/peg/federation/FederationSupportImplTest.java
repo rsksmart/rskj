@@ -1136,14 +1136,14 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationSize")
         void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
         @Tag("getRetiringFederationThreshold")
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1157,7 +1157,7 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationCreationBlockNumber")
         void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1225,14 +1225,14 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationSize")
         void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
         @Tag("getRetiringFederationThreshold")
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1246,7 +1246,7 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationCreationBlockNumber")
         void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1424,7 +1424,7 @@ class FederationSupportImplTest {
                 .build();
 
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
@@ -1466,7 +1466,7 @@ class FederationSupportImplTest {
                 .build();
 
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
@@ -1550,7 +1550,7 @@ class FederationSupportImplTest {
                 .build();
 
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
@@ -1905,7 +1905,7 @@ class FederationSupportImplTest {
         @Tag("getPendingFederationSize")
         void getPendingFederationSize_returnsPendingFederationNonExistentResponseCode() {
             int pendingFederationSize = federationSupport.getPendingFederationSize();
-            assertThat(pendingFederationSize, is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(pendingFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -2207,6 +2207,32 @@ class FederationSupportImplTest {
         // Assert
         assertTrue(actualProposedFederation.isPresent());
         assertEquals(proposedFederation, actualProposedFederation.get());
+    }
+        
+    @Test
+    void getProposedFederationSize_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<Integer> actualProposedFederationSize = federationSupport.getProposedFederationSize();
+
+        // Assert
+        assertFalse(actualProposedFederationSize.isPresent());
+    }
+
+    @Test
+    void getProposedFederationSize_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederationSize() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(federationKeys).build();
+        storageProvider.setProposedFederation(proposedFederation);
+        int expectedSize = federationKeys.size();
+
+        // Act
+        Optional<Integer> actualProposedFederationSize = federationSupport.getProposedFederationSize();
+
+        // Assert
+        assertTrue(actualProposedFederationSize.isPresent());
+        assertEquals(expectedSize, actualProposedFederationSize.get());
     }
 
     @Test
