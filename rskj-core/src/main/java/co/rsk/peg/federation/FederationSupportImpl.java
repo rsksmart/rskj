@@ -1,8 +1,8 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.UTXO;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
@@ -10,26 +10,18 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeIllegalArgumentException;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.ABICallSpec;
-import co.rsk.peg.vote.ABICallVoteResult;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.vote.*;
 import co.rsk.util.StringUtils;
+import java.time.Instant;
+import java.util.*;
+import javax.annotation.Nullable;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.time.Instant;
-import java.util.*;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationSupportImpl implements FederationSupport {
 
@@ -385,6 +377,12 @@ public class FederationSupportImpl implements FederationSupport {
     public Optional<Integer> getProposedFederationSize() {
         return getProposedFederation()
             .map(Federation::getSize);
+    }
+
+    @Override
+    public Optional<Instant> getProposedFederationCreationTime() {
+        return getProposedFederation()
+            .map(Federation::getCreationTime);
     }
 
     @Override

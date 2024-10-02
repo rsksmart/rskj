@@ -2258,6 +2258,32 @@ class FederationSupportImplTest {
         assertEquals(proposedFederation.getAddress(), actualProposedFederationAddress.get());
     }
 
+    @Test
+    void getProposedFederationCreationTime_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<Instant> actualCreationTime = federationSupport.getProposedFederationCreationTime();
+
+        // Assert
+        assertFalse(actualCreationTime.isPresent());
+    }
+
+    @Test
+    void getProposedFederationCreationTime_whenStorageProviderReturnsProposedFederation_shouldReturnCreationTime() {
+        // Arrange
+        Instant creationTime = Instant.EPOCH;
+        Federation proposedFederation = P2shErpFederationBuilder.builder()
+            .withCreationTime(creationTime)
+            .build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<Instant> actualCreationTime = federationSupport.getProposedFederationCreationTime();
+
+        // Assert
+        assertTrue(actualCreationTime.isPresent());
+        assertEquals(creationTime, actualCreationTime.get());
+    }
+
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
