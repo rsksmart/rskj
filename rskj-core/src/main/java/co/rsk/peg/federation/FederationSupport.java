@@ -50,6 +50,7 @@ public interface FederationSupport {
     Optional<Address> getProposedFederationAddress();
     Optional<Integer> getProposedFederationSize();
     Optional<Instant> getProposedFederationCreationTime();
+    Optional<Long> getProposedFederationCreationBlockNumber();
 
     int voteFederationChange(
         Transaction tx,
