@@ -62,7 +62,7 @@ public enum BridgeEvents {
     ),
     COMMIT_FEDERATION_FAILED("commit_federation_failed",
         new CallTransaction.Param[]{
-            new CallTransaction.Param(false, "proposedFederationRedeemScriptSerialized", SolidityType.getType(SolidityType.BYTES)),
+            new CallTransaction.Param(false, "proposedFederationRedeemScript", SolidityType.getType(SolidityType.BYTES)),
             new CallTransaction.Param(false, "blockNumber", SolidityType.getType(SolidityType.INT256))
         }
     ),
