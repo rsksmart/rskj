@@ -17,7 +17,7 @@
  */
 package co.rsk.peg.utils;
 
-import static co.rsk.RskTestUtils.createRskExecutionBlock;
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static org.junit.jupiter.api.Assertions.*;
@@ -352,7 +352,7 @@ class BridgeEventLoggerImplTest {
     private Block arrangeRskExecutionBlock() {
         long rskExecutionBlockNumber = 15005L;
         long rskExecutionBlockTimestamp = 15L;
-        return createRskExecutionBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
+        return createRskBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
     }
 
     @Test
