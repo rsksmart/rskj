@@ -1581,6 +1581,21 @@ public class BridgeSupport {
         Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
         int signaturesSize = signatures.size();
 
+        if (svpIsOngoing()) {
+            provider.getSvpSpendTxWaitingForSignatures()
+                .filter(svpSpendTxWFS -> svpSpendTxWFS.getKey().equals(rskTxHash))
+                .ifPresent(svpSpendTxWFS -> {
+                    logger.trace("Going to add federator public key {} to svp spend transaction", federatorBtcPublicKey);
+
+                    BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+                    if (notEnoughSignatures(svpSpendTx.getInputs().size(), signaturesSize)) {
+                        return;
+                    }
+
+                    addSvpSpendTxSignatures(federatorBtcPublicKey, signatures, rskTxHashSerialized, svpSpendTx);
+                });
+        }
+
         BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(rskTxHash);
         if (btcTx == null) {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", rskTxHash);
@@ -1637,7 +1652,6 @@ public class BridgeSupport {
         if (!BridgeUtils.hasEnoughSignatures(btcContext, btcTx) && logger.isDebugEnabled()) {
             int neededSignatures = federation.getNumberOfSignaturesRequired();
             logMissingSignatures(btcTx, rskTxHash, neededSignatures, federation.getSize());
-
             return;
         }
 
@@ -1657,6 +1671,36 @@ public class BridgeSupport {
         }
 
         return Optional.empty();
+    }
+
+    private void addSvpSpendTxSignatures(
+        BtcECKey federatorPublicKey,
+        List<byte[]> signatures,
+        byte[] rskTxHashSerialized,
+        BtcTransaction svpSpendTx
+    ) {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+        if (proposedFederationOpt.isEmpty()) {
+            throw new IllegalStateException("Proposed federation must exist when trying to sign svp spend transaction.");
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(federatorPublicKey);
+        if (federationMember.isEmpty()) {
+            throw new IllegalStateException("Federation member must be part of the proposed federation when trying to sign svp spend transaction.");
+        }
+
+        processSigning(federationMember.get(), signatures, rskTxHashSerialized, svpSpendTx);
+
+        Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
+        if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx) && logger.isDebugEnabled()) {
+            int neededSignatures = proposedFederation.getNumberOfSignaturesRequired();
+            logMissingSignatures(svpSpendTx, rskTxHash, neededSignatures, proposedFederation.getSize());
+            return;
+        }
+
+        logReleaseBtc(svpSpendTx, rskTxHashSerialized);
+        provider.setSvpSpendTxWaitingForSignatures(null);
     }
 
     private void logMissingSignatures(BtcTransaction btcTx, Keccak256 rskTxHash, int neededSignatures, int federationSize) {
