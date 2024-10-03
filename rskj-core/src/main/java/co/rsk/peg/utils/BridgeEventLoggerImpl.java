@@ -31,8 +31,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -72,13 +70,14 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logAddSignature(FederationMember federationMember, BtcTransaction btcTx, byte[] rskTxHash) {
-        ECKey federatorPublicKey = getFederatorPublicKey(federationMember);
-        String federatorRskAddress = ByteUtil.toHexString(federatorPublicKey.getAddress());
+        ECKey federatorRskPublicKey = getFederatorRskPublicKey(federationMember);
+        String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
+        BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
 
-        logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federationMember.getBtcPublicKey());
+        logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federatorBtcPublicKey);
     }
 
-    private ECKey getFederatorPublicKey(FederationMember federationMember) {
+    private ECKey getFederatorRskPublicKey(FederationMember federationMember) {
         if (!shouldUseRskPublicKey()) {
             return ECKey.fromPublicOnly(federationMember.getBtcPublicKey().getPubKey());
         }
