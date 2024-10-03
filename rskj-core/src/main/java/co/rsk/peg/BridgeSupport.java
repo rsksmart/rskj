@@ -60,6 +60,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1689,18 +1690,13 @@ public class BridgeSupport {
         }
 
         // Verify given signatures are correct before proceeding
-        Optional<List<BtcECKey.ECDSASignature>> decodedSignaturesOpt = getDecodedSignatures(signatures);
-        if (decodedSignaturesOpt.isEmpty()) {
-            return;
-        }
-        List<BtcECKey.ECDSASignature> decodedSignatures = decodedSignaturesOpt.get();
-
         BtcECKey federatorBtcPublicKey = federatorMember.getBtcPublicKey();
-        Optional<List<TransactionSignature>> txSigsOpt = getTransactionSignatures(federatorBtcPublicKey, sigHashes, decodedSignatures);
-        if (txSigsOpt.isEmpty()) {
+        List<TransactionSignature> txSigs;
+        try {
+            txSigs = getTransactionSignatures(federatorBtcPublicKey, sigHashes, signatures);
+        } catch (Exception e) {
             return;
         }
-        List<TransactionSignature> txSigs = txSigsOpt.get();
 
         // All signatures are correct. Proceed to signing
         Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
@@ -1709,6 +1705,49 @@ public class BridgeSupport {
         if (signed && activations.isActive(ConsensusRule.RSKIP326)) {
             eventLogger.logAddSignature(federatorMember, btcTx, rskTxHashSerialized);
         }
+    }
+
+    private List<TransactionSignature> getTransactionSignatures(BtcECKey federatorBtcPublicKey, List<Sha256Hash> sighash, List<byte[]> signatures) throws SignatureException {
+        List<BtcECKey.ECDSASignature> decodedSignatures = getDecodedSignatures(signatures);
+        List<TransactionSignature> txSigs = new ArrayList<>();
+
+        for (int i = 0; i < decodedSignatures.size(); i++) {
+            BtcECKey.ECDSASignature decodedSignature = decodedSignatures.get(i);
+            Sha256Hash sigHash = sighash.get(i);
+
+            if (!federatorBtcPublicKey.verify(sigHash, decodedSignature)) {
+                logger.warn(
+                    "Signature {} {} is not valid for hash {} and public key {}",
+                    i,
+                    Bytes.of(decodedSignature.encodeToDER()),
+                    sighash,
+                    federatorBtcPublicKey
+                );
+                throw new SignatureException();
+            }
+
+            TransactionSignature txSig = new TransactionSignature(decodedSignature, BtcTransaction.SigHash.ALL, false);
+            if (!txSig.isCanonical()) {
+                logger.warn("Signature {} {} is not canonical.", i, Bytes.of(decodedSignature.encodeToDER()));
+                throw new SignatureException();
+            }
+            txSigs.add(txSig);
+        }
+        return txSigs;
+    }
+
+    private List<BtcECKey.ECDSASignature> getDecodedSignatures(List<byte[]> signatures) {
+        List<BtcECKey.ECDSASignature> decodedSignatures = new ArrayList<>();
+        for (byte[] signature : signatures) {
+            try {
+                decodedSignatures.add(BtcECKey.ECDSASignature.decodeFromDER(signature));
+            } catch (RuntimeException e) {
+                int index = signatures.indexOf(signature);
+                logger.warn("Malformed signature for input {} : {}", index, Bytes.of(signature));
+                throw e;
+            }
+        }
+        return decodedSignatures;
     }
 
     private boolean sign(
@@ -1751,53 +1790,6 @@ public class BridgeSupport {
         }
 
         return signed;
-    }
-
-    private Optional<List<BtcECKey.ECDSASignature>> getDecodedSignatures(List<byte[]> signatures) {
-        List<BtcECKey.ECDSASignature> decodedSignatures = new ArrayList<>();
-        for (byte[] signature : signatures) {
-            try {
-                decodedSignatures.add(BtcECKey.ECDSASignature.decodeFromDER(signature));
-            } catch (RuntimeException e) {
-                int index = signatures.indexOf(signature);
-                logger.warn(
-                    "Malformed signature for input {} : {}",
-                    index,
-                    Bytes.of(signature)
-                );
-                return Optional.empty();
-            }
-        }
-        return Optional.of(decodedSignatures);
-    }
-
-    private Optional<List<TransactionSignature>> getTransactionSignatures(BtcECKey federatorBtcPublicKey, List<Sha256Hash> sighash, List<BtcECKey.ECDSASignature> decodedSignatures) {
-        List<TransactionSignature> txSigs = new ArrayList<>();
-
-        for (int i = 0; i < decodedSignatures.size(); i++) {
-            BtcECKey.ECDSASignature decodedSignature = decodedSignatures.get(i);
-            Sha256Hash sigHash = sighash.get(i);
-
-            if (!federatorBtcPublicKey.verify(sigHash, decodedSignature)) {
-                logger.warn(
-                    "Signature {} {} is not valid for hash {} and public key {}",
-                    i,
-                    Bytes.of(decodedSignature.encodeToDER()),
-                    sighash,
-                    federatorBtcPublicKey
-                );
-                return Optional.empty();
-            }
-
-            TransactionSignature txSig = new TransactionSignature(decodedSignature, BtcTransaction.SigHash.ALL, false);
-            if (!txSig.isCanonical()) {
-                logger.warn("Signature {} {} is not canonical.", i, Bytes.of(decodedSignature.encodeToDER()));
-                return Optional.empty();
-            }
-            txSigs.add(txSig);
-
-        }
-        return Optional.of(txSigs);
     }
 
     /**
