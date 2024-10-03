@@ -17,10 +17,10 @@
  */
 package co.rsk.peg.utils;
 
+import static co.rsk.RskTestUtils.createRskExecutionBlock;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
@@ -352,12 +352,7 @@ class BridgeEventLoggerImplTest {
     private Block arrangeRskExecutionBlock() {
         long rskExecutionBlockNumber = 15005L;
         long rskExecutionBlockTimestamp = 15L;
-        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(rskExecutionBlockNumber)
-            .setTimestamp(rskExecutionBlockTimestamp)
-            .build();
-
-        return Block.createBlockFromHeader(blockHeader, true);
+        return createRskExecutionBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
     }
 
     @Test
