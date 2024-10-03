@@ -2225,7 +2225,7 @@ class FederationSupportImplTest {
             new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
         Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(federationKeys).build();
         storageProvider.setProposedFederation(proposedFederation);
-        int expectedSize = proposedFederation.getSize();
+        int expectedSize = federationKeys.size();
 
         // Act
         Optional<Integer> actualProposedFederationSize = federationSupport.getProposedFederationSize();
