@@ -454,6 +454,18 @@ public enum BridgeMethods {
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
+    GET_PROPOSED_FEDERATION_ADDRESS(
+        CallTransaction.Function.fromSignature(
+                "getProposedFederationAddress",
+                new String[]{},
+                new String[]{ "string" }
+        ),
+        fixedCost(3000L),
+        (BridgeMethodExecutorTyped<String>) Bridge::getProposedFederationAddress,
+        activations -> activations.isActive(RSKIP419),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(
         CallTransaction.Function.fromSignature(
                 "getStateForBtcReleaseClient",
