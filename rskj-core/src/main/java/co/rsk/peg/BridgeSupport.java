@@ -2268,6 +2268,10 @@ public class BridgeSupport {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
 
+    public Optional<Address> getProposedFederationAddress() {
+        return federationSupport.getProposedFederationAddress();
+    }
+
     public Integer getLockWhitelistSize() {
         return whitelistSupport.getLockWhitelistSize();
     }
