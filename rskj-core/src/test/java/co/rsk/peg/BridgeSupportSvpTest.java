@@ -715,17 +715,6 @@ public class BridgeSupportSvpTest {
             assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
         }
 
-        private void assertLogReleaseBtc(List<LogInfo> logs, Keccak256 rskTxHash, BtcTransaction btcTx) {
-            byte[] rskTxHashSerialized = rskTxHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
-
-            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
-
-            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-            assertEventWasEmittedWithExpectedData(logs, encodedData);
-        }
-
         @Test
         void addSignature_forSvpSpendTx_withWrongKeys_shouldThrowIllegalStateExceptionAndNotAddProposedFederatorSignatures() {
             // arrange
@@ -903,6 +892,17 @@ public class BridgeSupportSvpTest {
 
             BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
             byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
+        }
+
+        private void assertLogReleaseBtc(List<LogInfo> logs, Keccak256 rskTxHash, BtcTransaction btcTx) {
+            byte[] rskTxHashSerialized = rskTxHash.getBytes();
+            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
+
+            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
+            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
 
             assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
             assertEventWasEmittedWithExpectedData(logs, encodedData);

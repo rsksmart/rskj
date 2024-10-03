@@ -136,7 +136,7 @@ class BridgeSupportAddSignatureTest {
 
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
-            new ArrayList<>(),
+            null,
             createHash3(1).getBytes()
         );
 
@@ -203,7 +203,7 @@ class BridgeSupportAddSignatureTest {
 
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
-            new ArrayList<>(),
+            null,
             createHash3(1).getBytes()
         );
 
@@ -270,7 +270,7 @@ class BridgeSupportAddSignatureTest {
 
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa05")),
-            new ArrayList<>(),
+            null,
             createHash3(1).getBytes()
         );
 
@@ -292,7 +292,7 @@ class BridgeSupportAddSignatureTest {
 
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa03")),
-            new ArrayList<>(),
+            null,
             createHash3(1).getBytes()
         );
 
@@ -323,7 +323,7 @@ class BridgeSupportAddSignatureTest {
 
         bridgeSupport.addSignature(
             genesisFederation.getBtcPublicKeys().get(0),
-            new ArrayList<>(),
+            null,
             BitcoinTestUtils.createHash(1).getBytes()
         );
         bridgeSupport.save();
@@ -354,7 +354,7 @@ class BridgeSupportAddSignatureTest {
 
         bridgeSupport.addSignature(
             new BtcECKey(),
-            new ArrayList<>(),
+            null,
             BitcoinTestUtils.createHash(1).getBytes()
         );
         bridgeSupport.save();

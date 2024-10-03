@@ -1575,7 +1575,7 @@ public class BridgeSupport {
      * @param rskTxHashSerialized            The id of the rsk tx
      */
     public void addSignature(BtcECKey federatorBtcPublicKey, List<byte[]> signatures, byte[] rskTxHashSerialized) throws Exception {
-        if (signatures.isEmpty()) {
+        if (signatures == null || signatures.isEmpty()) {
             return;
         }
 
