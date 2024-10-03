@@ -367,6 +367,18 @@ public class FederationSupportImpl implements FederationSupport {
         return provider.getProposedFederation(constants, activations);
     }
 
+    /**
+     * Retrieves the Bitcoin address of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method checks if there is a proposed federation available and 
+     * returns its associated Bitcoin address. The proposed federation is typically 
+     * a federation that is awaiting approval or activation.
+     * </p>
+     * 
+     * @return an {@link Optional} containing the Bitcoin {@link Address} of the proposed federation,
+     *         or an empty {@link Optional} if no proposed federation is available.
+     */
     @Override
     public Optional<Address> getProposedFederationAddress() {
         return getProposedFederation()
