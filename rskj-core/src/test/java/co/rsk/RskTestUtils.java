@@ -1,11 +1,17 @@
 package co.rsk;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.crypto.Keccak256;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 
 public class RskTestUtils {
 
@@ -26,5 +32,21 @@ public class RskTestUtils {
         return Arrays.stream(seeds)
             .map(RskTestUtils::getEcKeyFromSeed)
             .toList();
+    }
+
+    public static Block createRskBlock() {
+        final int defaultBlockNumber = 1001;
+        final Instant defaultBlockTimestamp = ZonedDateTime.parse("2020-01-20T12:00:08.400Z").toInstant();
+
+        return createRskBlock(defaultBlockNumber, defaultBlockTimestamp.toEpochMilli());
+    }
+
+    public static Block createRskBlock(long blockNumber, long blockTimestamp) {
+        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
+            .setTimestamp(blockTimestamp)
+            .build();
+
+        return Block.createBlockFromHeader(blockHeader, true);
     }
 }

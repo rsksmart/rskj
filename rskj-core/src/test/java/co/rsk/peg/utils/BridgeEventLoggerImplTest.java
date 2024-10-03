@@ -17,10 +17,10 @@
  */
 package co.rsk.peg.utils;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.coinListOf;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
@@ -324,15 +324,35 @@ class BridgeEventLoggerImplTest {
         return FederationFactory.buildStandardMultiSigFederation(federationArgs);
     }
 
+    @Test
+    void logCommitFederationFailed() {
+        // arrange
+        Block rskExecutionBlock = arrangeRskExecutionBlock();
+        long executionBlockNumber = rskExecutionBlock.getNumber();
+
+        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
+        byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
+
+        CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+        var topics = new Object[]{};
+        var data = new Object[]{
+            proposedFederationRedeemScriptSerialized,
+            executionBlockNumber
+        };
+
+        // act
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+
+        // assert
+        commonAssertLogs();
+        assertTopics(1);
+        assertEvent(event, topics, data);
+    }
+
     private Block arrangeRskExecutionBlock() {
         long rskExecutionBlockNumber = 15005L;
         long rskExecutionBlockTimestamp = 15L;
-        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(rskExecutionBlockNumber)
-            .setTimestamp(rskExecutionBlockTimestamp)
-            .build();
-
-        return Block.createBlockFromHeader(blockHeader, true);
+        return createRskBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
     }
 
     @Test
