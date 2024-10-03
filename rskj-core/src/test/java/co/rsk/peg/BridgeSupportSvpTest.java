@@ -727,6 +727,77 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
+        void addSignature_forSvpSpendTx_withWrongKeys_shouldThrowIllegalStateExceptionAndNotAddProposedFederatorSignatures() {
+            // arrange
+            List<BtcECKey> WRONG_KEYS =
+                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"wrong01", "wrong02", "wrong03", "wrong04", "wrong05"}, true);
+
+            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+
+            // act & assert
+            for (BtcECKey key : WRONG_KEYS) {
+                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
+
+                assertThrows(IllegalStateException.class, () -> bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized));
+            }
+
+            // assert
+            for (BtcECKey key : WRONG_KEYS) {
+                Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
+                assertFalse(federationMember.isPresent());
+
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_withEmptySignatures_shouldNotAddProposedFederatorSignatures() throws Exception {
+            // arrange
+            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+
+            // act
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> emptySignatures = new ArrayList<>();
+                bridgeSupport.addSignature(key, emptySignatures, rskTxHashSerialized);
+            }
+
+            // assert
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
+                assertTrue(federationMember.isPresent());
+
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_whenProposedFederationDoesNotExist_shouldNotAddProposedFederatorSignatures() throws Exception {
+            // arrange
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
+            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
+
+            // act
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
+            }
+
+            // assert
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+        }
+
+        @Test
         void addSignature_forSvpSpendTx_whenValidationPeriodEnded_shouldNotAddProposedFederatorsSignatures() throws Exception {
             // arrange
             arrangeExecutionBlockIsAfterValidationPeriodEnded();
@@ -753,31 +824,6 @@ public class BridgeSupportSvpTest {
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
                 assertTrue(federationMember.isPresent());
-                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
-            }
-
-            assertAddSignatureWasNotLogged();
-            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
-        }
-
-        @Test
-        void addSignature_forSvpSpendTx_withWrongKeys_shouldNotAddProposedFederatorsSignatures() throws Exception {
-            // arrange
-            List<BtcECKey> WRONG_KEYS =
-                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"wrong01", "wrong02", "wrong03", "wrong04", "wrong05"}, true);
-
-            byte[] rskTxHashSerialized = svpSpendTxCreationHash.getBytes();
-
-            // act
-            for (BtcECKey key : WRONG_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
-                bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHashSerialized);
-            }
-
-            // assert
-            for (BtcECKey key : WRONG_KEYS) {
-                Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(key);
-                assertFalse(federationMember.isPresent());
                 assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
 
