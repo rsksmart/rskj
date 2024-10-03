@@ -7,8 +7,9 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.script.FlyoverRedeemScriptParser;
+import co.rsk.bitcoinj.script.P2shErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -220,10 +221,10 @@ public class PegUtilsLegacy {
                      and check if it is a P2sh erp federation redeem script
                      */
                     boolean isFlyoverP2shRedeemScript = false;
-                    if (redeemScriptParser.getMultiSigType() == MultiSigType.FLYOVER) {
+                    if (redeemScriptParser instanceof FlyoverRedeemScriptParser) {
                         List<ScriptChunk> flyoverInternalRedeemScript = redeemScriptChunks.subList(2,
                             redeemScriptChunks.size());
-                        isFlyoverP2shRedeemScript = RedeemScriptParserFactory.get(flyoverInternalRedeemScript).getMultiSigType() == MultiSigType.P2SH_ERP_FED;
+                        isFlyoverP2shRedeemScript = RedeemScriptParserFactory.get(flyoverInternalRedeemScript) instanceof P2shErpRedeemScriptParser;
                     }
                     // Consider transactions that have an input with a redeem script of type P2SH ERP FED
                     // to be "future transactions" that should not be pegins. These are gonna be considered pegouts.
@@ -233,8 +234,7 @@ public class PegUtilsLegacy {
                     // TODO: Remove this if block after RSKIP353 activation
                     if (!activations.isActive(ConsensusRule.RSKIP353) &&
                         (
-                            redeemScriptParser.getMultiSigType()
-                                == RedeemScriptParser.MultiSigType.P2SH_ERP_FED
+                            redeemScriptParser instanceof P2shErpRedeemScriptParser
                                 || isFlyoverP2shRedeemScript)
                     ) {
                         String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";

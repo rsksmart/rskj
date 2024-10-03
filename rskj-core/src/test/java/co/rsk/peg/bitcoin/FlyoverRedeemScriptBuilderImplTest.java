@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
+import co.rsk.bitcoinj.script.FlyoverRedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -30,9 +30,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class FlyoverRedeemScriptBuilderImplTest {
 
-    private static NetworkParameters mainNetParams = BridgeMainNetConstants.getInstance().getBtcParams();
-    private static NetworkParameters testNetParams = BridgeTestNetConstants.getInstance().getBtcParams();
-    private static ErpFederation erpFederation = FederationTestUtils.getErpFederation(testNetParams);
+    private static final NetworkParameters mainNetParams = BridgeMainNetConstants.getInstance().getBtcParams();
+    private static final NetworkParameters testNetParams = BridgeTestNetConstants.getInstance().getBtcParams();
+    private static final ErpFederation erpFederation = FederationTestUtils.getErpFederation(testNetParams);
 
     private FlyoverRedeemScriptBuilder flyoverRedeemScriptBuilder;
 
@@ -76,10 +76,9 @@ class FlyoverRedeemScriptBuilderImplTest {
 
         ScriptChunk flyoverDerivationHashChunk = flyoverRedeemScriptChunks.get(0);
         ScriptChunk opDropChunk = flyoverRedeemScriptChunks.get(1);
-        MultiSigType multiSigType = RedeemScriptParserFactory.get(flyoverRedeemScriptChunks)
-            .getMultiSigType();
 
-        assertEquals(MultiSigType.FLYOVER, multiSigType);
+        assertInstanceOf(FlyoverRedeemScriptParser.class,
+            RedeemScriptParserFactory.get(flyoverRedeemScriptChunks));
         assertEquals(internalRedeemScript.getChunks(), originalRedeemScriptChunks);
         assertArrayEquals(flyoverDerivationHash.getBytes(), flyoverDerivationHashChunk.data);
         assertEquals(ScriptOpCodes.OP_DROP, opDropChunk.opcode);
@@ -123,13 +122,18 @@ class FlyoverRedeemScriptBuilderImplTest {
         Script standardRedeemScript = StandardMultiSigFederationBuilder.builder().build()
             .getRedeemScript();
         Script p2shRedemptionScript = P2shErpFederationBuilder.builder().build().getRedeemScript();
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(1),
+            p2shRedemptionScript
+        );
 
         return Stream.of(
             Arguments.of(nonStandardErpRedeemScriptForHop),
             Arguments.of(nonStandardErpRedeemScriptForTestnetHop),
             Arguments.of(nonStandardErpRedeemScriptAllActivations),
             Arguments.of(standardRedeemScript),
-            Arguments.of(p2shRedemptionScript)
+            Arguments.of(p2shRedemptionScript),
+            Arguments.of(flyoverRedeemScript)
         );
     }
 
@@ -162,17 +166,11 @@ class FlyoverRedeemScriptBuilderImplTest {
     private static Stream<Arguments> invalidRedeemScriptsArgsProvider() {
         Script p2shRedemptionScript = P2shErpFederationBuilder.builder().build().getRedeemScript();
 
-        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
-            RskTestUtils.createHash(1),
-            p2shRedemptionScript
-        );
-
         Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(p2shRedemptionScript);
         Script scriptSig = p2SHOutputScript.createEmptyInputScript(null, p2shRedemptionScript);
         Script emptyScript = new Script(new byte[]{});
 
         return Stream.of(
-            Arguments.of(flyoverRedeemScript, "Provided redeem script cannot be a flyover redeem script."),
             Arguments.of(p2SHOutputScript, "Provided redeem script has an invalid structure."),
             Arguments.of(scriptSig, "Provided redeem script has an invalid structure."),
             Arguments.of(emptyScript, "Provided redeem script has an invalid structure."),
