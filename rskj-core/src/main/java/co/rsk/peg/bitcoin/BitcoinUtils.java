@@ -99,6 +99,13 @@ public class BitcoinUtils {
             .findFirst();
     }
 
+    public static Sha256Hash generateSigHashForP2SHInput(BtcTransaction btcTx, int inputIndex) {
+        return Optional.ofNullable(btcTx.getInput(inputIndex))
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
+    }
+
     public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx) {
         Preconditions.checkState(tx.isCoinBase());
         // If more than one witness commitment, take the last one as the valid one
