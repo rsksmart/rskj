@@ -513,6 +513,29 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getProposedFederationAddress_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationAddress = bridgeSupport.getProposedFederationAddress();
+
+            // Assert
+            assertFalse(actualProposedFederationAddress.isPresent());
+        }
+
+        @Test
+        void getProposedFederationAddress_whenProposedFederationExists_shouldReturnAddress() {
+            // Arrange
+            var expectedAddress = federation.getAddress();
+            when(federationSupport.getProposedFederationAddress()).thenReturn(Optional.of(expectedAddress));
+
+            // Act
+            var actualProposedFederationAddress = bridgeSupport.getProposedFederationAddress();
+
+            // Assert
+            assertTrue(actualProposedFederationAddress.isPresent());
+            assertEquals(expectedAddress, actualProposedFederationAddress.get());
+        }
+
+        @Test
         void voteFederationChange() {
             Transaction tx = mock(Transaction.class);
             ABICallSpec callSpec = mock(ABICallSpec.class);
