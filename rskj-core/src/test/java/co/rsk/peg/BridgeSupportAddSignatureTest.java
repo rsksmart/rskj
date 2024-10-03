@@ -140,7 +140,7 @@ class BridgeSupportAddSignatureTest {
             createHash3(1).getBytes()
         );
 
-        verify(provider, times(1)).getPegoutsWaitingForSignatures();
+        verify(provider, never()).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -207,7 +207,7 @@ class BridgeSupportAddSignatureTest {
             createHash3(1).getBytes()
         );
 
-        verify(provider, times(1)).getPegoutsWaitingForSignatures();
+        verify(provider, never()).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -274,7 +274,7 @@ class BridgeSupportAddSignatureTest {
             createHash3(1).getBytes()
         );
 
-        verify(provider, times(0)).getPegoutsWaitingForSignatures();
+        verify(provider, never()).getPegoutsWaitingForSignatures();
     }
 
     @Test
@@ -296,7 +296,7 @@ class BridgeSupportAddSignatureTest {
             createHash3(1).getBytes()
         );
 
-        verify(provider, times(0)).getPegoutsWaitingForSignatures();
+        verify(provider, never()).getPegoutsWaitingForSignatures();
     }
 
     @Test
