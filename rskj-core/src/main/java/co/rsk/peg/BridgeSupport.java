@@ -1736,7 +1736,7 @@ public class BridgeSupport {
         return txSigs;
     }
 
-    private List<BtcECKey.ECDSASignature> getDecodedSignatures(List<byte[]> signatures) {
+    private List<BtcECKey.ECDSASignature> getDecodedSignatures(List<byte[]> signatures) throws SignatureException {
         List<BtcECKey.ECDSASignature> decodedSignatures = new ArrayList<>();
         for (byte[] signature : signatures) {
             try {
@@ -1744,7 +1744,7 @@ public class BridgeSupport {
             } catch (RuntimeException e) {
                 int index = signatures.indexOf(signature);
                 logger.warn("Malformed signature for input {} : {}", index, Bytes.of(signature));
-                throw e;
+                throw new SignatureException();
             }
         }
         return decodedSignatures;
