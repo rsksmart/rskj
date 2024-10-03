@@ -2247,6 +2247,22 @@ public class BridgeSupport {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
 
+    /**
+     * Retrieves the Bitcoin address of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method checks if there is a proposed federation available and 
+     * returns its associated Bitcoin address. The proposed federation is typically 
+     * a federation that is awaiting approval or activation.
+     * </p>
+     * 
+     * @return an {@link Optional} containing the Bitcoin {@link Address} of the proposed federation,
+     *         or an empty {@link Optional} if no proposed federation is available.
+     */
+    public Optional<Address> getProposedFederationAddress() {
+        return federationSupport.getProposedFederationAddress();
+    }
+
     public Integer getLockWhitelistSize() {
         return whitelistSupport.getLockWhitelistSize();
     }
