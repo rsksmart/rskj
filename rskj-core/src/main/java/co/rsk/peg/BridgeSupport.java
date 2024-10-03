@@ -1694,7 +1694,7 @@ public class BridgeSupport {
         List<TransactionSignature> txSigs;
         try {
             txSigs = getTransactionSignatures(federatorBtcPublicKey, sigHashes, signatures);
-        } catch (Exception e) {
+        } catch (SignatureException e) {
             return;
         }
 
