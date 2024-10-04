@@ -48,6 +48,7 @@ import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class FederationSupportImplTest {
@@ -2309,10 +2310,11 @@ class FederationSupportImplTest {
         assertEquals(creationBlockNumber, actualCreationBlockNumber.get());
     }
 
-    @Test
-    void getProposedFederatorPublicKeyOfType_whenFederationIsEmpty_shouldReturnEmpty() {
+    @ParameterizedTest
+    @EnumSource(FederationMember.KeyType.class)
+    void getProposedFederatorPublicKeyOfType_whenFederationIsEmpty_shouldReturnEmpty(FederationMember.KeyType keyType) {
         // Act
-        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC);
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
 
         // Assert
         assertFalse(actualPublicKey.isPresent());
