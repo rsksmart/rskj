@@ -1148,29 +1148,6 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
-        Address activeFederationAddress = genesisFederation.getAddress();
-        testIsValidPegInTx_fromP2shErpScriptSender(
-            false,
-            false,
-            activeFederationAddress,
-            false
-        );
-    }
-
-    @Test
-    void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        testIsValidPegInTx_fromP2shErpScriptSender(
-            false,
-            false,
-            randomAddress,
-            false
-        );
-    }
-
-    @Test
     void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
         Address activeFederationAddress = genesisFederation.getAddress();
@@ -1188,30 +1165,6 @@ class PegUtilsLegacyTest {
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
             false,
-            randomAddress,
-            false
-        );
-    }
-
-    @Test
-    void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
-        Address activeFederationAddress = genesisFederation.getAddress();
-        testIsValidPegInTx_fromP2shErpScriptSender(
-            false,
-            true,
-            activeFederationAddress,
-            false
-        );
-    }
-
-    // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
-    @Test
-    void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
-        testIsValidPegInTx_fromP2shErpScriptSender(
-            false,
-            true,
             randomAddress,
             false
         );
