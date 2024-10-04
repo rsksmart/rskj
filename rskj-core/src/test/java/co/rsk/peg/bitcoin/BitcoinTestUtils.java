@@ -2,6 +2,7 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
+import static co.rsk.peg.bitcoin.BitcoinUtils.generateSigHashForP2SHInput;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -153,5 +154,24 @@ public class BitcoinTestUtils {
             inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
             input.setScriptSig(inputScriptSig);
         }
+    }
+
+    public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
+        List<Sha256Hash> sigHashes = new ArrayList<>();
+        List<TransactionInput> inputs = btcTx.getInputs();
+        for (TransactionInput input : inputs) {
+            Sha256Hash sigHash = generateSigHashForP2SHInput(btcTx, inputs.indexOf(input));
+            sigHashes.add(sigHash);
+        }
+        return sigHashes;
+    }
+
+    public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
+        List<byte[]> encodedSignatures = new ArrayList<>();
+        for (Sha256Hash sigHash : sigHashes) {
+            BtcECKey.ECDSASignature signature = signingKey.sign(sigHash);
+            encodedSignatures.add(signature.encodeToDER());
+        }
+        return encodedSignatures;
     }
 }
