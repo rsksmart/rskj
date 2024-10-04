@@ -1679,18 +1679,12 @@ public class BridgeSupport {
         byte[] rskTxHashSerialized,
         BtcTransaction svpSpendTx
     ) {
-        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
-        if (proposedFederationOpt.isEmpty()) {
-            throw new IllegalStateException("Proposed federation must exist when trying to sign svp spend transaction.");
-        }
-        Federation proposedFederation = proposedFederationOpt.get();
+        Federation proposedFederation = federationSupport.getProposedFederation()
+            .orElseThrow(() -> new IllegalStateException("Proposed federation must exist when trying to sign the svp spend transaction."));
+        FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(federatorPublicKey)
+            .orElseThrow(() -> new IllegalStateException("Federator must belong to proposed federation to sign the svp spend transaction."));
 
-        Optional<FederationMember> federationMember = proposedFederation.getMemberByBtcPublicKey(federatorPublicKey);
-        if (federationMember.isEmpty()) {
-            throw new IllegalStateException("Federation member must be part of the proposed federation when trying to sign svp spend transaction.");
-        }
-
-        processSigning(federationMember.get(), signatures, rskTxHashSerialized, svpSpendTx);
+        processSigning(federationMember, signatures, rskTxHashSerialized, svpSpendTx);
 
         Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
         if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx) && logger.isDebugEnabled()) {

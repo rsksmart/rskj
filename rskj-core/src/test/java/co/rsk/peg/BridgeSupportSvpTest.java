@@ -788,7 +788,7 @@ public class BridgeSupportSvpTest {
                 );
             }
             assertLogReleaseBtc(svpSpendTxCreationHash, svpSpendTx);
-            assertLogs(PROPOSED_FEDERATION_SIGNERS_KEYS.size() + 1); // proposedFedSigners size for addSignature, +1 for release btc
+            assertLogsSize(PROPOSED_FEDERATION_SIGNERS_KEYS.size() + 1); // proposedFedSigners size for addSignature, +1 for release btc
             assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
         }
 
@@ -825,12 +825,16 @@ public class BridgeSupportSvpTest {
             }
 
             assertLogReleaseBtc(rskTxHash, pegout);
-            assertLogs(activeFedSigners.size() + 1); // activeFedSigners size for addSignature, +1 for release btc
+            assertLogsSize(activeFedSigners.size() + 1); // activeFedSigners size for addSignature, +1 for release btc
 
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 assertFederatorDidNotSignInputs(pegoutInputs, pegoutTxSigHashes, key);
             }
             assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        private void assertLogsSize(int expectedLogs) {
+            assertEquals(expectedLogs, logs.size());
         }
 
         private void assertFederatorSigning(
@@ -844,6 +848,37 @@ public class BridgeSupportSvpTest {
             assertTrue(federationMember.isPresent());
             assertLogAddSignature(federationMember.get(), rskTxHashSerialized);
             assertFederatorSignedInputs(inputs, sigHashes, key);
+        }
+
+        private void assertLogAddSignature(FederationMember federationMember, byte[] rskTxHash) {
+            ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
+            String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
+
+            List<DataWord> encodedTopics = getEncodedTopics(addSignatureEvent, rskTxHash, federatorRskAddress);
+
+            BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
+            byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
+        }
+
+        private void assertLogReleaseBtc(Keccak256 rskTxHash, BtcTransaction btcTx) {
+            byte[] rskTxHashSerialized = rskTxHash.getBytes();
+            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
+
+            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
+            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
+        }
+
+        private void assertFederatorSignedInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
+                assertTrue(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
+            }
         }
 
         private void arrangeSvpSpendTransaction() {
@@ -875,41 +910,6 @@ public class BridgeSupportSvpTest {
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
             bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
             bridgeStorageProvider.save();
-        }
-
-        private void assertLogAddSignature(FederationMember federationMember, byte[] rskTxHash) {
-            ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
-            String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
-
-            List<DataWord> encodedTopics = getEncodedTopics(addSignatureEvent, rskTxHash, federatorRskAddress);
-
-            BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
-            byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
-
-            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-            assertEventWasEmittedWithExpectedData(logs, encodedData);
-        }
-
-        private void assertLogReleaseBtc(Keccak256 rskTxHash, BtcTransaction btcTx) {
-            byte[] rskTxHashSerialized = rskTxHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
-
-            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
-
-            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-            assertEventWasEmittedWithExpectedData(logs, encodedData);
-        }
-
-        private void assertLogs(int expectedLogs) {
-            assertEquals(expectedLogs, logs.size());
-        }
-
-        private void assertFederatorSignedInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
-            for (TransactionInput input : inputs) {
-                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
-                assertTrue(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
-            }
         }
     }
 
