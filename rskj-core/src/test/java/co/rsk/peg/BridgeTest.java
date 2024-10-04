@@ -2253,8 +2253,7 @@ class BridgeTest {
         byte[] data = function.encode();
 
         if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
-            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
-                !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
                 // Post arrowhead should fail for any msg type != CALL or STATIC CALL
                 assertThrows(VMException.class, () -> bridge.execute(data));
             } else {
