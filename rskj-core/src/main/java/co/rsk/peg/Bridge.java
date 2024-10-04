@@ -1040,6 +1040,27 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
+    /**
+     * Retrieves the proposed federation Bitcoin address as a Base58 string.
+     *
+     * <p>
+     * This method attempts to fetch the address of the proposed federation. If the 
+     * proposed federation is present, it converts the address to its Base58 representation.
+     * If not, an empty string is returned.
+     * <p>
+     *
+     * @param args Additional arguments (currently unused)
+     * @return The Base58 encoded Bitcoin address of the proposed federation, or an empty 
+     *         string if no proposed federation is present.
+     */
+    public String getProposedFederationAddress(Object[] args) {
+        logger.trace("getProposedFederationAddress");
+        
+        return bridgeSupport.getProposedFederationAddress()
+            .map(Address::toBase58)
+            .orElse("");
+    }
+
     public Integer getLockWhitelistSize(Object[] args) {
         logger.trace("getLockWhitelistSize");
 
