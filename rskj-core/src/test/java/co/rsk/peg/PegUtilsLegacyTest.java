@@ -1155,11 +1155,10 @@ class PegUtilsLegacyTest {
             false,
             false,
             activeFederationAddress,
-            true
+            false
         );
     }
 
-    // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
     @Test
     void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
@@ -1167,7 +1166,7 @@ class PegUtilsLegacyTest {
             false,
             false,
             randomAddress,
-            true
+            false
         );
     }
 
@@ -1202,7 +1201,7 @@ class PegUtilsLegacyTest {
             false,
             true,
             activeFederationAddress,
-            true
+            false
         );
     }
 
@@ -1214,7 +1213,7 @@ class PegUtilsLegacyTest {
             false,
             true,
             randomAddress,
-            true
+            false
         );
     }
 

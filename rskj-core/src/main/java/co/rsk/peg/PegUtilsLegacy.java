@@ -7,8 +7,6 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.script.FlyoverRedeemScriptParser;
-import co.rsk.bitcoinj.script.P2shErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
@@ -215,32 +213,6 @@ public class PegUtilsLegacy {
                 try {
                     List<ScriptChunk> redeemScriptChunks = redeemScriptOptional.get().getChunks();
                     RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptChunks);
-
-                    /*
-                     If the redeem script is a flyover, we need to extract the internal redeem script
-                     and check if it is a P2sh erp federation redeem script
-                     */
-                    boolean isFlyoverP2shRedeemScript = false;
-                    if (redeemScriptParser instanceof FlyoverRedeemScriptParser) {
-                        List<ScriptChunk> flyoverInternalRedeemScript = redeemScriptChunks.subList(2,
-                            redeemScriptChunks.size());
-                        isFlyoverP2shRedeemScript = RedeemScriptParserFactory.get(flyoverInternalRedeemScript) instanceof P2shErpRedeemScriptParser;
-                    }
-                    // Consider transactions that have an input with a redeem script of type P2SH ERP FED
-                    // to be "future transactions" that should not be pegins. These are gonna be considered pegouts.
-                    // This is only for backwards compatibility reasons. As soon as RSKIP353 activates,
-                    // pegins to the new federation should be valid again.
-                    // There's no reason for someone to send an actual pegin of this type before the new fed is active.
-                    // TODO: Remove this if block after RSKIP353 activation
-                    if (!activations.isActive(ConsensusRule.RSKIP353) &&
-                        (
-                            redeemScriptParser instanceof P2shErpRedeemScriptParser
-                                || isFlyoverP2shRedeemScript)
-                    ) {
-                        String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";
-                        logger.warn("[isValidPegInTx] {}", message);
-                        throw new ScriptException(message);
-                    }
 
                     List<ScriptChunk> inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
                     Script inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
