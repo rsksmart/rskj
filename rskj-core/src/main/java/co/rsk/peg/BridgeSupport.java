@@ -997,21 +997,17 @@ public class BridgeSupport {
     }
 
     private boolean svpIsOngoing() {
-        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
-
-        if (proposedFederationOpt.isEmpty()) {
-            return false;
-        }
-        Federation proposedFederation = proposedFederationOpt.get();
-
-        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
-            + bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
-        return rskExecutionBlock.getNumber() <= validationPeriodEndBlock;
+        return federationSupport.getProposedFederation()
+            .map(Federation::getCreationBlockNumber)
+            .map(proposedFederationCreationBlockNumber ->
+                proposedFederationCreationBlockNumber + bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks())
+            .filter(validationPeriodEndBlock -> rskExecutionBlock.getNumber() <= validationPeriodEndBlock)
+            .isPresent();
     }
 
     protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
-        if (!proposedFederationOpt.isPresent()) {
+        if (proposedFederationOpt.isEmpty()) {
             String message = "Proposed federation should be present when processing SVP fund transaction.";
             logger.warn(message);
             throw new IllegalStateException(message);
@@ -1572,8 +1568,8 @@ public class BridgeSupport {
      * If enough signatures were added, ask federators to broadcast the btc release tx.
      *
      * @param federatorBtcPublicKey   Federator who is signing
-     * @param signatures           1 signature per btc tx input
-     * @param rskTxHashSerialized            The id of the rsk tx
+     * @param signatures              1 signature per btc tx input
+     * @param rskTxHashSerialized     The id of the rsk tx
      */
     public void addSignature(BtcECKey federatorBtcPublicKey, List<byte[]> signatures, byte[] rskTxHashSerialized) throws Exception {
         if (signatures == null || signatures.isEmpty()) {
