@@ -37,7 +37,7 @@ public class MutableTrieCache implements MutableTrie {
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
-    private MutableTrie trie;
+    private MutableTrie mutableTrie;
     // We use a single cache to mark both changed elements and removed elements.
     // null value means the element has been removed.
     private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
@@ -46,7 +46,7 @@ public class MutableTrieCache implements MutableTrie {
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
 
     public MutableTrieCache(MutableTrie parentTrie) {
-        trie = parentTrie;
+        mutableTrie = parentTrie;
         cache = new HashMap<>();
         deleteRecursiveLog = new HashSet<>();
     }
@@ -54,18 +54,18 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public Trie getTrie() {
         assertNoCache();
-        return trie.getTrie();
+        return mutableTrie.getTrie();
     }
 
     @Override
     public Keccak256 getHash() {
         assertNoCache();
-        return trie.getHash();
+        return mutableTrie.getHash();
     }
 
     @Override
     public byte[] get(byte[] key) {
-        return internalGet(key, trie::get, Function.identity()).orElse(null);
+        return internalGet(key, mutableTrie::get, Function.identity()).orElse(null);
     }
 
     private <T> Optional<T> internalGet(
@@ -110,7 +110,7 @@ public class MutableTrieCache implements MutableTrie {
             return new StorageKeysIterator(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
         }
 
-        Iterator<DataWord> storageKeys = trie.getStorageKeys(addr);
+        Iterator<DataWord> storageKeys = mutableTrie.getStorageKeys(addr);
         if (accountItems == null) {
             // uncached account
             return storageKeys;
@@ -175,11 +175,11 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public void commit() {
         // in case something was deleted and then put again, we first have to delete all the previous data
-        deleteRecursiveLog.forEach(item -> trie.deleteRecursive(item.getData()));
+        deleteRecursiveLog.forEach(item -> mutableTrie.deleteRecursive(item.getData()));
         cache.forEach((accountKey, accountData) -> {
             if (accountData != null) {
                 // cached account
-                accountData.forEach((realKey, value) -> this.trie.put(realKey, value));
+                accountData.forEach((realKey, value) -> this.mutableTrie.put(realKey, value));
             }
         });
 
@@ -190,7 +190,7 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public void save() {
         commit();
-        trie.save();
+        mutableTrie.save();
     }
 
     @Override
@@ -201,7 +201,7 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Set<ByteArrayWrapper> collectKeys(int size) {
-        Set<ByteArrayWrapper> parentSet = trie.collectKeys(size);
+        Set<ByteArrayWrapper> parentSet = mutableTrie.collectKeys(size);
 
         // all cached items to be transferred to parent
         cache.forEach((accountKey, account) ->
@@ -230,13 +230,13 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Uint24 getValueLength(byte[] key) {
-        return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
+        return internalGet(key, mutableTrie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
     }
 
     @Override
     public Optional<Keccak256> getValueHash(byte[] key) {
         return internalGet(key,
-                keyB -> trie.getValueHash(keyB).orElse(null),
+                keyB -> mutableTrie.getValueHash(keyB).orElse(null),
                 cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes)));
     }
 
