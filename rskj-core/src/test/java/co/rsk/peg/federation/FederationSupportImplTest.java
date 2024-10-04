@@ -48,6 +48,7 @@ import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class FederationSupportImplTest {
@@ -2307,6 +2308,78 @@ class FederationSupportImplTest {
         // Assert
         assertTrue(actualCreationBlockNumber.isPresent());
         assertEquals(creationBlockNumber, actualCreationBlockNumber.get());
+    }
+
+    @ParameterizedTest
+    @EnumSource(FederationMember.KeyType.class)
+    void getProposedFederatorPublicKeyOfType_whenFederationIsEmpty_shouldReturnEmpty(FederationMember.KeyType keyType) {
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertFalse(actualPublicKey.isPresent());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederationAndKeyTypeIsBTC_shouldReturnPublicKey() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(federationKeys).build();
+        FederationMember.KeyType keyType = FederationMember.KeyType.BTC;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederationAndKeyTypeIsRSK_shouldReturnPublicKey() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        List<ECKey> federationRskKeys = federationKeys.stream()
+            .map(BtcECKey::getPubKey)
+            .map(ECKey::fromPublicOnly)
+            .toList();
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersRskPublicKeys(federationRskKeys).build();
+        FederationMember.KeyType keyType = FederationMember.KeyType.RSK;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederationAndKeyTypeIsMst_shouldReturnPublicKey() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        List<ECKey> federationMstKeys = federationKeys.stream()
+            .map(BtcECKey::getPubKey)
+            .map(ECKey::fromPublicOnly)
+            .toList();
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersMstPublicKeys(federationMstKeys).build();
+        FederationMember.KeyType keyType = FederationMember.KeyType.MST;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
