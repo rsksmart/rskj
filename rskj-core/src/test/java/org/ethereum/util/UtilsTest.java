@@ -19,12 +19,11 @@
 
 package org.ethereum.util;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
+import co.rsk.core.types.bytes.Bytes;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -112,7 +111,7 @@ class UtilsTest {
 
     @Test
     void TestValidateArrayWithOffset() {
-        byte[] data = new byte[10];
+        Bytes data = Bytes.of(new byte[10]);
         // Valid indices
         Utils.validateArrayAllegedSize(data, 1, 0);
         Utils.validateArrayAllegedSize(data, 8, 1);
@@ -137,13 +136,13 @@ class UtilsTest {
             // Only type of exception expected
         }
         try {
-            Utils.validateArrayAllegedSize(new byte[0], 1, 0);
+            Utils.validateArrayAllegedSize(Bytes.of(new byte[0]), 1, 0);
             fail("should have failed");
         }
         catch (IllegalArgumentException e) {
             // Only type of exception expected
         }
-        byte[] noData = null;
+        Bytes noData = null;
         try {
             Utils.validateArrayAllegedSize(noData, 1, 1);
             fail("should have failed");
@@ -156,33 +155,33 @@ class UtilsTest {
 
     @Test
     void TestSafeCopyOfRangeWithValidArrays() {
-        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(new byte[2], 0, 1));
-        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(new byte[100], 97, 3));
-        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(new byte[0], 0, 0));
+        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(Bytes.of(new byte[2]), 0, 1));
+        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(Bytes.of(new byte[100]), 97, 3));
+        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(Bytes.of(new byte[0]), 0, 0));
     }
 
     @Test
     void TestSafeCopyOfRangeWithInvalidArrays() {
         try {
-            Utils.safeCopyOfRange(new byte[2], 1, 2);
+            Utils.safeCopyOfRange(Bytes.of(new byte[2]), 1, 2);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
         }
         try {
-            Utils.safeCopyOfRange(new byte[100], 98, 3);
+            Utils.safeCopyOfRange(Bytes.of(new byte[100]), 98, 3);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
         }
         try {
-            Utils.safeCopyOfRange(new byte[0], 0, 1);
+            Utils.safeCopyOfRange(Bytes.of(new byte[0]), 0, 1);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){
         }
         try {
-            Utils.safeCopyOfRange(new byte[0], 1, 0);
+            Utils.safeCopyOfRange(Bytes.of(new byte[0]), 1, 0);
             fail("should have failed");
         }
         catch (IllegalArgumentException e){

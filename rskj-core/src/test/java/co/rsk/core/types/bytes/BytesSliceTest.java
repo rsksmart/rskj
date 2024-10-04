@@ -19,17 +19,60 @@
 
 package co.rsk.core.types.bytes;
 
+import co.rsk.util.Functions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BytesSliceTest {
 
     @Test
+    void testBytesLength() {
+        assertEquals(0, Bytes.of(new byte[]{}).slice(0, 0).length());
+        assertEquals(0, Bytes.of(new byte[]{1}).slice(0, 0).length());
+        assertEquals(1, Bytes.of(new byte[]{1}).slice(0, 1).length());
+        assertEquals(0, Bytes.of(new byte[]{1,2,3}).slice(1, 1).length());
+        assertEquals(1, Bytes.of(new byte[]{1,2,3}).slice(1, 2).length());
+        assertEquals(2, Bytes.of(new byte[]{1,2,3}).slice(0, 2).length());
+        assertEquals(3, Bytes.of(new byte[]{1,2,3}).slice(0, 3).length());
+    }
+
+    @Test
+    void testBytesAt() {
+        assertEquals(1, Bytes.of(new byte[]{1}).slice(0, 1).byteAt(0));
+        assertEquals(2, Bytes.of(new byte[]{1,2}).slice(0, 2).byteAt(1));
+        assertEquals(2, Bytes.of(new byte[]{1,2,3}).slice(1, 2).byteAt(0));
+        assertEquals(4, Bytes.of(new byte[]{1,2,3,4}).slice(2, 4).byteAt(1));
+    }
+
+    @Test
+    void testBytesAtIndexOutOfBoundsException() {
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{}).slice(0, 0).byteAt(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1}).slice(0, 1).byteAt(1));
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1}).slice(0, 1).byteAt(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> Bytes.of(new byte[]{1,2,3}).slice(1, 2).byteAt(1));
+    }
+
+    @Test
+    void testBytesSliceArraycopy() {
+        checkArraycopy((src, srcPos, dest, destPos, length) -> Bytes.of((byte[]) src).slice(1, 4).arraycopy(srcPos, (byte[]) dest, destPos, length));
+    }
+
+    @Test
+    void testBytesSliceArraycopyMimicsSystemOne() {
+        checkArraycopy((src, srcPos, dest, destPos, length) -> System.arraycopy(Arrays.copyOfRange((byte[]) src, 1, 4), srcPos, dest, destPos, length));
+    }
+
+    @Test
     void testCopyArrayOfRange() {
-        byte[] bArray =  new byte[]{1, 2, 3, 4, 5, 6};
-        byte[] expectedResult =  new byte[]{3, 4, 5};
-        assertArrayEquals(expectedResult, Bytes.of(bArray).slice(0, bArray.length).copyArrayOfRange(2, 5));
+        checkCopyOfRange(BytesSlice::copyArrayOfRange, (origin, from, to) -> Bytes.of(origin).slice(from, to));
+    }
+
+    @Test
+    void testCopyArrayOfRangeMimicsSystemOne() {
+        checkCopyOfRange(Arrays::copyOfRange, Arrays::copyOfRange);
     }
 
     @Test
@@ -73,5 +116,73 @@ class BytesSliceTest {
         byte[] expectedResult =  new byte[]{};
         assertEquals(0, actualResult.length());
         assertArrayEquals(expectedResult, actualResult.copyArray());
+    }
+
+    private static void checkArraycopy(Functions.Action5<Object, Integer, Object, Integer, Integer> fun) {
+        /*
+            'fun' signature:
+            @src – the source array.
+            @srcPos – starting position in the source array.
+            @dest – the destination array.
+            @destPos – starting position in the destination data.
+            @length – the number of array elements to be copied.
+        */
+        byte[] dest = new byte[3];
+        byte[] origin = new byte[]{1,2,3,4,5};
+
+        assertThrows(NullPointerException.class, () -> fun.apply(origin, 0, null, 0, 3));
+
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(origin, -1, dest, 0, 3));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(origin, 0, dest, -1, 3));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(origin, 0, dest, 0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(origin, 0, dest, 0, 4));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(origin, 1, dest, 0, 3));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(origin, 0, dest, 1, 3));
+
+        assertArrayEquals(new byte[3], dest); // yet unmodified
+
+        fun.apply(origin, 0, dest, 0, 3);
+        assertArrayEquals(new byte[]{2,3,4}, dest);
+
+        byte[] dest2 = new byte[3];
+        fun.apply(origin, 1, dest2, 1, 1);
+        assertArrayEquals(new byte[]{0,3,0}, dest2);
+    }
+
+    private static <T> void checkCopyOfRange(Functions.Function3<T, Integer, Integer, byte[]> fun,
+                                             Functions.Function3<byte[], Integer, Integer, T> slicer) {
+        /*
+            'fun' signature:
+            @original – the array from which a range is to be copied
+            @from – the initial index of the range to be copied, inclusive
+            @to – the final index of the range to be copied, exclusive. (This index may lie outside the array.)
+
+            @return a new array containing the specified range from the original array, truncated or padded with zeros
+            to obtain the required length
+        */
+
+        /*
+            'slicer' signature:
+            @original – the array from which a range is to be copied
+            @from – the initial index of the range to be copied, inclusive
+            @to – the final index of the range to be copied, exclusive. (This index may lie outside the array.)
+
+            @return a new entity containing the specified range from the original array, truncated or padded with zeros
+            to obtain the required length
+        */
+
+        byte[] bArray =  new byte[]{1, 2, 3, 4, 5, 6};
+
+        assertEquals(bArray.length, fun.apply(slicer.apply(bArray, 0, 6), 0, 6).length);
+        assertNotSame(bArray, fun.apply(slicer.apply(bArray, 0, 6), 0, 6));
+
+        assertArrayEquals(new byte[]{3, 4, 5}, fun.apply(slicer.apply(bArray, 0, 6), 2, 5));
+        assertArrayEquals(new byte[]{3, 4}, fun.apply(slicer.apply(bArray, 1, 5), 1, 3));
+        assertArrayEquals(new byte[]{3, 4, 5, 0, 0, 0, 0}, fun.apply(slicer.apply(bArray, 1, 5), 1, 8));
+        assertArrayEquals(new byte[]{}, fun.apply(slicer.apply(bArray, 1, 5), 4, 4));
+
+        assertThrows(IllegalArgumentException.class, () -> fun.apply(slicer.apply(bArray, 1, 5), 1, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(slicer.apply(bArray, 1, 5), -1, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> fun.apply(slicer.apply(bArray, 1, 5), 5, 5));
     }
 }

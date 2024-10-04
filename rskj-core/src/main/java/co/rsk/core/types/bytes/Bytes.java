@@ -23,7 +23,6 @@ import org.ethereum.util.FastByteComparisons;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -140,8 +139,8 @@ class BytesImpl implements Bytes {
     }
 
     @Override
-    public byte[] copyArrayOfRange(int from, int to) {
-        return Arrays.copyOfRange(byteArray, from, to);
+    public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
+        System.arraycopy(byteArray, srcPos, dest, destPos, length);
     }
 
     @Override
