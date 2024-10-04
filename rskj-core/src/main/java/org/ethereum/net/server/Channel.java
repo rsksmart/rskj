@@ -213,7 +213,8 @@ public class Channel implements Peer {
     }
 
     public void sendMessage(Message message) {
-        eth.sendMessage(new RskMessage(message));
+        int version = 1; // TODO get from constant, config, whatever
+        eth.sendMessage(new RskMessage(version, message));
     }
 
     @Override
