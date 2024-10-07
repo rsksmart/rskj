@@ -536,6 +536,29 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getProposedFederationSize_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationSize = bridgeSupport.getProposedFederationSize();
+
+            // Assert
+            assertFalse(actualProposedFederationSize.isPresent());
+        }
+
+        @Test
+        void getProposedFederationSize_whenProposedFederationExists_shouldReturnSize() {
+            // Arrange
+            var expectedSize = federation.getSize();
+            when(federationSupport.getProposedFederationSize()).thenReturn(Optional.of(expectedSize));
+
+            // Act
+            var actualProposedFederationSize = bridgeSupport.getProposedFederationSize();
+
+            // Assert
+            assertTrue(actualProposedFederationSize.isPresent());
+            assertEquals(expectedSize, actualProposedFederationSize.get());
+        }
+
+        @Test
         void getProposedFederationCreationTime_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
             // Act
             var actualProposedFederationCreationTime = bridgeSupport.getProposedFederationCreationTime();
