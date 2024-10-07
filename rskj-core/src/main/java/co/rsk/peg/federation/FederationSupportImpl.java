@@ -374,18 +374,6 @@ public class FederationSupportImpl implements FederationSupport {
             .map(members -> getFederationMemberPublicKeyOfType(members, index, keyType, "Proposed Federator"));
     }
 
-    /**
-     * Retrieves the Bitcoin address of the proposed federation, if it exists.
-     *
-     * <p>
-     * This method checks if there is a proposed federation available and 
-     * returns its associated Bitcoin address. The proposed federation is typically 
-     * a federation that is awaiting approval or activation.
-     * </p>
-     * 
-     * @return an {@link Optional} containing the Bitcoin {@link Address} of the proposed federation,
-     *         or an empty {@link Optional} if no proposed federation is available.
-     */
     @Override
     public Optional<Address> getProposedFederationAddress() {
         return getProposedFederation()
@@ -404,18 +392,6 @@ public class FederationSupportImpl implements FederationSupport {
             .map(Federation::getSize);
     }
 
-    /**
-     * Retrieves the creation time of the proposed federation, if available.
-     *
-     * <p>
-     * This method checks if a proposed federation exists and, if present,
-     * returns the time at which it was created. The proposed federation is
-     * typically one that is awaiting approval or activation.
-     * </p>
-     *
-     * @return an {@link Optional} containing the {@link Instant} of the proposed federation's creation,
-     *         or an empty {@link Optional} if no proposed federation exists.
-     */
     @Override
     public Optional<Instant> getProposedFederationCreationTime() {
         return getProposedFederation()
