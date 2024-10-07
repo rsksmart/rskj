@@ -1061,6 +1061,26 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             .orElse("");
     }
 
+    /**
+     * Retrieves the creation time of the proposed federation in milliseconds since the epoch.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and returns its creation time in
+     * milliseconds since the Unix epoch. If no proposed federation exists, it returns -1.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the creation time of the proposed federation in milliseconds since the epoch,
+     *         or -1 if no proposed federation exists.
+     */
+    public Long getProposedFederationCreationTime(Object[] args) {
+        logger.trace("getProposedFederationCreationTime");
+        
+        return bridgeSupport.getProposedFederationCreationTime()
+            .map(Instant::toEpochMilli)
+            .orElse(-1L);
+    }
+
     public Integer getLockWhitelistSize(Object[] args) {
         logger.trace("getLockWhitelistSize");
 

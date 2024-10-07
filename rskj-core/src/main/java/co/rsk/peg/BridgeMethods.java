@@ -466,6 +466,18 @@ public enum BridgeMethods {
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
+    GET_PROPOSED_FEDERATION_CREATION_TIME(
+        CallTransaction.Function.fromSignature(
+                "getProposedFederationCreationTime",
+                new String[]{},
+                new String[]{ "int256" }
+        ),
+        fixedCost(3000L),
+        (BridgeMethodExecutorTyped<Long>) Bridge::getProposedFederationCreationTime,
+        activations -> activations.isActive(RSKIP419),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(
         CallTransaction.Function.fromSignature(
                 "getStateForBtcReleaseClient",

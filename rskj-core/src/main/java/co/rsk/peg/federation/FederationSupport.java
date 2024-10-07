@@ -47,10 +47,40 @@ public interface FederationSupport {
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     Optional<Federation> getProposedFederation();
+
+    /**
+     * Retrieves the Bitcoin address of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method checks if there is a proposed federation available and 
+     * returns its associated Bitcoin address. The proposed federation is typically 
+     * a federation that is awaiting approval or activation.
+     * </p>
+     * 
+     * @return an {@link Optional} containing the Bitcoin {@link Address} of the proposed federation,
+     *         or an empty {@link Optional} if no proposed federation is available.
+     */
     Optional<Address> getProposedFederationAddress();
+
     Optional<Integer> getProposedFederationSize();
+
+    /**
+     * Retrieves the creation time of the proposed federation, if available.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and, if present,
+     * returns the time at which it was created. The proposed federation is
+     * typically one that is awaiting approval or activation.
+     * </p>
+     *
+     * @return an {@link Optional} containing the {@link Instant} of the
+     *         proposed federation's creation, or an empty {@link Optional}
+     *         if no proposed federation exists.
+     */
     Optional<Instant> getProposedFederationCreationTime();
+
     Optional<Long> getProposedFederationCreationBlockNumber();
+
     Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     int voteFederationChange(
