@@ -2276,6 +2276,10 @@ public class BridgeSupport {
         return federationSupport.getProposedFederationCreationTime();
     }
 
+    public Optional<Long> getProposedFederationCreationBlockNumber() {
+        return federationSupport.getProposedFederationCreationBlockNumber();
+    }
+
     public Integer getLockWhitelistSize() {
         return whitelistSupport.getLockWhitelistSize();
     }
