@@ -2251,6 +2251,10 @@ public class BridgeSupport {
         return federationSupport.getProposedFederationAddress();
     }
 
+    public Optional<Integer> getProposedFederationSize() {
+        return federationSupport.getProposedFederationSize();
+    }
+
     public Optional<Instant> getProposedFederationCreationTime() {
         return federationSupport.getProposedFederationCreationTime();
     }

@@ -62,6 +62,18 @@ public interface FederationSupport {
      */
     Optional<Address> getProposedFederationAddress();
 
+    /**
+     * Retrieves the size of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method checks if a proposed federation is available and returns the number of members
+     * in the proposed federation. If no proposed federation exists, it returns an empty {@link Optional}.
+     * </p>
+     *
+     * @return an {@link Optional} containing the size of the proposed federation
+     *         (i.e., the number of members), or an empty {@link Optional} if no
+     *         proposed federation is available.
+     */
     Optional<Integer> getProposedFederationSize();
 
     /**
