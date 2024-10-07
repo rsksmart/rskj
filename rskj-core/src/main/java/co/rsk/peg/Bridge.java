@@ -1063,6 +1063,26 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     /**
+     * Retrieves the size of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method returns the number of members in the proposed federation. If no proposed federation exists,
+     * it returns a default response code {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT} that indicates
+     * the federation does not exist.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the size of the proposed federation (number of members), or the default code from
+     *         {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT} if no proposed federation is available.
+     */
+    public int getProposedFederationSize(Object[] args) {
+        logger.trace("getProposedFederationSize");
+
+        return bridgeSupport.getProposedFederationSize()
+            .orElse(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
+
+    /**
      * Retrieves the creation time of the proposed federation in milliseconds since the epoch.
      *
      * <p>
