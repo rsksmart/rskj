@@ -33,6 +33,7 @@ import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -1075,10 +1076,31 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
      */
     public Long getProposedFederationCreationTime(Object[] args) {
         logger.trace("getProposedFederationCreationTime");
-        
+
         return bridgeSupport.getProposedFederationCreationTime()
             .map(Instant::toEpochMilli)
             .orElse(-1L);
+    }
+
+    /**
+     * Retrieves the block number of the proposed federation's creation.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and returns the block number at which it was created.
+     * If no proposed federation exists, it returns the default code defined in
+     * {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT}.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the block number of the proposed federation's creation, or
+     *         the code from {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT}
+     *         if no proposed federation exists.
+     */
+    public long getProposedFederationCreationBlockNumber(Object[] args) {
+        logger.trace("getProposedFederationCreationBlockNumber");
+
+        return bridgeSupport.getProposedFederationCreationBlockNumber()
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
     }
 
     public Integer getLockWhitelistSize(Object[] args) {
