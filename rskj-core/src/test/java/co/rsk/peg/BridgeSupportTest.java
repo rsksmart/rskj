@@ -536,6 +536,29 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getProposedFederationCreationTime_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationCreationTime = bridgeSupport.getProposedFederationCreationTime();
+
+            // Assert
+            assertFalse(actualProposedFederationCreationTime.isPresent());
+        }
+
+        @Test
+        void getProposedFederationCreationTime_whenProposedFederationExists_shouldReturnCreationTime() {
+            // Arrange
+            var expectedCreationTime = federation.getCreationTime();
+            when(federationSupport.getProposedFederationCreationTime()).thenReturn(Optional.of(expectedCreationTime));
+
+            // Act
+            var actualProposedFederationCreationTime = bridgeSupport.getProposedFederationCreationTime();
+
+            // Assert
+            assertTrue(actualProposedFederationCreationTime.isPresent());
+            assertEquals(expectedCreationTime, actualProposedFederationCreationTime.get());
+        }
+
+        @Test
         void voteFederationChange() {
             Transaction tx = mock(Transaction.class);
             ABICallSpec callSpec = mock(ABICallSpec.class);
