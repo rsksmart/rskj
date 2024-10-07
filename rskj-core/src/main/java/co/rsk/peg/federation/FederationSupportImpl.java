@@ -404,6 +404,18 @@ public class FederationSupportImpl implements FederationSupport {
             .map(Federation::getSize);
     }
 
+    /**
+     * Retrieves the creation time of the proposed federation, if available.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and, if present,
+     * returns the time at which it was created. The proposed federation is
+     * typically one that is awaiting approval or activation.
+     * </p>
+     *
+     * @return an {@link Optional} containing the {@link Instant} of the proposed federation's creation,
+     *         or an empty {@link Optional} if no proposed federation exists.
+     */
     @Override
     public Optional<Instant> getProposedFederationCreationTime() {
         return getProposedFederation()
