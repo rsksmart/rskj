@@ -2268,6 +2268,40 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
+    void getProposedFederationSize(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Integer expectedSize = 9;
+        when(bridgeSupportMock.getProposedFederationSize()).thenReturn(Optional.of(expectedSize));
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATION_SIZE.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederationSize();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
     void getProposedFederationCreationTime(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
