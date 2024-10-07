@@ -559,6 +559,29 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getProposedFederationCreationBlockNumber_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationCreationBlockNumber = bridgeSupport.getProposedFederationCreationBlockNumber();
+
+            // Assert
+            assertFalse(actualProposedFederationCreationBlockNumber.isPresent());
+        }
+
+        @Test
+        void getProposedFederationCreationBlockNumber_whenProposedFederationExists_shouldReturnCreationBlockNumber() {
+            // Arrange
+            var expectedCreationBlockNumber = federation.getCreationBlockNumber();
+            when(federationSupport.getProposedFederationCreationBlockNumber()).thenReturn(Optional.of(expectedCreationBlockNumber));
+
+            // Act
+            var actualProposedFederationCreationBlockNumber = bridgeSupport.getProposedFederationCreationBlockNumber();
+
+            // Assert
+            assertTrue(actualProposedFederationCreationBlockNumber.isPresent());
+            assertEquals(expectedCreationBlockNumber, actualProposedFederationCreationBlockNumber.get());
+        }
+
+        @Test
         void voteFederationChange() {
             Transaction tx = mock(Transaction.class);
             ABICallSpec callSpec = mock(ABICallSpec.class);
