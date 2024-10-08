@@ -81,6 +81,7 @@ import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -535,6 +536,50 @@ class BridgeSupportTest {
             assertEquals(expectedAddress, actualProposedFederationAddress.get());
         }
 
+        @ParameterizedTest
+        @EnumSource(FederationMember.KeyType.class)
+        void getProposedFederatorPublicKeyOfType_whenBridgeSupportReturnsEmpty_shouldReturnEmpty(FederationMember.KeyType keyType) {
+            // Arrange
+            var index = 1;
+
+            // Act
+            var actualProposedFederatorPublicKey = bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType);
+
+            // Assert
+            assertFalse(actualProposedFederatorPublicKey.isPresent());
+        }
+
+        @ParameterizedTest
+        @EnumSource(FederationMember.KeyType.class)
+        void getProposedFederatorPublicKeyOfType_whenProposedFederationExists_shouldReturnAddress(FederationMember.KeyType keyType) {
+            var index = 0;
+            var member = federation.getMembers().get(index);
+            
+            // Set up public keys based on the keyType
+            byte[] expectedPublicKey;
+            switch (keyType) {
+                case BTC:
+                    expectedPublicKey = member.getBtcPublicKey().getPubKey();
+                    when(federationSupport.getProposedFederatorPublicKeyOfType(index, FederationMember.KeyType.BTC))
+                        .thenReturn(Optional.of(expectedPublicKey));
+                    break;
+                case RSK:
+                    expectedPublicKey = member.getRskPublicKey().getPubKey();
+                    when(federationSupport.getProposedFederatorPublicKeyOfType(index, FederationMember.KeyType.RSK))
+                        .thenReturn(Optional.of(expectedPublicKey));
+                    break;
+                case MST:
+                    expectedPublicKey = member.getMstPublicKey().getPubKey();
+                    when(federationSupport.getProposedFederatorPublicKeyOfType(index, FederationMember.KeyType.MST))
+                        .thenReturn(Optional.of(expectedPublicKey));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown KeyType");
+            }
+
+            assertArrayEquals(expectedPublicKey, bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType).get());
+        }
+
         @Test
         void getProposedFederationSize_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
             // Act
@@ -602,6 +647,19 @@ class BridgeSupportTest {
             // Assert
             assertTrue(actualProposedFederationCreationBlockNumber.isPresent());
             assertEquals(expectedCreationBlockNumber, actualProposedFederationCreationBlockNumber.get());
+        }
+
+        @Test
+        void getProposedFederatorPublicKeyOfType_whenIndexOutOfBoundsForMemberList_shouldThrowException() {
+            // Arrange
+            var index = 1;
+            var keyType = FederationMember.KeyType.BTC;
+            when(federationSupport.getProposedFederatorPublicKeyOfType(index, keyType))
+                .thenThrow(new IndexOutOfBoundsException());
+
+            // Act & Assert
+            assertThrows(IndexOutOfBoundsException.class,
+                () -> bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType));
         }
 
         @Test
