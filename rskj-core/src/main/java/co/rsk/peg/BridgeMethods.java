@@ -502,6 +502,18 @@ public enum BridgeMethods {
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
+    GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+        CallTransaction.Function.fromSignature(
+                "getProposedFederatorPublicKeyOfType",
+                new String[]{ "int256", "string" },
+                new String[]{ "bytes" }
+        ),
+        fixedCost(3000L),
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getProposedFederatorPublicKeyOfType,
+        activations -> activations.isActive(RSKIP419),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(
         CallTransaction.Function.fromSignature(
             "getStateForBtcReleaseClient",

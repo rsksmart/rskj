@@ -1123,6 +1123,43 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
     }
 
+    /**
+     * Retrieves the public key of the proposed federator at the specified index and key type.
+     *
+     * <p>
+     * This method extracts the index and key type from the provided arguments, retrieves the
+     * public key of the proposed federator, and returns it. If no public key is found, an empty byte
+     * array is returned.
+     * </p>
+     *
+     * <p>
+     * The first argument in the {@code args} array is expected to be a {@link BigInteger} representing
+     * the federator's index. The second argument is expected to be a {@link String} representing
+     * the key type, which is converted into a {@link FederationMember.KeyType}.
+     * </p>
+     *
+     * @param args an array of arguments, where {@code args[0]} is a {@link BigInteger} for the federator's index,
+     *             and {@code args[1]} is a {@link String} for the key type.
+     * @return a byte array containing the federator's public key, or an empty byte array if not found.
+     * @throws VMException if an error occurs while processing the key type.
+     */
+    public byte[] getProposedFederatorPublicKeyOfType(Object[] args) throws VMException {
+        logger.trace("getProposedFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getProposedFederatorPublicKeyOfType", e);
+            throw new VMException("Exception in getProposedFederatorPublicKeyOfType", e);
+        }
+
+        return bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType)
+            .orElse(new byte[]{});
+    }
+
     public Integer getLockWhitelistSize(Object[] args) {
         logger.trace("getLockWhitelistSize");
 
