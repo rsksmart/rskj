@@ -2370,6 +2370,39 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
+    void getProposedFederatorPublicKeyOfType(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        int federatorIndex = 1;
+        KeyType keyType = KeyType.BTC;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+        byte[] data = function.encode(federatorIndex, keyType.getValue());
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederatorPublicKeyOfType(federatorIndex, keyType);
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
     void getStateForBtcReleaseClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
