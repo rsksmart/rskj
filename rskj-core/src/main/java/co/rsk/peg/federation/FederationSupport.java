@@ -52,11 +52,11 @@ public interface FederationSupport {
      * Retrieves the Bitcoin address of the proposed federation, if it exists.
      *
      * <p>
-     * This method checks if there is a proposed federation available and 
-     * returns its associated Bitcoin address. The proposed federation is typically 
+     * This method checks if there is a proposed federation available and
+     * returns its associated Bitcoin address. The proposed federation is typically
      * a federation that is awaiting approval or activation.
      * </p>
-     * 
+     *
      * @return an {@link Optional} containing the Bitcoin {@link Address} of the proposed federation,
      *         or an empty {@link Optional} if no proposed federation is available.
      */
@@ -79,6 +79,19 @@ public interface FederationSupport {
      */
     Optional<Instant> getProposedFederationCreationTime();
 
+    /**
+     * Retrieves the block number at which the proposed federation was created, if available.
+     *
+     * <p>
+     * This method checks if there is a proposed federation and, if present,
+     * returns the block number during which it was created. The proposed federation
+     * is typically a federation awaiting approval or activation.
+     * </p>
+     *
+     * @return an {@link Optional} containing the block number of the proposed
+     *         federation's creation, or an empty {@link Optional} if no proposed
+     *         federation exists.
+     */
     Optional<Long> getProposedFederationCreationBlockNumber();
 
     Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
