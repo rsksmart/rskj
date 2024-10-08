@@ -651,6 +651,19 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getProposedFederatorPublicKeyOfType_whenIndexOutOfBoundsForMemberList_shouldThrowException() {
+            // Arrange
+            var index = 1;
+            var keyType = FederationMember.KeyType.BTC;
+            when(federationSupport.getProposedFederatorPublicKeyOfType(index, keyType))
+                .thenThrow(new IndexOutOfBoundsException());
+
+            // Act & Assert
+            assertThrows(IndexOutOfBoundsException.class,
+                () -> bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType));
+        }
+
+        @Test
         void voteFederationChange() {
             Transaction tx = mock(Transaction.class);
             ABICallSpec callSpec = mock(ABICallSpec.class);
