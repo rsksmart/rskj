@@ -2284,6 +2284,10 @@ public class BridgeSupport {
         return federationSupport.getProposedFederationCreationBlockNumber();
     }
 
+    public Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        return federationSupport.getProposedFederatorPublicKeyOfType(index, keyType);
+    }
+
     public Integer getLockWhitelistSize() {
         return whitelistSupport.getLockWhitelistSize();
     }
