@@ -1794,7 +1794,8 @@ public class BridgeSupport {
 
             try {
                 int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorBtcPublicKey);
-                inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex, 1, 1);
+                Script outputScript = ScriptBuilder.createP2SHOutputScript(getRedeemScriptFromP2SHInputScript(inputScript));
+                inputScript = outputScript.getScriptSigWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex);
                 input.setScriptSig(inputScript);
                 logger.debug("Tx input {} for tx {} signed.", i, rskTxHash);
                 signed = true;
