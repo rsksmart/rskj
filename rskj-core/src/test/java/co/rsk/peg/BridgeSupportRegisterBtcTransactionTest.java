@@ -1,12 +1,11 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.*;
 import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -48,14 +47,13 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportRegisterBtcTransactionTest {
+    private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final FederationConstants federationMainnetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
@@ -532,7 +530,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
     private BridgeSupport buildBridgeSupport(ActivationConfig.ForBlock activations) {
         Repository repository = mock(Repository.class);
-        when(repository.getBalance(PrecompiledContracts.BRIDGE_ADDR)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
+        when(repository.getBalance(bridgeContractAddress)).thenReturn(co.rsk.core.Coin.fromBitcoin(bridgeMainnetConstants.getMaxRbtc()));
         LockingCapSupport lockingCapSupport =  mock(LockingCapSupport.class);
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(bridgeMainnetConstants.getMaxRbtc()));
 
@@ -1148,7 +1146,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptForRsk(
                 1,
-                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeContractAddress,
                 Optional.empty()
             )
         );
@@ -1192,7 +1190,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptForRsk(
                 1,
-                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeContractAddress,
                 Optional.empty()
             )
         );
@@ -1200,7 +1198,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptForRsk(
                 1,
-                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeContractAddress,
                 Optional.empty()
             )
         );
@@ -1244,7 +1242,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptForRsk(
                 2,
-                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeContractAddress,
                 Optional.empty()
             )
         );
@@ -1287,7 +1285,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptWithInvalidPrefix(
                 1,
-                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeContractAddress,
                 Optional.empty()
             )
         );
@@ -1330,7 +1328,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             Coin.ZERO,
             PegTestUtils.createOpReturnScriptForRsk(
                 1,
-                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeContractAddress,
                 Optional.empty()
             )
         );

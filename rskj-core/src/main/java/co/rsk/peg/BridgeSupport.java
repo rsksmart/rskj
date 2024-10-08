@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.PegUtils.getFlyoverAddress;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -67,6 +68,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -405,6 +407,9 @@ public class BridgeSupport {
                 case PEGOUT_OR_MIGRATION:
                     logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx);
+                    if (svpIsOngoing()) {
+                        updateSvpFundTransactionValuesIfPossible(btcTx);
+                    }
                     break;
                 default:
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
@@ -419,6 +424,32 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
+    }
+
+    private void updateSvpFundTransactionValuesIfPossible(BtcTransaction transaction) {
+        provider.getSvpFundTxHashUnsigned()
+            .filter(svpFundTxHashUnsigned -> isTheSvpFundTransaction(svpFundTxHashUnsigned, transaction))
+            .ifPresent(isTheSvpFundTransaction -> updateSvpFundTransactionValues(transaction));
+    }
+
+    private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
+        Sha256Hash transactionHash = transaction.getHash();
+
+        if (!transaction.hasWitness()) {
+            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
+            transactionHash = transactionCopyWithoutSignatures.getHash();
+        }
+        return transactionHash.equals(svpFundTransactionHashUnsigned);
+    }
+
+    private void updateSvpFundTransactionValues(BtcTransaction transaction) {
+        logger.debug(
+            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
+        );
+
+        provider.setSvpFundTxSigned(transaction);
+        provider.setSvpFundTxHashUnsigned(null);
     }
 
     private Script getLastRetiredFederationP2SHScript() {
@@ -957,6 +988,19 @@ public class BridgeSupport {
         updateFederationCreationBlockHeights();
     }
 
+    private boolean svpIsOngoing() {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+
+        if (!proposedFederationOpt.isPresent()) {
+            return false;
+        }
+        Federation proposedFederation = proposedFederationOpt.get();
+
+        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
+            + bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
+        return rskExecutionBlock.getNumber() <= validationPeriodEndBlock;
+    }
+
     protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (!proposedFederationOpt.isPresent()) {
@@ -977,13 +1021,14 @@ public class BridgeSupport {
     private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
 
-        BtcTransaction svpFundTransaction = new BtcTransaction(bridgeConstants.getBtcParams());
+        BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
         svpFundTransaction.setVersion(BTC_TX_VERSION_2);
 
         // add outputs to proposed fed and proposed fed with flyover prefix
         svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
 
-        Address proposedFederationWithFlyoverPrefixAddress = getProposedFederationWithFlyoverPrefixAddress(proposedFederation.getRedeemScript());
+        Address proposedFederationWithFlyoverPrefixAddress =
+            getFlyoverAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
         svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
@@ -991,16 +1036,6 @@ public class BridgeSupport {
         activeFederationWallet.completeTx(sendRequest);
 
         return svpFundTransaction;
-    }
-
-    private Address getProposedFederationWithFlyoverPrefixAddress(Script federationRedeemScript) {
-        Script federationWithFlyoverPrefixRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
-            bridgeConstants.getProposedFederationFlyoverPrefix(),
-            federationRedeemScript
-        );
-        Script federationWithFlyoverPrefixP2SHScript = ScriptBuilder.createP2SHOutputScript(federationWithFlyoverPrefixRedeemScript);
-
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), federationWithFlyoverPrefixP2SHScript);
     }
 
     private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
@@ -1652,7 +1687,24 @@ public class BridgeSupport {
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
         StateForFederator stateForFederator = new StateForFederator(provider.getPegoutsWaitingForSignatures());
-        return stateForFederator.getEncoded();
+        return stateForFederator.encodeToRlp();
+    }
+
+   /**
+     * Retrieves the current SVP spend transaction state for the SVP client.
+     * <p>
+     * This method checks if there is an SVP spend transaction waiting for signatures, and if so, it serializes 
+     * the state into RLP format. If no transaction is waiting, it returns an encoded empty RLP list.
+     * </p>
+     *
+     * @return A byte array representing the RLP-encoded state of the SVP spend transaction. If no transaction 
+     *         is waiting, returns an RLP-encoded empty list.
+     */
+    public byte[] getStateForSvpClient() {
+        return provider.getSvpSpendTxWaitingForSignatures()
+            .map(StateForProposedFederator::new)
+            .map(StateForProposedFederator::encodeToRlp)
+            .orElse(RLP.encodedEmptyList());
     }
 
     /**

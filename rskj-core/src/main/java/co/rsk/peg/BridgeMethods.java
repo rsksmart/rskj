@@ -465,6 +465,18 @@ public enum BridgeMethods {
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
+    GET_STATE_FOR_SVP_CLIENT(
+        CallTransaction.Function.fromSignature(
+                "getStateForSvpClient",
+                new String[]{},
+                new String[]{"bytes"}
+        ),
+        fixedCost(4000L), // TODO: check fixed cost value
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForSvpClient,
+        activations -> activations.isActive(RSKIP419),
+        fixedPermission(true),
+        CallTypeHelper.ALLOW_STATIC_CALL
+    ),
     GET_STATE_FOR_DEBUGGING(
         CallTransaction.Function.fromSignature(
                 "getStateForDebugging",
