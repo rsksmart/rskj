@@ -1579,26 +1579,28 @@ public class BridgeSupport {
         Context.propagate(btcContext);
 
         Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
-        int signaturesSize = signatures.size();
 
-        BtcTransaction btcTx = provider.getPegoutsWaitingForSignatures().get(rskTxHash);
-        if (btcTx == null) {
+        BtcTransaction releaseTx = provider.getPegoutsWaitingForSignatures().get(rskTxHash);
+        if (releaseTx == null) {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", rskTxHash);
             return;
         }
-        if (notEnoughSignatures(btcTx.getInputs().size(), signaturesSize)) {
+        if (!enoughSignatures(releaseTx, signatures)) {
             return;
         }
 
-        addReleaseSignatures(federatorBtcPublicKey, signatures, rskTxHashSerialized, btcTx);
+        addReleaseSignatures(federatorBtcPublicKey, signatures, rskTxHashSerialized, releaseTx);
     }
 
-    private boolean notEnoughSignatures(int inputsSize, int signaturesSize) {
+    private boolean enoughSignatures(BtcTransaction releaseTx, List<byte[]> signatures) {
+        int inputsSize = releaseTx.getInputs().size();
+        int signaturesSize = signatures.size();
+
         if (inputsSize != signaturesSize) {
             logger.warn("Expected {} signatures but received {}.", inputsSize, signaturesSize);
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     private void addReleaseSignatures(
@@ -1635,9 +1637,7 @@ public class BridgeSupport {
 
         Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
         if (!BridgeUtils.hasEnoughSignatures(btcContext, btcTx) && logger.isDebugEnabled()) {
-            int neededSignatures = federation.getNumberOfSignaturesRequired();
-            logMissingSignatures(btcTx, rskTxHash, neededSignatures, federation.getSize());
-
+            logMissingSignatures(btcTx, rskTxHash, federation);
             return;
         }
 
@@ -1659,12 +1659,13 @@ public class BridgeSupport {
         return Optional.empty();
     }
 
-    private void logMissingSignatures(BtcTransaction btcTx, Keccak256 rskTxHash, int neededSignatures, int federationSize) {
+    private void logMissingSignatures(BtcTransaction btcTx, Keccak256 rskTxHash, Federation federation) {
         int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
+        int neededSignatures = federation.getNumberOfSignaturesRequired();
         int signaturesCount = neededSignatures - missingSignatures;
 
         logger.debug("Tx {} not yet fully signed. Requires {}/{} signatures but has {}",
-            rskTxHash, neededSignatures, federationSize, signaturesCount);
+            rskTxHash, neededSignatures, federation.getSize(), signaturesCount);
     }
 
     private void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHashSerialized) {
@@ -1703,20 +1704,20 @@ public class BridgeSupport {
         }
     }
 
-    private List<TransactionSignature> getTransactionSignatures(BtcECKey federatorBtcPublicKey, List<Sha256Hash> sighash, List<byte[]> signatures) throws SignatureException {
+    private List<TransactionSignature> getTransactionSignatures(BtcECKey federatorBtcPublicKey, List<Sha256Hash> sigHashes, List<byte[]> signatures) throws SignatureException {
         List<BtcECKey.ECDSASignature> decodedSignatures = getDecodedSignatures(signatures);
         List<TransactionSignature> txSigs = new ArrayList<>();
 
         for (int i = 0; i < decodedSignatures.size(); i++) {
             BtcECKey.ECDSASignature decodedSignature = decodedSignatures.get(i);
-            Sha256Hash sigHash = sighash.get(i);
+            Sha256Hash sigHash = sigHashes.get(i);
 
             if (!federatorBtcPublicKey.verify(sigHash, decodedSignature)) {
                 logger.warn(
                     "Signature {} {} is not valid for hash {} and public key {}",
                     i,
                     Bytes.of(decodedSignature.encodeToDER()),
-                    sighash,
+                    sigHashes,
                     federatorBtcPublicKey
                 );
                 throw new SignatureException();
@@ -1781,7 +1782,7 @@ public class BridgeSupport {
                 } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorBtcPublicKey)) {
                     logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
                 }
-                throw e;
+                return false;
             }
         }
 
