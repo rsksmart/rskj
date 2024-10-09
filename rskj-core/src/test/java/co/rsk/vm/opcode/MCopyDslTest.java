@@ -358,4 +358,60 @@ public class MCopyDslTest {
 
     }
 
+    // Full Memory Copy/Rewrite/Clean Tests
+
+    @Test
+    void testMCOPY_fullMemoryClean_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
+
+        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testFullMemoryClean.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // Assertions
+
+        // There's one block (b01) containing only 1 transaction
+        Block block1 = world.getBlockByName("b01");
+        Assertions.assertNotNull(block1);
+        Assertions.assertEquals(1, block1.getTransactionsList().size());
+
+        // There's a transaction called txTestMCopy
+        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
+        Assertions.assertNotNull(txTestMCopy);
+
+        // Transaction txTestMCopy has a transaction receipt
+        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
+        Assertions.assertNotNull(txTestMCopyReceipt);
+
+        // Transaction txTestMCopy has been processed correctly
+        byte[] creationStatus = txTestMCopyReceipt.getStatus();
+        Assertions.assertNotNull(creationStatus);
+        Assertions.assertEquals(1, creationStatus.length);
+        Assertions.assertEquals(1, creationStatus[0]);
+
+        // There's one block (b02) containing only 1 transaction
+        Block block2 = world.getBlockByName("b02");
+        Assertions.assertNotNull(block2);
+        Assertions.assertEquals(1, block2.getTransactionsList().size());
+
+        // There's a transaction called txTestMCopyOKCall
+        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
+        Assertions.assertNotNull(txTestMCopyOKCall);
+
+        // Transaction txTestMCopyOKCall has a transaction receipt
+        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
+        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
+
+        // Transaction txTestMCopyOKCall has been processed correctly
+        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
+        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
+        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
+        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+
+        // Check events
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
+        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
+
+    }
+
 }
