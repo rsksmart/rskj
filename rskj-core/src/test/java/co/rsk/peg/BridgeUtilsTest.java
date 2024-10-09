@@ -63,8 +63,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class BridgeUtilsTest {
@@ -2015,5 +2015,28 @@ class BridgeUtilsTest {
         );
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
+    }
+
+    @Test
+    void deserializeRskTxHash_() {
+        // arrange
+        Keccak256 expectedRskTxHash = RskTestUtils.createHash(1);
+        byte[] rskTxHashSerialized = expectedRskTxHash.getBytes();
+
+        // act
+        Keccak256 rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
+
+        // assert
+        assertEquals(expectedRskTxHash, rskTxHash);
+    }
+
+    @Test
+    void deserializeRskTxHash_withInvalidLength_throwsIllegalArgumentException() {
+        // arrange
+        byte[] rskTxHashSerialized = new byte[31];
+
+        // act & assert
+        assertThrows(IllegalArgumentException.class,
+            () -> deserializeRskTxHash(rskTxHashSerialized));
     }
 }
