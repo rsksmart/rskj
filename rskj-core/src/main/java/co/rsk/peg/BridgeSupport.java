@@ -1680,7 +1680,7 @@ public class BridgeSupport {
         // Build input hashes for signatures
         List<Sha256Hash> sigHashes = new ArrayList<>();
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
-            Sha256Hash sigHash = generateSigHashForP2SHInput(btcTx, i);
+            Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(btcTx, i);
             sigHashes.add(sigHash);
         }
 
