@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
+
+contract TestMCopy {
+    constructor() {}
+
+    event OK();
+    event ERROR();
+
+    function checkMCopy() external {
+        if (testSingleWordPlusOneByteMemoryExtension()) {
+            emit OK();
+        } else {
+            emit ERROR();
+        }
+    }
+
+    function testSingleWordPlusOneByteMemoryExtension() public pure returns (bool status) {
+
+        bytes32 word1           = 0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f;
+        bytes32 word2           = 0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f;
+        bytes32 word3           = 0x404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f;
+        bytes32 word4           = 0x606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f;
+        bytes32 word5           = 0x808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f;
+        bytes32 word6           = 0xa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf;
+        bytes32 word7           = 0xc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf;
+        bytes32 word8           = 0xe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff;
+
+        bytes32 secondLastValue = 0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20;
+        bytes32 lastValue       = 0x2100000000000000000000000000000000000000000000000000000000000000;
+
+        uint memSizeBefore;
+        uint memSizeAfter;
+
+        assembly {
+
+            mstore(0,   word1)
+            mstore(32,  word2)
+            mstore(64,  word3)
+            mstore(96,  word4)
+            mstore(128, word5)
+            mstore(160, word6)
+            mstore(192, word7)
+            mstore(224, word8) // ... Initialize Memory
+
+            memSizeBefore := msize() // Get memory size before the changes
+            mcopy(256, 1, 33)        // Use MCOPY to copy 33 bytes starting from offset 1 to offset 256 in memory
+            memSizeAfter := msize()  // Get memory size after the changes
+
+            status := eq(mload(0), word1)
+            status := and(status, eq(mload(32),  word2))
+            status := and(status, eq(mload(64),  word3))
+            status := and(status, eq(mload(96),  word4))
+            status := and(status, eq(mload(128), word5))
+            status := and(status, eq(mload(160), word6))
+            status := and(status, eq(mload(192), word7))
+            status := and(status, eq(mload(224), word8)) // ... Old memory stays as it was
+
+            status := and(status, eq(mload(256), secondLastValue)) // Second-last word will contain the last 31 bytes from the first word, plus the first byte of the second word
+
+            status := and(status, eq(mload(288), lastValue)) // Last word will contain the second byte from the second word, and the rest will be all 0s
+
+        }
+
+        status = status && memSizeBefore == 256 && memSizeAfter == 320; // New memory size is the initial size plus 64 additional bytes
+
+    }
+
+}
