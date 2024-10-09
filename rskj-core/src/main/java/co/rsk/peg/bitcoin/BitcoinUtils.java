@@ -106,7 +106,7 @@ public class BitcoinUtils {
             .findFirst();
     }
 
-    public static Sha256Hash generateSigHashForP2SHInput(BtcTransaction btcTx, int inputIndex) {
+    public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
         return Optional.ofNullable(btcTx.getInput(inputIndex))
             .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
             .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
