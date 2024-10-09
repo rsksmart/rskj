@@ -86,11 +86,11 @@ public interface HexPrintableBytes extends PrintableBytes {
      * @return the hexadecimal representation of the bytes in the range of {@code offset} and {@code length}.
      */
     default String toHexStringV2(int offset, int length) {
-        int endIndex = offset + length;
-        if (offset < 0 || length < 0 || endIndex > length()) {
+        if (offset < 0 || length < 0 || Long.sum(offset, length) > length()) {
             throw new IndexOutOfBoundsException("invalid 'offset' and/or 'length': " + offset + "; " + length);
         }
 
+        int endIndex = offset + length;
         StringBuilder sb = new StringBuilder(length * 2);
         for (int i = offset; i < endIndex; i++) {
             byte b = byteAt(i);
@@ -106,7 +106,7 @@ class PrintableBytesHexFormatter implements PrintableBytes.Formatter<HexPrintabl
     @Override
     public String toFormattedString(@Nonnull HexPrintableBytes printableBytes, int off, int length) {
         int bytesLen = Objects.requireNonNull(printableBytes).length();
-        if (off + length > bytesLen) {
+        if (off < 0 || length < 0 || Long.sum(off, length) > bytesLen) {
             throw new IndexOutOfBoundsException("invalid 'off' and/or 'length': " + off + "; " + length);
         }
 

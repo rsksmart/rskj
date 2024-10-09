@@ -104,10 +104,10 @@ public interface BytesSlice extends HexPrintableBytes {
         if (from < 0 || from > length()) {
             throw new IndexOutOfBoundsException("invalid 'from': " + from);
         }
-        int newLength = to - from;
-        if (newLength < 0) {
+        if (to < from) {
             throw new IllegalArgumentException(from + " > " + to);
         }
+        int newLength = to - from;
         byte[] copy = new byte[newLength];
         arraycopy(from, copy, 0, Math.min(length() - from, newLength));
         return copy;

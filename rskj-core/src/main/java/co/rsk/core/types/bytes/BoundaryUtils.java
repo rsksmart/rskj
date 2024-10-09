@@ -26,10 +26,10 @@ public class BoundaryUtils {
         if (length < 0) {
             throw new IndexOutOfBoundsException("invalid 'length': " + length);
         }
-        if (srcPos < 0 || srcPos + length > srcLength) {
+        if (srcPos < 0 || Long.sum(srcPos, length) > srcLength) {
             throw new IndexOutOfBoundsException("invalid 'srcPos' and/or 'length': [" + srcPos + ";" + length + ")");
         }
-        if (destPos < 0 || destPos + length > dest.length) {
+        if (destPos < 0 || Long.sum(destPos, length) > dest.length) {
             throw new IndexOutOfBoundsException("invalid 'destPos' and/or 'length': [" + destPos + ";" + length + ")");
         }
     }
