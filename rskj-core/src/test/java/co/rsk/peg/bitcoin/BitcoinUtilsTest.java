@@ -508,6 +508,24 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void generateSigHashForP2SHInput_forEmptyInputScript_shouldThrowIllegalArgumentException() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+        int inputIndex = 0;
+
+        // act & assert
+        assertThrows(IllegalArgumentException.class,
+            () -> generateSigHashForP2SHTransactionInput(transaction, inputIndex));
+    }
+
+    @Test
     void searchForOutput_whenTheOutputIsThere_shouldReturnOutputSentToExpectedScript() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
