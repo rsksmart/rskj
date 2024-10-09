@@ -617,11 +617,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
             signatures.add(signatureByteArray);
         }
-        byte[] rskTxHash = (byte[]) args[2];
-        if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHash));
+        byte[] rskTxHashSerialized = (byte[]) args[2];
+        if (rskTxHashSerialized.length!=32) {
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHashSerialized));
         }
         try {
+            Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
         } catch (BridgeIllegalArgumentException e) {
             throw e;
