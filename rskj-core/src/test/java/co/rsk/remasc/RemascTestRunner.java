@@ -137,7 +137,6 @@ class RemascTestRunner {
                 builder.getConfig().getActivationConfig(), blockTxSignatureCache);
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, blockTxSignatureCache);
         BlockExecutor blockExecutor = new BlockExecutor(
-                builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
@@ -147,8 +146,9 @@ class RemascTestRunner {
                         programInvokeFactory,
                         precompiledContracts,
                         blockTxSignatureCache
-                )
-        );
+                ),
+                builder.getConfig());
+
         Random random = new Random(RemascTestRunner.class.hashCode());
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
@@ -282,7 +282,7 @@ class RemascTestRunner {
         );
     }
 
-    private static class HardcodedHashBlockHeader extends BlockHeader {
+    private static class HardcodedHashBlockHeader extends BlockHeaderV0 {
         private final Keccak256 blockHash;
 
         public HardcodedHashBlockHeader(
@@ -294,7 +294,7 @@ class RemascTestRunner {
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null, new byte[0],
-                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0]
+                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0], null
             );
             this.blockHash = blockHash;
         }

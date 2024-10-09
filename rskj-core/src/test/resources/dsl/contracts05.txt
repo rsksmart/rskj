@@ -10,6 +10,7 @@ transaction_build tx01
 
 block_build b01
     parent g00
+    gasLimit 7500000
     transactions tx01
     build
 

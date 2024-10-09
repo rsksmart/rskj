@@ -21,6 +21,7 @@ package co.rsk.config;
 import co.rsk.core.RskAddress;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.rpc.ModuleDescription;
+import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
@@ -31,7 +32,9 @@ import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.listener.GasPriceCalculator;
+import org.ethereum.vm.PrecompiledContracts;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -71,6 +74,10 @@ public class RskSystemProperties extends SystemProperties {
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
+
+    private Set<RskAddress> concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            PrecompiledContracts.REMASC_ADDR, PrecompiledContracts.BRIDGE_ADDR
+    )));
 
     private List<ModuleDescription> moduleDescriptions;
 
@@ -246,6 +253,15 @@ public class RskSystemProperties extends SystemProperties {
         return remascEnabled;
     }
 
+    public Set<RskAddress> concurrentContractsDisallowed() {
+        return concurrentContractsDisallowed;
+    }
+
+    @VisibleForTesting
+    public void setConcurrentContractsDisallowed(@Nonnull Set<RskAddress> disallowed) {
+        this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(disallowed));
+    }
+
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     public void setRemascEnabled(boolean remascEnabled) {
         this.remascEnabled = remascEnabled;
@@ -258,7 +274,7 @@ public class RskSystemProperties extends SystemProperties {
     public boolean usePeersFromLastSession() {
         return getBoolean(USE_PEERS_FROM_LAST_SESSION, false);
     }
-    
+
     public long peerDiscoveryMessageTimeOut() {
         return getLong("peer.discovery.msg.timeout", PD_DEFAULT_TIMEOUT_MESSAGE);
     }
