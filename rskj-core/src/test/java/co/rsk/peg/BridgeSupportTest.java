@@ -552,7 +552,7 @@ class BridgeSupportTest {
 
         @ParameterizedTest
         @EnumSource(FederationMember.KeyType.class)
-        void getProposedFederatorPublicKeyOfType_whenProposedFederationExists_shouldReturnAddress(FederationMember.KeyType keyType) {
+        void getProposedFederatorPublicKeyOfType_whenProposedFederationExists_shouldReturnExpectedPublicKey(FederationMember.KeyType keyType) {
             var index = 0;
             var member = federation.getMembers().get(index);
             
