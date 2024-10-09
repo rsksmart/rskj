@@ -25,8 +25,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Created by ajlopez on 08/01/2017.
@@ -188,7 +191,7 @@ class TrieStoreImplTest {
 
     @Test
     void retrieveTrieNotFound() {
-        Assertions.assertFalse(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }).isPresent());
+        Assertions.assertFalse(store.retrieve(new byte[]{0x01, 0x02, 0x03, 0x04}).isPresent());
     }
 
     @Test
@@ -238,5 +241,52 @@ class TrieStoreImplTest {
         store.retrieve(trie.getHash().getBytes());
 
         verify(map, times(1)).get(any());
+    }
+
+    @Test
+    void saveAndRetrieveTrieDTO() {
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
+
+        TrieDTO dto = TrieDTO.decodeFromMessage(trie.toMessage(), store);
+        store.saveDTO(dto);
+
+        verify(map, times(trie.trieSize())).put(any(), any());
+        verifyNoMoreInteractions(map);
+
+        Optional<TrieDTO> optStoredDto = store.retrieveDTO(trie.getHash().getBytes());
+        assertTrue(optStoredDto.isPresent());
+
+        TrieDTO storedDto = optStoredDto.get();
+        assertArrayEquals("bar".getBytes(), storedDto.getValue());
+    }
+
+    @Test
+    void saveAndRetrieveTrieDTOLongValue() {
+        byte[] longValue = TrieValueTest.makeValue(100);
+        Trie trie = new Trie(store).put("foo", longValue);
+        store.save(trie);
+        TrieDTO dto = TrieDTO.decodeFromMessage(trie.toMessage(), store);
+        store.saveDTO(dto);
+
+        verify(map, times(4)).put(any(), any());
+
+        Optional<TrieDTO> optStoredDto = store.retrieveDTO(trie.getHash().getBytes());
+        assertTrue(optStoredDto.isPresent());
+
+        TrieDTO storedDto = optStoredDto.get();
+        assertArrayEquals(longValue, storedDto.getValue());
+    }
+
+    @Test
+    void saveComposedTrieDtoWithLongValues() {
+        Trie trie = new Trie(store)
+                .put("foo", TrieValueTest.makeValue(100))
+                .put("bar", TrieValueTest.makeValue(200));
+        store.save(trie);
+        verify(map, times(trie.trieSize())).put(any(), any());
+
+        TrieDTO dto = TrieDTO.decodeFromMessage(trie.toMessage(), store, true, null);
+        store.saveDTO(dto);
+        verify(map, times(6)).put(any(), any());
     }
 }

@@ -23,10 +23,10 @@ import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.NewBlockHashesMessage;
-import java.time.Instant;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 

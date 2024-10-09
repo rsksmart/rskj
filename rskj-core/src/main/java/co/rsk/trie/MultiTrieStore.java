@@ -61,6 +61,11 @@ public class MultiTrieStore implements TrieStore {
         getCurrentStore().save(trie);
     }
 
+    @Override
+    public void saveDTO(TrieDTO trieDTO) {
+        getCurrentStore().saveDTO(trieDTO);
+    }
+
     /**
      * It's not enough to just flush the current one b/c it may occur, if the epoch size doesn't match the flush size,
      * that some epoch may never get flushed
@@ -82,6 +87,19 @@ public class MultiTrieStore implements TrieStore {
                 continue;
             }
             return Optional.of(Trie.fromMessage(message, this).markAsSaved());
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<TrieDTO> retrieveDTO(byte[] rootHash) {
+        for (TrieStore epochTrieStore : epochs) {
+            byte[] message = epochTrieStore.retrieveValue(rootHash);
+            if (message == null) {
+                continue;
+            }
+            return Optional.of(TrieDTO.decodeFromMessage(message, this));
         }
 
         return Optional.empty();

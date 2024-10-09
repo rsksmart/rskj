@@ -117,7 +117,6 @@ public class Stats {
     }
 
     private double priority(MessageType type) {
-
         switch (type) {
             case TRANSACTIONS:
                 return 2;
@@ -151,8 +150,21 @@ public class Stats {
                 return 0.5;
             case BLOCK_HEADERS_RESPONSE_MESSAGE:
                 return 5;
+            case SNAP_BLOCKS_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_BLOCKS_RESPONSE_MESSAGE:
+                return 3;
+            case SNAP_STATUS_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_STATUS_RESPONSE_MESSAGE:
+                return 3;
+            case SNAP_STATE_CHUNK_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_STATE_CHUNK_RESPONSE_MESSAGE:
+                return 3;
+            default:
+                return 0.0;
         }
-        return 0.0;
     }
     public synchronized void imported(boolean best) {
         if (best) {
