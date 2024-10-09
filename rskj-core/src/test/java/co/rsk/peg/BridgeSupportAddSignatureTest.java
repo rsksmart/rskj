@@ -137,7 +137,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             null,
-            createHash3(1).getBytes()
+            createHash3(1)
         );
 
         verify(provider, never()).getPegoutsWaitingForSignatures();
@@ -204,7 +204,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             null,
-            createHash3(1).getBytes()
+            createHash3(1)
         );
 
         verify(provider, never()).getPegoutsWaitingForSignatures();
@@ -271,7 +271,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa05")),
             null,
-            createHash3(1).getBytes()
+            createHash3(1)
         );
 
         verify(provider, never()).getPegoutsWaitingForSignatures();
@@ -293,7 +293,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             BtcECKey.fromPrivate(Hex.decode("fa03")),
             null,
-            createHash3(1).getBytes()
+            createHash3(1)
         );
 
         verify(provider, never()).getPegoutsWaitingForSignatures();
@@ -324,7 +324,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             genesisFederation.getBtcPublicKeys().get(0),
             null,
-            BitcoinTestUtils.createHash(1).getBytes()
+            createHash3(1)
         );
         bridgeSupport.save();
 
@@ -355,7 +355,7 @@ class BridgeSupportAddSignatureTest {
         bridgeSupport.addSignature(
             new BtcECKey(),
             null,
-            BitcoinTestUtils.createHash(1).getBytes()
+            createHash3(1)
         );
         bridgeSupport.save();
 
@@ -457,9 +457,9 @@ class BridgeSupportAddSignatureTest {
 
         BtcECKey federatorPubKey = REGTEST_FEDERATION_PUBLIC_KEYS.get(indexOfKeyToSignWith);
         FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPubKey);
-        bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
+        bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash);
         if (shouldSignTwice) {
-            bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
+            bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash);
         }
 
         verify(eventLogger, times(wantedNumberOfInvocations)).logAddSignature(federationMember, btcTx, rskTxHash.getBytes());
@@ -584,7 +584,7 @@ class BridgeSupportAddSignatureTest {
         }
 
         // Sign with two valid signatures and one invalid signature
-        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256);
         bridgeSupport.save();
 
         // Sign with two valid signatures and one malformed signature
@@ -593,16 +593,16 @@ class BridgeSupportAddSignatureTest {
             malformedSignature[i] = (byte) i;
         }
         derEncodedSigsFirstFed.set(2, malformedSignature);
-        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256);
         bridgeSupport.save();
 
         // Sign with fully valid signatures for same federator
         derEncodedSigsFirstFed.set(2, lastSig.encodeToDER());
-        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256);
         bridgeSupport.save();
 
         // Sign with second federation
-        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256);
         bridgeSupport.save();
 
         provider = new BridgeStorageProvider(repository, bridgeAddress, btcRegTestParams, activationsBeforeForks);
@@ -720,7 +720,7 @@ class BridgeSupportAddSignatureTest {
         List<byte[]> derEncodedSigs = Collections.singletonList(sig.encodeToDER());
 
         // Act
-        bridgeSupport.addSignature(federationMemberToSignWith.getBtcPublicKey(), derEncodedSigs, rskTxHash.getBytes());
+        bridgeSupport.addSignature(federationMemberToSignWith.getBtcPublicKey(), derEncodedSigs, rskTxHash);
 
         // Assert
         commonAssertLogs(eventLogs);
@@ -821,7 +821,7 @@ class BridgeSupportAddSignatureTest {
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
-        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256);
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
@@ -833,7 +833,7 @@ class BridgeSupportAddSignatureTest {
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
             List<byte[]> list = new ArrayList<>();
             list.add(sig2.encodeToDER());
-            bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), list, keccak256.getBytes());
+            bridgeSupport.addSignature(findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), list, keccak256);
         }
         if (privateKeysToSignWith.size() > 1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
@@ -845,7 +845,7 @@ class BridgeSupportAddSignatureTest {
             bridgeSupport.addSignature(
                 findPublicKeySignedBy(genesisFederation.getBtcPublicKeys(), privateKeysToSignWith.get(1)),
                 derEncodedSigs2,
-                keccak256.getBytes()
+                keccak256
             );
         }
         bridgeSupport.save();
