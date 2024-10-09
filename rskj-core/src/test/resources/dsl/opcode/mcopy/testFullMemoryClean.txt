@@ -1,0 +1,137 @@
+comment
+
+// CONTRACT CODE
+//
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
+
+contract TestMCopy {
+    constructor() {}
+
+    event OK();
+    event ERROR();
+
+    function checkMCopy() external {
+        if (testFullMemoryClean()) {
+            emit OK();
+        } else {
+            emit ERROR();
+        }
+    }
+
+    function testFullMemoryClean() public pure returns (bool status) {
+
+        bytes32 zeroed = 0x0000000000000000000000000000000000000000000000000000000000000000;
+
+        uint memSizeBefore;
+        uint memSizeAfter;
+
+        assembly {
+
+            mstore(0,   0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f)
+            mstore(32,  0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f)
+            mstore(64,  0x404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f)
+            mstore(96,  0x606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f)
+            mstore(128, 0x808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f)
+            mstore(160, 0xa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf)
+            mstore(192, 0xc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf)
+            mstore(224, 0xe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff) // ... Initialize Memory
+
+            memSizeBefore := msize() // Get memory size before the changes
+            mcopy(0, 256, 256)       // Use MCOPY to copy 256 bytes starting from offset 256 to offset 0 in memory
+            memSizeAfter := msize()  // Get memory size after the changes
+
+            status := eq(mload(0), zeroed)
+            status := and(status, eq(mload(32),  zeroed))
+            status := and(status, eq(mload(64),  zeroed))
+            status := and(status, eq(mload(96),  zeroed))
+            status := and(status, eq(mload(128), zeroed))
+            status := and(status, eq(mload(160), zeroed))
+            status := and(status, eq(mload(192), zeroed))
+            status := and(status, eq(mload(224), zeroed)) // All words should contain only 0s (they're cleared)
+
+        }
+
+        status = status && memSizeBefore == 256 && memSizeAfter == 512; // New memory size is the double of the initial size
+
+    }
+
+}
+
+// DESCRIPTION
+
+This contract contains two types of functions:
+
+* checkMCopy runs the tes function and based on its return value:
+    - Emits an OK event if it returned true.
+    - Emits an ERROR otherwise.
+
+* testFullMemoryClean initialize, modifies and checks memory and then:
+    - Returns true if all the checks passed.
+    - Returns false otherwise.
+
+// CONTRACT BYTECODE
+
+6080604052348015600e575f80fd5b506102d18061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c806318d79be0146100385780638c2bcab914610056575b5f80fd5b610040610060565b60405161004d9190610282565b60405180910390f35b61005e6101fb565b005b5f805f801b90505f807e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f527f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f6020527f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f6040527f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f6060527f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f6080527fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf60a0527fc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf60c0527fe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff60e052599150610100805f5e599050825f511493508260205114841693508260405114841693508260605114841693508260805114841693508260a05114841693508260c05114841693508260e05114841693508380156101e6575061010082145b80156101f3575061020081145b935050505090565b610203610060565b15610239577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610266565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b565b5f8115159050919050565b61027c81610268565b82525050565b5f6020820190506102955f830184610273565b9291505056fea2646970667358221220f5efb928b226b33069cc5084e89551d5d7260bc1d9e5639f849fa8ded0ee8f0e64736f6c634300081a0033
+
+// CONTRACT CALL
+
+- checkMCopy()
+
+    8c2bcab9
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TestMCopy contract
+transaction_build txTestMCopy
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b506102d18061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c806318d79be0146100385780638c2bcab914610056575b5f80fd5b610040610060565b60405161004d9190610282565b60405180910390f35b61005e6101fb565b005b5f805f801b90505f807e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f527f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f6020527f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f6040527f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f6060527f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f6080527fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf60a0527fc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf60c0527fe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff60e052599150610100805f5e599050825f511493508260205114841693508260405114841693508260605114841693508260805114841693508260a05114841693508260c05114841693508260e05114841693508380156101e6575061010082145b80156101f3575061020081145b935050505090565b610203610060565b15610239577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610266565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b565b5f8115159050919050565b61027c81610268565b82525050565b5f6020820190506102955f830184610273565b9291505056fea2646970667358221220f5efb928b226b33069cc5084e89551d5d7260bc1d9e5639f849fa8ded0ee8f0e64736f6c634300081a0033
+    gas 1200000
+    build
+
+# Create block to hold txTestMCopy transaction
+block_build b01
+    parent g00
+    transactions txTestMCopy
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Check txTestMCopy succeeded
+assert_tx_success txTestMCopy
+
+# Create transaction to execute checkMCopy() method
+transaction_build txTestMCopyOKCall
+    sender acc1
+    nonce 1
+    contract txTestMCopy
+    value 0
+    data 8c2bcab9
+    gas 300000
+    build
+
+# Create block to hold txTestMCopyOKCall transaction
+block_build b02
+    parent b01
+    transactions txTestMCopyOKCall
+    gasLimit 6500000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Check txTestMCopyOKCall succeeded
+assert_tx_success txTestMCopyOKCall

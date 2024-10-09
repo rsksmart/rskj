@@ -1436,6 +1436,31 @@ public class VM {
         program.step();
     }
 
+    protected void doMCOPY() {
+        if (computeGas) {
+            // See "Gas Cost" section on EIP 5656
+            // gas cost = 3 * (length + 31) + memory expansion cost + very low
+            long length = stack.get(stack.size() - 3).longValue();
+            long newMemSize = memNeeded(stack.peek(), length);
+            long cost = 3 * (length + 31) + calcMemGas(oldMemSize, newMemSize, 0) + 3; // TODO -> Check copy size
+
+            gasCost = GasCost.add(gasCost, cost);
+            spendOpCodeGas();
+        }
+
+        // EXECUTION PHASE
+        DataWord dst = program.stackPop();
+        DataWord src = program.stackPop();
+        DataWord length = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = "dst: " + dst + " src: " + src + " length: " + length;
+        }
+
+        program.memoryCopy(dst.intValue(), src.intValue(), length.intValue());
+        program.step();
+    }
+
     protected void doCREATE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException(program);
@@ -1992,6 +2017,12 @@ public class VM {
             break;
             case OpCodes.OP_JUMPDEST: doJUMPDEST();
             break;
+            case OpCodes.OP_MCOPY:
+                if (!activations.isActive(RSKIP445)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doMCOPY();
+                break;
             case OpCodes.OP_CREATE: doCREATE();
             break;
             case OpCodes.OP_CREATE2:
