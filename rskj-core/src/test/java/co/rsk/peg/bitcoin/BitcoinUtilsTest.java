@@ -1,8 +1,6 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.searchForOutput;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -467,6 +465,65 @@ class BitcoinUtilsTest {
         for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
             assertEquals(0, chunk.opcode);
         }
+    }
+
+    @Test
+    void getRedeemScriptFromP2SHInputScript_shouldGetExpectedRedeemScript() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script expectedRedeemScript = federation.getRedeemScript();
+
+        Script p2shInputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(expectedRedeemScript);
+
+        // act
+        Script redeemScript = getRedeemScriptFromP2SHInputScript(p2shInputScript);
+
+        // assert
+        assertEquals(expectedRedeemScript, redeemScript);
+    }
+
+    @Test
+    void generateSigHashForP2SHInput_shouldGenerateExpectedSigHash() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        int inputIndex = 0;
+        TransactionInput input = transaction.getInput(inputIndex);
+        Script p2shInputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+        input.setScriptSig(p2shInputScript);
+
+        // act
+        Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(transaction, inputIndex);
+
+        // assert
+        Sha256Hash expectedSigHash = transaction.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
+        assertEquals(expectedSigHash, sigHash);
+    }
+
+    @Test
+    void generateSigHashForP2SHInput_forEmptyInputScript_shouldThrowIllegalArgumentException() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+        int inputIndex = 0;
+
+        // act & assert
+        assertThrows(IllegalArgumentException.class,
+            () -> generateSigHashForP2SHTransactionInput(transaction, inputIndex));
     }
 
     @Test
