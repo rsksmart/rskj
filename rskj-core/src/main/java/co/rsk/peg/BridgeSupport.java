@@ -1690,6 +1690,7 @@ public class BridgeSupport {
         try {
             txSigs = getTransactionSignatures(federatorBtcPublicKey, sigHashes, signatures);
         } catch (SignatureException e) {
+            logger.error("[processSigning] Unable to proceed with signing as the transaction signatures are incorrect.");
             return;
         }
 
