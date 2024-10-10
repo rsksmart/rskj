@@ -74,6 +74,7 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
 
     private String getResponseFromWeb() {
         try {
+            logger.info("[Test - HttpGetMinGasPriceProvider] getResponseFromWeb httpClient.doGet(url) "+ httpClient.doGet(url));
             return httpClient.doGet(url);
         } catch (Exception e) {
             logger.error("Error getting min gas price from web provider: {}", e.getMessage());

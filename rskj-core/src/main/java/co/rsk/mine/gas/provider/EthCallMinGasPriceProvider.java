@@ -69,9 +69,12 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
                 new HexDataParam(data),
                 null
         );
+        logger.info("[Test - EthCallMinGasPriceProvider] callArguments: "+ callArguments.toString());
         try {
             String callOutput = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
-
+            logger.info("[Test - EthCallMinGasPriceProvider] callOutput: "+ callOutput);
+            logger.info("[Test - EthCallMinGasPriceProvider] jsonHexToLong optional: "+ Optional.of(HexUtils.jsonHexToLong(
+                    callOutput)));
             // Parse the output of the call to get the exchange rate. Will not work with bytes32 values!
             return Optional.of(HexUtils.jsonHexToLong(
                     callOutput));
