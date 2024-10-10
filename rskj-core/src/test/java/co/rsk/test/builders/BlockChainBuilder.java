@@ -247,10 +247,9 @@ public class BlockChainBuilder {
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
                 repositoryLocator,
-                transactionExecutorFactory
-        );
+                transactionExecutorFactory,
+                config);
         BlockChainImpl blockChain = new BlockChainLoader(
                 blockStore,
                 receiptStore,
@@ -284,12 +283,20 @@ public class BlockChainBuilder {
         return ofSize(size, false);
     }
 
+    public Blockchain ofSize(int size, BlockGenerator blockGenerator) {
+        return ofSize(size, false, Collections.emptyMap(), blockGenerator);
+    }
+
     public Blockchain ofSize(int size, boolean mining) {
         return ofSize(size, mining, Collections.emptyMap());
     }
 
+
     public Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
-        BlockGenerator blockGenerator = new BlockGenerator();
+        return ofSize(size, mining, accounts, new BlockGenerator());
+    }
+
+    public Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts, BlockGenerator blockGenerator) {
         Genesis genesis = blockGenerator.getGenesisBlock(accounts);
         BlockChainImpl blockChain = setGenesis(genesis).build();
 

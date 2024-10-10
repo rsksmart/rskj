@@ -18,13 +18,15 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.peg.constants.BridgeRegTestConstants;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
@@ -254,7 +256,7 @@ class RskForksBridgeTest {
         long nonce = 0;
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
-        BigInteger gasLimit = BigInteger.valueOf(1000000);
+        BigInteger gasLimit = BigInteger.valueOf(500000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS, Constants.REGTEST_CHAIN_ID, "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value));
@@ -380,7 +382,7 @@ class RskForksBridgeTest {
         long nonce = 0;
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
-        BigInteger gasLimit = BigInteger.valueOf(1000000);
+        BigInteger gasLimit = BigInteger.valueOf(500000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.RECEIVE_HEADERS, Constants.REGTEST_CHAIN_ID, new Object[]{headerArray});

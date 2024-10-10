@@ -18,6 +18,7 @@
 package org.ethereum.rpc.parameters;
 
 import co.rsk.util.HexUtils;
+import co.rsk.util.StringUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -32,9 +33,16 @@ import java.math.BigInteger;
 public class HexNumberParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public static final int HEX_NUM_BYTE_LENGTH = 32;
+    public static final int MAX_HEX_NUM_LEN = 2 + 2 * HEX_NUM_BYTE_LENGTH; // 2 bytes for 0x prefix; 2 hex characters per byte
+
     private final String hexNumber;
 
     public HexNumberParam(String hexNumber) {
+        if (!isHexNumberLengthValid(hexNumber)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid param: " + StringUtils.trim(hexNumber));
+        }
+
         boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
         if (!HexUtils.isHex(hexNumber.toLowerCase(), hasPrefix ? 2 : 0)) {
             try {
@@ -54,6 +62,10 @@ public class HexNumberParam implements Serializable {
     @Override
     public String toString() {
         return this.hexNumber;
+    }
+
+    public static boolean isHexNumberLengthValid(String hex) {
+        return hex != null && hex.length() <= MAX_HEX_NUM_LEN;
     }
 
     public static class Deserializer extends StdDeserializer<HexNumberParam> {

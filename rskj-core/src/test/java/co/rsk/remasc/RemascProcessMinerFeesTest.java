@@ -1031,7 +1031,6 @@ class RemascProcessMinerFeesTest {
                 config.getActivationConfig(), signatureCache);
 
         return new BlockExecutor(
-                config.getActivationConfig(),
                 repositoryLocator,
                 new TransactionExecutorFactory(
                         config,
@@ -1041,7 +1040,7 @@ class RemascProcessMinerFeesTest {
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-        );
+                ),
+                config);
     }
 }

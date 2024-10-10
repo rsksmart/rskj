@@ -588,11 +588,9 @@ class TransactionModuleTest {
         this.transactionExecutorFactory = transactionExecutorFactory;
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
                 repositoryLocator,
-//                stateRootHandler,
-                this.transactionExecutorFactory
-        );
+                this.transactionExecutorFactory,
+                config);
 
         MinerServer minerServer = new MinerServerImpl(
                 config,

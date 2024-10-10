@@ -19,7 +19,8 @@
 
 package org.ethereum.util;
 
-import java.util.Arrays;
+import co.rsk.core.types.bytes.BytesSlice;
+
 import java.util.List;
 
 /**
@@ -30,7 +31,7 @@ public class RLPList extends RLPItem implements RLPElement {
     private List<RLPElement> elements;
     private final int offset;
 
-    public RLPList(byte[] rlpData, int offset) {
+    public RLPList(BytesSlice rlpData, int offset) {
         super(rlpData);
         this.offset = offset;
     }
@@ -52,8 +53,8 @@ public class RLPList extends RLPItem implements RLPElement {
             return;
         }
 
-        byte[] bytes = this.getRLPData();
-        byte[] content = Arrays.copyOfRange(bytes, offset, bytes.length);
+        BytesSlice bytes = getRLPBytes();
+        BytesSlice content = bytes.slice(offset, bytes.length());
 
         this.elements = RLP.decode2(content);
     }

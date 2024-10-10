@@ -520,9 +520,9 @@ class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\n" +
-                "transaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nbuild\n" +
-                "transaction_build tx02\nsender acc1\nreceiver acc2\nvalue 1000\nbuild\n" +
+        DslParser parser = new DslParser("account_new acc1 100000000000\naccount_new acc2 100000000000\n" +
+                "transaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nnonce 0\nbuild\n" +
+                "transaction_build tx02\nsender acc1\nreceiver acc2\nvalue 1000\nnonce 1\nbuild\n" +
                 "block_build b01\nparent g00\ntransactions tx01 tx02\nbuild\n");
 
         processor.processCommands(parser);

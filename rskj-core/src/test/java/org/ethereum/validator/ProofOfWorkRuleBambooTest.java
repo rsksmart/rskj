@@ -21,6 +21,7 @@ package org.ethereum.validator;
 import co.rsk.mine.NetworkUpgrades;
 import org.junit.jupiter.api.BeforeEach;
 
+@SuppressWarnings("java:S2187")
 class ProofOfWorkRuleBambooTest extends ProofOfWorkRuleTest {
 
     @BeforeEach

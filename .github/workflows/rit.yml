@@ -1,6 +1,8 @@
 name: Rootstock Integration Tests
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: ["master", "*-rc"]
@@ -37,7 +39,7 @@ jobs:
         run: |
           PR_DESCRIPTION=pr-description.txt
 
-          ALLOWED_BRANCH_CHARACTERS='[-./0-9A-Z_a-z]'
+          ALLOWED_BRANCH_CHARACTERS='[-+./0-9A-Z_a-z]'
 
           default_rskj_branch=master
           default_powpeg_branch=master
