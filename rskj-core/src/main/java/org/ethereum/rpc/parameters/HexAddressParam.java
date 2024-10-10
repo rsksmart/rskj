@@ -31,11 +31,15 @@ import java.io.Serializable;
 public class HexAddressParam implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public static final int HEX_ADDR_BYTE_LENGTH = RskAddress.LENGTH_IN_BYTES;
+    public static final int MIN_HEX_ADDR_LEN = 2 * HEX_ADDR_BYTE_LENGTH; // 2 hex characters per byte
+    public static final int MAX_HEX_ADDR_LEN = MIN_HEX_ADDR_LEN + 2; // 2 bytes for 0x prefix
+
     private transient final RskAddress address;
 
     public HexAddressParam(String hexAddress) {
-        if (hexAddress == null || hexAddress.isEmpty()) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid address: empty or null.");
+        if (!isHexAddressLengthValid(hexAddress)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid address: null, empty or invalid hex value.");
         }
 
         try {
@@ -52,6 +56,10 @@ public class HexAddressParam implements Serializable {
     @Override
     public String toString() {
         return address.toString();
+    }
+
+    public static boolean isHexAddressLengthValid(String hex) {
+        return hex != null && hex.length() >= MIN_HEX_ADDR_LEN && hex.length() <= MAX_HEX_ADDR_LEN;
     }
     
     public static class Deserializer extends StdDeserializer<HexAddressParam> {
