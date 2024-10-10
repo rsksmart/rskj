@@ -54,12 +54,14 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
         String response = getResponseFromWeb();
         if (!StringUtils.isBlank(response)) {
             Long price = parsePrice(response);
+            logger.info("[Test - getBtcExchangeRate()] parsepRICE: "+price);
             return Optional.ofNullable(price);
         }
         return Optional.empty();
     }
 
     private Long parsePrice(String response) {
+        logger.info("[Test - JsonPath] " + jsonPath);
         try {
             JsonNode jObject = objectMapper.readTree(response);
             if (jObject.at(jsonPath).isMissingNode()) {

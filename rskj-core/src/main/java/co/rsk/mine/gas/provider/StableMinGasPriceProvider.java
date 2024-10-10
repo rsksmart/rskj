@@ -120,6 +120,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     private Optional<Long> fetchPriceSync() {
+        logger.info("fetchPriceSync()");
         Optional<Long> priceResponse = getBtcExchangeRate();
         logger.info("[Test - StableMinGasPriceProvider] priceResponse : "+ priceResponse);
         if (priceResponse.isPresent() && priceResponse.get() > 0) {
