@@ -105,7 +105,9 @@ class ActivationConfigTest {
             "    rskip290: hop400",
             "    rskip293: hop400",
             "    rskip294: hop400",
+            "    rskip144: arrowhead600",
             "    rskip297: hop400",
+            "    rskip351: arrowhead600",
             "    rskip326: fingerroot500",
             "    rskip353: hop401",
             "    rskip357: hop401",
@@ -189,5 +191,17 @@ class ActivationConfigTest {
     void failsReadingWithUnknownUpgradeConfiguration() {
         Config config = BASE_CONFIG.withValue("consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> ActivationConfig.read(config));
+    }
+
+    @Test
+    void headerVersion0() {
+        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+        Assertions.assertEquals((byte) 0x0, config.getHeaderVersion(10));
+    }
+
+    @Test
+    void headerVersion1() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        Assertions.assertEquals((byte) 0x1, config.getHeaderVersion(10));
     }
 }

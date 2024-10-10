@@ -32,7 +32,7 @@ transaction_build txCreateContract
 
 block_build b01
     parent g00
-    gasLimit 6500000
+    gasLimit 15000000
     transactions txCreateContract
     build
 

@@ -24,12 +24,15 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import static co.rsk.util.HexUtils.stringHexToByteArray;
 
 public abstract class HashParam32 {
-    private static final int HASH_BYTE_LENGTH = 32;
+    public static final int HASH_BYTE_LENGTH = Keccak256.HASH_LEN;
+    public static final int MIN_HASH_HEX_LEN = 2 * HASH_BYTE_LENGTH; // 2 hex characters per byte
+    public static final int MAX_HASH_HEX_LEN = MIN_HASH_HEX_LEN + 2; // 2 bytes for 0x prefix
+
     private final Keccak256 hash;
 
     HashParam32(String hashType, String hash) {
-        if (hash == null || hash.isEmpty()) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + ": empty or null.");
+        if (!isHash32HexLengthValid(hash)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid " + hashType + ": incorrect length.");
         }
 
         byte[] hashBytes;
@@ -49,5 +52,9 @@ public abstract class HashParam32 {
 
     public Keccak256 getHash() {
         return hash;
+    }
+
+    public static boolean isHash32HexLengthValid(String hex) {
+        return hex != null && hex.length() >= MIN_HASH_HEX_LEN && hex.length() <= MAX_HASH_HEX_LEN;
     }
 }

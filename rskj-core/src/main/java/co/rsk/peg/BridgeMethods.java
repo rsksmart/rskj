@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -31,7 +32,11 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.MessageCall.MsgType;
 
 /**
- * This enum holds the basic information of the Bridge contract methods: the ABI, the cost and the implementation.
+ * Represents the methods of the Bridge contract, encapsulating details such as 
+ * the Application Binary Interface (ABI), execution costs, and method implementations.
+ *
+ * Each enum constant corresponds to a specific method of the Bridge contract, 
+ * defining its signature and providing the necessary information for execution.
  */
 public enum BridgeMethods {
     ADD_FEDERATOR_PUBLIC_KEY(
@@ -41,7 +46,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(13000L),
-        (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::addFederatorPublicKey,
         activations -> !activations.isActive(RSKIP123),
         fixedPermission(false)
     ),
@@ -52,7 +57,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(13000L),
-        (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::addFederatorPublicKeyMultikey,
         activations -> activations.isActive(RSKIP123),
         fixedPermission(false)
     ),
@@ -63,7 +68,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(25000L),
-        (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::addOneOffLockWhitelistAddress,
         activations -> !activations.isActive(RSKIP87),
         fixedPermission(false)
     ),
@@ -74,7 +79,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
-        (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::addOneOffLockWhitelistAddress,
         activations -> activations.isActive(RSKIP87),
         fixedPermission(false)
     ),
@@ -85,7 +90,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
-        (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::addUnlimitedLockWhitelistAddress,
         activations -> activations.isActive(RSKIP87),
         fixedPermission(false)
     ),
@@ -106,7 +111,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(38000L),
-        (BridgeMethodExecutorTyped) Bridge::commitFederation,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::commitFederation,
         fixedPermission(false)
     ),
     CREATE_FEDERATION(
@@ -116,7 +121,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(11000L),
-        (BridgeMethodExecutorTyped) Bridge::createFederation,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::createFederation,
         fixedPermission(false)
     ),
     GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT(
@@ -126,7 +131,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(19000L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getBtcBlockchainBestChainHeight,
         fromMethod(Bridge::getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -137,7 +142,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(20000L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getBtcBlockchainInitialBlockHeight,
         activations -> activations.isActive(RSKIP89),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -149,7 +154,7 @@ public enum BridgeMethods {
             new String[]{"string[]"}
         ),
         fixedCost(76000L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
+        (BridgeMethodExecutorTyped<Object[]>) Bridge::getBtcBlockchainBlockLocator,
         activations -> !activations.isActive(RSKIP89),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -161,7 +166,7 @@ public enum BridgeMethods {
             new String[]{"bytes"}
         ),
         fixedCost(20000L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBlockHashAtDepth,
         activations -> activations.isActive(RSKIP89),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -173,7 +178,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
-        (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getBtcTransactionConfirmations,
         activations -> activations.isActive(RSKIP122),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -185,7 +190,7 @@ public enum BridgeMethods {
             new String[]{"int64"}
         ),
         fixedCost(22000L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcTxHashProcessedHeight,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getBtcTxHashProcessedHeight,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -196,7 +201,7 @@ public enum BridgeMethods {
             new String[]{"string"}
         ),
         fixedCost(11000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederationAddress,
+        (BridgeMethodExecutorTyped<String>) Bridge::getFederationAddress,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -207,7 +212,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(10000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederationCreationBlockNumber,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getFederationCreationBlockNumber,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -218,7 +223,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(10000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederationCreationTime,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getFederationCreationTime,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -229,7 +234,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(10000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederationSize,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getFederationSize,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -240,7 +245,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(11000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederationThreshold,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getFederationThreshold,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -251,7 +256,7 @@ public enum BridgeMethods {
             new String[]{"bytes"}
         ),
         fixedCost(10000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getFederatorPublicKey,
         activations -> !activations.isActive(RSKIP123),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -263,7 +268,7 @@ public enum BridgeMethods {
             new String[]{"bytes"}
         ),
         fixedCost(10000L),
-        (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getFederatorPublicKeyOfType,
         activations -> activations.isActive(RSKIP123),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -275,7 +280,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(2000L),
-        (BridgeMethodExecutorTyped) Bridge::getFeePerKb,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getFeePerKb,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -286,7 +291,7 @@ public enum BridgeMethods {
             new String[]{"string"}
         ),
         fixedCost(16000L),
-        (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress,
+        (BridgeMethodExecutorTyped<String>) Bridge::getLockWhitelistAddress,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -297,7 +302,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(16000L),
-        (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getLockWhitelistEntryByAddress,
         activations -> activations.isActive(RSKIP87),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -309,7 +314,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(16000L),
-        (BridgeMethodExecutorTyped) Bridge::getLockWhitelistSize,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getLockWhitelistSize,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -320,7 +325,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(2000L),
-        (BridgeMethodExecutorTyped) Bridge::getMinimumLockTxValue,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getMinimumLockTxValue,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -331,7 +336,7 @@ public enum BridgeMethods {
             new String[]{"bytes"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getPendingFederationHashSerialized,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getPendingFederationHashSerialized,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -342,7 +347,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getPendingFederationSize,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getPendingFederationSize,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -353,7 +358,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getPendingFederatorPublicKey,
         activations -> !activations.isActive(RSKIP123),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -365,7 +370,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getPendingFederatorPublicKeyOfType,
         activations -> activations.isActive(RSKIP123),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -377,7 +382,7 @@ public enum BridgeMethods {
                 new String[]{"string"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederationAddress,
+        (BridgeMethodExecutorTyped<String>) Bridge::getRetiringFederationAddress,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -388,7 +393,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederationCreationBlockNumber,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getRetiringFederationCreationBlockNumber,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -399,7 +404,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederationCreationTime,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getRetiringFederationCreationTime,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -410,7 +415,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederationSize,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getRetiringFederationSize,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -421,7 +426,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederationThreshold,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getRetiringFederationThreshold,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -432,7 +437,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getRetiringFederatorPublicKey,
         activations -> !activations.isActive(RSKIP123),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -444,7 +449,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(3000L),
-        (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getRetiringFederatorPublicKeyOfType,
         activations -> activations.isActive(RSKIP123),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -456,7 +461,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(4000L),
-        (BridgeMethodExecutorTyped) Bridge::getStateForBtcReleaseClient,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForBtcReleaseClient,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -467,7 +472,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(3_000_000L),
-        (BridgeMethodExecutorTyped) Bridge::getStateForDebugging,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForDebugging,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -478,7 +483,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(3_000L),
-        (BridgeMethodExecutorTyped) Bridge::getLockingCap,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getLockingCap,
         activations -> activations.isActive(RSKIP134),
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -490,7 +495,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(30_000L),
-        (BridgeMethodExecutorTyped) Bridge::getActivePowpegRedeemScript,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getActivePowpegRedeemScript,
         activations -> activations.isActive(RSKIP293),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -502,7 +507,7 @@ public enum BridgeMethods {
                 new String[]{"uint256"}
         ),
         fixedCost(3_000L),
-        (BridgeMethodExecutorTyped) Bridge::getActiveFederationCreationBlockHeight,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getActiveFederationCreationBlockHeight,
         activations -> activations.isActive(RSKIP186),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -514,7 +519,7 @@ public enum BridgeMethods {
                 new String[]{"bool"}
         ),
         fixedCost(8_000L),
-        (BridgeMethodExecutorTyped) Bridge::increaseLockingCap,
+        (BridgeMethodExecutorTyped<Boolean>) Bridge::increaseLockingCap,
         activations -> activations.isActive(RSKIP134),
         fixedPermission(false)
     ),
@@ -525,7 +530,7 @@ public enum BridgeMethods {
                 new String[]{"bool"}
         ),
         fixedCost(23000L),
-        (BridgeMethodExecutorTyped) Bridge::isBtcTxHashAlreadyProcessed,
+        (BridgeMethodExecutorTyped<Boolean>) Bridge::isBtcTxHashAlreadyProcessed,
         fixedPermission(true),
         CallTypeHelper.ALLOW_STATIC_CALL
     ),
@@ -550,7 +555,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(10_600L),
-        (BridgeMethodExecutorTyped) Bridge::receiveHeader,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::receiveHeader,
         activations -> activations.isActive(RSKIP200),
         fixedPermission(false)
     ),
@@ -585,7 +590,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(24000L),
-        (BridgeMethodExecutorTyped) Bridge::removeLockWhitelistAddress,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::removeLockWhitelistAddress,
         fixedPermission(false)
     ),
     ROLLBACK_FEDERATION(
@@ -595,7 +600,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(12000L),
-        (BridgeMethodExecutorTyped) Bridge::rollbackFederation,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::rollbackFederation,
         fixedPermission(false)
     ),
     SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY(
@@ -605,7 +610,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(24000L),
-        (BridgeMethodExecutorTyped) Bridge::setLockWhitelistDisableBlockDelay,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::setLockWhitelistDisableBlockDelay,
         fixedPermission(false)
     ),
     UPDATE_COLLECTIONS(
@@ -625,7 +630,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(10000L),
-        (BridgeMethodExecutorTyped) Bridge::voteFeePerKbChange,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::voteFeePerKbChange,
         fixedPermission(false)
     ),
     REGISTER_BTC_COINBASE_TRANSACTION(
@@ -646,7 +651,7 @@ public enum BridgeMethods {
                 new String[]{"bool"}
         ),
         fixedCost(5000L),
-        (BridgeMethodExecutorTyped) Bridge::hasBtcBlockCoinbaseTransactionInformation,
+        (BridgeMethodExecutorTyped<Boolean>) Bridge::hasBtcBlockCoinbaseTransactionInformation,
         activations -> activations.isActive(RSKIP143),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -658,7 +663,7 @@ public enum BridgeMethods {
                 new String[]{"int256"}
         ),
         fixedCost(25_000L),
-        (BridgeMethodExecutorTyped) Bridge::registerFlyoverBtcTransaction,
+        (BridgeMethodExecutorTyped<BigInteger>) Bridge::registerFlyoverBtcTransaction,
         activations -> activations.isActive(RSKIP176),
         fixedPermission(false)
     ),
@@ -669,7 +674,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(3_800L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestBlockHeader,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBestBlockHeader,
         activations -> activations.isActive(RSKIP220),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -681,7 +686,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(4_600L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHash,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBlockHeaderByHash,
         activations -> activations.isActive(RSKIP220),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -693,7 +698,7 @@ public enum BridgeMethods {
             new String[]{"bytes"}
         ),
         fixedCost(5_000L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHeight,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainBlockHeaderByHeight,
         activations -> activations.isActive(RSKIP220),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -705,7 +710,7 @@ public enum BridgeMethods {
                 new String[]{"bytes"}
         ),
         fixedCost(4_900L),
-        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainParentBlockHeaderByHash,
+        (BridgeMethodExecutorTyped<byte[]>) Bridge::getBtcBlockchainParentBlockHeaderByHash,
         activations -> activations.isActive(RSKIP220),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -717,7 +722,7 @@ public enum BridgeMethods {
                 new String[]{"uint256"}
         ),
         fixedCost(3_000L),
-        (BridgeMethodExecutorTyped) Bridge::getNextPegoutCreationBlockNumber,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getNextPegoutCreationBlockNumber,
         activations -> activations.isActive(RSKIP271),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -729,7 +734,7 @@ public enum BridgeMethods {
                 new String[]{"uint256"}
         ),
         fixedCost(3_000L),
-        (BridgeMethodExecutorTyped) Bridge::getQueuedPegoutsCount,
+        (BridgeMethodExecutorTyped<Integer>) Bridge::getQueuedPegoutsCount,
         activations -> activations.isActive(RSKIP271),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -741,7 +746,7 @@ public enum BridgeMethods {
                 new String[]{"uint256"}
         ),
         fixedCost(10_000L),
-        (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
+        (BridgeMethodExecutorTyped<Long>) Bridge::getEstimatedFeesForNextPegOutEvent,
         activations -> activations.isActive(RSKIP271),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
@@ -858,10 +863,33 @@ public enum BridgeMethods {
         boolean isTrue(Bridge bridge);
     }
 
+    /**
+     * Interface for executing methods in the Bridge context.
+     * 
+     * <p>
+     * This interface defines a single method, {@code execute}, which takes a
+     * {@link Bridge} instance and an array of arguments, returning an
+     * {@code Optional} result. Implementations of this interface should handle
+     * the execution logic and manage potential exceptions.
+     * </p>
+     */
     public interface BridgeMethodExecutor {
         Optional<?> execute(Bridge self, Object[] args) throws Exception;
     }
 
+    /**
+     * A typed variant of {@link BridgeMethodExecutor} that allows for specific
+     * return types.
+     * 
+     * <p>
+     * This interface extends {@code BridgeMethodExecutor} and provides a default
+     * implementation of the {@code execute} method, delegating the call to a typed
+     * execution method {@code executeTyped}. Implementations must define this
+     * method to specify the expected return type.
+     * </p>
+     *
+     * @param <T> the return type of the executed method
+     */
     private interface BridgeMethodExecutorTyped<T> extends BridgeMethodExecutor {
         @Override
         default Optional<T> execute(Bridge self, Object[] args) throws Exception {
@@ -871,6 +899,16 @@ public enum BridgeMethods {
         T executeTyped(Bridge self, Object[] args) throws Exception;
     }
 
+    /**
+     * A variant of {@link BridgeMethodExecutor} for void methods.
+     * 
+     * <p>
+     * This interface overrides the {@code execute} method to perform an action
+     * without returning a result. Implementations should define the
+     * {@code executeVoid} method, which executes the intended action using the
+     * provided {@link Bridge} instance and arguments.
+     * </p>
+     */
     private interface BridgeMethodExecutorVoid extends BridgeMethodExecutor {
         @Override
         default Optional<?> execute(Bridge self, Object[] args) throws Exception {

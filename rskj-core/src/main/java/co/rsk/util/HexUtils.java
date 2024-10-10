@@ -361,15 +361,4 @@ public class HexUtils {
 
         return Integer.parseInt(preResult, 16);
     }
-
-    public static int jsonHexToIntOptionalPrefix(final String param) {
-        if (!hasHexPrefix(param) && !HexUtils.isHex(param)) {
-            throw invalidParamError(INCORRECT_HEX_SYNTAX);
-        }
-
-        String preResult = removeHexPrefix(param);
-
-        return Integer.parseInt(preResult, 16);
-    }
-
 }

@@ -29,6 +29,7 @@ transaction_build tx01
 
 block_build b01
     parent g00
+    gasLimit 10000000
     transactions tx01
     build
 
@@ -46,6 +47,7 @@ transaction_build tx02
 
 block_build b02
     parent b01
+    gasLimit 10000000
     #transactions tx02
     build
 
@@ -54,6 +56,7 @@ assert_best b02
 
 block_build b03
     parent b02
+    gasLimit 10000000
     transactions tx02
     build
 
