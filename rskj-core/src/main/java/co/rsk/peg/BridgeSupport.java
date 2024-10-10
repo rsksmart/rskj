@@ -1571,7 +1571,7 @@ public class BridgeSupport {
      * @param signatures              1 signature per btc tx input
      * @param rskTxHash               The hash of the rsk tx
      */
-    public void addSignature(BtcECKey federatorBtcPublicKey, List<byte[]> signatures, Keccak256 rskTxHash) throws Exception {
+    public void addSignature(BtcECKey federatorBtcPublicKey, List<byte[]> signatures, Keccak256 rskTxHash) throws IOException {
         if (signatures == null || signatures.isEmpty()) {
             return;
         }
@@ -1690,7 +1690,7 @@ public class BridgeSupport {
         try {
             txSigs = getTransactionSignatures(federatorBtcPublicKey, sigHashes, signatures);
         } catch (SignatureException e) {
-            logger.error("[processSigning] Unable to proceed with signing as the transaction signatures are incorrect.");
+            logger.error("[processSigning] Unable to proceed with signing as the transaction signatures are incorrect. {} ", e.getMessage());
             return;
         }
 

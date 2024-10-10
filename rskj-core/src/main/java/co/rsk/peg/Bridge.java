@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 
 import co.rsk.bitcoinj.core.*;
@@ -618,15 +619,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             signatures.add(signatureByteArray);
         }
         byte[] rskTxHashSerialized = (byte[]) args[2];
-        if (rskTxHashSerialized.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHashSerialized));
-        }
         try {
-            Keccak256 rskTxHash = new Keccak256(rskTxHashSerialized);
+            Keccak256 rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
-        } catch (BridgeIllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHashSerialized));
+        } catch (IOException e) {
             logger.warn("Exception in addSignature", e);
             throw new VMException("Exception in addSignature", e);
         }
