@@ -105,7 +105,7 @@ jobs:
           GH_REF: ${{ github.ref }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [ "$GH_EVENT" = pull_request ]; then
+          if [ "$GH_EVENT" = pull_request ] && [ "${{ github.event.pull_request.head.repo.fork }}" != "true" ]; then
             ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
               -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
               -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
