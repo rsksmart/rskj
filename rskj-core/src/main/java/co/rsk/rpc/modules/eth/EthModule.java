@@ -145,6 +145,9 @@ public class EthModule
                 res = callConstantWithState(args, block, finalState);
             } else {
                 res = callConstant(args, block);
+                LOGGER.info("StableMinGasPrice : RES.ISREVERT() :"+res.isRevert());
+                LOGGER.info("StableMinGasPrice : RES.getHReturn() :"+ Arrays.toString(res.getHReturn()));
+                LOGGER.info("StableMinGasPrice : RES.getGasUsed() :"+res.getGasUsed());
             }
             if (res.isRevert()) {
                 Pair<String, byte[]> programRevert = decodeProgramRevert(res);
@@ -297,6 +300,8 @@ public class EthModule
     @VisibleForTesting
     public ProgramResult callConstant(CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        LOGGER.info("StableMinGasPrice - hexArgs getGasPrice {} getFromAddress {} getToAddress {} getData {}",
+                hexArgs.getGasPrice() , hexArgs.getFromAddress(), hexArgs.getToAddress(), hexArgs.getData());
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,
                 executionBlock.getCoinbase(),
