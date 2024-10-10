@@ -69,7 +69,13 @@ public class EthCallMinGasPriceProvider extends StableMinGasPriceProvider {
                 new HexDataParam(data),
                 null
         );
-        logger.info("[Test - EthCallMinGasPriceProvider] callArguments: "+ callArguments.toString());
+        logger.info("[Test - EthCallMinGasPriceProvider] callArguments: data={}, callArguments data= {}, from={}, to={}, chainId={}",
+                data,
+                callArguments.getData().getAsHexString(),
+                callArguments.getFrom(),
+                callArguments.getTo(),
+                callArguments.getChainId());
+
         try {
             String callOutput = ethModule.call(callArguments, new BlockIdentifierParam("latest"));
             logger.info("[Test - EthCallMinGasPriceProvider] callOutput: "+ callOutput);
