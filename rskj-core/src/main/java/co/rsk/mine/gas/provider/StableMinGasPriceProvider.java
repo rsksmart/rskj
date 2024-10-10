@@ -63,6 +63,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
             Future<Long> priceFuture = fetchPriceAsync();
             if (wait || priceFuture.isDone()) {
                 try {
+                    logger.info("priceFuture.isDone() !! this is the price: "+ priceFuture.get());
                     return priceFuture.get();
                 } catch (InterruptedException e) {
                     logger.error("Min gas price fetching was interrupted", e);
@@ -128,6 +129,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
             lastMinGasPrice = result;
             lastUpdateTimeMillis = System.currentTimeMillis();
             numOfFailures.set(0);
+            logger.info("[Test - StableMinGasPriceProvider] RESULT : "+ result);
             return Optional.of(result);
         }
 
