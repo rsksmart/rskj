@@ -73,17 +73,17 @@ public class PegUtilsLegacy {
         int inputsSize = btcTx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             TransactionInput txInput = btcTx.getInput(i);
-            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInput(i));
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(txInput);
             if (!redeemScriptOptional.isPresent()) {
                 continue;
             }
 
-            Script redeemScript = redeemScriptOptional.get();
+            List<ScriptChunk> redeemScriptChunks = redeemScriptOptional.get().getChunks();
             if (activations.isActive(ConsensusRule.RSKIP201)) {
-                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
+                // Extract standard redeem script chunks since the registered utxo could be from a fast bridge or erp federation
                 try {
-                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptChunks);
+                    redeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
                 } catch (ScriptException e) {
                     logger.debug("[isPegOutTx] There is no redeem script", e);
                     // There is no redeem script
@@ -91,6 +91,7 @@ public class PegUtilsLegacy {
                 }
             }
 
+            Script redeemScript = new ScriptBuilder().addChunks(redeemScriptChunks).build();
             Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
             if (Arrays.stream(fedStandardP2shScripts).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
                 return true;
@@ -204,25 +205,17 @@ public class PegUtilsLegacy {
                 return false;
             }
 
+            TransactionInput txInput = tx.getInput(i);
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(txInput);
             // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
             // erp federation, or even a retired fast bridge or erp federation
-            if (activations.isActive(ConsensusRule.RSKIP201)) {
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
+            if (activations.isActive(ConsensusRule.RSKIP201) && redeemScriptOptional.isPresent()) {
                 try {
-                    // Consider transactions that have an input with a redeem script of type P2SH ERP FED
-                    // to be "future transactions" that should not be pegins. These are gonna be considered pegouts.
-                    // This is only for backwards compatibility reasons. As soon as RSKIP353 activates,
-                    // pegins to the new federation should be valid again.
-                    // There's no reason for someone to send an actual pegin of this type before the new fed is active.
-                    // TODO: Remove this if block after RSKIP353 activation
-                    if (!activations.isActive(ConsensusRule.RSKIP353) &&
-                            (redeemScriptParser.getMultiSigType() == RedeemScriptParser.MultiSigType.P2SH_ERP_FED ||
-                                 redeemScriptParser.getMultiSigType() == RedeemScriptParser.MultiSigType.FAST_BRIDGE_P2SH_ERP_FED)) {
-                        String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";
-                        logger.warn("[isValidPegInTx] {}", message);
-                        throw new ScriptException(message);
-                    }
-                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    List<ScriptChunk> redeemScriptChunks = redeemScriptOptional.get().getChunks();
+                    RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptChunks);
+
+                    List<ScriptChunk> inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
+                    Script inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
                     if (activeFederations.stream().anyMatch(federation -> getFederationStandardRedeemScript(federation).equals(inputStandardRedeemScript))) {
                         return false;
                     }
