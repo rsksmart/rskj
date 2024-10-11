@@ -1777,22 +1777,26 @@ public class BridgeSupport {
 
         boolean signed = false;
         for (int i = 0; i < sigHashes.size(); i++) {
-            Sha256Hash sighash = sigHashes.get(i);
+            Sha256Hash sigHash = sigHashes.get(i);
             TransactionInput input = btcTx.getInput(i);
             Script inputScript = input.getScriptSig();
 
             boolean alreadySignedByThisFederator =
-                BridgeUtils.isInputSignedByThisFederator(federatorBtcPublicKey, sighash, input);
+                BridgeUtils.isInputSignedByThisFederator(federatorBtcPublicKey, sigHash, input);
 
-            // Sign the input if it wasn't already
             if (alreadySignedByThisFederator) {
                 logger.warn("Input {} of tx {} already signed by this federator.", i, rskTxHash);
                 break;
             }
 
+            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(input);
+            if (redeemScriptOpt.isEmpty()) {
+                break;
+            }
+            Script redeemScript = redeemScriptOpt.get();
+
             try {
-                int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorBtcPublicKey);
-                Script redeemScript = getRedeemScriptFromP2SHInputScript(inputScript);
+                int sigIndex = inputScript.getSigInsertionIndex(sigHash, federatorBtcPublicKey);
                 Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
 
                 Script inputScriptWithSignature = outputScript.getScriptSigWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex);
