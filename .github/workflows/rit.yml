@@ -36,6 +36,8 @@ jobs:
           github_event_pull_request_number: ${{ github.event.pull_request.number }}
           github_head_ref: ${{ github.head_ref }}
           github_ref_name: ${{ github.ref_name }}
+          github_event_pull_request_head_repo_owner_login: ${{ github.event.pull_request.head.repo.owner.login }}
+          github_repository_owner: ${{ github.repository_owner }}
         run: |
           PR_DESCRIPTION=pr-description.txt
 
@@ -96,6 +98,11 @@ jobs:
             exit 1
           fi
 
+          # Set the Repo Owner
+          REPO_OWNER="${github_event_pull_request_head_repo_owner_login:-$github_repository_owner}"
+
+
+          echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
@@ -116,11 +123,12 @@ jobs:
           echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
+        uses: rsksmart/rootstock-integration-tests@e86332474179a63f027d0fe969687d3d24f34c29 #v1
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
+          repo-owner: ${{ env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
         if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
