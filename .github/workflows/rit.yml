@@ -123,7 +123,7 @@ jobs:
           echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
+        uses: rsksmart/rootstock-integration-tests@e86332474179a63f027d0fe969687d3d24f34c29 #v1
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
