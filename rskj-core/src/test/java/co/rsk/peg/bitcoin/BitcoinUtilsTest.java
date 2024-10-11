@@ -468,21 +468,6 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getRedeemScriptFromP2SHInputScript_shouldGetExpectedRedeemScript() {
-        // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script expectedRedeemScript = federation.getRedeemScript();
-
-        Script p2shInputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(expectedRedeemScript);
-
-        // act
-        Script redeemScript = getRedeemScriptFromP2SHInputScript(p2shInputScript);
-
-        // assert
-        assertEquals(expectedRedeemScript, redeemScript);
-    }
-
-    @Test
     void generateSigHashForP2SHInput_shouldGenerateExpectedSigHash() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();

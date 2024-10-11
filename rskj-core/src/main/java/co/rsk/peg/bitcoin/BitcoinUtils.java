@@ -93,13 +93,6 @@ public class BitcoinUtils {
         return outputScript.createEmptyInputScript(null, redeemScript);
     }
 
-    public static Script getRedeemScriptFromP2SHInputScript(Script inputScript) {
-        List<ScriptChunk> inputScriptChunks = inputScript.getChunks();
-        int redeemScriptIndex = inputScriptChunks.size() - 1;
-        ScriptChunk redeemScriptChunk = inputScriptChunks.get(redeemScriptIndex);
-        return new Script(redeemScriptChunk.data);
-    }
-
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
         return transactionOutputs.stream()
             .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
