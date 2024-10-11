@@ -132,7 +132,7 @@ jobs:
           echo "REPO_OWNER=${{ env.REPO_OWNER }}"
 
       - name: Run Rootstock Integration Tests
-        uses: rmoreliovlabs/rootstock-integration-tests@feature/add_repo_owner_input
+        uses: rmoreliovlabs/rootstock-integration-tests@e86332474179a63f027d0fe969687d3d24f34c29 #v1
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
