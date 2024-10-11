@@ -142,7 +142,7 @@ jobs:
               "attachments": [
                 {
                   "color": "good",
-                  "text": "*PASSED*: :white_check_mark: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} \n#${{ github.run_number }} - *${{ github.event.pull_request.title }}* \n*PR*: ${{ github.event.pull_request.html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rootstock-integration-tests:`${{ env.RIT_BRANCH }}`"
+                  "text": "*PASSED*: :white_check_mark: - *${{ github.event.pull_request.title }}* \n*Pull request*: ${{ github.event.pull_request.html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rit:`${{ env.RIT_BRANCH }}`"
                 }
               ]
             }
@@ -159,7 +159,7 @@ jobs:
               "attachments": [
                 {
                   "color": "danger",
-                  "text": "*FAILED*: :x: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} \n#${{ github.run_number }} - *${{ github.event.pull_request.title }}* \n*PR*: ${{ github.event.pull_request.html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rootstock-integration-tests:`${{ env.RIT_BRANCH }}`"
+                  "text": "*FAILED*: :x: - *${{ github.event.pull_request.title }}* \n*Pull request*: ${{ github.event.pull_request.html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rit:`${{ env.RIT_BRANCH }}`"
                 }
               ]
             }
