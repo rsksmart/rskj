@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
@@ -42,7 +43,7 @@ class TraceTransformerTest {
                 null,
                 gas,
                 callValue,
-                data,
+                Bytes.of(data),
                 null, null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
