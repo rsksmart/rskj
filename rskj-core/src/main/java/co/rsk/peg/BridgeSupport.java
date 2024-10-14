@@ -1578,6 +1578,19 @@ public class BridgeSupport {
 
         Context.propagate(btcContext);
 
+        if (svpIsOngoing()) {
+            provider.getSvpSpendTxWaitingForSignatures()
+                .filter(svpSpendTxWFS -> svpSpendTxWFS.getKey().equals(rskTxHash))
+                .ifPresent(svpSpendTxWFS -> {
+                    logger.trace("Going to add federator public key {} to svp spend transaction", federatorBtcPublicKey);
+                    BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+                    if (!hasEnoughSignatures(svpSpendTx, signatures)) {
+                        return;
+                    }
+                    addSvpSpendTxSignatures(federatorBtcPublicKey, signatures, rskTxHash, svpSpendTx);
+                });
+        }
+
         BtcTransaction releaseTx = provider.getPegoutsWaitingForSignatures().get(rskTxHash);
         if (releaseTx == null) {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", rskTxHash);
@@ -1655,6 +1668,28 @@ public class BridgeSupport {
         }
 
         return Optional.empty();
+    }
+
+    private void addSvpSpendTxSignatures(
+        BtcECKey federatorPublicKey,
+        List<byte[]> signatures,
+        Keccak256 rskTxHash,
+        BtcTransaction svpSpendTx
+    ) {
+        Federation proposedFederation = federationSupport.getProposedFederation()
+            .orElseThrow(() -> new IllegalStateException("Proposed federation must exist when trying to sign the svp spend transaction."));
+        FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(federatorPublicKey)
+            .orElseThrow(() -> new IllegalStateException("Federator must belong to proposed federation to sign the svp spend transaction."));
+
+        processSigning(federationMember, signatures, rskTxHash, svpSpendTx);
+
+        if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx)) {
+            logMissingSignatures(svpSpendTx, rskTxHash, proposedFederation);
+            return;
+        }
+
+        logReleaseBtc(svpSpendTx, rskTxHash.getBytes());
+        provider.setSvpSpendTxWaitingForSignatures(null);
     }
 
     private void logMissingSignatures(BtcTransaction btcTx, Keccak256 rskTxHash, Federation federation) {
