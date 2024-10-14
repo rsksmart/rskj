@@ -2,6 +2,7 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
+import static co.rsk.peg.bitcoin.BitcoinUtils.generateSigHashForP2SHTransactionInput;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -9,6 +10,7 @@ import co.rsk.bitcoinj.script.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -155,6 +157,19 @@ public class BitcoinTestUtils {
             inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
             input.setScriptSig(inputScriptSig);
         }
+    }
+
+    public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
+        return IntStream.range(0, btcTx.getInputs().size())
+            .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
+            .toList();
+    }
+
+    public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
+        return sigHashes.stream()
+            .map(signingKey::sign)
+            .map(BtcECKey.ECDSASignature::encodeToDER)
+            .toList();
     }
 
     public static BtcTransaction createCoinbaseTransaction(NetworkParameters networkParameters) {
