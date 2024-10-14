@@ -1584,7 +1584,7 @@ public class BridgeSupport {
                 .ifPresent(svpSpendTxWFS -> {
                     logger.trace("Going to add federator public key {} to svp spend transaction", federatorBtcPublicKey);
                     BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
-                    if (!hasEnoughSignatures(svpSpendTx, signatures)) {
+                    if (!areSignaturesEnoughToSignAllTxInputs(svpSpendTx, signatures)) {
                         return;
                     }
                     addSvpSpendTxSignatures(federatorBtcPublicKey, signatures, rskTxHash, svpSpendTx);
@@ -1596,14 +1596,14 @@ public class BridgeSupport {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", rskTxHash);
             return;
         }
-        if (!hasEnoughSignatures(releaseTx, signatures)) {
+        if (!areSignaturesEnoughToSignAllTxInputs(releaseTx, signatures)) {
             return;
         }
 
         addReleaseSignatures(federatorBtcPublicKey, signatures, rskTxHash, releaseTx);
     }
 
-    private boolean hasEnoughSignatures(BtcTransaction releaseTx, List<byte[]> signatures) {
+    private boolean areSignaturesEnoughToSignAllTxInputs(BtcTransaction releaseTx, List<byte[]> signatures) {
         int inputsSize = releaseTx.getInputs().size();
         int signaturesSize = signatures.size();
 
