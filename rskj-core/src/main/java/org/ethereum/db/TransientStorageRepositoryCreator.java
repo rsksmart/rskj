@@ -19,16 +19,18 @@
 
 package org.ethereum.db;
 
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 
-public interface TransientStorageRepository {
-    /**
-     * Returns the transientRepository initializing a new one if the current one is null
-     */
-    Repository getTransientRepository();
+public class TransientStorageRepositoryCreator {
 
-    /**
-     *  Delete all the data for this repository
-     */
-    void clearTransientRepository();
+    private TransientStorageRepositoryCreator() {
+    }
+
+    public static Repository createNewTransientStorage() {
+        return new MutableRepository(new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()));
+    }
 }

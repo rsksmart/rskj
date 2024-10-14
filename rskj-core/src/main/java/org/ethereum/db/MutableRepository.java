@@ -25,22 +25,28 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.*;
+import co.rsk.trie.IterationElement;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieStore;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
-public class MutableRepository implements Repository, TransientStorageRepository {
+public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
@@ -49,7 +55,6 @@ public class MutableRepository implements Repository, TransientStorageRepository
     private final TrieKeyMapper trieKeyMapper;
     private final MutableTrie mutableTrie;
     private final IReadWrittenKeysTracker tracker;
-    private Repository transientRepository;
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie));
@@ -407,23 +412,5 @@ public class MutableRepository implements Repository, TransientStorageRepository
     private Optional<Keccak256> internalGetValueHash(byte[] key) {
         tracker.addNewReadKey(new ByteArrayWrapper(key));
         return mutableTrie.getValueHash(key);
-    }
-
-    @Override
-    public Repository getTransientRepository() {
-        if(transientRepository == null) {
-            transientRepository = getMutableRepository();
-        }
-
-        return transientRepository;
-    }
-
-    @Override
-    public synchronized void clearTransientRepository() {
-        transientRepository =  getMutableRepository();
-    }
-
-    private static MutableRepository getMutableRepository() {
-        return new MutableRepository(new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()));
     }
 }

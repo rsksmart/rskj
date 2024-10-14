@@ -29,8 +29,6 @@ import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStoreImpl;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
@@ -42,8 +40,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
+import org.ethereum.db.TransientStorageRepositoryCreator;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.DataWord;
@@ -120,7 +117,7 @@ public class Program {
     private final Stack stack;
     private final Memory memory;
     private final Storage storage;
-    private final Map<RskAddress, MutableRepository> transientStorages;
+    private final Map<RskAddress, Repository> transientStorages;
     private byte[] returnDataBuffer;
 
     private final ProgramResult result = new ProgramResult();
@@ -460,10 +457,10 @@ public class Program {
         return this.storage;
     }
 
-    public MutableRepository getTransientStorage(RskAddress addr) {
-        MutableRepository current = transientStorages.get(addr);
+    public Repository getTransientStorage(RskAddress addr) {
+        Repository current = transientStorages.get(addr);
         if(current == null) {
-            current = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+            current = TransientStorageRepositoryCreator.createNewTransientStorage();
             transientStorages.put(addr, current);
         }
         return current;
@@ -1004,7 +1001,7 @@ public class Program {
 
     public void transientStorageSave(DataWord key, DataWord value) {
         RskAddress addr = getOwnerRskAddress();
-        MutableRepository storage = getTransientStorage(addr);
+        Repository storage = getTransientStorage(addr);
         storage.addStorageRow(addr, key, value);
     }
 
@@ -1120,7 +1117,7 @@ public class Program {
 
     public DataWord transientStorageLoad(DataWord key) {
         RskAddress addr = getOwnerRskAddress();
-        MutableRepository currentTransientStorage = getTransientStorage(addr);
+        Repository currentTransientStorage = getTransientStorage(addr);
 
         return currentTransientStorage.getStorageValue(addr, key);
     }
