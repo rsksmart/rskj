@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
+import static java.util.Objects.isNull;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -66,6 +67,9 @@ public class BridgeSerializationUtils {
     }
 
     public static Keccak256 deserializeRskTxHash(byte[] rskTxHashSerialized) {
+        if (isNull(rskTxHashSerialized)) {
+            throw new IllegalArgumentException("Serialized hash cannot be null.");
+        }
         return new Keccak256(rskTxHashSerialized);
     }
 
