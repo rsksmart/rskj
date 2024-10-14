@@ -678,18 +678,18 @@ public class BridgeSupportSvpTest {
         @Test
         void addSignature_forSvpSpendTx_withWrongKeys_shouldThrowIllegalStateExceptionAndNotAddProposedFederatorSignatures() {
             // arrange
-            List<BtcECKey> WRONG_KEYS =
+            List<BtcECKey> wrongKeys =
                 BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"wrong01", "wrong02", "wrong03", "wrong04", "wrong05"}, true);
 
             // act & assert
-            for (BtcECKey key : WRONG_KEYS) {
+            for (BtcECKey key : wrongKeys) {
                 List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
                 assertThrows(IllegalStateException.class,
                     () -> bridgeSupport.addSignature(key, signerEncodedSignatures, svpSpendTxCreationHash));
             }
 
             // assert
-            for (BtcECKey key : WRONG_KEYS) {
+            for (BtcECKey key : wrongKeys) {
                 assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
             }
 
