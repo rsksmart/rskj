@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -33,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -71,7 +73,9 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 
 import java.math.BigInteger;
@@ -267,6 +271,35 @@ class BridgeSerializationUtilsTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void deserializeRskTxHash_returnsExpectedHash() {
+        // arrange
+        Keccak256 expectedRskTxHash = RskTestUtils.createHash(1);
+        byte[] rskTxHashSerialized = expectedRskTxHash.getBytes();
+
+        // act
+        Keccak256 rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
+
+        // assert
+        assertEquals(expectedRskTxHash, rskTxHash);
+    }
+
+    @Test
+    void deserializeRskTxHash_withInvalidLengthSerializedHash_throwsIllegalArgumentException() {
+        // arrange
+        byte[] rskTxHashSerialized = new byte[31];
+
+        // act & assert
+        assertThrows(IllegalArgumentException.class,
+            () -> deserializeRskTxHash(rskTxHashSerialized));
+    }
+
+    @Test
+    void deserializeRskTxHash_withNullValue_throwsIllegalArgumentException() {
+        // act & assert
+        assertThrows(IllegalArgumentException.class, () -> deserializeRskTxHash(null));
     }
 
     @Test
