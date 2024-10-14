@@ -619,12 +619,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             signatures.add(signatureByteArray);
         }
         byte[] rskTxHashSerialized = (byte[]) args[2];
+        Keccak256 rskTxHash;
         try {
-            Keccak256 rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
-            bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
+            rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
         } catch (IllegalArgumentException e) {
             throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHashSerialized));
-        } catch (IOException e) {
+        }
+        try {
+            bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
+        } catch (Exception e) {
             logger.warn("Exception in addSignature", e);
             throw new VMException("Exception in addSignature", e);
         }
