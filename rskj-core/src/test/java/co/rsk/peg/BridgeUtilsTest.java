@@ -2016,27 +2016,4 @@ class BridgeUtilsTest {
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
     }
-
-    @Test
-    void deserializeRskTxHash_() {
-        // arrange
-        Keccak256 expectedRskTxHash = RskTestUtils.createHash(1);
-        byte[] rskTxHashSerialized = expectedRskTxHash.getBytes();
-
-        // act
-        Keccak256 rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
-
-        // assert
-        assertEquals(expectedRskTxHash, rskTxHash);
-    }
-
-    @Test
-    void deserializeRskTxHash_withInvalidLength_throwsIllegalArgumentException() {
-        // arrange
-        byte[] rskTxHashSerialized = new byte[31];
-
-        // act & assert
-        assertThrows(IllegalArgumentException.class,
-            () -> deserializeRskTxHash(rskTxHashSerialized));
-    }
 }
