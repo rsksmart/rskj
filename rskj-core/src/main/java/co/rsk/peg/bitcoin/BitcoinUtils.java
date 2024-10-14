@@ -95,4 +95,11 @@ public class BitcoinUtils {
             .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
             .findFirst();
     }
+
+    public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
+        return Optional.ofNullable(btcTx.getInput(inputIndex))
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
+    }
 }
