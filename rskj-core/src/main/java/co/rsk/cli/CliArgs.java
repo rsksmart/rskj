@@ -25,6 +25,7 @@ import java.util.*;
 public class CliArgs<O, F> {
 
     private final Map<O, String> options;
+
     private final Set<F> flags;
     private final Map<String, String> paramValueMap;
 
