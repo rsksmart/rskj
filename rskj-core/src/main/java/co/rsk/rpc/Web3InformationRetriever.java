@@ -21,19 +21,22 @@ package co.rsk.rpc;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.util.HexUtils;
+import co.rsk.util.StringUtils;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.rpc.parameters.HashParam32;
+import org.ethereum.rpc.parameters.HexNumberParam;
 
 import java.util.List;
 import java.util.Optional;
 
-import static co.rsk.crypto.Keccak256.HASH_LEN;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.parameters.HashParam32.HASH_BYTE_LENGTH;
 
 /**
  * Retrieves information requested by web3 based on the block identifier:
@@ -84,10 +87,18 @@ public class Web3InformationRetriever {
                 block = blockchain.getBlockByNumber(0);
                 break;
             default:
-                byte[] hash = getBlockHash(identifier);
-                block = hash.length == HASH_LEN ?
-                        blockchain.getBlockByHash(hash)
-                        : blockchain.getBlockByNumber(getBlockNumber(identifier));
+                if (HashParam32.isHash32HexLengthValid(identifier)
+                        && HexUtils.isHex(identifier, HexUtils.hasHexPrefix(identifier) ? 2 : 0)) {
+                    byte[] hash = getBlockHash(identifier);
+                    if (hash.length != HASH_BYTE_LENGTH) {
+                        throw invalidParamError(String.format("invalid block hash %s", identifier));
+                    }
+                    block = blockchain.getBlockByHash(hash);
+                } else if (HexNumberParam.isHexNumberLengthValid(identifier)) {
+                    block = blockchain.getBlockByNumber(getBlockNumber(identifier));
+                } else {
+                    throw invalidParamError(String.format("invalid block identifier %s", StringUtils.trim(identifier)));
+                }
         }
 
         return Optional.ofNullable(block);

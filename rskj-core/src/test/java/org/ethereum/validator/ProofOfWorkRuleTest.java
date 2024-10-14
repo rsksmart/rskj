@@ -21,6 +21,7 @@ package org.ethereum.validator;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
+import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
@@ -28,20 +29,25 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.junit.jupiter.api.*;
+import org.ethereum.core.BlockHeader;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
-import org.bouncycastle.util.encoders.Hex;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -66,7 +72,7 @@ public abstract class ProofOfWorkRuleTest {
     void test_1() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
-        Assertions.assertTrue(rule.isValid(b));
+        assertTrue(rule.isValid(b));
     }
 
     @Disabled("TODO improve, the mutated block header could be still valid")
@@ -94,8 +100,8 @@ public abstract class ProofOfWorkRuleTest {
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b2.flushRLP();// force re-encode
         byte[] encoded2 = b2.getEncoded();
-        Assertions.assertTrue(Arrays.equals(encoded,encoded2));
-        Assertions.assertTrue(Arrays.equals(lastField,lastField2));
+        assertTrue(Arrays.equals(encoded,encoded2));
+        assertTrue(Arrays.equals(lastField,lastField2));
     }
 
     @Disabled("stress test")
@@ -113,7 +119,7 @@ public abstract class ProofOfWorkRuleTest {
 
         long total = System.currentTimeMillis() - start;
 
-        Assertions.assertTrue(total > 0);
+        assertTrue(total > 0);
 
         System.out.printf("Time: total = %d ms, per block = %.2f ms%n", total, (double) total / iterCnt);
     }
@@ -139,6 +145,22 @@ public abstract class ProofOfWorkRuleTest {
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), bytes);
 
         Assertions.assertFalse(rule.isValid(b));
+    }
+
+    @Test
+    void test_validAfterEncodingAndDecoding() {
+        BlockHeader header = blockFactory.getBlockHeaderBuilder()
+                .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION)
+                .setIncludeForkDetectionData(true)
+                .build();
+        Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+        Block minedBlock = new BlockMiner(activationConfig).mineBlock(block);
+        BlockHeader minedBlockHeader = minedBlock.getHeader();
+
+        byte[] encodedCompressed = minedBlockHeader.getFullEncoded();
+        BlockHeader decodedHeader = blockFactory.decodeHeader(encodedCompressed, false);
+
+        assertTrue(rule.isValid(decodedHeader));
     }
 
     @Test
@@ -169,7 +191,7 @@ public abstract class ProofOfWorkRuleTest {
 
         Block newBlock1 = new BlockMiner(config).mineBlock(newBlock, bitcoinMergedMiningCoinbaseTransaction);
         ProofOfWorkRule rule = new ProofOfWorkRule(props);
-        Assertions.assertTrue(rule.isValid(newBlock1));
+        assertTrue(rule.isValid(newBlock1));
     }
 
     @Test

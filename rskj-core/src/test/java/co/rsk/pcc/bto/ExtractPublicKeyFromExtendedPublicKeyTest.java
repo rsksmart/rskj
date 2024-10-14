@@ -91,7 +91,7 @@ class ExtractPublicKeyFromExtendedPublicKeyTest {
             });
             Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assertions.assertEquals("Invalid extended public key 'tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77L...'", e.getMessage());
+            Assertions.assertEquals("Invalid extended public key 'tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3...'", e.getMessage());
         }
     }
 

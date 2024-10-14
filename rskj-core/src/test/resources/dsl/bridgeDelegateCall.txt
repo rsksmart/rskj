@@ -5,7 +5,7 @@ transaction_build tx01
     receiverAddress 00
     value 0
     data 5f600060006000600073000000000000000000000000000000000100000663005b8d80f1
-    gas 1200000
+    gas 600000
     build
 
 transaction_build tx02
@@ -13,7 +13,7 @@ transaction_build tx02
     receiverAddress 00
     value 0
     data 5f600060006000600073000000000000000000000000000000000100000663005b8d80f4
-    gas 1200000
+    gas 600000
     nonce 1
     build
 
@@ -22,7 +22,7 @@ transaction_build tx03
     receiverAddress 00
     value 0
     data 5f600060006000600073000000000000000000000000000000000100000663005b8d80f2
-    gas 1200000
+    gas 600000
     nonce 2
     build
 
@@ -31,7 +31,7 @@ transaction_build tx04
     receiverAddress 00
     value 0
     data 5f600060006000600073000000000000000000000000000000000100000663005b8d80fa
-    gas 1200000
+    gas 600000
     nonce 3
     build
 

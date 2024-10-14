@@ -348,7 +348,7 @@ class BitcoinUtilsTest {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script p2shMultiSigScriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
-        BtcECKey pubKey = new BtcECKey();
+        BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
         Script p2pkhScriptSig = ScriptBuilder.createInputScript(null, pubKey);
 
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
