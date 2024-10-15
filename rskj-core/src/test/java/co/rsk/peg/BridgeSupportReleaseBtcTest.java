@@ -1279,7 +1279,8 @@ class BridgeSupportReleaseBtcTest {
         // Add some extra weis to the value, but less than 1 satoshi.
         // To ensure that the pegout value is rounded down to fit in satoshis.
         co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.fromBitcoin(Coin.SATOSHI);
-        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        co.rsk.core.Coin oneWei = co.rsk.core.Coin.valueOf(Denomination.WEI.longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(oneWei);
         pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
@@ -1375,7 +1376,8 @@ class BridgeSupportReleaseBtcTest {
         // Add some extra weis to the value, but less than 1 satoshi.
         // To ensure that the pegout value is rounded down to fit in satoshis.
         co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.fromBitcoin(Coin.SATOSHI);
-        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        co.rsk.core.Coin oneWei = co.rsk.core.Coin.valueOf(Denomination.WEI.longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(oneWei);
         pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
@@ -1422,7 +1424,8 @@ class BridgeSupportReleaseBtcTest {
         // Add some extra weis to the value, but less than 1 satoshi.
         // To ensure that the pegout value is rounded down to fit in satoshis.
         co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.fromBitcoin(Coin.SATOSHI);
-        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        co.rsk.core.Coin oneWei = co.rsk.core.Coin.valueOf(Denomination.WEI.longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(oneWei);
         pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx_fromContract(pegoutRequestValue));
@@ -1480,7 +1483,8 @@ class BridgeSupportReleaseBtcTest {
         // Add some extra weis to the value, but less than 1 satoshi.
         // To ensure that the pegout value is rounded down to fit in satoshis.
         co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.fromBitcoin(Coin.SATOSHI);
-        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        co.rsk.core.Coin oneWei = co.rsk.core.Coin.valueOf(Denomination.WEI.longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(oneWei);
         pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
@@ -1543,7 +1547,8 @@ class BridgeSupportReleaseBtcTest {
         // Add some extra weis to the value, but less than 1 satoshi.
         // To ensure that the pegout value is rounded down to fit in satoshis.
         co.rsk.core.Coin oneSatoshiInWeis = co.rsk.core.Coin.fromBitcoin(Coin.SATOSHI);
-        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(co.rsk.core.Coin.valueOf(1));
+        co.rsk.core.Coin oneWei = co.rsk.core.Coin.valueOf(Denomination.WEI.longValue());
+        co.rsk.core.Coin extraWeis = oneSatoshiInWeis.subtract(oneWei);
         pegoutRequestValue = pegoutRequestValue.add(extraWeis);
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
