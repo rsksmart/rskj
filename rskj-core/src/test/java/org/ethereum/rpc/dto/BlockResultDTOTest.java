@@ -142,6 +142,7 @@ class BlockResultDTOTest {
         Assertions.assertEquals(1, blockResultDTO.getTransactions().size());
         Assertions.assertTrue(transactionResultsHashes.contains(TRANSACTION.getHash().toJsonString()));
         Assertions.assertFalse(transactionResultsHashes.contains(REMASC_TRANSACTION.getHash().toJsonString()));
+        Assertions.assertNotNull(blockResultDTO.getRskPteEdges());
     }
 
     private List<TransactionResultDTO> transactionResultsByBlock(BlockResultDTO blockResultDTO) {

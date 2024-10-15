@@ -1,5 +1,6 @@
 package org.ethereum.solidity;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,7 @@ class SolidityTypeTest {
         input[31] = 0x10; // Indicating we should have 16 elements in the array should fail
 
         try {
-            dat.decode(input, 0);
+            dat.decode(Bytes.of(input), 0);
             Assertions.fail();
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
@@ -35,7 +36,7 @@ class SolidityTypeTest {
         input[97] = 0x69;
 
         try {
-            dat.decode(input, 0);
+            dat.decode(Bytes.of(input), 0);
             Assertions.fail();
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
@@ -60,7 +61,7 @@ class SolidityTypeTest {
         input[163] = 0x69;
 
         try {
-            dat.decode(input, 0);
+            dat.decode(Bytes.of(input), 0);
             Assertions.fail();
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
@@ -96,7 +97,7 @@ class SolidityTypeTest {
         input[229] = 0x68;
         input[230] = 0x75;
 
-        Object[] ret = (Object[])dat.decode(input, 0);
+        Object[] ret = (Object[])dat.decode(Bytes.of(input), 0);
         Assertions.assertEquals(3, ret.length);
         Assertions.assertTrue(ret[0].toString().contains("hi"));
         Assertions.assertTrue(ret[1].toString().contains("ih"));
@@ -114,7 +115,7 @@ class SolidityTypeTest {
             // the actual data
             input[32] = 0x68;
             input[33] = 0x69;
-            dat.decode(input, 0);
+            dat.decode(Bytes.of(input), 0);
             Assertions.fail("should have failed");
         }
         catch (IllegalArgumentException e) {
@@ -130,7 +131,7 @@ class SolidityTypeTest {
             // the actual data
             input[32] = 0x68;
             input[33] = 0x69;
-            dat.decode(input, 0);
+            dat.decode(Bytes.of(input), 0);
             Assertions.fail("should have failed");
         }
         catch (IllegalArgumentException e) {
@@ -149,7 +150,7 @@ class SolidityTypeTest {
         input[32] = 0x68;
         input[33] = 0x69;
 
-        Object[] ret = dat.decode(input, 0);
+        Object[] ret = dat.decode(Bytes.of(input), 0);
         Assertions.assertEquals(1, ret.length);
         Assertions.assertTrue(ret[0].toString().contains("hi"));
     }
@@ -159,7 +160,7 @@ class SolidityTypeTest {
         // Should fail, the array is smaller than the offset we define
         try {
             byte[] input = new byte[] {0x4f, 0x4f};
-            SolidityType.IntType.decodeInt(input, 12);
+            SolidityType.IntType.decodeInt(Bytes.of(input), 12);
             Assertions.fail("should have failed to deserialize the array");
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
@@ -168,11 +169,11 @@ class SolidityTypeTest {
 
         // Should get a valid number
         input[31] = 0x01;
-        BigInteger value = SolidityType.IntType.decodeInt(input, 0);
+        BigInteger value = SolidityType.IntType.decodeInt(Bytes.of(input), 0);
         Assertions.assertEquals(1, value.intValue());
 
         // Should get a valid number
-        value = SolidityType.IntType.decodeInt(input, 32);
+        value = SolidityType.IntType.decodeInt(Bytes.of(input), 32);
         Assertions.assertEquals(0, value.intValue());
     }
 

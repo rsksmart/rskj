@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -35,12 +36,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.Mockito.when;
 
 class BlockHeaderBuilderTest {
     private static final byte[] EMPTY_UNCLES_LIST_HASH = HashUtil.keccak256(RLP.encodeList(new byte[0]));
@@ -257,7 +261,10 @@ class BlockHeaderBuilderTest {
 
     @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} then expectedSize {2}")
     @ArgumentsSource(CreateHeaderArgumentsProvider.class)
-    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, int expectedSize) {
+    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, int expectedSize) {
+        BlockHeaderBuilder blockHeaderBuilder = useRSKIP351
+                ? this.blockHeaderBuilder
+                : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
         byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase",128);
         byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader",80);
         byte[] merkleProof = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "merkleProof",32);
@@ -400,15 +407,134 @@ class BlockHeaderBuilderTest {
         assertArrayEquals(null, header.getUmmRoot());
     }
 
-    private static class CreateHeaderArgumentsProvider implements ArgumentsProvider {
+    @Test
+    void createsHeaderWithParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
 
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(true)
+                .build();
+
+        assertArrayEquals(new short[0], header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithoutParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(false)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(edges)
+                .build();
+
+        assertArrayEquals(edges, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithNullEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(null)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithNullEdgesButParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(null)
+                .setCreateParallelCompliantHeader(true)
+                .build();
+
+        assertArrayEquals(new short[0], header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithoutParallelCompliantButWithEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(false)
+                .setTxExecutionSublistsEdges(edges)
+                .build();
+
+        assertArrayEquals(edges, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithEdgesButWithoutParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray("edges", 4);
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(edges)
+                .setCreateParallelCompliantHeader(false)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithParallelCompliantButWithNullEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(true)
+                .setTxExecutionSublistsEdges(null)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+    private static class CreateHeaderArgumentsProvider implements ArgumentsProvider {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    Arguments.of(false, false, 20),
-                    Arguments.of(false, true, 18),
-                    Arguments.of(true, false, 18)
+                    Arguments.of(false, false, false, 21),
+                    Arguments.of(false, true, false, 19),
+                    Arguments.of(true, false, false, 19),
+                    Arguments.of(false, false, true, 22),
+                    Arguments.of(false, true, true, 20),
+                    Arguments.of(true, false, true, 20)
             );
         }
+    }
+
+    @Test
+    void createsHeaderWithVersion0WithNoRskip351() {
+        // RSKIP351 = -1
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)).build();
+        assertEquals((byte) 0x0, header.getVersion());
+    }
+
+    @Test
+    void createsHeaderWithVersion0BeforeRskip351() {
+        // RSKIP351 > header number
+        ActivationConfig activationConfig = Mockito.mock(ActivationConfig.class);
+        when(activationConfig.getHeaderVersion(geq(2))).thenReturn((byte) 0x0);
+        BlockHeader header = new BlockHeaderBuilder(activationConfig).setNumber(1).build();
+        assertEquals((byte) 0x0, header.getVersion());
+    }
+
+    @Test
+    void createHeaderWithVersion1AfterRskip351() {
+        // RSKIP351 = 0
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
+        assertEquals((byte) 0x1, header.getVersion());
     }
 }

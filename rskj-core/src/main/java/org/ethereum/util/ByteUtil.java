@@ -26,6 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -673,5 +674,21 @@ public class ByteUtil {
         return FastByteComparisons.compareTo(
                 left, 0, left.length,
                 right, 0, right.length) == 0;
+    }
+
+    public static byte[] shortsToRLP(short[] shorts) {
+        byte[] edgesBytes = new byte[shorts.length * 2];
+        ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(shorts);
+        return RLP.encodeElement(edgesBytes);
+    }
+
+    public static short[] rlpToShorts(byte[] rlpData) {
+        if(rlpData.length == 0) return new short[]{};
+        short[] shorts = new short[rlpData.length / 2];
+        ByteBuffer.wrap(rlpData)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asShortBuffer()
+                .get(shorts);
+        return shorts;
     }
 }

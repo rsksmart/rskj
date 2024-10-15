@@ -43,6 +43,8 @@ import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -62,6 +64,13 @@ public final class TestUtils {
 
     public static Keccak256 generateHash(String discriminator) {
         return new Keccak256(generateBytes(TestUtils.class, discriminator, 32));
+    }
+
+    public static short[] randomShortArray(@Nonnull String discriminator, int length) {
+        short[] result = new short[length];
+        byte[] bytes = generateBytes(TestUtils.class, discriminator, length * 2);
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(result);
+        return result;
     }
 
     public static Long generateLong(@Nonnull String discriminator) {

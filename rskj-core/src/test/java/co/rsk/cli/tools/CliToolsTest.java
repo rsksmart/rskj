@@ -41,8 +41,9 @@ import co.rsk.util.SystemUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -77,9 +78,7 @@ import java.util.Random;
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.generateBytesFromRandom;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.*;
 
@@ -292,7 +291,7 @@ class CliToolsTest {
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(receiptStore).when(rskContext).getReceiptStore();
-        doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        doReturn(new BlockFactory(world.getConfig().getActivationConfig())).when(rskContext).getBlockFactory();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
@@ -309,11 +308,8 @@ class CliToolsTest {
         verify(stopper).stop(0);
     }
 
-    @Test
-    void importBlocks() throws IOException, DslProcessorException {
+    void testImportBlocks(World world) throws IOException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks01b.txt");
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = new World(receiptStore);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -346,7 +342,7 @@ class CliToolsTest {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
-        doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        doReturn(new BlockFactory(world.getConfig().getActivationConfig())).when(rskContext).getBlockFactory();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(DbKind.ROCKS_DB).when(rskSystemProperties).databaseKind();
@@ -359,6 +355,36 @@ class CliToolsTest {
         Assertions.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
 
         verify(stopper).stop(0);
+    }
+
+    @Test
+    void importBlocksWithoutRskip351() throws IOException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(-1))
+        );
+        Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 3));
+        World world = new World(receiptStore, config);
+        testImportBlocks(world);
+    }
+
+    @Test
+    void importBlocksWithRskip351InMiddle() throws IOException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip351", ConfigValueFactory.fromAnyRef(2))
+        );
+        Assertions.assertFalse(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 1));
+        Assertions.assertTrue(config.getActivationConfig().isActive(ConsensusRule.RSKIP351, 2));
+        World world = new World(receiptStore, config);
+        testImportBlocks(world);
+    }
+
+    @Test
+    void importBlocks() throws IOException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        testImportBlocks(world);
     }
 
     @Test

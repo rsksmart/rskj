@@ -20,6 +20,7 @@
 package org.ethereum.solidity;
 
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.core.types.bytes.BytesSlice;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.ethereum.util.ByteUtil;
@@ -101,9 +102,9 @@ public abstract class SolidityType {
      */
     public abstract byte[] encode(Object value);
 
-    public abstract Object decode(byte[] encoded, int offset);
+    public abstract Object decode(BytesSlice encoded, int offset);
 
-    public Object decode(byte[] encoded) {
+    public Object decode(BytesSlice encoded) {
         return decode(encoded, 0);
     }
 
@@ -196,7 +197,7 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object[] decode(byte[] encoded, int offset) {
+        public Object[] decode(BytesSlice encoded, int offset) {
             Utils.validateArrayAllegedSize(encoded, offset, getFixedSize());
             Object[] result = new Object[size];
             for (int i = 0; i < size; i++) {
@@ -247,8 +248,8 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int origOffset) {
-            if (encoded.length == 0) {
+        public Object decode(BytesSlice encoded, int origOffset) {
+            if (encoded.length() == 0) {
                 return new Object[0];
             }
             int len = IntType.decodeInt(encoded, origOffset).intValue();
@@ -299,7 +300,7 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             int len = IntType.decodeInt(encoded, offset).intValue();
             offset += IntType.INT_SIZE;
             return Utils.safeCopyOfRange(encoded, offset, len);
@@ -325,7 +326,7 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             return new String((byte[]) super.decode(encoded, offset), StandardCharsets.UTF_8);
         }
     }
@@ -357,7 +358,7 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             return Utils.safeCopyOfRange(encoded, offset, getFixedSize());
         }
     }
@@ -383,7 +384,7 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             BigInteger asBigInteger = (BigInteger) super.decode(encoded, offset);
             return DataWord.valueOf(asBigInteger.toByteArray());
         }
@@ -434,14 +435,14 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             return decodeInt(encoded, offset);
         }
 
-        public static BigInteger decodeInt(byte[] encoded, int offset) {
+        public static BigInteger decodeInt(BytesSlice encoded, int offset) {
             // This is here because getGasForData might send an empty payload which will produce an exception
             // But currently the bridge would return the cost of RELEASE_BTC in this situation
-            if (encoded.length == 0) {
+            if (encoded.length() == 0) {
                 return BigInteger.ZERO;
             }
             return new BigInteger(Utils.safeCopyOfRange(encoded, offset, INT_SIZE));
@@ -474,7 +475,7 @@ public abstract class SolidityType {
         }
 
         @Override
-        public Object decode(byte[] encoded, int offset) {
+        public Object decode(BytesSlice encoded, int offset) {
             return Boolean.valueOf(((Number) super.decode(encoded, offset)).intValue() != 0);
         }
     }
