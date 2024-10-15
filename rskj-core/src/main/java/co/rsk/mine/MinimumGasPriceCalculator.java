@@ -27,7 +27,7 @@ import co.rsk.mine.gas.provider.MinGasPriceProvider;
  */
 public class MinimumGasPriceCalculator {
 
-    private MinGasPriceProvider minGasPriceProvider;
+    private final MinGasPriceProvider minGasPriceProvider;
 
     public MinimumGasPriceCalculator(MinGasPriceProvider minGasPriceProvider) {
         this.minGasPriceProvider = minGasPriceProvider;
