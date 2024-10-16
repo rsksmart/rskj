@@ -840,13 +840,13 @@ public class BridgeSupport {
     }
 
     private void refundAndEmitRejectEvent(
-        co.rsk.core.Coin releaseRequestedValue,
+        co.rsk.core.Coin releaseRequestedValueInWeis,
         RskAddress senderAddress,
         RejectedPegoutReason reason
     ) {
         logger.trace(
             "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
-            releaseRequestedValue,
+            releaseRequestedValueInWeis,
             senderAddress,
             reason
         );
@@ -854,19 +854,19 @@ public class BridgeSupport {
         // Prior to RSKIP427, the value was converted to BTC before doing the refund
         // This could cause the original value to be rounded down to fit in satoshis value
         co.rsk.core.Coin refundValue = activations.isActive(RSKIP427) ?
-            releaseRequestedValue :
-            co.rsk.core.Coin.fromBitcoin(releaseRequestedValue.toBitcoin());
+            releaseRequestedValueInWeis :
+            co.rsk.core.Coin.fromBitcoin(releaseRequestedValueInWeis.toBitcoin());
 
         rskRepository.transfer(
             PrecompiledContracts.BRIDGE_ADDR,
             senderAddress,
             refundValue
         );
-        emitRejectEvent(releaseRequestedValue, senderAddress, reason);
+        emitRejectEvent(releaseRequestedValueInWeis, senderAddress, reason);
     }
 
-    private void emitRejectEvent(co.rsk.core.Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
-        eventLogger.logReleaseBtcRequestRejected(senderAddress, value, reason);
+    private void emitRejectEvent(co.rsk.core.Coin releaseRequestedValueInWeis, RskAddress senderAddress, RejectedPegoutReason reason) {
+        eventLogger.logReleaseBtcRequestRejected(senderAddress, releaseRequestedValueInWeis, reason);
     }
 
     /**
@@ -875,11 +875,11 @@ public class BridgeSupport {
      * to be processed later.
      *
      * @param destinationAddress the destination BTC address.
-     * @param releaseRequestedValue the amount of RBTC requested to be released.
+     * @param releaseRequestedValueInWeis the amount of RBTC requested to be released, represented in weis
      * @throws IOException if there is an error getting the release request queue from storage
      */
-    private void requestRelease(Address destinationAddress, co.rsk.core.Coin releaseRequestedValue, Transaction rskTx) throws IOException {
-        Coin valueToRelease = releaseRequestedValue.toBitcoin();
+    private void requestRelease(Address destinationAddress, co.rsk.core.Coin releaseRequestedValueInWeis, Transaction rskTx) throws IOException {
+        Coin valueToReleaseInSatoshis = releaseRequestedValueInWeis.toBitcoin();
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
             int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
@@ -897,11 +897,11 @@ public class BridgeSupport {
                     .divide(100)
                 ); // add the gap
 
-            // The pegout releaseRequestedValue should be greater or equals than the max of these two values
+            // The pegout releaseRequestedValueInWeis should be greater or equals than the max of these two values
             Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValue().value, requireFundsForFee.value));
 
             // Since Iris the peg-out the rule is that the minimum is inclusive
-            if (valueToRelease.isLessThan(minValue)) {
+            if (valueToReleaseInSatoshis.isLessThan(minValue)) {
                 optionalRejectedPegoutReason = Optional.of(
                     Objects.equals(minValue, requireFundsForFee) ?
                     RejectedPegoutReason.FEE_ABOVE_VALUE:
@@ -910,7 +910,7 @@ public class BridgeSupport {
             }
         } else {
             // For legacy peg-outs the rule stated that the minimum was exclusive
-            if (!valueToRelease.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
+            if (!valueToReleaseInSatoshis.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
                 optionalRejectedPegoutReason = Optional.of(RejectedPegoutReason.LOW_AMOUNT);
             }
         }
@@ -920,21 +920,21 @@ public class BridgeSupport {
                 "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
                 destinationAddress,
                 rskTx,
-                releaseRequestedValue,
+                releaseRequestedValueInWeis,
                 optionalRejectedPegoutReason.get()
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 refundAndEmitRejectEvent(
-                    releaseRequestedValue,
+                    releaseRequestedValueInWeis,
                     rskTx.getSender(signatureCache),
                     optionalRejectedPegoutReason.get()
                 );
             }
         } else {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseRequestQueue().add(destinationAddress, valueToRelease, rskTx.getHash());
+                provider.getReleaseRequestQueue().add(destinationAddress, valueToReleaseInSatoshis, rskTx.getHash());
             } else {
-                provider.getReleaseRequestQueue().add(destinationAddress, valueToRelease);
+                provider.getReleaseRequestQueue().add(destinationAddress, valueToReleaseInSatoshis);
             }
 
             RskAddress sender = rskTx.getSender(signatureCache);
@@ -942,14 +942,14 @@ public class BridgeSupport {
                 eventLogger.logReleaseBtcRequestReceived(
                     sender,
                     destinationAddress,
-                    releaseRequestedValue
+                    releaseRequestedValueInWeis
                 );
             }
             logger.info(
                 "[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.",
                 destinationAddress,
                 rskTx,
-                releaseRequestedValue
+                releaseRequestedValueInWeis
             );
         }
     }

@@ -192,45 +192,45 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestReceived(RskAddress sender, Address btcDestinationAddress, co.rsk.core.Coin amount) {
+    public void logReleaseBtcRequestReceived(RskAddress sender, Address btcDestinationAddress, co.rsk.core.Coin amountInWeis) {
         if (activations.isActive(ConsensusRule.RSKIP326)) {
-            logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.toString(), amount);
+            logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.toString(), amountInWeis);
         } else {
-            logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.getHash160(), amount.toBitcoin());
+            logReleaseBtcRequestReceived(sender.toHexString(), btcDestinationAddress.getHash160(), amountInWeis.toBitcoin());
         }
     }
 
-    private void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount) {
+    private void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amountInSatoshis) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
-        byte[] encodedData = event.encodeEventData(btcDestinationAddress, amount.getValue());
+        byte[] encodedData = event.encodeEventData(btcDestinationAddress, amountInSatoshis.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    private void logReleaseBtcRequestReceived(String sender, String btcDestinationAddress, co.rsk.core.Coin amount) {
+    private void logReleaseBtcRequestReceived(String sender, String btcDestinationAddress, co.rsk.core.Coin amountInWeis) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] encodedData = activations.isActive(ConsensusRule.RSKIP427) ?
-            event.encodeEventData(btcDestinationAddress, amount.asBigInteger()) :
-            event.encodeEventData(btcDestinationAddress, amount.toBitcoin().getValue());
+            event.encodeEventData(btcDestinationAddress, amountInWeis.asBigInteger()) :
+            event.encodeEventData(btcDestinationAddress, amountInWeis.toBitcoin().getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
     @Override
-    public void logReleaseBtcRequestRejected(RskAddress sender, co.rsk.core.Coin amount, RejectedPegoutReason reason) {
+    public void logReleaseBtcRequestRejected(RskAddress sender, co.rsk.core.Coin amountInWeis, RejectedPegoutReason reason) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender.toHexString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] encodedData = activations.isActive(ConsensusRule.RSKIP427) ?
-            event.encodeEventData(amount.asBigInteger(), reason.getValue()) :
-            event.encodeEventData(amount.toBitcoin().getValue(), reason.getValue());
+            event.encodeEventData(amountInWeis.asBigInteger(), reason.getValue()) :
+            event.encodeEventData(amountInWeis.toBitcoin().getValue(), reason.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
