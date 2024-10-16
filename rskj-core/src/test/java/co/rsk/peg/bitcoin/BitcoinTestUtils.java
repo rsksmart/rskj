@@ -160,13 +160,13 @@ public class BitcoinTestUtils {
     public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
         return IntStream.range(0, btcTx.getInputs().size())
             .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
         return sigHashes.stream()
             .map(signingKey::sign)
             .map(BtcECKey.ECDSASignature::encodeToDER)
-            .collect(Collectors.toList());
+            .toList();
     }
 }
