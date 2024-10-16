@@ -732,14 +732,32 @@ public class BridgeSupportSvpTest {
                 .build();
 
             // act
-            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
-                bridgeSupport.addSignature(key, signatures, svpSpendTxCreationHash);
+            for (BtcECKey proposedFederatorSignerKeys : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKeys, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(proposedFederatorSignerKeys, signatures, svpSpendTxCreationHash);
             }
 
             // assert
-            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            for (BtcECKey proposedFederatorSignerKeys : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, proposedFederatorSignerKeys);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_withoutEnoughSignatures_shouldNotAddProposedFederatorsSignatures() throws Exception {
+            // act
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+                List<byte[]> notEnoughSignatures = signatures.subList(0, signatures.size() - 1);
+                bridgeSupport.addSignature(proposedFederatorSignerKey, notEnoughSignatures, svpSpendTxCreationHash);
+            }
+
+            // assert
+            for (BtcECKey proposedFederatorSignerKeys : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, proposedFederatorSignerKeys);
             }
 
             assertAddSignatureWasNotLogged();
