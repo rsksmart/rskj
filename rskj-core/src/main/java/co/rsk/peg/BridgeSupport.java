@@ -845,7 +845,7 @@ public class BridgeSupport {
         RejectedPegoutReason reason
     ) {
         logger.trace(
-            "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
+            "[refundAndEmitRejectEvent] Executing a refund of {} weis to {}. Reason: {}",
             releaseRequestedValueInWeis,
             senderAddress,
             reason
@@ -917,7 +917,7 @@ public class BridgeSupport {
 
         if (optionalRejectedPegoutReason.isPresent()) {
             logger.warn(
-                "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
+                "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {} weis. Reason: {}",
                 destinationAddress,
                 rskTx,
                 releaseRequestedValueInWeis,
@@ -946,7 +946,7 @@ public class BridgeSupport {
                 );
             }
             logger.info(
-                "[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.",
+                "[requestRelease] releaseBtc successful to {}. Tx {}. Value {} weis.",
                 destinationAddress,
                 rskTx,
                 releaseRequestedValueInWeis
