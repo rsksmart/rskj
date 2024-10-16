@@ -1580,6 +1580,7 @@ public class BridgeSupport {
 
         if (svpIsOngoing() && isSvpSpendTx(releaseCreationRskTxHash)) {
             addSvpSpendTxSignatures(federatorBtcPublicKey, signatures);
+            return;
         }
 
         addReleaseSignatures(federatorBtcPublicKey, signatures, releaseCreationRskTxHash);
