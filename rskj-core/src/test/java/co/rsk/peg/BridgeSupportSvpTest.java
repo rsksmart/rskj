@@ -678,19 +678,19 @@ public class BridgeSupportSvpTest {
         @Test
         void addSignature_forSvpSpendTx_withWrongKeys_shouldThrowIllegalStateExceptionAndNotAddProposedFederatorSignatures() {
             // arrange
-            List<BtcECKey> wrongKeys =
+            List<BtcECKey> wrongSigningKeys =
                 BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"wrong01", "wrong02", "wrong03", "wrong04", "wrong05"}, true);
 
             // act & assert
-            for (BtcECKey key : wrongKeys) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
+            for (BtcECKey wrongSigningKey : wrongSigningKeys) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(wrongSigningKey, svpSpendTxSigHashes);
                 assertThrows(IllegalStateException.class,
-                    () -> bridgeSupport.addSignature(key, signerEncodedSignatures, svpSpendTxCreationHash));
+                    () -> bridgeSupport.addSignature(wrongSigningKey, signatures, svpSpendTxCreationHash));
             }
 
             // assert
-            for (BtcECKey key : wrongKeys) {
-                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            for (BtcECKey wrongSigningKey : wrongSigningKeys) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, wrongSigningKey);
             }
 
             assertAddSignatureWasNotLogged();
@@ -703,9 +703,9 @@ public class BridgeSupportSvpTest {
             when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
 
             // act
-            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
-                bridgeSupport.addSignature(key, signerEncodedSignatures, svpSpendTxCreationHash);
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
             }
 
             // assert
@@ -733,8 +733,8 @@ public class BridgeSupportSvpTest {
 
             // act
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
-                bridgeSupport.addSignature(key, signerEncodedSignatures, svpSpendTxCreationHash);
+                List<byte[]> signatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(key, signatures, svpSpendTxCreationHash);
             }
 
             // assert
@@ -764,19 +764,19 @@ public class BridgeSupportSvpTest {
         @Test
         void addSignature_forSvpSpendTx_shouldAddProposedFederatorsSignatures() throws Exception {
             // act
-            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, svpSpendTxSigHashes);
-                bridgeSupport.addSignature(key, signerEncodedSignatures, svpSpendTxCreationHash);
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
             }
 
             // assert
-            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 assertFederatorSigning(
                     svpSpendTxCreationHash.getBytes(),
                     svpSpendTx.getInputs(),
                     svpSpendTxSigHashes,
                     proposedFederation,
-                    key
+                    proposedFederatorSignerKey
                 );
             }
             assertLogReleaseBtc(svpSpendTxCreationHash, svpSpendTx);
@@ -792,20 +792,20 @@ public class BridgeSupportSvpTest {
             SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
             pegoutsWFS.put(rskTxHash, pegout);
 
-            List<BtcECKey> activeFedSigners =
+            List<BtcECKey> activeFedSignersKeys =
                 BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true);
 
             List<Sha256Hash> pegoutTxSigHashes = generateTransactionInputsSigHashes(pegout);
 
             // act
-            for (BtcECKey key : activeFedSigners) {
-                List<byte[]> signerEncodedSignatures = generateSignerEncodedSignatures(key, pegoutTxSigHashes);
-                bridgeSupport.addSignature(key, signerEncodedSignatures, rskTxHash);
+            for (BtcECKey activeFedSignerKey : activeFedSignersKeys) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(activeFedSignerKey, pegoutTxSigHashes);
+                bridgeSupport.addSignature(activeFedSignerKey, signatures, rskTxHash);
             }
 
             // assert
             List<TransactionInput> pegoutInputs = pegout.getInputs();
-            for (BtcECKey key : activeFedSigners) {
+            for (BtcECKey key : activeFedSignersKeys) {
                 assertFederatorSigning(
                     rskTxHash.getBytes(),
                     pegout.getInputs(),
@@ -816,7 +816,7 @@ public class BridgeSupportSvpTest {
             }
 
             assertLogReleaseBtc(rskTxHash, pegout);
-            assertLogsSize(activeFedSigners.size() + 1); // activeFedSigners size for addSignature, +1 for release btc
+            assertLogsSize(activeFedSignersKeys.size() + 1); // activeFedSignersKeys size for addSignature, +1 for release btc
 
             for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
                 assertFederatorDidNotSignInputs(pegoutInputs, pegoutTxSigHashes, key);

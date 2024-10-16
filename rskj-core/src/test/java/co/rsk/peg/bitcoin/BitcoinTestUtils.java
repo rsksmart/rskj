@@ -10,6 +10,7 @@ import co.rsk.bitcoinj.script.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 
@@ -157,21 +158,15 @@ public class BitcoinTestUtils {
     }
 
     public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
-        List<Sha256Hash> sigHashes = new ArrayList<>();
-        List<TransactionInput> inputs = btcTx.getInputs();
-        for (TransactionInput input : inputs) {
-            Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(btcTx, inputs.indexOf(input));
-            sigHashes.add(sigHash);
-        }
-        return sigHashes;
+        return IntStream.range(0, btcTx.getInputs().size())
+            .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
+            .collect(Collectors.toList());
     }
 
     public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
-        List<byte[]> encodedSignatures = new ArrayList<>();
-        for (Sha256Hash sigHash : sigHashes) {
-            BtcECKey.ECDSASignature signature = signingKey.sign(sigHash);
-            encodedSignatures.add(signature.encodeToDER());
-        }
-        return encodedSignatures;
+        return sigHashes.stream()
+            .map(signingKey::sign)
+            .map(BtcECKey.ECDSASignature::encodeToDER)
+            .collect(Collectors.toList());
     }
 }

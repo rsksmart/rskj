@@ -1567,11 +1567,11 @@ public class BridgeSupport {
      * The hash for the signature must be calculated with Transaction.SigHash.ALL and anyoneCanPay=false. The signature must be canonical.
      * If enough signatures were added, ask federators to broadcast the btc release tx.
      *
-     * @param federatorBtcPublicKey   Federator who is signing
-     * @param signatures              1 signature per btc tx input
-     * @param rskTxHash               The hash of the rsk tx
+     * @param federatorBtcPublicKey         Federator who is signing
+     * @param signatures                    1 signature per btc tx input
+     * @param releaseCreationRskTxHash      The hash of the rsk tx
      */
-    public void addSignature(BtcECKey federatorBtcPublicKey, List<byte[]> signatures, Keccak256 rskTxHash) throws IOException {
+    public void addSignature(BtcECKey federatorBtcPublicKey, List<byte[]> signatures, Keccak256 releaseCreationRskTxHash) throws IOException {
         if (signatures == null || signatures.isEmpty()) {
             return;
         }
@@ -1580,27 +1580,27 @@ public class BridgeSupport {
 
         if (svpIsOngoing()) {
             provider.getSvpSpendTxWaitingForSignatures()
-                .filter(svpSpendTxWFS -> svpSpendTxWFS.getKey().equals(rskTxHash))
+                .filter(svpSpendTxWFS -> svpSpendTxWFS.getKey().equals(releaseCreationRskTxHash))
                 .ifPresent(svpSpendTxWFS -> {
-                    logger.trace("Going to add federator public key {} to svp spend transaction", federatorBtcPublicKey);
+                    logger.trace("[addSignature] Going to sign svp spend transaction with federator public key {}", federatorBtcPublicKey);
                     BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
                     if (!areSignaturesEnoughToSignAllTxInputs(svpSpendTx, signatures)) {
                         return;
                     }
-                    addSvpSpendTxSignatures(federatorBtcPublicKey, signatures, rskTxHash, svpSpendTx);
+                    addSvpSpendTxSignatures(federatorBtcPublicKey, signatures, releaseCreationRskTxHash, svpSpendTx);
                 });
         }
 
-        BtcTransaction releaseTx = provider.getPegoutsWaitingForSignatures().get(rskTxHash);
+        BtcTransaction releaseTx = provider.getPegoutsWaitingForSignatures().get(releaseCreationRskTxHash);
         if (releaseTx == null) {
-            logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", rskTxHash);
+            logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", releaseCreationRskTxHash);
             return;
         }
         if (!areSignaturesEnoughToSignAllTxInputs(releaseTx, signatures)) {
             return;
         }
 
-        addReleaseSignatures(federatorBtcPublicKey, signatures, rskTxHash, releaseTx);
+        addReleaseSignatures(federatorBtcPublicKey, signatures, releaseCreationRskTxHash, releaseTx);
     }
 
     private boolean areSignaturesEnoughToSignAllTxInputs(BtcTransaction releaseTx, List<byte[]> signatures) {
@@ -1671,14 +1671,15 @@ public class BridgeSupport {
     }
 
     private void addSvpSpendTxSignatures(
-        BtcECKey federatorPublicKey,
+        BtcECKey proposedFederatorPublicKey,
         List<byte[]> signatures,
         Keccak256 rskTxHash,
         BtcTransaction svpSpendTx
     ) {
         Federation proposedFederation = federationSupport.getProposedFederation()
+            // This flow should never be reached. There should always be a proposed federation if svpIsOngoing.
             .orElseThrow(() -> new IllegalStateException("Proposed federation must exist when trying to sign the svp spend transaction."));
-        FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(federatorPublicKey)
+        FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(proposedFederatorPublicKey)
             .orElseThrow(() -> new IllegalStateException("Federator must belong to proposed federation to sign the svp spend transaction."));
 
         processSigning(federationMember, signatures, rskTxHash, svpSpendTx);
