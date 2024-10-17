@@ -818,7 +818,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getReceiptStore(),
                     getNodeMessageHandler(),
                     getBlockExecutor(),
-                    getTxQuotaChecker()
+                    getTxQuotaChecker(),
+                    getWeb3InformationRetriever()
             );
         }
 

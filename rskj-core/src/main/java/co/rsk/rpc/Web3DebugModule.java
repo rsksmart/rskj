@@ -44,7 +44,15 @@ public interface Web3DebugModule {
     }
 
     default JsonNode debug_traceBlockByHash(String blockHash, Map<String, String> traceOptions) throws Exception {
-        return getDebugModule().traceBlock(blockHash, traceOptions);
+        return getDebugModule().traceBlockByHash(blockHash, traceOptions);
+    }
+
+    default JsonNode debug_traceBlockByNumber(String bnOrId) throws Exception {
+        return debug_traceBlockByNumber(bnOrId, null);
+    }
+
+    default JsonNode debug_traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception {
+        return getDebugModule().traceBlockByNumber(bnOrId, traceOptions);
     }
 
     default TxQuota debug_accountTransactionQuota(String address) {
