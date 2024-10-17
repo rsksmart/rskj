@@ -1079,7 +1079,7 @@ class Web3ImplLogsTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         blocksBloomStore = new BlocksBloomStore(2, 0, new HashMapDB());
         return new Web3RskImpl(
                 eth,

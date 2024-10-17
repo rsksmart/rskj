@@ -24,7 +24,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.handler.quota.TxQuota;
 import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.util.HexUtils;
+import co.rsk.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -49,18 +51,21 @@ public class DebugModuleImpl implements DebugModule {
     private final BlockExecutor blockExecutor;
 
     private final TxQuotaChecker txQuotaChecker;
+    private final Web3InformationRetriever web3InformationRetriever;
 
     public DebugModuleImpl(
             BlockStore blockStore,
             ReceiptStore receiptStore,
             MessageHandler messageHandler,
             BlockExecutor blockExecutor,
-            TxQuotaChecker txQuotaChecker) {
+            TxQuotaChecker txQuotaChecker,
+            Web3InformationRetriever web3InformationRetriever) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.messageHandler = messageHandler;
         this.blockExecutor = blockExecutor;
         this.txQuotaChecker = txQuotaChecker;
+        this.web3InformationRetriever = web3InformationRetriever;
     }
 
     @Override
@@ -71,22 +76,15 @@ public class DebugModuleImpl implements DebugModule {
 
     @Override
     public JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) {
-        logger.trace("debug_traceTransaction({}, {})", transactionHash, traceOptions);
+        logger.trace("debug_traceTransaction for txHash: {}", StringUtils.trim(transactionHash));
 
-        TraceOptions options = new TraceOptions(traceOptions);
-
-        if (!options.getUnsupportedOptions().isEmpty()) {
-            // TODO: implement the logic that takes into account the remaining trace options.
-            logger.warn(
-                    "Received {} unsupported trace options.",
-                    options.getUnsupportedOptions());
-        }
+        TraceOptions options = toTraceOptions(traceOptions);
 
         byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
         if (txInfo == null) {
-            logger.trace("No transaction info for {}", transactionHash);
+            logger.trace("No transaction info for txHash: {}", StringUtils.trim(transactionHash));
             return null;
         }
 
@@ -102,25 +100,37 @@ public class DebugModuleImpl implements DebugModule {
     }
 
     @Override
-    public JsonNode traceBlock(String blockHash, Map<String, String> traceOptions) {
-        logger.trace("debug_traceBlockByHash({}, {})", blockHash, traceOptions);
+    public JsonNode traceBlockByHash(String blockHash, Map<String, String> traceOptions) {
+        logger.trace("debug_traceBlockByHash for blockHash: {}", StringUtils.trim(blockHash));
 
-        TraceOptions options = new TraceOptions(traceOptions);
-
-        if (!options.getUnsupportedOptions().isEmpty()) {
-            // TODO: implement the logic that takes into account the remaining trace options.
-            logger.warn(
-                    "Received {} unsupported trace options.",
-                    options.getUnsupportedOptions());
-        }
+        TraceOptions options = toTraceOptions(traceOptions);
 
         byte[] bHash = HexUtils.stringHexToByteArray(blockHash);
         Block block = blockStore.getBlockByHash(bHash);
         if (block == null) {
-            logger.trace("No block is found for {}", bHash);
+            logger.trace("No block is found for blockHash: {}", StringUtils.trim(blockHash));
             return null;
         }
 
+        return traceBlock(block, options);
+    }
+
+    @Override
+    public JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) {
+        logger.trace("debug_traceBlockByNumber for bnOrId: {}", StringUtils.trim(bnOrId));
+
+        TraceOptions options = toTraceOptions(traceOptions);
+
+        Block block = web3InformationRetriever.getBlock(bnOrId).orElse(null);
+        if (block == null) {
+            logger.trace("No block is found for bnOrId: {}", StringUtils.trim(bnOrId));
+            return null;
+        }
+
+        return traceBlock(block, options);
+    }
+
+    private JsonNode traceBlock(Block block, TraceOptions options) {
         Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor(options);
@@ -133,9 +143,20 @@ public class DebugModuleImpl implements DebugModule {
         return programTraceProcessor.getProgramTracesAsJsonNode(txHashes);
     }
 
+    private TraceOptions toTraceOptions(Map<String, String> traceOptions) {
+        TraceOptions options = new TraceOptions(traceOptions);
+
+        if (!options.getUnsupportedOptions().isEmpty()) {
+            // TODO: implement the logic that takes into account the remaining trace options.
+            logger.warn("Received {} unsupported trace options", options.getUnsupportedOptions().size());
+        }
+
+        return options;
+    }
+
     @Override
     public TxQuota accountTransactionQuota(String address) {
-        logger.trace("debug_accountTransactionQuota({})", address);
+        logger.trace("debug_accountTransactionQuota({})", StringUtils.trim(address));
         RskAddress rskAddress = new RskAddress(address);
         return this.txQuotaChecker.getTxQuota(rskAddress);
     }
