@@ -19,12 +19,11 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.ConfigFactory;
-import org.ethereum.config.SystemProperties;
-
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.ethereum.config.SystemProperties;
 
 @SuppressWarnings({"squid:S2187"}) // used from another class
 public class ActivationConfigsForTest {
@@ -32,12 +31,11 @@ public class ActivationConfigsForTest {
     private static final ActivationConfig REGTEST = read("config/regtest");
 
     private static List<ConsensusRule> getPaidBridgeTxsRskip() {
-        return Arrays.asList(ConsensusRule.ARE_BRIDGE_TXS_PAID);
+        return Collections.singletonList(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
     private static List<ConsensusRule> getOrchidRskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP85,
             ConsensusRule.RSKIP87,
             ConsensusRule.RSKIP88,
@@ -48,8 +46,6 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP97,
             ConsensusRule.RSKIP98
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getOrchid060Rskips() {
@@ -60,8 +56,7 @@ public class ActivationConfigsForTest {
     }
 
     private static List<ConsensusRule> getWasabi100Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP103,
             ConsensusRule.RSKIP106,
             ConsensusRule.RSKIP110,
@@ -74,8 +69,6 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP126,
             ConsensusRule.RSKIP132
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getBahamasRskips() {
@@ -93,8 +86,7 @@ public class ActivationConfigsForTest {
     }
 
     private static List<ConsensusRule> getPapyrus200Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP134,
             ConsensusRule.RSKIP137,
             ConsensusRule.RSKIP140,
@@ -106,13 +98,10 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP156,
             ConsensusRule.RSKIPUMM
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getIris300Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP153,
             ConsensusRule.RSKIP169,
             ConsensusRule.RSKIP170,
@@ -133,13 +122,10 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP219,
             ConsensusRule.RSKIP220
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getHop400Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP271,
             ConsensusRule.RSKIP284,
             ConsensusRule.RSKIP290,
@@ -147,23 +133,17 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP294,
             ConsensusRule.RSKIP297
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getHop401Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP353,
             ConsensusRule.RSKIP357
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getFingerroot500Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP252,
             ConsensusRule.RSKIP326,
             ConsensusRule.RSKIP374,
@@ -172,13 +152,10 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP383,
             ConsensusRule.RSKIP385
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getArrowhead600Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP203,
             ConsensusRule.RSKIP376,
             ConsensusRule.RSKIP379,
@@ -189,25 +166,19 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP144,
             ConsensusRule.RSKIP351
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getArrowhead631Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Collections.singletonList(
+        return new ArrayList<>(Collections.singletonList(
             ConsensusRule.RSKIP434
         ));
-
-        return rskips;
     }
 
     private static List<ConsensusRule> getLovell700Rskips() {
-        List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
+            ConsensusRule.RSKIP427,
             ConsensusRule.RSKIP428
         ));
-        return rskips;
     }
 
     public static ActivationConfig genesis() {

@@ -18,49 +18,39 @@
 
 package co.rsk.peg.utils;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.DeprecatedMethodCallException;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.peg.federation.*;
-import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
+import org.ethereum.util.*;
+import org.ethereum.vm.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Test class for BridgeEventLoggerLegacyImpl.
  *
  * @author kelvin.isievwore
  */
-
 class BridgeEventLoggerLegacyImplTest {
-
     private ActivationConfig.ForBlock activations;
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
@@ -73,9 +63,14 @@ class BridgeEventLoggerLegacyImplTest {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        eventLogger = new BrigeEventLoggerLegacyImpl(
+            constantsMock,
+            activations,
+            eventLogs,
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+        );
         btcTxMock = mock(BtcTransaction.class);
-        rskTxHash = PegTestUtils.createHash3(1);
+        rskTxHash = RskTestUtils.createHash(1);
     }
 
     @Test
@@ -84,8 +79,7 @@ class BridgeEventLoggerLegacyImplTest {
 
         // Setup Rsk transaction
         Transaction tx = mock(Transaction.class);
-        RskAddress sender = mock(RskAddress.class);
-        when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
+        RskAddress sender = new RskAddress("0x0000000000000000000000000000000000000001");
         when(tx.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         // Act
@@ -97,12 +91,12 @@ class BridgeEventLoggerLegacyImplTest {
         LogInfo logResult = eventLogs.get(0);
         List<DataWord> topics = Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC);
         for (int i = 0; i < topics.size(); i++) {
-            Assertions.assertEquals(topics.get(i), logResult.getTopics().get(i));
+            assertEquals(topics.get(i), logResult.getTopics().get(i));
         }
 
         // Assert log data
         byte[] encodedData = RLP.encodeElement(tx.getSender(new BlockTxSignatureCache(new ReceivedTxSignatureCache())).getBytes());
-        Assertions.assertArrayEquals(encodedData, logResult.getData());
+        assertArrayEquals(encodedData, logResult.getData());
     }
 
     @Test
@@ -130,21 +124,21 @@ class BridgeEventLoggerLegacyImplTest {
         LogInfo logResult = eventLogs.get(0);
 
         // Assert address that made the log
-        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assertions.assertEquals(1, logResult.getTopics().size());
-        Assertions.assertEquals(Bridge.ADD_SIGNATURE_TOPIC, logResult.getTopics().get(0));
+        assertEquals(1, logResult.getTopics().size());
+        assertEquals(Bridge.ADD_SIGNATURE_TOPIC, logResult.getTopics().get(0));
 
         // Assert log data
-        Assertions.assertNotNull(logResult.getData());
+        assertNotNull(logResult.getData());
         List<RLPElement> rlpData = RLP.decode2(logResult.getData());
         Assertions.assertEquals(1, rlpData.size());
         RLPList dataList = (RLPList) rlpData.get(0);
-        Assertions.assertEquals(3, dataList.size());
-        Assertions.assertArrayEquals(btcTxMock.getHashAsString().getBytes(), dataList.get(0).getRLPData());
-        Assertions.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
-        Assertions.assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
+        assertEquals(3, dataList.size());
+        assertArrayEquals(btcTxMock.getHashAsString().getBytes(), dataList.get(0).getRLPData());
+        assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
+        assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
     }
 
     @Test
@@ -172,18 +166,18 @@ class BridgeEventLoggerLegacyImplTest {
         LogInfo logResult = eventLogs.get(0);
 
         // Assert address that made the log
-        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assertions.assertEquals(1, logResult.getTopics().size());
+        assertEquals(1, logResult.getTopics().size());
         List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
         for (int i = 0; i < topics.size(); i++) {
-            Assertions.assertEquals(topics.get(i), logResult.getTopics().get(i));
+            assertEquals(topics.get(i), logResult.getTopics().get(i));
         }
 
         // Assert log data
         byte[] encodedData = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize()));
-        Assertions.assertArrayEquals(encodedData, logResult.getData());
+        assertArrayEquals(encodedData, logResult.getData());
     }
 
     @Test
@@ -233,49 +227,55 @@ class BridgeEventLoggerLegacyImplTest {
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
 
         // Assert log size
-        Assertions.assertEquals(1, eventLogs.size());
+        assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
 
         // Assert address that made the log
-        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assertions.assertEquals(1, logResult.getTopics().size());
-        Assertions.assertEquals(Bridge.COMMIT_FEDERATION_TOPIC, logResult.getTopics().get(0));
+        assertEquals(1, logResult.getTopics().size());
+        assertEquals(Bridge.COMMIT_FEDERATION_TOPIC, logResult.getTopics().get(0));
 
         // Assert log data
-        Assertions.assertNotNull(logResult.getData());
+        assertNotNull(logResult.getData());
         List<RLPElement> rlpData = RLP.decode2(logResult.getData());
-        Assertions.assertEquals(1, rlpData.size());
+        assertEquals(1, rlpData.size());
         RLPList dataList = (RLPList) rlpData.get(0);
-        Assertions.assertEquals(3, dataList.size());
+        assertEquals(3, dataList.size());
 
         // Assert old federation data
         RLPList oldFedData = (RLPList) dataList.get(0);
-        Assertions.assertEquals(2, oldFedData.size());
-        Assertions.assertArrayEquals(oldFederation.getAddress().getHash160(), oldFedData.get(0).getRLPData());
+        assertEquals(2, oldFedData.size());
+        assertArrayEquals(oldFederation.getAddress().getHash160(), oldFedData.get(0).getRLPData());
 
         RLPList oldFedPubKeys = (RLPList) oldFedData.get(1);
-        Assertions.assertEquals(4, oldFedPubKeys.size());
+        assertEquals(4, oldFedPubKeys.size());
         for (int i = 0; i < 4; i++) {
-            Assertions.assertEquals(oldFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
+            assertEquals(oldFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
         }
 
         // Assert new federation data
         RLPList newFedData = (RLPList) dataList.get(1);
-        Assertions.assertEquals(2, newFedData.size());
-        Assertions.assertArrayEquals(newFederation.getAddress().getHash160(), newFedData.get(0).getRLPData());
+        assertEquals(2, newFedData.size());
+        assertArrayEquals(newFederation.getAddress().getHash160(), newFedData.get(0).getRLPData());
 
         RLPList newFedPubKeys = (RLPList) newFedData.get(1);
-        Assertions.assertEquals(3, newFedPubKeys.size());
+        assertEquals(3, newFedPubKeys.size());
         for (int i = 0; i < 3; i++) {
-            Assertions.assertEquals(newFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData()));
+            assertEquals(
+                newFederation.getBtcPublicKeys().get(i),
+                BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData())
+            );
         }
 
         // Assert new federation activation block number
         FederationConstants federationConstants = constantsMock.getFederationConstants();
-        Assertions.assertEquals(15L + federationConstants.getFederationActivationAge(activations), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        assertEquals(
+            15L + federationConstants.getFederationActivationAge(activations),
+            Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue()
+        );
     }
 
     @Test
@@ -284,7 +284,10 @@ class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
+        assertThrows(
+            DeprecatedMethodCallException.class,
+            () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class))
+        );
     }
 
     /**********************************
