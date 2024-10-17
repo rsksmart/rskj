@@ -1,9 +1,6 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -80,5 +77,29 @@ public class BitcoinUtils {
             Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
             input.setScriptSig(emptyInputScript);
         }
+    }
+
+    public static void addInputFromMatchingOutputScript(BtcTransaction transaction, BtcTransaction sourceTransaction, Script expectedOutputScript) {
+        List<TransactionOutput> outputs = sourceTransaction.getOutputs();
+        searchForOutput(outputs, expectedOutputScript)
+            .ifPresent(transaction::addInput);
+    }
+
+    public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        return outputScript.createEmptyInputScript(null, redeemScript);
+    }
+
+    public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
+        return transactionOutputs.stream()
+            .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
+            .findFirst();
+    }
+
+    public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
+        return Optional.ofNullable(btcTx.getInput(inputIndex))
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
     }
 }

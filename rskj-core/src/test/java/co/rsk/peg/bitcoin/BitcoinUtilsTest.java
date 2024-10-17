@@ -1,13 +1,15 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.P2shErpFederationBuilder;
+import co.rsk.peg.federation.*;
+import java.util.*;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,9 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.*;
-import java.util.stream.Stream;
 
 class BitcoinUtilsTest {
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
@@ -396,5 +395,157 @@ class BitcoinUtilsTest {
 
         // assert
         assertEquals(transactionWithoutSignaturesHash, transaction.getHash());
+    }
+
+    @Test
+    void addInputFromOutputSentToScript_withNoMatchingOutputScript_shouldNotAddInput() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        // act
+        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
+
+        Federation anotherFederation = StandardMultiSigFederationBuilder.builder().build();
+        Script anotherRedeemScript = anotherFederation.getRedeemScript();
+        Script anotherOutputScript = ScriptBuilder.createP2SHOutputScript(anotherRedeemScript);
+        addInputFromMatchingOutputScript(newTransaction, sourceTransaction, anotherOutputScript);
+
+        // assert
+        assertEquals(0, newTransaction.getInputs().size());
+    }
+
+    @Test
+    void addInputFromOutputSentToScript_withMatchingOutputScript_shouldAddInputWithOutpointFromOutput() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        // act
+        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
+        addInputFromMatchingOutputScript(newTransaction, sourceTransaction, outputScript);
+
+        // assert
+        TransactionInput newTransactionInput = newTransaction.getInput(0);
+        TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
+        assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
+    }
+
+    @Test
+    void createBaseP2SHInputScriptThatSpendsFromRedeemScript_shouldCreateExpectedScriptSig() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        // act
+        TransactionInput input = transaction.getInput(0);
+        input.setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript));
+
+        // assert
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+
+        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+            assertEquals(0, chunk.opcode);
+        }
+    }
+
+    @Test
+    void generateSigHashForP2SHInput_shouldGenerateExpectedSigHash() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        int inputIndex = 0;
+        TransactionInput input = transaction.getInput(inputIndex);
+        Script p2shInputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+        input.setScriptSig(p2shInputScript);
+
+        // act
+        Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(transaction, inputIndex);
+
+        // assert
+        Sha256Hash expectedSigHash = transaction.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
+        assertEquals(expectedSigHash, sigHash);
+    }
+
+    @Test
+    void generateSigHashForP2SHInput_forEmptyInputScript_shouldThrowIllegalArgumentException() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+        int inputIndex = 0;
+
+        // act & assert
+        assertThrows(IllegalArgumentException.class,
+            () -> generateSigHashForP2SHTransactionInput(transaction, inputIndex));
+    }
+
+    @Test
+    void searchForOutput_whenTheOutputIsThere_shouldReturnOutputSentToExpectedScript() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        // act
+        Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), outputScript);
+
+        // assert
+        assertTrue(transactionOutput.isPresent());
+        assertEquals(outputScript, transactionOutput.get().getScriptPubKey());
+    }
+
+    @Test
+    void searchForOutput_whenTheOutputIsNotThere_shouldReturnEmpty() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        Federation anotherFederation = StandardMultiSigFederationBuilder.builder().build();
+        Script anotherRedeemScript = anotherFederation.getRedeemScript();
+        Script anotherOutputScript = ScriptBuilder.createP2SHOutputScript(anotherRedeemScript);
+
+        // act
+        Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), anotherOutputScript);
+
+        // assert
+        assertFalse(transactionOutput.isPresent());
     }
 }
