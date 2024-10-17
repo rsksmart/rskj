@@ -684,12 +684,24 @@ public class Program {
                                 this,
                                 "No gas to return just created contract",
                                 storageCost));
+
+                if (activations.isActive(ConsensusRule.RSKIP453)) {
+                    track.rollback();
+                    stackPushZero();
+                    return programResult;
+                }
             } else if (codeLength > Constants.getMaxContractSize()) {
                 programResult.setException(
                         ExceptionHelper.tooLargeContractSize(
                                 this,
                                 Constants.getMaxContractSize(),
                                 codeLength));
+
+                if (activations.isActive(ConsensusRule.RSKIP453)) {
+                    track.rollback();
+                    stackPushZero();
+                    return programResult;
+                }
             } else {
                 programResult.spendGas(storageCost);
                 track.saveCode(contractAddress, code);
