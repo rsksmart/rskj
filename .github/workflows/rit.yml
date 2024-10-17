@@ -17,6 +17,9 @@ on:
         required: false
         default: 'master'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests

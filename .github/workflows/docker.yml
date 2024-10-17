@@ -7,6 +7,9 @@ on:
     tags:
       - '*'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   docker:
     runs-on: ubuntu-20.04
