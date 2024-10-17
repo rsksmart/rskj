@@ -355,6 +355,28 @@ public class Web3ConnectorE2E implements Web3Connector {
     }
 
     @Override
+    public JsonNode debugTraceBlockByNumber(String bnOrId) throws HttpRpcException {
+        try {
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> debugModuleWeb3j.debugTraceBlockByNumber(bnOrId));
+            return response.getJson();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
+    public JsonNode debugTraceBlockByNumber(String bnOrId, Map<String, String> params) throws HttpRpcException {
+        try {
+            RskModuleWeb3j.GenericJsonResponse response = sendRequest(() -> debugModuleWeb3j.debugTraceBlockByNumber(bnOrId, params));
+            return response.getJson();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpRpcException(e);
+        }
+    }
+
+    @Override
     public EthAccounts ethAccounts() throws HttpRpcException {
         try {
             return rskModuleWeb3j.ethAccounts().send();
