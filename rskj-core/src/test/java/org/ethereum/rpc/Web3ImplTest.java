@@ -750,7 +750,7 @@ class Web3ImplTest {
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         Web3 web3 = new Web3Impl(
                 ethMock,
                 blockchain,
@@ -2776,7 +2776,7 @@ class Web3ImplTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -2894,7 +2894,7 @@ class Web3ImplTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, flusher, nodeStopper);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -2957,7 +2957,7 @@ class Web3ImplTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, mock(Flusher.class));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();

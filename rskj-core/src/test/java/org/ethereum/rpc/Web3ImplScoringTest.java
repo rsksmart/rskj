@@ -400,7 +400,7 @@ class Web3ImplScoringTest {
                 config.getCallGasCap()
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
-        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         return new Web3RskImpl(
                 rsk,
                 world.getBlockChain(),
