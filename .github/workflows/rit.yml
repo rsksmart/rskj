@@ -135,6 +135,8 @@ jobs:
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          github_event_pull_request_title: ${{ github.event.pull_request.title }}
+          github_event_pull_request_html_url: ${{ github.event.pull_request.html_url }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -142,7 +144,7 @@ jobs:
               "attachments": [
                 {
                   "color": "good",
-                  "text": "*PASSED*: :white_check_mark: - *${{ github.event.pull_request.title }}* \n*Pull request*: ${{ github.event.pull_request.html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rit:`${{ env.RIT_BRANCH }}`"
+                  "text": "*PASSED*: :white_check_mark: - *${{ github_event_pull_request_title }}* \n*Pull request*: ${{ github_event_pull_request_html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rit:`${{ env.RIT_BRANCH }}`"
                 }
               ]
             }
@@ -152,6 +154,8 @@ jobs:
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          github_event_pull_request_title: ${{ github.event.pull_request.title }}
+          github_event_pull_request_html_url: ${{ github.event.pull_request.html_url }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -159,7 +163,7 @@ jobs:
               "attachments": [
                 {
                   "color": "danger",
-                  "text": "*FAILED*: :x: - *${{ github.event.pull_request.title }}* \n*Pull request*: ${{ github.event.pull_request.html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rit:`${{ env.RIT_BRANCH }}`"
+                  "text": "*FAILED*: :x: - *${{ github_event_pull_request_title }}* \n*Pull request*: ${{ github_event_pull_request_html_url }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: \n- rskj:`${{ env.RSKJ_BRANCH }}` \n- fed:`${{ env.POWPEG_BRANCH }}` \n- rit:`${{ env.RIT_BRANCH }}`"
                 }
               ]
             }
