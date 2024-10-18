@@ -308,6 +308,24 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     private byte[] storedBlockToByteArray(StoredBlock block) {
+        // This RSKIP was chosen just for the PoC. It should be changed to the correct RSKIP when it is defined.
+        if (activations.isActive(ConsensusRule.RSKIP428)) {
+            return storedBlockToByteArrayV2(block);
+        } else {
+            return storedBlockToByteArrayLegacy(block);
+        }
+    }
+
+    private byte[] storedBlockToByteArrayV2(StoredBlock block) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE_V2);
+        block.serializeCompactV2(byteBuffer);
+        byte[] ba = new byte[byteBuffer.position()];
+        byteBuffer.flip();
+        byteBuffer.get(ba);
+        return ba;
+    }
+
+    private byte[] storedBlockToByteArrayLegacy(StoredBlock block) {
         ByteBuffer byteBuffer = ByteBuffer.allocate(128);
         block.serializeCompact(byteBuffer);
         byte[] ba = new byte[byteBuffer.position()];
@@ -317,6 +335,20 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     private StoredBlock byteArrayToStoredBlock(byte[] ba) {
+        if (ba.length == StoredBlock.COMPACT_SERIALIZED_SIZE)
+            return byteArrayToStoredBlockLegacy(ba);
+        else if (ba.length == StoredBlock.COMPACT_SERIALIZED_SIZE_V2)
+            return byteArrayToStoredBlockV2(ba);
+        else
+            throw new IllegalStateException("unexpected length of checkpoint: " + ba.length);
+    }
+
+    private StoredBlock byteArrayToStoredBlockV2(byte[] ba) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(ba);
+        return StoredBlock.deserializeCompactV2(btcNetworkParams, byteBuffer);
+    }
+
+    private StoredBlock byteArrayToStoredBlockLegacy(byte[] ba) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(ba);
         return StoredBlock.deserializeCompact(btcNetworkParams, byteBuffer);
     }

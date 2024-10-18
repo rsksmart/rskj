@@ -165,7 +165,7 @@ public class BridgeSupport {
 
     @VisibleForTesting
     InputStream getCheckPoints() {
-        String resourceName = "/rskbitcoincheckpoints/" + networkParameters.getId() + ".checkpoints";
+        String resourceName = "/rskbitcoincheckpoints/" + networkParameters.getId() + ".checkpoints.txt";
         InputStream checkpoints = BridgeSupport.class.getResourceAsStream(resourceName);
         logger.debug("[getCheckPoints] Looking for checkpoint {}. Found? {}", resourceName, checkpoints != null);
         if (checkpoints == null) {

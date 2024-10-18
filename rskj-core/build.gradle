@@ -80,6 +80,7 @@ tasks.withType(Javadoc) {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         url "https://deps.rsklabs.io"
