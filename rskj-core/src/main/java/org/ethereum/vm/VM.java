@@ -1326,6 +1326,34 @@ public class VM {
         program.step();
     }
 
+    protected void doTLOAD(){
+
+        DataWord key = program.stackPop();
+        DataWord address = program.getOwnerAddress();
+
+        if (isLogEnabled) {
+            logger.info("Executing TLOAD with parameters: address={} | key = {}", address, key);
+        }
+
+        program.transientStorageSave(key, address);
+        // key could be returned to the pool, but storageLoad semantics should be checked
+        // to make sure storageLoad always gets a copy, not a reference.
+        program.step();
+    }
+
+    protected void doTSTORE(){
+
+        DataWord value = program.stackPop();
+        DataWord address = program.getOwnerAddress();
+        DataWord key = DataWord.ZERO;
+
+        if (isLogEnabled) {
+            logger.info("Executing TSTORE with parameters: address={} | key = {} | value = {}",  address, key, value);
+        }
+        program.transientStorageLoad(address, key, value);
+        program.step();
+    }
+
     protected void doJUMP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1938,7 +1966,11 @@ public class VM {
             case OpCodes.OP_SLOAD: doSLOAD();
             break;
             case OpCodes.OP_SSTORE: doSSTORE();
-            break;
+                break;
+            case OpCodes.OP_TLOAD: doTLOAD();
+                break;
+            case OpCodes.OP_TSTORE: doTSTORE();
+                break;
             case OpCodes.OP_JUMP: doJUMP();
             break;
             case OpCodes.OP_JUMPI: doJUMPI();
