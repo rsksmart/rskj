@@ -63,6 +63,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
             Future<Long> priceFuture = fetchPriceAsync();
             if (wait || priceFuture.isDone()) {
                 try {
+                    logger.debug("getMinGasPrice returning fetched minGasPrice: {}", priceFuture.get());
                     return priceFuture.get();
                 } catch (InterruptedException e) {
                     logger.error("Min gas price fetching was interrupted", e);
@@ -73,7 +74,10 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
             }
         }
 
-        return getLastMinGasPrice();
+        long minGasPrice = getLastMinGasPrice();
+        logger.debug("getMinGasPrice returning cached minGasPrice: {}", minGasPrice);
+
+        return minGasPrice;
     }
 
     @Override
@@ -104,12 +108,14 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private synchronized Future<Long> fetchPriceAsync() {
         Future<Long> future = priceFuture.get();
         if (future != null) {
+            logger.debug("fetchPriceAsync skipped as there is already price fetching in progress...");
             return future;
         }
 
         CompletableFuture<Long> newFuture = new CompletableFuture<>();
         priceFuture.set(newFuture);
 
+        logger.debug("fetchPriceAsync...");
         new Thread(() -> {
             Optional<Long> priceResponse = fetchPriceSync();
             newFuture.complete(priceResponse.orElse(getLastMinGasPrice()));
@@ -120,12 +126,16 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     private Optional<Long> fetchPriceSync() {
+        logger.debug("fetchPriceSync...");
         Optional<Long> priceResponse = getBtcExchangeRate();
         if (priceResponse.isPresent() && priceResponse.get() > 0) {
             long result = calculateMinGasPriceBasedOnBtcPrice(priceResponse.get());
             lastMinGasPrice = result;
             lastUpdateTimeMillis = System.currentTimeMillis();
             numOfFailures.set(0);
+
+            logger.debug("fetchPriceSync completed with priceResponse: {}, lastMinGasPrice: {}", priceResponse, lastMinGasPrice);
+
             return Optional.of(result);
         }
 
