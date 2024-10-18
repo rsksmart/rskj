@@ -199,16 +199,16 @@ public class PegUtils {
 
     public static Address getFlyoverAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Script redeemScript) {
         Script flyoverScriptPubKey = getFlyoverScriptPubKey(flyoverDerivationHash, redeemScript);
-
         return Address.fromP2SHScript(networkParameters, flyoverScriptPubKey);
     }
 
     public static Script getFlyoverScriptPubKey(Keccak256 flyoverDerivationHash, Script redeemScript) {
-        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
-            flyoverDerivationHash,
-            redeemScript
-        );
-
+        Script flyoverRedeemScript = getFlyoverRedeemScript(flyoverDerivationHash, redeemScript);
         return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+    }
+
+    public static Script getFlyoverRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
+        return FlyoverRedeemScriptBuilderImpl.builder()
+            .of(flyoverDerivationHash, redeemScript);
     }
 }

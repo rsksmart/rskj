@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 
 import co.rsk.bitcoinj.core.*;
@@ -33,6 +34,7 @@ import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -616,14 +618,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
             signatures.add(signatureByteArray);
         }
-        byte[] rskTxHash = (byte[]) args[2];
-        if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHash));
+        byte[] rskTxHashSerialized = (byte[]) args[2];
+        Keccak256 rskTxHash;
+        try {
+            rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
+        } catch (IllegalArgumentException e) {
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHashSerialized));
         }
         try {
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
-        } catch (BridgeIllegalArgumentException e) {
-            throw e;
         } catch (Exception e) {
             logger.warn("Exception in addSignature", e);
             throw new VMException("Exception in addSignature", e);
@@ -1038,6 +1041,125 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return publicKey;
+    }
+
+    /**
+     * Retrieves the proposed federation Bitcoin address as a Base58 string.
+     *
+     * <p>
+     * This method attempts to fetch the address of the proposed federation. If the 
+     * proposed federation is present, it converts the address to its Base58 representation.
+     * If not, an empty string is returned.
+     * <p>
+     *
+     * @param args Additional arguments (currently unused)
+     * @return The Base58 encoded Bitcoin address of the proposed federation, or an empty 
+     *         string if no proposed federation is present.
+     */
+    public String getProposedFederationAddress(Object[] args) {
+        logger.trace("getProposedFederationAddress");
+        
+        return bridgeSupport.getProposedFederationAddress()
+            .map(Address::toBase58)
+            .orElse("");
+    }
+
+    /**
+     * Retrieves the size of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method returns the number of members in the proposed federation. If no proposed federation exists,
+     * it returns a default response code {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT} that indicates
+     * the federation does not exist.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the size of the proposed federation (number of members), or the default code from
+     *         {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT} if no proposed federation is available.
+     */
+    public int getProposedFederationSize(Object[] args) {
+        logger.trace("getProposedFederationSize");
+
+        return bridgeSupport.getProposedFederationSize()
+            .orElse(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
+
+    /**
+     * Retrieves the creation time of the proposed federation in milliseconds since the epoch.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and returns its creation time in
+     * milliseconds since the Unix epoch. If no proposed federation exists, it returns -1.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the creation time of the proposed federation in milliseconds since the epoch,
+     *         or -1 if no proposed federation exists.
+     */
+    public Long getProposedFederationCreationTime(Object[] args) {
+        logger.trace("getProposedFederationCreationTime");
+
+        return bridgeSupport.getProposedFederationCreationTime()
+            .map(Instant::toEpochMilli)
+            .orElse(-1L);
+    }
+
+    /**
+     * Retrieves the block number of the proposed federation's creation.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and returns the block number at which it was created.
+     * If no proposed federation exists, it returns the default code defined in
+     * {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT}.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the block number of the proposed federation's creation, or
+     *         the code from {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT}
+     *         if no proposed federation exists.
+     */
+    public long getProposedFederationCreationBlockNumber(Object[] args) {
+        logger.trace("getProposedFederationCreationBlockNumber");
+
+        return bridgeSupport.getProposedFederationCreationBlockNumber()
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
+
+    /**
+     * Retrieves the public key of the proposed federator at the specified index and key type.
+     *
+     * <p>
+     * This method extracts the index and key type from the provided arguments, retrieves the
+     * public key of the proposed federator, and returns it. If no public key is found, an empty byte
+     * array is returned.
+     * </p>
+     *
+     * <p>
+     * The first argument in the {@code args} array is expected to be a {@link BigInteger} representing
+     * the federator's index. The second argument is expected to be a {@link String} representing
+     * the key type, which is converted into a {@link FederationMember.KeyType}.
+     * </p>
+     *
+     * @param args an array of arguments, where {@code args[0]} is a {@link BigInteger} for the federator's index,
+     *             and {@code args[1]} is a {@link String} for the key type.
+     * @return a byte array containing the federator's public key, or an empty byte array if not found.
+     * @throws VMException if an error occurs while processing the key type.
+     */
+    public byte[] getProposedFederatorPublicKeyOfType(Object[] args) throws VMException {
+        logger.trace("getProposedFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getProposedFederatorPublicKeyOfType", e);
+            throw new VMException("Exception in getProposedFederatorPublicKeyOfType", e);
+        }
+
+        return bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType)
+            .orElse(new byte[]{});
     }
 
     public Integer getLockWhitelistSize(Object[] args) {

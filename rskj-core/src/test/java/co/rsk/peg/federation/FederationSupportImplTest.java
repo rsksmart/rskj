@@ -37,7 +37,6 @@ import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
@@ -49,16 +48,17 @@ import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class FederationSupportImplTest {
 
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private ErpFederation newFederation;
     private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
-    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private FederationSupport federationSupport;
 
     @BeforeEach
@@ -1136,14 +1136,14 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationSize")
         void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
         @Tag("getRetiringFederationThreshold")
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1157,7 +1157,7 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationCreationBlockNumber")
         void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1225,14 +1225,14 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationSize")
         void getRetiringFederationSize_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
         @Tag("getRetiringFederationThreshold")
         void getRetiringFederationThreshold_returnsRetiringFederationNonExistentResponseCode() {
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1246,7 +1246,7 @@ class FederationSupportImplTest {
         @Tag("getRetiringFederationCreationBlockNumber")
         void getRetiringFederationCreationBlockNumber_returnsRetiringFederationNonExistentResponseCode() {
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -1424,7 +1424,7 @@ class FederationSupportImplTest {
                 .build();
 
             int retiringFederationSize = federationSupport.getRetiringFederationSize();
-            assertThat(retiringFederationSize, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
@@ -1466,7 +1466,7 @@ class FederationSupportImplTest {
                 .build();
 
             int retiringFederationThreshold = federationSupport.getRetiringFederationThreshold();
-            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationThreshold, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
@@ -1550,7 +1550,7 @@ class FederationSupportImplTest {
                 .build();
 
             long retiringFederationCreationBlockNumber = federationSupport.getRetiringFederationCreationBlockNumber();
-            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(retiringFederationCreationBlockNumber, is((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @ParameterizedTest
@@ -1905,7 +1905,7 @@ class FederationSupportImplTest {
         @Tag("getPendingFederationSize")
         void getPendingFederationSize_returnsPendingFederationNonExistentResponseCode() {
             int pendingFederationSize = federationSupport.getPendingFederationSize();
-            assertThat(pendingFederationSize, is(FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode()));
+            assertThat(pendingFederationSize, is(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode()));
         }
 
         @Test
@@ -2188,36 +2188,209 @@ class FederationSupportImplTest {
 
     @Test
     void getProposedFederation_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
-        // act
+        // Act
         Optional<Federation> actualProposedFederation = federationSupport.getProposedFederation();
 
-        // assert
+        // Assert
         assertFalse(actualProposedFederation.isPresent());
     }
 
     @Test
     void getProposedFederation_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederation() {
-        // arrange
+        // Arrange
         Federation proposedFederation = P2shErpFederationBuilder.builder().build();
         storageProvider.setProposedFederation(proposedFederation);
 
-        //act
+        // Act
         Optional<Federation> actualProposedFederation = federationSupport.getProposedFederation();
 
-        // assert
+        // Assert
         assertTrue(actualProposedFederation.isPresent());
         assertEquals(proposedFederation, actualProposedFederation.get());
+    }
+        
+    @Test
+    void getProposedFederationSize_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<Integer> actualProposedFederationSize = federationSupport.getProposedFederationSize();
+
+        // Assert
+        assertFalse(actualProposedFederationSize.isPresent());
+    }
+
+    @Test
+    void getProposedFederationSize_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederationSize() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(federationKeys).build();
+        storageProvider.setProposedFederation(proposedFederation);
+        int expectedSize = federationKeys.size();
+
+        // Act
+        Optional<Integer> actualProposedFederationSize = federationSupport.getProposedFederationSize();
+
+        // Assert
+        assertTrue(actualProposedFederationSize.isPresent());
+        assertEquals(expectedSize, actualProposedFederationSize.get());
+    }
+
+    @Test
+    void getProposedFederationAddress_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<Address> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
+
+        // Assert
+        assertFalse(actualProposedFederationAddress.isPresent());
+    }
+
+    @Test
+    void getProposedFederationAddress_whenStorageProviderReturnsProposedFederation_shouldReturnProposedFederationAddress() {
+        // Arrange
+        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<Address> actualProposedFederationAddress = federationSupport.getProposedFederationAddress();
+
+        // Assert
+        assertTrue(actualProposedFederationAddress.isPresent());
+        assertEquals(proposedFederation.getAddress(), actualProposedFederationAddress.get());
+    }
+
+    @Test
+    void getProposedFederationCreationTime_whenStorageProviderReturnsEmpty_shouldReturnEmpty() {
+        // Act
+        Optional<Instant> actualCreationTime = federationSupport.getProposedFederationCreationTime();
+
+        // Assert
+        assertFalse(actualCreationTime.isPresent());
+    }
+
+    @Test
+    void getProposedFederationCreationTime_whenStorageProviderReturnsProposedFederation_shouldReturnCreationTime() {
+        // Arrange
+        Instant creationTime = Instant.EPOCH;
+        Federation proposedFederation = P2shErpFederationBuilder.builder()
+            .withCreationTime(creationTime)
+            .build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<Instant> actualCreationTime = federationSupport.getProposedFederationCreationTime();
+
+        // Assert
+        assertTrue(actualCreationTime.isPresent());
+        assertEquals(creationTime, actualCreationTime.get());
+    }
+
+    @Test
+    void getProposedFederationCreationBlockNumber_whenStorageProviderReturnsEmpty_shouldReturnErrorCode() {
+        // Act
+        Optional<Long> actualCreationBlockNumber = federationSupport.getProposedFederationCreationBlockNumber();
+
+        // Assert
+        assertFalse(actualCreationBlockNumber.isPresent());
+    }
+
+    @Test
+    void getProposedFederationCreationBlockNumber_whenStorageProviderReturnsProposedFederation_shouldReturnCreationBlockNumber() {
+        // Arrange
+        long creationBlockNumber = 12345L;
+        Federation proposedFederation = P2shErpFederationBuilder.builder()
+            .withCreationBlockNumber(creationBlockNumber)
+            .build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<Long> actualCreationBlockNumber = federationSupport.getProposedFederationCreationBlockNumber();
+
+        // Assert
+        assertTrue(actualCreationBlockNumber.isPresent());
+        assertEquals(creationBlockNumber, actualCreationBlockNumber.get());
+    }
+
+    @ParameterizedTest
+    @EnumSource(FederationMember.KeyType.class)
+    void getProposedFederatorPublicKeyOfType_whenFederationIsEmpty_shouldReturnEmpty(FederationMember.KeyType keyType) {
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertFalse(actualPublicKey.isPresent());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederationAndKeyTypeIsBTC_shouldReturnPublicKey() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(federationKeys).build();
+        FederationMember.KeyType keyType = FederationMember.KeyType.BTC;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederationAndKeyTypeIsRSK_shouldReturnPublicKey() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        List<ECKey> federationRskKeys = federationKeys.stream()
+            .map(BtcECKey::getPubKey)
+            .map(ECKey::fromPublicOnly)
+            .toList();
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersRskPublicKeys(federationRskKeys).build();
+        FederationMember.KeyType keyType = FederationMember.KeyType.RSK;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenStorageProviderReturnsProposedFederationAndKeyTypeIsMst_shouldReturnPublicKey() {
+        // Arrange
+        List<BtcECKey> federationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[] { "fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09" }, true);
+        List<ECKey> federationMstKeys = federationKeys.stream()
+            .map(BtcECKey::getPubKey)
+            .map(ECKey::fromPublicOnly)
+            .toList();
+        Federation proposedFederation = P2shErpFederationBuilder.builder().withMembersMstPublicKeys(federationMstKeys).build();
+        FederationMember.KeyType keyType = FederationMember.KeyType.MST;
+        byte[] expectedPublicKey = proposedFederation.getMembers().get(0).getPublicKey(keyType).getPubKey(true);
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // Act
+        Optional<byte[]> actualPublicKey = federationSupport.getProposedFederatorPublicKeyOfType(0, keyType);
+
+        // Assert
+        assertTrue(actualPublicKey.isPresent());
+        assertArrayEquals(expectedPublicKey, actualPublicKey.get());
     }
 
     private List<ECKey> getRskPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getRskPublicKey)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private List<ECKey> getMstPublicKeysFromFederationMembers(List<FederationMember> members) {
         return members.stream()
             .map(FederationMember::getMstPublicKey)
-            .collect(Collectors.toList());
+            .toList();
     }
 }
