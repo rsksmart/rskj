@@ -70,7 +70,6 @@ class RepositoryBtcBlockStoreWithCacheTestPoC {
         repository = spy(new MutableRepository(
             new MutableTrieCache(new MutableTrieImpl(null, new Trie()))
         ));
-        //repository = mock(Repository.class);
     }
 
     void arrange(ActivationConfig.ForBlock activations) {
