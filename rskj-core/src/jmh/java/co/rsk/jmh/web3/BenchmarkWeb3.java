@@ -170,13 +170,25 @@ public class BenchmarkWeb3 {
     @Benchmark
     @Timeout(time = 30)
     public void debugTraceBlockByHash(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlock());
+        plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlockHash());
     }
 
     @Benchmark
     @Timeout(time = 30)
     public void debugTraceBlockByHash_Params(DebugPlan plan) throws BenchmarkWeb3Exception {
-        plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlock());
+        plan.getWeb3Connector().debugTraceBlockByHash(plan.getBlockHash(), plan.getDebugParams());
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public void debugTraceBlockByNumber(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().debugTraceBlockByNumber(plan.getBlockNumber());
+    }
+
+    @Benchmark
+    @Timeout(time = 30)
+    public void debugTraceBlockByNumber_Params(DebugPlan plan) throws BenchmarkWeb3Exception {
+        plan.getWeb3Connector().debugTraceBlockByNumber(plan.getBlockTag(), plan.getDebugParams());
     }
 
     @Benchmark
