@@ -19,16 +19,15 @@
 
 package org.ethereum.vm;
 
+import co.rsk.core.types.bytes.BytesSlice;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.program.Memory;
 import org.junit.jupiter.api.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
 import static java.lang.Math.ceil;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MemoryTest {
 
@@ -530,6 +529,34 @@ class MemoryTest {
         assertEquals(10, zero);
     }
 
+    @Test
+    void memorySliceMatchesWithWritten() {
+        Memory memory = new Memory();
+        memory.write(0, new byte[]{1, 2, 3, 4}, 4, false);
+        BytesSlice memSlice = memory.readSlice(0, 4);
 
+        assertArrayEquals(new byte[]{1, 2, 3, 4}, memSlice.copyArray());
+        assertArrayEquals(memory.read(0, 4), memSlice.copyArray());
+    }
 
+    @Test
+    void memorySliceMatchesWithWrittenAndExpansion() {
+        Memory memory = new Memory();
+        memory.write(0, new byte[]{1, 2, 3, 4}, 4, false);
+        BytesSlice memSlice = memory.readSlice(0, 8);
+
+        assertArrayEquals(new byte[]{1, 2, 3, 4, 0, 0, 0, 0}, memSlice.copyArray());
+        assertArrayEquals(memory.read(0, 8), memSlice.copyArray());
+    }
+
+    @Test
+    void memoryWriteInvalidatesSlice() {
+        Memory memory = new Memory();
+        memory.write(0, new byte[]{1, 2, 3, 4}, 4, false);
+        BytesSlice memSlice = memory.readSlice(0, 4);
+        memory.write(0, new byte[]{4, 3, 2, 1}, 4, false);
+
+        assertThrows(IllegalStateException.class, () -> memSlice.byteAt(0), "Memory was changed during slice lifetime");
+        assertThrows(IllegalStateException.class, () -> memSlice.arraycopy(0, new byte[4], 0, 4), "Memory was changed during slice lifetime");
+    }
 }
