@@ -1,7 +1,7 @@
 package co.rsk.peg.performance;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -10,6 +10,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationTestUtils;
 import org.ethereum.config.Constants;
@@ -136,52 +137,57 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
             int minBtcBlocks,
             int maxBtcBlocks
             ) {
+
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-                BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-                Repository thisRepository = repository.startTracking();
-                BtcBlockStore btcBlockStore = btcBlockStoreFactory
-                    .newInstance(thisRepository, bridgeConstants, provider, activationConfig.forBlock(0));
-                Context btcContext = new Context(networkParameters);
-                BtcBlockChain btcBlockChain;
-                try {
-                    btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-                } catch (BlockStoreException e) {
-                    throw new RuntimeException("Error initializing btc blockchain for tests");
-                }
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                bridgeConstants.getBtcParams());
+            Repository thisRepository = repository.startTracking();
+            BtcBlockStore btcBlockStore = btcBlockStoreFactory
+                .newInstance(thisRepository, bridgeConstants, provider,
+                    activationConfig.forBlock(0));
+            Context btcContext = new Context(networkParameters);
+            BtcBlockChain btcBlockChain;
+            try {
+                btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+            } catch (BlockStoreException e) {
+                throw new RuntimeException("Error initializing btc blockchain for tests");
+            }
 
-                int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
-                BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
-                Federation genesisFederation = FederationTestUtils.getGenesisFederation(bridgeConstants.getFederationConstants());
-                Script federationRedeemScript= genesisFederation.getRedeemScript();
+            int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
+            BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
+            Federation genesisFederation = FederationTestUtils.getGenesisFederation(
+                bridgeConstants.getFederationConstants());
+            Script federationRedeemScript = genesisFederation.getRedeemScript();
 
+            Keccak256 flyoverDerivationHash = getFlyoverDerivationHash(
+                RskTestUtils.createHash(1),
+                AddressesBuilder.userRefundAddress,
+                AddressesBuilder.lpBtcAddress,
+                AddressesBuilder.lbcAddress
+            );
 
-            Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                        federationRedeemScript,
-                        Sha256Hash.wrap(
-                                getFLyoverDerivationHash(
-                                        PegTestUtils.createHash3(1),
-                                        AddressesBuilder.userRefundAddress,
-                                        AddressesBuilder.lpBtcAddress,
-                                        AddressesBuilder.lbcAddress
-                                ).getBytes()
-                        )
-                );
+            Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+                flyoverDerivationHash,
+                federationRedeemScript
+            );
 
-                Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-                Address flyoverFederationAddress = Address.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
+            Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+            Address flyoverFederationAddress = Address.fromP2SHScript(
+                bridgeConstants.getBtcParams(), flyoverP2SH);
 
-                btcTx = createBtcTransactionWithOutputToAddress(totalAmount, flyoverFederationAddress);
+            btcTx = createBtcTransactionWithOutputToAddress(totalAmount, flyoverFederationAddress);
 
-                pmt = PartialMerkleTree.buildFromLeaves(networkParameters, new byte[]{(byte) 0xff}, Arrays.asList(btcTx.getHash()));
-                List<Sha256Hash> hashes = new ArrayList<>();
-                Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashes);
+            pmt = PartialMerkleTree.buildFromLeaves(networkParameters, new byte[]{(byte) 0xff},
+                Arrays.asList(btcTx.getHash()));
+            List<Sha256Hash> hashes = new ArrayList<>();
+            Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashes);
 
-                blockWithTx = Helper.generateBtcBlock(lastBlock, Arrays.asList(btcTx), merkleRoot);
-                btcBlockChain.add(blockWithTx);
-                blockWithTxHeight = btcBlockChain.getBestChainHeight();
+            blockWithTx = Helper.generateBtcBlock(lastBlock, Arrays.asList(btcTx), merkleRoot);
+            btcBlockChain.add(blockWithTx);
+            blockWithTxHeight = btcBlockChain.getBestChainHeight();
 
-                Helper.generateAndAddBlocks(btcBlockChain, 10);
-                thisRepository.commit();
+            Helper.generateAndAddBlocks(btcBlockChain, 10);
+            thisRepository.commit();
         };
     }
 
@@ -194,7 +200,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
         return tx;
     }
 
-    private Keccak256 getFLyoverDerivationHash(
+    private Keccak256 getFlyoverDerivationHash(
             Keccak256 derivationArgumentsHash,
             Address userRefundAddress,
             Address lpBtcAddress,

@@ -19,8 +19,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -319,20 +317,14 @@ public final class BridgeUtils {
         TransactionInput input = btcTx.getInput(0);
         Script scriptSig = input.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
-        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
-        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
-        MultiSigType multiSigType;
 
         int lastChunk;
+        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
 
-        multiSigType = parser.getMultiSigType();
-
-        if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
-            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
-        ) {
-            lastChunk = chunks.size() - 1;
-        } else {
+        if (isErpType(redeemScript)) {
             lastChunk = chunks.size() - 2;
+        } else {
+            lastChunk = chunks.size() - 1;
         }
 
         for (int i = 1; i < lastChunk; i++) {
@@ -342,6 +334,11 @@ public final class BridgeUtils {
             }
         }
         return unsigned;
+    }
+
+    private static boolean isErpType(Script redeemScript) {
+        List<ScriptChunk> redeemScriptChunks = redeemScript.getChunks();
+        return RedeemScriptParserFactory.get(redeemScriptChunks).hasErpFormat();
     }
 
     /**
@@ -357,23 +354,18 @@ public final class BridgeUtils {
         Script scriptSig;
         List<ScriptChunk> chunks;
         Script redeemScript;
-        RedeemScriptParser parser;
-        MultiSigType multiSigType;
 
         int lastChunk;
         for (TransactionInput input : btcTx.getInputs()) {
             scriptSig = input.getScriptSig();
             chunks = scriptSig.getChunks();
             redeemScript = new Script(chunks.get(chunks.size() - 1).data);
-            parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
-            multiSigType = parser.getMultiSigType();
 
-            if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
-            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
+            if (isErpType(redeemScript)
             ) {
-                lastChunk = chunks.size() - 1;
-            } else {
                 lastChunk = chunks.size() - 2;
+            } else {
+                lastChunk = chunks.size() - 1;
             }
 
             for (int i = 1; i < lastChunk; i++) {
