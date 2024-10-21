@@ -1017,6 +1017,22 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
+    protected void processValidationFailure(Federation proposedFederation) {
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+        logger.warn("[updateSvpState] Proposed federation validation failed so svp values will be cleared.");
+        clearSvpValues();
+    }
+
+    private void clearSvpValues() {
+        federationSupport.clearProposedFederation();
+        // even if we know all these values cannot exist simultaneously,
+        // is easier to just clean them all.
+        provider.setSvpFundTxHashUnsigned(null);
+        provider.setSvpFundTxSigned(null);
+        provider.setSvpSpendTxHashUnsigned(null);
+        provider.setSvpSpendTxWaitingForSignatures(null);
+    }
+
     private boolean svpIsOngoing() {
         return federationSupport.getProposedFederation()
             .map(Federation::getCreationBlockNumber)
