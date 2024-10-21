@@ -1019,7 +1019,7 @@ public class BridgeSupport {
 
     protected void processValidationFailure(Federation proposedFederation) {
         eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
-        logger.warn("[updateSvpState] Proposed federation validation failed so svp values will be cleared.");
+        logger.warn("[processValidationFailure] Proposed federation validation failed so svp values will be cleared.");
         clearSvpValues();
     }
 
