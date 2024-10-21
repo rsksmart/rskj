@@ -1019,6 +1019,49 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
+    protected void processValidationFailure(Federation proposedFederation) {
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+        logger.warn("[processValidationFailure] Proposed federation validation failed so svp values will be cleared.");
+        clearSvpValues();
+    }
+
+    private void clearSvpValues() {
+        federationSupport.clearProposedFederation();
+
+        provider.getSvpFundTxHashUnsigned().ifPresent(
+            svpFundTxHashUnsigned -> {
+                logger.warn("[clearSvpValues] Fund tx change {} was never registered.", svpFundTxHashUnsigned);
+                provider.setSvpFundTxHashUnsigned(null);
+            }
+        );
+
+        provider.getSvpFundTxSigned().ifPresent(
+            svpFundTxSigned -> {
+                logger.warn("[clearSvpValues] Spend tx was never created. Fund tx hash: {}", svpFundTxSigned.getHash());
+                provider.setSvpFundTxSigned(null);
+            }
+        );
+
+        provider.getSvpSpendTxWaitingForSignatures().ifPresent(
+            svpSpendTxWFS -> {
+                Keccak256 rskCreationHash = svpSpendTxWFS.getKey();
+                BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+
+                logger.warn("[clearSvpValues] Spend tx {} was not fully signed. Rsk creation hash: {}.",
+                    svpSpendTx.getHash(), rskCreationHash);
+                provider.setSvpSpendTxWaitingForSignatures(null);
+                provider.setSvpSpendTxHashUnsigned(null);
+            }
+        );
+
+        provider.getSvpSpendTxHashUnsigned().ifPresent(
+            svpSpendTxHashUnsigned -> {
+                logger.warn("[clearSvpValues] Spend tx {} was not registered.", svpSpendTxHashUnsigned);
+                provider.setSvpSpendTxHashUnsigned(null);
+            }
+        );
+    }
+
     private boolean svpIsOngoing() {
         return federationSupport.getProposedFederation()
             .filter(this::validationPeriodIsOngoing)
