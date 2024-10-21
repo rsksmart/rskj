@@ -119,7 +119,7 @@ public class BridgeSupportSvpTest {
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("update svp state tests")
-    class SvpUpdateCollectionsTests {
+    class UpdateSvpStateTests {
         @BeforeEach
         void setUp() {
             logs = new ArrayList<>();
