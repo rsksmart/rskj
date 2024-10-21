@@ -72,8 +72,10 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -94,7 +96,6 @@ public class Program {
     // These logs should never be in Info mode in production
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
-
 
     public static final long MAX_MEMORY = (1<<30);
 
@@ -985,8 +986,8 @@ public class Program {
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
     }
 
-    public void transientStorageSave(DataWord key, DataWord address) {
-
+    public void transientStorageSave(DataWord key, DataWord value) {
+        getStorage().addTransientStorageRow(getOwnerRskAddress(), key, value);
     }
 
     private RskAddress getOwnerRskAddress() {
@@ -1099,8 +1100,8 @@ public class Program {
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
-    public void transientStorageLoad(DataWord address, DataWord key, DataWord value) {
-
+    public DataWord transientStorageLoad(DataWord key) {
+        return getStorage().getTransientStorageValue(getOwnerRskAddress(), key);
     }
 
     public DataWord getPrevHash() {
