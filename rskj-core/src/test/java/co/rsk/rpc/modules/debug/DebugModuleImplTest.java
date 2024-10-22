@@ -54,28 +54,28 @@ import static org.mockito.Mockito.when;
 
 class DebugModuleImplTest {
 
-    private BlockStore blockStore;
-    private ReceiptStore receiptStore;
-    private MessageHandler messageHandler;
-    private TxQuotaChecker txQuotaChecker;
-    private Web3InformationRetriever web3InformationRetriever;
+    private BlockStore blockStoreMock;
+    private ReceiptStore receiptStoreMock;
+    private MessageHandler messageHandlerMock;
+    private TxQuotaChecker txQuotaCheckerMock;
+    private Web3InformationRetriever web3InformationRetrieverMock;
 
-    private DebugModuleImpl debugModule;
+    private DebugModuleImpl mockedDebugModule;
 
     @BeforeEach
     void setup() {
-        blockStore = Web3Mocks.getMockBlockStore();
-        receiptStore = Web3Mocks.getMockReceiptStore();
-        messageHandler = Web3Mocks.getMockMessageHandler();
-        txQuotaChecker = mock(TxQuotaChecker.class);
-        web3InformationRetriever = mock(Web3InformationRetriever.class);
+        blockStoreMock = Web3Mocks.getMockBlockStore();
+        receiptStoreMock = Web3Mocks.getMockReceiptStore();
+        messageHandlerMock = Web3Mocks.getMockMessageHandler();
+        txQuotaCheckerMock = mock(TxQuotaChecker.class);
+        web3InformationRetrieverMock = mock(Web3InformationRetriever.class);
 
-        debugModule = new DebugModuleImpl(blockStore, receiptStore, messageHandler, Web3Mocks.getMockBlockExecutor(), txQuotaChecker, web3InformationRetriever);
+        mockedDebugModule = new DebugModuleImpl(blockStoreMock, receiptStoreMock, messageHandlerMock, Web3Mocks.getMockBlockExecutor(), txQuotaCheckerMock, web3InformationRetrieverMock);
     }
 
     @Test
     void debug_wireProtocolQueueSize_basic() {
-        String result = debugModule.wireProtocolQueueSize();
+        String result = mockedDebugModule.wireProtocolQueueSize();
         try {
             HexUtils.jsonHexToLong(result);
         } catch (NumberFormatException e) {
@@ -85,8 +85,8 @@ class DebugModuleImplTest {
 
     @Test
     void debug_wireProtocolQueueSize_value() {
-        when(messageHandler.getMessageQueueSize()).thenReturn(5L);
-        String result = debugModule.wireProtocolQueueSize();
+        when(messageHandlerMock.getMessageQueueSize()).thenReturn(5L);
+        String result = mockedDebugModule.wireProtocolQueueSize();
         try {
             long value = HexUtils.jsonHexToLong(result);
             Assertions.assertEquals(5L, value);
@@ -99,9 +99,9 @@ class DebugModuleImplTest {
     void debug_traceTransaction_retrieveUnknownTransactionAsNull() {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
-        when(receiptStore.getInMainChain(hash, blockStore)).thenReturn(Optional.empty());
+        when(receiptStoreMock.getInMainChain(hash, blockStoreMock)).thenReturn(Optional.empty());
 
-        JsonNode result = debugModule.traceTransaction("0x00", null);
+        JsonNode result = mockedDebugModule.traceTransaction("0x00", null);
 
         Assertions.assertNull(result);
     }
@@ -117,7 +117,7 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -143,7 +143,7 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -168,7 +168,7 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -194,7 +194,7 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -219,7 +219,7 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         JsonNode resultWithNoOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
         JsonNode resultWithEmptyOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), Collections.emptyMap());
@@ -238,9 +238,9 @@ class DebugModuleImplTest {
     void debug_traceBlockByHash_retrieveUnknownBlockAsNull() throws Exception {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
-        when(blockStore.getBlockByHash(hash)).thenReturn(null);
+        when(blockStoreMock.getBlockByHash(hash)).thenReturn(null);
 
-        JsonNode result = debugModule.traceBlockByHash("0x00", null);
+        JsonNode result = mockedDebugModule.traceBlockByHash("0x00", null);
 
         Assertions.assertNull(result);
     }
@@ -256,7 +256,7 @@ class DebugModuleImplTest {
 
         Block block = world.getBlockByName("b01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         JsonNode result = debugModule.traceBlockByHash(block.getHash().toJsonString(), null);
 
@@ -277,9 +277,9 @@ class DebugModuleImplTest {
 
     @Test
     void debug_traceBlockByNumber_retrieveUnknownBlockAsNull() throws Exception {
-        when(web3InformationRetriever.getBlock("0x1")).thenReturn(Optional.empty());
+        when(web3InformationRetrieverMock.getBlock("0x1")).thenReturn(Optional.empty());
 
-        JsonNode result = debugModule.traceBlockByNumber("0x1", null);
+        JsonNode result = mockedDebugModule.traceBlockByNumber("0x1", null);
 
         Assertions.assertNull(result);
     }
@@ -295,9 +295,9 @@ class DebugModuleImplTest {
 
         Block block = world.getBlockByName("b01");
         String blockNumber = HexUtils.toQuantityJsonHex(block.getNumber());
-        when(web3InformationRetriever.getBlock(blockNumber)).thenReturn(Optional.of(block));
+        when(web3InformationRetrieverMock.getBlock(blockNumber)).thenReturn(Optional.of(block));
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, web3InformationRetriever);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, web3InformationRetrieverMock);
 
         JsonNode result = debugModule.traceBlockByNumber(blockNumber, null);
 
@@ -327,7 +327,7 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
 
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStack", "true");
@@ -382,9 +382,9 @@ class DebugModuleImplTest {
         when(timeProvider.currentTimeMillis()).thenReturn(creationTimestamp);
 
         TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.generateHash("rawAddress"), initialQuota, timeProvider);
-        when(txQuotaChecker.getTxQuota(address)).thenReturn(txQuotaCreated);
+        when(txQuotaCheckerMock.getTxQuota(address)).thenReturn(txQuotaCreated);
 
-        TxQuota txQuotaRetrieved = debugModule.accountTransactionQuota(rawAddress);
+        TxQuota txQuotaRetrieved = mockedDebugModule.accountTransactionQuota(rawAddress);
 
         Assertions.assertNotNull(txQuotaRetrieved);
 
@@ -400,9 +400,9 @@ class DebugModuleImplTest {
 
         TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.generateHash("txQuota"), 200L, System::currentTimeMillis);
 
-        when(txQuotaChecker.getTxQuota(address)).thenReturn(txQuotaCreated);
+        when(txQuotaCheckerMock.getTxQuota(address)).thenReturn(txQuotaCreated);
 
-        TxQuota txQuotaRetrieved = debugModule.accountTransactionQuota("0xbe182646a44fb90dc6501ab50d19e7c91078a35a");
+        TxQuota txQuotaRetrieved = mockedDebugModule.accountTransactionQuota("0xbe182646a44fb90dc6501ab50d19e7c91078a35a");
 
         Assertions.assertNull(txQuotaRetrieved);
     }

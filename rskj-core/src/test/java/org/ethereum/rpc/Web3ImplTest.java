@@ -101,7 +101,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
@@ -1425,7 +1424,7 @@ class Web3ImplTest {
         verify(stopperMock).stop(0);
     }
 
-    void testGetBlockByHash(RskSystemProperties config) {
+    void testGetBlockByHash() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1480,14 +1479,12 @@ class Web3ImplTest {
 
     @Test
     void getBlockByHashWithoutFingerroot500() {
-        testGetBlockByHash(new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(2))
-        ));
+        testGetBlockByHash();
     }
 
     @Test
     void getBlockByHash() {
-        testGetBlockByHash(new TestSystemProperties());
+        testGetBlockByHash();
     }
 
     @Test
