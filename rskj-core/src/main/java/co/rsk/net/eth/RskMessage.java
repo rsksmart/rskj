@@ -27,9 +27,11 @@ import org.ethereum.util.RLP;
  * Created by ajlopez on 5/14/2016.
  */
 public class RskMessage extends EthMessage {
+    private final int version;
     private Message message;
 
-    public RskMessage(Message message) {
+    public RskMessage(int version, Message message) {
+        this.version = version;
         this.message = message;
         this.parsed = true;
     }
@@ -58,11 +60,12 @@ public class RskMessage extends EthMessage {
     }
 
     protected void encode() {
-        byte[] msg = this.message.getEncoded();
-
-        this.encoded = RLP.encodeList(msg);
+        byte[] type = RLP.encodeByte(this.message.getMessageType().getTypeAsByte());
+        byte[] body = RLP.encodeElement(this.message.getEncodedMessage());
+        byte[] versionEncoded = RLP.encodeInt(this.version);
+        byte[] msgEncoded = RLP.encodeList(type, body, versionEncoded);
+        this.encoded = RLP.encodeList(msgEncoded);
     }
-
 
     @Override
     public String toString() {
