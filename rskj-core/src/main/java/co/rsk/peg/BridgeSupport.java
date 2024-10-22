@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.findWitnessCommitment;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -2144,7 +2145,13 @@ public class BridgeSupport {
         return lockingCapSupport.increaseLockingCap(tx, newLockingCap);
     }
 
-    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
+    public void registerBtcCoinbaseTransaction(
+        byte[] btcTxSerialized,
+        Sha256Hash blockHash,
+        byte[] pmtSerialized,
+        Sha256Hash witnessMerkleRoot,
+        byte[] witnessReservedValue
+    ) throws VMException {
         Context.propagate(btcContext);
         try{
             this.ensureBtcBlockStore();
@@ -2203,17 +2210,34 @@ public class BridgeSupport {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
         btcTx.verify();
 
-        Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
-
-        if(!witnessCommitment.equals(btcTx.findWitnessCommitment())){
-            logger.warn("[btcTx:{}] WitnessCommitment does not match", btcTxHash);
-            throw new BridgeIllegalArgumentException("WitnessCommitment does not match");
-        }
+        validateWitnessInformation(btcTx, witnessMerkleRoot, witnessReservedValue);
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
         provider.setCoinbaseInformation(blockHeader.getHash(), coinbaseInformation);
 
         logger.warn("[btcTx:{}] Registered coinbase information", btcTxHash);
+    }
+
+    private void validateWitnessInformation(
+        BtcTransaction coinbaseTransaction,
+        Sha256Hash witnessMerkleRoot,
+        byte[] witnessReservedValue
+    ) throws BridgeIllegalArgumentException {
+        Optional<Sha256Hash> expectedWitnessCommitment = findWitnessCommitment(coinbaseTransaction);
+        Sha256Hash calculatedWitnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
+
+        expectedWitnessCommitment
+            .filter(commitment -> commitment.equals(calculatedWitnessCommitment))
+            .orElseThrow(() -> {
+                String message = String.format(
+                    "[btcTx: %s] Witness commitment does not match. Expected: %s, Calculated: %s",
+                    coinbaseTransaction.getHash(),
+                    expectedWitnessCommitment.orElse(null),
+                    calculatedWitnessCommitment
+                );
+                logger.warn("[validateWitnessInformation] {}", message);
+                return new BridgeIllegalArgumentException(message);
+            });
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
