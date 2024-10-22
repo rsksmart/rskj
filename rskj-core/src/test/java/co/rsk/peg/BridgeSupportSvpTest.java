@@ -56,11 +56,12 @@ public class BridgeSupportSvpTest {
 
     private static final Coin spendableValueFromProposedFederation = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
 
-    private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
-    private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-    private final CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
-    private final CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
-    private final CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+    private static final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
+    private static final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+    private static final CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+    private static final CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
+    private static final CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
+
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
     private List<LogInfo> logs;
