@@ -64,7 +64,6 @@ public class BridgeSupportSvpTest {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
     private List<LogInfo> logs;
-    private BridgeEventLogger bridgeEventLogger;
 
     private Block rskExecutionBlock;
     private Transaction rskTx;
@@ -118,58 +117,17 @@ public class BridgeSupportSvpTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("update svp state tests")
-    class UpdateSvpStateTests {
+    @Tag("Validation failure tests")
+    class ValidationFailureTests {
         @BeforeEach
         void setUp() {
             logs = new ArrayList<>();
-            bridgeEventLogger = new BridgeEventLoggerImpl(
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 allActivations,
                 logs
             );
-        }
 
-        @Test
-        void processValidationFailure_shouldLogValidationFailureAndClearSvpValues() {
-            // arrange
-
-            // even if we know all these values cannot exist simultaneously,
-            // we need to test that all of them are being cleared when validation fails.
-            Sha256Hash svpFundTxHash = BitcoinTestUtils.createHash(1);
-            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
-
-            BtcTransaction svpFundTx = mock(BtcTransaction.class);
-            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
-
-            Sha256Hash svpSpendTxHash = BitcoinTestUtils.createHash(2);
-            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
-
-            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
-            BtcTransaction svpSpendTx = mock(BtcTransaction.class);
-            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
-            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
-
-            arrangeFederationSupportRealImpl();
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .build();
-
-            // act
-            bridgeSupport.processValidationFailure(proposedFederation);
-
-            // assert
-            assertLogCommitFederationFailed(proposedFederation);
-            assertSvpValuesWereCleared();
-        }
-
-        private void arrangeFederationSupportRealImpl() {
             InMemoryStorage storageAccessor = new InMemoryStorage();
             FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(storageAccessor);
             federationStorageProvider.setProposedFederation(proposedFederation);
@@ -180,9 +138,82 @@ public class BridgeSupportSvpTest {
                 rskExecutionBlock,
                 allActivations
             );
+
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .build();
         }
 
-        private void assertLogCommitFederationFailed(Federation proposedFederation) {
+        @Test
+        void processValidationFailure_whenSvpFundTxHashUnsigned_shouldLogValidationFailureAndClearValue() {
+            // arrange
+            Sha256Hash svpFundTxHashUnsigned = BitcoinTestUtils.createHash(1);
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHashUnsigned);
+
+            // act
+            bridgeSupport.processValidationFailure(proposedFederation);
+
+            // assert
+            assertLogCommitFederationFailed();
+            assertProposedFederationWasCleared();
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+        }
+
+        @Test
+        void processValidationFailure_whenSvpFundTxSigned_shouldLogValidationFailureAndClearValue() {
+            // arrange
+            BtcTransaction svpFundTx = mock(BtcTransaction.class);
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+
+            // act
+            bridgeSupport.processValidationFailure(proposedFederation);
+
+            // assert
+            assertLogCommitFederationFailed();
+            assertProposedFederationWasCleared();
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+        }
+
+        @Test
+        void processValidationFailure_whenSvpSpendTxWFS_shouldLogValidationFailureAndClearSpendTxValues() {
+            // arrange
+            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
+            BtcTransaction svpSpendTx = mock(BtcTransaction.class);
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
+
+            // act
+            bridgeSupport.processValidationFailure(proposedFederation);
+
+            // assert
+            assertLogCommitFederationFailed();
+            assertProposedFederationWasCleared();
+            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
+        }
+
+        @Test
+        void processValidationFailure_whenSvpSpendTxHashUnsigned_shouldLogValidationFailureAndClearValue() {
+            // arrange
+            Sha256Hash svpSpendTxHash = BitcoinTestUtils.createHash(2);
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+
+            // act
+            bridgeSupport.processValidationFailure(proposedFederation);
+
+            // assert
+            assertLogCommitFederationFailed();
+            assertProposedFederationWasCleared();
+            assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
+        }
+
+        private void assertLogCommitFederationFailed() {
             List<DataWord> encodedTopics = getEncodedTopics(commitFederationFailedEvent);
 
             byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
@@ -192,24 +223,8 @@ public class BridgeSupportSvpTest {
             assertEventWasEmittedWithExpectedData(encodedData);
         }
 
-        private void assertSvpValuesWereCleared() {
-            assertProposedFederationWasCleared();
-            assertThereAreNoSvpFundTxValues();
-            assertThereAreNoSvpSpendTxValues();
-        }
-
         private void assertProposedFederationWasCleared() {
             assertFalse(federationSupport.getProposedFederation().isPresent());
-        }
-
-        private void assertThereAreNoSvpFundTxValues() {
-            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
-        }
-
-        private void assertThereAreNoSvpSpendTxValues() {
-            assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
         }
     }
 

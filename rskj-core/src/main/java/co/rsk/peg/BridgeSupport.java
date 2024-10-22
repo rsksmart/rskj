@@ -1025,12 +1025,43 @@ public class BridgeSupport {
 
     private void clearSvpValues() {
         federationSupport.clearProposedFederation();
-        // even if we know all these values cannot exist simultaneously,
-        // is easier to just clean them all.
-        provider.setSvpFundTxHashUnsigned(null);
-        provider.setSvpFundTxSigned(null);
-        provider.setSvpSpendTxHashUnsigned(null);
-        provider.setSvpSpendTxWaitingForSignatures(null);
+
+        String methodName = "[clearSvpValues]";
+
+        Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
+        if (svpFundTxHashUnsigned.isPresent()) {
+            logger.warn("{} Fund tx {} was never registered.", methodName, svpFundTxHashUnsigned.get());
+            provider.setSvpFundTxHashUnsigned(null);
+            return;
+        }
+
+        if (provider.getSvpFundTxSigned().isPresent()) {
+            logger.warn("{} Spend tx was never created.", methodName);
+            provider.setSvpFundTxSigned(null);
+            return;
+        }
+
+        Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWFSOpt = provider.getSvpSpendTxWaitingForSignatures();
+        if (svpSpendTxWFSOpt.isPresent()) {
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = svpSpendTxWFSOpt.get();
+            Keccak256 rskCreationHash = svpSpendTxWFS.getKey();
+            BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+
+            logger.warn("{} Spend tx {} was not fully signed. Rsk creation hash: {}.",
+                methodName, svpSpendTx.getHash(), rskCreationHash);
+            provider.setSvpSpendTxWaitingForSignatures(null);
+            provider.setSvpSpendTxHashUnsigned(null);
+            return;
+        }
+
+        Optional<Sha256Hash> svpSpendTxHashUnsigned = provider.getSvpSpendTxHashUnsigned();
+        if (svpSpendTxHashUnsigned.isPresent()) {
+            logger.warn("{} Spend tx {} was not registered.", methodName, svpSpendTxHashUnsigned.get());
+            provider.setSvpSpendTxHashUnsigned(null);
+            return;
+        }
+
+        logger.error("{} All SVP values were already clear, so validation should have been successful.", methodName);
     }
 
     private boolean svpIsOngoing() {
