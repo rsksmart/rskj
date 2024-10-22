@@ -47,4 +47,12 @@ public class RskDebugModuleWeb3j extends JsonRpc2_0Web3j {
     public Request<?, RskModuleWeb3j.GenericJsonResponse> debugTraceBlockByHash(String txHash, Map<String, String> params) {
         return new Request<>("debug_traceBlockByHash", Arrays.asList(txHash, params), web3jService, RskModuleWeb3j.GenericJsonResponse.class);
     }
+
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> debugTraceBlockByNumber(String bnOrId) {
+        return new Request<>("debug_traceBlockByNumber", Collections.singletonList(bnOrId), web3jService, RskModuleWeb3j.GenericJsonResponse.class);
+    }
+
+    public Request<?, RskModuleWeb3j.GenericJsonResponse> debugTraceBlockByNumber(String bnOrId, Map<String, String> params) {
+        return new Request<>("debug_traceBlockByNumber", Arrays.asList(bnOrId, params), web3jService, RskModuleWeb3j.GenericJsonResponse.class);
+    }
 }

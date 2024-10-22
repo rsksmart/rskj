@@ -101,7 +101,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
@@ -750,7 +749,7 @@ class Web3ImplTest {
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         Web3 web3 = new Web3Impl(
                 ethMock,
                 blockchain,
@@ -1425,7 +1424,7 @@ class Web3ImplTest {
         verify(stopperMock).stop(0);
     }
 
-    void testGetBlockByHash(RskSystemProperties config) {
+    void testGetBlockByHash() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1480,14 +1479,12 @@ class Web3ImplTest {
 
     @Test
     void getBlockByHashWithoutFingerroot500() {
-        testGetBlockByHash(new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(2))
-        ));
+        testGetBlockByHash();
     }
 
     @Test
     void getBlockByHash() {
-        testGetBlockByHash(new TestSystemProperties());
+        testGetBlockByHash();
     }
 
     @Test
@@ -2776,7 +2773,7 @@ class Web3ImplTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -2894,7 +2891,7 @@ class Web3ImplTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, flusher, nodeStopper);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -2957,7 +2954,7 @@ class Web3ImplTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, mock(Flusher.class));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
