@@ -1026,43 +1026,38 @@ public class BridgeSupport {
     private void clearSvpValues() {
         federationSupport.clearProposedFederation();
 
-        String methodName = "[clearSvpValues]";
+        provider.getSvpFundTxHashUnsigned().ifPresent(
+            svpFundTxHashUnsigned -> {
+                logger.warn("[clearSvpValues] Fund tx change {} was never registered.", svpFundTxHashUnsigned);
+                provider.setSvpFundTxHashUnsigned(null);
+            }
+        );
 
-        Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
-        if (svpFundTxHashUnsigned.isPresent()) {
-            logger.warn("{} Fund tx {} was never registered.", methodName, svpFundTxHashUnsigned.get());
-            provider.setSvpFundTxHashUnsigned(null);
-            return;
-        }
+        provider.getSvpFundTxSigned().ifPresent(
+            svpFundTxSigned -> {
+                logger.warn("[clearSvpValues] Spend tx was never created. Fund tx hash: {}", svpFundTxSigned.getHash());
+                provider.setSvpFundTxSigned(null);
+            }
+        );
 
-        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
-        if (svpFundTxSigned.isPresent()) {
-            logger.warn("{} Spend tx was never created. Fund tx hash: {}", methodName, svpFundTxSigned.get().getHash());
-            provider.setSvpFundTxSigned(null);
-            return;
-        }
+        provider.getSvpSpendTxWaitingForSignatures().ifPresent(
+            svpSpendTxWFS -> {
+                Keccak256 rskCreationHash = svpSpendTxWFS.getKey();
+                BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
 
-        Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWFSOpt = provider.getSvpSpendTxWaitingForSignatures();
-        if (svpSpendTxWFSOpt.isPresent()) {
-            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = svpSpendTxWFSOpt.get();
-            Keccak256 rskCreationHash = svpSpendTxWFS.getKey();
-            BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+                logger.warn("[clearSvpValues] Spend tx {} was not fully signed. Rsk creation hash: {}.",
+                    svpSpendTx.getHash(), rskCreationHash);
+                provider.setSvpSpendTxWaitingForSignatures(null);
+                provider.setSvpSpendTxHashUnsigned(null);
+            }
+        );
 
-            logger.warn("{} Spend tx {} was not fully signed. Rsk creation hash: {}.",
-                methodName, svpSpendTx.getHash(), rskCreationHash);
-            provider.setSvpSpendTxWaitingForSignatures(null);
-            provider.setSvpSpendTxHashUnsigned(null);
-            return;
-        }
-
-        Optional<Sha256Hash> svpSpendTxHashUnsigned = provider.getSvpSpendTxHashUnsigned();
-        if (svpSpendTxHashUnsigned.isPresent()) {
-            logger.warn("{} Spend tx {} was not registered.", methodName, svpSpendTxHashUnsigned.get());
-            provider.setSvpSpendTxHashUnsigned(null);
-            return;
-        }
-
-        logger.error("{} All SVP values were already clear, so validation should have been successful.", methodName);
+        provider.getSvpSpendTxHashUnsigned().ifPresent(
+            svpSpendTxHashUnsigned -> {
+                logger.warn("[clearSvpValues] Spend tx {} was not registered.", svpSpendTxHashUnsigned);
+                provider.setSvpSpendTxHashUnsigned(null);
+            }
+        );
     }
 
     private boolean svpIsOngoing() {
