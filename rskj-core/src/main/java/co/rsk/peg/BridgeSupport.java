@@ -1035,8 +1035,9 @@ public class BridgeSupport {
             return;
         }
 
-        if (provider.getSvpFundTxSigned().isPresent()) {
-            logger.warn("{} Spend tx was never created.", methodName);
+        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
+        if (svpFundTxSigned.isPresent()) {
+            logger.warn("{} Spend tx was never created. Fund tx hash: {}", methodName, svpFundTxSigned.get().getHash());
             provider.setSvpFundTxSigned(null);
             return;
         }
