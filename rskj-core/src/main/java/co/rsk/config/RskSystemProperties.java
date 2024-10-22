@@ -36,6 +36,8 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -180,6 +182,29 @@ public class RskSystemProperties extends SystemProperties {
 
     public double minerMinFeesNotifyInDollars() {
         return getDouble("miner.minFeesNotifyInDollars", 0);
+    }
+
+    public boolean isRestServerEnabled() {
+        return configFromFiles.getBoolean("rest.server.enabled");
+    }
+
+    public int getRestServerPort() {
+        return configFromFiles.getInt("rest.server.port");
+    }
+
+    public InetAddress getRestServerBindAddress() {
+        String bindAddress = configFromFiles.getString("rest.server.bind_address");
+        try {
+            return InetAddress.getByName(bindAddress);
+        } catch (UnknownHostException e) {
+            throw new RskConfigurationException(
+                    String.format("Invalid REST Server bind address %s", bindAddress),
+                    e);
+        }
+    }
+
+    public boolean isHealthCheckModuleEnabled() {
+        return configFromFiles.getBoolean("rest.server.modules.health-check.enabled");
     }
 
     public boolean bloomServiceEnabled() {
