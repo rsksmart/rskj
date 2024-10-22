@@ -36,7 +36,9 @@ public class DebugPlan extends BasePlan {
     private String transactionVT;
     private String transactionContractCreation;
     private String transactionContractCall;
-    private String block;
+    private String blockHash;
+    private String blockNumber;
+    private String blockTag;
 
     private final Map<String, String> debugParams = new HashMap<>();
 
@@ -87,10 +89,13 @@ public class DebugPlan extends BasePlan {
             }
         }
 
-        block = configuration.getNullableProperty("debug.block");
-        if (block == null) {
-            block = web3Connector.ethGetBlockHashByNumber(BigInteger.ONE); // naive, valid only for regtest mode
+        blockHash = configuration.getNullableProperty("debug.block");
+        if (blockHash == null) {
+            blockHash = web3Connector.ethGetBlockHashByNumber(BigInteger.ONE); // naive, valid only for regtest mode
         }
+
+        blockNumber = "0x1";
+        blockTag = "latest";
     }
 
     @TearDown(Level.Trial)
@@ -111,8 +116,16 @@ public class DebugPlan extends BasePlan {
         return transactionContractCall;
     }
 
-    public String getBlock() {
-        return block;
+    public String getBlockHash() {
+        return blockHash;
+    }
+
+    public String getBlockNumber() {
+        return blockNumber;
+    }
+
+    public String getBlockTag() {
+        return blockTag;
     }
 
     public Map<String, String> getDebugParams() {
