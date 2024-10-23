@@ -156,6 +156,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Returns the block number of the creation of the retiring federation
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
 
+    // Returns the proposed federation bitcoin address
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_ADDRESS = BridgeMethods.GET_PROPOSED_FEDERATION_ADDRESS.getFunction();
+    // Returns the number of federates in the proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_SIZE = BridgeMethods.GET_PROPOSED_FEDERATION_SIZE.getFunction();
+    // Returns the public key of given type the federator at the specified index for the current proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+    // Returns the creation time of the proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_CREATION_TIME = BridgeMethods.GET_PROPOSED_FEDERATION_CREATION_TIME.getFunction();
+    // Returns the block number of the creation of the proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_CREATION_BLOCK_NUMBER = BridgeMethods.GET_PROPOSED_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
+
     // Creates a new pending federation and returns its id
     public static final CallTransaction.Function CREATE_FEDERATION = BridgeMethods.CREATE_FEDERATION.getFunction();
     // Adds the given key to the current pending federation
