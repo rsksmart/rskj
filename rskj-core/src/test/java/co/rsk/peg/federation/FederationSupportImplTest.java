@@ -2172,6 +2172,28 @@ class FederationSupportImplTest {
     }
 
     @Test
+    @Tag("clear proposed federation")
+    void clearProposedFederation_removesProposedFederation() {
+        // arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+
+        ErpFederation federation = P2shErpFederationBuilder.builder().build();
+        storageProvider.setProposedFederation(federation);
+
+        // first check the proposed federation was correctly saved
+        Optional<Federation> proposedFederation = storageProvider.getProposedFederation(federationMainnetConstants, activations);
+        assertTrue(proposedFederation.isPresent());
+        assertThat(proposedFederation.get(), is(federation));
+
+        // act
+        federationSupport.clearProposedFederation();
+
+        // assert
+        Optional<Federation> currentProposedFederation = storageProvider.getProposedFederation(federationMainnetConstants, activations);
+        assertFalse(currentProposedFederation.isPresent());
+    }
+
+    @Test
     @Tag("save")
     void save_callsStorageProviderSave() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
