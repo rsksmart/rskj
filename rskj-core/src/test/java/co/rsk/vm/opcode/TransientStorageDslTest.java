@@ -119,6 +119,33 @@ public class TransientStorageDslTest {
        assertTransactionReceiptWithStatus(world, checkingOpcodesTxName, "b03", false);
     }
 
+    @Test
+    void testTransientStorageTestsEip1153BasicScenarios() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_eip1153_basic_tests.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String mainContractTransientStorageCreationTxName = "txTestTransientStorageContract";
+        assertTransactionReceiptWithStatus(world, mainContractTransientStorageCreationTxName, "b01", true);
+
+        String txTestTloadAfterSstore = "txTestTloadAfterSstore";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTestTloadAfterSstore, "b02", true);
+        Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txTestTloadAfterTstore = "txTestTloadAfterTstore";
+        txReceipt = assertTransactionReceiptWithStatus(world, txTestTloadAfterTstore, "b03", true);
+        Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txTestTransientUnsetValues = "txTestTransientUnsetValues";
+        txReceipt = assertTransactionReceiptWithStatus(world, txTestTransientUnsetValues, "b04", true);
+        Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txTestTloadAfterTstoreIsZero = "txTestTloadAfterTstoreIsZero";
+        txReceipt = assertTransactionReceiptWithStatus(world, txTestTloadAfterTstoreIsZero, "b04", true);
+        Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
         Transaction txCreation = world.getTransactionByName(txName);
         assertNotNull(txCreation);
