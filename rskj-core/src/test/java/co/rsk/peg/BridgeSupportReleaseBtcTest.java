@@ -25,8 +25,6 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -39,7 +37,6 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.*;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
-import co.rsk.trie.Trie;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
@@ -50,7 +47,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -87,7 +83,7 @@ class BridgeSupportReleaseBtcTest {
     void setUpOnEachTest() {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         activeFederation = P2shErpFederationBuilder.builder().build();
-        repository = spy(createRepository());
+        repository = spy(RskTestUtils.createRepository());
         eventLogger = mock(BridgeEventLogger.class);
         provider = initProvider();
         federationStorageProvider = initFederationStorageProvider();
@@ -1652,9 +1648,5 @@ class BridgeSupportReleaseBtcTest {
         storageProvider.setNewFederation(activeFederation);
 
         return storageProvider;
-    }
-
-    private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }
