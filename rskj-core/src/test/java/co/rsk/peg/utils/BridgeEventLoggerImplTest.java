@@ -493,11 +493,9 @@ class BridgeEventLoggerImplTest {
 
         eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS, btcRecipientAddress, amount);
 
-        commonAssertLogs(eventLogs);
-        assertTopics(2, eventLogs);
+        commonAssertLogs();
+        assertTopics(2);
         assertEvent(
-            eventLogs,
-            0,
             BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(),
             new Object[]{RSK_ADDRESS.toHexString()},
             new Object[]{btcRecipientAddress.toString(), amount.asBigInteger()}
@@ -530,11 +528,9 @@ class BridgeEventLoggerImplTest {
 
         eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS, amount, reason);
 
-        commonAssertLogs(eventLogs);
-        assertTopics(2, eventLogs);
+        commonAssertLogs();
+        assertTopics(2);
         assertEvent(
-            eventLogs,
-            0,
             BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(),
             new Object[]{RSK_ADDRESS.toHexString()},
             new Object[]{amount.asBigInteger(), reason.getValue()}
