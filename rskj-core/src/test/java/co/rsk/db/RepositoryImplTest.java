@@ -18,11 +18,17 @@
 
 package co.rsk.db;
 
+import static co.rsk.RskTestUtils.createRepository;
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Set;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -32,17 +38,11 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Set;
-
-import static org.hamcrest.Matchers.is;
-
 /**
  * Created by ajlopez on 29/03/2017.
  */
 class RepositoryImplTest {
-    private static Keccak256 emptyHash = TrieHashTest.makeEmptyHash();
+    private static final Keccak256 emptyHash = TrieHashTest.makeEmptyHash();
 
     @Test
     void getNonceUnknownAccount() {
@@ -428,9 +428,5 @@ class RepositoryImplTest {
 
     private static Repository createRepositoryWithCache() {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-    }
-
-    private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
     }
 }

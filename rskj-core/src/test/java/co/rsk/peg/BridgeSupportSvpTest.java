@@ -1,7 +1,10 @@
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -10,10 +13,7 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationSupport;
-import co.rsk.peg.federation.FederationTestUtils;
-import co.rsk.peg.federation.P2shErpFederationBuilder;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -22,6 +22,8 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -29,8 +31,16 @@ import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.IntStream;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -38,6 +48,10 @@ import static org.mockito.Mockito.when;
 
 public class BridgeSupportSvpTest {
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
+    private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+    private final CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+    private final CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -102,21 +116,18 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp fund transaction creation and processing tests")
     class SvpFundTxCreationAndProcessingTests {
-        private final List<LogInfo> logs = new ArrayList<>();
-        private final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
-        private final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+        private List<LogInfo> logs;
 
         private BtcTransaction svpFundTransactionUnsigned;
         private Sha256Hash svpFundTransactionHashUnsigned;
 
         @BeforeEach
         void setUp() {
-            SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+            logs = new ArrayList<>();
             BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 allActivations,
-                logs,
-                signatureCache
+                logs
             );
 
             bridgeSupport = bridgeSupportBuilder
@@ -184,8 +195,8 @@ public class BridgeSupportSvpTest {
             svpFundTransactionUnsigned = getSvpFundTransactionFromPegoutsMap(pegoutsWaitingForConfirmations);
 
             assertPegoutTxSigHashWasSaved(svpFundTransactionUnsigned);
-            assertLogReleaseRequested(rskTx.getHash(), svpFundTransactionHashUnsigned);
-            assertLogPegoutTransactionCreated(svpFundTransactionUnsigned);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpFundTransactionHashUnsigned, spendableValueFromProposedFederation);
+            assertLogPegoutTransactionCreated(logs, svpFundTransactionUnsigned);
         }
 
         private BtcTransaction getSvpFundTransactionFromPegoutsMap(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations) {
@@ -228,31 +239,14 @@ public class BridgeSupportSvpTest {
         private void assertOneOutputIsToProposedFederationWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
             Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
 
-            Optional<TransactionOutput> outputToProposedFederationOpt = searchForOutput(svpFundTransactionUnsignedOutputs, proposedFederationScriptPubKey);
-            assertTrue(outputToProposedFederationOpt.isPresent());
-
-            TransactionOutput outputToProposedFederation = outputToProposedFederationOpt.get();
-            assertEquals(spendableValueFromProposedFederation, outputToProposedFederation.getValue());
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationScriptPubKey, spendableValueFromProposedFederation);
         }
 
         private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
             Script proposedFederationWithFlyoverPrefixScriptPubKey =
                 PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
 
-            Optional<TransactionOutput> outputToProposedFederationWithFlyoverPrefixOpt = searchForOutput(
-                svpFundTransactionUnsignedOutputs,
-                proposedFederationWithFlyoverPrefixScriptPubKey
-            );
-            assertTrue(outputToProposedFederationWithFlyoverPrefixOpt.isPresent());
-
-            TransactionOutput outputToProposedFederationWithFlyoverPrefix = outputToProposedFederationWithFlyoverPrefixOpt.get();
-            assertEquals(spendableValueFromProposedFederation, outputToProposedFederationWithFlyoverPrefix.getValue());
-        }
-
-        private Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
-            return transactionOutputs.stream()
-                .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
-                .findFirst();
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationWithFlyoverPrefixScriptPubKey, spendableValueFromProposedFederation);
         }
 
         private void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash) {
@@ -272,54 +266,8 @@ public class BridgeSupportSvpTest {
             Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
             assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
         }
-
-        private void assertLogReleaseRequested(Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash) {
-            byte[] releaseCreationTxHashSerialized = releaseCreationTxHash.getBytes();
-            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, releaseCreationTxHashSerialized, pegoutTransactionHashSerialized);
-
-            byte[] encodedData = getEncodedData(releaseRequestedEvent, spendableValueFromProposedFederation.getValue());
-
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
-        }
-
-        private void assertLogPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
-            Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
-            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
-
-            List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
-            byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
-            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
-
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
-        }
-
-        private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-            byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-            return LogInfo.byteArrayToList(encodedTopicsInBytes);
-        }
-
-        private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-            return bridgeEvent.encodeEventData(args);
-        }
-
-        private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-            Optional<LogInfo> topicOpt = logs.stream()
-                .filter(log -> log.getTopics().equals(expectedTopics))
-                .findFirst();
-            assertTrue(topicOpt.isPresent());
-        }
-
-        private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-            Optional<LogInfo> data = logs.stream()
-                .filter(log -> Arrays.equals(log.getData(), expectedData))
-                .findFirst();
-            assertTrue(data.isPresent());
-        }
     }
+
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("svp fund transaction registration tests")
@@ -342,7 +290,7 @@ public class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionWithChange();
+            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionUnsignedWithChange();
 
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
@@ -365,20 +313,17 @@ public class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereNotUpdated();
         }
 
+        private void assertSvpFundTransactionValuesWereNotUpdated() {
+            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+        }
+
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenValidationPeriodEnded_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // arrange
-            // make rsk execution block to be after validation period ended
-            long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
-                + bridgeMainNetConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
-            long rskExecutionBlockTimestamp = 10L;
-            BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-                .setNumber(validationPeriodEndBlock + 1) // adding one more block to ensure validation period is ended
-                .setTimestamp(rskExecutionBlockTimestamp)
-                .build();
-            rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
 
-            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionWithChange();
+            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionUnsignedWithChange();
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
 
@@ -401,9 +346,9 @@ public class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forNormalPegout_whenSvpPeriodIsOngoing_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
-            arrangeSvpFundTransactionWithChange();
+            arrangeSvpFundTransactionUnsignedWithChange();
 
-            BtcTransaction pegout = createPegout();
+            BtcTransaction pegout = createPegout(proposedFederation.getRedeemScript());
             savePegoutIndex(pegout);
             signInputs(pegout); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(pegout);
@@ -427,7 +372,7 @@ public class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forSvpFundTransactionWithoutChangeOutput_whenSvpPeriodIsOngoing_shouldJustUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
-            BtcTransaction svpFundTransaction = recreateSvpFundTransaction();
+            BtcTransaction svpFundTransaction = recreateSvpFundTransactionUnsigned();
             saveSvpFundTransactionUnsigned(svpFundTransaction);
 
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
@@ -452,7 +397,7 @@ public class BridgeSupportSvpTest {
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenSvpPeriodIsOngoing_shouldRegisterTransactionAndUpdateSvpFundTransactionValues() throws Exception {
             // Arrange
-            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionWithChange();
+            BtcTransaction svpFundTransaction = arrangeSvpFundTransactionUnsignedWithChange();
 
             signInputs(svpFundTransaction); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(svpFundTransaction);
@@ -473,24 +418,10 @@ public class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereUpdated();
         }
 
-        private BtcTransaction arrangeSvpFundTransactionWithChange() {
-            BtcTransaction svpFundTransaction = recreateSvpFundTransaction();
+        private BtcTransaction arrangeSvpFundTransactionUnsignedWithChange() {
+            BtcTransaction svpFundTransaction = recreateSvpFundTransactionUnsigned();
             addOutputChange(svpFundTransaction);
             saveSvpFundTransactionUnsigned(svpFundTransaction);
-
-            return svpFundTransaction;
-        }
-
-        private BtcTransaction recreateSvpFundTransaction() {
-            BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
-
-            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
-            addInput(svpFundTransaction, parentTxHash);
-
-            svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
-            Address flyoverProposedFederationAddress =
-                PegUtils.getFlyoverAddress(btcMainnetParams, bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-            svpFundTransaction.addOutput(spendableValueFromProposedFederation, flyoverProposedFederationAddress);
 
             return svpFundTransaction;
         }
@@ -500,47 +431,14 @@ public class BridgeSupportSvpTest {
             saveSvpFundTransactionHashUnsigned(svpFundTransaction.getHash());
         }
 
-        private BtcTransaction createPegout() {
-            BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
-            Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
-            addInput(pegout, parentTxHash);
-            addOutputChange(pegout);
-
-            return pegout;
-        }
-
-        private void addInput(BtcTransaction transaction, Sha256Hash parentTxHash) {
-            // we need to add an input that we can actually sign,
-            // and we know the private keys for the following scriptSig
-            Federation federation = P2shErpFederationBuilder.builder().build();
-            Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
-
-            transaction.addInput(parentTxHash, 0, scriptSig);
-        }
-
-        private void signInputs(BtcTransaction transaction) {
-            List<BtcECKey> keysToSign =
-                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true);
-            List<TransactionInput> inputs = transaction.getInputs();
-            for (TransactionInput input : inputs) {
-                BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, inputs.indexOf(input), keysToSign);
-            }
-        }
-
-        private void addOutputChange(BtcTransaction transaction) {
-            // add output to the active fed
-            Script activeFederationP2SHScript = activeFederation.getP2SHScript();
-            transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
+        private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
+            bridgeSupport.save();
         }
 
         private void savePegoutIndex(BtcTransaction pegout) {
             BitcoinUtils.getFirstInputSigHash(pegout)
                 .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
-        }
-
-        private void saveSvpFundTransactionHashUnsigned(Sha256Hash svpFundTransactionHashUnsigned) {
-            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
-            bridgeSupport.save();
         }
 
         private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
@@ -580,16 +478,568 @@ public class BridgeSupportSvpTest {
             assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
         }
 
-        private void assertSvpFundTransactionValuesWereNotUpdated() {
-            assertTrue(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
-        }
-
         private void assertSvpFundTransactionValuesWereUpdated() {
             Optional<BtcTransaction> svpFundTransactionSignedOpt = bridgeStorageProvider.getSvpFundTxSigned();
             assertTrue(svpFundTransactionSignedOpt.isPresent());
 
             assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
         }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("svp spend transaction creation and processing tests")
+    class SvpSpendTxCreationAndProcessingTests {
+        private List<LogInfo> logs;
+        private BtcTransaction svpFundTransaction;
+        private Sha256Hash svpSpendTransactionHashUnsigned;
+        private BtcTransaction svpSpendTransactionUnsigned;
+
+        @BeforeEach
+        void setUp() {
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainNetConstants,
+                allActivations,
+                logs
+            );
+
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .build();
+        }
+
+        @Test
+        void processSvpSpendTransaction_whenThereIsNoProposedFederation_shouldNotCreateNorProcessSpendTx() {
+            // act
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
+            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSpendTransactionValuesWereNotSaved();
+            assertSvpSpendTransactionReleaseWasNotLogged();
+        }
+
+        @Test
+        void processSvpSpendTransaction_whenThereIsNoFundTxSigned_shouldNotCreateNorProcessSpendTx() {
+            // act
+            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSpendTransactionValuesWereNotSaved();
+            assertSvpSpendTransactionReleaseWasNotLogged();
+        }
+
+        private void assertSvpSpendTransactionValuesWereNotSaved() {
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertFalse(svpSpendTxHashUnsigned.isPresent());
+
+            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertFalse(svpSpendTxWaitingForSignatures.isPresent());
+        }
+
+        private void assertSvpSpendTransactionReleaseWasNotLogged() {
+            assertEquals(0, logs.size());
+        }
+
+        @Test
+        void processSvpSpendTransaction_createsExpectedTransactionAndSavesTheValuesAndLogsExpectedEvents() {
+            // arrange
+            svpFundTransaction = arrangeSvpFundTransactionSigned();
+
+            // act
+            bridgeSupport.processSvpSpendTransactionUnsigned(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertSvpSpendTxHashUnsignedWasSavedInStorage();
+            assertSvpSpendTxIsWaitingForSignatures();
+            assertSvpSpendTxHasExpectedInputsAndOutputs();
+
+            assertSvpFundTxSignedWasRemovedFromStorage();
+
+            assertLogPegoutTransactionCreated(logs, svpSpendTransactionUnsigned);
+            Coin valueSentToActiveFed = Coin.valueOf(1762);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, valueSentToActiveFed);
+        }
+
+        private void assertSvpSpendTxHashUnsignedWasSavedInStorage() {
+            Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTransactionHashUnsignedOpt.isPresent());
+
+            svpSpendTransactionHashUnsigned = svpSpendTransactionHashUnsignedOpt.get();
+        }
+
+        private void assertSvpSpendTxIsWaitingForSignatures() {
+            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignaturesOpt.get();
+
+            Keccak256 svpSpendTxWaitingForSignaturesRskTxHash = svpSpendTxWaitingForSignatures.getKey();
+            assertEquals(rskTx.getHash(), svpSpendTxWaitingForSignaturesRskTxHash);
+
+            BtcTransaction svpSpendTxWaitingForSignaturesSpendTx = svpSpendTxWaitingForSignatures.getValue();
+            assertEquals(svpSpendTransactionHashUnsigned, svpSpendTxWaitingForSignaturesSpendTx.getHash());
+            svpSpendTransactionUnsigned = svpSpendTxWaitingForSignaturesSpendTx;
+        }
+
+        private void assertSvpFundTxSignedWasRemovedFromStorage() {
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertFalse(svpFundTxSigned.isPresent());
+        }
+
+        private void assertSvpSpendTxHasExpectedInputsAndOutputs() {
+            List<TransactionInput> inputs = svpSpendTransactionUnsigned.getInputs();
+            assertEquals(2, inputs.size());
+            assertInputsHaveExpectedScriptSig(inputs);
+            assertInputsOutpointHashIsFundTxHash(inputs, svpFundTransaction.getHash());
+
+            List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
+            assertEquals(1, outputs.size());
+
+            Coin expectedAmount = Coin.valueOf(1_762L);
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), expectedAmount);
+        }
+
+        private void assertInputsHaveExpectedScriptSig(List<TransactionInput> inputs) {
+            TransactionInput inputToProposedFederation = inputs.get(0);
+            Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+            assertInputHasExpectedScriptSig(inputToProposedFederation, proposedFederationRedeemScript);
+
+            TransactionInput inputToFlyoverProposedFederation = inputs.get(1);
+            Script flyoverRedeemScript =
+                getFlyoverRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+            assertInputHasExpectedScriptSig(inputToFlyoverProposedFederation, flyoverRedeemScript);
+        }
+
+        private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash outpointHash = input.getOutpoint().getHash();
+                assertEquals(svpFundTxHashSigned, outpointHash);
+            }
+        }
+
+        private void assertInputHasExpectedScriptSig(TransactionInput input, Script redeemScript) {
+            List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+            int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+            assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+            for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+                assertEquals(0, chunk.opcode);
+            }
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("svp spend transaction signing tests")
+    class SvpSpendTxSigning {
+        private static final List<BtcECKey> PROPOSED_FEDERATION_SIGNERS_KEYS =
+            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // this is needed to have the private keys too
+
+        private static final Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
+
+        private BtcTransaction svpSpendTx;
+        private List<Sha256Hash> svpSpendTxSigHashes;
+        private List<LogInfo> logs;
+        private BridgeEventLogger bridgeEventLogger;
+
+        @BeforeEach
+        void setUp() {
+            logs = new ArrayList<>();
+            bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainNetConstants,
+                allActivations,
+                logs
+            );
+
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskExecutionBlock)
+                .build();
+
+            arrangeSvpSpendTransaction();
+            svpSpendTxSigHashes = generateTransactionInputsSigHashes(svpSpendTx);
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_withWrongKeys_shouldThrowIllegalStateExceptionAndNotAddProposedFederatorSignatures() {
+            // arrange
+            List<BtcECKey> wrongSigningKeys =
+                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"wrong01", "wrong02", "wrong03", "wrong04", "wrong05"}, true);
+
+            // act & assert
+            for (BtcECKey wrongSigningKey : wrongSigningKeys) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(wrongSigningKey, svpSpendTxSigHashes);
+                assertThrows(IllegalStateException.class,
+                    () -> bridgeSupport.addSignature(wrongSigningKey, signatures, svpSpendTxCreationHash));
+            }
+
+            // assert
+            for (BtcECKey wrongSigningKey : wrongSigningKeys) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, wrongSigningKey);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_whenProposedFederationDoesNotExist_shouldNotAddProposedFederatorSignatures() throws Exception {
+            // arrange
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
+
+            // act
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
+            }
+
+            // assert
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, key);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_whenValidationPeriodEnded_shouldNotAddProposedFederatorsSignatures() throws Exception {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskExecutionBlock)
+                .build();
+
+            // act
+            for (BtcECKey proposedFederatorSignerKeys : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKeys, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(proposedFederatorSignerKeys, signatures, svpSpendTxCreationHash);
+            }
+
+            // assert
+            for (BtcECKey proposedFederatorSignerKeys : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, proposedFederatorSignerKeys);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_withoutEnoughSignatures_shouldNotAddProposedFederatorsSignatures() throws Exception {
+            // act
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+                List<byte[]> notEnoughSignatures = signatures.subList(0, signatures.size() - 1);
+                bridgeSupport.addSignature(proposedFederatorSignerKey, notEnoughSignatures, svpSpendTxCreationHash);
+            }
+
+            // assert
+            for (BtcECKey proposedFederatorSignerKeys : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(svpSpendTx.getInputs(), svpSpendTxSigHashes, proposedFederatorSignerKeys);
+            }
+
+            assertAddSignatureWasNotLogged();
+            assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        private void assertFederatorDidNotSignInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
+                assertFalse(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
+            }
+        }
+
+        private void assertAddSignatureWasNotLogged() {
+            assertEquals(0, logs.size());
+        }
+
+        private void assertSvpSpendTxWFSWasNotRemoved() {
+            assertTrue(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+        }
+
+        @Test
+        void addSignature_forSvpSpendTx_shouldAddProposedFederatorsSignatures() throws Exception {
+            // act
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+                bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
+            }
+
+            // assert
+            for (BtcECKey proposedFederatorSignerKey : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorSigning(
+                    svpSpendTxCreationHash.getBytes(),
+                    svpSpendTx.getInputs(),
+                    svpSpendTxSigHashes,
+                    proposedFederation,
+                    proposedFederatorSignerKey
+                );
+            }
+            assertLogReleaseBtc(svpSpendTxCreationHash, svpSpendTx);
+            assertLogsSize(PROPOSED_FEDERATION_SIGNERS_KEYS.size() + 1); // proposedFedSigners size for addSignature, +1 for release btc
+            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+        }
+
+        @Test
+        void addSignature_forNormalPegout_whenSvpIsOngoing_shouldAddJustActiveFederatorsSignaturesToPegout() throws Exception {
+            Keccak256 rskTxHash = RskTestUtils.createHash(2);
+
+            BtcTransaction pegout = createPegout(activeFederation.getRedeemScript());
+            SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+            pegoutsWFS.put(rskTxHash, pegout);
+
+            List<BtcECKey> activeFedSignersKeys =
+                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03", "fa04", "fa05"}, true);
+
+            List<Sha256Hash> pegoutTxSigHashes = generateTransactionInputsSigHashes(pegout);
+
+            // act
+            for (BtcECKey activeFedSignerKey : activeFedSignersKeys) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(activeFedSignerKey, pegoutTxSigHashes);
+                bridgeSupport.addSignature(activeFedSignerKey, signatures, rskTxHash);
+            }
+
+            // assert
+            List<TransactionInput> pegoutInputs = pegout.getInputs();
+            for (BtcECKey key : activeFedSignersKeys) {
+                assertFederatorSigning(
+                    rskTxHash.getBytes(),
+                    pegout.getInputs(),
+                    pegoutTxSigHashes,
+                    activeFederation,
+                    key
+                );
+            }
+
+            assertLogReleaseBtc(rskTxHash, pegout);
+            assertLogsSize(activeFedSignersKeys.size() + 1); // activeFedSignersKeys size for addSignature, +1 for release btc
+
+            for (BtcECKey key : PROPOSED_FEDERATION_SIGNERS_KEYS) {
+                assertFederatorDidNotSignInputs(pegoutInputs, pegoutTxSigHashes, key);
+            }
+            assertSvpSpendTxWFSWasNotRemoved();
+        }
+
+        private void assertLogsSize(int expectedLogs) {
+            assertEquals(expectedLogs, logs.size());
+        }
+
+        private void assertFederatorSigning(
+            byte[] rskTxHashSerialized,
+            List<TransactionInput> inputs,
+            List<Sha256Hash> sigHashes,
+            Federation federation,
+            BtcECKey key
+        ) {
+            Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(key);
+            assertTrue(federationMember.isPresent());
+            assertLogAddSignature(federationMember.get(), rskTxHashSerialized);
+            assertFederatorSignedInputs(inputs, sigHashes, key);
+        }
+
+        private void assertLogAddSignature(FederationMember federationMember, byte[] rskTxHash) {
+            ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
+            String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
+
+            List<DataWord> encodedTopics = getEncodedTopics(addSignatureEvent, rskTxHash, federatorRskAddress);
+
+            BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
+            byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
+        }
+
+        private void assertLogReleaseBtc(Keccak256 rskTxHash, BtcTransaction btcTx) {
+            byte[] rskTxHashSerialized = rskTxHash.getBytes();
+            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
+
+            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
+            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
+        }
+
+        private void assertFederatorSignedInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
+                assertTrue(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
+            }
+        }
+
+        private void arrangeSvpSpendTransaction() {
+            recreateSvpSpendTransaction();
+            saveSvpSpendTransactionWFSValues();
+        }
+
+        private void recreateSvpSpendTransaction() {
+            svpSpendTx = new BtcTransaction(btcMainnetParams);
+            svpSpendTx.setVersion(BTC_TX_VERSION_2);
+
+            BtcTransaction svpFundTx = arrangeSvpFundTransactionSigned();
+            // add inputs
+            addInputFromMatchingOutputScript(svpSpendTx, svpFundTx, proposedFederation.getP2SHScript());
+            Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+            svpSpendTx.getInput(0)
+                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
+
+            Script flyoverRedeemScript = getFlyoverRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+            addInputFromMatchingOutputScript(svpSpendTx, svpFundTx, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
+            svpSpendTx.getInput(1)
+                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+
+            // add output
+            svpSpendTx.addOutput(Coin.valueOf(1762), federationSupport.getActiveFederationAddress());
+        }
+
+        private void saveSvpSpendTransactionWFSValues() {
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.save();
+        }
+    }
+
+    private void arrangeExecutionBlockIsAfterValidationPeriodEnded() {
+        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
+            + bridgeMainNetConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
+        long rskExecutionBlockNumber = validationPeriodEndBlock + 1; // adding one more block to ensure validation period is ended
+        long rskExecutionBlockTimestamp = 10L;
+
+        rskExecutionBlock = createRskBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
+    }
+
+    private BtcTransaction arrangeSvpFundTransactionSigned() {
+        BtcTransaction svpFundTransaction = recreateSvpFundTransactionUnsigned();
+        signInputs(svpFundTransaction);
+
+        bridgeStorageProvider.setSvpFundTxSigned(svpFundTransaction);
+        bridgeStorageProvider.save();
+
+        return svpFundTransaction;
+    }
+
+    private BtcTransaction recreateSvpFundTransactionUnsigned() {
+        BtcTransaction svpFundTransaction = new BtcTransaction(btcMainnetParams);
+
+        Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
+        addInput(svpFundTransaction, parentTxHash, proposedFederation.getRedeemScript());
+
+        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
+        Address flyoverProposedFederationAddress =
+            PegUtils.getFlyoverAddress(btcMainnetParams, bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+        svpFundTransaction.addOutput(spendableValueFromProposedFederation, flyoverProposedFederationAddress);
+
+        return svpFundTransaction;
+    }
+
+    private BtcTransaction createPegout(Script redeemScript) {
+        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+        Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
+        addInput(pegout, parentTxHash, redeemScript);
+        addOutputChange(pegout);
+
+        return pegout;
+    }
+
+    private void addInput(BtcTransaction transaction, Sha256Hash parentTxHash, Script redeemScript) {
+        // we need to add an input that we can actually sign
+        transaction.addInput(
+            parentTxHash,
+            0,
+            createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript)
+        );
+    }
+
+    private void addOutputChange(BtcTransaction transaction) {
+        // add output to the active fed
+        Script activeFederationP2SHScript = activeFederation.getP2SHScript();
+        transaction.addOutput(Coin.COIN.multiply(10), activeFederationP2SHScript);
+    }
+
+    private void signInputs(BtcTransaction transaction) {
+        List<BtcECKey> keysToSign =
+            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true);
+        List<TransactionInput> inputs = transaction.getInputs();
+        IntStream.range(0, inputs.size()).forEach(i ->
+            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
+        );
+    }
+
+    private void assertOutputWasSentToExpectedScriptWithExpectedAmount(List<TransactionOutput> transactionOutputs, Script expectedScriptPubKey, Coin expectedAmount) {
+        Optional<TransactionOutput> expectedOutput = searchForOutput(transactionOutputs, expectedScriptPubKey);
+        assertTrue(expectedOutput.isPresent());
+
+        TransactionOutput output = expectedOutput.get();
+        assertEquals(expectedAmount, output.getValue());
+    }
+
+    private void assertLogReleaseRequested(List<LogInfo> logs, Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash, Coin requestedAmount) {
+        byte[] releaseCreationTxHashSerialized = releaseCreationTxHash.getBytes();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, releaseCreationTxHashSerialized, pegoutTransactionHashSerialized);
+
+        byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    private void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction pegoutTransaction) {
+        Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
+
+        List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
+        byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
+        byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
+        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
+        return LogInfo.byteArrayToList(encodedTopicsInBytes);
+    }
+
+    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
+        return bridgeEvent.encodeEventData(args);
+    }
+
+    private void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
+        Optional<LogInfo> topicOpt = logs.stream()
+            .filter(log -> log.getTopics().equals(expectedTopics))
+            .findFirst();
+        assertTrue(topicOpt.isPresent());
+    }
+
+    private void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
+        Optional<LogInfo> data = logs.stream()
+            .filter(log -> Arrays.equals(log.getData(), expectedData))
+            .findFirst();
+        assertTrue(data.isPresent());
     }
 }

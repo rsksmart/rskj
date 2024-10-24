@@ -1,8 +1,8 @@
 package co.rsk.peg.federation;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.UTXO;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
@@ -10,26 +10,18 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeIllegalArgumentException;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.vote.ABICallElection;
-import co.rsk.peg.vote.ABICallSpec;
-import co.rsk.peg.vote.ABICallVoteResult;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
+import co.rsk.peg.vote.*;
 import co.rsk.util.StringUtils;
+import java.time.Instant;
+import java.util.*;
+import javax.annotation.Nullable;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.time.Instant;
-import java.util.*;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationSupportImpl implements FederationSupport {
 
@@ -242,7 +234,7 @@ public class FederationSupportImpl implements FederationSupport {
     public int getRetiringFederationSize() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         return retiringFederation.getSize();
@@ -252,7 +244,7 @@ public class FederationSupportImpl implements FederationSupport {
     public int getRetiringFederationThreshold() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         return retiringFederation.getNumberOfSignaturesRequired();
@@ -272,7 +264,7 @@ public class FederationSupportImpl implements FederationSupport {
     public long getRetiringFederationCreationBlockNumber() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
-            return FederationChangeResponseCode.RETIRING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
         return retiringFederation.getCreationBlockNumber();
     }
@@ -340,7 +332,7 @@ public class FederationSupportImpl implements FederationSupport {
         PendingFederation currentPendingFederation = getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         return currentPendingFederation.getSize();
@@ -373,6 +365,37 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     public Optional<Federation> getProposedFederation() {
         return provider.getProposedFederation(constants, activations);
+    }
+    
+    @Override
+    public Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        return getProposedFederation()
+            .map(Federation::getMembers)
+            .map(members -> getFederationMemberPublicKeyOfType(members, index, keyType, "Proposed Federator"));
+    }
+
+    @Override
+    public Optional<Address> getProposedFederationAddress() {
+        return getProposedFederation()
+            .map(Federation::getAddress);
+    }
+
+    @Override
+    public Optional<Long> getProposedFederationCreationBlockNumber() {
+        return getProposedFederation()
+            .map(Federation::getCreationBlockNumber);
+    }
+
+    @Override
+    public Optional<Integer> getProposedFederationSize() {
+        return getProposedFederation()
+            .map(Federation::getSize);
+    }
+
+    @Override
+    public Optional<Instant> getProposedFederationCreationTime() {
+        return getProposedFederation()
+            .map(Federation::getCreationTime);
     }
 
     @Override
@@ -586,7 +609,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[addFederatorPublicKeyMultikey] Pending federation does not exist.");
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
@@ -626,7 +649,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (currentPendingFederation == null) {
             logger.warn("[commitFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT;
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT;
         }
 
         if (!currentPendingFederation.isComplete()) {
@@ -765,7 +788,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         if (!pendingFederationExists()) {
             logger.warn("[rollbackFederation] Pending federation does not exist.");
-            return FederationChangeResponseCode.PENDING_FEDERATION_NON_EXISTENT.getCode();
+            return FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode();
         }
 
         if (dryRun) {
@@ -802,17 +825,20 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     /**
-     * Returns the compressed public key of given type of the member list at the given index
-     * Throws a custom index out of bounds exception when appropiate
-     * @param members the list of federation members
-     * @param index the federator's index (zero-based)
-     * @param keyType the key type
-     * @param errorPrefix the index out of bounds error prefix
-     * @return the federation member's public key
+     * Returns the compressed public key of given type of the member list at the
+     * given index. Throws a custom index out of bounds exception when appropiate.
+     * 
+     * @param members     list of federation members
+     * @param index       federator's index (zero-based)
+     * @param keyType     key type
+     * @param errorPrefix index out of bounds error prefix
+     * @return federation member's public key
      */
-    private byte[] getFederationMemberPublicKeyOfType(List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
+    private byte[] getFederationMemberPublicKeyOfType(
+          List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
         if (index < 0 || index >= members.size()) {
-            throw new IndexOutOfBoundsException(String.format("%s index must be between 0 and %d", errorPrefix, members.size() - 1));
+            throw new IndexOutOfBoundsException(
+                String.format("%s index must be between 0 and %d (found: %d)", errorPrefix, members.size() - 1, index));
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
