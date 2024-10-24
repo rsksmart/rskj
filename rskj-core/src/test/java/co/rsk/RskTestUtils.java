@@ -3,6 +3,9 @@ package co.rsk;
 import static org.mockito.Mockito.mock;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.Trie;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -12,6 +15,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.MutableRepository;
 
 public class RskTestUtils {
 
@@ -48,5 +52,9 @@ public class RskTestUtils {
             .build();
 
         return Block.createBlockFromHeader(blockHeader, true);
+    }
+
+    public static Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

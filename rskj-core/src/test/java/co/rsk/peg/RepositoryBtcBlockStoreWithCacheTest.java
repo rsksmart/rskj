@@ -18,35 +18,29 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
+import static co.rsk.RskTestUtils.createRepository;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.Trie;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.math.BigInteger;
-import java.util.ArrayList;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class RepositoryBtcBlockStoreWithCacheTest {
 
@@ -146,7 +140,7 @@ class RepositoryBtcBlockStoreWithCacheTest {
 
     @Test
     void cacheLivesAcrossInstances() throws BlockStoreException {
-        Repository repository =  createRepository();
+        Repository repository = createRepository();
         RepositoryBtcBlockStoreWithCache.Factory factory = createBlockStoreFactory();
         BtcBlockStoreWithCache btcBlockStore = createBlockStoreWithTrack(factory, repository.startTracking());
 
@@ -211,7 +205,7 @@ class RepositoryBtcBlockStoreWithCacheTest {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
 
         int blockHeight = 100;
-        Sha256Hash blockHash = PegTestUtils.createHash(2);
+        Sha256Hash blockHash = BitcoinTestUtils.createHash(2);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getBtcBestBlockHashByHeight(blockHeight)).thenReturn(Optional.of(blockHash));
 
@@ -292,7 +286,7 @@ class RepositoryBtcBlockStoreWithCacheTest {
 
     @Test
     void getStoredBlockAtMainChainHeight_postIris_heightLowerThanMaxDepth_limitInBtcHeightWhenBlockIndexActivates() throws BlockStoreException {
-        Repository repository =  createRepository();
+        Repository repository = createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -517,10 +511,6 @@ class RepositoryBtcBlockStoreWithCacheTest {
 
     private RepositoryBtcBlockStoreWithCache.Factory createBlockStoreFactory() {
         return new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
-    }
-
-    private Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     private StoredBlock createStoredBlock(BtcBlock parent, int height, int nonce) {
