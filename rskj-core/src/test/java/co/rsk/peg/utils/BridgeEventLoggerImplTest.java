@@ -62,7 +62,7 @@ class BridgeEventLoggerImplTest {
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMETERS = BRIDGE_CONSTANTS.getBtcParams();
     private static final BtcTransaction BTC_TRANSACTION = new BtcTransaction(NETWORK_PARAMETERS);
-    private static final RskAddress RSK_ADDRESS = new RskAddress("0x0000000000000000000000000000000000000000");
+    private static final RskAddress RSK_ADDRESS = new RskAddress("0x0000000000000000000000000000000000000101");
     private static final Keccak256 RSK_TX_HASH = RskTestUtils.createHash(1);
 
     private List<LogInfo> eventLogs;
@@ -75,7 +75,12 @@ class BridgeEventLoggerImplTest {
 
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         eventLogs = new LinkedList<>();
-        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, eventLogs, signatureCache);
+        eventLogger = new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            activations,
+            eventLogs,
+            signatureCache
+        );
     }
 
     @Test
@@ -411,18 +416,23 @@ class BridgeEventLoggerImplTest {
     }
 
     @Test
-    void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
-        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
-        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
+    void logReleaseBtcRequestReceived_preRSKIP326_destinationAddressAsHash160() {
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
+        eventLogger = new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            hopActivations,
+            eventLogs,
+            signatureCache
+        );
 
         Address btcRecipientAddress = new Address(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83")
         );
-        Coin amount = Coin.COIN;
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
 
-        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS.toString(), btcRecipientAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS, btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -430,21 +440,29 @@ class BridgeEventLoggerImplTest {
             eventLogs,
             0,
             BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent(),
-            new Object[]{RSK_ADDRESS.toString()},
-            new Object[]{btcRecipientAddress.getHash160(), amount.value}
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{btcRecipientAddress.getHash160(), amount.toBitcoin().getValue()}
         );
     }
 
     @Test
-    void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
+    void logReleaseBtcRequestReceived_postRSKIP326_destinationAddressAsBase58() {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+        eventLogger = new BridgeEventLoggerImpl(
+            BRIDGE_CONSTANTS,
+            arrowheadActivations,
+            eventLogs,
+            signatureCache
+        );
+
         Address btcRecipientAddress = new Address(
             NETWORK_PARAMETERS,
             NETWORK_PARAMETERS.getP2SHHeader(),
             Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83")
         );
-        Coin amount = Coin.COIN;
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
 
-        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS.toString(), btcRecipientAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS, btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -452,17 +470,42 @@ class BridgeEventLoggerImplTest {
             eventLogs,
             0,
             BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(),
-            new Object[]{RSK_ADDRESS.toString()},
-            new Object[]{btcRecipientAddress.toString(), amount.value}
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{btcRecipientAddress.toString(), amount.toBitcoin().getValue()}
         );
     }
 
     @Test
-    void testLogReleaseBtcRequestRejected() {
-        Coin amount = Coin.COIN;
+    void logReleaseBtcRequestReceived_postRSKIP427_amountAsWeis() {
+        Address btcRecipientAddress = new Address(
+            NETWORK_PARAMETERS,
+            NETWORK_PARAMETERS.getP2SHHeader(),
+            Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83")
+        );
+        co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(Coin.COIN);
+
+        eventLogger.logReleaseBtcRequestReceived(RSK_ADDRESS, btcRecipientAddress, amount);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(),
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{btcRecipientAddress.toString(), amount.asBigInteger()}
+        );
+    }
+
+    @Test
+    void logReleaseBtcRequestRejected_preRSKIP427_logAmountAsSatoshis() {
+        ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0);
+        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, arrowheadActivations, eventLogs, signatureCache);
+
+        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
 
-        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS.toString(), amount, reason);
+        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS, amount, reason);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
@@ -470,8 +513,26 @@ class BridgeEventLoggerImplTest {
             eventLogs,
             0,
             BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(),
-            new Object[]{RSK_ADDRESS.toString()},
-            new Object[]{amount.value, reason.getValue()}
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{amount.toBitcoin().getValue(), reason.getValue()}
+        );
+    }
+
+    @Test
+    void logReleaseBtcRequestRejected_postRSKIP427_logAmountAsWeis() {
+        co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
+        RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
+
+        eventLogger.logReleaseBtcRequestRejected(RSK_ADDRESS, amount, reason);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(
+            eventLogs,
+            0,
+            BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(),
+            new Object[]{RSK_ADDRESS.toHexString()},
+            new Object[]{amount.asBigInteger(), reason.getValue()}
         );
     }
 
