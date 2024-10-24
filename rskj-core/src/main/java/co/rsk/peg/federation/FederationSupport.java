@@ -125,6 +125,8 @@ public interface FederationSupport {
      */
     Optional<byte[]> getProposedFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
+    void clearProposedFederation();
+
     int voteFederationChange(
         Transaction tx,
         ABICallSpec callSpec,
