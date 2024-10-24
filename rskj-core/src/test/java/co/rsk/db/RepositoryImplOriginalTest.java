@@ -19,12 +19,21 @@
 
 package co.rsk.db;
 
+import static co.rsk.RskTestUtils.createRepository;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.*;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
@@ -36,19 +45,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.MethodOrderer;
-
-import java.math.BigInteger;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 /**
  * @author Roman Mandeleil
@@ -822,9 +819,5 @@ class RepositoryImplOriginalTest {
         if (failSema.getCount() == 0) {
             throw new RuntimeException("Test failed.");
         }
-    }
-
-    private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
     }
 }
