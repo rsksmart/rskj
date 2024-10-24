@@ -45,7 +45,6 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -66,7 +65,7 @@ class BridgeSupportReleaseBtcTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private static final ECKey SENDER = new ECKey();
+    private static final ECKey SENDER = RskTestUtils.getEcKeyFromSeed("sender");
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
@@ -96,7 +95,7 @@ class BridgeSupportReleaseBtcTest {
         feePerKbSupport = mock(FeePerKbSupportImpl.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.valueOf(5_000L));
         bridgeSupport = spy(initBridgeSupport(eventLogger, ACTIVATIONS_ALL));
-        releaseTx = buildReleaseRskTx();
+        releaseTx = buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(Coin.COIN));
     }
 
     @Test
@@ -1180,9 +1179,6 @@ class BridgeSupportReleaseBtcTest {
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
 
-        Transaction rskTx = buildUpdateTx();
-        rskTx.sign(SENDER.getPrivKeyBytes());
-
         verify(repository, times(1)).transfer(BRIDGE_ADDRESS, senderAddress, pegoutRequestValue);
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, logInfo.size());
@@ -1561,7 +1557,7 @@ class BridgeSupportReleaseBtcTest {
 
     private UTXO buildUTXO() {
         return new UTXO(
-            Sha256Hash.wrap(TestUtils.generateBytes("utxo",32)),
+            BitcoinTestUtils.createHash(11),
             0,
             Coin.COIN.multiply(2),
             1,
@@ -1570,13 +1566,8 @@ class BridgeSupportReleaseBtcTest {
         );
     }
 
-    private Transaction buildReleaseRskTx() {
-        return buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(Coin.COIN));
-    }
-
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {
-        Transaction releaseTransaction = Transaction
-            .builder()
+        Transaction releaseTransaction = Transaction.builder()
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
@@ -1591,8 +1582,10 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private Transaction buildReleaseRskTx_fromContract(co.rsk.core.Coin pegoutRequestValue) {
+        Keccak256 parentHash = RskTestUtils.createHash(4);
+
         return new InternalTransaction(
-            RskTestUtils.createHash(4).getBytes(),
+            parentHash.getBytes(),
             400,
             0,
             NONCE.toByteArray(),
@@ -1610,8 +1603,7 @@ class BridgeSupportReleaseBtcTest {
     private Transaction buildUpdateTx() {
         final BigInteger value = new BigInteger("1");
 
-        return Transaction
-            .builder()
+        Transaction updateCollectionsTx = Transaction.builder()
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
@@ -1620,6 +1612,9 @@ class BridgeSupportReleaseBtcTest {
             .chainId(Constants.MAINNET_CHAIN_ID)
             .value(value)
             .build();
+        updateCollectionsTx.sign(SENDER.getPrivKeyBytes());
+
+        return updateCollectionsTx;
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activations) {
