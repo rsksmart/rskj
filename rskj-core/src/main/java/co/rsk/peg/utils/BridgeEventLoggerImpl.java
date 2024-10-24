@@ -261,7 +261,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     public void logReleaseBtcRequestRejected(RskAddress sender, co.rsk.core.Coin amountInWeis, RejectedPegoutReason reason) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent();
 
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(sender);
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(sender.toHexString());
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
         byte[] encodedData = activations.isActive(ConsensusRule.RSKIP427) ?
