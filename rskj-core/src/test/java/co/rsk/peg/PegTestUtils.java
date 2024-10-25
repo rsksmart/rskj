@@ -20,9 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -312,10 +312,13 @@ public final class PegTestUtils {
     }
 
     public static Address getFlyoverAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
-        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            redeemScript,
-            derivationArgumentHash
+
+        Keccak256 flyoverDerivationHash = new Keccak256(derivationArgumentHash.getBytes());
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            redeemScript
         );
+
         Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
         return Address.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
     }

@@ -29,7 +29,9 @@ public interface DebugModule {
 
     JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) throws Exception;
 
-    JsonNode traceBlock(String blockHash, Map<String, String> traceOptions) throws Exception;
+    JsonNode traceBlockByHash(String blockHash, Map<String, String> traceOptions) throws Exception;
+
+    JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception;
 
     TxQuota accountTransactionQuota(String address);
 }

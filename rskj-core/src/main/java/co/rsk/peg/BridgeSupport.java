@@ -274,7 +274,7 @@ public class BridgeSupport {
      * Get the wallet for the currently active federation
      * @return A BTC wallet for the currently active federation
      *
-     * @param shouldConsiderFlyoverUTXOs
+     * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
     public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         Federation federation = getActiveFederation();
@@ -294,7 +294,7 @@ public class BridgeSupport {
      * or null if there's currently no retiring federation
      * @return A BTC wallet for the currently active federation
      *
-     * @param shouldConsiderFlyoverUTXOs
+     * @param shouldConsiderFlyoverUTXOs Whether to consider flyover UTXOs
      */
     protected Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) {
         List<UTXO> retiringFederationBtcUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
@@ -351,8 +351,8 @@ public class BridgeSupport {
      * @param btcTxSerialized The raw BTC tx
      * @param height The height of the BTC block that contains the tx
      * @param pmtSerialized The raw partial Merkle tree
-     * @throws BlockStoreException
-     * @throws IOException
+     * @throws BlockStoreException If there's an error while executing validations
+     * @throws IOException If there's an error while processing the tx
      */
     public void registerBtcTransaction(
         Transaction rskTx,
@@ -804,11 +804,10 @@ public class BridgeSupport {
      * The funds will be sent to the bitcoin address controlled by the private key that signed the rsk tx.
      * The amount sent to the bridge in this tx will be the amount sent in the btc network minus fees.
      * @param rskTx The rsk tx being executed.
-     * @throws IOException
+     * @throws IOException If there's an error while processing the release request.
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
         final co.rsk.core.Coin pegoutValueInWeis = rskTx.getValue();
-        final Coin pegoutValueInSatoshis = pegoutValueInWeis.toBitcoin();
         final RskAddress senderAddress = rskTx.getSender(signatureCache);
         logger.debug(
             "[releaseBtc] Releasing {} weis from RSK address {} in tx {}",
@@ -824,7 +823,7 @@ public class BridgeSupport {
                 senderAddress
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                emitRejectEvent(pegoutValueInSatoshis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
+                emitRejectEvent(pegoutValueInWeis, senderAddress, RejectedPegoutReason.CALLER_CONTRACT);
                 return;
             } else {
                 String message = "Contract calling releaseBTC";
@@ -837,26 +836,37 @@ public class BridgeSupport {
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, networkParameters);
         logger.debug("[releaseBtc] BTC destination address: {}", btcDestinationAddress);
 
-        requestRelease(btcDestinationAddress, pegoutValueInSatoshis, rskTx);
+        requestRelease(btcDestinationAddress, pegoutValueInWeis, rskTx);
     }
 
-    private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+    private void refundAndEmitRejectEvent(
+        co.rsk.core.Coin releaseRequestedValueInWeis,
+        RskAddress senderAddress,
+        RejectedPegoutReason reason
+    ) {
         logger.trace(
-            "[refundAndEmitRejectEvent] Executing a refund of {} to {}. Reason: {}",
-            value,
+            "[refundAndEmitRejectEvent] Executing a refund of {} weis to {}. Reason: {}",
+            releaseRequestedValueInWeis,
             senderAddress,
             reason
         );
+
+        // Prior to RSKIP427, the value was converted to BTC before doing the refund
+        // This could cause the original value to be rounded down to fit in satoshis value
+        co.rsk.core.Coin refundValue = activations.isActive(RSKIP427) ?
+            releaseRequestedValueInWeis :
+            co.rsk.core.Coin.fromBitcoin(releaseRequestedValueInWeis.toBitcoin());
+
         rskRepository.transfer(
             PrecompiledContracts.BRIDGE_ADDR,
             senderAddress,
-            co.rsk.core.Coin.fromBitcoin(value)
+            refundValue
         );
-        emitRejectEvent(value, senderAddress, reason);
+        emitRejectEvent(releaseRequestedValueInWeis, senderAddress, reason);
     }
 
-    private void emitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
-        eventLogger.logReleaseBtcRequestRejected(senderAddress.toHexString(), value, reason);
+    private void emitRejectEvent(co.rsk.core.Coin releaseRequestedValueInWeis, RskAddress senderAddress, RejectedPegoutReason reason) {
+        eventLogger.logReleaseBtcRequestRejected(senderAddress, releaseRequestedValueInWeis, reason);
     }
 
     /**
@@ -865,10 +875,11 @@ public class BridgeSupport {
      * to be processed later.
      *
      * @param destinationAddress the destination BTC address.
-     * @param value the amount of BTC to release.
-     * @throws IOException
+     * @param releaseRequestedValueInWeis the amount of RBTC requested to be released, represented in weis
+     * @throws IOException if there is an error getting the release request queue from storage
      */
-    private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
+    private void requestRelease(Address destinationAddress, co.rsk.core.Coin releaseRequestedValueInWeis, Transaction rskTx) throws IOException {
+        Coin valueToReleaseInSatoshis = releaseRequestedValueInWeis.toBitcoin();
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
             int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
@@ -886,11 +897,11 @@ public class BridgeSupport {
                     .divide(100)
                 ); // add the gap
 
-            // The pegout value should be greater or equals than the max of these two values
+            // The pegout releaseRequestedValueInWeis should be greater or equals than the max of these two values
             Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValue().value, requireFundsForFee.value));
 
             // Since Iris the peg-out the rule is that the minimum is inclusive
-            if (value.isLessThan(minValue)) {
+            if (valueToReleaseInSatoshis.isLessThan(minValue)) {
                 optionalRejectedPegoutReason = Optional.of(
                     Objects.equals(minValue, requireFundsForFee) ?
                     RejectedPegoutReason.FEE_ABOVE_VALUE:
@@ -899,37 +910,47 @@ public class BridgeSupport {
             }
         } else {
             // For legacy peg-outs the rule stated that the minimum was exclusive
-            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
+            if (!valueToReleaseInSatoshis.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValue())) {
                 optionalRejectedPegoutReason = Optional.of(RejectedPegoutReason.LOW_AMOUNT);
             }
         }
 
         if (optionalRejectedPegoutReason.isPresent()) {
             logger.warn(
-                "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
+                "[requestRelease] releaseBtc ignored. To {}. Tx {}. Value {} weis. Reason: {}",
                 destinationAddress,
                 rskTx,
-                value,
+                releaseRequestedValueInWeis,
                 optionalRejectedPegoutReason.get()
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 refundAndEmitRejectEvent(
-                    value,
+                    releaseRequestedValueInWeis,
                     rskTx.getSender(signatureCache),
                     optionalRejectedPegoutReason.get()
                 );
             }
         } else {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
+                provider.getReleaseRequestQueue().add(destinationAddress, valueToReleaseInSatoshis, rskTx.getHash());
             } else {
-                provider.getReleaseRequestQueue().add(destinationAddress, value);
+                provider.getReleaseRequestQueue().add(destinationAddress, valueToReleaseInSatoshis);
             }
 
+            RskAddress sender = rskTx.getSender(signatureCache);
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender(signatureCache).toHexString(), destinationAddress, value);
+                eventLogger.logReleaseBtcRequestReceived(
+                    sender,
+                    destinationAddress,
+                    releaseRequestedValueInWeis
+                );
             }
-            logger.info("[requestRelease] releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+            logger.info(
+                "[requestRelease] releaseBtc successful to {}. Tx {}. Value {} weis.",
+                destinationAddress,
+                rskTx,
+                releaseRequestedValueInWeis
+            );
         }
     }
 
@@ -2431,17 +2452,18 @@ public class BridgeSupport {
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash, Federation federation) {
-        Script flyoverScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federation.getRedeemScript(),
-            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+        Script federationRedeemScript = federation.getRedeemScript();
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            federationRedeemScript
         );
 
-        Script flyoverScriptHash = ScriptBuilder.createP2SHOutputScript(flyoverScript);
+        Script flyoverP2shOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
 
         return new FlyoverFederationInformation(
             flyoverDerivationHash,
             federation.getP2SHScript().getPubKeyHash(),
-            flyoverScriptHash.getPubKeyHash()
+            flyoverP2shOutputScript.getPubKeyHash()
         );
     }
 

@@ -91,6 +91,10 @@ public interface Web3Connector {
 
     JsonNode debugTraceBlockByHash(String txHash, Map<String, String> params) throws HttpRpcException;
 
+    JsonNode debugTraceBlockByNumber(String bnOrId) throws HttpRpcException;
+
+    JsonNode debugTraceBlockByNumber(String bnOrId, Map<String, String> params) throws HttpRpcException;
+
     EthAccounts ethAccounts() throws HttpRpcException;
 
     EthHashrate ethHashrate() throws HttpRpcException;

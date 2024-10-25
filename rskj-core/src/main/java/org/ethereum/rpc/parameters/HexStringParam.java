@@ -18,12 +18,19 @@
 package org.ethereum.rpc.parameters;
 
 import co.rsk.util.HexUtils;
+import co.rsk.util.StringUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+
+import static org.ethereum.rpc.parameters.HexNumberParam.isHexNumberLengthValid;
 
 public abstract class HexStringParam {
     HexStringParam(String hexString) {
-        if(hexString.isEmpty()) {
+        if (hexString.isEmpty()) {
             return;
+        }
+
+        if (!isHexNumberLengthValid(hexString)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid argument: " + StringUtils.trim(hexString));
         }
 
         if (!HexUtils.hasHexPrefix(hexString) || !HexUtils.isHex(hexString,2)) {

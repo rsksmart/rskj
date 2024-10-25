@@ -78,6 +78,8 @@ public enum ConsensusRule {
     RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
     RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP351("rskip351"), // block header extension v1
+    RSKIP144("rskip144"), // Parallel tx execution
     RSKIP326("rskip326"), // release_request_received event update to use base58 for btcDestinationAddress
     RSKIP353("rskip353"),
     RSKIP357("rskip357"),
@@ -93,12 +95,13 @@ public enum ConsensusRule {
     RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     RSKIP415("rskip415"),
     RSKIP417("rskip417"),
+    RSKIP427("rskip427"),
     RSKIP428("rskip428"),
     RSKIP434("rskip434"),
     RSKIP438("rskip438")
     ;
 
-    private String configKey;
+    private final String configKey;
 
     ConsensusRule(String configKey) {
         this.configKey = configKey;

@@ -116,6 +116,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(requestId).header;
+        header.setExtension(message.getBlockHeaderExtension());
         Block block;
         try {
             block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());

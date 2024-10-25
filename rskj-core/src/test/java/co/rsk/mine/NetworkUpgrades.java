@@ -65,6 +65,23 @@ public enum NetworkUpgrades {
         public String projectVersionModifier() {
             return "Orchid";
         }
+    }),
+
+    ARROWHEAD600_PROPERTIES(new TestSystemProperties() {
+        @Override
+        public ActivationConfig getActivationConfig() {
+            return ActivationConfigsForTest.arrowhead600();
+        }
+
+        @Override
+        public String toString() {
+            return "Arrowhead";
+        }
+
+        @Override
+        public String projectVersionModifier() {
+            return "Arrowhead";
+        }
     });
 
     private final TestSystemProperties properties;

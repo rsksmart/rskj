@@ -10,6 +10,7 @@ transaction_build tx01
 
 block_build b01
     parent g00
+    gasLimit 7500000
     transactions tx01
     build
 
@@ -29,6 +30,7 @@ transaction_build tx02
 
 block_build b02
     parent b01
+    gasLimit 7500000
     transactions tx02
     build
 
@@ -51,6 +53,7 @@ transaction_build tx03
 
 block_build b03
     parent b02
+    gasLimit 7500000
     transactions tx03
     build
 
@@ -73,6 +76,7 @@ transaction_build tx04
 
 block_build b04
     parent b03
+    gasLimit 75000000
     transactions tx04
     build
 
@@ -120,7 +124,7 @@ transaction_build tx06
     contract tx01   # created in tx01
     value 5000
     data 9530dcee
-    gas 1000000
+    gas 500000
     build
 
 block_build b06

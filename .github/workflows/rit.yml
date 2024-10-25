@@ -1,6 +1,8 @@
 name: Rootstock Integration Tests
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches: ["master", "*-rc"]
@@ -15,6 +17,9 @@ on:
         required: false
         default: 'master'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   rootstock-integration-tests:
     name: Rootstock Integration Tests
@@ -22,7 +27,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout Repository # Step needed to access the PR description using github CLI
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 #v4.2.1
 
       - name: Set Branch Variables
         id: set-branch-variables
@@ -34,10 +39,12 @@ jobs:
           github_event_pull_request_number: ${{ github.event.pull_request.number }}
           github_head_ref: ${{ github.head_ref }}
           github_ref_name: ${{ github.ref_name }}
+          github_event_pull_request_head_repo_owner_login: ${{ github.event.pull_request.head.repo.owner.login }}
+          github_repository_owner: ${{ github.repository_owner }}
         run: |
           PR_DESCRIPTION=pr-description.txt
 
-          ALLOWED_BRANCH_CHARACTERS='[-./0-9A-Z_a-z]'
+          ALLOWED_BRANCH_CHARACTERS='[-+./0-9A-Z_a-z]'
 
           default_rskj_branch=master
           default_powpeg_branch=master
@@ -94,6 +101,11 @@ jobs:
             exit 1
           fi
 
+          # Set the Repo Owner
+          REPO_OWNER="${github_event_pull_request_head_repo_owner_login:-$github_repository_owner}"
+
+
+          echo "REPO_OWNER=$REPO_OWNER" >> $GITHUB_ENV
           echo "RSKJ_BRANCH=$RSKJ_BRANCH" >> $GITHUB_ENV
           echo "RIT_BRANCH=$RIT_BRANCH" >> $GITHUB_ENV
           echo "POWPEG_BRANCH=$POWPEG_BRANCH" >> $GITHUB_ENV
@@ -104,27 +116,29 @@ jobs:
           BUILD_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "BUILD_URL=$BUILD_URL" >> $GITHUB_ENV
 
-      - name: Sanitize Branch Name
-        id: sanitize-branch-name
+      - name: Sanitize Github Variables
+        id: sanitize-github-variables
         env:
-          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_EVENT_PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          # Delete non-alphanumeric characters and limit to 255 chars which is the branch limit in GitHub
-          SAFE_BRANCH_NAME=$(echo "${GITHUB_HEAD_REF}" | tr -cd '[:alnum:]_-' | cut -c1-255)
-          echo "SAFE_BRANCH_NAME=$SAFE_BRANCH_NAME" >> $GITHUB_ENV
+          # Delete non-alphanumeric characters and limit to 75 chars which is the branch title limit in GitHub
+          SAFE_PULL_REQUEST_TITLE=$(echo "${GITHUB_EVENT_PULL_REQUEST_TITLE}" | tr -cd '[:alnum:]_ -' | cut -c1-75)
+          echo "SAFE_PULL_REQUEST_TITLE=$SAFE_PULL_REQUEST_TITLE" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@497172fd38dcfaf48c77f9bb1eeb6617eef5eed6 #v1
+        uses: rsksmart/rootstock-integration-tests@e86332474179a63f027d0fe969687d3d24f34c29 #v1
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
           rit-branch: ${{ env.RIT_BRANCH }}
+          repo-owner: ${{ env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
         if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -132,7 +146,7 @@ jobs:
               "attachments": [
                 {
                   "color": "good",
-                  "text": "OK: :+1: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                  "text": "*PASSED*: :white_check_mark: - *${{ env.SAFE_PULL_REQUEST_TITLE }}* \n*Pull request*: ${{ env.GITHUB_EVENT_PULL_REQUEST_HTML_URL }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: [ rskj:`${{ env.RSKJ_BRANCH }}` ] [ fed:`${{ env.POWPEG_BRANCH }}` ] [ rit:`${{ env.RIT_BRANCH }}` ]"
                 }
               ]
             }
@@ -142,6 +156,7 @@ jobs:
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -149,7 +164,7 @@ jobs:
               "attachments": [
                 {
                   "color": "danger",
-                  "text": "FAILED: :robot_face: *Pull request*: ${{ env.SAFE_BRANCH_NAME }} - [#${{ github.run_number }}] - (${{ env.BUILD_URL }}) - *Branches used* [rskj:`rsksmart#${{ env.RSKJ_BRANCH }}`] [fed:`${{ env.POWPEG_BRANCH }}`] [rootstock-integration-tests:`${{ env.RIT_BRANCH }}`]"
+                  "text": "*FAILED*: :x: - *${{ env.SAFE_PULL_REQUEST_TITLE }}* \n*Pull request*: ${{ env.GITHUB_EVENT_PULL_REQUEST_HTML_URL }} \n*Pipeline*: ${{ env.BUILD_URL }} \n*Branches used*: [ rskj:`${{ env.RSKJ_BRANCH }}` ] [ fed:`${{ env.POWPEG_BRANCH }}` ] [ rit:`${{ env.RIT_BRANCH }}` ]"
                 }
               ]
             }

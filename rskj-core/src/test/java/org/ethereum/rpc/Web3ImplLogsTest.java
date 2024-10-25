@@ -18,35 +18,11 @@
 
 package org.ethereum.rpc;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-
-import java.math.BigInteger;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.typesafe.config.ConfigValueFactory;
-import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.rpc.parameters.TxHashParam;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RskTestFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -67,6 +43,9 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -137,7 +116,6 @@ class Web3ImplLogsTest {
     private Web3Impl web3;
     private TrieStore trieStore;
     private BlockStore blockStore;
-
     private SignatureCache signatureCache;
     private BlocksBloomStore blocksBloomStore;
 
@@ -866,7 +844,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithEventInContractCreationReturnsAsExpectedWithBlockHashFilter() throws Exception {
         addEventInContractCreation();
-        final String blockHash = TRACKED_TEST_BLOCK_HASH;
+        final String blockHash = "0xed4afd31173a73c4c5135aae72b940507b97605a5129790de00510894f58f5ce";
         FilterRequestParam fr = new FilterRequestParam(null, null, null, null, new BlockHashParam(blockHash));
 
         Object[] logs = web3.eth_getLogs(fr);
@@ -1101,7 +1079,7 @@ class Web3ImplLogsTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
         blocksBloomStore = new BlocksBloomStore(2, 0, new HashMapDB());
         return new Web3RskImpl(
                 eth,
@@ -1204,7 +1182,7 @@ class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null, blockStore)
+        Block block1 = new BlockBuilder(blockChain, null, blockStore, new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)))
                 .trieStore(trieStore).parent(genesis).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
     }
@@ -1321,8 +1299,8 @@ class Web3ImplLogsTest {
     }
 
     //0.4.11+commit.68ef5810.Emscripten.clang WITH optimizations
-    static final String compiled_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
-    static final String compiled_unknown = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
+    static final String COMPILED_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
+    static final String COMPILED_UNKNOWN = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
 
     private static Transaction getContractTransaction(Account acc1, boolean withEvent) {
     /* contract compiled in data attribute of tx
@@ -1350,9 +1328,9 @@ class Web3ImplLogsTest {
     } */
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
-                .data(compiled_0_4_11)
+                .data(COMPILED_0_4_11)
                 .build();
     }
 
@@ -1393,7 +1371,7 @@ contract main {
 
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(compiledLogExample)
                 .build();
@@ -1423,7 +1401,7 @@ contract caller {
         String compiledCaller = "606060405234610000576040516020806101f8833981016040528080519060200190919050505b8073ffffffffffffffffffffffffffffffffffffffff1663195977a66130396040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b156100005760325a03f115610000575050507f2012ef02e82e91abf55727cc31c3b6e3375003aa9e879f855db72d9e78822c40607b6040518082815260200191505060405180910390a15b505b610111806100e76000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e60c2d4414603c575b6000565b34600057606a600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050606c565b005b8073ffffffffffffffffffffffffffffffffffffffff1663195977a661303a6040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1560005760325a03f1156000575050505b505600a165627a7a72305820f8bc730651ba568de3f84a81088f94a8701c5c41f732d5c7a447077ee40f97a80029";
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(compiledCaller + address)
                 .nonce(1)
@@ -1441,7 +1419,7 @@ contract caller {
         return new TransactionBuilder()
                 .sender(acc1)
                 .receiverAddress(receiverAddress)
-                .gasLimit(BigInteger.valueOf(1000000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
                 .data(ByteUtil.toHexString(func.encode("0x" + address)))
                 .nonce(2)

@@ -24,6 +24,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class BlockResult {
             null,
             Collections.emptyList(),
             Collections.emptyList(),
-            0,
+            new short[0], 0,
             Coin.ZERO,
             null
     );
@@ -49,11 +50,13 @@ public class BlockResult {
     // It is for optimizing switching between states. Instead of using the "stateRoot" field,
     // which requires regenerating the trie, using the finalState field does not.
     private final Trie finalState;
+    private final short[] txEdges;
 
     public BlockResult(
             Block block,
             List<Transaction> executedTransactions,
             List<TransactionReceipt> transactionReceipts,
+            short[] txEdges,
             long gasUsed,
             Coin paidFees,
             Trie finalState) {
@@ -63,11 +66,13 @@ public class BlockResult {
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
         this.finalState = finalState;
+        this.txEdges = txEdges != null? Arrays.copyOf(txEdges, txEdges.length) : null;
     }
-
     public Block getBlock() {
         return block;
     }
+
+    public short[] getTxEdges() { return this.txEdges != null ? Arrays.copyOf(txEdges, txEdges.length) : null; }
 
     public List<Transaction> getExecutedTransactions() { return executedTransactions; }
 
