@@ -18,14 +18,10 @@
  */
 package co.rsk.snapshotsync;
 
-import co.rsk.util.FilesHelper;
-import co.rsk.util.OkHttpClientTestFixture;
-import co.rsk.util.RskjConfigurationFileFixture;
-import co.rsk.util.ThreadTimerHelper;
-import co.rsk.util.cli.ConnectBlocksCommandLine;
+import co.rsk.util.*;
 import co.rsk.util.cli.NodeIntegrationTestCommandLine;
-import co.rsk.util.cli.RskjCommandLineBase;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.squareup.okhttp.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -38,11 +34,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static co.rsk.util.FilesHelper.readBytesFromFile;
+import static co.rsk.util.OkHttpClientTestFixture.FromToAddressPair.of;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SnapshotSyncIntegrationTest {
@@ -83,15 +84,15 @@ public class SnapshotSyncIntegrationTest {
         Path serverDbDir = tempDirectory.resolve("server/database");
         Path clientDbDir = tempDirectory.resolve("client/database");
 
-        importTheExportedBlocksToRegtestNode(serverDbDir);
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
-
         serverNode.startNode();
-        ThreadTimerHelper.waitForSeconds(30);
+        ThreadTimerHelper.waitForSeconds(20);
+        generateBlocks();
 
         JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
         String serverBestBlockNumber = serverBestBlockResponse.get(0).get("result").get("number").asText();
+        assertTrue(HexUtils.jsonHexToLong(serverBestBlockNumber) > 6000);
 
         //when
         String rskConfFileChangedClient = configureClientConfWithGeneratedInformation(serverDbDir, clientDbDir.toString());
@@ -124,12 +125,6 @@ public class SnapshotSyncIntegrationTest {
         }
 
         assertTrue(isClientSynced);
-    }
-
-    private void importTheExportedBlocksToRegtestNode(Path dbDir) throws IOException, InterruptedException {
-        String exportedBlocksCsv = FilesHelper.getIntegrationTestResourcesFullPath("server_blocks.csv");
-        RskjCommandLineBase rskjCommandLineBase = new ConnectBlocksCommandLine(exportedBlocksCsv, dbDir);
-        rskjCommandLineBase.executeCommand();
     }
 
     private String configureServerWithGeneratedInformation(Path tempDirDatabaseServerPath) throws IOException {
@@ -172,5 +167,18 @@ public class SnapshotSyncIntegrationTest {
         byte[] fileBytes = readBytesFromFile(String.format("%s/nodeId.properties", serverDatabasePath));
         String fileContent = new String(fileBytes, StandardCharsets.UTF_8);
         return StringUtils.substringAfter(fileContent, "nodeId=").trim();
+    }
+
+    private void generateBlocks() throws IOException {
+        List<String> accounts = OkHttpClientTestFixture.PRE_FUNDED_ACCOUNTS;
+        Random rand = new Random(111);
+
+        for (int i = 0; i < 700; i++) {
+            OkHttpClientTestFixture.FromToAddressPair[] pairs = IntStream.range(0, 10)
+                    .mapToObj(n -> of(accounts.get(rand.nextInt(accounts.size())), accounts.get(rand.nextInt(accounts.size()))))
+                    .toArray(OkHttpClientTestFixture.FromToAddressPair[]::new);
+            Response response = OkHttpClientTestFixture.sendBulkTransactions(portServerRpc, pairs);
+            assertTrue(response.isSuccessful());
+        }
     }
 }
