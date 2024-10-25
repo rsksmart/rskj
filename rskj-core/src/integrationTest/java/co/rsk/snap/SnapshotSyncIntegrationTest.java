@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.snapshotsync;
+package co.rsk.snap;
 
 import co.rsk.util.*;
 import co.rsk.util.cli.NodeIntegrationTestCommandLine;

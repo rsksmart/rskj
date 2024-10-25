@@ -38,7 +38,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     private final List<Block> blocks = new ArrayList<Block>();
     private long requestId;
     private byte[] hash;
-    private int count;
     private long blockGap = 1000000;
 
     @Override
