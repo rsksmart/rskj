@@ -1973,10 +1973,11 @@ public class VM {
                 }
                 doTLOAD();
                 break;
-            case OpCodes.OP_TSTORE: doTSTORE();
+            case OpCodes.OP_TSTORE:
                 if (!activations.isActive(RSKIP446)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
                 }
+                doTSTORE();
                 break;
             case OpCodes.OP_JUMP: doJUMP();
             break;

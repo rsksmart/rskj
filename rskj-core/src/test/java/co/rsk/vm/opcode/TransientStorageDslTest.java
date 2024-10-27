@@ -121,7 +121,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testTransientStorageTestsEip1153BasicScenarios() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_eip1153_basic_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_transient_storage.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -147,15 +147,78 @@ public class TransientStorageDslTest {
     }
 
     @Test
-    void testTransientStorageTestsCreateContextsOnlyConstructorCode() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_create_context_only_constructor_code.txt");
+    void testOnlyConstructorCodeCreateContext() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_only_constructor_code_create_contexts.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String mainContractTransientStorageCreationTxName = "txTestTransientStorageContract";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, mainContractTransientStorageCreationTxName, "b01", true);
-        Assertions.assertEquals(2, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
+       assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+
+        String txOnlyConstructorCode = "txOnlyConstructorCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txOnlyConstructorCode, "b02", true);
+        Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testInConstructorAndCodeCreateContext() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_in_constructor_and_deploy_code_create_context.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+
+        String txInConstructorAndCode = "txInConstructorAndCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txInConstructorAndCode, "b02", true);
+        Assertions.assertEquals(6, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testAccrossConstructorAndCodeV0CreateContext() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_accross_constructor_and_deploy_code_v0_create_context.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+
+        String txAcrossConstructorAndCodeV0 = "txAcrossConstructorAndCodeV0";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txAcrossConstructorAndCodeV0, "b02", true);
+        Assertions.assertEquals(6, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testAccrossConstructorAndCodeV1CreateContext() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_accross_constructor_and_deploy_code_v1_create_context.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+
+        String txAcrossConstructorAndCodeV1 = "txAcrossConstructorAndCodeV1";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txAcrossConstructorAndCodeV1, "b02", true);
+        Assertions.assertEquals(7, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testNoConstructorCodeCreateContext() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_no_constructor_code_create_contexts.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+
+        String txNoConstructorCode = "txNoConstructorCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txNoConstructorCode, "b02", true);
+        Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
