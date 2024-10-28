@@ -42,7 +42,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP103;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP140;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP150;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP151;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP152;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP169;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP191;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP398;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP412;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP446;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP90;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP91;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
 
@@ -1327,6 +1340,8 @@ public class VM {
     }
 
     protected void doTLOAD(){
+        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
+        // different types of calls
         DataWord key = program.stackPop();
         if (isLogEnabled) {
             logger.info("Executing TLOAD with parameters: key = {}",  key);
@@ -1344,13 +1359,15 @@ public class VM {
     }
 
     protected void doTSTORE(){
-        DataWord address = program.stackPop();
+        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
+        // different types of calls
+        DataWord key = program.stackPop();
         DataWord value = program.stackPop();
 
         if (isLogEnabled) {
-            logger.info("Executing TSTORE with parameters: address={} | value = {}",  address, value);
+            logger.info("Executing TSTORE with parameters: address={} | value = {}",  key, value);
         }
-        program.transientStorageSave(address, value);
+        program.transientStorageSave(key, value);
         program.step();
     }
 

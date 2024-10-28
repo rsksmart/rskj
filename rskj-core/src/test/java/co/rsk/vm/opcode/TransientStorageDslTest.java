@@ -35,14 +35,16 @@ import org.junit.jupiter.api.Test;
 import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TransientStorageDslTest {
 
     @Test
     void testTransientStorageOpcodesExecutionsWithRSKIPActivated() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_contract.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -64,7 +66,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testTransientStorageOpcodesShareMemorySameTransaction() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_contract.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -82,7 +84,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testTransientStorageOpcodesDoesntShareMemoryFromOtherContract() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_contract.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -104,7 +106,7 @@ public class TransientStorageDslTest {
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
 
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_contract.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World(rskip446Disabled);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -121,7 +123,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testTransientStorageTestsEip1153BasicScenarios() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_transient_storage.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/eip1153_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -148,7 +150,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testOnlyConstructorCodeCreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_only_constructor_code_create_contexts.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/only_constructor_code_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -163,7 +165,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testInConstructorAndCodeCreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_in_constructor_and_deploy_code_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/in_constructor_and_deploy_code_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -178,7 +180,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testAccrossConstructorAndCodeV0CreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_accross_constructor_and_deploy_code_v0_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/accross_constructor_and_deploy_code_v0_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -193,7 +195,7 @@ public class TransientStorageDslTest {
 
     @Test
     void testAccrossConstructorAndCodeV1CreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_accross_constructor_and_deploy_code_v1_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/accross_constructor_and_deploy_code_v1_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -208,7 +210,22 @@ public class TransientStorageDslTest {
 
     @Test
     void testNoConstructorCodeCreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/test_eip1153_no_constructor_code_create_contexts.txt");
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/no_constructor_code_create_context.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+
+        String txNoConstructorCode = "txNoConstructorCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txNoConstructorCode, "b02", true);
+        Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testDynamicCallCodeExecutionContext() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/no_constructor_code_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -235,10 +252,9 @@ public class TransientStorageDslTest {
         assertNotNull(status);
 
         if(withSuccess) {
-            assertEquals(1, status.length);
-            assertEquals(1, status[0]);
+            assertTrue(txReceipt.isSuccessful());
         } else {
-            assertEquals(0, status.length);
+            assertFalse(txReceipt.isSuccessful());
         }
         return txReceipt;
     }

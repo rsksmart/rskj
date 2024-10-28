@@ -458,8 +458,7 @@ public class MutableRepository implements Repository {
     @Nullable
     @Override
     public DataWord getTransientStorageValue(RskAddress addr, DataWord key) {
-        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = transientTrie.get(triekey);
+        byte[] value = getTransientStorageBytes(addr, key);
         if (value == null) {
             return null;
         }
