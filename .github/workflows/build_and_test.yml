@@ -99,7 +99,8 @@ jobs:
           path: |
             rskj-core/build/reports/
 
-      - name: Run SonarQube analysis
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@v3.1.0 # Ex: v3.1.0, See the latest version at https://github.com/marketplace/actions/sonarcloud-scan
         env:
           GH_EVENT: ${{ github.event_name }}
           GH_PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -107,34 +108,10 @@ jobs:
           GH_PR_HEAD_REF: ${{ github.head_ref }}
           GH_REF: ${{ github.ref }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
-        run: |
-          if [ "$GH_EVENT" = "pull_request" ]; then
-            if [ "$IS_FORK" != "true" ]; then
-              ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
-                -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
-                -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
-                -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
-                -Dsonar.organization=rsksmart \
-                -Dsonar.projectKey=rskj \
-                -Dsonar.host.url="https://sonarcloud.io" \
-                -Dsonar.junit.reportPaths=rskj-core/build/test-results/ \
-                -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
-                -Dsonar.token="$SONAR_TOKEN"
-            else
-              echo "Skipping SonarQube analysis for pull request from a forked repo."
-            fi
-          else
-            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
-              -Dsonar.branch.name="$GH_REF" \
-              -Dsonar.organization=rsksmart \
-              -Dsonar.projectKey=rskj \
-              -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.junit.reportPaths=rskj-core/build/test-results/ \
-              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
-              -Dsonar.token="$SONAR_TOKEN"
-          fi
-
+        with:
+          args: >
+            -Dsonar.branch.name="$GH_REF"
+            -Dsonar.verbose=true
 
   mining-tests:
     needs: build
