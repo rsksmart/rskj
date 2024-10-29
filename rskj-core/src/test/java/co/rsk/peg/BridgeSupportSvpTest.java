@@ -226,6 +226,7 @@ public class BridgeSupportSvpTest {
         private void assertNoProposedFederation() {
             assertFalse(federationSupport.getProposedFederation().isPresent());
         }
+
         private void assertNoSVPValues() {
             assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
             assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());

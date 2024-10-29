@@ -1184,7 +1184,7 @@ class BridgeStorageProviderTest {
             bridgeStorageProvider.clearSvpValues();
 
             // assert
-            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertNoSVPValues();
         }
 
         @Test
@@ -1197,7 +1197,7 @@ class BridgeStorageProviderTest {
             bridgeStorageProvider.clearSvpValues();
 
             // assert
-            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+            assertNoSVPValues();
         }
 
         @Test
@@ -1212,8 +1212,7 @@ class BridgeStorageProviderTest {
             bridgeStorageProvider.clearSvpValues();
 
             // assert
-            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
-            assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
+            assertNoSVPValues();
         }
 
         @Test
@@ -1228,6 +1227,13 @@ class BridgeStorageProviderTest {
             bridgeStorageProvider.clearSvpValues();
 
             // assert
+            assertNoSVPValues();
+        }
+
+        private void assertNoSVPValues() {
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
             assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
         }
     }
