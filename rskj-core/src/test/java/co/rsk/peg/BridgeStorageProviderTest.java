@@ -1162,6 +1162,80 @@ class BridgeStorageProviderTest {
         }
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("clear svp values tests")
+    class ClearSvpValuesTests {
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            Repository repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void clearSvpValues_whenFundTxHashUnsigned_shouldClearValue() {
+            // arrange
+            Sha256Hash svpFundTxHashUnsigned = BitcoinTestUtils.createHash(1);
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHashUnsigned);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        @Test
+        void clearSvpValues_whenFundTxSigned_shouldClearValue() {
+            // arrange
+            BtcTransaction svpFundTxSigned = new BtcTransaction(mainnetBtcParams);
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTxSigned);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        @Test
+        void clearSvpValues_whenSpendTxWFS_shouldClearSpendTxValues() {
+            // arrange
+            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
+            BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        @Test
+        void clearSvpValues_whenSpendTxHashUnsigned_shouldClearValue() {
+            // arrange
+            Sha256Hash svpSpendTxCreationHash = BitcoinTestUtils.createHash(1);
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxCreationHash);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        private void assertNoSVPValues() {
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
+        }
+    }
+
     @Test
     void getReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);

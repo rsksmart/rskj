@@ -1019,47 +1019,19 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
-    protected void processValidationFailure(Federation proposedFederation) {
+    protected void processSVPFailure(Federation proposedFederation) {
         eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
-        logger.warn("[processValidationFailure] Proposed federation validation failed so svp values will be cleared.");
-        clearSvpValues();
+        logger.warn(
+            "[processSVPFailure] Proposed federation validation failed at block {}, so federation election will be allowed again.",
+            rskExecutionBlock.getNumber()
+        );
+
+        allowFederationElectionAgain();
     }
 
-    private void clearSvpValues() {
+    private void allowFederationElectionAgain() {
         federationSupport.clearProposedFederation();
-
-        provider.getSvpFundTxHashUnsigned().ifPresent(
-            svpFundTxHashUnsigned -> {
-                logger.warn("[clearSvpValues] Fund tx change {} was never registered.", svpFundTxHashUnsigned);
-                provider.setSvpFundTxHashUnsigned(null);
-            }
-        );
-
-        provider.getSvpFundTxSigned().ifPresent(
-            svpFundTxSigned -> {
-                logger.warn("[clearSvpValues] Spend tx was never created. Fund tx hash: {}", svpFundTxSigned.getHash());
-                provider.setSvpFundTxSigned(null);
-            }
-        );
-
-        provider.getSvpSpendTxWaitingForSignatures().ifPresent(
-            svpSpendTxWFS -> {
-                Keccak256 rskCreationHash = svpSpendTxWFS.getKey();
-                BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
-
-                logger.warn("[clearSvpValues] Spend tx {} was not fully signed. Rsk creation hash: {}.",
-                    svpSpendTx.getHash(), rskCreationHash);
-                provider.setSvpSpendTxWaitingForSignatures(null);
-                provider.setSvpSpendTxHashUnsigned(null);
-            }
-        );
-
-        provider.getSvpSpendTxHashUnsigned().ifPresent(
-            svpSpendTxHashUnsigned -> {
-                logger.warn("[clearSvpValues] Spend tx {} was not registered.", svpSpendTxHashUnsigned);
-                provider.setSvpSpendTxHashUnsigned(null);
-            }
-        );
+        provider.clearSvpValues();
     }
 
     private boolean svpIsOngoing() {
