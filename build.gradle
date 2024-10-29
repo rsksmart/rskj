@@ -2,6 +2,14 @@ plugins {
     id "org.sonarqube" version "5.1.0.4882"
 }
 
+sonar {
+    properties {
+        property "sonar.projectKey", "rskj"
+        property "sonar.organization", "rsksmart"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
+}
+
 subprojects {
     def config = new ConfigSlurper().parse(file("$projectDir/src/main/resources/version.properties").toURI().toURL())
     group = 'co.rsk'
