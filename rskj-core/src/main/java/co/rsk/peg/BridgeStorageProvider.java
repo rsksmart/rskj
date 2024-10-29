@@ -31,6 +31,8 @@ import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 /**
@@ -40,6 +42,7 @@ import org.spongycastle.util.encoders.Hex;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
+    private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
 
     // Dummy value to use when saving key only indexes
     private static final byte TRUE_VALUE = (byte) 1;
@@ -677,6 +680,33 @@ public class BridgeStorageProvider {
             svpSpendTxWaitingForSignatures,
             BridgeSerializationUtils::serializeRskTxWaitingForSignatures
         );
+    }
+
+    public void clearSvpValues() {
+        if (svpFundTxHashUnsigned != null) {
+            logger.warn("[clearSvpValues] Fund tx change {} was never registered.", svpFundTxHashUnsigned);
+            setSvpFundTxHashUnsigned(null);
+        }
+
+        if (svpFundTxSigned != null) {
+            logger.warn("[clearSvpValues] Spend tx was never created. Fund tx hash: {}", svpFundTxSigned.getHash());
+            setSvpFundTxSigned(null);
+        }
+
+        if (svpSpendTxWaitingForSignatures != null) {
+            Keccak256 rskCreationHash = svpSpendTxWaitingForSignatures.getKey();
+            BtcTransaction svpSpendTx = svpSpendTxWaitingForSignatures.getValue();
+
+            logger.warn("[clearSvpValues] Spend tx {} was not fully signed. Rsk creation hash: {}.",
+                svpSpendTx.getHash(), rskCreationHash);
+            setSvpSpendTxWaitingForSignatures(null);
+            setSvpSpendTxHashUnsigned(null);
+        }
+
+        if (svpSpendTxHashUnsigned != null) {
+            logger.warn("[clearSvpValues] Spend tx {} was not registered.", svpSpendTxHashUnsigned);
+            setSvpSpendTxHashUnsigned(null);
+        }
     }
 
     public void save() {
