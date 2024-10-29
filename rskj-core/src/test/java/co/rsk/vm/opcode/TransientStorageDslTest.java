@@ -224,18 +224,91 @@ public class TransientStorageDslTest {
     }
 
     @Test
-    void testDynamicCallCodeExecutionContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/no_constructor_code_create_context.txt");
+    void testDynamicExecutionContextSimpleScenario() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_simple.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
-        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+        String txCallAndDelegateCallSimpleTest = "txCallAndDelegateCallSimpleTest";
+        assertTransactionReceiptWithStatus(world, txCallAndDelegateCallSimpleTest, "b01", true);
 
-        String txNoConstructorCode = "txNoConstructorCode";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txNoConstructorCode, "b02", true);
+        String txExecuteCallCode = "txExecuteCallCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
         Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteDelegateCall = "txExecuteDelegateCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testDynamicExecutionContextWithRevert() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_with_revert.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txDynamicExecutionContextWithRevertTest = "txDynamicExecutionContextWithRevertTest";
+        assertTransactionReceiptWithStatus(world, txDynamicExecutionContextWithRevertTest, "b01", true);
+
+        String txExecuteCallCode = "txExecuteCallCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteDelegateCall = "txExecuteDelegateCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteCall = "txExecuteCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b04", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testDynamicExecutionContextWithInvalid() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_with_invalid.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txDynamicExecutionContextWithInvalidTest = "txDynamicExecutionContextWithInvalidTest";
+        assertTransactionReceiptWithStatus(world, txDynamicExecutionContextWithInvalidTest, "b01", true);
+
+        String txExecuteCallCode = "txExecuteCallCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteDelegateCall = "txExecuteDelegateCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteCall = "txExecuteCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b04", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testDynamicExecutionContextWithStackOverflow() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_with_stack_overflow.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txDynamicExecutionContextWithStackOverflowTest = "txDynamicExecutionContextWithStackOverflowTest";
+        assertTransactionReceiptWithStatus(world, txDynamicExecutionContextWithStackOverflowTest, "b01", true);
+
+        String txExecuteCallCode = "txExecuteCallCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteDelegateCall = "txExecuteDelegateCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txExecuteCall = "txExecuteCall";
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b04", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
