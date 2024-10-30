@@ -1017,6 +1017,21 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
+    protected void processSVPFailure(Federation proposedFederation) {
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+        logger.warn(
+            "[processSVPFailure] Proposed federation validation failed at block {}, so federation election will be allowed again.",
+            rskExecutionBlock.getNumber()
+        );
+
+        allowFederationElectionAgain();
+    }
+
+    private void allowFederationElectionAgain() {
+        federationSupport.clearProposedFederation();
+        provider.clearSvpValues();
+    }
+
     private boolean svpIsOngoing() {
         return federationSupport.getProposedFederation()
             .map(Federation::getCreationBlockNumber)
