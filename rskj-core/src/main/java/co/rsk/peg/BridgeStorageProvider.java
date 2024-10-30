@@ -684,27 +684,28 @@ public class BridgeStorageProvider {
 
     public void clearSvpValues() {
         if (svpFundTxHashUnsigned != null) {
-            logger.warn("[clearSvpValues] Fund tx change {} was never registered.", svpFundTxHashUnsigned);
+            logger.warn("[clearSvpValues] Clearing fund tx hash unsigned {} value.", svpFundTxHashUnsigned);
             setSvpFundTxHashUnsigned(null);
         }
 
         if (svpFundTxSigned != null) {
-            logger.warn("[clearSvpValues] Spend tx was never created. Fund tx hash: {}", svpFundTxSigned.getHash());
+            logger.warn("[clearSvpValues] Clearing fund tx signed {} value.", svpFundTxSigned.getHash());
             setSvpFundTxSigned(null);
         }
 
         if (svpSpendTxWaitingForSignatures != null) {
             Keccak256 rskCreationHash = svpSpendTxWaitingForSignatures.getKey();
             BtcTransaction svpSpendTx = svpSpendTxWaitingForSignatures.getValue();
-
-            logger.warn("[clearSvpValues] Spend tx {} was not fully signed. Rsk creation hash: {}.",
-                svpSpendTx.getHash(), rskCreationHash);
+            logger.warn(
+                "[clearSvpValues] Clearing spend tx waiting for signatures with spend tx {} and rsk creation hash {} value.",
+                svpSpendTx.getHash(), rskCreationHash
+            );
             setSvpSpendTxWaitingForSignatures(null);
             setSvpSpendTxHashUnsigned(null);
         }
 
         if (svpSpendTxHashUnsigned != null) {
-            logger.warn("[clearSvpValues] Spend tx {} was not registered.", svpSpendTxHashUnsigned);
+            logger.warn("[clearSvpValues] Clearing spend tx hash unsigned {} value.", svpSpendTxHashUnsigned);
             setSvpSpendTxHashUnsigned(null);
         }
     }

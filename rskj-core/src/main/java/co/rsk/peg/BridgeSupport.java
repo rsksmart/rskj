@@ -1019,17 +1019,16 @@ public class BridgeSupport {
 
     protected void processSVPFailure(Federation proposedFederation) {
         eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
-        logger.warn("[processSVPFailure] Proposed federation validation failed at block {}, so svp values will be cleared.", rskExecutionBlock.getNumber());
+        logger.warn(
+            "[processSVPFailure] Proposed federation validation failed at block {}, so federation election will be allowed again.",
+            rskExecutionBlock.getNumber()
+        );
 
-        clearProposedFederation();
-        clearSvpValues();
+        allowFederationElectionAgain();
     }
 
-    private void clearProposedFederation() {
+    private void allowFederationElectionAgain() {
         federationSupport.clearProposedFederation();
-    }
-
-    private void clearSvpValues() {
         provider.clearSvpValues();
     }
 
