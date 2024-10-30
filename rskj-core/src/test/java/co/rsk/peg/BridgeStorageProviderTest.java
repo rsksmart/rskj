@@ -1218,10 +1218,8 @@ class BridgeStorageProviderTest {
         @Test
         void clearSvpValues_whenSpendTxHashUnsigned_shouldClearValue() {
             // arrange
-            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
-            BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
-            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
-            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
+            Sha256Hash svpSpendTxCreationHash = BitcoinTestUtils.createHash(1);
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxCreationHash);
 
             // act
             bridgeStorageProvider.clearSvpValues();
