@@ -1032,19 +1032,15 @@ public class BridgeSupport {
             return;
         }
 
-        // if the unsigned fund tx hash is not present, we will proceed with the fund tx creation
-        // if it is, we keep waiting for the change to be registered.
-
-        // if the fund tx signed is present, then the change was registered,
+        // if the fund tx signed is present, then the fund transaction change was registered,
         // meaning we can create the spend tx.
-
-        // if none of those values are present, we keep waiting for the spend tx to be registered.
         Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
         if (svpFundTxSigned.isPresent()) {
             processSvpSpendTransactionUnsigned(rskTxHash, proposedFederation, svpFundTxSigned.get());
             return;
         }
 
+        // if the unsigned fund tx hash is not present, meaning we can proceed with the fund tx creation
         Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
         if (svpFundTxHashUnsigned.isEmpty()) {
             try {
