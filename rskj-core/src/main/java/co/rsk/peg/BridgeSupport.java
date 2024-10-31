@@ -1023,6 +1023,7 @@ public class BridgeSupport {
             return;
         }
 
+        Keccak256 rskTxHash = rskTx.getHash();
         // if the proposed federation exists and the validation period ended,
         // we can conclude that the svp failed
         Federation proposedFederation = proposedFederationOpt.get();
@@ -1040,14 +1041,14 @@ public class BridgeSupport {
         // if none of those values are present, we keep waiting for the spend tx to be registered.
         Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
         if (svpFundTxSigned.isPresent()) {
-            processSvpSpendTransactionUnsigned(rskTx, proposedFederation, svpFundTxSigned.get());
+            processSvpSpendTransactionUnsigned(rskTxHash, proposedFederation, svpFundTxSigned.get());
             return;
         }
 
         Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
         if (svpFundTxHashUnsigned.isEmpty()) {
             try {
-                processSvpFundTransactionUnsigned(rskTx, proposedFederation);
+                processSvpFundTransactionUnsigned(rskTxHash, proposedFederation);
             } catch (Exception e) {
                 logger.error("[updateSvpState] Error processing svp fund transaction unsigned.");
             }
@@ -1082,13 +1083,13 @@ public class BridgeSupport {
         return rskExecutionBlock.getNumber() <= validationPeriodEndBlock;
     }
 
-    private void processSvpFundTransactionUnsigned(Transaction rskTx, Federation proposedFederation) throws IOException, InsufficientMoneyException {
+    private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) throws IOException, InsufficientMoneyException {
         Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
         BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
 
         provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTx.getHash(), spendableValueFromProposedFederation);
+        settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
     }
 
     private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
@@ -1121,10 +1122,8 @@ public class BridgeSupport {
         return sendRequest;
     }
 
-    private void processSvpSpendTransactionUnsigned(Transaction rskTx, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
+    private void processSvpSpendTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
         BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
-
-        Keccak256 rskTxHash = rskTx.getHash();
         updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
 
         Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
