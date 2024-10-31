@@ -10,7 +10,7 @@ apply plugin: 'jacoco'
 import java.nio.file.Paths
 
 // Define static timestamp
-def staticTimestamp = '2024-10-17T10:24:00'
+def staticTimestamp = '2024-10-31T10:24:00'
 ext.timestamp = staticTimestamp
 
 def filteredFiles = getFilteredFiles()
@@ -24,7 +24,8 @@ spotless {
     java {
         googleJavaFormat()
         indentWithTabs(2)
-        indentWithSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
         target filteredFiles
     }
 }
