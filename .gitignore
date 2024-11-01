@@ -53,10 +53,10 @@ blocksminer
 jacocoHtml/
 
 # CheckStyle Reports
-config/checkstyle/reports/
+rskj-core/config/checkstyle/reports/
 
 # PMD
-config/pmd/reports/
+rskj-core/config/pmd/reports/
 
 blocksminer1.txt
 
