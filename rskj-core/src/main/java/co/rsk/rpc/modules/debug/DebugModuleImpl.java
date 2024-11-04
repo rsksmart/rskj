@@ -19,54 +19,35 @@
 package co.rsk.rpc.modules.debug;
 
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.handler.quota.TxQuota;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
+import co.rsk.rpc.modules.debug.trace.TracerType;
 import co.rsk.util.HexUtils;
 import co.rsk.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
-import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class DebugModuleImpl implements DebugModule {
+    //this could be configurable
+    public static final TracerType DEFAULT_TRACER_TYPE = TracerType.RSK_TRACER;
     private static final Logger logger = LoggerFactory.getLogger("web3");
-
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
-
+    private final TraceProvider traceProvider;
     private final MessageHandler messageHandler;
-    private final BlockExecutor blockExecutor;
-
     private final TxQuotaChecker txQuotaChecker;
-    private final Web3InformationRetriever web3InformationRetriever;
 
-    public DebugModuleImpl(
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            MessageHandler messageHandler,
-            BlockExecutor blockExecutor,
-            TxQuotaChecker txQuotaChecker,
-            Web3InformationRetriever web3InformationRetriever) {
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
+    public DebugModuleImpl(TraceProvider traceProvider, MessageHandler messageHandler, TxQuotaChecker txQuotaChecker) {
+        this.traceProvider = traceProvider;
         this.messageHandler = messageHandler;
-        this.blockExecutor = blockExecutor;
         this.txQuotaChecker = txQuotaChecker;
-        this.web3InformationRetriever = web3InformationRetriever;
     }
+
 
     @Override
     public String wireProtocolQueueSize() {
@@ -75,72 +56,60 @@ public class DebugModuleImpl implements DebugModule {
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) {
+    public TxQuota accountTransactionQuota(String address) {
+        logger.trace("debug_accountTransactionQuota({})", StringUtils.trim(address));
+        RskAddress rskAddress = new RskAddress(address);
+        return txQuotaChecker.getTxQuota(rskAddress);
+    }
+
+    @Override
+    public JsonNode traceTransaction(String transactionHash) {
+        return traceTransaction(transactionHash, new TraceOptions(), null);
+    }
+
+    @Override
+    public JsonNode traceTransaction(String transactionHash, TraceOptions traceOptions, TracerType tracerType) {
+        if (tracerType == null) {
+            tracerType = DEFAULT_TRACER_TYPE;
+        }
+        if (traceOptions == null) {
+            traceOptions = new TraceOptions();
+        }
+        DebugTracer tracer = traceProvider.getTracer(tracerType);
         logger.trace("debug_traceTransaction for txHash: {}", StringUtils.trim(transactionHash));
-
-        TraceOptions options = toTraceOptions(traceOptions);
-
-        byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
-
-        if (txInfo == null) {
-            logger.trace("No transaction info for txHash: {}", StringUtils.trim(transactionHash));
-            return null;
-        }
-
-        Block block = blockStore.getBlockByHash(txInfo.getBlockHash());
-        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
-        Transaction tx = block.getTransactionsList().get(txInfo.getIndex());
-        txInfo.setTransaction(tx);
-
-        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor(options);
-        blockExecutor.traceBlock(programTraceProcessor, 0, block, parent.getHeader(), false, false);
-
-        return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
+        return tracer.traceTransaction(transactionHash, traceOptions);
     }
 
     @Override
-    public JsonNode traceBlockByHash(String blockHash, Map<String, String> traceOptions) {
+    public JsonNode traceBlockByHash(String blockHash, TraceOptions traceOptions, TracerType tracerType) {
+        if (tracerType == null) {
+            tracerType = DEFAULT_TRACER_TYPE;
+        }
+        if (traceOptions == null) {
+            traceOptions = new TraceOptions();
+        }
         logger.trace("debug_traceBlockByHash for blockHash: {}", StringUtils.trim(blockHash));
-
-        TraceOptions options = toTraceOptions(traceOptions);
-
-        byte[] bHash = HexUtils.stringHexToByteArray(blockHash);
-        Block block = blockStore.getBlockByHash(bHash);
-        if (block == null) {
-            logger.trace("No block is found for blockHash: {}", StringUtils.trim(blockHash));
-            return null;
-        }
-
-        return traceBlock(block, options);
+        DebugTracer tracer = traceProvider.getTracer(tracerType);
+        return tracer.traceBlockByHash(blockHash, traceOptions);
     }
 
     @Override
-    public JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) {
-        logger.trace("debug_traceBlockByNumber for bnOrId: {}", StringUtils.trim(bnOrId));
-
-        TraceOptions options = toTraceOptions(traceOptions);
-
-        Block block = web3InformationRetriever.getBlock(bnOrId).orElse(null);
-        if (block == null) {
-            logger.trace("No block is found for bnOrId: {}", StringUtils.trim(bnOrId));
-            return null;
-        }
-
-        return traceBlock(block, options);
+    public JsonNode traceBlockByHash(String blockHash) throws Exception {
+        return traceBlockByHash(blockHash, new TraceOptions(), null);
     }
 
-    private JsonNode traceBlock(Block block, TraceOptions options) {
-        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
-        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor(options);
-        blockExecutor.traceBlock(programTraceProcessor, 0, block, parent.getHeader(), false, false);
+    @Override
+    public JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception {
+        return traceBlockByNumber(bnOrId, traceOptions, DEFAULT_TRACER_TYPE);
+    }
 
-        List<Keccak256> txHashes = block.getTransactionsList().stream()
-                .map(Transaction::getHash)
-                .collect(Collectors.toList());
-
-        return programTraceProcessor.getProgramTracesAsJsonNode(txHashes);
+    @Override
+    public JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions, TracerType tracerType) throws Exception {
+        logger.trace("debug_traceBlockByNumber for bnOrId: {}", StringUtils.trim(bnOrId));
+        DebugTracer tracer = traceProvider.getTracer(tracerType);
+        TraceOptions options = toTraceOptions(traceOptions);
+        return tracer.traceBlockByNumber(bnOrId, options);
     }
 
     private TraceOptions toTraceOptions(Map<String, String> traceOptions) {
@@ -154,10 +123,12 @@ public class DebugModuleImpl implements DebugModule {
         return options;
     }
 
-    @Override
-    public TxQuota accountTransactionQuota(String address) {
-        logger.trace("debug_accountTransactionQuota({})", StringUtils.trim(address));
-        RskAddress rskAddress = new RskAddress(address);
-        return this.txQuotaChecker.getTxQuota(rskAddress);
+    private TracerType getTracerType(Map<String, String> options) {
+        if (options.containsKey("tracer")) {
+            Optional.ofNullable(TracerType.getTracerType(options.get("tracer")))
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid tracer type: " + options.get("tracer")));
+        }
+        return DEFAULT_TRACER_TYPE;
     }
+
 }

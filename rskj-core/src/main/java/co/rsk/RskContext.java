@@ -63,6 +63,9 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.debug.trace.CallTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotificationEmitter;
 import co.rsk.rpc.modules.eth.subscribe.LogsNotificationEmitter;
@@ -811,16 +814,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     public synchronized DebugModule getDebugModule() {
         checkIfNotClosed();
+        RskTracer rskTracer = new RskTracer(getBlockStore(), getReceiptStore(),
+                 getBlockExecutor(), getWeb3InformationRetriever());
 
+        CallTracer callTracer = new CallTracer();
+        TraceProvider traceProvider = new TraceProvider(Arrays.asList(callTracer, rskTracer));
         if (debugModule == null) {
-            debugModule = new DebugModuleImpl(
-                    getBlockStore(),
-                    getReceiptStore(),
-                    getNodeMessageHandler(),
-                    getBlockExecutor(),
-                    getTxQuotaChecker(),
-                    getWeb3InformationRetriever()
-            );
+            debugModule = new DebugModuleImpl(traceProvider,getNodeMessageHandler(),getTxQuotaChecker());
         }
 
         return debugModule;

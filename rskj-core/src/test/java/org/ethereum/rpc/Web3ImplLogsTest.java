@@ -32,6 +32,9 @@ import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -1079,8 +1082,9 @@ class Web3ImplLogsTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
-        blocksBloomStore = new BlocksBloomStore(2, 0, new HashMapDB());
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule debugModule = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);        blocksBloomStore = new BlocksBloomStore(2, 0, new HashMapDB());
         return new Web3RskImpl(
                 eth,
                 blockChain,

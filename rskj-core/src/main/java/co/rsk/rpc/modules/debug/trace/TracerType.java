@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2024 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,28 +15,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.rpc.modules.debug.trace;
 
-package co.rsk.rpc.modules.debug;
+public enum TracerType {
+    CALL_TRACER("callTracer"), RSK_TRACER("rskTracer");
 
-public enum DisableOption {
-    DISABLE_MEMORY("disableMemory", "memory"),
-    DISABLE_STACK("disableStack", "stack"),
-    DISABLE_STORAGE("disableStorage", "storage");
-
-    public final String option;
-    public final String value;
-
-    DisableOption(String option, String value) {
-        this.option = option;
-        this.value = value;
+    private final String tracerName;
+    TracerType(String tracerName) {
+        this.tracerName = tracerName;
     }
 
-    public static DisableOption getDisableOption(String option) {
-        for (DisableOption disableOption : DisableOption.values()) {
-            if (disableOption.option.equalsIgnoreCase(option)) {
-                return disableOption;
+    public static TracerType getTracerType(String tracerName) {
+        for (TracerType tracerType : TracerType.values()) {
+            if (tracerType.getTracerName().equalsIgnoreCase(tracerName)) {
+                return tracerType;
             }
         }
         return null;
+    }
+    public String getTracerName() {
+        return tracerName;
+    }
+
+    public TracerType getDefault() {
+        return RSK_TRACER;
     }
 }
