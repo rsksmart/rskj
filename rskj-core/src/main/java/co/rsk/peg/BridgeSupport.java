@@ -1046,7 +1046,7 @@ public class BridgeSupport {
             try {
                 processSvpFundTransactionUnsigned(rskTxHash, proposedFederation);
             } catch (Exception e) {
-                logger.error("[updateSvpState] Error processing svp fund transaction unsigned.");
+                logger.error("[updateSvpState] Error processing svp fund transaction unsigned. Error message: {}", e.getMessage());
             }
         }
     }
