@@ -95,7 +95,6 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
-
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -985,8 +984,8 @@ public class Program {
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
     }
 
-    public void transientStorageSave(DataWord key, DataWord address) {
-
+    public void transientStorageSave(DataWord key, DataWord value) {
+        getStorage().addTransientStorageRow(getOwnerRskAddress(), key, value);
     }
 
     private RskAddress getOwnerRskAddress() {
@@ -1099,8 +1098,8 @@ public class Program {
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
-    public void transientStorageLoad(DataWord address, DataWord key, DataWord value) {
-
+    public DataWord transientStorageLoad(DataWord key) {
+        return getStorage().getTransientStorageValue(getOwnerRskAddress(), key);
     }
 
     public DataWord getPrevHash() {

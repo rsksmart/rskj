@@ -1,0 +1,246 @@
+comment
+
+// CONTRACT CODE
+pragma solidity ^0.8.24;
+
+contract TestTransientStorage {
+    constructor() {}
+
+    event OK();
+    event ERROR(bytes32);
+
+    function checkTransientStorage(bytes32 key, bytes32 value) external {
+        bytes32 valueLoaded;
+        assembly {
+            tstore(key, value)
+            valueLoaded := tload(key)
+        }
+        if (valueLoaded == value) {
+            emit OK();
+        } else {
+            emit ERROR(valueLoaded);
+        }
+    }
+
+    function checkDataEqualsTheValuePassed(bytes32 key, bytes32 valueExpected) external {
+        bytes32 valueLoaded;
+        assembly {
+            valueLoaded := tload(key)
+        }
+        if (valueLoaded == valueExpected) {
+            emit OK();
+        } else {
+            emit ERROR(valueLoaded);
+        }
+    }
+
+    function checkIfNestedTransactionSameContractShareMemory(bytes32 key, bytes32 value) external {
+        assembly {
+            tstore(key, value)
+        }
+        this.checkDataEqualsTheValuePassed(key, value);
+    }
+
+    function checkIfNestedTransactionFromOtherContractShareMemory(bytes32 key, bytes32 value) external {
+        assembly {
+            tstore(key, value)
+        }
+        new TestTransientStorageOtherContract().checkDataEqualsTheValuePassed(key, value);
+    }
+}
+
+contract TestTransientStorageOtherContract{
+    constructor() {}
+
+    event OK();
+    event ERROR(bytes32);
+
+    function checkDataEqualsTheValuePassed(bytes32 key, bytes32 valueExpected) external {
+        bytes32 valueLoaded;
+        assembly {
+            valueLoaded := tload(key)
+        }
+        if (valueLoaded == valueExpected) {
+            emit OK();
+        } else {
+            emit ERROR(valueLoaded);
+        }
+    }
+}
+
+// DESCRIPTION
+
+TestTransientStorage has the following functions:
+
+* checkTransientStorage simply checks if the TSTORE and TLOAD functions are working properly. It stores a value in the transient storage and then loads it. If the loaded value is the same as the stored value, it emits an OK event. Otherwise, it emits an ERROR event.
+
+* checkDataEqualsTheValuePassed simply checks if the transaction TLOAD doesn't load a value that was not stored in the transient storage. It loads a value from the transient storage, if we haven't loaded with a nested transaction it will return 0 otherwise it will return the value stored.
+If the value loaded is the same as the value passed as a parameter, it emits an OK event. Otherwise, it emits an ERROR event.
+
+* checkIfNestedTransactionSameContractShareMemory stores a value in the transient storage and then calls a function from the same contract that loads the value from the transient storage. This is to check if the transient storage is shared between nested transactions.
+
+* checkIfNestedTransactionFromOtherContractShareMemory stores a value in the transient storage and then calls a function from another contract that loads the value from the transient storage. This is to check if the transient storage is not shared between transactions.
+
+TestTransientStorageOtherContract has the following functions:
+
+* checkDataEqualsTheValuePassed simply checks if the transaction TLOAD doesn't load a value that was not stored in the transient storage. It loads a value from the transient storage, if we haven't loaded with a nested transaction it will return 0 otherwise it will return the value stored.
+If the value loaded is the same as the value passed as a parameter, it emits an OK event. Otherwise, it emits an ERROR event.
+
+// CONTRACT BYTECODE
+
+TestTransientStorage: 6080604052348015600e575f80fd5b506105718061001c5f395ff3fe608060405234801561000f575f80fd5b506004361061004a575f3560e01c80635dbdd0ce1461004e5780637b70ef4e1461006a5780637dccab6614610086578063f5cc67a1146100a2575b5f80fd5b610068600480360381019061006391906102fc565b6100be565b005b610084600480360381019061007f91906102fc565b61012d565b005b6100a0600480360381019061009b91906102fc565b6101c1565b005b6100bc60048036038101906100b791906102fc565b61023b565b005b80825d3073ffffffffffffffffffffffffffffffffffffffff16637dccab6683836040518363ffffffff1660e01b81526004016100fc929190610349565b5f604051808303815f87803b158015610113575f80fd5b505af1158015610125573d5f803e3d5ffd5b505050505050565b80825d60405161013c906102b8565b604051809103905ff080158015610155573d5f803e3d5ffd5b5073ffffffffffffffffffffffffffffffffffffffff16637dccab6683836040518363ffffffff1660e01b8152600401610190929190610349565b5f604051808303815f87803b1580156101a7575f80fd5b505af11580156101b9573d5f803e3d5ffd5b505050505050565b5f825c90508181036101fe577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610236565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd98160405161022d9190610370565b60405180910390a15b505050565b5f81835d825c905081810361027b577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16102b3565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd9816040516102aa9190610370565b60405180910390a15b505050565b6101b28061038a83390190565b5f80fd5b5f819050919050565b6102db816102c9565b81146102e5575f80fd5b50565b5f813590506102f6816102d2565b92915050565b5f8060408385031215610312576103116102c5565b5b5f61031f858286016102e8565b9250506020610330858286016102e8565b9150509250929050565b610343816102c9565b82525050565b5f60408201905061035c5f83018561033a565b610369602083018461033a565b9392505050565b5f6020820190506103835f83018461033a565b9291505056fe6080604052348015600e575f80fd5b506101968061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80637dccab661461002d575b5f80fd5b610047600480360381019061004291906100fa565b610049565b005b5f825c9050818103610086577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100be565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd9816040516100b59190610147565b60405180910390a15b505050565b5f80fd5b5f819050919050565b6100d9816100c7565b81146100e3575f80fd5b50565b5f813590506100f4816100d0565b92915050565b5f80604083850312156101105761010f6100c3565b5b5f61011d858286016100e6565b925050602061012e858286016100e6565b9150509250929050565b610141816100c7565b82525050565b5f60208201905061015a5f830184610138565b9291505056fea2646970667358221220299e78f210bb50b25e55a7d3d761eb697663f501d6b877c5f17e651d5c7111fb64736f6c634300081a0033a2646970667358221220d99f2c2087ad3b0f2283262f95bb66f6becb8b8538af83c1a9a571716f0abb1b64736f6c634300081a0033
+
+TestTransientStorageOtherContract: 6080604052348015600e575f80fd5b506101968061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80637dccab661461002d575b5f80fd5b610047600480360381019061004291906100fa565b610049565b005b5f825c9050818103610086577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100be565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd9816040516100b59190610147565b60405180910390a15b505050565b5f80fd5b5f819050919050565b6100d9816100c7565b81146100e3575f80fd5b50565b5f813590506100f4816100d0565b92915050565b5f80604083850312156101105761010f6100c3565b5b5f61011d858286016100e6565b925050602061012e858286016100e6565b9150509250929050565b610141816100c7565b82525050565b5f60208201905061015a5f830184610138565b9291505056fea2646970667358221220299e78f210bb50b25e55a7d3d761eb697663f501d6b877c5f17e651d5c7111fb64736f6c634300081a0033
+
+// CONTRACT CALLS
+
+TestTransientStorage:
+
+ 7dccab66: checkDataEqualsTheValuePassed(bytes32,bytes32)
+ 7b70ef4e: checkIfNestedTransactionFromOtherContractShareMemory(bytes32,bytes32)
+ 5dbdd0ce: checkIfNestedTransactionSameContractShareMemory(bytes32,bytes32)
+ f5cc67a1: checkTransientStorage(bytes32,bytes32)
+
+TestTransientStorageOtherContract:
+- 7dccab66 -> checkDataEqualsTheValuePassed(bytes32,bytes32)
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TestTransientStorage contract
+transaction_build txTestTransientStorageContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b506105718061001c5f395ff3fe608060405234801561000f575f80fd5b506004361061004a575f3560e01c80635dbdd0ce1461004e5780637b70ef4e1461006a5780637dccab6614610086578063f5cc67a1146100a2575b5f80fd5b610068600480360381019061006391906102fc565b6100be565b005b610084600480360381019061007f91906102fc565b61012d565b005b6100a0600480360381019061009b91906102fc565b6101c1565b005b6100bc60048036038101906100b791906102fc565b61023b565b005b80825d3073ffffffffffffffffffffffffffffffffffffffff16637dccab6683836040518363ffffffff1660e01b81526004016100fc929190610349565b5f604051808303815f87803b158015610113575f80fd5b505af1158015610125573d5f803e3d5ffd5b505050505050565b80825d60405161013c906102b8565b604051809103905ff080158015610155573d5f803e3d5ffd5b5073ffffffffffffffffffffffffffffffffffffffff16637dccab6683836040518363ffffffff1660e01b8152600401610190929190610349565b5f604051808303815f87803b1580156101a7575f80fd5b505af11580156101b9573d5f803e3d5ffd5b505050505050565b5f825c90508181036101fe577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610236565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd98160405161022d9190610370565b60405180910390a15b505050565b5f81835d825c905081810361027b577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16102b3565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd9816040516102aa9190610370565b60405180910390a15b505050565b6101b28061038a83390190565b5f80fd5b5f819050919050565b6102db816102c9565b81146102e5575f80fd5b50565b5f813590506102f6816102d2565b92915050565b5f8060408385031215610312576103116102c5565b5b5f61031f858286016102e8565b9250506020610330858286016102e8565b9150509250929050565b610343816102c9565b82525050565b5f60408201905061035c5f83018561033a565b610369602083018461033a565b9392505050565b5f6020820190506103835f83018461033a565b9291505056fe6080604052348015600e575f80fd5b506101968061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80637dccab661461002d575b5f80fd5b610047600480360381019061004291906100fa565b610049565b005b5f825c9050818103610086577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100be565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd9816040516100b59190610147565b60405180910390a15b505050565b5f80fd5b5f819050919050565b6100d9816100c7565b81146100e3575f80fd5b50565b5f813590506100f4816100d0565b92915050565b5f80604083850312156101105761010f6100c3565b5b5f61011d858286016100e6565b925050602061012e858286016100e6565b9150509250929050565b610141816100c7565b82525050565b5f60208201905061015a5f830184610138565b9291505056fea2646970667358221220299e78f210bb50b25e55a7d3d761eb697663f501d6b877c5f17e651d5c7111fb64736f6c634300081a0033a2646970667358221220d99f2c2087ad3b0f2283262f95bb66f6becb8b8538af83c1a9a571716f0abb1b64736f6c634300081a0033
+    gas 1000000
+    build
+
+# Create block to hold txTestTransientStorageContract transaction
+block_build b01
+    parent g00
+    transactions txTestTransientStorageContract
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Create transaction to deploy TestTransientStorageOtherContract contract
+transaction_build txTestTransientStorageOtherContract
+    sender acc1
+    nonce 1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b506101968061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c80637dccab661461002d575b5f80fd5b610047600480360381019061004291906100fa565b610049565b005b5f825c9050818103610086577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100be565b7f2fe0d3bd8bbb632441eefda46ec52f1ddda3a9e827d14c40f422037320f28bd9816040516100b59190610147565b60405180910390a15b505050565b5f80fd5b5f819050919050565b6100d9816100c7565b81146100e3575f80fd5b50565b5f813590506100f4816100d0565b92915050565b5f80604083850312156101105761010f6100c3565b5b5f61011d858286016100e6565b925050602061012e858286016100e6565b9150509250929050565b610141816100c7565b82525050565b5f60208201905061015a5f830184610138565b9291505056fea2646970667358221220299e78f210bb50b25e55a7d3d761eb697663f501d6b877c5f17e651d5c7111fb64736f6c634300081a0033
+    gas 1000000
+    build
+
+# Create block to hold txTestTransientStorageOtherContract transaction
+block_build b02
+    parent b01
+    transactions txTestTransientStorageOtherContract
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Create transaction to execute  checkTransientStorage(bytes32 key, bytes32 value) method
+transaction_build txTestTransientStorageOpCodes
+    sender acc1
+    nonce 2
+    contract txTestTransientStorageContract
+    value 0
+    data f5cc67a131000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000
+    gas 200000
+    build
+
+# Create block to hold txTestTransientStorageOpCodes transaction
+block_build b03
+    parent b02
+    transactions txTestTransientStorageOpCodes
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b03
+
+# Check b02 is best block
+assert_best b03
+
+# Create transaction to execute  checkTransientStorage(bytes32 key, bytes32 value) method
+transaction_build txTestTransientStorageOpCodesOtherValue
+    sender acc1
+    nonce 3
+    contract txTestTransientStorageContract
+    value 0
+    data f5cc67a132000000000000000000000000000000000000000000000000000000000000003132333435000000000000000000000000000000000000000000000000000000
+    gas 200000
+    build
+
+# Create block to hold txTestTransientStorageOpCodesOtherValue transaction
+block_build b04
+    parent b03
+    transactions txTestTransientStorageOpCodesOtherValue
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b04
+
+# Check b02 is best block
+assert_best b04
+
+# Create transaction to execute  checkIfNestedTransactionSameContractShareMemory(bytes32 key, bytes32 value) method
+transaction_build txTestTransientStorageNestedTransactionShareMemory
+    sender acc1
+    nonce 4
+    contract txTestTransientStorageContract
+    value 0
+    data f5cc67a131300000000000000000000000000000000000000000000000000000000000003230000000000000000000000000000000000000000000000000000000000000
+    gas 200000
+    build
+
+# Create block to hold txTestTransientStorageNestedTransactionShareMemory transaction
+block_build b05
+    parent b04
+    transactions txTestTransientStorageNestedTransactionShareMemory
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b05
+
+# Check b02 is best block
+assert_best b05
+
+# Create transaction to execute  checkIfNestedTransactionFromOtherContractShareMemory(bytes32 key, bytes32 value) method
+transaction_build txTestTransientStorageNestedTransactionOtherContractDoesntShareMemory
+    sender acc1
+    nonce 5
+    contract txTestTransientStorageContract
+    value 0
+    data 7b70ef4e31300000000000000000000000000000000000000000000000000000000000003230000000000000000000000000000000000000000000000000000000000000
+    gas 200000
+    build
+
+# Create block to hold txTestTransientStorageNestedTransactionOtherContractDoesntShareMemory transaction
+block_build b06
+    parent b05
+    transactions txTestTransientStorageNestedTransactionOtherContractDoesntShareMemory
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b06
+
+# Check b02 is best block
+assert_best b06
+
