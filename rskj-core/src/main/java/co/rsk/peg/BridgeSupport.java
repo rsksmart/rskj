@@ -53,6 +53,7 @@ import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,6 +62,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -1766,7 +1768,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         try {
             this.ensureBtcBlockStore();
-            final StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+            final StoredBlock block = getBlockKeepingTestnetConsensus(btcBlockHash);
 
             // Block not found, default to basic cost
             if (block == null) {
@@ -1804,7 +1806,7 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
 
         // Get the block using the given block hash
-        StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+        StoredBlock block = getBlockKeepingTestnetConsensus(btcBlockHash);
         if (block == null) {
             return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
         }
@@ -1838,6 +1840,31 @@ public class BridgeSupport {
         }
 
         return bestChainHeight - block.getHeight() + 1;
+    }
+
+    private StoredBlock getBlockKeepingTestnetConsensus(Sha256Hash btcBlockHash) throws BlockStoreException {
+        long rskBlockNumber = 5_148_285;
+
+        boolean networkIsTestnet = bridgeConstants.getBtcParams().equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+        Sha256Hash blockHash = Sha256Hash.wrap("00000000e8e7b540df01a7067e020fd7e2026bf86289def2283a35120c1af379");
+
+        // DO NOT MODIFY.
+        // This check is needed since this block caused a misbehaviour
+        // for being stored in the cache but not in the storage
+        if (rskExecutionBlock.getNumber() == rskBlockNumber
+            && networkIsTestnet
+            && btcBlockHash.equals(blockHash)
+        ) {
+            byte[] rawBtcBlockHeader = HexUtils.stringHexToByteArray("000000203b5d178405c4e6e7dc07d63d6de5db1342044791721654760c00000000000000796cf6743a036300b43fb3abe6703d04a7999751b6d5744f20327d1175320bd37b954e66ffff001d56dc11ce");
+
+            BtcBlock btcBlockHeader = new BtcBlock(bridgeConstants.getBtcParams(), rawBtcBlockHeader);
+            BigInteger btcBlockChainWork = new BigInteger("000000000000000000000000000000000000000000000ddeb5fbcd969312a77c", 16);
+            int btcBlockNumber = 2_817_125;
+
+            return new StoredBlock(btcBlockHeader, btcBlockChainWork, btcBlockNumber);
+        }
+
+        return btcBlockStore.get(btcBlockHash);
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {
@@ -2205,7 +2232,17 @@ public class BridgeSupport {
 
         // Check merkle root equals btc block merkle root at the specified height in the btc best chain
         // Btc blockstore is available since we've already queried the best chain height
-        StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
+        StoredBlock storedBlock = null;
+        try {
+            storedBlock = btcBlockStore.get(blockHash);
+        } catch (BlockStoreException e) {
+            logger.error(
+                "[registerBtcCoinbaseTransaction] Error gettin block {} from block store. {}",
+                blockHash,
+                e.getMessage()
+            );
+        }
+
         if (storedBlock == null) {
             String message = String.format("Block %s not yet registered", blockHash);
             logger.warn("[registerBtcCoinbaseTransaction] {}", message);
