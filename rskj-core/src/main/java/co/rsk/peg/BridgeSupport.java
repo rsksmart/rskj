@@ -1020,6 +1020,7 @@ public class BridgeSupport {
     protected void updateSvpState(Transaction rskTx) {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (proposedFederationOpt.isEmpty()) {
+            logger.debug("[updateSvpState] Proposed federation does not exist, so there's no svp going on.");
             return;
         }
 
