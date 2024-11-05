@@ -567,7 +567,7 @@ public class BridgeSupportSvpTest {
             assertSvpFundTxSignedWasRemovedFromStorage();
 
             assertLogPegoutTransactionCreated(logs, svpSpendTransactionUnsigned);
-            Coin valueSentToActiveFed = Coin.valueOf(1762);
+            Coin valueSentToActiveFed = Coin.valueOf(2114L);
             assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, valueSentToActiveFed);
         }
 
@@ -605,7 +605,7 @@ public class BridgeSupportSvpTest {
             List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
             assertEquals(1, outputs.size());
 
-            Coin expectedAmount = Coin.valueOf(1_762L);
+            Coin expectedAmount = Coin.valueOf(2114L);
             assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), expectedAmount);
         }
 
@@ -912,7 +912,7 @@ public class BridgeSupportSvpTest {
                 .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
 
             // add output
-            svpSpendTx.addOutput(Coin.valueOf(1762), federationSupport.getActiveFederationAddress());
+            svpSpendTx.addOutput(Coin.valueOf(2114L), federationSupport.getActiveFederationAddress());
         }
 
         private void saveSvpSpendTransactionWFSValues() {
