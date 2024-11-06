@@ -1021,11 +1021,15 @@ public class BridgeSupport {
 
     private boolean svpIsOngoing() {
         return federationSupport.getProposedFederation()
-            .map(Federation::getCreationBlockNumber)
-            .map(proposedFederationCreationBlockNumber ->
-                proposedFederationCreationBlockNumber + bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks())
-            .filter(validationPeriodEndBlock -> rskExecutionBlock.getNumber() <= validationPeriodEndBlock)
+            .filter(this::validationPeriodIsOngoing)
             .isPresent();
+    }
+
+    private boolean validationPeriodIsOngoing(Federation proposedFederation) {
+        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber() +
+            bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
+
+        return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
     }
 
     protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
