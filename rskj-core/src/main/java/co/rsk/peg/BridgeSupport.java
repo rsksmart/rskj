@@ -1080,7 +1080,7 @@ public class BridgeSupport {
         long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber() +
             bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
 
-        return rskExecutionBlock.getNumber() <= validationPeriodEndBlock;
+        return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
     }
 
     private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
