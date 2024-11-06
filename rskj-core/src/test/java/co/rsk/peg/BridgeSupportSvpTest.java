@@ -925,10 +925,9 @@ public class BridgeSupportSvpTest {
     private void arrangeExecutionBlockIsAfterValidationPeriodEnded() {
         long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
             + bridgeMainNetConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
-        long rskExecutionBlockNumber = validationPeriodEndBlock + 1; // adding one more block to ensure validation period is ended
         long rskExecutionBlockTimestamp = 10L;
 
-        rskExecutionBlock = createRskBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
+        rskExecutionBlock = createRskBlock(validationPeriodEndBlock, rskExecutionBlockTimestamp);
     }
 
     private BtcTransaction arrangeSvpFundTransactionSigned() {
