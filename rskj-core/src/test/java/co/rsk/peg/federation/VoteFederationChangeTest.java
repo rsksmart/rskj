@@ -415,7 +415,8 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertFederationChangeInfoWasSet();
+        assertNewActiveFederationCreationBlockHeightWasSet();
+        assertLastRetiredFederationScriptWasSet();
 
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
@@ -443,7 +444,7 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertFederationChangeInfoWasSet();
+        assertNewActiveFederationCreationBlockHeightWasSet();
 
         assertLogCommitFederation(activeFederation, proposedFederation.get());
 
@@ -509,13 +510,13 @@ class VoteFederationChangeTest {
         assertTrue(federationElectionVotes.isEmpty());
     }
 
-    private void assertFederationChangeInfoWasSet() {
-        // assert federation creation block height was set correctly
+    private void assertNewActiveFederationCreationBlockHeightWasSet() {
         Optional<Long> nextFederationCreationBlockHeight = storageProvider.getNextFederationCreationBlockHeight(activations);
         assertTrue(nextFederationCreationBlockHeight.isPresent());
         assertEquals(RSK_EXECUTION_BLOCK_NUMBER, nextFederationCreationBlockHeight.get());
+    }
 
-        // assert last retired federation p2sh script was set correctly
+    private void assertLastRetiredFederationScriptWasSet() {
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
         Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScript.isPresent());
