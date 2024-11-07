@@ -44,6 +44,7 @@ import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.addInputFromMatchingOutputScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -129,6 +130,10 @@ public class BridgeSupportSvpTest {
             logs
         );
 
+        ECKey key = RskTestUtils.getEcKeyFromSeed("key");
+        RskAddress address = new RskAddress(key.getAddress());
+        when(rskTx.getSender(any())).thenReturn(address); // to not throw when logging update collections after calling it
+
         bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeMainNetConstants)
             .withProvider(bridgeStorageProvider)
@@ -173,13 +178,13 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateSvpState_whenSvpFundTxHashUnsigned_shouldLogValidationFailureAndClearValue() {
+        void updateCollections_whenSvpFundTxHashUnsigned_shouldLogValidationFailureAndClearValue() throws IOException {
             // arrange
             svpFundTransactionHashUnsigned = BitcoinTestUtils.createHash(1);
             bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTransactionHashUnsigned);
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
 
             // assert
             assertLogCommitFederationFailed();
@@ -188,13 +193,13 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateSvpState_whenSvpFundTxSigned_shouldLogValidationFailureAndClearValue() {
+        void updateCollections_whenSvpFundTxSigned_shouldLogValidationFailureAndClearValue() throws IOException {
             // arrange
             svpFundTransaction = new BtcTransaction(btcMainnetParams);
             bridgeStorageProvider.setSvpFundTxSigned(svpFundTransaction);
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
 
             // assert
             assertLogCommitFederationFailed();
@@ -203,7 +208,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateSvpState_whenSvpSpendTxWFS_shouldLogValidationFailureAndClearSpendTxValues() {
+        void updateCollections_whenSvpSpendTxWFS_shouldLogValidationFailureAndClearSpendTxValues() throws IOException {
             // arrange
             Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
             svpSpendTransaction = new BtcTransaction(btcMainnetParams);
@@ -211,7 +216,7 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
 
             // assert
             assertLogCommitFederationFailed();
@@ -220,13 +225,13 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateSvpState_whenSvpSpendTxHashUnsigned_shouldLogValidationFailureAndClearValue() {
+        void updateCollections_whenSvpSpendTxHashUnsigned_shouldLogValidationFailureAndClearValue() throws IOException {
             // arrange
             svpSpendTransactionHashUnsigned = BitcoinTestUtils.createHash(2);
             bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTransactionHashUnsigned);
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
 
             // assert
             assertLogCommitFederationFailed();
@@ -261,34 +266,34 @@ public class BridgeSupportSvpTest {
     @Tag("Fund transaction creation and processing tests")
     class FundTxCreationAndProcessingTests {
         @Test
-        void updateSvpState_whenProposedFederationDoesNotExist_shouldNotCreateFundTransaction() {
+        void updateCollections_whenProposedFederationDoesNotExist_shouldNotCreateFundTransaction() throws IOException {
             // arrange
             when(federationSupport.getProposedFederation()).thenReturn(Optional.empty());
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
 
             // assert
             assertNoSvpFundTxHashUnsigned();
         }
 
         @Test
-        void updateSvpState_whenThereAreNoEnoughUTXOs_shouldNotCreateFundTransaction() {
+        void updateCollections_whenThereAreNoEnoughUTXOs_shouldNotCreateFundTransaction() throws IOException {
             // arrange
             List<UTXO> insufficientUtxos = new ArrayList<>();
             when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(insufficientUtxos);
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
 
             // assert
             assertNoSvpFundTxHashUnsigned();
         }
 
         @Test
-        void updateSvpState_whenFundTxCanBeCreated_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+        void updateCollections_whenFundTxCanBeCreated_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
             bridgeStorageProvider.save(); // to save the tx sig hash
 
             // assert
@@ -593,9 +598,9 @@ public class BridgeSupportSvpTest {
     class SpendTxCreationAndProcessingTests {
 
         @Test
-        void updateSvpState_whenThereIsNoFundTxSigned_shouldNotCreateNorProcessSpendTx() {
+        void updateCollections_whenThereIsNoFundTxSigned_shouldNotCreateNorProcessSpendTx() throws IOException {
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
             bridgeStorageProvider.save();
 
             // assert
@@ -604,12 +609,12 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void updateSvpState_whenSpendTxCanBeCreated_createsExpectedSpendTxAndSavesTheValuesAndLogsExpectedEvents() {
+        void updateCollections_whenSpendTxCanBeCreated_createsExpectedSpendTxAndSavesTheValuesAndLogsExpectedEvents() throws IOException {
             // arrange
             arrangeSvpFundTransactionSigned();
 
             // act
-            bridgeSupport.updateSvpState(rskTx);
+            bridgeSupport.updateCollections(rskTx);
             bridgeStorageProvider.save();
 
             // assert

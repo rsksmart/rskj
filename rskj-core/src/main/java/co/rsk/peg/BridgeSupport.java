@@ -1010,6 +1010,8 @@ public class BridgeSupport {
         processConfirmedPegouts(rskTx);
 
         updateFederationCreationBlockHeights();
+
+        updateSvpState(rskTx);
     }
 
     private void logUpdateCollections(Transaction rskTx) {
@@ -1017,7 +1019,7 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
-    protected void updateSvpState(Transaction rskTx) {
+    private void updateSvpState(Transaction rskTx) {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (proposedFederationOpt.isEmpty()) {
             logger.debug("[updateSvpState] Proposed federation does not exist, so there's no svp going on.");
