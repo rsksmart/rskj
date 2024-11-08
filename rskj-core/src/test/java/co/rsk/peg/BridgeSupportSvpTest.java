@@ -58,6 +58,8 @@ public class BridgeSupportSvpTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
 
+    private static final Coin feePerKb = Coin.valueOf(1000L);
+
     private static final Coin spendableValueFromProposedFederation = bridgeMainNetConstants.getSpendableValueFromProposedFederation();
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
@@ -100,7 +102,6 @@ public class BridgeSupportSvpTest {
         when(federationSupport.getProposedFederation()).thenReturn(Optional.of(proposedFederation));
 
         feePerKbSupport = mock(FeePerKbSupport.class);
-        Coin feePerKb = Coin.valueOf(1000);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
         repository = createRepository();
@@ -567,8 +568,9 @@ public class BridgeSupportSvpTest {
             assertSvpFundTxSignedWasRemovedFromStorage();
 
             assertLogPegoutTransactionCreated(logs, svpSpendTransactionUnsigned);
-            Coin valueSentToActiveFed = Coin.valueOf(2114L);
-            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, valueSentToActiveFed);
+
+            TransactionOutput outputToActiveFed = svpSpendTransactionUnsigned.getOutput(0);
+            assertLogReleaseRequested(logs, rskTx.getHash(), svpSpendTransactionHashUnsigned, outputToActiveFed.getValue());
         }
 
         private void assertSvpSpendTxHashUnsignedWasSavedInStorage() {
@@ -605,7 +607,10 @@ public class BridgeSupportSvpTest {
             List<TransactionOutput> outputs = svpSpendTransactionUnsigned.getOutputs();
             assertEquals(1, outputs.size());
 
-            Coin expectedAmount = Coin.valueOf(2114L);
+            long calculatedTransactionSize = 1762L; // using calculatePegoutTxSize method
+            Coin expectedAmount = feePerKb
+                .multiply(calculatedTransactionSize * 12L / 10L) // back up calculation
+                .divide(1000);
             assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), expectedAmount);
         }
 
@@ -912,7 +917,8 @@ public class BridgeSupportSvpTest {
                 .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
 
             // add output
-            svpSpendTx.addOutput(Coin.valueOf(2114L), federationSupport.getActiveFederationAddress());
+            Coin amount = Coin.valueOf(2114L); // previously calculated amount
+            svpSpendTx.addOutput(amount, federationSupport.getActiveFederationAddress());
         }
 
         private void saveSvpSpendTransactionWFSValues() {
