@@ -7,6 +7,8 @@ sonar {
         property "sonar.projectKey", "rskj"
         property "sonar.organization", "rsksmart"
         property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.junit.reportPaths", "rskj-core/build/test-results/"
+        property "sonar.coverage.jacoco.xmlReportPaths", "rskj-core/build/reports/jacoco/test/jacocoTestReport.xml"
     }
 }
 
