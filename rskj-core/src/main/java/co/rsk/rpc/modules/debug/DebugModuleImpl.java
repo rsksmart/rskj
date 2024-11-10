@@ -143,16 +143,6 @@ public class DebugModuleImpl implements DebugModule {
         return programTraceProcessor.getProgramTracesAsJsonNode(txHashes);
     }
 
-    private boolean testFunctionNotCovered() {
-        boolean var1 = false;
-        boolean var2 = true;
-        boolean var3 = false;
-        if (!var1 && var2 || !var3) {
-            return true;
-        }
-        return false;
-    }
-
     private TraceOptions toTraceOptions(Map<String, String> traceOptions) {
         TraceOptions options = new TraceOptions(traceOptions);
 
