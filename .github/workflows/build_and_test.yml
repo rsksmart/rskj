@@ -108,12 +108,16 @@ jobs:
           GH_REF: ${{ github.ref }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [ "$GH_EVENT" = "pull_request" ]; then # If this is a PR, then add pointers to it
-            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
-              -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
-              -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
-              -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
-              -Dsonar.token="$SONAR_TOKEN"
+          if [ "$GH_EVENT" = "pull_request" ]; then
+            if [ "$SONAR_TOKEN" != "" ]; then
+              ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
+                -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
+                -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
+                -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
+                -Dsonar.token="$SONAR_TOKEN"
+            else
+              echo "Skipping SonarQube analysis."
+            fi
           else
             ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
               -Dsonar.branch.name="$GH_REF" \
