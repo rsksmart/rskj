@@ -1019,11 +1019,15 @@ public class BridgeSupport {
 
     private boolean svpIsOngoing() {
         return federationSupport.getProposedFederation()
-            .map(Federation::getCreationBlockNumber)
-            .map(proposedFederationCreationBlockNumber ->
-                proposedFederationCreationBlockNumber + bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks())
-            .filter(validationPeriodEndBlock -> rskExecutionBlock.getNumber() <= validationPeriodEndBlock)
+            .filter(this::validationPeriodIsOngoing)
             .isPresent();
+    }
+
+    private boolean validationPeriodIsOngoing(Federation proposedFederation) {
+        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber() +
+            bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
+
+        return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
     }
 
     protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
@@ -1119,10 +1123,10 @@ public class BridgeSupport {
 
     private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
-        long backupSizePercentage = (long) 1.2; // just to be sure the amount sent will be enough
+        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the amount sent will be enough
 
         return feePerKbSupport.getFeePerKb()
-            .multiply(svpSpendTransactionSize * backupSizePercentage)
+            .multiply(svpSpendTransactionBackedUpSize)
             .divide(1000);
     }
 
