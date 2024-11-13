@@ -1024,7 +1024,7 @@ public class BridgeSupport {
     private void updateSvpState(Transaction rskTx) {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (proposedFederationOpt.isEmpty()) {
-            logger.debug("[updateSvpState] Proposed federation does not exist, so there's no svp going on.");
+            logger.trace("[updateSvpState] Proposed federation does not exist, so there's no svp going on.");
             return;
         }
 
@@ -1036,11 +1036,19 @@ public class BridgeSupport {
                 "[updateSvpState] Proposed federation validation failed at block {}. SVP failure will be processed",
                 rskExecutionBlock.getNumber()
             );
-            processSVPFailure(proposedFederation);
+            processSvpFailure(proposedFederation);
             return;
         }
 
         Keccak256 rskTxHash = rskTx.getHash();
+
+        if (shouldCreateAndProcessSvpFundTransaction()) {
+            logger.info(
+                "[updateSvpState] No svp values were found, so fund tx creation will be processed."
+            );
+            processSvpFundTransactionUnsigned(rskTxHash, proposedFederation);
+        }
+
         // if the fund tx signed is present, then the fund transaction change was registered,
         // meaning we can create the spend tx.
         Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
@@ -1049,20 +1057,22 @@ public class BridgeSupport {
                 "[updateSvpState] Fund tx signed was found, so spend tx creation will be processed."
             );
             processSvpSpendTransactionUnsigned(rskTxHash, proposedFederation, svpFundTxSigned.get());
-            return;
-        }
-
-        // if the unsigned fund tx hash is not present, meaning we can proceed with the fund tx creation
-        Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
-        if (svpFundTxHashUnsigned.isEmpty()) {
-            logger.info(
-                "[updateSvpState] Fund tx hash unsigned was not found, so fund tx creation will be processed."
-            );
-            processSvpFundTransactionUnsigned(rskTxHash, proposedFederation);
         }
     }
 
-    private void processSVPFailure(Federation proposedFederation) {
+    private boolean shouldCreateAndProcessSvpFundTransaction() {
+        // the fund tx will be created when the svp starts,
+        // so we must ensure all svp values are clear to proceed with its creation
+        Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
+        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
+        Optional<Sha256Hash> svpSpendTxHashUnsigned = provider.getSvpSpendTxHashUnsigned(); // spendTxHash will be removed the last, after spendTxWFS, so is enough checking just this value
+
+        return svpFundTxHashUnsigned.isEmpty()
+            && svpFundTxSigned.isEmpty()
+            && svpSpendTxHashUnsigned.isEmpty();
+    }
+
+    private void processSvpFailure(Federation proposedFederation) {
         eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
 
         logger.info("[processSVPFailure] Federation election will be allowed again.");
