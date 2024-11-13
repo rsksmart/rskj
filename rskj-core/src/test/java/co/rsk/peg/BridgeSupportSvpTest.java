@@ -141,8 +141,8 @@ public class BridgeSupportSvpTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("SVP failure tests")
-    class SVPFailureTests {
+    @Tag("Failure tests")
+    class FailureTests {
 
         @BeforeEach
         void setUp() {
@@ -259,6 +259,7 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("Fund transaction creation and processing tests")
     class FundTxCreationAndProcessingTests {
+
         @Test
         void updateCollections_whenProposedFederationDoesNotExist_shouldNotCreateFundTransaction() throws IOException {
             // arrange
@@ -288,10 +289,10 @@ public class BridgeSupportSvpTest {
         void updateCollections_whenFundTxCanBeCreated_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
             // act
             bridgeSupport.updateCollections(rskTx);
-            bridgeStorageProvider.save(); // to save the tx sig hash
+            bridgeStorageProvider.save();
 
             // assert
-            assertSvpFundTxHashUnsignedWasSavedInStorage();
+            assertSvpFundTxHashUnsignedIsSavedInStorage();
             assertSvpFundTxReleaseWasSettled();
             assertSvpFundTransactionHasExpectedInputsAndOutputs();
         }
@@ -335,6 +336,59 @@ public class BridgeSupportSvpTest {
 
             assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationWithFlyoverPrefixScriptPubKey, spendableValueFromProposedFederation);
         }
+
+        @Test
+        void updateCollections_whenWaitingForFundTxToBeRegistered_shouldNotCreateFundTransactionAgain() throws Exception {
+            // arrange
+            arrangeSvpFundTransactionUnsigned();
+            assertSvpFundTxHashUnsignedIsSavedInStorage();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertJustUpdateCollectionsWasLogged();
+        }
+
+        @Test
+        void updateCollections_whenFundTxSignedIsSaved_shouldNotCreateFundTransaction() throws Exception {
+            // arrange
+            arrangeSvpFundTransactionSigned();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNoSvpFundTxHashUnsigned();
+        }
+
+        @Test
+        void updateCollections_whenWaitingForSpendTxToBeRegistered_shouldNotCreateFundTransaction() throws Exception {
+            // arrange
+            arrangeSvpSpendTransaction();
+
+            // act
+            bridgeSupport.updateCollections(rskTx);
+            bridgeStorageProvider.save();
+
+            // assert
+            assertNoSvpFundTxHashUnsigned();
+            assertJustUpdateCollectionsWasLogged();
+        }
+
+        private void assertJustUpdateCollectionsWasLogged() {
+            assertEquals(1, logs.size());
+
+            CallTransaction.Function updateCollectionsEvent = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
+            List<DataWord> encodedTopics = getEncodedTopics(updateCollectionsEvent);
+            assertEventWasEmittedWithExpectedTopics(encodedTopics);
+
+            String senderData = rskTx.getSender(mock(SignatureCache.class)).toHexString();
+            byte[] encodedData = getEncodedData(updateCollectionsEvent, senderData);
+            assertEventWasEmittedWithExpectedData(encodedData);
+        }
     }
 
     private void arrangeSvpFundTransactionUnsigned() {
@@ -358,7 +412,7 @@ public class BridgeSupportSvpTest {
         bridgeSupport.save();
     }
 
-    private void assertSvpFundTxHashUnsignedWasSavedInStorage() {
+    private void assertSvpFundTxHashUnsignedIsSavedInStorage() {
         Optional<Sha256Hash> svpFundTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpFundTxHashUnsigned();
         assertTrue(svpFundTransactionHashUnsignedOpt.isPresent());
 
@@ -937,11 +991,15 @@ public class BridgeSupportSvpTest {
     }
 
     private void arrangeSvpFundTransactionSigned() {
-        recreateSvpFundTransactionUnsigned();
-        signInputs(svpFundTransaction);
+        recreateSvpFundTransactionSigned();
 
         bridgeStorageProvider.setSvpFundTxSigned(svpFundTransaction);
         bridgeStorageProvider.save();
+    }
+
+    private void recreateSvpFundTransactionSigned() {
+        recreateSvpFundTransactionUnsigned();
+        signInputs(svpFundTransaction);
     }
 
     private void recreateSvpFundTransactionUnsigned() {
@@ -991,14 +1049,14 @@ public class BridgeSupportSvpTest {
 
     private void arrangeSvpSpendTransaction() {
         recreateSvpSpendTransactionUnsigned();
-        saveSvpSpendTransactionWFSValues();
+        saveSvpSpendTransactionValues();
     }
 
     private void recreateSvpSpendTransactionUnsigned() {
         svpSpendTransaction = new BtcTransaction(btcMainnetParams);
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
-        arrangeSvpFundTransactionSigned();
+        recreateSvpFundTransactionSigned();
         // add inputs
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, proposedFederation.getP2SHScript());
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
@@ -1014,9 +1072,12 @@ public class BridgeSupportSvpTest {
         svpSpendTransaction.addOutput(Coin.valueOf(1762), federationSupport.getActiveFederationAddress());
     }
 
-    private void saveSvpSpendTransactionWFSValues() {
+    private void saveSvpSpendTransactionValues() {
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTransaction.getHash());
+
         Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTransaction);
         bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+
         bridgeStorageProvider.save();
     }
 
