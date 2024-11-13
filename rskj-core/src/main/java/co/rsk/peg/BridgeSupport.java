@@ -1010,6 +1010,8 @@ public class BridgeSupport {
         processConfirmedPegouts(rskTx);
 
         updateFederationCreationBlockHeights();
+
+        updateSvpState(rskTx);
     }
 
     private void logUpdateCollections(Transaction rskTx) {
@@ -1017,13 +1019,61 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
-    protected void processSVPFailure(Federation proposedFederation) {
-        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
-        logger.warn(
-            "[processSVPFailure] Proposed federation validation failed at block {}, so federation election will be allowed again.",
-            rskExecutionBlock.getNumber()
-        );
+    private void updateSvpState(Transaction rskTx) {
+        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
+        if (proposedFederationOpt.isEmpty()) {
+            logger.trace("[updateSvpState] Proposed federation does not exist, so there's no svp going on.");
+            return;
+        }
 
+        // if the proposed federation exists and the validation period ended,
+        // we can conclude that the svp failed
+        Federation proposedFederation = proposedFederationOpt.get();
+        if (!validationPeriodIsOngoing(proposedFederation)) {
+            logger.info(
+                "[updateSvpState] Proposed federation validation failed at block {}. SVP failure will be processed",
+                rskExecutionBlock.getNumber()
+            );
+            processSvpFailure(proposedFederation);
+            return;
+        }
+
+        Keccak256 rskTxHash = rskTx.getHash();
+
+        if (shouldCreateAndProcessSvpFundTransaction()) {
+            logger.info(
+                "[updateSvpState] No svp values were found, so fund tx creation will be processed."
+            );
+            processSvpFundTransactionUnsigned(rskTxHash, proposedFederation);
+        }
+
+        // if the fund tx signed is present, then the fund transaction change was registered,
+        // meaning we can create the spend tx.
+        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
+        if (svpFundTxSigned.isPresent()) {
+            logger.info(
+                "[updateSvpState] Fund tx signed was found, so spend tx creation will be processed."
+            );
+            processSvpSpendTransactionUnsigned(rskTxHash, proposedFederation, svpFundTxSigned.get());
+        }
+    }
+
+    private boolean shouldCreateAndProcessSvpFundTransaction() {
+        // the fund tx will be created when the svp starts,
+        // so we must ensure all svp values are clear to proceed with its creation
+        Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
+        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
+        Optional<Sha256Hash> svpSpendTxHashUnsigned = provider.getSvpSpendTxHashUnsigned(); // spendTxHash will be removed the last, after spendTxWFS, so is enough checking just this value
+
+        return svpFundTxHashUnsigned.isEmpty()
+            && svpFundTxSigned.isEmpty()
+            && svpSpendTxHashUnsigned.isEmpty();
+    }
+
+    private void processSvpFailure(Federation proposedFederation) {
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+
+        logger.info("[processSVPFailure] Federation election will be allowed again.");
         allowFederationElectionAgain();
     }
 
@@ -1045,21 +1095,24 @@ public class BridgeSupport {
         return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
     }
 
-    protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
-        Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
-        if (proposedFederationOpt.isEmpty()) {
-            String message = "Proposed federation should be present when processing SVP fund transaction.";
-            logger.warn(message);
-            throw new IllegalStateException(message);
-        }
-        Federation proposedFederation = proposedFederationOpt.get();
-
+    private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
         Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
-        BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
-
-        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTx.getHash(), spendableValueFromProposedFederation);
+        try {
+            BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
+            provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+            PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+            settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
+        } catch (InsufficientMoneyException e) {
+            logger.error(
+                "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
+                e.getMessage()
+            );
+        } catch (IOException e) {
+            logger.error(
+                "[processSvpFundTransactionUnsigned] IOException getting the pegouts waiting for confirmations. Error message: {}",
+                e.getMessage()
+            );
+        }
     }
 
     private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
@@ -1092,19 +1145,13 @@ public class BridgeSupport {
         return sendRequest;
     }
 
-    protected void processSvpSpendTransactionUnsigned(Transaction rskTx) {
-        federationSupport.getProposedFederation()
-            .ifPresent(proposedFederation -> provider.getSvpFundTxSigned()
-            .ifPresent(svpFundTxSigned -> {
-                BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+    private void processSvpSpendTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
+        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
 
-                Keccak256 rskTxHash = rskTx.getHash();
-                updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
-
-                Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
-                logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, amountSentToActiveFed);
-                logPegoutTransactionCreated(svpSpendTransactionUnsigned);
-            }));
+        Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
+        logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, amountSentToActiveFed);
+        logPegoutTransactionCreated(svpSpendTransactionUnsigned);
     }
 
     private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
