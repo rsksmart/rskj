@@ -1361,6 +1361,10 @@ public class VM {
     protected void doTSTORE(){
         //TODO: Gas cost calculation will be done here and also shared contexts verifications for
         // different types of calls
+        if (program.isStaticCall()) {
+            throw Program.ExceptionHelper.modificationException(program);
+        }
+
         DataWord key = program.stackPop();
         DataWord value = program.stackPop();
 

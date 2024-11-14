@@ -311,6 +311,36 @@ class TransientStorageDslTest {
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
+    @Test
+    void testDynamicExecutionCallContextSubcall() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_call_subcall.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txContextCallSubcallContract = "txContextCallSubcallContract";
+        assertTransactionReceiptWithStatus(world, txContextCallSubcallContract, "b01", true);
+
+        String txExecuteCallCode = "txExecuteCallCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        Assertions.assertEquals(6, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testDynamicExecutionStaticCallSubcallCantUseTstore() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_staticcall_subcall_cant_call_tstore.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txContextStaticCallCantCallTstoreContract = "txContextStaticCallCantCallTstoreContract";
+        assertTransactionReceiptWithStatus(world, txContextStaticCallCantCallTstoreContract, "b01", true);
+
+        String txExecuteStaticCallCode = "txExecuteStaticCallCode";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteStaticCallCode, "b02", true);
+        Assertions.assertEquals(2, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
         Transaction txCreation = world.getTransactionByName(txName);
         assertNotNull(txCreation);
