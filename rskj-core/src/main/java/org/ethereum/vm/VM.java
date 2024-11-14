@@ -1361,7 +1361,7 @@ public class VM {
     protected void doTSTORE(){
         //TODO: Gas cost calculation will be done here and also shared contexts verifications for
         // different types of calls
-        if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
+        if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
         }
 
