@@ -43,6 +43,18 @@ public class StateForFederator {
                 decodeRlpToMap(rlpData), networkParameters));
     }
 
+    /**
+     * Retrieves a sorted map of RSK transactions that are waiting for signatures.
+     *
+     * <p>
+     * The returned {@code SortedMap<Keccak256, BtcTransaction>} contains entries where the key
+     * is the hash of the RSK transaction, and the value is the {@code BtcTransaction} object.
+     * This method guarantees a non-null result, returning an empty map if no transactions are pending.
+     * </p>
+     *
+     * @return a non-null {@code SortedMap<Keccak256, BtcTransaction>} of transactions waiting for signatures;
+     *         if no transactions are pending, an empty map is returned.
+     */
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
         return rskTxsWaitingForSignatures;
     }
