@@ -47,6 +47,10 @@ public class Start {
         }
     }
 
+    static boolean testSonar() {
+        return true;
+    }
+
     static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
         preflightChecks.runChecks();
 
