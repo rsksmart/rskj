@@ -21,7 +21,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Objects;
 import org.ethereum.util.RLP;
@@ -32,10 +31,7 @@ public class StateForProposedFederator {
     private final Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
 
     public StateForProposedFederator(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
-        Objects.requireNonNull(svpSpendTxWaitingForSignatures);
-
-        this.svpSpendTxWaitingForSignatures = 
-            new AbstractMap.SimpleImmutableEntry<>(svpSpendTxWaitingForSignatures);
+        this.svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignatures;
     }
 
     public StateForProposedFederator(byte[] rlpData, NetworkParameters networkParameters) {
@@ -44,6 +40,18 @@ public class StateForProposedFederator {
                 decodeRlpToEntry(rlpData), networkParameters));
     }
 
+    /**
+     * Retrieves the SVP spend transaction waiting for signatures.
+     *
+     * <p>
+     * This method returns a {@code Map.Entry<Keccak256, BtcTransaction>} representing
+     * the transaction waiting for signatures, with the hash of the transaction as the key
+     * and the {@code BtcTransaction} object as the value.
+     * </p>
+     *
+     * @return a {@code Map.Entry<Keccak256, BtcTransaction>} if a transaction is pending
+     * for signatures, or {@code null} if no such transaction exists.
+     */
     public Map.Entry<Keccak256, BtcTransaction> getSvpSpendTxWaitingForSignatures() {
         return svpSpendTxWaitingForSignatures;
     }

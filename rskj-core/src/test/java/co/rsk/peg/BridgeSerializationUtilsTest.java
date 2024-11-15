@@ -73,11 +73,9 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -213,9 +211,18 @@ class BridgeSerializationUtilsTest {
         assertArrayEquals(pegoutTx.bitcoinSerialize(), deserializedEntry.getValue().bitcoinSerialize());
     }
 
+    @Test
+    void serializeRskTxWaitingForSignatures_whenNullValuePassed_shouldReturnEmptyResult() {
+        // Act
+        byte[] result =
+            BridgeSerializationUtils.serializeRskTxWaitingForSignatures(null);
+
+        // Assert
+        assertArrayEquals(RLP.encodedEmptyList(), result);
+    }
+
     @ParameterizedTest
-    @NullSource
-    @EmptySource
+    @MethodSource("provideInvalidData")
     void deserializeRskTxWaitingForSignatures_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
         // Act
         Map.Entry<Keccak256, BtcTransaction> result =
@@ -223,6 +230,13 @@ class BridgeSerializationUtilsTest {
 
         // Assert
         assertNull(result);
+    }
+    
+    private static Stream<byte[]> provideInvalidData() {
+        return Stream.of(
+            null,
+            new byte[]{},
+            RLP.encodedEmptyList());
     }
 
     @Test
