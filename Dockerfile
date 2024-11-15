@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk@sha256:5ad4efff3364b06c61578b267138359bcba92acc20dfd533f35b75c709a6f10b AS build
+FROM eclipse-temurin:21-jdk@sha256:c51438f60d2c23293ad8145e6eb27a3c2e85ed6aebaa418a9187ae5e9571f5a3 AS build
 
 RUN apt-get update -y && \
     apt-get install -y git curl gnupg
@@ -19,7 +19,7 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
     modifier=$(sed -n 's/^modifier=//p' "$file" | tr -d "\"'") && \
     cp "rskj-core/build/libs/rskj-core-$version_number-$modifier-all.jar" rsk.jar
 
-FROM eclipse-temurin:21-jre@sha256:4c1ec9743c333c9d47f55d883c4e317d117e198899e7edf1d9cf4c89253b1b9d
+FROM eclipse-temurin:21-jre@sha256:e311d44022111e9978adfeb1fab8d73a4e7812cebf19231a4775119c6f906be5
 LABEL org.opencontainers.image.authors="ops@rootstocklabs.com"
 
 RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
