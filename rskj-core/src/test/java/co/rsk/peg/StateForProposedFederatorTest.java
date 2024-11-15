@@ -15,19 +15,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createHash;
 import static org.ethereum.TestUtils.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import java.util.AbstractMap;
 import java.util.Map;
+import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Test;
 
 class StateForProposedFederatorTest {
@@ -53,9 +54,15 @@ class StateForProposedFederatorTest {
     }
 
     @Test
-    void stateForProposedFederator_whenNullValueAndSerializeAndDeserialize_shouldThrowNullPointerException() {
+    void stateForProposedFederator_whenEmptyDoubleRLPEncodedList_shouldReturnEmptySvpSpendTxWaitingForSignatures() {
+        // Arrange
+        var doubleEncodedEmptyList = RLP.encodeList(RLP.encodedEmptyList());
+
+        // Act
+        StateForProposedFederator deserializedStateForProposedFederator =
+            new StateForProposedFederator(doubleEncodedEmptyList, NETWORK_PARAMETERS);
+       
         // Assert
-        assertThrows(NullPointerException.class, () -> new StateForProposedFederator(null));
-        assertThrows(NullPointerException.class, () -> new StateForProposedFederator(null, NETWORK_PARAMETERS));
+        assertNull(deserializedStateForProposedFederator.getSvpSpendTxWaitingForSignatures());
     }
 }
