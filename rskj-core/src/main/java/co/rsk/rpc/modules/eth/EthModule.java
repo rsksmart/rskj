@@ -146,7 +146,7 @@ public class EthModule
             } else {
                 res = callConstant(args, block);
             }
-            handleTransactionRevert(res);
+            handleTransactionRevertIfHappens(res);
             hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
 
             return hReturn;
@@ -181,7 +181,7 @@ public class EthModule
             );
 
             ProgramResult res = executor.getResult();
-            handleTransactionRevert(res);
+            handleTransactionRevertIfHappens(res);
 
             estimation = internalEstimateGas(executor.getResult());
 
@@ -348,7 +348,7 @@ public class EthModule
         );
     }
 
-    private void handleTransactionRevert(ProgramResult res) {
+    private void handleTransactionRevertIfHappens(ProgramResult res) {
         if (res.isRevert()) {
             Pair<String, byte[]> programRevert = decodeProgramRevert(res);
             String revertReason = programRevert.getLeft();
