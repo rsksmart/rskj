@@ -415,7 +415,8 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertFederationChangeInfoWasSet();
+        assertNewActiveFederationCreationBlockHeightWasSet();
+        assertLastRetiredFederationScriptWasSet();
 
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
@@ -443,11 +444,11 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertFederationChangeInfoWasSet();
-
         assertLogCommitFederation(activeFederation, proposedFederation.get());
 
-        // assert new and old federation were not set and utxos were not moved
+        // assert some values were not set
+        assertNewActiveFederationCreationBlockHeightWasNotSet();
+        assertLastRetiredFederationScriptWasNotSet();
         assertNewAndOldFederationsWereNotSet();
         assertUTXOsWereNotMovedFromNewToOldFederation();
     }
@@ -509,17 +510,27 @@ class VoteFederationChangeTest {
         assertTrue(federationElectionVotes.isEmpty());
     }
 
-    private void assertFederationChangeInfoWasSet() {
-        // assert federation creation block height was set correctly
+    private void assertNewActiveFederationCreationBlockHeightWasSet() {
         Optional<Long> nextFederationCreationBlockHeight = storageProvider.getNextFederationCreationBlockHeight(activations);
         assertTrue(nextFederationCreationBlockHeight.isPresent());
         assertEquals(RSK_EXECUTION_BLOCK_NUMBER, nextFederationCreationBlockHeight.get());
+    }
 
-        // assert last retired federation p2sh script was set correctly
+    private void assertNewActiveFederationCreationBlockHeightWasNotSet() {
+        Optional<Long> nextFederationCreationBlockHeight = storageProvider.getNextFederationCreationBlockHeight(activations);
+        assertFalse(nextFederationCreationBlockHeight.isPresent());
+    }
+
+    private void assertLastRetiredFederationScriptWasSet() {
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
         Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScript.isPresent());
         assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
+    }
+
+    private void assertLastRetiredFederationScriptWasNotSet() {
+        Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
+        assertFalse(lastRetiredFederationP2SHScript.isPresent());
     }
 
     private Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {

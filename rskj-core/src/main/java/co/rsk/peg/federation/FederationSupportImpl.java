@@ -702,7 +702,9 @@ public class FederationSupportImpl implements FederationSupport {
         clearPendingFederationVoting();
 
         if (activations.isActive(RSKIP186)) {
-            preserveFederationChangeInfo(activeFederation);
+            // since we are creating the to-be-active-fed in this block,
+            // its creation block height is this block number
+            saveFederationChangeInfo(rskExecutionBlock.getNumber());
         }
 
         Federation currentOldFederation = provider.getOldFederation(constants, activations);
@@ -736,9 +738,7 @@ public class FederationSupportImpl implements FederationSupport {
 
         clearPendingFederationVoting();
 
-        Federation activeFederation = getActiveFederation();
-        preserveFederationChangeInfo(activeFederation);
-        logCommitmentWithVotedFederation(eventLogger, activeFederation, proposedFederation);
+        logCommitmentWithVotedFederation(eventLogger, getActiveFederation(), proposedFederation);
 
         return FederationChangeResponseCode.SUCCESSFUL;
     }
@@ -756,9 +756,13 @@ public class FederationSupportImpl implements FederationSupport {
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
     }
 
-    private void preserveFederationChangeInfo(Federation activeFederation) {
-        provider.setNextFederationCreationBlockHeight(rskExecutionBlock.getNumber());
+    private void saveFederationChangeInfo(long newActiveFederationCreationBlockHeight) {
+        saveLastRetiredFederationScript();
+        provider.setNextFederationCreationBlockHeight(newActiveFederationCreationBlockHeight);
+    }
 
+    private void saveLastRetiredFederationScript() {
+        Federation activeFederation = getActiveFederation();
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activeFederation);
         provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
     }
