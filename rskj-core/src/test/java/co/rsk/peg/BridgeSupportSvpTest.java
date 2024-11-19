@@ -82,6 +82,9 @@ public class BridgeSupportSvpTest {
     private Sha256Hash svpSpendTransactionHashUnsigned;
     private BtcTransaction svpSpendTransaction;
 
+    private PartialMerkleTree pmtWithTransactions;
+    private int btcBlockWithPmtHeight;
+
     @BeforeEach
     void setUp() {
         long rskExecutionBlockNumber = 1000L;
@@ -467,8 +470,6 @@ public class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("Fund transaction registration tests")
     class FundTxRegistrationTests {
-        private PartialMerkleTree pmtWithTransactions;
-        private int btcBlockWithPmtHeight;
 
         @Test
         void registerBtcTransaction_forSvpFundTransactionChange_whenProposedFederationDoesNotExist_shouldRegisterTransactionButNotUpdateSvpFundTransactionValues() throws Exception {
@@ -595,43 +596,6 @@ public class BridgeSupportSvpTest {
             assertSvpFundTransactionValuesWereUpdated();
         }
 
-        private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
-            // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
-            BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
-
-            pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transaction.getHash()), btcMainnetParams);
-            btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
-
-            int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
-            recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
-
-            bridgeStorageProvider.save();
-
-            bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeMainNetConstants)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(allActivations)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withRepository(repository)
-                .build();
-        }
-
-        private void assertActiveFederationUtxosSize(int expectedActiveFederationUtxosSize) {
-            assertEquals(expectedActiveFederationUtxosSize, federationSupport.getActiveFederationBtcUTXOs().size());
-        }
-
-        private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
-            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
-            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
-
-            long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
-            assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
-        }
-
         private void assertSvpFundTransactionValuesWereUpdated() {
             Optional<BtcTransaction> svpFundTransactionSignedOpt = bridgeStorageProvider.getSvpFundTxSigned();
             assertTrue(svpFundTransactionSignedOpt.isPresent());
@@ -666,7 +630,7 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedWasSavedInStorage();
+            svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedIsSavedInStorage();
             svpSpendTransaction = assertSvpSpendTxIsWaitingForSignatures();
             assertSvpSpendTxHasExpectedInputsAndOutputs();
 
@@ -727,7 +691,7 @@ public class BridgeSupportSvpTest {
         }
     }
 
-    private Sha256Hash assertSvpSpendTxHashUnsignedWasSavedInStorage() {
+    private Sha256Hash assertSvpSpendTxHashUnsignedIsSavedInStorage() {
         Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
         assertTrue(svpSpendTransactionHashUnsignedOpt.isPresent());
 
@@ -982,6 +946,105 @@ public class BridgeSupportSvpTest {
         }
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("Spend transaction registration tests")
+    class SpendTxRegistrationTests {
+        @Test
+        void registerBtcTransaction_whenValidationPeriodEnded_shouldNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeExecutionBlockIsAfterValidationPeriodEnded();
+
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            // act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            assertSvpSpendTxHashUnsignedIsSavedInStorage();
+        }
+
+        @Test
+        void registerBtcTransaction_whenIsTheSpendTransaction_shouldProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            // act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertTransactionWasProcessed(svpSpendTransaction.getHash());
+            assertNoSvpSpendTxHash();
+        }
+
+        @Test
+        void registerBtcTransaction_whenIsNotTheSpendTransaction_shouldNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            BtcTransaction pegout = createPegout(proposedFederation.getRedeemScript());
+            savePegoutIndex(pegout);
+            signInputs(pegout);
+            setUpForTransactionRegistration(pegout);
+
+            // act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegout.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            assertSvpSpendTxHashUnsignedIsSavedInStorage();
+        }
+
+        @Test
+        void registerBtcTransaction_whenSpendTransactionHashIsNotSaved_shouldNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            recreateSvpSpendTransactionUnsigned();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            // act
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+        }
+    }
+
     private void arrangeExecutionBlockIsAfterValidationPeriodEnded() {
         long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber()
             + bridgeMainNetConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
@@ -1079,6 +1142,48 @@ public class BridgeSupportSvpTest {
         bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
 
         bridgeStorageProvider.save();
+    }
+
+    private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
+        // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
+
+        pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transaction.getHash()), btcMainnetParams);
+        btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+
+        int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
+
+        bridgeStorageProvider.save();
+
+        bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeMainNetConstants)
+            .withProvider(bridgeStorageProvider)
+            .withActivations(allActivations)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withExecutionBlock(rskExecutionBlock)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withRepository(repository)
+            .build();
+    }
+
+    private void assertActiveFederationUtxosSize(int expectedActiveFederationUtxosSize) {
+        assertEquals(expectedActiveFederationUtxosSize, federationSupport.getActiveFederationBtcUTXOs().size());
+    }
+
+    private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+        long rskExecutionBlockNumber = rskExecutionBlock.getNumber();
+        assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+    }
+
+    private void assertTransactionWasNotProcessed(Sha256Hash transactionHash) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertFalse(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
     }
 
     private void assertNoSvpFundTxHashUnsigned() {
