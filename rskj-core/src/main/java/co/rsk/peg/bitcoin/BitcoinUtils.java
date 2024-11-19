@@ -60,7 +60,19 @@ public class BitcoinUtils {
         }
     }
 
-    public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
+    public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+        Sha256Hash transactionHash = transaction.getHash();
+
+        if (!transaction.hasWitness()) {
+            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
+            transactionHash = transactionCopyWithoutSignatures.getHash();
+        }
+
+        return transactionHash;
+    }
+
+    private static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             String message = "Removing signatures from SegWit transactions is not allowed.";
             logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
