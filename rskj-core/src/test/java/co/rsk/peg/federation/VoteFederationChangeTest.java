@@ -444,11 +444,11 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertNewActiveFederationCreationBlockHeightWasSet();
-
         assertLogCommitFederation(activeFederation, proposedFederation.get());
 
-        // assert new and old federation were not set and utxos were not moved
+        // assert some values were not set
+        assertNewActiveFederationCreationBlockHeightWasNotSet();
+        assertLastRetiredFederationScriptWasNotSet();
         assertNewAndOldFederationsWereNotSet();
         assertUTXOsWereNotMovedFromNewToOldFederation();
     }
@@ -516,11 +516,21 @@ class VoteFederationChangeTest {
         assertEquals(RSK_EXECUTION_BLOCK_NUMBER, nextFederationCreationBlockHeight.get());
     }
 
+    private void assertNewActiveFederationCreationBlockHeightWasNotSet() {
+        Optional<Long> nextFederationCreationBlockHeight = storageProvider.getNextFederationCreationBlockHeight(activations);
+        assertFalse(nextFederationCreationBlockHeight.isPresent());
+    }
+
     private void assertLastRetiredFederationScriptWasSet() {
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
         Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScript.isPresent());
         assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
+    }
+
+    private void assertLastRetiredFederationScriptWasNotSet() {
+        Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
+        assertFalse(lastRetiredFederationP2SHScript.isPresent());
     }
 
     private Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
