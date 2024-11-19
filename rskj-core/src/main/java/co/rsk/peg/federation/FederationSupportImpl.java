@@ -702,8 +702,9 @@ public class FederationSupportImpl implements FederationSupport {
         clearPendingFederationVoting();
 
         if (activations.isActive(RSKIP186)) {
-            setNewActiveFederationCreationBlockHeight();
-            preserveLastRetiredFederationScript();
+            // since we are creating the to-be-active-fed in this block,
+            // its creation block height is this block number
+            saveFederationChangeInfo(rskExecutionBlock.getNumber());
         }
 
         Federation currentOldFederation = provider.getOldFederation(constants, activations);
@@ -734,7 +735,6 @@ public class FederationSupportImpl implements FederationSupport {
         // set proposed federation
         Federation proposedFederation = buildFederationFromPendingFederation(currentPendingFederation);
         provider.setProposedFederation(proposedFederation);
-        setNewActiveFederationCreationBlockHeight();
 
         clearPendingFederationVoting();
 
@@ -756,17 +756,15 @@ public class FederationSupportImpl implements FederationSupport {
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
     }
 
-    private void preserveLastRetiredFederationScript() {
+    private void saveFederationChangeInfo(long newActiveFederationCreationBlockHeight) {
+        saveLastRetiredFederationScript();
+        provider.setNextFederationCreationBlockHeight(newActiveFederationCreationBlockHeight);
+    }
+
+    private void saveLastRetiredFederationScript() {
         Federation activeFederation = getActiveFederation();
         Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activeFederation);
         provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
-    }
-
-    private void setNewActiveFederationCreationBlockHeight() {
-        // since we are creating the to-be-active-fed in this block,
-        // its creation block height is this block number
-        long newActiveFederationCreationBlockHeight = rskExecutionBlock.getNumber();
-        provider.setNextFederationCreationBlockHeight(newActiveFederationCreationBlockHeight);
     }
 
     private Script getFederationMembersP2SHScript(Federation federation) {
