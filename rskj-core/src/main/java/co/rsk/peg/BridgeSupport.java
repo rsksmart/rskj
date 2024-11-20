@@ -395,6 +395,7 @@ public class BridgeSupport {
 
             if (isSvpOngoing() && isTheSvpSpendTransaction(btcTx)) {
                 registerSvpSpendTransaction(btcTx);
+                processSvpSuccess();
                 return;
             }
 
@@ -464,8 +465,11 @@ public class BridgeSupport {
     private void registerSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
         markTxAsProcessed(svpSpendTx);
         saveNewUTXOs(svpSpendTx);
+    }
+
+    private void processSvpSuccess() {
         provider.setSvpSpendTxHashUnsigned(null);
-        // proceed with svp success
+        federationSupport.commitProposedFederation();
     }
 
     private Script getLastRetiredFederationP2SHScript() {
