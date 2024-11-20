@@ -25,6 +25,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
@@ -52,8 +53,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * @author Oscar Guindzberg
@@ -618,5 +618,20 @@ public final class BridgeUtils {
         int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
 
         return baseSize + signingSize;
+    }
+
+    public static Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
+        // when the federation is a standard multisig,
+        // the members p2sh script is the p2sh script
+        if (!activations.isActive(RSKIP377)) {
+            return federation.getP2SHScript();
+        }
+        if (!(federation instanceof ErpFederation)) {
+            return federation.getP2SHScript();
+        }
+
+        // when the federation also has erp keys,
+        // the members p2sh script is the default p2sh script
+        return ((ErpFederation) federation).getDefaultP2SHScript();
     }
 }
