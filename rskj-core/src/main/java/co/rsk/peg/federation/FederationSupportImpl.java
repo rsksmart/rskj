@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -694,10 +695,8 @@ public class FederationSupportImpl implements FederationSupport {
         moveUTXOsFromNewToOldFederation();
 
         // set old and new federations
-        Federation activeFederation = getActiveFederation();
-        provider.setOldFederation(activeFederation);
         Federation newFederation = buildFederationFromPendingFederation(currentPendingFederation);
-        provider.setNewFederation(newFederation);
+        setOldAndNewFederations(getActiveFederation(), newFederation);
 
         clearPendingFederationVoting();
 
@@ -712,6 +711,22 @@ public class FederationSupportImpl implements FederationSupport {
         logCommitmentWithVotedFederation(eventLogger, currentOldFederation, currentNewFederation);
 
         return FederationChangeResponseCode.SUCCESSFUL;
+    }
+
+    public void commitProposedFederation() {
+        Federation proposedFederation = provider.getProposedFederation(constants, activations)
+                .orElseThrow(IllegalStateException::new);
+
+        moveUTXOsFromNewToOldFederation();
+        setOldAndNewFederations(getActiveFederation(), proposedFederation);
+        saveFederationChangeInfo(proposedFederation.getCreationBlockNumber());
+
+        clearProposedFederation();
+    }
+
+    private void setOldAndNewFederations(Federation oldFederation, Federation newFederation) {
+        provider.setOldFederation(oldFederation);
+        provider.setNewFederation(newFederation);
     }
 
     private void moveUTXOsFromNewToOldFederation() {
@@ -763,23 +778,8 @@ public class FederationSupportImpl implements FederationSupport {
 
     private void saveLastRetiredFederationScript() {
         Federation activeFederation = getActiveFederation();
-        Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activeFederation);
+        Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, activeFederation);
         provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
-    }
-
-    private Script getFederationMembersP2SHScript(Federation federation) {
-        // when the federation is a standard multisig,
-        // the members p2sh script is the p2sh script
-        if (!activations.isActive(RSKIP377)) {
-            return federation.getP2SHScript();
-        }
-        if (!(federation instanceof ErpFederation)) {
-            return federation.getP2SHScript();
-        }
-
-        // when the federation also has erp keys,
-        // the members p2sh script is the default p2sh script
-        return ((ErpFederation) federation).getDefaultP2SHScript();
     }
 
     private void logCommitmentWithVotedFederation(BridgeEventLogger eventLogger, Federation federationToBeRetired, Federation votedFederation) {
