@@ -61,15 +61,13 @@ public class BitcoinUtils {
     }
 
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
-        Sha256Hash transactionHash = transaction.getHash();
-
         if (!transaction.hasWitness()) {
             BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
             BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
-            transactionHash = transactionCopyWithoutSignatures.getHash();
+            return transactionCopyWithoutSignatures.getHash();
         }
 
-        return transactionHash;
+        return transaction.getHash();
     }
 
     private static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
