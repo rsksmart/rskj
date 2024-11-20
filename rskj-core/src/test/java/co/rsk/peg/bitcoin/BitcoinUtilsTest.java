@@ -304,7 +304,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnExpectedTxHash() {
+    void getTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnSameTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
