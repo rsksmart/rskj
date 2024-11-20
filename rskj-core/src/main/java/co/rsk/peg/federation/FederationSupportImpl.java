@@ -692,19 +692,10 @@ public class FederationSupportImpl implements FederationSupport {
      * The federation change info is preserved, and the commitment with the voted federation is logged.
      */
     private FederationChangeResponseCode legacyCommitPendingFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
-        moveUTXOsFromNewToOldFederation();
-
-        // set old and new federations
         Federation newFederation = buildFederationFromPendingFederation(currentPendingFederation);
-        setOldAndNewFederations(getActiveFederation(), newFederation);
+        handoverFromOldToNewFederation(getActiveFederation(), newFederation);
 
         clearPendingFederationVoting();
-
-        if (activations.isActive(RSKIP186)) {
-            // since we are creating the to-be-active-fed in this block,
-            // its creation block height is this block number
-            saveFederationChangeInfo(rskExecutionBlock.getNumber());
-        }
 
         Federation currentOldFederation = provider.getOldFederation(constants, activations);
         Federation currentNewFederation = provider.getNewFederation(constants, activations);
@@ -717,11 +708,19 @@ public class FederationSupportImpl implements FederationSupport {
         Federation proposedFederation = provider.getProposedFederation(constants, activations)
                 .orElseThrow(IllegalStateException::new);
 
-        moveUTXOsFromNewToOldFederation();
-        setOldAndNewFederations(getActiveFederation(), proposedFederation);
-        saveFederationChangeInfo(proposedFederation.getCreationBlockNumber());
-
+        handoverFromOldToNewFederation(getActiveFederation(), proposedFederation);
         clearProposedFederation();
+    }
+
+    private void handoverFromOldToNewFederation(Federation oldFederation, Federation newFederation) {
+        moveUTXOsFromNewToOldFederation();
+
+        setOldAndNewFederations(oldFederation, newFederation);
+
+        if (activations.isActive(RSKIP186)) {
+            saveLastRetiredFederationScript();
+            provider.setNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
+        }
     }
 
     private void setOldAndNewFederations(Federation oldFederation, Federation newFederation) {
@@ -769,11 +768,6 @@ public class FederationSupportImpl implements FederationSupport {
         // Clear pending federation and votes on election
         provider.setPendingFederation(null);
         provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
-    }
-
-    private void saveFederationChangeInfo(long newActiveFederationCreationBlockHeight) {
-        saveLastRetiredFederationScript();
-        provider.setNextFederationCreationBlockHeight(newActiveFederationCreationBlockHeight);
     }
 
     private void saveLastRetiredFederationScript() {
