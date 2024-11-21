@@ -391,6 +391,11 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
+            if (isSvpOngoing() && isTheSvpSpendTransaction(btcTx)) {
+                registerSvpSpendTransaction(btcTx);
+                return;
+            }
+
             PegTxType pegTxType = PegUtils.getTransactionType(
                 activations,
                 provider,
@@ -410,8 +415,8 @@ public class BridgeSupport {
                 case PEGOUT_OR_MIGRATION:
                     logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx);
-                    if (svpIsOngoing()) {
-                        updateSvpFundTransactionValuesIfPossible(btcTx);
+                    if (isSvpOngoing() && isTheSvpFundTransaction(btcTx)) {
+                        updateSvpFundTransactionValues(btcTx);
                     }
                     break;
                 default:
@@ -429,21 +434,12 @@ public class BridgeSupport {
         }
     }
 
-    private void updateSvpFundTransactionValuesIfPossible(BtcTransaction transaction) {
-        provider.getSvpFundTxHashUnsigned()
-            .filter(svpFundTxHashUnsigned -> isTheSvpFundTransaction(svpFundTxHashUnsigned, transaction))
-            .ifPresent(isTheSvpFundTransaction -> updateSvpFundTransactionValues(transaction));
-    }
-
-    private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
-        Sha256Hash transactionHash = transaction.getHash();
-
-        if (!transaction.hasWitness()) {
-            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
-            transactionHash = transactionCopyWithoutSignatures.getHash();
-        }
-        return transactionHash.equals(svpFundTransactionHashUnsigned);
+    private boolean isTheSvpFundTransaction(BtcTransaction transaction) {
+        return provider.getSvpFundTxHashUnsigned()
+            .map(svpFundTransactionHashUnsigned ->
+                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpFundTransactionHashUnsigned)
+            )
+            .orElse(false);
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
@@ -453,6 +449,21 @@ public class BridgeSupport {
 
         provider.setSvpFundTxSigned(transaction);
         provider.setSvpFundTxHashUnsigned(null);
+    }
+
+    private boolean isTheSvpSpendTransaction(BtcTransaction transaction) {
+        return provider.getSvpSpendTxHashUnsigned()
+            .filter(svpSpendTransactionHashUnsigned ->
+                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpSpendTransactionHashUnsigned)
+            )
+            .isPresent();
+    }
+
+    private void registerSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
+        markTxAsProcessed(svpSpendTx);
+        saveNewUTXOs(svpSpendTx);
+        provider.setSvpSpendTxHashUnsigned(null);
+        // proceed with svp success
     }
 
     private Script getLastRetiredFederationP2SHScript() {
@@ -1082,7 +1093,7 @@ public class BridgeSupport {
         provider.clearSvpValues();
     }
 
-    private boolean svpIsOngoing() {
+    private boolean isSvpOngoing() {
         return federationSupport.getProposedFederation()
             .filter(this::validationPeriodIsOngoing)
             .isPresent();
@@ -1665,7 +1676,7 @@ public class BridgeSupport {
 
         Context.propagate(btcContext);
 
-        if (svpIsOngoing() && isSvpSpendTx(releaseCreationRskTxHash)) {
+        if (isSvpOngoing() && isSvpSpendTx(releaseCreationRskTxHash)) {
             logger.trace("[addSignature] Going to sign svp spend transaction with federator public key {}", federatorBtcPublicKey);
             addSvpSpendTxSignatures(federatorBtcPublicKey, signatures);
             return;
@@ -1760,7 +1771,6 @@ public class BridgeSupport {
         provider.getSvpSpendTxWaitingForSignatures()
             // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
             .ifPresent(svpSpendTxWFS -> {
-
                 Keccak256 svpSpendTxCreationRskTxHash = svpSpendTxWFS.getKey();
                 BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
 
