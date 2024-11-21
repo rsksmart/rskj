@@ -693,7 +693,7 @@ public class FederationSupportImpl implements FederationSupport {
      */
     private FederationChangeResponseCode legacyCommitPendingFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
         Federation newFederation = buildFederationFromPendingFederation(currentPendingFederation);
-        handoverFromOldToNewFederation(getActiveFederation(), newFederation);
+        handoverToNewFederation(newFederation);
 
         clearPendingFederationVoting();
 
@@ -708,14 +708,14 @@ public class FederationSupportImpl implements FederationSupport {
         Federation proposedFederation = provider.getProposedFederation(constants, activations)
                 .orElseThrow(IllegalStateException::new);
 
-        handoverFromOldToNewFederation(getActiveFederation(), proposedFederation);
+        handoverToNewFederation(proposedFederation);
         clearProposedFederation();
     }
 
-    private void handoverFromOldToNewFederation(Federation oldFederation, Federation newFederation) {
+    private void handoverToNewFederation(Federation newFederation) {
         moveUTXOsFromNewToOldFederation();
 
-        setOldAndNewFederations(oldFederation, newFederation);
+        setOldAndNewFederations(getActiveFederation(), newFederation);
 
         if (activations.isActive(RSKIP186)) {
             saveLastRetiredFederationScript();
@@ -729,15 +729,17 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private void moveUTXOsFromNewToOldFederation() {
-        List<UTXO> utxosToMove = new ArrayList<>(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
+        // since the current active fed reference will change from being 'new' to 'old',
+        // we have to change the UTXOs reference to match it
+        List<UTXO> activeFederationUTXOs = new ArrayList<>(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
 
         // Clear new and old federation's UTXOs
         provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations).clear();
         List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
         oldFederationUTXOs.clear();
 
-        // Move UTXOs from the new federation into the old federation
-        oldFederationUTXOs.addAll(utxosToMove);
+        // Move UTXOs reference to the old federation
+        oldFederationUTXOs.addAll(activeFederationUTXOs);
     }
 
     /**
