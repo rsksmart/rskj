@@ -16,26 +16,115 @@ import org.ethereum.core.Transaction;
 public interface FederationSupport {
 
     Federation getActiveFederation();
+
+    /**
+     * Returns the redeemScript of the current active federation
+     *
+     * @return Returns the redeemScript of the current active federation
+     */
     Optional<Script> getActiveFederationRedeemScript();
+
+    /**
+     * Returns the active federation bitcoin address.
+     * @return the active federation bitcoin address.
+     */
     Address getActiveFederationAddress();
+
+    /**
+     * Returns the active federation's size
+     * @return the active federation size
+     */
     int getActiveFederationSize();
+
+    /**
+     * Returns the active federation's minimum required signatures
+     * @return the active federation minimum required signatures
+     */
     int getActiveFederationThreshold();
+
+    /**
+     * Returns the active federation's creation time
+     * @return the active federation creation time
+     */
     Instant getActiveFederationCreationTime();
+
+    /**
+     * Returns the active federation's creation block number
+     * @return the active federation creation block number
+     */
     long getActiveFederationCreationBlockNumber();
+
+    /**
+     * Returns the public key of the active federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @return the federator's public key
+     */
     byte[] getActiveFederatorBtcPublicKey(int index);
+
+    /**
+     * Returns the public key of given type of the active federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the federator's public key
+     */
     byte[] getActiveFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
+
     List<UTXO> getActiveFederationBtcUTXOs();
 
     void clearRetiredFederation();
 
+    /**
+     * Returns the currently retiring federation.
+     * See getRetiringFederationReference() for details.
+     * @return the retiring federation.
+     */
     @Nullable
     Federation getRetiringFederation();
+
+    /**
+     * Returns the retiring federation bitcoin address.
+     * @return the retiring federation bitcoin address, null if no retiring federation exists
+     */
     Address getRetiringFederationAddress();
+
+    /**
+     * Returns the retiring federation's size
+     * @return the retiring federation size, -1 if no retiring federation exists
+     */
     int getRetiringFederationSize();
+
+    /**
+     * Returns the retiring federation's minimum required signatures
+     * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
+     */
     int getRetiringFederationThreshold();
+
+    /**
+     * Returns the retiring federation's creation time
+     * @return the retiring federation creation time, null if no retiring federation exists
+     */
     Instant getRetiringFederationCreationTime();
+
+    /**
+     * Returns the retiring federation's creation block number
+     * @return the retiring federation creation block number,
+     * -1 if no retiring federation exists
+     */
     long getRetiringFederationCreationBlockNumber();
+
+    /**
+     * Returns the public key of the retiring federation's federator at the given index
+     * @param index the retiring federator's index (zero-based)
+     * @return the retiring federator's public key, null if no retiring federation exists
+     */
     byte[] getRetiringFederatorBtcPublicKey(int index);
+
+    /**
+     * Returns the public key of the given type of the retiring federation's federator at the given index
+     * @param index the retiring federator's index (zero-based)
+     * @param keyType the key type
+     * @return the retiring federator's public key of the given type, null if no retiring federation exists
+     */
     byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     /**
@@ -50,9 +139,31 @@ public interface FederationSupport {
     List<UTXO> getNewFederationBtcUTXOs();
     List<UTXO> getRetiringFederationBtcUTXOs();
 
+    /**
+     * Returns the currently pending federation hash, or null if none exists
+     * @return the currently pending federation hash, or null if none exists
+     */
     Keccak256 getPendingFederationHash();
+
+    /**
+     * Returns the currently pending federation size, or -1 if none exists
+     * @return the currently pending federation size, or -1 if none exists
+     */
     int getPendingFederationSize();
+
+    /**
+     * Returns the currently pending federation federator's public key at the given index, or null if none exists
+     * @param index the federator's index (zero-based)
+     * @return the pending federation's federator public key
+     */
     byte[] getPendingFederatorBtcPublicKey(int index);
+
+    /**
+     * Returns the public key of the given type of the pending federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the pending federation's federator public key of given type
+     */
     byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
 
     Optional<Federation> getProposedFederation();

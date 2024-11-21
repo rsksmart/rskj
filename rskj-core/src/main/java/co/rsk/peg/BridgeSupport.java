@@ -2289,131 +2289,65 @@ public class BridgeSupport {
         return federationSupport.getActiveFederation();
     }
 
-    /**
-     * Returns the currently retiring federation.
-     * See getRetiringFederationReference() for details.
-     * @return the retiring federation.
-     */
+
     @Nullable
     public Federation getRetiringFederation() {
         return federationSupport.getRetiringFederation();
     }
 
-    /**
-     * Returns the active federation bitcoin address.
-     * @return the active federation bitcoin address.
-     */
     public Address getActiveFederationAddress() {
         return federationSupport.getActiveFederationAddress();
     }
 
-    /**
-     * Returns the active federation's size
-     * @return the active federation size
-     */
     public Integer getActiveFederationSize() {
         return federationSupport.getActiveFederationSize();
     }
 
-    /**
-     * Returns the active federation's minimum required signatures
-     * @return the active federation minimum required signatures
-     */
     public Integer getActiveFederationThreshold() {
         return federationSupport.getActiveFederationThreshold();
     }
 
-    /**
-     * Returns the public key of the active federation's federator at the given index
-     * @param index the federator's index (zero-based)
-     * @return the federator's public key
-     */
     public byte[] getActiveFederatorBtcPublicKey(int index) {
         return federationSupport.getActiveFederatorBtcPublicKey(index);
     }
 
-    /**
-     * Returns the public key of given type of the active federation's federator at the given index
-     * @param index the federator's index (zero-based)
-     * @param keyType the key type
-     * @return the federator's public key
-     */
     public byte[] getActiveFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getActiveFederatorPublicKeyOfType(index, keyType);
     }
 
-    /**
-     * Returns the active federation's creation time
-     * @return the active federation creation time
-     */
     public Instant getActiveFederationCreationTime() {
         return federationSupport.getActiveFederationCreationTime();
     }
 
-    /**
-     * Returns the active federation's creation block number
-     * @return the active federation creation block number
-     */
     public long getActiveFederationCreationBlockNumber() {
         return federationSupport.getActiveFederationCreationBlockNumber();
     }
 
-    /**
-     * Returns the retiring federation bitcoin address.
-     * @return the retiring federation bitcoin address, null if no retiring federation exists
-     */
     public Address getRetiringFederationAddress() {
         return federationSupport.getRetiringFederationAddress();
     }
 
-    /**
-     * Returns the retiring federation's size
-     * @return the retiring federation size, -1 if no retiring federation exists
-     */
+
     public Integer getRetiringFederationSize() {
         return federationSupport.getRetiringFederationSize();
     }
 
-    /**
-     * Returns the retiring federation's minimum required signatures
-     * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
-     */
     public Integer getRetiringFederationThreshold() {
         return federationSupport.getRetiringFederationThreshold();
     }
 
-    /**
-     * Returns the public key of the retiring federation's federator at the given index
-     * @param index the retiring federator's index (zero-based)
-     * @return the retiring federator's public key, null if no retiring federation exists
-     */
     public byte[] getRetiringFederatorBtcPublicKey(int index) {
         return federationSupport.getRetiringFederatorBtcPublicKey(index);
     }
 
-    /**
-     * Returns the public key of the given type of the retiring federation's federator at the given index
-     * @param index the retiring federator's index (zero-based)
-     * @param keyType the key type
-     * @return the retiring federator's public key of the given type, null if no retiring federation exists
-     */
     public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
     }
 
-    /**
-     * Returns the retiring federation's creation time
-     * @return the retiring federation creation time, null if no retiring federation exists
-     */
     public Instant getRetiringFederationCreationTime() {
         return federationSupport.getRetiringFederationCreationTime();
     }
 
-    /**
-     * Returns the retiring federation's creation block number
-     * @return the retiring federation creation block number,
-     * -1 if no retiring federation exists
-     */
     public long getRetiringFederationCreationBlockNumber() {
         return federationSupport.getRetiringFederationCreationBlockNumber();
     }
@@ -2422,37 +2356,18 @@ public class BridgeSupport {
         return federationSupport.voteFederationChange(tx, callSpec, signatureCache, eventLogger);
     }
 
-    /**
-     * Returns the currently pending federation hash, or null if none exists
-     * @return the currently pending federation hash, or null if none exists
-     */
     public Keccak256 getPendingFederationHash() {
         return federationSupport.getPendingFederationHash();
     }
 
-    /**
-     * Returns the currently pending federation size, or -1 if none exists
-     * @return the currently pending federation size, or -1 if none exists
-     */
     public Integer getPendingFederationSize() {
         return federationSupport.getPendingFederationSize();
     }
 
-    /**
-     * Returns the currently pending federation federator's public key at the given index, or null if none exists
-     * @param index the federator's index (zero-based)
-     * @return the pending federation's federator public key
-     */
     public byte[] getPendingFederatorBtcPublicKey(int index) {
         return federationSupport.getPendingFederatorBtcPublicKey(index);
     }
 
-    /**
-     * Returns the public key of the given type of the pending federation's federator at the given index
-     * @param index the federator's index (zero-based)
-     * @param keyType the key type
-     * @return the pending federation's federator public key of given type
-     */
     public byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
@@ -2519,11 +2434,6 @@ public class BridgeSupport {
         return lockingCapSupport.getLockingCap().orElse(null);
     }
 
-    /**
-     * Returns the redeemScript of the current active federation
-     *
-     * @return Returns the redeemScript of the current active federation
-     */
     public Optional<Script> getActiveFederationRedeemScript() {
         return federationSupport.getActiveFederationRedeemScript();
     }
