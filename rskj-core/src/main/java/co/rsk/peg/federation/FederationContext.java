@@ -15,12 +15,6 @@ public class FederationContext {
         this.activeFederation = activeFederation;
     }
 
-    public FederationContext(Federation activeFederation, Federation retiringFederation, Script lastRetiredFederationP2SHScript) {
-        this.activeFederation = activeFederation;
-        this.retiringFederation = retiringFederation;
-        this.lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScript;
-    }
-
     public Federation getActiveFederation() {
         return activeFederation;
     }
