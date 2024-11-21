@@ -37,9 +37,18 @@ public interface FederationSupport {
     long getRetiringFederationCreationBlockNumber();
     byte[] getRetiringFederatorBtcPublicKey(int index);
     byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType);
-    List<UTXO> getRetiringFederationBtcUTXOs();
+
+    /**
+     * Returns the currently live federations
+     * This would be the active federation plus potentially the retiring federation
+     * @return a list of live federations
+     */
+    List<Federation> getLiveFederations();
+
+    FederationContext getFederationContext();
 
     List<UTXO> getNewFederationBtcUTXOs();
+    List<UTXO> getRetiringFederationBtcUTXOs();
 
     Keccak256 getPendingFederationHash();
     int getPendingFederationSize();
@@ -136,7 +145,6 @@ public interface FederationSupport {
         BridgeEventLogger eventLogger
     );
     long getActiveFederationCreationBlockHeight();
-    Optional<Script> getLastRetiredFederationP2SHScript();
 
     void updateFederationCreationBlockHeights();
 
