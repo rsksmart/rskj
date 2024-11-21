@@ -63,9 +63,9 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
-import co.rsk.rpc.modules.debug.trace.CallTracer;
 import co.rsk.rpc.modules.debug.trace.RskTracer;
 import co.rsk.rpc.modules.debug.trace.TraceProvider;
+import co.rsk.rpc.modules.debug.trace.call.CallTracer;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotificationEmitter;
 import co.rsk.rpc.modules.eth.subscribe.LogsNotificationEmitter;
@@ -107,6 +107,7 @@ import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.datasource.*;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImplV2;
@@ -814,13 +815,17 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     public synchronized DebugModule getDebugModule() {
         checkIfNotClosed();
-        RskTracer rskTracer = new RskTracer(getBlockStore(), getReceiptStore(),
-                 getBlockExecutor(), getWeb3InformationRetriever());
 
-        CallTracer callTracer = new CallTracer();
+        Web3InformationRetriever web3i = getWeb3InformationRetriever();
+        BlockStore bs = getBlockStore();
+        BlockExecutor be = getBlockExecutor();
+        RskTracer rskTracer = new RskTracer(bs, getReceiptStore(),
+                be, web3i);
+
+        CallTracer callTracer = new CallTracer(bs, be, web3i, getReceiptStore(), getBlockchain());
         TraceProvider traceProvider = new TraceProvider(Arrays.asList(callTracer, rskTracer));
         if (debugModule == null) {
-            debugModule = new DebugModuleImpl(traceProvider,getNodeMessageHandler(),getTxQuotaChecker());
+            debugModule = new DebugModuleImpl(traceProvider, getNodeMessageHandler(), getTxQuotaChecker());
         }
 
         return debugModule;

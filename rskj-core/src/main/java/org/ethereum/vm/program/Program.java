@@ -633,7 +633,7 @@ public class Program {
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit,
-                newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
+                newBalance, programCode, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
 
@@ -812,7 +812,6 @@ public class Program {
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
             DataWord transferValue = DataWord.valueOf(endowment.getBytes());
-
             TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
             ProgramResult result = new ProgramResult();
 

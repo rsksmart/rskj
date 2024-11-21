@@ -15,10 +15,13 @@ import java.util.Map;
 import java.util.Optional;
 
 @JsonDeserialize(using = DebugTracerParam.Deserializer.class)
-
 public class DebugTracerParam {
     private final TracerType tracerType;
     private final TraceOptions traceOptions;
+
+    public DebugTracerParam() {
+        this(null, null);
+    }
 
     public DebugTracerParam(TracerType tracerType, TraceOptions traceOptions) {
         this.tracerType = tracerType;
@@ -62,15 +65,16 @@ public class DebugTracerParam {
                     JsonNode tracerConfigNode = entry.getValue();
                     tracerConfigNode.fields().forEachRemaining(tracerConfigEntry
                             -> traceOptions.addOption(tracerConfigEntry.getKey(), tracerConfigEntry.getValue().asText()));
-                }else if("tracer".equalsIgnoreCase(entry.getKey())) {
+                } else if ("tracer".equalsIgnoreCase(entry.getKey())) {
                     tracerType = getTracerType(entry.getValue().asText());
-                }else {
+                } else {
                     traceOptions.addOption(entry.getKey(), entry.getValue().asText());
                 }
             }
             return new DebugTracerParam(tracerType, traceOptions);
         }
 
+        //TODO check how this exeption is handled
         private TracerType getTracerType(String tracerType) {
             return Optional.ofNullable(TracerType.getTracerType(tracerType)).orElseThrow(()
                     -> new IllegalArgumentException("Invalid tracer type: " + tracerType));

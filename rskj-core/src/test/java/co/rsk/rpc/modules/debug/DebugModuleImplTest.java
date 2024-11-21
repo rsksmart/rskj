@@ -96,7 +96,7 @@ class DebugModuleImplTest {
     }
 
     @Test
-    void debug_traceTransaction_retrieveUnknownTransactionAsNull() {
+    void debug_traceTransaction_retrieveUnknownTransactionAsNull() throws Exception {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
         when(receiptStoreMock.getInMainChain(hash, blockStoreMock)).thenReturn(Optional.empty());
@@ -281,7 +281,7 @@ class DebugModuleImplTest {
     void debug_traceBlockByNumber_retrieveUnknownBlockAsNull() throws Exception {
         when(web3InformationRetrieverMock.getBlock("0x1")).thenReturn(Optional.empty());
 
-        JsonNode result = mockedDebugModule.traceBlockByNumber("0x1", null);
+        JsonNode result = mockedDebugModule.traceBlockByNumber("0x1", null, null);
 
         Assertions.assertNull(result);
     }
@@ -301,7 +301,7 @@ class DebugModuleImplTest {
 
         DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, web3InformationRetrieverMock);
 
-        JsonNode result = debugModule.traceBlockByNumber(blockNumber, null);
+        JsonNode result = debugModule.traceBlockByNumber(blockNumber, null, null);
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isArray());

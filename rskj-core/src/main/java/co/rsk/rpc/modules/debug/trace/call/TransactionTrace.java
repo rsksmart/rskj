@@ -15,17 +15,27 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.modules.debug.trace;
+package co.rsk.rpc.modules.debug.trace.call;
 
-import co.rsk.rpc.modules.debug.TraceOptions;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface DebugTracer {
-    JsonNode traceTransaction(String transactionHash, TraceOptions traceOptions) throws Exception;
+public class TransactionTrace {
 
-    JsonNode traceBlockByHash(String blockHash, TraceOptions traceOptions);
+    private String txHash;
+    private TxTraceResult result;
 
-    JsonNode traceBlockByNumber(String bnOrId, TraceOptions traceOptions);
+    public TransactionTrace(String txHash, TxTraceResult result) {
+        this.txHash = txHash;
+        this.result = result;
+    }
 
-    TracerType getTracerType();
+    @JsonProperty("txHash")
+    public String getTxHash() {
+        return txHash;
+    }
+
+    @JsonProperty("result")
+    public TxTraceResult getResult() {
+        return result;
+    }
 }

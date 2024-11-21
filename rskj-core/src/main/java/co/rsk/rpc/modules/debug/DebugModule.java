@@ -22,8 +22,6 @@ import co.rsk.net.handler.quota.TxQuota;
 import co.rsk.rpc.modules.debug.trace.TracerType;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Map;
-
 public interface DebugModule {
 
     String wireProtocolQueueSize();
@@ -35,9 +33,7 @@ public interface DebugModule {
     JsonNode traceBlockByHash(String blockHash, TraceOptions traceOptions, TracerType tracerType) throws Exception;
     JsonNode traceBlockByHash(String blockHash) throws Exception;
 
-    JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception;
-
-    JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions, TracerType tracerType) throws Exception;
+    JsonNode traceBlockByNumber(String bnOrId, TraceOptions traceOptions, TracerType tracerType) throws Exception;
 
     TxQuota accountTransactionQuota(String address);
 }

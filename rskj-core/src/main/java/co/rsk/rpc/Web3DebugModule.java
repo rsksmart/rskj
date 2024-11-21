@@ -23,8 +23,6 @@ import co.rsk.rpc.modules.debug.DebugModule;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.rpc.parameters.DebugTracerParam;
 
-import java.util.Map;
-
 @java.lang.SuppressWarnings("squid:S100")
 public interface Web3DebugModule {
 
@@ -49,11 +47,12 @@ public interface Web3DebugModule {
     }
 
     default JsonNode debug_traceBlockByNumber(String bnOrId) throws Exception {
-        return debug_traceBlockByNumber(bnOrId, null);
+
+        return debug_traceBlockByNumber(bnOrId, new DebugTracerParam());
     }
 
-    default JsonNode debug_traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception {
-        return getDebugModule().traceBlockByNumber(bnOrId, traceOptions);
+    default JsonNode debug_traceBlockByNumber(String bnOrId, DebugTracerParam debugTracerParam) throws Exception {
+        return getDebugModule().traceBlockByNumber(bnOrId, debugTracerParam.getTraceOptions(), debugTracerParam.getTracerType());
     }
 
     default TxQuota debug_accountTransactionQuota(String address) {

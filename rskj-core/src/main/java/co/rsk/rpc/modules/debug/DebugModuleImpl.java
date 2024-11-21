@@ -31,9 +31,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Optional;
-
 public class DebugModuleImpl implements DebugModule {
     //this could be configurable
     public static final TracerType DEFAULT_TRACER_TYPE = TracerType.RSK_TRACER;
@@ -57,39 +54,43 @@ public class DebugModuleImpl implements DebugModule {
 
     @Override
     public TxQuota accountTransactionQuota(String address) {
-        logger.trace("debug_accountTransactionQuota({})", StringUtils.trim(address));
+        if (logger.isTraceEnabled()) {
+            logger.trace("debug_accountTransactionQuota({})", StringUtils.trim(address));
+        }
         RskAddress rskAddress = new RskAddress(address);
         return txQuotaChecker.getTxQuota(rskAddress);
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash) {
+    public JsonNode traceTransaction(String transactionHash) throws Exception {
         return traceTransaction(transactionHash, new TraceOptions(), null);
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash, TraceOptions traceOptions, TracerType tracerType) {
-        if (tracerType == null) {
-            tracerType = DEFAULT_TRACER_TYPE;
-        }
+    public JsonNode traceTransaction(String transactionHash, TraceOptions traceOptions, TracerType tracerType) throws Exception {
+        TracerType type = getTracerTypeOrDefault(tracerType);
+
         if (traceOptions == null) {
             traceOptions = new TraceOptions();
         }
-        DebugTracer tracer = traceProvider.getTracer(tracerType);
-        logger.trace("debug_traceTransaction for txHash: {}", StringUtils.trim(transactionHash));
+        DebugTracer tracer = traceProvider.getTracer(type);
+        if (logger.isTraceEnabled()) {
+            logger.trace("debug_traceTransaction for txHash: {}", StringUtils.trim(transactionHash));
+        }
         return tracer.traceTransaction(transactionHash, traceOptions);
     }
 
     @Override
     public JsonNode traceBlockByHash(String blockHash, TraceOptions traceOptions, TracerType tracerType) {
-        if (tracerType == null) {
-            tracerType = DEFAULT_TRACER_TYPE;
-        }
+        TracerType type = getTracerTypeOrDefault(tracerType);
+
         if (traceOptions == null) {
             traceOptions = new TraceOptions();
         }
-        logger.trace("debug_traceBlockByHash for blockHash: {}", StringUtils.trim(blockHash));
-        DebugTracer tracer = traceProvider.getTracer(tracerType);
+        if (logger.isTraceEnabled()) {
+            logger.trace("debug_traceBlockByHash for blockHash: {}", StringUtils.trim(blockHash));
+        }
+        DebugTracer tracer = traceProvider.getTracer(type);
         return tracer.traceBlockByHash(blockHash, traceOptions);
     }
 
@@ -100,35 +101,23 @@ public class DebugModuleImpl implements DebugModule {
 
 
     @Override
-    public JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception {
-        return traceBlockByNumber(bnOrId, traceOptions, DEFAULT_TRACER_TYPE);
-    }
-
-    @Override
-    public JsonNode traceBlockByNumber(String bnOrId, Map<String, String> traceOptions, TracerType tracerType) throws Exception {
-        logger.trace("debug_traceBlockByNumber for bnOrId: {}", StringUtils.trim(bnOrId));
-        DebugTracer tracer = traceProvider.getTracer(tracerType);
-        TraceOptions options = toTraceOptions(traceOptions);
-        return tracer.traceBlockByNumber(bnOrId, options);
-    }
-
-    private TraceOptions toTraceOptions(Map<String, String> traceOptions) {
-        TraceOptions options = new TraceOptions(traceOptions);
-
-        if (!options.getUnsupportedOptions().isEmpty()) {
-            // TODO: implement the logic that takes into account the remaining trace options.
-            logger.warn("Received {} unsupported trace options", options.getUnsupportedOptions().size());
+    public JsonNode traceBlockByNumber(String bnOrId, TraceOptions traceOptions, TracerType tracerType) throws Exception {
+        TracerType type = getTracerTypeOrDefault(tracerType);
+        if (traceOptions == null) {
+            traceOptions = new TraceOptions();
         }
-
-        return options;
-    }
-
-    private TracerType getTracerType(Map<String, String> options) {
-        if (options.containsKey("tracer")) {
-            Optional.ofNullable(TracerType.getTracerType(options.get("tracer")))
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid tracer type: " + options.get("tracer")));
+        if (logger.isTraceEnabled()) {
+            logger.trace("debug_traceBlockByNumber for bnOrId: {}", StringUtils.trim(bnOrId));
         }
-        return DEFAULT_TRACER_TYPE;
+        DebugTracer tracer = traceProvider.getTracer(type);
+        return tracer.traceBlockByNumber(bnOrId, traceOptions);
     }
 
+    private TracerType getTracerTypeOrDefault(TracerType tracerType) {
+        //TODO review about this default tracer logic
+        if (tracerType == null) {
+            return DEFAULT_TRACER_TYPE;
+        }
+        return tracerType;
+    }
 }
