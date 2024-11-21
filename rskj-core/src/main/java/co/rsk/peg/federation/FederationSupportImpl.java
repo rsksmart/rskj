@@ -181,13 +181,13 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     @Nullable
     public Federation getRetiringFederation() {
-        switch (getRetiringFederationReference()) {
-            case OLD:
-                return provider.getOldFederation(constants, activations);
-            case NONE:
-            default:
-                return null;
+        StorageFederationReference retiringFederationReference = getRetiringFederationReference();
+
+        if (retiringFederationReference == StorageFederationReference.OLD) {
+            return provider.getOldFederation(constants, activations);
         }
+
+        return null; // TODO Make this method Optional to avoid returning null
     }
 
     /**
@@ -296,6 +296,32 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     @Override
+    public List<Federation> getLiveFederations() {
+        return getFederationContext().getLiveFederations();
+    }
+
+    @Override
+    public FederationContext getFederationContext() {
+        Federation activeFederation = getActiveFederation();
+        Federation retiringFederation = getRetiringFederation();
+        Optional<Script> lastRetiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript(activations);
+
+        FederationContext federationContext = new FederationContext(activeFederation);
+
+        if (retiringFederation != null) {
+            federationContext.setRetiringFederation(retiringFederation);
+        }
+        lastRetiredFederationP2SHScript.ifPresent(federationContext::setLastRetiredFederationP2SHScript);
+
+        return federationContext;
+    }
+
+    @Override
+    public List<UTXO> getNewFederationBtcUTXOs() {
+        return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
+    }
+
+    @Override
     public List<UTXO> getRetiringFederationBtcUTXOs() {
         switch (getRetiringFederationReference()) {
             case OLD:
@@ -304,11 +330,6 @@ public class FederationSupportImpl implements FederationSupport {
             default:
                 return Collections.emptyList();
         }
-    }
-
-    @Override
-    public List<UTXO> getNewFederationBtcUTXOs() {
-        return provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations);
     }
 
     @Nullable
@@ -859,11 +880,6 @@ public class FederationSupportImpl implements FederationSupport {
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
-    }
-
-    @Override
-    public Optional<Script> getLastRetiredFederationP2SHScript() {
-        return provider.getLastRetiredFederationP2SHScript(activations);
     }
 
     @Override

@@ -340,7 +340,13 @@ public class BridgeSupport {
      *
      */
     public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFlyoverCompatible) {
-        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos, isFlyoverCompatible, provider);
+        return BridgeUtils.getFederationsSpendWallet(
+            btcContext,
+            federationSupport.getLiveFederations(),
+            utxos,
+            isFlyoverCompatible,
+            provider
+        );
     }
 
     /**
@@ -349,7 +355,12 @@ public class BridgeSupport {
      *
      */
     public Wallet getNoSpendWalletForLiveFederations(boolean isFlyoverCompatible) {
-        return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations(), isFlyoverCompatible, provider);
+        return BridgeUtils.getFederationsNoSpendWallet(
+            btcContext,
+            federationSupport.getLiveFederations(),
+            isFlyoverCompatible,
+            provider
+        );
     }
 
     /**
@@ -399,13 +410,12 @@ public class BridgeSupport {
                 return;
             }
 
+            FederationContext federationContext = federationSupport.getFederationContext();
             PegTxType pegTxType = PegUtils.getTransactionType(
                 activations,
                 provider,
                 bridgeConstants,
-                getActiveFederation(),
-                getRetiringFederation(),
-                getLastRetiredFederationP2SHScript(),
+                federationContext,
                 btcTx,
                 height
             );
@@ -470,10 +480,6 @@ public class BridgeSupport {
     private void processSvpSuccess() {
         provider.setSvpSpendTxHashUnsigned(null);
         federationSupport.commitProposedFederation();
-    }
-
-    private Script getLastRetiredFederationP2SHScript() {
-        return federationSupport.getLastRetiredFederationP2SHScript().orElse(null);
     }
 
     @VisibleForTesting
@@ -2412,22 +2418,6 @@ public class BridgeSupport {
         return federationSupport.getRetiringFederationCreationBlockNumber();
     }
 
-    /**
-     * Returns the currently live federations
-     * This would be the active federation plus
-     * potentially the retiring federation
-     * @return a list of live federations
-     */
-    private List<Federation> getLiveFederations() {
-        List<Federation> liveFederations = new ArrayList<>();
-        liveFederations.add(getActiveFederation());
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation != null) {
-            liveFederations.add(retiringFederation);
-        }
-        return liveFederations;
-    }
-
     public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         return federationSupport.voteFederationChange(tx, callSpec, signatureCache, eventLogger);
     }
@@ -2935,10 +2925,15 @@ public class BridgeSupport {
     }
 
     protected Wallet getFlyoverWallet(Context btcContext, List<UTXO> utxos, List<FlyoverFederationInformation> fbFederations) {
-        Wallet wallet = new FlyoverCompatibleBtcWalletWithMultipleScripts(btcContext, getLiveFederations(), fbFederations);
+        Wallet wallet = new FlyoverCompatibleBtcWalletWithMultipleScripts(
+            btcContext,
+            federationSupport.getLiveFederations(),
+            fbFederations
+        );
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
+
         return wallet;
     }
 

@@ -15,11 +15,11 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationContext;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -89,17 +89,11 @@ public class PegUtils {
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         BridgeConstants bridgeConstants,
-        Federation activeFederation,
-        Federation retiringFederation,
-        Script retiredFederationP2SHScript,
+        FederationContext federationContext,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
-        List<Federation> liveFeds = new ArrayList<>();
-        liveFeds.add(activeFederation);
-        if (retiringFederation != null){
-            liveFeds.add(retiringFederation);
-        }
+        List<Federation> liveFeds = federationContext.getLiveFederations();
         Context context = Context.getOrCreate(bridgeConstants.getBtcParams());
         Wallet liveFederationsWallet = new BridgeBtcWallet(context, liveFeds);
 
@@ -126,9 +120,7 @@ public class PegUtils {
 
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,
-                activeFederation,
-                retiringFederation,
-                retiredFederationP2SHScript,
+                federationContext,
                 oldFederationAddress,
                 activations,
                 minimumPeginTxValue,
