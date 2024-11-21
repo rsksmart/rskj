@@ -455,10 +455,10 @@ public class BridgeSupport {
 
     private boolean isTheSvpSpendTransaction(BtcTransaction transaction) {
         return provider.getSvpSpendTxHashUnsigned()
-            .map(svpSpendTransactionHashUnsigned ->
+            .filter(svpSpendTransactionHashUnsigned ->
                 getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpSpendTransactionHashUnsigned)
             )
-            .orElse(false);
+            .isPresent();
     }
 
     private void registerSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
