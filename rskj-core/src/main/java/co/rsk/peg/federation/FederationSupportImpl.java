@@ -183,11 +183,11 @@ public class FederationSupportImpl implements FederationSupport {
     public Federation getRetiringFederation() {
         StorageFederationReference retiringFederationReference = getRetiringFederationReference();
 
-        if (retiringFederationReference == StorageFederationReference.OLD) {
-            return provider.getOldFederation(constants, activations);
+        if (retiringFederationReference != StorageFederationReference.OLD) {
+            return null; // TODO Make this method Optional to avoid returning null
         }
 
-        return null; // TODO Make this method Optional to avoid returning null
+        return provider.getOldFederation(constants, activations);
     }
 
     /**
