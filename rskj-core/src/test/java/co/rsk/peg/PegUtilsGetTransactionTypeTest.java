@@ -1,8 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.PegTestUtils.createBech32Output;
-import static co.rsk.peg.PegTestUtils.createFederation;
+import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -195,13 +193,19 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(shouldSendAmountBelowMinimum? belowMinimumPeginTxValue: minimumPeginTxValue, userAddress);
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            null,
+            lastRetiredFederationP2SHScript
+        );
+        if (existsRetiringFederation) {
+            federationContext.setRetiringFederation(retiringFederation);
+        }
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            existsRetiringFederation? retiringFederation: null,
-            lastRetiredFederationP2SHScript,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -251,13 +255,12 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -288,13 +291,12 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(unknownFed, signers, btcTransaction);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -327,13 +329,12 @@ class PegUtilsGetTransactionTypeTest {
         FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, btcTransaction);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -354,13 +355,12 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -384,13 +384,12 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -414,13 +413,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -471,13 +469,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -500,13 +497,16 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.COIN, BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "unknown2"));
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -527,13 +527,16 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -580,13 +583,16 @@ class PegUtilsGetTransactionTypeTest {
         Script lastRetiredFederationP2SHScript = retiredFed.getP2SHScript();
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            null,
+            lastRetiredFederationP2SHScript
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            lastRetiredFederationP2SHScript,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -610,13 +616,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -639,13 +648,16 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.COIN, retiringFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -670,13 +682,16 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(Coin.COIN, userAddress);
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -696,13 +711,12 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(minimumPeginTxValue.minus(Coin.SATOSHI), activeFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -723,13 +737,12 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addOutput(minimumPeginTxValue, new Script(new byte[]{}) );
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             fingerrootActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             anyToAnyTx,
             1
         );
@@ -750,13 +763,12 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             fingerrootActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             anyToAnyTx,
             1
         );
@@ -777,13 +789,12 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addOutput(minimumPeginTxValue, new Script(new byte[]{}) );
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             arrowheadActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             anyToAnyTx,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -804,13 +815,12 @@ class PegUtilsGetTransactionTypeTest {
         anyToAnyTx.addOutput(belowMinimum, new Script(new byte[]{}));
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             arrowheadActivations,
             mock(BridgeStorageProvider.class),
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             anyToAnyTx,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -860,13 +870,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -895,13 +904,12 @@ class PegUtilsGetTransactionTypeTest {
         peginTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -944,13 +952,12 @@ class PegUtilsGetTransactionTypeTest {
         peginTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -973,13 +980,12 @@ class PegUtilsGetTransactionTypeTest {
         peginTx.addOutput(minimumPeginTxValue, activeFederation.getAddress());
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             peginTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1039,13 +1045,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1067,13 +1072,12 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -1129,13 +1133,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1189,13 +1192,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1236,13 +1238,12 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1265,13 +1266,12 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -1305,13 +1305,16 @@ class PegUtilsGetTransactionTypeTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -1336,13 +1339,16 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -1373,13 +1379,12 @@ class PegUtilsGetTransactionTypeTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash)).thenReturn(true);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             btcTransaction,
             heightAtWhichToStartUsingPegoutIndex
         );
@@ -1459,13 +1464,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1521,13 +1529,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1569,13 +1580,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1725,13 +1739,19 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(shouldSendAmountBelowMinimum? belowMinimumPeginTxValue: minimumPeginTxValue, flyoverFederationAddress);
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            null,
+            lastRetiredFederationP2SHScript
+        );
+        if (existsRetiringFederation) {
+            federationContext.setRetiringFederation(retiringFederation);
+        }
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            existsRetiringFederation? retiringFederation: null,
-            lastRetiredFederationP2SHScript,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1786,13 +1806,19 @@ class PegUtilsGetTransactionTypeTest {
         btcTransaction.addOutput(createBech32Output(bridgeMainnetConstants.getBtcParams(), minimumPeginTxValue));
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            null,
+            lastRetiredFederationP2SHScript
+        );
+        if (existsRetiringFederation) {
+            federationContext.setRetiringFederation(retiringFederation);
+        }
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            existsRetiringFederation ? retiringFederation : null,
-            lastRetiredFederationP2SHScript,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1880,13 +1906,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             migrationTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -1960,13 +1989,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             migrationTx,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -2041,13 +2073,16 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType pegTxType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            retiringFederation,
-            null,
+            federationContext,
             btcTransaction,
             shouldUsePegoutTxIndex? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -2116,13 +2151,16 @@ class PegUtilsGetTransactionTypeTest {
         assertTrue(PegUtilsLegacy.txIsFromOldFederation(migrationTx, oldFederation.getAddress()));
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            retiringFederation,
+            null
+        );
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeRegTestConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             migrationTx,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -2183,13 +2221,16 @@ class PegUtilsGetTransactionTypeTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
         // Act
+        FederationContext federationContext = new FederationContext(
+            activeFederation,
+            null,
+            lastRetiredFederationP2SHScript
+        );
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            lastRetiredFederationP2SHScript,
+            federationContext,
             migrationTx,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
@@ -2252,13 +2293,12 @@ class PegUtilsGetTransactionTypeTest {
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtils.getTransactionType(
             activations,
             provider,
             bridgeMainnetConstants,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             migrationTx,
             shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 0
         );
