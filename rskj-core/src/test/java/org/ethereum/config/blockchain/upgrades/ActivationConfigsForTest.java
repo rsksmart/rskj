@@ -178,6 +178,7 @@ public class ActivationConfigsForTest {
         return new ArrayList<>(Arrays.asList(
             ConsensusRule.RSKIP427,
             ConsensusRule.RSKIP428,
+            ConsensusRule.RSKIP438,
             ConsensusRule.RSKIP454
         ));
     }
