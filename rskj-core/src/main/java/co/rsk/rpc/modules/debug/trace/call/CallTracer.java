@@ -40,6 +40,7 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,11 +66,8 @@ public class CallTracer implements DebugTracer {
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash, TraceOptions traceOptions) throws Exception {
+    public JsonNode traceTransaction(@Nonnull String transactionHash, @Nonnull TraceOptions traceOptions) throws Exception {
         logger.trace("trace_transaction({})", transactionHash);
-        if (traceOptions != null) {
-            logger.warn("Trace Options not supported yet");
-        }
 
         byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore).orElse(null);
@@ -95,7 +93,7 @@ public class CallTracer implements DebugTracer {
             return null;
         }
 
-        TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null);
+        TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, traceOptions.isOnlyTopCall());
         return OBJECT_MAPPER.valueToTree(trace.getResult());
     }
 
@@ -113,7 +111,7 @@ public class CallTracer implements DebugTracer {
     }
 
     @Override
-    public JsonNode traceBlockByNumber(String bnOrId, TraceOptions traceOptions) {
+    public JsonNode traceBlockByNumber(@Nonnull String bnOrId, @Nonnull TraceOptions traceOptions) {
         Block block = web3InformationRetriever.getBlock(bnOrId).orElse(null);
         if (block == null) {
             if (logger.isTraceEnabled()) {
@@ -134,11 +132,11 @@ public class CallTracer implements DebugTracer {
         if (traceOptions != null) {
             logger.warn("Trace Options not supported yet");
         }
-        List<TransactionTrace> result = buildBlockTraces(block);
+        List<TransactionTrace> result = buildBlockTraces(block, traceOptions.isOnlyTopCall());
         return OBJECT_MAPPER.valueToTree(result);
     }
 
-    private List<TransactionTrace> buildBlockTraces(Block block) {
+    private List<TransactionTrace> buildBlockTraces(Block block, boolean onlyTopCall) {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block != null && block.getNumber() != 0) {
@@ -163,7 +161,7 @@ public class CallTracer implements DebugTracer {
                     return Collections.emptyList();
                 }
 
-                TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null);
+                TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, onlyTopCall);
 
                 blockTraces.add(trace);
             }

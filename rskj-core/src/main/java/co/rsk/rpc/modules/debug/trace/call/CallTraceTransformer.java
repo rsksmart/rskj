@@ -39,7 +39,7 @@ public class CallTraceTransformer {
     private CallTraceTransformer() {
     }
 
-    public static TransactionTrace toTrace(SummarizedProgramTrace trace, TransactionInfo txInfo, DataWord codeAddress) {
+    public static TransactionTrace toTrace(SummarizedProgramTrace trace, TransactionInfo txInfo, DataWord codeAddress, boolean onlyTopCall) {
         boolean isContractCreation = txInfo.getReceipt().getTransaction().isContractCreation();
         CallType callType = isContractCreation ? CallType.NONE : CallType.CALL;
 
@@ -65,9 +65,12 @@ public class CallTraceTransformer {
         }
 
         TxTraceResult traceOutput = toTrace(traceType, callType, invoke, codeAddress, programResult, creationData);
-        for (ProgramSubtrace subtrace : trace.getSubtraces()) {
-            traceOutput.addCall(toTrace(subtrace));
+        if(!onlyTopCall) {
+            for (ProgramSubtrace subtrace : trace.getSubtraces()) {
+                traceOutput.addCall(toTrace(subtrace));
+            }
         }
+
         return new TransactionTrace(txInfo.getReceipt().getTransaction().getHash().toHexString(), traceOutput);
     }
 
