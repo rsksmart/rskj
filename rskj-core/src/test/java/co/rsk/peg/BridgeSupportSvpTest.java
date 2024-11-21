@@ -963,8 +963,9 @@ public class BridgeSupportSvpTest {
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
 
-            // act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
             bridgeSupport.registerBtcTransaction(
                 rskTx,
                 svpSpendTransaction.bitcoinSerialize(),
@@ -974,9 +975,14 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
+            // tx was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+
+            // svp success was not processed
             assertSvpSpendTxHashUnsignedIsSavedInStorage();
+            assertNoHandoverToNewFederation();
+            assertProposedFederation();
         }
 
         @Test
@@ -990,8 +996,9 @@ public class BridgeSupportSvpTest {
             signInputs(pegout);
             setUpForTransactionRegistration(pegout);
 
-            // act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
             bridgeSupport.registerBtcTransaction(
                 rskTx,
                 pegout.bitcoinSerialize(),
@@ -1001,9 +1008,16 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
+            // pegout was registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertTransactionWasProcessed(pegout.getHash());
+            // but spend tx was not
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+
+            // svp success was not processed
             assertSvpSpendTxHashUnsignedIsSavedInStorage();
+            assertNoHandoverToNewFederation();
+            assertProposedFederation();
         }
 
         @Test
@@ -1012,8 +1026,9 @@ public class BridgeSupportSvpTest {
             recreateSvpSpendTransactionUnsigned();
             setUpForTransactionRegistration(svpSpendTransaction);
 
-            // act
             int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
             bridgeSupport.registerBtcTransaction(
                 rskTx,
                 svpSpendTransaction.bitcoinSerialize(),
@@ -1023,8 +1038,17 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
+            // spend tx was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+
+            // svp success was not processed
+            assertNoHandoverToNewFederation();
+            assertProposedFederation();
+        }
+
+        private void assertProposedFederation() {
+            assertTrue(federationSupport.getProposedFederation().isPresent());
         }
 
         @Test
@@ -1033,8 +1057,9 @@ public class BridgeSupportSvpTest {
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
 
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
             // act
-            List<UTXO> activeFedUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
             bridgeSupport.registerBtcTransaction(
                 rskTx,
                 svpSpendTransaction.bitcoinSerialize(),
@@ -1045,17 +1070,12 @@ public class BridgeSupportSvpTest {
 
             // assert
             // tx registration
-            assertActiveFederationUtxosSize(activeFedUtxosBeforeRegisteringTx.size() + 1);
+            assertActiveFederationUtxosSize(activeFederationUtxosBeforeRegisteringTx.size() + 1);
             assertTransactionWasProcessed(svpSpendTransaction.getHash());
-            assertNoSvpSpendTxHash();
 
             // svp success
+            assertNoSvpSpendTxHash();
             assertNoProposedFederation();
-
-            assertNewActiveFederationCreationBlockHeightWasSet();
-            assertLastRetiredFederationScriptWasSet();
-
-            assertNewAndOldFederationsWereSet();
 
             int outputSentToActiveFedIndex = 0;
             TransactionOutput spendTxOutputSentToActiveFed = svpSpendTransaction.getOutput(outputSentToActiveFedIndex);
@@ -1067,21 +1087,43 @@ public class BridgeSupportSvpTest {
                 svpSpendTransaction.isCoinBase(),
                 spendTxOutputSentToActiveFed.getScriptPubKey()
             );
-            activeFedUtxosBeforeRegisteringTx.add(utxoSentToActiveFederation);
-            assertUTXOsWereMovedFromNewToOldFederation(activeFedUtxosBeforeRegisteringTx);
+            activeFederationUtxosBeforeRegisteringTx.add(utxoSentToActiveFederation);
+
+            assertHandoverToNewFederation(activeFederationUtxosBeforeRegisteringTx);
         }
 
-        private void assertNewActiveFederationCreationBlockHeightWasSet() {
-            Optional<Long> nextFederationCreationBlockHeight = federationStorageProvider.getNextFederationCreationBlockHeight(allActivations);
-            assertTrue(nextFederationCreationBlockHeight.isPresent());
-            assertEquals(proposedFederation.getCreationBlockNumber(), nextFederationCreationBlockHeight.get());
+        private void assertHandoverToNewFederation(List<UTXO> utxosToMove) {
+            assertUTXOsWereMovedFromNewToOldFederation(utxosToMove);
+            assertNewAndOldFederationsWereSet();
+            assertLastRetiredFederationScriptWasSet();
+            assertNewActiveFederationCreationBlockHeightWasSet();
         }
 
-        private void assertLastRetiredFederationScriptWasSet() {
-            Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(allActivations, federationSupport.getActiveFederation());
-            Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations);
-            assertTrue(lastRetiredFederationP2SHScript.isPresent());
-            assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
+        private void assertNoHandoverToNewFederation() {
+            assertUTXOsWereNotMovedToOldFederation();
+            assertNewAndOldFederationsWereNotSet();
+            assertLastRetiredFederationScriptWasNotSet();
+            assertNewActiveFederationCreationBlockHeightWasNotSet();
+        }
+
+        private void assertUTXOsWereMovedFromNewToOldFederation(List<UTXO> utxosToMove) {
+            // assert utxos were moved from new federation to old federation
+            List<UTXO> oldFederationUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
+            assertEquals(utxosToMove, oldFederationUTXOs);
+
+            // assert new federation utxos were cleaned
+            List<UTXO> newFederationUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, allActivations);
+            assertTrue(newFederationUTXOs.isEmpty());
+        }
+
+        private void assertUTXOsWereNotMovedToOldFederation() {
+            // assert old federation utxos are still empty
+            List<UTXO> oldFederationUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
+            assertTrue(oldFederationUTXOs.isEmpty());
+
+            // assert new federation utxos are not empty
+            List<UTXO> newFederationUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, allActivations);
+            assertFalse(newFederationUTXOs.isEmpty());
         }
 
         private void assertNewAndOldFederationsWereSet() {
@@ -1094,14 +1136,37 @@ public class BridgeSupportSvpTest {
             assertEquals(proposedFederation, newFederation);
         }
 
-        private void assertUTXOsWereMovedFromNewToOldFederation(List<UTXO> utxosToMove) {
-            // assert utxos were moved from new federation to old federation
-            List<UTXO> oldFederationUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
-            assertEquals(utxosToMove, oldFederationUTXOs);
+        private void assertNewAndOldFederationsWereNotSet() {
+            // assert old federation is still null
+            Federation oldFederation = federationStorageProvider.getOldFederation(federationMainNetConstants, allActivations);
+            assertNull(oldFederation);
 
-            // assert new federation utxos were cleaned
-            List<UTXO> newFederationUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(btcMainnetParams, allActivations);
-            assertTrue(newFederationUTXOs.isEmpty());
+            // assert new federation is still the active federation
+            Federation newFederation = federationStorageProvider.getNewFederation(federationMainNetConstants, allActivations);
+            assertEquals(activeFederation, newFederation);
+        }
+
+        private void assertLastRetiredFederationScriptWasSet() {
+            Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(allActivations, federationSupport.getActiveFederation());
+            Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations);
+            assertTrue(lastRetiredFederationP2SHScript.isPresent());
+            assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
+        }
+
+        private void assertLastRetiredFederationScriptWasNotSet() {
+            Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations);
+            assertFalse(lastRetiredFederationP2SHScript.isPresent());
+        }
+
+        private void assertNewActiveFederationCreationBlockHeightWasSet() {
+            Optional<Long> nextFederationCreationBlockHeight = federationStorageProvider.getNextFederationCreationBlockHeight(allActivations);
+            assertTrue(nextFederationCreationBlockHeight.isPresent());
+            assertEquals(proposedFederation.getCreationBlockNumber(), nextFederationCreationBlockHeight.get());
+        }
+
+        private void assertNewActiveFederationCreationBlockHeightWasNotSet() {
+            Optional<Long> nextFederationCreationBlockHeight = federationStorageProvider.getNextFederationCreationBlockHeight(allActivations);
+            assertFalse(nextFederationCreationBlockHeight.isPresent());
         }
     }
 
