@@ -1293,27 +1293,21 @@ class PegUtilsLegacyTest {
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
-        FederationContext federationContextWithP2shScript = new FederationContext(
-            activeFederation,
-            null,
-            retiredFederation.getP2SHScript()
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
+
         assertFalse(isMigrationTx(
             migrationTx,
-            federationContextWithP2shScript,
+            federationContext,
             federationWallet,
             bridgeConstantsMainnet.getMinimumPeginTxValue(activations),
             activations
         ));
 
-        FederationContext federationContextWithDefaultP2shScript = new FederationContext(
-            activeFederation,
-            null,
-            retiredFederation.getDefaultP2SHScript()
-        );
+        federationContext.setLastRetiredFederationP2SHScript(retiredFederation.getDefaultP2SHScript());
         assertTrue(isMigrationTx(
             migrationTx,
-            federationContextWithDefaultP2shScript,
+            federationContext,
             federationWallet,
             bridgeConstantsMainnet.getMinimumPeginTxValue(activations),
             activations
@@ -1362,11 +1356,8 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFedKeys, migrationTxInput, migrationTx);
 
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
 
         assertTrue(isMigrationTx(
@@ -1429,13 +1420,10 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
 
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            null,
-            retiredFederation.getP2SHScript()
-        );
         assertTrue(isMigrationTx(
             migrationTx,
             federationContext,
@@ -1488,11 +1476,9 @@ class PegUtilsLegacyTest {
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
+
         assertTrue(isMigrationTx(
             migrationTx,
             federationContext,
@@ -1549,12 +1535,9 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            null,
-            retiredFederation.getP2SHScript()
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
 
         assertTrue(isMigrationTx(
             migrationTx,
@@ -1613,11 +1596,8 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
 
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
 
         assertTrue(isMigrationTx(
@@ -1688,11 +1668,8 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
 
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
 
         assertTrue(isMigrationTx(
