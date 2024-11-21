@@ -102,18 +102,16 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            p2shRetiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(p2shRetiringFederation);
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
             federationContext,
             oldFederationAddress,
             activations,
             minimumPeginTxValue,
-            new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, p2shRetiringFederation))
+            new BridgeBtcWallet(btcContext, federationContext.getLiveFederations())
         );
 
         // Assert
@@ -368,11 +366,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         peginTx.addOutput(amountToSend, activeFederation.getAddress());
 
         // Act
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            retiredFederationP2SHScript
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
+        federationContext.setLastRetiredFederationP2SHScript(retiredFederationP2SHScript);
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             peginTx,
             federationContext,
@@ -456,18 +453,16 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
             federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
-            new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, retiringFederation))
+            new BridgeBtcWallet(btcContext, federationContext.getLiveFederations())
         );
 
         // Assert
@@ -508,18 +503,16 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
             federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
-            new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, retiringFederation))
+            new BridgeBtcWallet(btcContext, federationContext.getLiveFederations())
         );
 
         // Assert
@@ -550,18 +543,16 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(
-            activeFederation,
-            retiringFederation,
-            null
-        );
+        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext.setRetiringFederation(retiringFederation);
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
             federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
-            new BridgeBtcWallet(btcContext, Arrays.asList(activeFederation, retiringFederation))
+            new BridgeBtcWallet(btcContext, federationContext.getLiveFederations())
         );
 
         // Assert
