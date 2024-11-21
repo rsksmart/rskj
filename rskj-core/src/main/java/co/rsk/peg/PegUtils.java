@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.getMultiSigTransactionHashWithoutSignatures;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -116,6 +117,14 @@ public class PegUtils {
             );
         }
 
+        // Check first if the transaction is part of an SVP process
+        if (isTheSvpFundTransaction(bridgeConstants.getBtcParams(), provider, btcTransaction)) {
+            return PegTxType.SVP_FUND_TX;
+        }
+        if (isTheSvpSpendTransaction(bridgeConstants.getBtcParams(), provider, btcTransaction)) {
+            return PegTxType.SVP_SPEND_TX;
+        }
+
         return getTransactionTypeUsingPegoutIndex(
             activations,
             provider,
@@ -134,6 +143,30 @@ public class PegUtils {
         int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
         return activations.isActive(ConsensusRule.RSKIP379) &&
             btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
+    }
+
+    private static boolean isTheSvpFundTransaction(
+        NetworkParameters networkParameters,
+        BridgeStorageProvider provider,
+        BtcTransaction transaction
+    ) {
+        return provider.getSvpFundTxHashUnsigned()
+            .filter(svpFundTransactionHashUnsigned ->
+                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpFundTransactionHashUnsigned)
+            )
+            .isPresent();
+    }
+
+    private static boolean isTheSvpSpendTransaction(
+        NetworkParameters networkParameters,
+        BridgeStorageProvider provider,
+        BtcTransaction transaction
+    ) {
+        return provider.getSvpSpendTxHashUnsigned()
+            .filter(svpSpendTransactionHashUnsigned ->
+                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpSpendTransactionHashUnsigned)
+            )
+            .isPresent();
     }
 
     static PeginEvaluationResult evaluatePegin(

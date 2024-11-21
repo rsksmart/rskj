@@ -447,14 +447,6 @@ public class BridgeSupport {
         }
     }
 
-    private boolean isTheSvpFundTransaction(BtcTransaction transaction) {
-        return provider.getSvpFundTxHashUnsigned()
-            .map(svpFundTransactionHashUnsigned ->
-                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpFundTransactionHashUnsigned)
-            )
-            .orElse(false);
-    }
-
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
         logger.debug(
             "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
@@ -462,14 +454,6 @@ public class BridgeSupport {
 
         provider.setSvpFundTxSigned(transaction);
         provider.setSvpFundTxHashUnsigned(null);
-    }
-
-    private boolean isTheSvpSpendTransaction(BtcTransaction transaction) {
-        return provider.getSvpSpendTxHashUnsigned()
-            .filter(svpSpendTransactionHashUnsigned ->
-                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpSpendTransactionHashUnsigned)
-            )
-            .isPresent();
     }
 
     private void registerSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
