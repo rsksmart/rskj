@@ -3046,6 +3046,10 @@ class BridgeSupportFlyoverTest {
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
 
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        FederationSupport federationSupport = mock(FederationSupport.class);
+        when(federationSupport.getFederationContext()).thenReturn(new FederationContext(genesisFederation));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3057,18 +3061,17 @@ class BridgeSupportFlyoverTest {
             btcContext,
             feePerKbSupport,
             whitelistSupport,
-            mock(FederationSupport.class),
+            federationSupport,
             lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
         ));
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
-        doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
-        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        when(bridgeSupport.getActiveFederation()).thenReturn(genesisFederation);
+        when(bridgeSupport.validationsForRegisterBtcTransaction(any(), anyInt(), any(), any())).thenReturn(true);
 
-        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
+        doReturn(RskTestUtils.createHash(1)).when(bridgeSupport).getFlyoverDerivationHash(
             any(Keccak256.class),
             any(Address.class),
             any(Address.class),
@@ -3104,7 +3107,7 @@ class BridgeSupportFlyoverTest {
             tx.bitcoinSerialize(),
             100,
             pmtSerialized,
-            PegTestUtils.createHash3(0),
+            RskTestUtils.createHash(0),
             btcAddress,
             lbcAddress,
             btcAddress,
