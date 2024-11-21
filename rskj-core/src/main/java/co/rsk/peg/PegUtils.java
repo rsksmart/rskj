@@ -97,20 +97,8 @@ public class PegUtils {
         Context context = Context.getOrCreate(bridgeConstants.getBtcParams());
         Wallet liveFederationsWallet = new BridgeBtcWallet(context, liveFeds);
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) &&
-            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
-
-        if (shouldUsePegoutTxIndex){
-            return getTransactionTypeUsingPegoutIndex(
-                activations,
-                provider,
-                liveFederationsWallet,
-                btcTransaction
-            );
-        } else {
+        if (!isPegoutTxIndexEnabled(bridgeConstants, activations, btcTransactionHeight)) {
+            // Use legacy logic
             Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
             FederationConstants federationConstants = bridgeConstants.getFederationConstants();
             Address oldFederationAddress = Address.fromBase58(
@@ -127,6 +115,25 @@ public class PegUtils {
                 liveFederationsWallet
             );
         }
+
+        return getTransactionTypeUsingPegoutIndex(
+            activations,
+            provider,
+            liveFederationsWallet,
+            btcTransaction
+        );
+    }
+
+    private static boolean isPegoutTxIndexEnabled(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        long btcTransactionHeight) {
+
+        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        return activations.isActive(ConsensusRule.RSKIP379) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
     }
 
     static PeginEvaluationResult evaluatePegin(
