@@ -404,12 +404,6 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
-            if (isSvpOngoing() && isTheSvpSpendTransaction(btcTx)) {
-                registerSvpSpendTransaction(btcTx);
-                processSvpSuccess();
-                return;
-            }
-
             FederationContext federationContext = federationSupport.getFederationContext();
             PegTxType pegTxType = PegUtils.getTransactionType(
                 activations,
@@ -421,21 +415,29 @@ public class BridgeSupport {
             );
 
             switch (pegTxType) {
-                case PEGIN:
+                case PEGIN -> {
                     logger.debug("[registerBtcTransaction] This is a peg-in tx {}", btcTx.getHash());
                     processPegIn(btcTx, rskTxHash, height);
-                    break;
-                case PEGOUT_OR_MIGRATION:
+                }
+                case PEGOUT_OR_MIGRATION -> {
                     logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx);
-                    if (isSvpOngoing() && isTheSvpFundTransaction(btcTx)) {
-                        updateSvpFundTransactionValues(btcTx);
-                    }
-                    break;
-                default:
+                }
+                case SVP_FUND_TX -> {
+                    logger.debug("[registerBtcTransaction] This is an svp fund tx {}", btcTx.getHash());
+                    processPegoutOrMigration(btcTx); // Need to register the change UTXO
+                    updateSvpFundTransactionValues(btcTx);
+                }
+                case SVP_SPEND_TX -> {
+                    logger.debug("[registerBtcTransaction] This is an svp spend tx {}", btcTx.getHash());
+                    registerSvpSpendTransaction(btcTx);
+                    processSvpSuccess();
+                }
+                default -> {
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
                     logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTxHash, message);
                     panicProcessor.panic("btclock", message);
+                }
             }
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
