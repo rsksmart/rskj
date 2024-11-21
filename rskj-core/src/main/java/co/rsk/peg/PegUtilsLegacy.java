@@ -2,28 +2,13 @@ package co.rsk.peg;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import co.rsk.peg.federation.ErpFederation;
-import co.rsk.peg.federation.Federation;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.federation.*;
+import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -33,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * @deprecated Methods included in this class should not be used anymore
  * Instead use methods in {@link co.rsk.peg.PegUtils}
  */
-@Deprecated
+@Deprecated(since = "ARROWHEAD-6.0.0")
 public class PegUtilsLegacy {
 
     private static final Logger logger = LoggerFactory.getLogger(PegUtilsLegacy.class);
@@ -258,29 +243,39 @@ public class PegUtilsLegacy {
     @Deprecated
     protected static boolean isMigrationTx(
         BtcTransaction btcTx,
-        Federation activeFederation,
-        Federation retiringFederation,
-        Script retiredFederationP2SHScript,
+        FederationContext federationContext,
         Wallet liveFederationsWallet,
         Coin minimumPeginTxValue,
         ActivationConfig.ForBlock activations) {
 
-        if (retiredFederationP2SHScript == null && retiringFederation == null) {
+        Optional<Federation> retiringFederation = federationContext.getRetiringFederation();
+        Optional<Script> retiredFederationP2SHScript = federationContext.getLastRetiredFederationP2SHScript();
+
+        if (retiredFederationP2SHScript.isEmpty() && retiringFederation.isEmpty()) {
             return false;
         }
 
         List<Script> standardP2shScripts = new ArrayList<>();
-        if (retiredFederationP2SHScript != null){
-            standardP2shScripts.add(retiredFederationP2SHScript);
-        }
-        if (retiringFederation != null){
-            standardP2shScripts.add(getFederationStandardP2SHScript(retiringFederation));
-        }
+        retiredFederationP2SHScript.ifPresent(standardP2shScripts::add);
+        retiringFederation.ifPresent(
+            federation -> standardP2shScripts.add(getFederationStandardP2SHScript(federation))
+        );
 
         boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts.toArray(new Script[0]));
 
-        BridgeBtcWallet activeFederationWallet = new BridgeBtcWallet(liveFederationsWallet.getContext(), Collections.singletonList(activeFederation));
-        boolean moveToActive = isValidPegInTx(btcTx, Collections.singletonList(activeFederation), null, activeFederationWallet, minimumPeginTxValue, activations);
+        Federation activeFederation = federationContext.getActiveFederation();
+        BridgeBtcWallet activeFederationWallet = new BridgeBtcWallet(
+            liveFederationsWallet.getContext(),
+            Collections.singletonList(activeFederation)
+        );
+        boolean moveToActive = isValidPegInTx(
+            btcTx,
+            Collections.singletonList(activeFederation),
+            null,
+            activeFederationWallet,
+            minimumPeginTxValue,
+            activations
+        );
 
         return moveFromRetiringOrRetired && moveToActive;
     }
@@ -290,9 +285,7 @@ public class PegUtilsLegacy {
      * Use instead {@link co.rsk.peg.PegUtils#getTransactionType}
      *
      * @param btcTx
-     * @param activeFederation
-     * @param retiringFederation
-     * @param retiredFederationP2SHScript
+     * @param federationContext
      * @param oldFederationAddress
      * @param activations
      * @param minimumPeginTxValue
@@ -302,9 +295,7 @@ public class PegUtilsLegacy {
     @Deprecated
     protected static PegTxType getTransactionType(
         BtcTransaction btcTx,
-        Federation activeFederation,
-        Federation retiringFederation,
-        Script retiredFederationP2SHScript,
+        FederationContext federationContext,
         Address oldFederationAddress,
         ActivationConfig.ForBlock activations,
         Coin minimumPeginTxValue,
@@ -313,21 +304,19 @@ public class PegUtilsLegacy {
         /************************************************************************/
         /** Special case to migrate funds from an old federation               **/
         /************************************************************************/
-        if (activations.isActive(ConsensusRule.RSKIP199) &&
-                PegUtilsLegacy.txIsFromOldFederation(
-                    btcTx,
-                    oldFederationAddress
-                )
-        ) {
-            logger.debug("[getTransactionType][btc tx {}] is from the old federation, treated as a migration", btcTx.getHash());
+        if (activations.isActive(ConsensusRule.RSKIP199) && PegUtilsLegacy.txIsFromOldFederation(
+            btcTx,
+            oldFederationAddress
+        )) {
+            logger.debug(
+                "[getTransactionType][btc tx {}] is from the old federation, treated as a migration",
+                btcTx.getHash()
+            );
             return PegTxType.PEGOUT_OR_MIGRATION;
         }
 
-        List<Federation> liveFederations = new ArrayList<>();
-        liveFederations.add(activeFederation);
-        if (retiringFederation != null) {
-            liveFederations.add(retiringFederation);
-        }
+        List<Federation> liveFederations = federationContext.getLiveFederations();
+        Script retiredFederationP2SHScript = federationContext.getLastRetiredFederationP2SHScript().orElse(null);
 
         if (isValidPegInTx(
             btcTx,
@@ -344,9 +333,7 @@ public class PegUtilsLegacy {
 
         if (isMigrationTx(
             btcTx,
-            activeFederation,
-            retiringFederation,
-            retiredFederationP2SHScript,
+            federationContext,
             federationsWallet,
             minimumPeginTxValue,
             activations

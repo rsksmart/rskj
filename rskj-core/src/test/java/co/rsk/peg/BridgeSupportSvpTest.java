@@ -108,6 +108,7 @@ public class BridgeSupportSvpTest {
         when(federationSupport.getActiveFederationAddress()).thenReturn(activeFederation.getAddress());
         when(federationSupport.getActiveFederationBtcUTXOs()).thenReturn(activeFederationUTXOs);
         when(federationSupport.getProposedFederation()).thenReturn(Optional.of(proposedFederation));
+        when(federationSupport.getFederationContext()).thenReturn(new FederationContext(activeFederation));
 
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);

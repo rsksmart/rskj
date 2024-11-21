@@ -102,11 +102,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
 
         // Act
-        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            migrationTx,
+        FederationContext federationContext = new FederationContext(
             activeFederation,
             p2shRetiringFederation,
-            null,
+            null
+        );
+        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
+            migrationTx,
+            federationContext,
             oldFederationAddress,
             activations,
             minimumPeginTxValue,
@@ -163,11 +166,13 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
+        if (activations.isActive(RSKIP186)) {
+            federationContext.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
+        }
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
-            activeFederation,
-            null,
-            activations.isActive(RSKIP186) ? retiredFederation.getP2SHScript() : null,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeRegTestConstants.getMinimumPeginTxValue(activations),
@@ -208,11 +213,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, peginTx);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             peginTx,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -364,11 +368,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
         peginTx.addOutput(amountToSend, activeFederation.getAddress());
 
         // Act
-        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            peginTx,
+        FederationContext federationContext = new FederationContext(
             activeFederation,
             retiringFederation,
-            retiredFederationP2SHScript,
+            retiredFederationP2SHScript
+        );
+        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
+            peginTx,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -407,11 +414,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(activeFederation, fedKeys, pegoutBtcTx);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             pegoutBtcTx,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -450,11 +456,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            migrationTx,
+        FederationContext federationContext = new FederationContext(
             activeFederation,
             retiringFederation,
-            null,
+            null
+        );
+        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
+            migrationTx,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -499,11 +508,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            migrationTx,
+        FederationContext federationContext = new FederationContext(
             activeFederation,
             retiringFederation,
-            null,
+            null
+        );
+        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
+            migrationTx,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -538,11 +550,14 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
-            migrationTx,
+        FederationContext federationContext = new FederationContext(
             activeFederation,
             retiringFederation,
-            null,
+            null
+        );
+        PegTxType transactionType = PegUtilsLegacy.getTransactionType(
+            migrationTx,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
@@ -567,11 +582,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         unknownPegTx.addOutput(Coin.COIN, unknownAddress);
 
         // Act
+        FederationContext federationContext = new FederationContext(activeFederation);
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             unknownPegTx,
-            activeFederation,
-            null,
-            null,
+            federationContext,
             oldFederationAddress,
             activations,
             bridgeMainnetConstants.getMinimumPeginTxValue(activations),
