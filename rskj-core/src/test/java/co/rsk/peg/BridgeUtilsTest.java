@@ -63,7 +63,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -1996,29 +1995,5 @@ class BridgeUtilsTest {
         );
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
-    }
-
-    @Test
-    void getFederationMembersP2SHScript_beforeRSKIP377_shouldReturnP2SHScript() {
-        when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(false);
-        Federation standardMultisigFederation = StandardMultiSigFederationBuilder.builder().build();
-
-        assertEquals(standardMultisigFederation.getP2SHScript(), getFederationMembersP2SHScript(activations, standardMultisigFederation));
-    }
-
-    @Test
-    void getFederationMembersP2SHScript_whenIsNotErpFederation_shouldReturnP2SHScript() {
-        when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(true);
-        Federation standardMultisigFederation = StandardMultiSigFederationBuilder.builder().build();
-
-        assertEquals(standardMultisigFederation.getP2SHScript(), getFederationMembersP2SHScript(activations, standardMultisigFederation));
-    }
-
-    @Test
-    void getFederationMembersP2SHScript_whenIsErpFederation_shouldReturnDefaultP2SHScript() {
-        when(activations.isActive(ConsensusRule.RSKIP377)).thenReturn(true);
-        ErpFederation p2shErpFederation = P2shErpFederationBuilder.builder().build();
-
-        assertEquals(p2shErpFederation.getDefaultP2SHScript(), getFederationMembersP2SHScript(activations, p2shErpFederation));
     }
 }
