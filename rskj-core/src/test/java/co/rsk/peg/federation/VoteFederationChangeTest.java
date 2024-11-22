@@ -521,11 +521,11 @@ class VoteFederationChangeTest {
     }
 
     private void assertNewAndOldFederationsWereSet(Federation expectedNewFederation) {
-        // assert old federation was set as the active federation
+        // assert the active federation was set as the old federation
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
         assertEquals(federationSupport.getActiveFederation(), oldFederation);
 
-        // assert new federation was set as the federation built from the pending one
+        // assert the federation built from the pending one was set as the new federation
         Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
         assertEquals(expectedNewFederation, newFederation);
     }
