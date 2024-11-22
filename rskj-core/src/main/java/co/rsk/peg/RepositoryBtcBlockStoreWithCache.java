@@ -18,6 +18,9 @@
 
 package co.rsk.peg;
 
+import static co.rsk.bitcoinj.core.StoredBlock.deserializeCompactLegacy;
+import static co.rsk.bitcoinj.core.StoredBlock.deserializeCompactV2;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -307,17 +310,36 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     private byte[] storedBlockToByteArray(StoredBlock block) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(128);
-        block.serializeCompact(byteBuffer);
+        ByteBuffer byteBuffer = serializeBlock(block);
         byte[] ba = new byte[byteBuffer.position()];
         byteBuffer.flip();
         byteBuffer.get(ba);
         return ba;
     }
 
+    private ByteBuffer serializeBlock(StoredBlock block) {
+        if (shouldUseLegacy12ByteChainworkFormat()) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE_LEGACY);
+            block.serializeCompactLegacy(byteBuffer);
+            return byteBuffer;
+        }
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE_V2);
+        block.serializeCompactV2(byteBuffer);
+        return byteBuffer;
+    }
+
+    private boolean shouldUseLegacy12ByteChainworkFormat() {
+        return !activations.isActive(ConsensusRule.RSKIP454);
+    }
+
     private StoredBlock byteArrayToStoredBlock(byte[] ba) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(ba);
-        return StoredBlock.deserializeCompact(btcNetworkParams, byteBuffer);
+        if (ba.length == StoredBlock.COMPACT_SERIALIZED_SIZE_LEGACY) {
+            return deserializeCompactLegacy(btcNetworkParams, byteBuffer);
+        }
+
+        return deserializeCompactV2(btcNetworkParams, byteBuffer);
     }
 
     private void checkIfInitialized() {
