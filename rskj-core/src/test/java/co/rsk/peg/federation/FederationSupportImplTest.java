@@ -40,23 +40,19 @@ import java.util.*;
 import java.util.stream.Stream;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.FederationSupportBuilder;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.*;
 
 class FederationSupportImplTest {
 
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();
     private final Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationMainnetConstants);
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
-    private ErpFederation newFederation;
+    private Federation newFederation;
     private StorageAccessor storageAccessor;
     private FederationStorageProvider storageProvider;
     private FederationSupport federationSupport;
@@ -220,6 +216,27 @@ class FederationSupportImplTest {
 
             List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
             assertThat(activeFederationUTXOs, is(genesisFederationUTXOs));
+        }
+
+        @Test
+        void getLiveFederations_returnsGenesisFederation() {
+            List<Federation> liveFederations = federationSupport.getLiveFederations();
+
+            assertEquals(1, liveFederations.size());
+            assertEquals(genesisFederation, liveFederations.get(0));
+        }
+
+        @Test
+        void getFederationContext() {
+            FederationContext federationContext = federationSupport.getFederationContext();
+            List<Federation> liveFederations = federationContext.getLiveFederations();
+
+            assertEquals(genesisFederation, federationContext.getActiveFederation());
+            assertTrue(federationContext.getRetiringFederation().isEmpty());
+            assertTrue(federationContext.getLastRetiredFederationP2SHScript().isEmpty());
+
+            assertEquals(1, liveFederations.size());
+            assertEquals(genesisFederation, liveFederations.get(0));
         }
     }
 
@@ -420,6 +437,27 @@ class FederationSupportImplTest {
             List<UTXO> activeFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
             assertThat(activeFederationUTXOs, is(newFederationUTXOs));
         }
+
+        @Test
+        void getLiveFederations_returnsActiveFederation() {
+            List<Federation> liveFederations = federationSupport.getLiveFederations();
+
+            assertEquals(1, liveFederations.size());
+            assertEquals(newFederation, liveFederations.get(0));
+        }
+
+        @Test
+        void getFederationContext() {
+            FederationContext federationContext = federationSupport.getFederationContext();
+            List<Federation> liveFederations = federationContext.getLiveFederations();
+
+            assertEquals(newFederation, federationContext.getActiveFederation());
+            assertTrue(federationContext.getRetiringFederation().isEmpty());
+            assertTrue(federationContext.getLastRetiredFederationP2SHScript().isEmpty());
+
+            assertEquals(1, liveFederations.size());
+            assertEquals(newFederation, liveFederations.get(0));
+        }
     }
 
     @Nested
@@ -584,8 +622,8 @@ class FederationSupportImplTest {
         void getActiveFederationSize_returnsExpectedSizeAccordingToActivationAgeAndActivations(
             long currentBlock,
             ActivationConfig.ForBlock activations,
-            int expectedSize) {
-
+            int expectedSize
+        ) {
             Block executionBlock = mock(Block.class);
             when(executionBlock.getNumber()).thenReturn(currentBlock);
 
@@ -843,6 +881,30 @@ class FederationSupportImplTest {
                 Arguments.of(blockNumberFederationActivationFingerroot, fingerrootActivations, newFederationUTXOs),
                 Arguments.of(blockNumberFederationActivationFingerroot, hopActivations, newFederationUTXOs)
             );
+        }
+
+        @Test
+        void getLiveFederations_returnsActiveAndRetiringFederations() {
+            List<Federation> liveFederations = federationSupport.getLiveFederations();
+
+            assertEquals(2, liveFederations.size());
+            assertEquals(newFederation, liveFederations.get(0));
+            assertEquals(oldFederation, liveFederations.get(1));
+        }
+
+        @Test
+        void getFederationContext() {
+            FederationContext federationContext = federationSupport.getFederationContext();
+            List<Federation> liveFederations = federationContext.getLiveFederations();
+
+            assertEquals(newFederation, federationContext.getActiveFederation());
+            assertTrue(federationContext.getRetiringFederation().isPresent());
+            assertEquals(oldFederation, federationContext.getRetiringFederation().get());
+            assertTrue(federationContext.getLastRetiredFederationP2SHScript().isEmpty());
+
+            assertEquals(2, liveFederations.size());
+            assertEquals(newFederation, liveFederations.get(0));
+            assertEquals(oldFederation, liveFederations.get(1));
         }
     }
 
