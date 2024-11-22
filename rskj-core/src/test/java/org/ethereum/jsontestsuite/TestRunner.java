@@ -157,6 +157,7 @@ public class TestRunner {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
+                null,
                 blockStore,
                 receiptStore,
                 transactionPool,

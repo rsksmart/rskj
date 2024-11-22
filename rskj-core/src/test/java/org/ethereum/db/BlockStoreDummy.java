@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 
@@ -31,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -122,6 +122,26 @@ public class BlockStoreDummy implements BlockStore {
     @Override
     public boolean isEmpty() {
         return false;
+    }
+
+    @Override
+    public boolean blockHeaderExists(Keccak256 hash) {
+        return false;
+    }
+
+    @Override
+    public BlockHeader getBlockHeaderByHash(Keccak256 hash) {
+        return null;
+    }
+
+    @Override
+    public void saveBlockHeader(BlockHeader blockHeader) {
+
+    }
+
+    @Override
+    public void removeBlockHeader(Keccak256 hash) {
+
     }
 
     @Override

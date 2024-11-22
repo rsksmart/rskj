@@ -430,17 +430,6 @@ public class RskSystemProperties extends SystemProperties {
     public boolean isServerSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.server.enabled");}
     public boolean isClientSnapshotSyncEnabled() { return configFromFiles.getBoolean(PROPERTY_SNAP_CLIENT_ENABLED);}
 
-    @Override
-    public List<String> peerCapabilities() {
-        List<String> capabilities = super.peerCapabilities();
-
-        if (isSnapshotSyncEnabled()) {
-            capabilities.add(Capability.SNAP);
-        }
-
-        return capabilities;
-    }
-
     public int getSnapshotChunkTimeout() {
         return configFromFiles.getInt("sync.snapshot.client.chunkRequestTimeout");
     }
@@ -568,10 +557,6 @@ public class RskSystemProperties extends SystemProperties {
             throw new RskConfigurationException("Invalid gasPriceCalculatorType: " + value);
         }
         return gasCalculatorType;
-    }
-
-    public boolean isSnapshotSyncEnabled(){
-        return isServerSnapshotSyncEnabled() || isClientSnapshotSyncEnabled();
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {

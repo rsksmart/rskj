@@ -288,7 +288,7 @@ class BlockValidatorTest {
         store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
 
         BlockHeaderParentDependantValidationRule parentValidationRule = mock(BlockHeaderParentDependantValidationRule.class);
-        when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
+        when(parentValidationRule.isValid(Mockito.any(), (Block) Mockito.any())).thenReturn(true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), parentValidationRule)

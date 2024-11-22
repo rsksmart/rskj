@@ -76,7 +76,7 @@ class SnapSyncStateTest {
         //given-when
         underTest.onEnter();
         //then
-        verify(snapshotProcessor, times(1)).startSyncing();
+        verify(snapshotProcessor, times(1)).startSyncing(underTest);
     }
 
     @Test
@@ -95,7 +95,7 @@ class SnapSyncStateTest {
         underTest.onEnter();
         underTest.onEnter();
         //then
-        verify(snapshotProcessor, times(1)).startSyncing();
+        verify(snapshotProcessor, times(1)).startSyncing(underTest);
     }
 
     @Test
@@ -178,7 +178,7 @@ class SnapSyncStateTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -200,7 +200,7 @@ class SnapSyncStateTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -222,7 +222,7 @@ class SnapSyncStateTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test

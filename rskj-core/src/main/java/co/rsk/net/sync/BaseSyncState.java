@@ -30,8 +30,8 @@ import java.time.Duration;
 import java.util.List;
 
 public abstract class BaseSyncState implements SyncState {
-    protected SyncConfiguration syncConfiguration;
-    protected SyncEventsHandler syncEventsHandler;
+    protected final SyncConfiguration syncConfiguration;
+    protected final SyncEventsHandler syncEventsHandler;
 
     protected Duration timeElapsed;
 
@@ -57,7 +57,7 @@ public abstract class BaseSyncState implements SyncState {
     protected void onMessageTimeOut() { /* empty */ }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk) { /* empty */ }
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) { /* empty */ }
 
     @Override
     public void newBody(BodyResponseMessage message, Peer peer) { /* empty */ }

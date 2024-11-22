@@ -73,7 +73,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
     }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk) {
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
         Optional<ChunkDescriptor> currentChunkOpt = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunkOpt.isPresent()) {
             syncEventsHandler.onSyncIssue(selectedPeer, "Current chunk not present on {}", this.getClass());
@@ -124,7 +124,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
 
         if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers
-            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeer);
+            processPendingHeaders(pendingHeaders, skeletons, selectedPeer);
             return;
         }
 
@@ -160,5 +160,9 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         }
 
         return blockParentValidationRule.validate(header, parentHeader);
+    }
+
+    void processPendingHeaders(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer) {
+        syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, peer);
     }
 }

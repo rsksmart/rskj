@@ -20,6 +20,7 @@ package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
 import co.rsk.util.FormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,7 @@ public abstract class SyncMessageHandler implements Runnable {
                 job = jobQueue.take();
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Processing msg: [{}] from: [{}] for: [{}]", job.getMsg().getMessageType(), job.getSender(), name);
+                    logger.debug("Processing msg: [{}] from: [{}] for: [{}]", job.getMsgType(), job.getSender(), name);
                     jobStart = Instant.now();
                 }
 
@@ -73,7 +74,7 @@ public abstract class SyncMessageHandler implements Runnable {
 
                 if (logger.isDebugEnabled()) {
                     logger.debug("Finished processing of msg: [{}] from: [{}] for: [{}] after [{}] seconds.",
-                            job.getMsg().getMessageType(), job.getSender(), name,
+                            job.getMsgType(), job.getSender(), name,
                             FormatUtils.formatNanosecondsToSeconds(Duration.between(jobStart, Instant.now()).toNanos()));
                 }
 
@@ -116,27 +117,31 @@ public abstract class SyncMessageHandler implements Runnable {
 
     public static abstract class Job implements Runnable {
         private final Peer sender;
-
-        private final Message msg;
+        private final MessageType msgType;
 
         public Job(Peer sender, Message msg) {
             this.sender = sender;
-            this.msg = msg;
+            this.msgType = msg.getMessageType();
+        }
+
+        public Job(Peer sender, MessageType msgType) {
+            this.sender = sender;
+            this.msgType = msgType;
         }
 
         public Peer getSender() {
             return sender;
         }
 
-        public Message getMsg() {
-            return msg;
+        public MessageType getMsgType() {
+            return msgType;
         }
 
         @Override
         public String toString() {
             return "SyncMessageHandler{" +
                     "sender=" + sender +
-                    ", msgType=" + msg.getMessageType() +
+                    ", msgType=" + msgType +
                     '}';
         }
     }

@@ -143,7 +143,7 @@ public class PeersInformation implements SnapshotPeersInformation {
             return Optional.of(entriesToConsider.get(randomIndex).getKey());
         }
 
-        return getBestCandidatesStream()
+        return bestCandidatesStream
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
     }

@@ -43,6 +43,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
+    public void startFindingSnapConnectionPoint(Peer peer) {
+
+    }
+
+    @Override
     public void backwardSyncing(Peer peer) {
     }
 
@@ -66,6 +71,9 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) { }
 
     @Override
+    public void startDownloadingSnapHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {}
+
+    @Override
     public void startBlockForwardSyncing(Peer peer) {
         this.startSyncingWasCalled_ = true;
     }
@@ -77,6 +85,9 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
 
     @Override
     public void startDownloadingSkeleton(long connectionPoint, Peer peer) { }
+
+    @Override
+    public void startDownloadingSnapSkeleton(long connectionPoint, Peer peer) {}
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }
@@ -105,5 +116,5 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync() { }
+    public void startSnapSync(Peer peer) { }
 }

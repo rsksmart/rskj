@@ -29,6 +29,7 @@ import java.util.List;
 
 public class BlockConnectorHelper {
     private static final Logger logger = LoggerFactory.getLogger("SnapBlockConnector");
+
     private final BlockStore blockStore;
 
     public BlockConnectorHelper(BlockStore blockStore) {
@@ -42,25 +43,19 @@ public class BlockConnectorHelper {
         }
 
         blockAndDifficultiesList.sort(new BlockAndDiffComparator());
-        Block child = null;
         logger.info("Start connecting blocks ranging from {} to {} - Total: {}",
                 blockAndDifficultiesList.get(0).getKey().getNumber(),
                 blockAndDifficultiesList.get(blockAndDifficultiesList.size() - 1).getKey().getNumber(),
                 blockAndDifficultiesList.size());
 
         int blockIndex = blockAndDifficultiesList.size() - 1;
-        if (blockStore.isEmpty()) {
-            Pair<Block, BlockDifficulty> blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
-            child = blockAndDifficulty.getLeft();
-            logger.debug("BlockStore is empty, setting child block number the last block from the list: {}", child.getNumber());
-            blockStore.saveBlock(child, blockAndDifficulty.getRight(), true);
-            logger.debug("Block number: {} saved", child.getNumber());
-            blockIndex--;
-        } else {
-            logger.debug("BlockStore is not empty, getting best block");
-            child = blockStore.getBestBlock();
-            logger.debug("Best block number: {}", child.getNumber());
-        }
+        Pair<Block, BlockDifficulty> blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
+        Block child = blockAndDifficulty.getLeft();
+        logger.debug("Setting child block number the last block from the list: {}", child.getNumber());
+        blockStore.saveBlock(child, blockAndDifficulty.getRight(), true);
+        logger.debug("Block number: {} saved", child.getNumber());
+        blockIndex--;
+
         while (blockIndex >= 0) {
             Pair<Block, BlockDifficulty> currentBlockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
             Block currentBlock = currentBlockAndDifficulty.getLeft();

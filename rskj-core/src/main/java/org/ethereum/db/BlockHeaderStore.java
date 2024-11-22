@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2019 RSK Labs Ltd.
+ * Copyright (C) 2024 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,15 +17,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.validators;
+package org.ethereum.db;
 
-import org.ethereum.core.Block;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.BlockHeader;
 
-public interface BlockHeaderParentDependantValidationRule {
-    boolean isValid(BlockHeader header, BlockHeader parent);
+public interface BlockHeaderStore {
 
-    default boolean isValid(BlockHeader header, Block parentBlock) {
-        return isValid(header, parentBlock == null ? null : parentBlock.getHeader());
-    }
+    boolean blockHeaderExists(Keccak256 hash);
+
+    BlockHeader getBlockHeaderByHash(Keccak256 hash);
+
+    void saveBlockHeader(BlockHeader blockHeader);
+
+    void removeBlockHeader(Keccak256 hash);
+
 }

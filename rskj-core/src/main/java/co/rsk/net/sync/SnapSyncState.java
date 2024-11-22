@@ -21,14 +21,17 @@ package co.rsk.net.sync;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
+import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.SnapBlocksResponseMessage;
 import co.rsk.net.messages.SnapStateChunkResponseMessage;
 import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.scoring.EventType;
 import co.rsk.trie.TrieDTO;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +66,7 @@ public class SnapSyncState extends BaseSyncState {
     private byte[] remoteRootHash;
     private final List<Pair<Block, BlockDifficulty>> blocks;
     private Block lastBlock;
+    private BlockHeader lastVerifiedBlockHeader;
     private BlockDifficulty lastBlockDifficulty;
 
     private long nextExpectedFrom = 0L;
@@ -98,7 +102,7 @@ public class SnapSyncState extends BaseSyncState {
         }
         isRunning = Boolean.TRUE;
         thread.start();
-        snapshotProcessor.startSyncing();
+        snapshotProcessor.startSyncing(this);
     }
 
     @Override
@@ -146,6 +150,25 @@ public class SnapSyncState extends BaseSyncState {
         }
     }
 
+    @Override
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
+        try {
+            responseQueue.put(new SyncMessageHandler.Job(peer, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE) {
+                @Override
+                public void run() {
+                    snapshotProcessor.processBlockHeaderChunk(SnapSyncState.this, peer, chunk);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("SnapStateChunkResponseMessage processing was interrupted", e);
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public SyncEventsHandler getSyncEventsHandler() {
+        return this.syncEventsHandler;
+    }
+
     public void onNewChunk() {
         resetTimeElapsed();
     }
@@ -173,6 +196,14 @@ public class SnapSyncState extends BaseSyncState {
 
     public void setLastBlock(Block lastBlock) {
         this.lastBlock = lastBlock;
+    }
+
+    public BlockHeader getLastVerifiedBlockHeader() {
+        return lastVerifiedBlockHeader;
+    }
+
+    public void setLastVerifiedBlockHeader(BlockHeader lastVerifiedBlockHeader) {
+        this.lastVerifiedBlockHeader = lastVerifiedBlockHeader;
     }
 
     public long getNextExpectedFrom() {
@@ -211,8 +242,8 @@ public class SnapSyncState extends BaseSyncState {
         blocks.add(blockPair);
     }
 
-    public void addAllBlocks(List<Pair<Block, BlockDifficulty>> blocks) {
-        this.blocks.addAll(blocks);
+    public Pair<Block, BlockDifficulty> getLastBlockPair() {
+        return blocks.isEmpty() ? null : blocks.get(blocks.size() - 1);
     }
 
     public void connectBlocks(BlockConnectorHelper blockConnectorHelper) {
@@ -247,6 +278,14 @@ public class SnapSyncState extends BaseSyncState {
         return chunkTaskQueue;
     }
 
+    public int getBlockHeaderChunkSize() {
+        return syncConfiguration.getChunkSize();
+    }
+
+    public boolean isRunning() {
+        return isRunning == Boolean.TRUE;
+    }
+
     public void finish() {
         if (isRunning != Boolean.TRUE) {
             logger.warn("Invalid state, isRunning: [{}]", isRunning);
@@ -257,6 +296,18 @@ public class SnapSyncState extends BaseSyncState {
         thread.interrupt();
 
         syncEventsHandler.stopSyncing();
+    }
+
+    public void fail(Peer peer, EventType eventType, String message, Object... arguments) {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        isRunning = Boolean.FALSE;
+        thread.interrupt();
+
+        syncEventsHandler.onErrorSyncing(peer, eventType, message, arguments);
     }
 
     @VisibleForTesting

@@ -40,7 +40,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
 
     private final RskSystemProperties config;
 
-    private SortedSet<Capability> allCapabilities = new TreeSet<>();
+    private final SortedSet<Capability> allCapabilities = new TreeSet<>();
 
     public ConfigCapabilitiesImpl(RskSystemProperties config) {
         if (config.syncVersion() != null) {
@@ -54,13 +54,12 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
             }
         }
 
-        if (config.isSnapshotSyncEnabled() && allCapabilities.stream().anyMatch(Capability::isRSK)) {
+        if (allCapabilities.stream().anyMatch(Capability::isRSK)) {
             allCapabilities.add(new Capability(SNAP, SNAP_VERSION));
         }
 
         this.config = config;
     }
-
 
     /**
      * Gets the capabilities listed in 'peer.capabilities' config property
@@ -83,6 +82,10 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
     @Override
     public List<Capability> getSupportedCapabilities(HelloMessage hello) {
         List<Capability> configCaps = getConfigCapabilities();
+        if (config.isClientSnapshotSyncEnabled()) {
+            configCaps.add(new Capability(Capability.SNAP, Capability.SNAP_VERSION));
+        }
+
         List<Capability> supported = new ArrayList<>();
 
         List<Capability> eths = new ArrayList<>();

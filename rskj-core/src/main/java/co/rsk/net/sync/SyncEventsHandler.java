@@ -41,7 +41,11 @@ public interface SyncEventsHandler {
 
     void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer);
 
+    void startDownloadingSnapHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer);
+
     void startDownloadingSkeleton(long connectionPoint, Peer peer);
+
+    void startDownloadingSnapSkeleton(long connectionPoint, Peer peer);
 
     void startBlockForwardSyncing(Peer peer);
 
@@ -57,7 +61,9 @@ public interface SyncEventsHandler {
 
     void startFindingConnectionPoint(Peer peer);
 
+    void startFindingSnapConnectionPoint(Peer peer);
+
     void backwardSyncing(Peer peer);
 
-    void startSnapSync();
+    void startSnapSync(Peer peer);
 }

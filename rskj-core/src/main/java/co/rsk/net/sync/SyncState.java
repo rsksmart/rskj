@@ -29,7 +29,7 @@ import java.time.Duration;
 import java.util.List;
 
 public interface SyncState {
-    void newBlockHeaders(List<BlockHeader> chunk);
+    void newBlockHeaders(Peer peer, List<BlockHeader> chunk);
 
     // TODO(mc) don't receive a full message
     void newBody(BodyResponseMessage message, Peer peer);

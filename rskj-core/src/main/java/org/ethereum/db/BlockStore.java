@@ -31,7 +31,7 @@ import java.util.List;
  * @author Roman Mandeleil
  * @since 08.01.2015
  */
-public interface BlockStore extends RemascCache {
+public interface BlockStore extends BlockHeaderStore, RemascCache {
 
     /**
      * Gets the block hash by its index.

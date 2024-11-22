@@ -96,7 +96,7 @@ class DownloadingBackwardsHeadersSyncStateTest {
 
 
         List<BlockHeader> receivedHeaders = new LinkedList<>();
-        target.newBlockHeaders(receivedHeaders);
+        target.newBlockHeaders(selectedPeer, receivedHeaders);
 
 
         verify(syncEventsHandler).backwardDownloadBodies(child, receivedHeaders, selectedPeer);

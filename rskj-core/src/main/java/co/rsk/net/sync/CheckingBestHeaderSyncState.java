@@ -46,7 +46,7 @@ public class CheckingBestHeaderSyncState extends BaseSelectedPeerSyncState {
     }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk){
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk){
         BlockHeader header = chunk.get(0);
         boolean unexpectedHeader = !ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash());
         if (unexpectedHeader) {
