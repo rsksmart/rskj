@@ -1,6 +1,5 @@
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,6 +51,7 @@ class VoteFederationChangeTest {
     private static final long RSK_EXECUTION_BLOCK_NUMBER = 1000L;
     private static final long RSK_EXECUTION_BLOCK_TIMESTAMP = 10L;
     private static final PendingFederation pendingFederationToBe = new PendingFederation(FederationTestUtils.getFederationMembers(9));
+    private static final Federation activeFederation = FederationTestUtils.getErpFederation(federationMainnetConstants.getBtcParams());
 
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
     private FederationSupport federationSupport;
@@ -71,6 +71,7 @@ class VoteFederationChangeTest {
 
         bridgeStorageAccessor = new InMemoryStorage();
         storageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        storageProvider.setNewFederation(activeFederation);
 
         BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
             .setNumber(RSK_EXECUTION_BLOCK_NUMBER)
@@ -415,7 +416,7 @@ class VoteFederationChangeTest {
         voteAndAssertCommitPendingFederation();
 
         // assertions
-        List<UTXO> utxosToMove = new ArrayList<>(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
+        List<UTXO> utxosToMove = List.copyOf(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
         Federation federationBuiltFromPendingFederation =
             pendingFederationToBe.buildFederation(Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP), RSK_EXECUTION_BLOCK_NUMBER, federationMainnetConstants, activations);
         assertHandoverToNewFederation(utxosToMove, federationBuiltFromPendingFederation);
@@ -531,12 +532,13 @@ class VoteFederationChangeTest {
     }
 
     private void assertNewAndOldFederationsWereNotSet() {
-        // assert old and new federations are still null
+        // assert old federation is still null
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
-        Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
-
         assertNull(oldFederation);
-        assertNull(newFederation);
+
+        // assert new federation is still the active federation
+        Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
+        assertEquals(activeFederation, newFederation);
     }
 
     private void assertPendingFederationVotingWasCleaned() {
@@ -553,7 +555,8 @@ class VoteFederationChangeTest {
     }
 
     private void assertLastRetiredFederationScriptWasSet() {
-        Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, federationSupport.getActiveFederation());
+        ErpFederation activeFederation = (ErpFederation) federationSupport.getActiveFederation();
+        Script activeFederationMembersP2SHScript = activeFederation.getDefaultP2SHScript();
         Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScript.isPresent());
         assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
