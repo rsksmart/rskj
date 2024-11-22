@@ -27,7 +27,6 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
