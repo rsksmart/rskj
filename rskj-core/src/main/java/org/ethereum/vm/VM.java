@@ -1438,11 +1438,14 @@ public class VM {
 
     protected void doMCOPY() {
         if (computeGas) {
-            // See "Gas Cost" section on EIP 5656
-            // gas cost = 3 * (length + 31) + memory expansion cost + very low
             long length = stack.get(stack.size() - 3).longValue();
             long newMemSize = memNeeded(stack.peek(), length);
-            long cost = 3 * (length + 31) + calcMemGas(oldMemSize, newMemSize, 0) + 3; // TODO -> Check copy size
+
+            // See "Gas Cost" section on EIP 5656 for reference
+            long copiedWords = (length + 31) / 32;
+            long memoryExpansionCost = calcMemGas(oldMemSize, newMemSize, copiedWords);
+            long copyGasCost = 3 * copiedWords + memoryExpansionCost;
+            long cost = 3 + copyGasCost; // 3 is the fixed gas cost for very low mem usage
 
             gasCost = GasCost.add(gasCost, cost);
             spendOpCodeGas();
