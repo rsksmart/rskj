@@ -1,6 +1,5 @@
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -731,7 +730,7 @@ public class FederationSupportImpl implements FederationSupport {
     private void moveUTXOsFromNewToOldFederation() {
         // since the current active fed reference will change from being 'new' to 'old',
         // we have to change the UTXOs reference to match it
-        List<UTXO> activeFederationUTXOs = new ArrayList<>(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
+        List<UTXO> activeFederationUTXOs = List.copyOf(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
 
         // Clear new and old federation's UTXOs
         provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations).clear();
@@ -764,6 +763,19 @@ public class FederationSupportImpl implements FederationSupport {
         long federationCreationBlockNumber = rskExecutionBlock.getNumber();
 
         return pendingFederation.buildFederation(federationCreationTime, federationCreationBlockNumber, constants, activations);
+    }
+
+    private static Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
+        // when the federation is a standard multisig, the members p2sh script is the p2sh script
+        if (!activations.isActive(RSKIP377)) {
+            return federation.getP2SHScript();
+        }
+        if (!(federation instanceof ErpFederation)) {
+            return federation.getP2SHScript();
+        }
+
+        // when the federation also has erp keys, the members p2sh script is the default p2sh script
+        return ((ErpFederation) federation).getDefaultP2SHScript();
     }
 
     private void clearPendingFederationVoting() {
