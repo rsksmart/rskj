@@ -1220,8 +1220,8 @@ public class BridgeSupportSvpTest {
         }
 
         private void assertLastRetiredFederationScriptWasSet() {
-            ErpFederation activeFederation = (ErpFederation) federationSupport.getActiveFederation();
-            Script activeFederationMembersP2SHScript = activeFederation.getDefaultP2SHScript();
+            ErpFederation activeFederationCasted = (ErpFederation) federationSupport.getActiveFederation();
+            Script activeFederationMembersP2SHScript = activeFederationCasted.getDefaultP2SHScript();
             Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations);
             assertTrue(lastRetiredFederationP2SHScript.isPresent());
             assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
