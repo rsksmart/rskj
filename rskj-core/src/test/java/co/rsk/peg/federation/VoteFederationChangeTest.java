@@ -1,5 +1,11 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
@@ -29,17 +35,10 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
-
-import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.flatKeysAsByteArray;
-import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 class VoteFederationChangeTest {
     private static final FederationConstants federationMainnetConstants = FederationMainNetConstants.getInstance();

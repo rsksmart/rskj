@@ -35,7 +35,6 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
-
 import co.rsk.test.builders.FederationSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
