@@ -3048,7 +3048,7 @@ class BridgeSupportFlyoverTest {
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
-        when(federationSupport.getFederationContext()).thenReturn(new FederationContext(genesisFederation));
+        when(federationSupport.getLiveFederations()).thenReturn(Collections.singletonList(genesisFederation));
 
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
@@ -3145,6 +3145,10 @@ class BridgeSupportFlyoverTest {
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
 
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        FederationSupport federationSupport = mock(FederationSupport.class);
+        when(federationSupport.getLiveFederations()).thenReturn(Collections.singletonList(genesisFederation));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3156,14 +3160,12 @@ class BridgeSupportFlyoverTest {
             btcContext,
             feePerKbSupport,
             whitelistSupport,
-            mock(FederationSupport.class),
+            federationSupport,
             lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
         ));
-
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
@@ -3241,6 +3243,10 @@ class BridgeSupportFlyoverTest {
         FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        FederationSupport federationSupport = mock(FederationSupport.class);
+        when(federationSupport.getLiveFederations()).thenReturn(Collections.singletonList(genesisFederation));
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3252,13 +3258,12 @@ class BridgeSupportFlyoverTest {
             btcContext,
             feePerKbSupport,
             whitelistSupport,
-            mock(FederationSupport.class),
+            federationSupport,
             lockingCapSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
         ));
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
