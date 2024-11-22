@@ -706,7 +706,7 @@ public class FederationSupportImpl implements FederationSupport {
 
     public void commitProposedFederation() {
         Federation proposedFederation = provider.getProposedFederation(constants, activations)
-                .orElseThrow(IllegalStateException::new);
+            .orElseThrow(IllegalStateException::new);
 
         handoverToNewFederation(proposedFederation);
         clearProposedFederation();
