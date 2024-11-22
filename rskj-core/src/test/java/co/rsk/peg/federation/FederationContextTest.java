@@ -7,6 +7,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,8 +38,10 @@ class FederationContextTest {
     void setRetiringFederation() {
         federationContext.setRetiringFederation(retiringFederation);
 
-        assertTrue(federationContext.getRetiringFederation().isPresent());
-        assertEquals(retiringFederation, federationContext.getRetiringFederation().get());
+        Optional<Federation> retiringFederationFromFederationContext = federationContext.getRetiringFederation();
+
+        assertTrue(retiringFederationFromFederationContext.isPresent());
+        assertEquals(retiringFederation, retiringFederationFromFederationContext.get());
     }
 
     @Test
@@ -48,11 +51,13 @@ class FederationContextTest {
 
     @Test
     void setLastRetiredFederationP2SHScript() {
-        Script lastRetiredFederationP2SHScript = retiringFederation.getP2SHScript();
-        federationContext.setLastRetiredFederationP2SHScript(lastRetiredFederationP2SHScript);
+        Script lastRetiredFederationP2SHScriptExpected = retiringFederation.getP2SHScript();
+        federationContext.setLastRetiredFederationP2SHScript(lastRetiredFederationP2SHScriptExpected);
 
-        assertTrue(federationContext.getLastRetiredFederationP2SHScript().isPresent());
-        assertEquals(lastRetiredFederationP2SHScript, federationContext.getLastRetiredFederationP2SHScript().get());
+        Optional<Script> lastRetiredFederationP2SHScriptFromFederationContext = federationContext.getLastRetiredFederationP2SHScript();
+
+        assertTrue(lastRetiredFederationP2SHScriptFromFederationContext.isPresent());
+        assertEquals(lastRetiredFederationP2SHScriptExpected, lastRetiredFederationP2SHScriptFromFederationContext.get());
     }
 
     @Test
