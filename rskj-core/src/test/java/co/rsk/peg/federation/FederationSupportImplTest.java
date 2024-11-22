@@ -464,41 +464,46 @@ class FederationSupportImplTest {
     @Tag("non null new and old federations")
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class ActiveFederationTestsWithNonNullFederations {
-        // new federation should be active if we are past the activation block number
-        // old federation should be active if we are before the activation block number
-        // activation block number is smaller for hop than for fingerroot
+        Federation oldFederation;
+        Federation newFederation;
 
-        // create old and new federations
-        long oldFederationCreationBlockNumber = 20;
-        long newFederationCreationBlockNumber = 65;
-        Federation oldFederation = P2shErpFederationBuilder.builder()
-            .withCreationBlockNumber(oldFederationCreationBlockNumber)
-            .build();
-        List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
-        );
-        Federation newFederation = P2shErpFederationBuilder.builder()
-            .withMembersBtcPublicKeys(newFederationKeys)
-            .withCreationBlockNumber(newFederationCreationBlockNumber)
-            .build();
+        long blockNumberFederationActivationHop;
+        long blockNumberFederationActivationFingerroot;
 
-        // get block number activations for hop and fingerroot
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
-        long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
-        long blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
         ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
-        long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
-        long blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
-
-        FederationStorageProvider storageProvider;
 
         @BeforeEach
         void setUp() {
+            long oldFederationCreationBlockNumber = 20;
+            oldFederation = P2shErpFederationBuilder.builder()
+                .withCreationBlockNumber(oldFederationCreationBlockNumber)
+                .build();
+
+            long newFederationCreationBlockNumber = 65;
+            List<BtcECKey> newFederationKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
+            );
+            newFederation = P2shErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(newFederationKeys)
+                .withCreationBlockNumber(newFederationCreationBlockNumber)
+                .build();
+
             // save federations in storage
             storageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(storageAccessor);
             storageProvider.setOldFederation(oldFederation);
             storageProvider.setNewFederation(newFederation);
+
+            // get block number activations for hop and fingerroot
+            // new federation should be active if we are past the activation block number
+            // old federation should be active if we are before the activation block number
+            // activation block number is smaller for hop than for fingerroot
+            long newFederationActivationAgeHop = federationMainnetConstants.getFederationActivationAge(hopActivations);
+            blockNumberFederationActivationHop = newFederationCreationBlockNumber + newFederationActivationAgeHop;
+
+            long newFederationActivationAgeFingerroot = federationMainnetConstants.getFederationActivationAge(fingerrootActivations);
+            blockNumberFederationActivationFingerroot = newFederationCreationBlockNumber + newFederationActivationAgeFingerroot;
         }
 
         @ParameterizedTest
