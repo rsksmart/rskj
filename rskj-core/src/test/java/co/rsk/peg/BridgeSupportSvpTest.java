@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.BridgeUtils.getFederationMembersP2SHScript;
 import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
@@ -1091,6 +1090,81 @@ public class BridgeSupportSvpTest {
             assertHandoverToNewFederation(activeFederationUtxosBeforeRegisteringTx);
         }
 
+        @Test
+        void registerBtcTransaction_whenIsTheSpendTransaction_withAmountBelowMinPeginValue_shouldProcessSpendTxAndSvpSuccess() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            createSpendTransaction();
+            addSpendTransactionInputs();
+            Coin amountToSend = bridgeMainNetConstants.getMinimumPeginTxValue(allActivations).minus(Coin.valueOf(1));
+            addSpendTransactionOutput(amountToSend);
+            saveSvpSpendTransactionValues();
+
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            // tx registration
+            assertActiveFederationUtxosSize(activeFederationUtxosBeforeRegisteringTx.size() + 1);
+            assertTransactionWasProcessed(svpSpendTransaction.getHash());
+
+            // svp success
+            assertNoSvpSpendTxHash();
+            assertNoProposedFederation();
+
+            int outputSentToActiveFedIndex = 0;
+            TransactionOutput spendTxOutputSentToActiveFed = svpSpendTransaction.getOutput(outputSentToActiveFedIndex);
+            UTXO utxoSentToActiveFederation = new UTXO(
+                svpSpendTransaction.getHash(),
+                outputSentToActiveFedIndex,
+                spendTxOutputSentToActiveFed.getValue(),
+                0,
+                svpSpendTransaction.isCoinBase(),
+                spendTxOutputSentToActiveFed.getScriptPubKey()
+            );
+            activeFederationUtxosBeforeRegisteringTx.add(utxoSentToActiveFederation);
+
+            assertHandoverToNewFederation(activeFederationUtxosBeforeRegisteringTx);
+        }
+
+        @Test
+        void registerBtcTransaction_twice_whenIsTheSpendTransaction_shouldRegisterItJustOnce() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            List<UTXO> activeFederationUtxosBeforeRegisteringTx = new ArrayList<>(federationSupport.getActiveFederationBtcUTXOs());
+
+            // register spend tx for the first time
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                svpSpendTransaction.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+
+            // assert utxo was registered just once
+            assertActiveFederationUtxosSize(activeFederationUtxosBeforeRegisteringTx.size() + 1);
+        }
+
         private void assertHandoverToNewFederation(List<UTXO> utxosToMove) {
             assertUTXOsWereMovedFromNewToOldFederation(utxosToMove);
             assertNewAndOldFederationsWereSet();
@@ -1146,7 +1220,8 @@ public class BridgeSupportSvpTest {
         }
 
         private void assertLastRetiredFederationScriptWasSet() {
-            Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(allActivations, federationSupport.getActiveFederation());
+            ErpFederation activeFederation = (ErpFederation) federationSupport.getActiveFederation();
+            Script activeFederationMembersP2SHScript = activeFederation.getDefaultP2SHScript();
             Optional<Script> lastRetiredFederationP2SHScript = federationStorageProvider.getLastRetiredFederationP2SHScript(allActivations);
             assertTrue(lastRetiredFederationP2SHScript.isPresent());
             assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
@@ -1240,9 +1315,19 @@ public class BridgeSupportSvpTest {
     }
 
     private void recreateSvpSpendTransactionUnsigned() {
+        createSpendTransaction();
+        addSpendTransactionInputs();
+
+        Coin amountToSend = Coin.valueOf(1762);
+        addSpendTransactionOutput(amountToSend);
+    }
+
+    private void createSpendTransaction() {
         svpSpendTransaction = new BtcTransaction(btcMainnetParams);
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
+    }
 
+    private void addSpendTransactionInputs() {
         recreateSvpFundTransactionSigned();
         // add inputs
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, proposedFederation.getP2SHScript());
@@ -1254,9 +1339,10 @@ public class BridgeSupportSvpTest {
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
         svpSpendTransaction.getInput(1)
             .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+    }
 
-        // add output
-        svpSpendTransaction.addOutput(Coin.valueOf(1762), federationSupport.getActiveFederationAddress());
+    private void addSpendTransactionOutput(Coin amountToSend) {
+        svpSpendTransaction.addOutput(amountToSend, federationSupport.getActiveFederationAddress());
     }
 
     private void saveSvpSpendTransactionValues() {
