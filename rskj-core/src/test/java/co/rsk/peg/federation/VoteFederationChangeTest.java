@@ -460,7 +460,6 @@ class VoteFederationChangeTest {
     @Test
     void commitProposedFederation_shouldPerformCommitProposedFederationActions() {
         // arrange
-        Federation activeFederation = FederationTestUtils.getErpFederation(federationMainnetConstants.getBtcParams());
         storageProvider.setNewFederation(activeFederation);
 
         List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
@@ -555,8 +554,8 @@ class VoteFederationChangeTest {
     }
 
     private void assertLastRetiredFederationScriptWasSet() {
-        ErpFederation activeFederation = (ErpFederation) federationSupport.getActiveFederation();
-        Script activeFederationMembersP2SHScript = activeFederation.getDefaultP2SHScript();
+        ErpFederation activeFederationCasted = (ErpFederation) federationSupport.getActiveFederation();
+        Script activeFederationMembersP2SHScript = activeFederationCasted.getDefaultP2SHScript();
         Optional<Script> lastRetiredFederationP2SHScript = storageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScript.isPresent());
         assertEquals(activeFederationMembersP2SHScript, lastRetiredFederationP2SHScript.get());
