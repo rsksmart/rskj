@@ -386,10 +386,10 @@ public class BridgeSupportIT {
                 dataOutputStream.writeInt(0);  // Number of signatures to read. Do this later.
                 digestOutputStream.on(true);
                 dataOutputStream.writeInt(checkpoints.size());
-                ByteBuffer buffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE);
+                ByteBuffer buffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE_LEGACY);
                 for (BtcBlock block : checkpoints) {
                     storedBlock = storedBlock.build(block);
-                    storedBlock.serializeCompact(buffer);
+                    storedBlock.serializeCompactLegacy(buffer);
                     dataOutputStream.write(buffer.array());
                     buffer.position(0);
                 }
