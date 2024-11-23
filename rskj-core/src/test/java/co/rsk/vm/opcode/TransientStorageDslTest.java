@@ -341,6 +341,96 @@ class TransientStorageDslTest {
         Assertions.assertEquals(2, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
+    @Test
+    void testDynamicReentrancyContextsTstoreBeforeRevertOrInvalidHasNoEffect() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_reentrancy_context_tstore_before_revert_or_invalid_has_no_effect.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstorageDynamicReentrancyContextContract = "txTstorageDynamicReentrancyContextContract";
+        assertTransactionReceiptWithStatus(world, txTstorageDynamicReentrancyContextContract, "b01", true);
+
+        String txTestReentrantContextRevert = "txTestReentrantContextRevert";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTestReentrantContextRevert, "b02", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txTestReentrantContextInvalid = "txTestReentrantContextInvalid";
+        assertTransactionReceiptWithStatus(world, txTestReentrantContextInvalid, "b03", false);
+    }
+
+    @Test
+    void testDynamicReentrancyContextsRevertOrInvalidUndoesAll() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_reentrancy_context_revert_or_invalid_undoes_all.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstorageDynamicReentrancyContextContract = "txTstorageDynamicReentrancyContextContract";
+        assertTransactionReceiptWithStatus(world, txTstorageDynamicReentrancyContextContract, "b01", true);
+
+        String txTestReentrantContextRevert = "txTestReentrantContextRevert";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTestReentrantContextRevert, "b02", true);
+        Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+
+        String txTestReentrantContextInvalid = "txTestReentrantContextInvalid";
+        assertTransactionReceiptWithStatus(world, txTestReentrantContextInvalid, "b03", false);
+    }
+
+    @Test
+    void testReentrancyContextsTstoreAfterReentrantCall() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_tstore_after_reentrant_call.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstorageReentrancyContextTestContract = "txTstorageReentrancyContextTestContract";
+        assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
+
+        String txTstoreInReentrantCall = "txTstoreInReentrantCall";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTstoreInReentrantCall, "b02", true);
+
+        String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
+        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testReentrancyContextsTloadAfterReentrantTstore() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_tload_after_reentrant_tstore.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstorageReentrancyContextTestContract = "txTstorageReentrancyContextTestContract";
+        assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
+
+        String txTloadAfterReentrantTstore = "txTloadAfterReentrantTstore";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTloadAfterReentrantTstore, "b02", true);
+
+        String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
+        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testReentrancyContextsManipulateInReentrantCall() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_manipulate_in_reentrant_call.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstorageReentrancyContextTestContract = "txTstorageReentrancyContextTestContract";
+        assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
+
+        String txManipulateInReentrantCall = "txManipulateInReentrantCall";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txManipulateInReentrantCall, "b02", true);
+
+        String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
+        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
         Transaction txCreation = world.getTransactionByName(txName);
         assertNotNull(txCreation);

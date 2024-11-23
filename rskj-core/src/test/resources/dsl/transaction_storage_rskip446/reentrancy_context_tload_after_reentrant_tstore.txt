@@ -1,0 +1,133 @@
+comment
+
+// CONTRACT CODE
+
+pragma solidity ^0.8.24;
+
+contract TstorageReentrancyContextTest {
+    bool reentrant = false;
+    uint256 success;
+    uint256 valueLoadedAfterSubcall;
+    uint256 valueLoadedBeforeSubcall;
+
+    constructor() {
+    }
+
+    event OK();
+    event ERROR(string, uint256);
+
+    function tLoadAfterReentrantTstore() external {
+        bytes memory data = abi.encodeWithSignature("tLoadAfterReentrantTstore()");
+
+        assembly {
+            let reentrantValue := sload(reentrant.slot)
+            switch reentrantValue
+            case 0 {
+                sstore(reentrant.slot, true)
+
+                tstore(0xFF, 0x100)
+                sstore(valueLoadedBeforeSubcall.slot, tload(0xFF))
+                mstore(0, 2)
+                sstore(success.slot, call(gas(), address(), 0, add(data, 0x20), mload(data), 0, 0))
+                sstore(valueLoadedAfterSubcall.slot, tload(0xFF))
+            }
+            default {
+                tstore(0xFF, 0x101)
+            }
+        }
+    }
+
+    function checkValuesStoredInTstorageCase() external {
+        checkReturnValueExpected(valueLoadedBeforeSubcall, 'Checking value from tload before subcall', 0x100);
+        checkReturnValueExpected(success, 'Checking result callee execution is with success', 1);
+        checkReturnValueExpected(valueLoadedAfterSubcall, 'Checking value from tload after subcall ', 0x101);
+    }
+
+    function checkReturnValueExpected(uint256 valueReceived, string memory message, uint256 expectedValue) private {
+        if( valueReceived == expectedValue){
+            emit OK();
+        } else {
+            emit ERROR(message, valueReceived);
+        }
+    }
+}
+
+// CONTRACT BYTECODE
+
+TstorageReentrancyContextTest: 60806040525f805f6101000a81548160ff021916908315150217905550348015610027575f80fd5b50610389806100355f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80635ecc5be5146100385780635f6813d114610042575b5f80fd5b61004061004c565b005b61004a610116565b005b5f6040516024016040516020818303038152906040527f5ecc5be5000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505090505f54805f81146100e75761010160ff5d610111565b60015f5561010060ff5d60ff5c60035560025f525f808451602086015f305af160015560ff5c6002555b505050565b61013d6003546040518060600160405280602881526020016102d46028913961010061018c565b6101636001546040518060600160405280603081526020016102fc60309139600161018c565b61018a60025460405180606001604052806028815260200161032c6028913961010161018c565b565b8083036101c4577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16101fe565b7fc9e730d5b570f89e168eb8c3d29f8c396b957e540af248c95c9519ac47c2c69f82846040516101f59291906102a5565b60405180910390a15b505050565b5f81519050919050565b5f82825260208201905092915050565b5f5b8381101561023a57808201518184015260208101905061021f565b5f8484015250505050565b5f601f19601f8301169050919050565b5f61025f82610203565b610269818561020d565b935061027981856020860161021d565b61028281610245565b840191505092915050565b5f819050919050565b61029f8161028d565b82525050565b5f6040820190508181035f8301526102bd8185610255565b90506102cc6020830184610296565b939250505056fe436865636b696e672076616c75652066726f6d20746c6f6164206265666f72652073756263616c6c436865636b696e6720726573756c742063616c6c656520657865637574696f6e20697320776974682073756363657373436865636b696e672076616c75652066726f6d20746c6f61642061667465722073756263616c6c20a264697066735822122051c2d1c8d7ba9ee8ee19a56961f0bb6c1a00450d360d92729994011b727dafac64736f6c63430008180033
+
+5f6813d1: checkValuesStoredInTstorage()
+5ecc5be5: tLoadAfterReentrantTstore()
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TstorageReentrancyContextTest contract
+transaction_build txTstorageReentrancyContextTestContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 60806040525f805f6101000a81548160ff021916908315150217905550348015610027575f80fd5b50610389806100355f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80635ecc5be5146100385780635f6813d114610042575b5f80fd5b61004061004c565b005b61004a610116565b005b5f6040516024016040516020818303038152906040527f5ecc5be5000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505090505f54805f81146100e75761010160ff5d610111565b60015f5561010060ff5d60ff5c60035560025f525f808451602086015f305af160015560ff5c6002555b505050565b61013d6003546040518060600160405280602881526020016102d46028913961010061018c565b6101636001546040518060600160405280603081526020016102fc60309139600161018c565b61018a60025460405180606001604052806028815260200161032c6028913961010161018c565b565b8083036101c4577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16101fe565b7fc9e730d5b570f89e168eb8c3d29f8c396b957e540af248c95c9519ac47c2c69f82846040516101f59291906102a5565b60405180910390a15b505050565b5f81519050919050565b5f82825260208201905092915050565b5f5b8381101561023a57808201518184015260208101905061021f565b5f8484015250505050565b5f601f19601f8301169050919050565b5f61025f82610203565b610269818561020d565b935061027981856020860161021d565b61028281610245565b840191505092915050565b5f819050919050565b61029f8161028d565b82525050565b5f6040820190508181035f8301526102bd8185610255565b90506102cc6020830184610296565b939250505056fe436865636b696e672076616c75652066726f6d20746c6f6164206265666f72652073756263616c6c436865636b696e6720726573756c742063616c6c656520657865637574696f6e20697320776974682073756363657373436865636b696e672076616c75652066726f6d20746c6f61642061667465722073756263616c6c20a264697066735822122051c2d1c8d7ba9ee8ee19a56961f0bb6c1a00450d360d92729994011b727dafac64736f6c63430008180033
+    gas 1000000
+    build
+
+# Create block to hold txTstorageReentrancyContextTestContract transaction
+block_build b01
+    parent g00
+    transactions txTstorageReentrancyContextTestContract
+    gasLimit 1200000
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Create transaction to execute txTloadAfterReentrantTstorel transaction
+transaction_build txTloadAfterReentrantTstore
+    sender acc1
+    nonce 1
+    contract txTstorageReentrancyContextTestContract
+    value 0
+    data 5ecc5be5
+    gas 300000
+    build
+
+# Create block to hold txTloadAfterReentrantTstore transaction
+block_build b02
+    parent b01
+    transactions txTloadAfterReentrantTstore
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Create transaction to execute txCheckValuesStoredInTstorage transaction
+transaction_build txCheckValuesStoredInTstorage transaction
+    sender acc1
+    nonce 2
+    contract txTstorageReentrancyContextTestContract
+    value 0
+    data 5f6813d1
+    gas 300000
+    build
+
+# Create block to hold txCheckValuesStoredInTstorage transaction
+block_build b03
+    parent b02
+    transactions txCheckValuesStoredInTstorage
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b03
+
+# Check b03 is best block
+assert_best b03
