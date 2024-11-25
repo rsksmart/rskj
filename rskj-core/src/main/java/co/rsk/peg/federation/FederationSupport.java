@@ -127,6 +127,8 @@ public interface FederationSupport {
 
     void clearProposedFederation();
 
+    void commitProposedFederation();
+
     int voteFederationChange(
         Transaction tx,
         ABICallSpec callSpec,

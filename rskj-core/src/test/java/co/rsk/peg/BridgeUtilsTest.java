@@ -63,7 +63,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -924,7 +923,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_ZeroInput_ZeroOutput() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -943,7 +941,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_2Inputs_2Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -971,7 +968,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_9Inputs_2Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -999,7 +995,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_10Inputs_20Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -1030,7 +1025,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_50Inputs_200Outputs() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -1061,7 +1055,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_50Inputs_200Outputs_nonStandardErpFederation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
@@ -1104,7 +1097,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_100Inputs_50Outputs_nonStandardErpFederation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
@@ -1147,7 +1139,6 @@ class BridgeUtilsTest {
 
     @Test
     void getRegularPegoutTxSize_has_proper_calculations() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         BtcECKey key1 = new BtcECKey();
@@ -1679,7 +1670,6 @@ class BridgeUtilsTest {
 
     @Test
     void testValidateFlyoverPeginValue_sent_zero_amount_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Address btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
@@ -1706,7 +1696,6 @@ class BridgeUtilsTest {
 
     @Test
     void testValidateFlyoverPeginValue_sent_one_utxo_with_amount_below_minimum_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Address addressReceivingFundsBelowMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
@@ -1734,7 +1723,6 @@ class BridgeUtilsTest {
 
     @Test
     void testValidateFlyoverPeginValue_sent_one_utxo_with_amount_below_minimum_after_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(networkParameters);
@@ -1759,7 +1747,6 @@ class BridgeUtilsTest {
 
     @Test
     void testValidateFlyoverPeginValue_funds_sent_equal_to_minimum_after_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
@@ -1786,7 +1773,6 @@ class BridgeUtilsTest {
 
     @Test
     void testValidateFlyoverPeginValue_funds_sent_above_minimum_after_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
@@ -1814,7 +1800,6 @@ class BridgeUtilsTest {
 
     @Test
     void testGetUTXOsSentToAddresses_multiple_utxos_sent_to_random_address_and_one_utxo_sent_to_bech32_address_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
@@ -1839,7 +1824,6 @@ class BridgeUtilsTest {
 
     @Test
     void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
@@ -1879,7 +1863,6 @@ class BridgeUtilsTest {
 
     @Test
     void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_before_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
@@ -1908,7 +1891,6 @@ class BridgeUtilsTest {
 
     @Test
     void testGetUTXOsSentToAddresses_multiple_utxos_sent_to_random_address_and_one_utxo_sent_to_bech32_address_after_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(networkParameters);
@@ -1942,7 +1924,6 @@ class BridgeUtilsTest {
 
     @Test
     void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_after_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(networkParameters);
@@ -1989,7 +1970,6 @@ class BridgeUtilsTest {
 
     @Test
     void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_after_RSKIP293() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(networkParameters);

@@ -691,21 +691,10 @@ public class FederationSupportImpl implements FederationSupport {
      * The federation change info is preserved, and the commitment with the voted federation is logged.
      */
     private FederationChangeResponseCode legacyCommitPendingFederation(PendingFederation currentPendingFederation, BridgeEventLogger eventLogger) {
-        moveUTXOsFromNewToOldFederation();
-
-        // set old and new federations
-        Federation activeFederation = getActiveFederation();
-        provider.setOldFederation(activeFederation);
         Federation newFederation = buildFederationFromPendingFederation(currentPendingFederation);
-        provider.setNewFederation(newFederation);
+        handoverToNewFederation(newFederation);
 
         clearPendingFederationVoting();
-
-        if (activations.isActive(RSKIP186)) {
-            // since we are creating the to-be-active-fed in this block,
-            // its creation block height is this block number
-            saveFederationChangeInfo(rskExecutionBlock.getNumber());
-        }
 
         Federation currentOldFederation = provider.getOldFederation(constants, activations);
         Federation currentNewFederation = provider.getNewFederation(constants, activations);
@@ -714,16 +703,42 @@ public class FederationSupportImpl implements FederationSupport {
         return FederationChangeResponseCode.SUCCESSFUL;
     }
 
+    public void commitProposedFederation() {
+        Federation proposedFederation = provider.getProposedFederation(constants, activations)
+            .orElseThrow(IllegalStateException::new);
+
+        handoverToNewFederation(proposedFederation);
+        clearProposedFederation();
+    }
+
+    private void handoverToNewFederation(Federation newFederation) {
+        moveUTXOsFromNewToOldFederation();
+
+        setOldAndNewFederations(getActiveFederation(), newFederation);
+
+        if (activations.isActive(RSKIP186)) {
+            saveLastRetiredFederationScript();
+            provider.setNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
+        }
+    }
+
+    private void setOldAndNewFederations(Federation oldFederation, Federation newFederation) {
+        provider.setOldFederation(oldFederation);
+        provider.setNewFederation(newFederation);
+    }
+
     private void moveUTXOsFromNewToOldFederation() {
-        List<UTXO> utxosToMove = new ArrayList<>(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
+        // since the current active fed reference will change from being 'new' to 'old',
+        // we have to change the UTXOs reference to match it
+        List<UTXO> activeFederationUTXOs = List.copyOf(provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations));
 
         // Clear new and old federation's UTXOs
         provider.getNewFederationBtcUTXOs(constants.getBtcParams(), activations).clear();
         List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
         oldFederationUTXOs.clear();
 
-        // Move UTXOs from the new federation into the old federation
-        oldFederationUTXOs.addAll(utxosToMove);
+        // Move UTXOs reference to the old federation
+        oldFederationUTXOs.addAll(activeFederationUTXOs);
     }
 
     /**
@@ -750,26 +765,8 @@ public class FederationSupportImpl implements FederationSupport {
         return pendingFederation.buildFederation(federationCreationTime, federationCreationBlockNumber, constants, activations);
     }
 
-    private void clearPendingFederationVoting() {
-        // Clear pending federation and votes on election
-        provider.setPendingFederation(null);
-        provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
-    }
-
-    private void saveFederationChangeInfo(long newActiveFederationCreationBlockHeight) {
-        saveLastRetiredFederationScript();
-        provider.setNextFederationCreationBlockHeight(newActiveFederationCreationBlockHeight);
-    }
-
-    private void saveLastRetiredFederationScript() {
-        Federation activeFederation = getActiveFederation();
-        Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activeFederation);
-        provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
-    }
-
-    private Script getFederationMembersP2SHScript(Federation federation) {
-        // when the federation is a standard multisig,
-        // the members p2sh script is the p2sh script
+    private static Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
+        // when the federation is a standard multisig, the members p2sh script is the p2sh script
         if (!activations.isActive(RSKIP377)) {
             return federation.getP2SHScript();
         }
@@ -777,9 +774,20 @@ public class FederationSupportImpl implements FederationSupport {
             return federation.getP2SHScript();
         }
 
-        // when the federation also has erp keys,
-        // the members p2sh script is the default p2sh script
+        // when the federation also has erp keys, the members p2sh script is the default p2sh script
         return ((ErpFederation) federation).getDefaultP2SHScript();
+    }
+
+    private void clearPendingFederationVoting() {
+        // Clear pending federation and votes on election
+        provider.setPendingFederation(null);
+        provider.getFederationElection(constants.getFederationChangeAuthorizer()).clear();
+    }
+
+    private void saveLastRetiredFederationScript() {
+        Federation activeFederation = getActiveFederation();
+        Script activeFederationMembersP2SHScript = getFederationMembersP2SHScript(activations, activeFederation);
+        provider.setLastRetiredFederationP2SHScript(activeFederationMembersP2SHScript);
     }
 
     private void logCommitmentWithVotedFederation(BridgeEventLogger eventLogger, Federation federationToBeRetired, Federation votedFederation) {
