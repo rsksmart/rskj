@@ -954,7 +954,7 @@ public class BridgeSupportSvpTest {
     @Tag("Spend transaction registration tests")
     class SpendTxRegistrationTests {
         @Test
-        void registerBtcTransaction_whenValidationPeriodEnded_shouldNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_whenValidationPeriodEnded_shouldRegisterSpendTxButNotProcessSvpSuccess() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeExecutionBlockIsAfterValidationPeriodEnded();
 
@@ -974,8 +974,8 @@ public class BridgeSupportSvpTest {
 
             // assert
             // tx was not registered
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
-            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertTransactionWasProcessed(svpSpendTransaction.getHash());
 
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsSavedInStorage();
