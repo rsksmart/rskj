@@ -37,7 +37,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -251,9 +254,8 @@ public class SnapshotProcessor implements InternalService {
 
         logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} triesize: {}", lastBlock.getNumber(), state.getRemoteTrieSize());
         logger.debug("Blocks included in the response: {} from {} to {}", blocksFromResponse.size(), blocksFromResponse.get(0).getNumber(), blocksFromResponse.get(blocksFromResponse.size() - 1).getNumber());
+
         requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
-//        generateChunkRequestTasks(state);
-//        startRequestingChunks(state);
     }
 
     private boolean validateAndSaveBlocks(SnapSyncState state, Peer sender, List<Block> blocks, List<BlockDifficulty> difficulties) {
@@ -269,10 +271,10 @@ public class SnapshotProcessor implements InternalService {
             }
 
             state.addBlock(blockPair);
-            childBlockPair = blockPair;
-        }
 
-        state.setLastVerifiedBlockHeader(childBlockPair.getLeft().getHeader());
+            childBlockPair = blockPair;
+            state.setLastVerifiedBlockHeader(childBlockPair.getLeft().getHeader());
+        }
 
         return true;
     }
@@ -334,6 +336,10 @@ public class SnapshotProcessor implements InternalService {
             }
 
             state.setLastVerifiedBlockHeader(blockHeader);
+
+            if (blocksVerified(state)) {
+                return true;
+            }
         }
 
         return true;
@@ -613,7 +619,7 @@ public class SnapshotProcessor implements InternalService {
 
     private boolean blocksVerified(SnapSyncState state) {
         BlockHeader lastVerifiedBlockHeader = state.getLastVerifiedBlockHeader();
-        return lastVerifiedBlockHeader != null && lastVerifiedBlockHeader.getParentHash().equals(blockchain.getGenesisBlock().getHash());
+        return lastVerifiedBlockHeader != null && blockStore.isBlockExist(lastVerifiedBlockHeader.getParentHash().getBytes());
     }
 
     /**

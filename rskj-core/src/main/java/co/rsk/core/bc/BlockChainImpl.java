@@ -78,7 +78,6 @@ public class BlockChainImpl implements Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final Genesis genesis;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
@@ -95,15 +94,13 @@ public class BlockChainImpl implements Blockchain {
     private final BlockExecutor blockExecutor;
     private boolean noValidation;
 
-    public BlockChainImpl(Genesis genesis,
-                          BlockStore blockStore,
+    public BlockChainImpl(BlockStore blockStore,
                           ReceiptStore receiptStore,
                           TransactionPool transactionPool,
                           EthereumListener listener,
                           BlockValidator blockValidator,
                           BlockExecutor blockExecutor,
                           StateRootHandler stateRootHandler) {
-        this.genesis = genesis;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
@@ -422,11 +419,6 @@ public class BlockChainImpl implements Blockchain {
     @Override
     public Block getBestBlock() {
         return this.status.getBestBlock();
-    }
-
-    @Override
-    public Genesis getGenesisBlock() {
-        return this.genesis;
     }
 
     public void setNoValidation(boolean noValidation) {

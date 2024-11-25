@@ -64,11 +64,15 @@ public class BlockConnectorHelper {
             if (!currentBlock.isParentOf(child)) {
                 throw new BlockConnectorException(currentBlock.getNumber(), child.getNumber());
             }
-            blockStore.saveBlock(currentBlock, currentBlockAndDifficulty.getRight(), true);
+            if (!blockStore.isBlockExist(currentBlock.getHash().getBytes())) {
+                blockStore.saveBlock(currentBlock, currentBlockAndDifficulty.getRight(), true);
+            } else {
+                logger.warn("Block: [{}/{}] already exists. Skipping", currentBlock.getNumber(), currentBlock.getHash());
+            }
             child = currentBlock;
             blockIndex--;
         }
-        logger.info("Finished connecting blocks. Last saved block: {}",child.getNumber());
+        logger.info("Finished connecting blocks. Last saved block: [{}/{}]", child.getNumber(), child.getHash());
     }
 
     static class BlockAndDiffComparator implements java.util.Comparator<Pair<Block, BlockDifficulty>> {

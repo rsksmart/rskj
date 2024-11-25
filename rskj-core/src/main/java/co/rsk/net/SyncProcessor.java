@@ -330,33 +330,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingSnapHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {
-        setSyncState(new SnapDownloadingHeadersSyncState(
-                syncConfiguration,
-                this,
-                consensusValidationMainchainView,
-                difficultyRule,
-                blockHeaderValidationRule,
-                peer,
-                skeletons,
-                connectionPoint,
-                peersInformation,
-                blockStore));
-    }
-
-    @Override
     public void startDownloadingSkeleton(long connectionPoint, Peer peer) {
         setSyncState(new DownloadingSkeletonSyncState(
-                syncConfiguration,
-                this,
-                peersInformation,
-                peer,
-                connectionPoint));
-    }
-
-    @Override
-    public void startDownloadingSnapSkeleton(long connectionPoint, Peer peer) {
-        setSyncState(new SnapDownloadingSkeletonSyncState(
                 syncConfiguration,
                 this,
                 peersInformation,
@@ -370,15 +345,6 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.debug("Find connection point with node {}", peerId);
         long bestBlockNumber = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
         setSyncState(new FindingConnectionPointSyncState(
-                syncConfiguration, this, blockStore, peer, bestBlockNumber));
-    }
-
-    @Override
-    public void startFindingSnapConnectionPoint(Peer peer) {
-        NodeID peerId = peer.getPeerNodeID();
-        logger.debug("Find snap connection point with node {}", peerId);
-        long bestBlockNumber = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
-        setSyncState(new SnapFindingConnectionPointSyncState(
                 syncConfiguration, this, blockStore, peer, bestBlockNumber));
     }
 

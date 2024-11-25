@@ -34,7 +34,6 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.util.ByteUtil;
 import org.mapdb.DataIO;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
@@ -52,7 +51,6 @@ public class IndexedBlockStore implements BlockStore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
     private static final Profiler profiler = ProfilerFactory.getInstance();
-    private static final byte[] BLOCK_HEADER_KEY_PREFIX = new byte[]{'h'};
 
     private final BlockCache blockCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
@@ -492,37 +490,6 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         return result;
-    }
-
-    @Override
-    public boolean blockHeaderExists(Keccak256 hash) {
-        byte[] blockHeaderKey = ByteUtil.merge(BLOCK_HEADER_KEY_PREFIX, hash.getBytes());
-        return this.blocks.get(blockHeaderKey) != null;
-    }
-
-    @Override
-    public BlockHeader getBlockHeaderByHash(Keccak256 hash) {
-        byte[] blockHeaderKey = ByteUtil.merge(BLOCK_HEADER_KEY_PREFIX, hash.getBytes());
-        byte[] blockHeaderRlp = this.blocks.get(blockHeaderKey);
-
-        if (blockHeaderRlp == null) {
-            return null;
-        }
-
-        return blockFactory.decodeHeader(blockHeaderRlp, false);
-    }
-
-    @Override
-    public void saveBlockHeader(BlockHeader blockHeader) {
-        Keccak256 hash = blockHeader.getHash();
-        byte[] blockHeaderKey = ByteUtil.merge(BLOCK_HEADER_KEY_PREFIX, hash.getBytes());
-        this.blocks.put(blockHeaderKey, blockHeader.getFullEncoded());
-    }
-
-    @Override
-    public void removeBlockHeader(Keccak256 hash) {
-        byte[] blockHeaderKey = ByteUtil.merge(BLOCK_HEADER_KEY_PREFIX, hash.getBytes());
-        this.blocks.delete(blockHeaderKey);
     }
 
     /**

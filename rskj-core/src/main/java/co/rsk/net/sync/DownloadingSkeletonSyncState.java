@@ -74,7 +74,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-            startDownloadingHeaders(skeletons, connectionPoint, peer);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peer);
         }
     }
 
@@ -94,16 +94,12 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
                 return;
             }
 
-            startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
         }
     }
 
     @Override
     public void onEnter() {
         peersInformation.getBestPeerCandidates().forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
-    }
-
-    protected void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {
-        syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peer);
     }
 }

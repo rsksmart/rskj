@@ -56,8 +56,6 @@ public interface Blockchain {
      */
     Block getBestBlock();
 
-    Genesis getGenesisBlock();
-
     long getSize();
 
     ImportResult tryToConnect(Block block);

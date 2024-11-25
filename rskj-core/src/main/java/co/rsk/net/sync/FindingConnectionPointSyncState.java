@@ -17,7 +17,6 @@
  */
 package co.rsk.net.sync;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.net.Peer;
 import org.ethereum.db.BlockStore;
 
@@ -25,7 +24,7 @@ import java.util.Optional;
 
 public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
 
-    protected final BlockStore blockStore;
+    private final BlockStore blockStore;
     private final ConnectionPointFinder connectionPointFinder;
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
@@ -44,15 +43,15 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        boolean knownBlock = isKnown(new Keccak256(hash));
+        boolean knownBlock = isKnownBlock(hash);
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (cp.isPresent()) {
             if (knownBlock) {
-                processConnectionPoint(cp.get(), selectedPeer);
+                syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeer);
             } else {
                 syncEventsHandler.onSyncIssue(selectedPeer, "Connection point not found on {}", this.getClass());
             }
-            return;
+             return;
         }
 
         if (knownBlock) {
@@ -64,7 +63,7 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
         cp = connectionPointFinder.getConnectionPoint();
         // No need to ask for genesis hash
         if (cp.isPresent() && cp.get() == 0L) {
-            processConnectionPoint(cp.get(), selectedPeer);
+            syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeer);
             return;
         }
 
@@ -72,8 +71,8 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
         trySendRequest();
     }
 
-    protected boolean isKnown(Keccak256 hash) {
-        return blockStore.isBlockExist(hash.getBytes());
+    private boolean isKnownBlock(byte[] hash) {
+        return blockStore.isBlockExist(hash);
     }
 
     private void trySendRequest() {
@@ -83,9 +82,5 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
     @Override
     public void onEnter() {
         trySendRequest();
-    }
-
-    protected void processConnectionPoint(long connectionPoint, Peer peer) {
-        syncEventsHandler.startDownloadingSkeleton(connectionPoint, peer);
     }
 }

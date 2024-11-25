@@ -124,7 +124,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
 
         if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers
-            processPendingHeaders(pendingHeaders, skeletons, selectedPeer);
+            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeer);
             return;
         }
 
@@ -160,9 +160,5 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         }
 
         return blockParentValidationRule.validate(header, parentHeader);
-    }
-
-    void processPendingHeaders(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer) {
-        syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, peer);
     }
 }

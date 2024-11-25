@@ -106,7 +106,6 @@ public class BlockChainLoader {
         }
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                genesis,
                 blockStore,
                 receiptStore,
                 transactionPool,
