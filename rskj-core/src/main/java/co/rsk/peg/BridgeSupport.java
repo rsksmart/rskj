@@ -426,12 +426,16 @@ public class BridgeSupport {
                 case SVP_FUND_TX -> {
                     logger.debug("[registerBtcTransaction] This is an svp fund tx {}", btcTx.getHash());
                     processPegoutOrMigration(btcTx); // Need to register the change UTXO
-                    updateSvpFundTransactionValues(btcTx);
+                    if (isSvpOngoing()) {
+                        updateSvpFundTransactionValues(btcTx);
+                    }
                 }
                 case SVP_SPEND_TX -> {
                     logger.debug("[registerBtcTransaction] This is an svp spend tx {}", btcTx.getHash());
                     registerSvpSpendTransaction(btcTx);
-                    processSvpSuccess();
+                    if (isSvpOngoing()) {
+                        processSvpSuccess();
+                    }
                 }
                 default -> {
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
