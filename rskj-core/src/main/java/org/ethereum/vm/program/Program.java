@@ -688,7 +688,7 @@ public class Program {
                 if (activations.isActive(ConsensusRule.RSKIP453)) {
                     track.rollback();
                     stackPushZero();
-                    return programResult;
+                    return null;
                 }
             } else if (codeLength > Constants.getMaxContractSize()) {
                 programResult.setException(
@@ -700,7 +700,7 @@ public class Program {
                 if (activations.isActive(ConsensusRule.RSKIP453)) {
                     track.rollback();
                     stackPushZero();
-                    return programResult;
+                    return null;
                 }
             } else {
                 programResult.spendGas(storageCost);
