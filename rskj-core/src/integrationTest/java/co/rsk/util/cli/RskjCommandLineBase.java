@@ -51,7 +51,7 @@ public abstract class RskjCommandLineBase {
         command.append(" ");
     }
 
-    private void appendLinesToProcessOutput(String output){
+    private synchronized void appendLinesToProcessOutput(String output){
         processOutputBuilder.append(output).append(System.lineSeparator());
     }
 
@@ -112,7 +112,7 @@ public abstract class RskjCommandLineBase {
         return cliProcess;  // We return the process so the test can use it to waitFor, to kill, to add in a Future operation
     }
 
-    public String getOutput() {
+    public synchronized String getOutput() {
         return processOutputBuilder.toString();
     }
 }

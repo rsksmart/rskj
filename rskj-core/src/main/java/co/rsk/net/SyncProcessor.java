@@ -68,6 +68,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private final PeersInformation peersInformation;
     private final Map<Long, MessageInfo> pendingMessages;
     private final AtomicBoolean isSyncing = new AtomicBoolean();
+    private final SnapshotProcessor snapshotProcessor;
 
     private volatile long initialBlockNumber;
     private volatile long highestBlockNumber;
@@ -77,6 +78,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private SyncState syncState;
     private long lastRequestId;
 
+    @VisibleForTesting
     public SyncProcessor(Blockchain blockchain,
                          BlockStore blockStore,
                          ConsensusValidationMainchainView consensusValidationMainchainView,
@@ -89,6 +91,23 @@ public class SyncProcessor implements SyncEventsHandler {
                          PeersInformation peersInformation,
                          Genesis genesis,
                          EthereumListener ethereumListener) {
+
+        this(blockchain, blockStore, consensusValidationMainchainView, blockSyncService, syncConfiguration, blockFactory, blockHeaderValidationRule, syncBlockValidatorRule, difficultyCalculator, peersInformation, genesis, ethereumListener, null);
+    }
+
+    public SyncProcessor(Blockchain blockchain,
+                         BlockStore blockStore,
+                         ConsensusValidationMainchainView consensusValidationMainchainView,
+                         BlockSyncService blockSyncService,
+                         SyncConfiguration syncConfiguration,
+                         BlockFactory blockFactory,
+                         BlockHeaderValidationRule blockHeaderValidationRule,
+                         SyncBlockValidatorRule syncBlockValidatorRule,
+                         DifficultyCalculator difficultyCalculator,
+                         PeersInformation peersInformation,
+                         Genesis genesis,
+                         EthereumListener ethereumListener,
+                         SnapshotProcessor snapshotProcessor) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
@@ -112,6 +131,7 @@ public class SyncProcessor implements SyncEventsHandler {
         };
 
         this.peersInformation = peersInformation;
+        this.snapshotProcessor = snapshotProcessor;
         setSyncState(new PeerAndModeDecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
 
@@ -204,6 +224,18 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
+    public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
+        syncState.onSnapStatus(sender, responseMessage);
+    }
+
+    public void processSnapBlocksResponse(Peer sender, SnapBlocksResponseMessage responseMessage) {
+        syncState.onSnapBlocks(sender, responseMessage);
+    }
+
+    public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage responseMessage) {
+        syncState.onSnapStateChunk(peer, responseMessage);
+    }
+
     @Override
     public void sendSkeletonRequest(Peer peer, long height) {
         logger.debug("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
@@ -246,7 +278,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSyncing(Peer peer) {
+    public void startBlockForwardSyncing(Peer peer) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.info("Start syncing with node {}", nodeID);
         byte[] bestBlockHash = peersInformation.getPeer(peer).getStatus().getBestBlockHash();
@@ -254,6 +286,12 @@ public class SyncProcessor implements SyncEventsHandler {
                 syncConfiguration,
                 this,
                 blockHeaderValidationRule, peer, bestBlockHash));
+    }
+
+    @Override
+    public void startSnapSync() {
+        logger.info("Start Snap syncing");
+        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration));
     }
 
     @Override

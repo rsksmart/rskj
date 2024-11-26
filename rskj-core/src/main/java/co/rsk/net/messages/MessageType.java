@@ -256,9 +256,46 @@ public enum MessageType {
             byte[] hash = list.get(0).getRLPData();
             return new NewBlockHashMessage(hash);
         }
-    };
+    },
+    SNAP_STATE_CHUNK_REQUEST_MESSAGE(20) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStateChunkRequestMessage.create(blockFactory, list);
+        }
+    },
+    SNAP_STATE_CHUNK_RESPONSE_MESSAGE(21) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStateChunkResponseMessage.create(blockFactory, list);
+        }
+    },
+    SNAP_STATUS_REQUEST_MESSAGE(22) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return new SnapStatusRequestMessage();
+        }
+    },
+    SNAP_STATUS_RESPONSE_MESSAGE(23) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStatusResponseMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    SNAP_BLOCKS_REQUEST_MESSAGE(24) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapBlocksRequestMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    SNAP_BLOCKS_RESPONSE_MESSAGE(25) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapBlocksResponseMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    ;
 
-    private int type;
+    private final int type;
 
     MessageType(int type) {
         this.type = type;

@@ -68,7 +68,7 @@ class OneAsyncNodeTest {
                 mock(Genesis.class),
                 mock(EthereumListener.class)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, null, channelManager, null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }

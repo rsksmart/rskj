@@ -199,6 +199,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private SyncProcessor syncProcessor;
     private BlockSyncService blockSyncService;
     private SyncPool syncPool;
+    private SnapshotProcessor snapshotProcessor;
     private Web3 web3;
     private JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
@@ -1014,6 +1015,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
+            if (getSyncConfiguration().isServerSnapSyncEnabled()) {
+                internalServices.add(getSnapshotProcessor());
+            }
         }
 
         if (getRskSystemProperties().isMinerServerEnabled()) {
@@ -1468,7 +1472,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 rskSystemProperties.getChunkSize(),
                 rskSystemProperties.getMaxRequestedBodies(),
                 rskSystemProperties.getLongSyncLimit(),
-                rskSystemProperties.getTopBest());
+                rskSystemProperties.getTopBest(),
+                rskSystemProperties.isServerSnapshotSyncEnabled(),
+                rskSystemProperties.isClientSnapshotSyncEnabled(),
+                rskSystemProperties.getSnapshotChunkTimeout(),
+                rskSystemProperties.getSnapshotSyncLimit(),
+                rskSystemProperties.getSnapBootNodes());
     }
 
     protected synchronized StateRootHandler buildStateRootHandler() {
@@ -1960,7 +1969,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getDifficultyCalculator(),
                     getPeersInformation(),
                     getGenesis(),
-                    getCompositeEthereumListener());
+                    getCompositeEthereumListener(),
+                    getSnapshotProcessor());
         }
 
         return syncProcessor;
@@ -1996,6 +2006,21 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return syncPool;
+    }
+
+    private SnapshotProcessor getSnapshotProcessor() {
+        if (snapshotProcessor == null) {
+            snapshotProcessor = new SnapshotProcessor(
+                    getBlockchain(),
+                    getTrieStore(),
+                    getPeersInformation(),
+                    getBlockStore(),
+                    getTransactionPool(),
+                    getRskSystemProperties().getSnapshotChunkSize(),
+                    getRskSystemProperties().isSnapshotParallelEnabled()
+            );
+        }
+        return snapshotProcessor;
     }
 
     private Web3 getWeb3() {
@@ -2118,6 +2143,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
+                    getSnapshotProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),

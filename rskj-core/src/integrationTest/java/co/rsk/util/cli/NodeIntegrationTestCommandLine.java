@@ -61,7 +61,7 @@ public class NodeIntegrationTestCommandLine extends RskjCommandLineBase {
         try {
             executeCommand(timeout);
         } finally {
-            if(timeout != 0) {
+            if (timeout != 0) {
                 killNode(beforeDestroyFn);
             }
         }
@@ -77,10 +77,18 @@ public class NodeIntegrationTestCommandLine extends RskjCommandLineBase {
         if (beforeDestroyFn != null) {
             beforeDestroyFn.accept(cliProcess);
         }
-        if(cliProcess.isAlive()){
-            cliProcess.destroyForcibly();
+
+        if (cliProcess.isAlive()) {
+            cliProcess.destroy();
+            // We have to wait a bit so the process finishes the kill command
+            cliProcess.waitFor(1, TimeUnit.MINUTES);
+
+            if (cliProcess.isAlive()) {
+                cliProcess.destroyForcibly();
+                cliProcess.waitFor(10, TimeUnit.SECONDS);
+            }
         }
-        cliProcess.waitFor(1, TimeUnit.MINUTES); // We have to wait a bit so the process finishes the kill command
+
         return cliProcess.exitValue();
     }
 }
