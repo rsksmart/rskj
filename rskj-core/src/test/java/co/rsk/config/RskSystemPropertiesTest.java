@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.config;
 
 import co.rsk.cli.CliArgs;
@@ -29,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -111,6 +112,32 @@ class RskSystemPropertiesTest {
     }
 
     @Test
+    void testCorrectRestServerProperties() throws UnknownHostException {
+        // Check rest server properties
+        TestSystemProperties config = new TestSystemProperties();
+
+        assertTrue(config.isRestServerEnabled());
+        assertEquals(4446, config.getRestServerPort());
+        assertEquals(InetAddress.getByName("localhost"), config.getRestServerBindAddress());
+
+        // Check rest server modules' properties
+        assertTrue(config.isHealthCheckModuleEnabled());
+    }
+
+    @Test
+    void testBorderCasesForRestServerProperties() {
+        TestSystemPropertiesV2 config = new TestSystemPropertiesV2("test-border-cases-rskj.conf");
+        RskSystemProperties rskSystemProperties = config.getRskSystemProperties();
+
+        try {
+            rskSystemProperties.getRestServerBindAddress();
+            fail("RskConfigurationException should be thrown");
+        } catch (RskConfigurationException e) {
+            assertEquals("Invalid REST Server bind address l0c4lh0st", e.getMessage());
+        }
+    }
+
+    @Test
     void testRpcModules() {
         RskCli rskCli = new RskCli();
         rskCli.load(new String[]{});
@@ -135,6 +162,7 @@ class RskSystemPropertiesTest {
 
         assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
     }
+
     @Test
     void testGetRpcModulesWithList() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
@@ -171,16 +199,17 @@ class RskSystemPropertiesTest {
         assertTrue(moduleDescriptionMap.containsKey("eth"));
         ModuleDescription ethModule = moduleDescriptionMap.get("eth");
         assertEquals("1.0", ethModule.getVersion());
-        assertEquals(true, ethModule.isEnabled());
+        assertTrue(ethModule.isEnabled());
         ModuleDescription webModule = moduleDescriptionMap.get("web");
         assertEquals("2.0", webModule.getVersion());
-        assertEquals(false, webModule.isEnabled());
+        assertFalse(webModule.isEnabled());
         assertEquals(1000, webModule.getTimeout());
         ModuleDescription netModule = moduleDescriptionMap.get("net");
         assertEquals(2, netModule.getEnabledMethods().size());
         assertEquals(1, netModule.getDisabledMethods().size());
         assertEquals(5000, netModule.getMethodTimeout("eth_getBlockByHash"));
     }
+
     @Test
     void testGetRpcModulesWithObject() {
         TestSystemProperties testSystemProperties = new TestSystemProperties(rawConfig ->
@@ -215,10 +244,10 @@ class RskSystemPropertiesTest {
         assertTrue(moduleDescriptionMap.containsKey("eth"));
         ModuleDescription ethModule = moduleDescriptionMap.get("eth");
         assertEquals("1.5", ethModule.getVersion());
-        assertEquals(true, ethModule.isEnabled());
+        assertTrue(ethModule.isEnabled());
         ModuleDescription webModule = moduleDescriptionMap.get("web");
         assertEquals("2.0", webModule.getVersion());
-        assertEquals(false, webModule.isEnabled());
+        assertFalse(webModule.isEnabled());
         ModuleDescription netModule = moduleDescriptionMap.get("net");
         assertEquals(2, netModule.getEnabledMethods().size());
         assertEquals(1, netModule.getDisabledMethods().size());
