@@ -60,6 +60,10 @@ import com.google.common.collect.Lists;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
 import java.time.Instant;
 import java.util.*;
@@ -70,6 +74,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -82,6 +87,8 @@ import org.ethereum.vm.program.Program;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -192,26 +199,8 @@ public class BridgeSupportIT {
     void testInitialChainHeadWithBtcCheckpoints() throws Exception {
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
 
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeTestNetConstants.getBtcParams());
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeTestNetConstants.getBtcParams(), activationsBeforeForks);
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
-        FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstants)
-            .withFederationStorageProvider(federationStorageProvider)
-            .withActivations(activationsBeforeForks)
-            .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeTestNetConstants)
-            .withProvider(provider)
-            .withRepository(track)
-            .withBtcBlockStoreFactory(btcBlockStoreFactory)
-            .withFederationSupport(federationSupport)
-            .build();
+        BridgeSupport bridgeSupport = arrangeBridgeSupport(bridgeTestNetConstants,
+            activationsBeforeForks);
 
         // Force instantiation of blockstore
         bridgeSupport.getBtcBlockchainBestChainHeight();
@@ -222,6 +211,113 @@ public class BridgeSupportIT {
         StoredBlock checkpoint = manager.getCheckpointBefore(time);
 
         assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        {
+            "12-byte-chainwork.production.checkpoints",
+            "12-byte-chainwork-mix-format.production.checkpoints"
+        }
+    )
+    void testInitialChainHeadWithBtcCheckpoints_whenCheckpointsWith12BytesChainWork_before_RSKIP454_ok(
+        String checkpointFileName) throws Exception {
+        var arrowhead631 = ActivationConfigsForTest.arrowhead631().forBlock(0);
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        String checkpointToCreate = "/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints";
+
+        Path target = Paths.get(getClass().getResource(checkpointToCreate).getPath());
+
+        Path source = Paths.get(getClass().getResource("/checkpoints/" + checkpointFileName).getPath());
+        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+        BridgeSupport bridgeSupport = arrangeBridgeSupport(bridgeConstants, arrowhead631);
+
+        // Force instantiation of blockstore
+        bridgeSupport.getBtcBlockchainBestChainHeight();
+
+        InputStream checkpointsStream = bridgeSupport.getCheckPoints();
+        CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpointsStream);
+        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli() - 604800L; // The magic number is a substraction CheckpointManager does when getting the checkpoints.
+        StoredBlock checkpoint = manager.getCheckpointBefore(time);
+
+        assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
+    }
+
+    @Test
+    void testInitialChainHeadWithBtcCheckpoints_whenCheckpointsWith32BytesChainWork_before_RSKIP454_shouldFail() throws Exception {
+        var arrowhead631 = ActivationConfigsForTest.arrowhead631().forBlock(0);
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        String checkpointToCreate = "/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints";
+
+        Path target = Paths.get(getClass().getResource(checkpointToCreate).getPath());
+
+        Path source = Paths.get(getClass().getResource("/checkpoints/32-byte-chainwork.production.checkpoints").getPath());
+        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+        BridgeSupport bridgeSupport = arrangeBridgeSupport(bridgeConstants, arrowhead631);
+
+        Assertions.assertThrows(IllegalArgumentException.class, bridgeSupport::getBtcBlockchainBestChainHeight, "The given number does not fit in 12");
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        {
+            "12-byte-chainwork.production.checkpoints",
+            "12-byte-chainwork.production.checkpoints",
+            "12-byte-chainwork-mix-format.production.checkpoints"
+        }
+    )
+    void testInitialChainHeadWithBtcCheckpoints_whenCheckpointsWith32BytesChainWork_after_RSKIP454_ok(
+        String checkpointFileName) throws Exception {
+        var lovell = ActivationConfigsForTest.lovell700().forBlock(0);
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        String checkpointToCreate = "/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints";
+
+        Path target = Paths.get(getClass().getResource(checkpointToCreate).getPath());
+
+        Path source = Paths.get(getClass().getResource("/checkpoints/" + checkpointFileName).getPath());
+        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+        BridgeSupport bridgeSupport = arrangeBridgeSupport(bridgeConstants, lovell);
+
+        // Force instantiation of blockstore
+        bridgeSupport.getBtcBlockchainBestChainHeight();
+
+        InputStream checkpointsStream = bridgeSupport.getCheckPoints();
+        CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpointsStream);
+        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli() - 604800L; // The magic number is a substraction CheckpointManager does when getting the checkpoints.
+        StoredBlock checkpoint = manager.getCheckpointBefore(time);
+
+        assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
+    }
+
+    private BridgeSupport arrangeBridgeSupport(BridgeConstants bridgeTestNetConstants,
+        ForBlock activations) {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+            bridgeTestNetConstants.getBtcParams());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeTestNetConstants.getBtcParams(),
+            activations);
+
+        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeTestNetConstants)
+            .withProvider(provider)
+            .withRepository(track)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withFederationSupport(federationSupport)
+            .withActivations(activations)
+            .build();
+        return bridgeSupport;
     }
 
     @Test
@@ -247,26 +343,7 @@ public class BridgeSupportIT {
 
     @Test
     void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationsBeforeForks);
-
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
-        FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstants)
-            .withFederationStorageProvider(federationStorageProvider)
-            .withActivations(activationsBeforeForks)
-            .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstants)
-            .withProvider(provider)
-            .withRepository(track)
-            .withBtcBlockStoreFactory(btcBlockStoreFactory)
-            .withFederationSupport(federationSupport)
-            .build();
+        BridgeSupport bridgeSupport = arrangeBridgeSupport(bridgeConstants, activationsBeforeForks);
 
         // Force instantiation of blockstore
         bridgeSupport.getBtcBlockchainBestChainHeight();
