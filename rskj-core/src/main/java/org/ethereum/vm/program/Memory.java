@@ -19,6 +19,8 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.types.bytes.BoundaryUtils;
+import co.rsk.core.types.bytes.BytesSlice;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
@@ -29,21 +31,33 @@ import java.util.List;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.oneByteToHexString;
+import static org.ethereum.util.ByteUtil.*;
 
 public class Memory implements ProgramListenerAware {
 
     private static final int CHUNK_SIZE = 1024;
     private static final int WORD_SIZE = 32;
 
-    private List<byte[]> chunks = new LinkedList<>();
+    private final List<byte[]> chunks = new LinkedList<>();
+
     private int softSize;
+    private int version; // versioning for memory changes
+
     private ProgramListener traceListener;
 
     @Override
     public void setTraceListener(ProgramListener traceListener) {
         this.traceListener = traceListener;
+    }
+
+    public BytesSlice readSlice(int address, int size) {
+        if (size <= 0) {
+            return EMPTY_BYTES_SLICE;
+        }
+
+        extend(address, size);
+
+        return new MemorySlice(address, size, version);
     }
 
     public byte[] read(int address, int size) {
@@ -76,6 +90,8 @@ public class Memory implements ProgramListenerAware {
     }
 
     public void write(int address, byte[] data, int dataSize, boolean limited) {
+        version++;
+
         if (data.length < dataSize) {
             dataSize = data.length;
         }
@@ -111,7 +127,6 @@ public class Memory implements ProgramListenerAware {
             traceListener.onMemoryWrite(address, data, dataSize);
         }
     }
-
 
     public void extendAndWrite(int address, int allocSize, byte[] data) {
         extend(address, allocSize);
@@ -222,6 +237,61 @@ public class Memory implements ProgramListenerAware {
     private void addChunks(int num) {
         for (int i = 0; i < num; ++i) {
             chunks.add(new byte[CHUNK_SIZE]);
+        }
+    }
+
+    private final class MemorySlice implements BytesSlice {
+        private final int address;
+        private final int size;
+        private final int memVersion;
+
+        MemorySlice(int address, int size, int memVersion) {
+            this.address = address;
+            this.size = size;
+            this.memVersion = memVersion;
+        }
+
+        @Override
+        public void arraycopy(int srcPos, byte[] dest, int destPos, int length) {
+            BoundaryUtils.checkArraycopyParams(length(), srcPos, dest, destPos, length);
+            checkVersion();
+
+            int chunkIndex = (address + srcPos) / CHUNK_SIZE;
+            int chunkOffset = (address + srcPos) % CHUNK_SIZE;
+
+            int toGrab = length;
+            int start = destPos;
+
+            while (toGrab > 0) {
+                int copied = grabMax(chunkIndex, chunkOffset, toGrab, dest, start);
+
+                // read next chunk from the start
+                ++chunkIndex;
+                chunkOffset = 0;
+
+                // mark remind
+                toGrab -= copied;
+                start += copied;
+            }
+        }
+
+        @Override
+        public int length() {
+            return size;
+        }
+
+        @Override
+        public byte byteAt(int index) {
+            BoundaryUtils.checkArrayIndexParam(length(), index);
+            checkVersion();
+
+            return readByte(address + index);
+        }
+
+        private void checkVersion() {
+            if (this.memVersion != Memory.this.version) {
+                throw new IllegalStateException("Memory was changed during slice lifetime");
+            }
         }
     }
 }
