@@ -19,7 +19,6 @@
 
 package co.rsk.rpc.modules.debug;
 
-import co.rsk.rpc.modules.debug.trace.TracerType;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,8 +35,7 @@ public class TraceOptions {
     private final Set<String> disabledFields;
     private final Set<String> unsupportedOptions;
     private boolean onlyTopCall;
-    private boolean diffMode;
-    private TracerType tracerType;
+    private boolean withLog;
 
     public TraceOptions() {
         this.disabledFields = new HashSet<>();
@@ -55,13 +53,10 @@ public class TraceOptions {
     public final void addOption(String key, String value) {
         switch (key) {
             case "onlyTopCall" -> onlyTopCall = Boolean.parseBoolean(value);
-            case "diffMode" -> diffMode = Boolean.parseBoolean(value);
+            case "withLog" -> withLog = Boolean.parseBoolean(value);
             default -> addDisableOption(key, value);
         }
     }
-
-
-
 
     private void addDisableOption(String key, String value) {
         DisableOption disableOption = DisableOption.getDisableOption(key);
@@ -74,21 +69,12 @@ public class TraceOptions {
         }
     }
 
-
-    public void setOnlyTopCall(boolean onlyTopCall) {
-        this.onlyTopCall = onlyTopCall;
-    }
-
-    public void setDiffMode(boolean diffMode) {
-        this.diffMode = diffMode;
-    }
-
     public boolean isOnlyTopCall() {
         return onlyTopCall;
     }
 
-    public boolean isDiffMode() {
-        return diffMode;
+    public boolean isWithLog() {
+        return withLog;
     }
 
     public Set<String> getDisabledFields() {
@@ -97,10 +83,6 @@ public class TraceOptions {
 
     public Set<String> getUnsupportedOptions() {
         return Collections.unmodifiableSet(unsupportedOptions);
-    }
-
-    public TracerType getTracerType() {
-        return tracerType;
     }
 
     public static class Deserializer extends StdDeserializer<TraceOptions> {

@@ -28,18 +28,21 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.trace.SummarizedProgramTrace;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CallTraceTransformer {
 
     private CallTraceTransformer() {
     }
 
-    public static TransactionTrace toTrace(SummarizedProgramTrace trace, TransactionInfo txInfo, DataWord codeAddress, boolean onlyTopCall) {
+    public static TransactionTrace toTrace(SummarizedProgramTrace trace, TransactionInfo txInfo, DataWord codeAddress, boolean onlyTopCall, boolean withLog) {
         boolean isContractCreation = txInfo.getReceipt().getTransaction().isContractCreation();
         CallType callType = isContractCreation ? CallType.NONE : CallType.CALL;
 
@@ -49,6 +52,11 @@ public class CallTraceTransformer {
         if (trace.getReverted()) {
             programResult.setRevert();
         }
+
+        if (withLog) {
+            programResult.addLogInfos(txInfo.getReceipt().getLogInfoList());
+        }
+
         InvokeData invoke = trace.getInvokeData();
 
         CreationData creationData = null;
@@ -64,41 +72,48 @@ public class CallTraceTransformer {
             traceType = TraceType.CREATE;
         }
 
-        TxTraceResult traceOutput = toTrace(traceType, callType, invoke, codeAddress, programResult, creationData);
-        if(!onlyTopCall) {
+        TxTraceResult traceOutput = toTrace(traceType, callType, invoke, codeAddress, programResult, creationData, withLog);
+        if (!onlyTopCall) {
             for (ProgramSubtrace subtrace : trace.getSubtraces()) {
-                traceOutput.addCall(toTrace(subtrace));
+                traceOutput.addCall(toTrace(subtrace, withLog));
             }
         }
 
         return new TransactionTrace(txInfo.getReceipt().getTransaction().getHash().toHexString(), traceOutput);
     }
 
-    private static TxTraceResult toTrace(ProgramSubtrace programSubtrace) {
+    private static TxTraceResult toTrace(ProgramSubtrace programSubtrace, boolean withLog) {
         InvokeData invokeData = programSubtrace.getInvokeData();
-        TxTraceResult subTrace = toTrace(programSubtrace.getTraceType(), programSubtrace.getCallType(), invokeData, programSubtrace.getCodeAddress(), programSubtrace.getProgramResult(), programSubtrace.getCreationData());
+        TxTraceResult subTrace = toTrace(programSubtrace.getTraceType(), programSubtrace.getCallType(), invokeData, programSubtrace.getCodeAddress(), programSubtrace.getProgramResult(), programSubtrace.getCreationData(), withLog);
         for (ProgramSubtrace call : programSubtrace.getSubtraces()) {
-            subTrace.addCall(toTrace(call));
+            subTrace.addCall(toTrace(call, withLog));
         }
         return subTrace;
     }
 
-    private static TxTraceResult toTrace(TraceType traceType, CallType callType, InvokeData invoke, DataWord codeAddress, ProgramResult programResult, CreationData creationData) {
+    private static TxTraceResult toTrace(TraceType traceType, CallType callType, InvokeData invoke, DataWord codeAddress, ProgramResult programResult, CreationData creationData, boolean withLog) {
         String type = traceType == TraceType.CREATE ? "CREATE" : callType.name();
         String from;
+        String to = null;
+        String gas = null;
+        //TODO input data is missing in TransferInvoke
+        String input = null;
+        String value = null;
+        String output = null;
+        String gasUsed = null;
+        String revertReason = null;
+        String error = null;
+
+
         if (callType == CallType.DELEGATECALL) {
             from = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
         } else {
             from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
         }
-        String to = null;
-        String gas = null;
+
+        List<LogInfoResult> logInfoResultList = null;
 
         DataWord callValue = invoke.getCallValue();
-        //TODO input data is missing in TransferInvoke
-        String input = null;
-        String value = null;
-        String output = null;
 
 
         if (traceType == TraceType.CREATE) {
@@ -125,15 +140,9 @@ public class CallTraceTransformer {
             }
 
             gas = HexUtils.toQuantityJsonHex(invoke.getGas());
-
         }
 
-        String gasUsed = null;
 
-        String revertReason = null;
-
-
-        String error = null;
 
         if (programResult != null) {
             gasUsed = HexUtils.toQuantityJsonHex(programResult.getGasUsed());
@@ -142,13 +151,24 @@ public class CallTraceTransformer {
                 Pair<String, byte[]> programRevert = EthModule.decodeProgramRevert(programResult);
                 revertReason = programRevert.getLeft();
                 output = HexUtils.toJsonHex(programRevert.getRight());
-
                 error = "execution reverted";
             } else if (traceType != TraceType.CREATE) {
                 output = HexUtils.toJsonHex(programResult.getHReturn());
             }
             if (programResult.getException() != null) {
                 error = programResult.getException().toString();
+            }
+        }
+
+        if(withLog) {
+            logInfoResultList = new ArrayList<>();
+            List<LogInfo> logInfoList = programResult.getLogInfoList();
+            if(logInfoList != null) {
+                for (int i = 0; i < programResult.getLogInfoList().size(); i++) {
+                    LogInfo logInfo = programResult.getLogInfoList().get(i);
+                    LogInfoResult logInfoResult = fromLogInfo(logInfo, i);
+                    logInfoResultList.add(logInfoResult);
+                }
             }
         }
 
@@ -163,8 +183,20 @@ public class CallTraceTransformer {
                 .output(output)
                 .revertReason(revertReason)
                 .error(error)
+                .logs(logInfoResultList)
                 .build();
 
     }
 
+    private static LogInfoResult fromLogInfo(LogInfo logInfo, int index) {
+        String address = HexUtils.toJsonHex(logInfo.getAddress());
+        List<String> topics = logInfo.getTopics().stream().map(DataWord::getData).map(HexUtils::toJsonHex).toList();
+        String data = HexUtils.toJsonHex(logInfo.getData());
+        return LogInfoResult.builder()
+                .index(index)
+                .address(address)
+                .topics(topics)
+                .data(data)
+                .build();
+    }
 }

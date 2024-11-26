@@ -46,8 +46,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class CallTracer implements DebugTracer {
-
-    public static final String UNSUPPORTED_OPERATION = "Operation not supported by this tracer.";
     private static final Logger logger = LoggerFactory.getLogger("callTracer");
     private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
 
@@ -93,7 +91,7 @@ public class CallTracer implements DebugTracer {
             return null;
         }
 
-        TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, traceOptions.isOnlyTopCall());
+        TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, traceOptions.isOnlyTopCall(), traceOptions.isWithLog());
         return OBJECT_MAPPER.valueToTree(trace.getResult());
     }
 
@@ -128,15 +126,12 @@ public class CallTracer implements DebugTracer {
         return TracerType.CALL_TRACER;
     }
 
-    private JsonNode traceBlock(Block block, TraceOptions traceOptions) {
-        if (traceOptions != null) {
-            logger.warn("Trace Options not supported yet");
-        }
-        List<TransactionTrace> result = buildBlockTraces(block, traceOptions.isOnlyTopCall());
+    private JsonNode traceBlock(Block block, @Nonnull TraceOptions traceOptions) {
+        List<TransactionTrace> result = buildBlockTraces(block, traceOptions.isOnlyTopCall(), traceOptions.isWithLog());
         return OBJECT_MAPPER.valueToTree(result);
     }
 
-    private List<TransactionTrace> buildBlockTraces(Block block, boolean onlyTopCall) {
+    private List<TransactionTrace> buildBlockTraces(Block block, boolean onlyTopCall, boolean withLog) {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block != null && block.getNumber() != 0) {
@@ -161,7 +156,7 @@ public class CallTracer implements DebugTracer {
                     return Collections.emptyList();
                 }
 
-                TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, onlyTopCall);
+                TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, onlyTopCall, withLog);
 
                 blockTraces.add(trace);
             }

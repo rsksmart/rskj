@@ -38,9 +38,9 @@ public class TxTraceResult {
     private final String error;
     private final String revertReason;
     private final List<TxTraceResult> calls;
-    private final List<String> logs;
+    private final List<LogInfoResult> logs;
 
-    public TxTraceResult(String type, String from, String to, String value, String gas, String gasUsed, String input, String output, String error, String revertReason, List<TxTraceResult> calls, List<String> logs) {
+    public TxTraceResult(String type, String from, String to, String value, String gas, String gasUsed, String input, String output, String error, String revertReason, List<TxTraceResult> calls, List<LogInfoResult> logs) {
         this.type = type;
         this.from = from;
         this.to = to;
@@ -110,9 +110,8 @@ public class TxTraceResult {
         return calls.isEmpty() ? null : calls;
     }
 
-    //TODO
     @JsonGetter("logs")
-    public List<String> getLogs() {
+    public List<LogInfoResult> getLogs() {
         return logs.isEmpty() ? null : logs;
     }
 
@@ -124,11 +123,6 @@ public class TxTraceResult {
     public void addCall(TxTraceResult call) {
         calls.add(call);
     }
-
-    public void addAllCall(List<TxTraceResult> calls) {
-        this.calls.addAll(calls);
-    }
-
 
     //Builder class
     public static class Builder {
@@ -143,7 +137,7 @@ public class TxTraceResult {
         private String error;
         private String revertReason;
         private List<TxTraceResult> calls;
-        private List<String> logs;
+        private List<LogInfoResult> logs;
 
         public Builder type(String type) {
             this.type = type;
@@ -200,7 +194,7 @@ public class TxTraceResult {
             return this;
         }
 
-        public Builder logs(List<String> logs) {
+        public Builder logs(List<LogInfoResult> logs) {
             this.logs = logs;
             return this;
         }
