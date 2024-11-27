@@ -228,8 +228,14 @@ class SnapSyncStateTest {
     @Test
     void testSetAndGetLastBlock() {
         Block mockBlock = mock(Block.class);
-        underTest.setLastBlock(mockBlock);
+        BlockDifficulty mockBlockDifficulty = mock(BlockDifficulty.class);
+        Peer mockPeer = mock(Peer.class);
+
+        underTest.setLastBlock(mockBlock, mockBlockDifficulty, mockPeer);
+
         assertEquals(mockBlock, underTest.getLastBlock());
+        assertEquals(mockBlockDifficulty, underTest.getLastBlockDifficulty());
+        assertEquals(mockPeer, underTest.getLastBlockSender());
     }
 
     @Test
@@ -270,13 +276,6 @@ class SnapSyncStateTest {
     void testGetSnapStateChunkQueue() {
         PriorityQueue<SnapStateChunkResponseMessage> queue = underTest.getSnapStateChunkQueue();
         assertNotNull(queue);
-    }
-
-    @Test
-    void testSetAndGetLastBlockDifficulty() {
-        BlockDifficulty mockBlockDifficulty = mock(BlockDifficulty.class);
-        underTest.setLastBlockDifficulty(mockBlockDifficulty);
-        assertEquals(mockBlockDifficulty, underTest.getLastBlockDifficulty());
     }
 
     @Test

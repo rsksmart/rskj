@@ -66,7 +66,7 @@ public abstract class SyncMessageHandler implements Runnable {
                 job = jobQueue.take();
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Processing msg: [{}] from: [{}] for: [{}]", job.getMsgType(), job.getSender(), name);
+                    logger.debug("Processing msg: [{}] from: [{}] for: [{}]. Pending count: [{}]", job.getMsgType(), job.getSender(), name, jobQueue.size());
                     jobStart = Instant.now();
                 }
 

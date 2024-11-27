@@ -204,6 +204,11 @@ public class PeersInformation implements SnapshotPeersInformation {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Optional<Peer> getBestPeer(Set<NodeID> exclude) {
+        return getBestPeer(getBestCandidatesStream().filter(p -> !exclude.contains(p.getKey().getPeerNodeID())));
+    }
+
     public Set<NodeID> knownNodeIds() {
         return peerStatuses.keySet().stream()
                 .map(Peer::getPeerNodeID)

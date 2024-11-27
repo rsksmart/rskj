@@ -243,8 +243,7 @@ public class SnapshotProcessor implements InternalService {
         Block lastBlock = blocksFromResponse.get(blocksFromResponse.size() - 1);
         BlockDifficulty lastBlockDifficulty = difficultiesFromResponse.get(difficultiesFromResponse.size() - 1);
 
-        state.setLastBlock(lastBlock);
-        state.setLastBlockDifficulty(lastBlockDifficulty);
+        state.setLastBlock(lastBlock, lastBlockDifficulty, sender);
         state.setRemoteRootHash(lastBlock.getStateRoot());
         state.setRemoteTrieSize(responseMessage.getTrieSize());
 
@@ -255,7 +254,14 @@ public class SnapshotProcessor implements InternalService {
         logger.debug("CLIENT - Processing snapshot status response - last blockNumber: {} triesize: {}", lastBlock.getNumber(), state.getRemoteTrieSize());
         logger.debug("Blocks included in the response: {} from {} to {}", blocksFromResponse.size(), blocksFromResponse.get(0).getNumber(), blocksFromResponse.get(blocksFromResponse.size() - 1).getNumber());
 
-        requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
+        if (blocksVerified(state)) {
+            logger.info("CLIENT - Finished Snap blocks request sending.");
+
+            generateChunkRequestTasks(state);
+            startRequestingChunks(state);
+        } else {
+            requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
+        }
     }
 
     private boolean validateAndSaveBlocks(SnapSyncState state, Peer sender, List<Block> blocks, List<BlockDifficulty> difficulties) {
@@ -265,22 +271,34 @@ public class SnapshotProcessor implements InternalService {
             BlockDifficulty totalDifficulty = difficulties.get(i);
 
             Pair<Block, BlockDifficulty> blockPair = new ImmutablePair<>(block, totalDifficulty);
-            if (!areBlockPairsValid(blockPair, childBlockPair)) {
+            if (!areBlockPairsValid(blockPair, childBlockPair, true)) {
                 failSyncing(state, sender, EventType.INVALID_BLOCK, "Block [{}]/[{}] at height: [{}] is not valid", block.getHash(), totalDifficulty, block.getNumber());
                 return false;
             }
 
+            Block parentBlock = blockStore.getBlockByHash(block.getParentHash().getBytes());
+            if (parentBlock != null) {
+                if (areBlockPairsValid(new ImmutablePair<>(parentBlock, blockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes())), blockPair, false)) {
+                    state.addBlock(blockPair);
+                    state.setLastVerifiedBlockHeader(blockPair.getLeft().getHeader());
+                    return true;
+                } else {
+                    failSyncing(state, sender, EventType.INVALID_BLOCK, "Block [{}]/[{}] at height: [{}] is not valid", block.getHash(), totalDifficulty, block.getNumber());
+                    return false;
+                }
+            }
+
             state.addBlock(blockPair);
+            state.setLastVerifiedBlockHeader(blockPair.getLeft().getHeader());
 
             childBlockPair = blockPair;
-            state.setLastVerifiedBlockHeader(childBlockPair.getLeft().getHeader());
         }
 
         return true;
     }
 
-    private boolean areBlockPairsValid(Pair<Block, BlockDifficulty> blockPair, @Nullable Pair<Block, BlockDifficulty> childBlockPair) {
-        if (!blockValidator.isValid(blockPair.getLeft())) {
+    private boolean areBlockPairsValid(Pair<Block, BlockDifficulty> blockPair, @Nullable Pair<Block, BlockDifficulty> childBlockPair, boolean validateParent) {
+        if (validateParent && !blockValidator.isValid(blockPair.getLeft())) {
             return false;
         }
 
@@ -330,8 +348,14 @@ public class SnapshotProcessor implements InternalService {
             BlockHeader blockHeader = blockHeaders.get(i);
             BlockHeader lastVerifiedBlockHeader = state.getLastVerifiedBlockHeader();
 
-            if (!areBlockHeadersValid(blockHeader, lastVerifiedBlockHeader)) {
-                failSyncing(state, sender, EventType.INVALID_BLOCK, "Block header [{}] at height: [{}] is not valid", blockHeader.getHash(), blockHeader.getNumber());
+            if (!areBlockHeadersValid(blockHeader, lastVerifiedBlockHeader, true)) {
+                failSyncing(state, state.getLastBlockSender(), EventType.INVALID_HEADER, "Block header [{}] at height: [{}] is not valid", blockHeader.getHash(), blockHeader.getNumber());
+                return false;
+            }
+
+            Block parentBlock = blockStore.getBlockByHash(blockHeader.getParentHash().getBytes());
+            if (parentBlock != null && !areBlockHeadersValid(parentBlock.getHeader(), blockHeader, false)) {
+                failSyncing(state, state.getLastBlockSender(), EventType.INVALID_HEADER, "Block header [{}] at height: [{}] is not valid", blockHeader.getHash(), blockHeader.getNumber());
                 return false;
             }
 
@@ -345,8 +369,8 @@ public class SnapshotProcessor implements InternalService {
         return true;
     }
 
-    private boolean areBlockHeadersValid(BlockHeader blockHeader, BlockHeader childBlockHeader) {
-        if (!blockHeaderValidator.isValid(blockHeader)) {
+    private boolean areBlockHeadersValid(BlockHeader blockHeader, BlockHeader childBlockHeader, boolean validateParent) {
+        if (validateParent && !blockHeaderValidator.isValid(blockHeader)) {
             return false;
         }
 
@@ -361,18 +385,26 @@ public class SnapshotProcessor implements InternalService {
      * BLOCK HEADER CHUNK
      */
     private void requestNextBlockHeadersChunk(SnapSyncState state, Peer sender) {
+        Peer peer = peersInformation.getBestPeer(Collections.singleton(state.getLastBlockSender().getPeerNodeID()))
+                .orElse(peersInformation.getBestSnapPeer().orElse(sender));
+
         BlockHeader lastVerifiedBlockHeader = state.getLastVerifiedBlockHeader();
         Keccak256 parentHash = lastVerifiedBlockHeader.getParentHash();
+        if (blockStore.isBlockExist(parentHash.getBytes())) {
+            logger.error("CLIENT - No more block headers to request");
+            stopSyncing(state);
+            return;
+        }
         long count = Math.min(state.getBlockHeaderChunkSize(), lastVerifiedBlockHeader.getNumber() - 1);
         if (count < 1) {
             logger.info("CLIENT - No more block headers to request but no genesis found");
-            state.fail(sender, EventType.INVALID_HEADER, "Invalid block headers genesis block");
+            state.fail(state.getLastBlockSender(), EventType.INVALID_HEADER, "Invalid block headers genesis block");
             return;
         }
 
-        logger.debug("CLIENT - Requesting block header chunk to node {} - block hash {}", sender.getPeerNodeID(), parentHash);
+        logger.debug("CLIENT - Requesting block header chunk to node {} - block [{}/{}]", peer.getPeerNodeID(), lastVerifiedBlockHeader.getNumber() - 1, parentHash);
 
-        state.getSyncEventsHandler().sendBlockHeadersRequest(sender, new ChunkDescriptor(parentHash.getBytes(), (int) count));
+        state.getSyncEventsHandler().sendBlockHeadersRequest(peer, new ChunkDescriptor(parentHash.getBytes(), (int) count));
     }
 
     public void processSnapBlocksRequest(Peer sender, SnapBlocksRequestMessage requestMessage) {
@@ -398,9 +430,18 @@ public class SnapshotProcessor implements InternalService {
         logger.debug("SERVER - Processing snap blocks request");
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
-        long startingBlockNumber = requestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE;
+
+        if (requestMessage.getBlockNumber() < 2) {
+            logger.debug("Snap blocks request from {} failed because of invalid block number {}", sender.getPeerNodeID(), requestMessage.getBlockNumber());
+            return;
+        }
+
+        long startingBlockNumber = Math.max(1, requestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE);
         for (long i = startingBlockNumber; i < requestMessage.getBlockNumber(); i++) {
             Block block = blockchain.getBlockByNumber(i);
+            if (block == null) {
+                break;
+            }
             blocks.add(block);
             difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
         }
@@ -425,7 +466,13 @@ public class SnapshotProcessor implements InternalService {
 
         long nextChunk = blocksFromResponse.get(0).getNumber();
         logger.debug("CLIENT - SnapBlock - nexChunk : {} - lastRequired {}, missing {}", nextChunk, lastRequiredBlock, nextChunk - lastRequiredBlock);
-        if (nextChunk > lastRequiredBlock) {
+
+        if (blocksVerified(state)) {
+            logger.info("CLIENT - Finished Snap blocks request sending.");
+
+            generateChunkRequestTasks(state);
+            startRequestingChunks(state);
+        } else if (nextChunk > lastRequiredBlock) {
             requestBlocksChunk(sender, nextChunk);
         } else {
             logger.info("CLIENT - Finished Snap blocks request sending.");
@@ -563,7 +610,6 @@ public class SnapshotProcessor implements InternalService {
         List<TrieDTO> preRootNodes = new ArrayList<>();
         List<TrieDTO> nodes = new ArrayList<>();
         List<TrieDTO> postRootNodes = new ArrayList<>();
-
 
         for (int i = 0; i < preRootElements.size(); i++) {
             final RLPList trieElement = (RLPList) preRootElements.get(i);

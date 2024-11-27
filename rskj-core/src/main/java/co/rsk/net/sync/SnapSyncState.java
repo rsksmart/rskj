@@ -65,9 +65,12 @@ public class SnapSyncState extends BaseSyncState {
     private long remoteTrieSize;
     private byte[] remoteRootHash;
     private final List<Pair<Block, BlockDifficulty>> blocks;
+
     private Block lastBlock;
-    private BlockHeader lastVerifiedBlockHeader;
     private BlockDifficulty lastBlockDifficulty;
+    private Peer lastBlockSender;
+
+    private BlockHeader lastVerifiedBlockHeader;
 
     private long nextExpectedFrom = 0L;
 
@@ -188,14 +191,17 @@ public class SnapSyncState extends BaseSyncState {
         // TODO: call syncEventsHandler.onErrorSyncing() and punish peers after SNAP feature discovery is implemented
 
         finish();
+//         resetTimeElapsed();
     }
 
     public Block getLastBlock() {
         return lastBlock;
     }
 
-    public void setLastBlock(Block lastBlock) {
+    public void setLastBlock(Block lastBlock, BlockDifficulty lastBlockDifficulty, Peer lastBlockSender) {
         this.lastBlock = lastBlock;
+        this.lastBlockDifficulty = lastBlockDifficulty;
+        this.lastBlockSender = lastBlockSender;
     }
 
     public BlockHeader getLastVerifiedBlockHeader() {
@@ -218,8 +224,8 @@ public class SnapSyncState extends BaseSyncState {
         return lastBlockDifficulty;
     }
 
-    public void setLastBlockDifficulty(BlockDifficulty lastBlockDifficulty) {
-        this.lastBlockDifficulty = lastBlockDifficulty;
+    public Peer getLastBlockSender() {
+        return lastBlockSender;
     }
 
     public byte[] getRemoteRootHash() {
@@ -314,6 +320,4 @@ public class SnapSyncState extends BaseSyncState {
     public void setRunning() {
         isRunning = true;
     }
-
-
 }

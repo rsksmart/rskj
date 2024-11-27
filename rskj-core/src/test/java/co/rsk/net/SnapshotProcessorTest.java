@@ -96,6 +96,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 false);
+        doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
         //when
         underTest.startSyncing(snapSyncState);
         //then
@@ -132,6 +133,10 @@ public class SnapshotProcessorTest {
         doReturn(blocks.get(blocks.size() - 1)).when(snapSyncState).getLastBlock();
         doReturn(snapStatusResponseMessage.getTrieSize()).when(snapSyncState).getRemoteTrieSize();
         doReturn(new LinkedList<>()).when(snapSyncState).getChunkTaskQueue();
+        doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(true).when(blockValidator).isValid(any());
+        doReturn(true).when(blockParentValidator).isValid(any(), any());
 
         underTest.startSyncing(snapSyncState);
 
@@ -139,8 +144,8 @@ public class SnapshotProcessorTest {
         underTest.processSnapStatusResponse(snapSyncState, peer, snapStatusResponseMessage);
 
         //then
-        verify(peer, atLeast(3)).sendMessage(any()); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
-        verify(peersInformation, times(2)).getBestSnapPeerCandidates();
+        verify(peer, times(2)).sendMessage(any()); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
+        verify(peersInformation, times(1)).getBestSnapPeer();
     }
 
     @Test
@@ -217,6 +222,9 @@ public class SnapshotProcessorTest {
         }
 
         SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(blocks, difficulties, 100000L);
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(true).when(blockValidator).isValid(any());
+        doReturn(true).when(blockParentValidator).isValid(any(), any());
         doReturn(new LinkedList<>()).when(snapSyncState).getChunkTaskQueue();
 
         underTest.startSyncing(snapSyncState);
@@ -401,6 +409,9 @@ public class SnapshotProcessorTest {
         when(snapSyncState.getNextExpectedFrom()).thenReturn(1L);
         when(responseMessage.getFrom()).thenReturn(1L);
         when(responseMessage.getChunkOfTrieKeyValue()).thenReturn(RLP.encodedEmptyList());
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(true).when(blockValidator).isValid(any());
+        doReturn(true).when(blockParentValidator).isValid(any(), any());
         underTest = spy(underTest);
 
         underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);

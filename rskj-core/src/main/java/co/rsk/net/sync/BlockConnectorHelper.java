@@ -38,47 +38,28 @@ public class BlockConnectorHelper {
 
     public void startConnecting(List<Pair<Block, BlockDifficulty>> blockAndDifficultiesList) {
         if (blockAndDifficultiesList.isEmpty()) {
-            logger.debug("Block list is empty, nothing to connect");
+            logger.warn("Block list is empty, nothing to connect");
             return;
         }
 
-        blockAndDifficultiesList.sort(new BlockAndDiffComparator());
-        logger.info("Start connecting blocks ranging from {} to {} - Total: {}",
+        logger.info("Start connecting blocks ranging from [{}] to [{}] - Total: [{}]",
                 blockAndDifficultiesList.get(0).getKey().getNumber(),
                 blockAndDifficultiesList.get(blockAndDifficultiesList.size() - 1).getKey().getNumber(),
                 blockAndDifficultiesList.size());
 
-        int blockIndex = blockAndDifficultiesList.size() - 1;
-        Pair<Block, BlockDifficulty> blockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
-        Block child = blockAndDifficulty.getLeft();
-        logger.debug("Setting child block number the last block from the list: {}", child.getNumber());
-        blockStore.saveBlock(child, blockAndDifficulty.getRight(), true);
-        logger.debug("Block number: {} saved", child.getNumber());
-        blockIndex--;
-
-        while (blockIndex >= 0) {
-            Pair<Block, BlockDifficulty> currentBlockAndDifficulty = blockAndDifficultiesList.get(blockIndex);
-            Block currentBlock = currentBlockAndDifficulty.getLeft();
+        int totalSaved = 0;
+        for (Pair<Block, BlockDifficulty> pair : blockAndDifficultiesList) {
+            Block currentBlock = pair.getLeft();
             logger.trace("Connecting block number: {}", currentBlock.getNumber());
 
-            if (!currentBlock.isParentOf(child)) {
-                throw new BlockConnectorException(currentBlock.getNumber(), child.getNumber());
-            }
             if (!blockStore.isBlockExist(currentBlock.getHash().getBytes())) {
-                blockStore.saveBlock(currentBlock, currentBlockAndDifficulty.getRight(), true);
+                blockStore.saveBlock(currentBlock, pair.getRight(), true);
+                totalSaved++;
             } else {
                 logger.warn("Block: [{}/{}] already exists. Skipping", currentBlock.getNumber(), currentBlock.getHash());
             }
-            child = currentBlock;
-            blockIndex--;
         }
-        logger.info("Finished connecting blocks. Last saved block: [{}/{}]", child.getNumber(), child.getHash());
-    }
 
-    static class BlockAndDiffComparator implements java.util.Comparator<Pair<Block, BlockDifficulty>> {
-        @Override
-        public int compare(Pair<Block, BlockDifficulty> o1, Pair<Block, BlockDifficulty> o2) {
-            return Long.compare(o1.getLeft().getNumber(), o2.getLeft().getNumber());
-        }
+        logger.info("Finished connecting blocks. Total saved: [{}]. ", totalSaved);
     }
 }
