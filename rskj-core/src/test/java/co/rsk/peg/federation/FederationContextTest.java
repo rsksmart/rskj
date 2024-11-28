@@ -20,8 +20,11 @@ class FederationContextTest {
     @BeforeEach
     void setup() {
         activeFederation = buildActiveFederation();
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .build();
+
         retiringFederation = buildRetiringFederation();
-        federationContext = new FederationContext(activeFederation);
     }
 
     @Test
@@ -36,7 +39,10 @@ class FederationContextTest {
 
     @Test
     void setRetiringFederation() {
-        federationContext.setRetiringFederation(retiringFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(retiringFederation)
+            .build();
 
         Optional<Federation> retiringFederationFromFederationContext = federationContext.getRetiringFederation();
 
@@ -52,7 +58,10 @@ class FederationContextTest {
     @Test
     void setLastRetiredFederationP2SHScript() {
         Script lastRetiredFederationP2SHScriptExpected = retiringFederation.getP2SHScript();
-        federationContext.setLastRetiredFederationP2SHScript(lastRetiredFederationP2SHScriptExpected);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setLastRetiredFederationP2SHScript(lastRetiredFederationP2SHScriptExpected)
+            .build();
 
         Optional<Script> lastRetiredFederationP2SHScriptFromFederationContext = federationContext.getLastRetiredFederationP2SHScript();
 
@@ -70,7 +79,11 @@ class FederationContextTest {
 
     @Test
     void getLiveFederations_withActiveAndRetiringFederations() {
-        federationContext.setRetiringFederation(retiringFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(retiringFederation)
+            .build();
+
         List<Federation> liveFederations = federationContext.getLiveFederations();
 
         assertEquals(2, liveFederations.size());
