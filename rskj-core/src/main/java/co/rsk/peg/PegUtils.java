@@ -136,8 +136,8 @@ public class PegUtils {
     private static boolean isPegoutTxIndexEnabled(
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
-        long btcTransactionHeight) {
-
+        long btcTransactionHeight
+    ) {
         int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
         int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
