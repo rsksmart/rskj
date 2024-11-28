@@ -415,28 +415,10 @@ public class BridgeSupport {
             );
 
             switch (pegTxType) {
-                case PEGIN -> {
-                    logger.debug("[registerBtcTransaction] This is a peg-in tx {}", btcTx.getHash());
-                    processPegIn(btcTx, rskTxHash, height);
-                }
-                case PEGOUT_OR_MIGRATION -> {
-                    logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
-                    processPegoutOrMigration(btcTx);
-                }
-                case SVP_FUND_TX -> {
-                    logger.debug("[registerBtcTransaction] This is an svp fund tx {}", btcTx.getHash());
-                    processPegoutOrMigration(btcTx); // Need to register the change UTXO
-                    if (isSvpOngoing()) {
-                        updateSvpFundTransactionValues(btcTx);
-                    }
-                }
-                case SVP_SPEND_TX -> {
-                    logger.debug("[registerBtcTransaction] This is an svp spend tx {}", btcTx.getHash());
-                    registerSvpSpendTransaction(btcTx);
-                    if (isSvpOngoing()) {
-                        processSvpSuccess();
-                    }
-                }
+                case PEGIN -> registerPegin(btcTx, rskTxHash, height);
+                case PEGOUT_OR_MIGRATION -> registerPegoutOrMigration(btcTx);
+                case SVP_FUND_TX -> registerSvpFundTx(btcTx);
+                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
                 default -> {
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
                     logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTxHash, message);
@@ -453,6 +435,32 @@ public class BridgeSupport {
         }
     }
 
+    private void registerPegin(BtcTransaction btcTx, Keccak256 rskTxHash, int height) throws RegisterBtcTransactionException, IOException {
+        logger.debug("[registerPegin] This is a peg-in tx {}", btcTx.getHash());
+        processPegIn(btcTx, rskTxHash, height);
+    }
+
+    private void registerPegoutOrMigration(BtcTransaction btcTx) throws IOException {
+        logger.debug("[registerPegoutOrMigration] This is a peg-out or migration tx {}", btcTx.getHash());
+        processPegoutOrMigration(btcTx);
+    }
+
+    private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
+        logger.debug("[registerSvpFundTx] This is an svp fund tx {}", btcTx.getHash());
+        processPegoutOrMigration(btcTx); // Need to register the change UTXO
+        if (isSvpOngoing()) {
+            updateSvpFundTransactionValues(btcTx);
+        }
+    }
+
+    private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
+        logger.debug("[registerSvpSpendTx] This is an svp spend tx {}", btcTx.getHash());
+        processSvpSpendTransaction(btcTx);
+        if (isSvpOngoing()) {
+            processSvpSuccess();
+        }
+    }
+
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
         logger.debug(
             "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
@@ -462,7 +470,7 @@ public class BridgeSupport {
         provider.setSvpFundTxHashUnsigned(null);
     }
 
-    private void registerSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
+    private void processSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
         markTxAsProcessed(svpSpendTx);
         saveNewUTXOs(svpSpendTx);
     }
