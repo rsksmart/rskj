@@ -8,11 +8,13 @@ import java.util.stream.Stream;
 
 public class FederationContext {
     private final Federation activeFederation;
-    private Federation retiringFederation;
-    private Script lastRetiredFederationP2SHScript;
+    private final Federation retiringFederation;
+    private final Script lastRetiredFederationP2SHScript;
 
-    public FederationContext(Federation activeFederation) {
-        this.activeFederation = activeFederation;
+    private FederationContext(FederationContextBuilder federationContextBuilder) {
+        this.activeFederation = federationContextBuilder.activeFederation;
+        this.retiringFederation = federationContextBuilder.retiringFederation;
+        this.lastRetiredFederationP2SHScript = federationContextBuilder.lastRetiredFederationP2SHScript;
     }
 
     public Federation getActiveFederation() {
@@ -23,21 +25,43 @@ public class FederationContext {
         return Optional.ofNullable(retiringFederation);
     }
 
-    public void setRetiringFederation(Federation retiringFederation) {
-        this.retiringFederation = retiringFederation;
-    }
-
     public Optional<Script> getLastRetiredFederationP2SHScript() {
         return Optional.ofNullable(lastRetiredFederationP2SHScript);
-    }
-
-    public void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {
-        this.lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScript;
     }
 
     public List<Federation> getLiveFederations() {
         return Stream.of(activeFederation, retiringFederation)
             .filter(Objects::nonNull)
             .toList();
+    }
+
+    public static FederationContextBuilder builder() {
+        return new FederationContextBuilder();
+    }
+
+    public static class FederationContextBuilder {
+        private Federation activeFederation;
+        private Federation retiringFederation;
+        private Script lastRetiredFederationP2SHScript;
+
+        public FederationContextBuilder setActiveFederation(Federation activeFederation) {
+            this.activeFederation = Objects.requireNonNull(activeFederation, "Active federation must not be null");
+            return this;
+        }
+
+        public FederationContextBuilder setRetiringFederation(Federation retiringFederation) {
+            this.retiringFederation = retiringFederation;
+            return this;
+        }
+
+        public FederationContextBuilder setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {
+            this.lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScript;
+            return this;
+        }
+
+        public FederationContext build() {
+            Objects.requireNonNull(activeFederation, "Active federation is required");
+            return new FederationContext(this);
+        }
     }
 }
