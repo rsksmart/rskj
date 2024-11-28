@@ -40,6 +40,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
     );
 
     private static Context btcContext;
+    private FederationContext federationContext;
 
     @BeforeEach
     void setUp() {
@@ -102,8 +103,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(p2shRetiringFederation, fedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
-        federationContext.setRetiringFederation(p2shRetiringFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(p2shRetiringFederation)
+            .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
@@ -164,10 +167,13 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiredFederation, REGTEST_OLD_FEDERATION_PRIVATE_KEYS, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
+        FederationContext.FederationContextBuilder federationContextBuilder = FederationContext.builder();
+        federationContextBuilder.setActiveFederation(activeFederation);
         if (activations.isActive(RSKIP186)) {
-            federationContext.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
+            federationContextBuilder.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
         }
+        federationContext = federationContextBuilder.build();
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
             federationContext,
@@ -211,7 +217,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(unknownFed, unknownFedSigners, peginTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .build();
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             peginTx,
             federationContext,
@@ -366,9 +375,11 @@ class PegUtilsLegacyGetTransactionTypeTest {
         peginTx.addOutput(amountToSend, activeFederation.getAddress());
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
-        federationContext.setRetiringFederation(retiringFederation);
-        federationContext.setLastRetiredFederationP2SHScript(retiredFederationP2SHScript);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(retiringFederation)
+            .setLastRetiredFederationP2SHScript(retiredFederationP2SHScript)
+            .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             peginTx,
@@ -411,7 +422,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(activeFederation, fedKeys, pegoutBtcTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .build();
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             pegoutBtcTx,
             federationContext,
@@ -453,8 +467,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
-        federationContext.setRetiringFederation(retiringFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(retiringFederation)
+            .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
@@ -503,8 +519,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
-        federationContext.setRetiringFederation(retiringFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(retiringFederation)
+            .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
@@ -543,8 +561,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedKeys, migrationTx);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
-        federationContext.setRetiringFederation(retiringFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .setRetiringFederation(retiringFederation)
+            .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             migrationTx,
@@ -573,7 +593,10 @@ class PegUtilsLegacyGetTransactionTypeTest {
         unknownPegTx.addOutput(Coin.COIN, unknownAddress);
 
         // Act
-        FederationContext federationContext = new FederationContext(activeFederation);
+        federationContext = FederationContext.builder()
+            .setActiveFederation(activeFederation)
+            .build();
+
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
             unknownPegTx,
             federationContext,
