@@ -338,9 +338,9 @@ public class SnapshotProcessor implements InternalService {
             boolean result = rebuildStateAndSave(state);
             logger.info("CLIENT - Snapshot sync finished {}! ", result ? "successfully" : "with errors");
             stopSyncing(state);
+        } else {
+            requestNextBlockHeadersChunk(state, sender);
         }
-
-        requestNextBlockHeadersChunk(state, sender);
     }
 
     private boolean validateBlockHeaders(SnapSyncState state, Peer sender, List<BlockHeader> blockHeaders) {
