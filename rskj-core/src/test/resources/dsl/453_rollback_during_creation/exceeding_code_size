@@ -5,14 +5,10 @@ comment
 // the contract source code
 
 contract BytecodeFactory {
-    event ContractDeployed(address contractAddress);
-
-    // Función para desplegar un contrato con `create2` a partir de un bytecode conocido
-    function deployContract(bytes memory bytecode, uint256 salt) public returns (address) {
+    function deployContractWithCreate2WithTheCodePassedInParameter(bytes memory bytecode, uint256 salt) public returns (address) {
         address contractAddress;
 
         assembly {
-            // Crear el contrato usando `create2` y asignar la dirección a `contractAddress`
             contractAddress := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
         }
 

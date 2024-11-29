@@ -12,7 +12,7 @@ import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ContractCreatingRollbackTest {
+class ContractCreatingDslRollbackTest {
 
     @Test
     void testCreateExecutionFailsAfter453IsRollingBack() throws FileNotFoundException, DslProcessorException {
