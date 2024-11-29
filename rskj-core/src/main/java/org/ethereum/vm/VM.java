@@ -770,11 +770,10 @@ public class VM {
     private long computeMemoryCopyGas() {
         DataWord length = stack.get(stack.size() - 3);
         DataWord offset = stack.peek();
-        long copiedWords = (length.longValue() + 31) / 32;
         long copySize = Program.limitToMaxLong(length);
         checkSizeArgument(copySize);
         long newMemSize = memNeeded(offset, copySize);
-        return GasCost.MEMORY * copiedWords + calcMemGas(oldMemSize, newMemSize, copySize) + GasCost.MEMORY;
+        return calcMemGas(oldMemSize, newMemSize, copySize) + GasCost.MEMORY;
     }
 
     protected void doCODESIZE() {
