@@ -29,9 +29,9 @@ import static org.mockito.Mockito.when;
 public class MCopyGasTest {
 
     private ActivationConfig.ForBlock activationConfig;
-    private ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
-    private BytecodeCompiler compiler = new BytecodeCompiler();
 
+    private final ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
+    private final BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
