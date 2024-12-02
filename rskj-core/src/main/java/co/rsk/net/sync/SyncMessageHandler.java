@@ -24,6 +24,7 @@ import co.rsk.net.messages.MessageType;
 import co.rsk.util.FormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -31,7 +32,9 @@ import java.util.concurrent.BlockingQueue;
 
 public abstract class SyncMessageHandler implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
+    private static final Logger logger = LoggerFactory.getLogger("syncmessagehandler");
+
+    public static final String QUEUE_NAME = "queue";
 
     private final String name;
 
@@ -65,6 +68,8 @@ public abstract class SyncMessageHandler implements Runnable {
             try {
                 job = jobQueue.take();
 
+                MDC.put(QUEUE_NAME, name);
+
                 if (logger.isDebugEnabled()) {
                     logger.debug("Processing msg: [{}] from: [{}] for: [{}]. Pending count: [{}]", job.getMsgType(), job.getSender(), name, jobQueue.size());
                     jobStart = Instant.now();
@@ -96,6 +101,8 @@ public abstract class SyncMessageHandler implements Runnable {
                 if (listener != null) {
                     listener.onException(e);
                 }
+            } finally {
+                MDC.remove(QUEUE_NAME);
             }
         }
 

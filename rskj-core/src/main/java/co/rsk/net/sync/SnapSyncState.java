@@ -60,6 +60,7 @@ public class SnapSyncState extends BaseSyncState {
 
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
+    private boolean stateFetched;
     private final List<TrieDTO> allNodes;
 
     private long remoteTrieSize;
@@ -88,13 +89,13 @@ public class SnapSyncState extends BaseSyncState {
         this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
         this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
-        this.thread = new Thread(new SyncMessageHandler("SNAP responses", responseQueue, listener) {
+        this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
 
             @Override
             public boolean isRunning() {
                 return isRunning;
             }
-        }, "snap sync response handler");
+        }, "snap sync client handler");
     }
 
     @Override
@@ -266,6 +267,14 @@ public class SnapSyncState extends BaseSyncState {
 
     public void setStateSize(BigInteger stateSize) {
         this.stateSize = stateSize;
+    }
+
+    public boolean isStateFetched() {
+        return stateFetched;
+    }
+
+    public void setStateFetched() {
+        this.stateFetched = true;
     }
 
     public BigInteger getStateChunkSize() {

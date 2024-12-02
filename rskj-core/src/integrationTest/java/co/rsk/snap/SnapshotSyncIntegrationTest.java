@@ -105,7 +105,7 @@ public class SnapshotSyncIntegrationTest {
         boolean isClientSynced = false;
 
         while (System.currentTimeMillis() < endTime) {
-            if (clientNode.getOutput().contains("CLIENT - Starting Snapshot sync.") && clientNode.getOutput().contains("CLIENT - Snapshot sync finished successfully!")) {
+            if (clientNode.getOutput().contains("Starting Snap sync") && clientNode.getOutput().contains("Snap sync finished successfully")) {
                 try {
                     JsonNode jsonResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portClientRpc, serverBestBlockNumber);
                     JsonNode jsonResult = jsonResponse.get(0).get("result");
