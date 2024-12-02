@@ -116,7 +116,7 @@ class FederationConstantsTest {
         return Stream.of(
             Arguments.of(mainnet, 16000L),
             Arguments.of(testnet, 80L),
-            Arguments.of(regtest, 15L)
+            Arguments.of(regtest, 125L)
         );
     }
 
@@ -135,7 +135,7 @@ class FederationConstantsTest {
 
         long fedActivationAgeMainnet = 40320L;
         long fedActivationAgeTestnet = 120L;
-        long fedActivationAgeRegtest = 20L;
+        long fedActivationAgeRegtest = 150L;
         ActivationConfig.ForBlock activationsPostRSKIP383 = mock(ActivationConfig.ForBlock.class);
         when(activationsPostRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
 
