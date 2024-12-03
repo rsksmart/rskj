@@ -35,6 +35,7 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CallTraceTransformer {
@@ -96,7 +97,6 @@ public class CallTraceTransformer {
         String from;
         String to = null;
         String gas = null;
-        //TODO input data is missing in TransferInvoke
         String input = null;
         String value = null;
         String output = null;
@@ -105,11 +105,7 @@ public class CallTraceTransformer {
         String error = null;
 
 
-        if (callType == CallType.DELEGATECALL) {
-            from = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
-        } else {
-            from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
-        }
+        from = getFrom(callType, invoke);
 
         List<LogInfoResult> logInfoResultList = null;
 
@@ -118,7 +114,7 @@ public class CallTraceTransformer {
 
         if (traceType == TraceType.CREATE) {
             if (creationData != null) {
-                input = HexUtils.toJsonHex(creationData.getCreationInput());
+                input = HexUtils.toUnformattedJsonHex(creationData.getCreationInput());
                 output = creationData.getCreatedAddress().toJsonString();
             }
             value = HexUtils.toQuantityJsonHex(callValue.getData());
@@ -126,7 +122,7 @@ public class CallTraceTransformer {
         }
 
         if (traceType == TraceType.CALL) {
-            input = HexUtils.toJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));
+            input = HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));
             value = HexUtils.toQuantityJsonHex(callValue.getData());
 
             if (callType == CallType.DELEGATECALL) {
@@ -143,34 +139,27 @@ public class CallTraceTransformer {
         }
 
 
-
         if (programResult != null) {
             gasUsed = HexUtils.toQuantityJsonHex(programResult.getGasUsed());
 
             if (programResult.isRevert()) {
                 Pair<String, byte[]> programRevert = EthModule.decodeProgramRevert(programResult);
                 revertReason = programRevert.getLeft();
-                output = HexUtils.toJsonHex(programRevert.getRight());
+                output = HexUtils.toQuantityJsonHex(programRevert.getRight());
                 error = "execution reverted";
             } else if (traceType != TraceType.CREATE) {
-                output = HexUtils.toJsonHex(programResult.getHReturn());
+                output = HexUtils.toQuantityJsonHex(programResult.getHReturn());
             }
+
             if (programResult.getException() != null) {
                 error = programResult.getException().toString();
             }
         }
 
-        if(withLog) {
-            logInfoResultList = new ArrayList<>();
-            List<LogInfo> logInfoList = programResult.getLogInfoList();
-            if(logInfoList != null) {
-                for (int i = 0; i < programResult.getLogInfoList().size(); i++) {
-                    LogInfo logInfo = programResult.getLogInfoList().get(i);
-                    LogInfoResult logInfoResult = fromLogInfo(logInfo, i);
-                    logInfoResultList.add(logInfoResult);
-                }
-            }
+        if (withLog) {
+            logInfoResultList = getLogs(programResult);
         }
+
 
         return TxTraceResult.builder()
                 .type(type)
@@ -186,6 +175,30 @@ public class CallTraceTransformer {
                 .logs(logInfoResultList)
                 .build();
 
+    }
+
+    private static String getFrom(CallType callType, InvokeData invoke) {
+        if (callType == CallType.DELEGATECALL) {
+            return new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+        } else {
+            return new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
+        }
+    }
+
+    private static List<LogInfoResult> getLogs(ProgramResult programResult) {
+        if (programResult == null) {
+            return Collections.emptyList();
+        }
+        List<LogInfoResult> logInfoResultList = new ArrayList<>();
+        List<LogInfo> logInfoList = programResult.getLogInfoList();
+        if (logInfoList != null) {
+            for (int i = 0; i < programResult.getLogInfoList().size(); i++) {
+                LogInfo logInfo = programResult.getLogInfoList().get(i);
+                LogInfoResult logInfoResult = fromLogInfo(logInfo, i);
+                logInfoResultList.add(logInfoResult);
+            }
+        }
+        return logInfoResultList;
     }
 
     private static LogInfoResult fromLogInfo(LogInfo logInfo, int index) {

@@ -84,7 +84,7 @@ public class TransferInvoke implements InvokeData {
         int size = 32; // maximum datavalue size
 
         if (index >= msgData.length
-                || tempIndex.compareTo(maxMsgData) == 1) {
+                || tempIndex.compareTo(maxMsgData) > 0) {
             return DataWord.ZERO;
         }
         if (index + size > msgData.length) {

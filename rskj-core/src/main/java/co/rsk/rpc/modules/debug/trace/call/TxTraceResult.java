@@ -40,6 +40,22 @@ public class TxTraceResult {
     private final List<TxTraceResult> calls;
     private final List<LogInfoResult> logs;
 
+    //Used by deserializer
+    public TxTraceResult(){
+        this.type = null;
+        this.from = null;
+        this.to = null;
+        this.value = null;
+        this.gas = null;
+        this.gasUsed = null;
+        this.input = null;
+        this.output = null;
+        this.error = null;
+        this.revertReason = null;
+        this.calls = new ArrayList<>();
+        this.logs = new ArrayList<>();
+    }
+
     public TxTraceResult(String type, String from, String to, String value, String gas, String gasUsed, String input, String output, String error, String revertReason, List<TxTraceResult> calls, List<LogInfoResult> logs) {
         this.type = type;
         this.from = from;

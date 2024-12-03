@@ -68,11 +68,16 @@ public class CallTracer implements DebugTracer {
         logger.trace("trace_transaction({})", transactionHash);
 
         byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
+        if(hash == null) {
+            logger.error("Invalid transaction hash: {}", transactionHash);
+            throw new IllegalArgumentException("Invalid transaction hash: " + transactionHash);
+        }
+
         TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);
-            return null;
+            throw new IllegalArgumentException("No transaction info for " + transactionHash);
         }
 
         Block block = this.blockchain.getBlockByHash(txInfo.getBlockHash());
