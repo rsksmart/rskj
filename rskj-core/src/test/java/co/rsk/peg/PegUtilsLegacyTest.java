@@ -1294,8 +1294,8 @@ class PegUtilsLegacyTest {
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
             .build();
 
         assertFalse(isMigrationTx(
@@ -1307,8 +1307,8 @@ class PegUtilsLegacyTest {
         ));
 
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederation.getDefaultP2SHScript())
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederation.getDefaultP2SHScript())
             .build();
         assertTrue(isMigrationTx(
             migrationTx,
@@ -1362,8 +1362,8 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(retiringFederation, retiringFedKeys, migrationTxInput, migrationTx);
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
@@ -1429,8 +1429,8 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
             .build();
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
@@ -1488,8 +1488,8 @@ class PegUtilsLegacyTest {
         Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         assertTrue(isMigrationTx(
@@ -1549,8 +1549,8 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
             .build();
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
@@ -1613,8 +1613,8 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
@@ -1688,8 +1688,8 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
 
         FederationContext federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
@@ -1734,8 +1734,8 @@ class PegUtilsLegacyTest {
         ));
 
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(null)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(null)
             .build();
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
@@ -1760,8 +1760,8 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, retiredMigrationTxInput, retiredMigrationTx);
 
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
             .build();
         assertTrue(isMigrationTx(
             retiredMigrationTx,
@@ -1779,9 +1779,9 @@ class PegUtilsLegacyTest {
         ));
 
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript())
+            .withRetiringFederation(retiringFederation)
             .build();
         assertTrue(isMigrationTx(
             retiredMigrationTx,
