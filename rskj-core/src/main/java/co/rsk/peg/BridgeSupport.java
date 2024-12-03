@@ -434,35 +434,40 @@ public class BridgeSupport {
     }
 
     private void registerPegin(BtcTransaction btcTx, Keccak256 rskTxHash, int height) throws RegisterBtcTransactionException, IOException {
-        logger.debug("[registerPegin] This is a peg-in tx {}", btcTx.getHash());
+        logger.info("[registerPegin] This is a peg-in tx {}", btcTx.getHash());
+
         processPegIn(btcTx, rskTxHash, height);
     }
 
     private void registerPegoutOrMigration(BtcTransaction btcTx) throws IOException {
-        logger.debug("[registerPegoutOrMigration] This is a peg-out or migration tx {}", btcTx.getHash());
+        logger.info("[registerPegoutOrMigration] This is a peg-out or migration tx {}", btcTx.getHash());
+
         processPegoutOrMigration(btcTx);
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
-        logger.debug("[registerSvpFundTx] This is an svp fund tx {}", btcTx.getHash());
+        logger.info("[registerSvpFundTx] This is an svp fund tx {}", btcTx.getHash());
+
         processPegoutOrMigration(btcTx); // Need to register the change UTXO
+
         if (isSvpOngoing()) {
             updateSvpFundTransactionValues(btcTx);
         }
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        logger.debug("[registerSvpSpendTx] This is an svp spend tx {}", btcTx.getHash());
+        logger.info("[registerSvpSpendTx] This is an svp spend tx {}", btcTx.getHash());
+
         processSvpSpendTransaction(btcTx);
+
         if (isSvpOngoing()) {
             processSvpSuccess();
         }
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
-        logger.debug(
-            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
-        );
+        logger.info(
+            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values", transaction);
 
         provider.setSvpFundTxSigned(transaction);
         provider.setSvpFundTxHashUnsigned(null);
@@ -474,6 +479,8 @@ public class BridgeSupport {
     }
 
     private void processSvpSuccess() {
+        logger.info("[processSvpSucess] SVP was successful. Going to commit the proposed federation");
+
         provider.setSvpSpendTxHashUnsigned(null);
         federationSupport.commitProposedFederation();
     }
@@ -1685,12 +1692,12 @@ public class BridgeSupport {
         Context.propagate(btcContext);
 
         if (isSvpOngoing() && isSvpSpendTx(releaseCreationRskTxHash)) {
-            logger.trace("[addSignature] Going to sign svp spend transaction with federator public key {}", federatorBtcPublicKey);
+            logger.info("[addSignature] Going to sign svp spend transaction with federator public key {}", federatorBtcPublicKey);
             addSvpSpendTxSignatures(federatorBtcPublicKey, signatures);
             return;
         }
 
-        logger.trace("[addSignature] Going to sign release transaction with federator public key {}", federatorBtcPublicKey);
+        logger.info("[addSignature] Going to sign release transaction with federator public key {}", federatorBtcPublicKey);
         addReleaseSignatures(federatorBtcPublicKey, signatures, releaseCreationRskTxHash);
     }
 
@@ -1773,29 +1780,32 @@ public class BridgeSupport {
         Federation proposedFederation = federationSupport.getProposedFederation()
             // This flow should never be reached. There should always be a proposed federation if svpIsOngoing.
             .orElseThrow(() -> new IllegalStateException("Proposed federation must exist when trying to sign the svp spend transaction."));
+        Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = provider.getSvpSpendTxWaitingForSignatures()
+            // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
+            .orElseThrow(() -> new IllegalStateException("Svp spend tx waiting for signatures must exist"));
         FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(proposedFederatorPublicKey)
             .orElseThrow(() -> new IllegalStateException("Federator must belong to proposed federation to sign the svp spend transaction."));
 
-        provider.getSvpSpendTxWaitingForSignatures()
-            // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
-            .ifPresent(svpSpendTxWFS -> {
-                Keccak256 svpSpendTxCreationRskTxHash = svpSpendTxWFS.getKey();
-                BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+        Keccak256 svpSpendTxCreationRskTxHash = svpSpendTxWFS.getKey();
+        BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
 
-                if (!areSignaturesEnoughToSignAllTxInputs(svpSpendTx, signatures)) {
-                    return;
-                }
+        if (!areSignaturesEnoughToSignAllTxInputs(svpSpendTx, signatures)) {
+            return;
+        }
 
-                processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
+        processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
+       
+        // save current fed signature back in storage
+        svpSpendTxWFS.setValue(svpSpendTx);
+        provider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
 
-                if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx)) {
-                    logMissingSignatures(svpSpendTx, svpSpendTxCreationRskTxHash, proposedFederation);
-                    return;
-                }
+        if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx)) {
+            logMissingSignatures(svpSpendTx, svpSpendTxCreationRskTxHash, proposedFederation);
+            return;
+        }
 
-                logReleaseBtc(svpSpendTx, svpSpendTxCreationRskTxHash.getBytes());
-                provider.setSvpSpendTxWaitingForSignatures(null);
-            });
+        logReleaseBtc(svpSpendTx, svpSpendTxCreationRskTxHash.getBytes());
+        provider.setSvpSpendTxWaitingForSignatures(null);
     }
 
     private boolean areSignaturesEnoughToSignAllTxInputs(BtcTransaction releaseTx, List<byte[]> signatures) {
