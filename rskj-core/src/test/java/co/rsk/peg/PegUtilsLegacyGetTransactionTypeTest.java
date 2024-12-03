@@ -104,8 +104,8 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(p2shRetiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(p2shRetiringFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -168,9 +168,9 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         FederationContext.FederationContextBuilder federationContextBuilder = FederationContext.builder();
-        federationContextBuilder.setActiveFederation(activeFederation);
+        federationContextBuilder.withActiveFederation(activeFederation);
         if (activations.isActive(RSKIP186)) {
-            federationContextBuilder.setLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
+            federationContextBuilder.withLastRetiredFederationP2SHScript(retiredFederation.getP2SHScript());
         }
         federationContext = federationContextBuilder.build();
 
@@ -218,7 +218,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
+            .withActiveFederation(activeFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -376,9 +376,9 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
-            .setLastRetiredFederationP2SHScript(retiredFederationP2SHScript)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
+            .withLastRetiredFederationP2SHScript(retiredFederationP2SHScript)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -423,7 +423,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
+            .withActiveFederation(activeFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -468,8 +468,8 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -520,8 +520,8 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -562,8 +562,8 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(
@@ -594,7 +594,7 @@ class PegUtilsLegacyGetTransactionTypeTest {
 
         // Act
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
+            .withActiveFederation(activeFederation)
             .build();
 
         PegTxType transactionType = PegUtilsLegacy.getTransactionType(

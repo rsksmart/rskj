@@ -303,13 +303,13 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     public FederationContext getFederationContext() {
         FederationContext.FederationContextBuilder federationContextBuilder = FederationContext.builder();
-        federationContextBuilder.setActiveFederation(getActiveFederation());
+        federationContextBuilder.withActiveFederation(getActiveFederation());
 
         Optional.ofNullable(getRetiringFederation())
-            .ifPresent(federationContextBuilder::setRetiringFederation);
+            .ifPresent(federationContextBuilder::withRetiringFederation);
 
         provider.getLastRetiredFederationP2SHScript(activations)
-            .ifPresent(federationContextBuilder::setLastRetiredFederationP2SHScript);
+            .ifPresent(federationContextBuilder::withLastRetiredFederationP2SHScript);
 
         return federationContextBuilder.build();
     }
