@@ -306,6 +306,19 @@ class VoteFederationChangeTest {
 
     // vote commit federation tests
     @Test
+    void voteCommitFederation_withNullPendingFederation_returnsFederationNonExistentResponseCode() {
+        // Arrange
+        Keccak256 someHash = Keccak256.ZERO_HASH;
+        ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{ someHash.getBytes() });
+
+        // Act
+        int result = federationSupport.voteFederationChange(firstAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+        // Assert
+        assertEquals(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode(), result);
+    }
+
+    @Test
     void voteCommitFederation_withEmptyFederation_returnsInsufficientMembersResponseCode() {
         // Arrange
         voteAndAssertCreateEmptyPendingFederation();
@@ -328,6 +341,25 @@ class VoteFederationChangeTest {
 
         // Assert
         assertEquals(FederationChangeResponseCode.INSUFFICIENT_MEMBERS.getCode(), firstVoteResult);
+    }
+
+    @Test
+    void voteCommitFederation_withMismatchedHashes_returnsPendingFederationMismatchedHashResponseCode() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+        int minMembersRequired = 2;
+        voteAndAssertAddFederatorPublicKeysToPendingFederation(minMembersRequired);
+
+        Keccak256 someHash = Keccak256.ZERO_HASH;
+        ABICallSpec commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{ someHash.getBytes() });
+
+        // Act
+        int result = federationSupport.voteFederationChange(firstAuthorizedTx, commitFederationAbiCallSpec, signatureCache, bridgeEventLogger);
+
+        // Assert
+        assertNotNull(federationSupport.getPendingFederationHash());
+        assertNotEquals(someHash, federationSupport.getPendingFederationHash());
+        assertEquals(FederationChangeResponseCode.PENDING_FEDERATION_MISMATCHED_HASH.getCode(), result);
     }
 
     @Test
