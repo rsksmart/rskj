@@ -1780,10 +1780,10 @@ public class BridgeSupport {
         List<byte[]> signatures
     ) {
         Federation proposedFederation = federationSupport.getProposedFederation()
-             // This flow should never be reached. There should always be a proposed federation if svpIsOngoing.
+            // This flow should never be reached. There should always be a proposed federation if svpIsOngoing.
             .orElseThrow(() -> new IllegalStateException("Proposed federation must exist when trying to sign the svp spend transaction."));
         Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = provider.getSvpSpendTxWaitingForSignatures()
-             // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
+            // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
             .orElseThrow(() -> new IllegalStateException("Svp spend tx waiting for signatures must exist"));
         FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(proposedFederatorPublicKey)
             .orElseThrow(() -> new IllegalStateException("Federator must belong to proposed federation to sign the svp spend transaction."));
