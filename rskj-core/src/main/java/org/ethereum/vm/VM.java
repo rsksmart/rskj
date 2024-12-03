@@ -1340,8 +1340,11 @@ public class VM {
     }
 
     protected void doTLOAD(){
-        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
-        // different types of calls
+        if (computeGas) {
+            gasCost = GasCost.TLOAD;
+            spendOpCodeGas();
+        }
+
         DataWord key = program.stackPop();
         if (isLogEnabled) {
             logger.info("Executing TLOAD with parameters: key = {}",  key);
@@ -1359,8 +1362,11 @@ public class VM {
     }
 
     protected void doTSTORE(){
-        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
-        // different types of calls
+        if (computeGas) {
+            gasCost = GasCost.TSTORE;
+            spendOpCodeGas();
+        }
+
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
         }

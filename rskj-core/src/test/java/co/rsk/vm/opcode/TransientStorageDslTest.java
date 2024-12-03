@@ -474,6 +474,21 @@ class TransientStorageDslTest {
         Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
+    @Test
+    void testTransientStorageGasMeasureTests() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstorage_gas_measure_tests.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstorageGasMeasureTestContract = "txTstorageGasMeasureTestContract";
+        assertTransactionReceiptWithStatus(world, txTstorageGasMeasureTestContract, "b01", true);
+
+        String txCheckGasMeasures = "txCheckGasMeasures";
+        TransactionReceipt txReceipt  = assertTransactionReceiptWithStatus(world, txCheckGasMeasures, "b02", true);
+        Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
         Transaction txCreation = world.getTransactionByName(txName);
         assertNotNull(txCreation);
