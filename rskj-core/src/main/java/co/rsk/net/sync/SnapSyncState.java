@@ -112,6 +112,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -119,7 +120,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapStatusResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.SNAP_STATUS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -127,6 +128,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -134,7 +136,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapBlocksResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -142,6 +144,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapStateChunk(Peer sender, SnapStateChunkResponseMessage responseMessage) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -149,7 +152,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapStateChunkResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -157,6 +160,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(peer, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE) {
                 @Override
                 public void run() {
@@ -164,7 +168,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapStateChunkResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -189,10 +193,7 @@ public class SnapSyncState extends BaseSyncState {
 
     @Override
     protected void onMessageTimeOut() {
-        // TODO: call syncEventsHandler.onErrorSyncing() and punish peers after SNAP feature discovery is implemented
-
-        finish();
-//         resetTimeElapsed();
+        fail(getLastBlockSender(), EventType.TIMEOUT_MESSAGE, "Snap sync timed out");
     }
 
     public Block getLastBlock() {
@@ -310,6 +311,8 @@ public class SnapSyncState extends BaseSyncState {
         isRunning = Boolean.FALSE;
         thread.interrupt();
 
+        logger.debug("Stopping Snap Sync");
+
         syncEventsHandler.stopSyncing();
     }
 
@@ -318,6 +321,8 @@ public class SnapSyncState extends BaseSyncState {
             logger.warn("Invalid state, isRunning: [{}]", isRunning);
             return;
         }
+
+        logger.debug("Snap Sync failed due to: {}", eventType);
 
         isRunning = Boolean.FALSE;
         thread.interrupt();
