@@ -44,17 +44,17 @@ public class FederationContext {
         private Federation retiringFederation;
         private Script lastRetiredFederationP2SHScript;
 
-        public FederationContextBuilder setActiveFederation(Federation activeFederation) {
+        public FederationContextBuilder withActiveFederation(Federation activeFederation) {
             this.activeFederation = Objects.requireNonNull(activeFederation, "Active federation must not be null");
             return this;
         }
 
-        public FederationContextBuilder setRetiringFederation(Federation retiringFederation) {
+        public FederationContextBuilder withRetiringFederation(Federation retiringFederation) {
             this.retiringFederation = retiringFederation;
             return this;
         }
 
-        public FederationContextBuilder setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {
+        public FederationContextBuilder withLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {
             this.lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScript;
             return this;
         }

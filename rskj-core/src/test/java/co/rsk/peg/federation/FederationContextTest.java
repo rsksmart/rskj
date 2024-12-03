@@ -21,7 +21,7 @@ class FederationContextTest {
     void setup() {
         activeFederation = buildActiveFederation();
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
+            .withActiveFederation(activeFederation)
             .build();
 
         retiringFederation = buildRetiringFederation();
@@ -40,8 +40,8 @@ class FederationContextTest {
     @Test
     void setRetiringFederation() {
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         Optional<Federation> retiringFederationFromFederationContext = federationContext.getRetiringFederation();
@@ -59,8 +59,8 @@ class FederationContextTest {
     void setLastRetiredFederationP2SHScript() {
         Script lastRetiredFederationP2SHScriptExpected = retiringFederation.getP2SHScript();
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setLastRetiredFederationP2SHScript(lastRetiredFederationP2SHScriptExpected)
+            .withActiveFederation(activeFederation)
+            .withLastRetiredFederationP2SHScript(lastRetiredFederationP2SHScriptExpected)
             .build();
 
         Optional<Script> lastRetiredFederationP2SHScriptFromFederationContext = federationContext.getLastRetiredFederationP2SHScript();
@@ -80,8 +80,8 @@ class FederationContextTest {
     @Test
     void getLiveFederations_withActiveAndRetiringFederations() {
         federationContext = FederationContext.builder()
-            .setActiveFederation(activeFederation)
-            .setRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .withRetiringFederation(retiringFederation)
             .build();
 
         List<Federation> liveFederations = federationContext.getLiveFederations();
