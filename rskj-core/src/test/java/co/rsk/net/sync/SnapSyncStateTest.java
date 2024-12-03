@@ -19,7 +19,6 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.messages.SnapBlocksResponseMessage;
@@ -33,11 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -45,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -99,27 +94,6 @@ class SnapSyncStateTest {
     }
 
     @Test
-    void givenOnMessageTimeOutCalled_thenSyncingStops() {
-        //given-when
-        underTest.setRunning();
-        underTest.onMessageTimeOut();
-        //then
-        verify(syncEventsHandler, times(1)).stopSyncing();
-    }
-
-    @Test
-    void givenNewChunk_thenTimerIsReset() {
-        //given
-        underTest.timeElapsed = Duration.ofMinutes(1);
-        assertThat(underTest.timeElapsed, greaterThan(Duration.ZERO));
-
-        // when
-        underTest.onNewChunk();
-        //then
-        assertThat(underTest.timeElapsed, equalTo(Duration.ZERO));
-    }
-
-    @Test
     void givenTickIsCalledBeforeTimeout_thenTimerIsUpdated_andNoTimeoutHappens() {
         //given
         Duration elapsedTime = Duration.ofMillis(10);
@@ -130,24 +104,6 @@ class SnapSyncStateTest {
         assertThat(underTest.timeElapsed, equalTo(elapsedTime));
         verify(syncEventsHandler, never()).stopSyncing();
         verify(syncEventsHandler, never()).onErrorSyncing(any(), any(), any(), any());
-    }
-
-    @Test
-    void givenTickIsCalledAfterTimeout_thenTimerIsUpdated_andTimeoutHappens() throws UnknownHostException {
-        //given
-        Duration elapsedTime = Duration.ofMinutes(1);
-        underTest.timeElapsed = Duration.ZERO;
-        Peer mockedPeer = mock(Peer.class);
-        NodeID nodeID = mock(NodeID.class);
-        when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
-        when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
-        when(peersInformation.getBestSnapPeer()).thenReturn(Optional.of(mockedPeer));
-        underTest.setRunning();
-        // when
-        underTest.tick(elapsedTime);
-        //then
-        assertThat(underTest.timeElapsed, equalTo(elapsedTime));
-        verify(syncEventsHandler, times(1)).stopSyncing();
     }
 
     @Test

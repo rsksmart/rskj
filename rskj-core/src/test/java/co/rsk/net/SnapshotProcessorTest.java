@@ -416,10 +416,8 @@ public class SnapshotProcessorTest {
 
         underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
 
-        verify(snapSyncState, times(1)).onNewChunk();
         verify(underTest, times(1)).onStateChunkResponseError(peer, responseMessage);
         verify(peer, times(1)).sendMessage(any(SnapStateChunkRequestMessage.class));
-
     }
 
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {

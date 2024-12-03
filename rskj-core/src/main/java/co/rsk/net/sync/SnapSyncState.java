@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -175,20 +174,6 @@ public class SnapSyncState extends BaseSyncState {
 
     public SyncEventsHandler getSyncEventsHandler() {
         return this.syncEventsHandler;
-    }
-
-    public void onNewChunk() {
-        resetTimeElapsed();
-    }
-
-    @Override
-    public void tick(Duration duration) {
-        // TODO(snap-poc) handle multiple peers casuistry, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
-
-        timeElapsed = timeElapsed.plus(duration);
-        if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingSnapChunk()) >= 0) {
-            onMessageTimeOut();
-        }
     }
 
     @Override

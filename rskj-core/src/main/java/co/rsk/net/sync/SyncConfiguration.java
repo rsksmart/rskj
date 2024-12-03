@@ -47,8 +47,6 @@ public final class SyncConfiguration {
     private final boolean isServerSnapSyncEnabled;
     private final boolean isClientSnapSyncEnabled;
 
-    private final Duration timeoutWaitingSnapChunk;
-
     private final int snapshotSyncLimit;
     private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
 
@@ -92,7 +90,6 @@ public final class SyncConfiguration {
                 topBest,
                 isServerSnapSyncEnabled,
                 isClientSnapSyncEnabled,
-                timeoutWaitingSnapChunk,
                 snapshotSyncLimit,
                 Collections.emptyList());
     }
@@ -109,7 +106,6 @@ public final class SyncConfiguration {
             double topBest,
             boolean isServerSnapSyncEnabled,
             boolean isClientSnapSyncEnabled,
-            int timeoutWaitingSnapChunk,
             int snapshotSyncLimit,
             List<Node> snapBootNodes) {
         this.expectedPeers = expectedPeers;
@@ -123,8 +119,6 @@ public final class SyncConfiguration {
         this.topBest = topBest;
         this.isServerSnapSyncEnabled = isServerSnapSyncEnabled;
         this.isClientSnapSyncEnabled = isClientSnapSyncEnabled;
-        // TODO(snap-poc) re-visit the need of this specific timeout as the algorithm evolves
-        this.timeoutWaitingSnapChunk = Duration.ofSeconds(timeoutWaitingSnapChunk);
         this.snapshotSyncLimit = snapshotSyncLimit;
 
         List<Node> snapBootNodesList = snapBootNodes != null ? snapBootNodes : Collections.emptyList();
@@ -175,10 +169,6 @@ public final class SyncConfiguration {
 
     public boolean isClientSnapSyncEnabled() {
         return isClientSnapSyncEnabled;
-    }
-
-    public Duration getTimeoutWaitingSnapChunk() {
-        return timeoutWaitingSnapChunk;
     }
 
     public int getSnapshotSyncLimit() {
