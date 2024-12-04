@@ -13,7 +13,9 @@ import java.util.stream.Stream;
 
 public class FederationRegTestConstants extends FederationConstants {
 
-    public FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
+    private static FederationRegTestConstants instance;
+
+    private FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -55,5 +57,27 @@ public class FederationRegTestConstants extends FederationConstants {
         // 9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
+    }
+
+    public static synchronized FederationRegTestConstants getInstance(List<BtcECKey> federationPublicKeys) {
+        if (federationPublicKeys == null || federationPublicKeys.isEmpty()) {
+            throw new IllegalArgumentException("Federation regtest public keys must not be null or empty.");
+        }
+
+        if (instance == null) {
+            instance = new FederationRegTestConstants(federationPublicKeys);
+        } else if (!federationPublicKeys.equals(instance.getGenesisFederationPublicKeys())) {
+            throw new IllegalStateException("Federation regtest constants is already initialized with different keys.");
+        }
+
+        return instance;
+    }
+
+    public static synchronized FederationRegTestConstants getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("Federation regtest constants is not initialized. Call getInstance(List<BtcECKey>) first.");
+        }
+
+        return instance;
     }
 }
