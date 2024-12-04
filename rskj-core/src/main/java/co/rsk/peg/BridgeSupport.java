@@ -413,8 +413,8 @@ public class BridgeSupport {
             );
 
             switch (pegTxType) {
-                case PEGIN -> processPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> processPegoutOrMigration(btcTx);
+                case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
+                case PEGOUT_OR_MIGRATION -> registerPegoutOrMigration(btcTx);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
                 default -> {
@@ -435,41 +435,35 @@ public class BridgeSupport {
     private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
         logger.info("[registerSvpFundTx] This is an svp fund tx {}", btcTx.getHash());
 
-        processPegoutOrMigration(btcTx); // Need to register the change UTXO
+        registerPegoutOrMigration(btcTx); // Need to register the change UTXO
 
-        if (isSvpOngoing()) {
+        // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
+        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
+        // This covers the case when the fundTx is registered between the validation period end and the next call to updateCollections
+        boolean isSvpOngoing = isSvpOngoing();
+        logger.trace("[registerSvpFundTx] Is SVP ongoing? {}", isSvpOngoing);
+        if (isSvpOngoing) {
             updateSvpFundTransactionValues(btcTx);
         }
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        logger.info("[registerSvpSpendTx] This is an svp spend tx {}", btcTx.getHash());
+        logger.info("[registerSvpSpendTx] This is an svp spend tx {}. SVP was successful. Going to commit the proposed federation", btcTx.getHash());
 
-        processSvpSpendTransaction(btcTx);
-
-        if (isSvpOngoing()) {
-            processSvpSuccess();
-        }
+        registerPegoutOrMigration(btcTx); // Need to register the UTXOs and mark the tx as processed
+        provider.setSvpSpendTxHashUnsigned(null);
+        federationSupport.commitProposedFederation();
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
         logger.info(
-            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values", transaction);
+            "[updateSvpFundTransactionValues] Transaction {} (wtxid:{}) is the svp fund transaction. Going to update its values",
+            transaction.getHash(),
+            transaction.getHash(true)
+        );
 
         provider.setSvpFundTxSigned(transaction);
         provider.setSvpFundTxHashUnsigned(null);
-    }
-
-    private void processSvpSpendTransaction(BtcTransaction svpSpendTx) throws IOException {
-        markTxAsProcessed(svpSpendTx);
-        saveNewUTXOs(svpSpendTx);
-    }
-
-    private void processSvpSuccess() {
-        logger.info("[processSvpSucess] SVP was successful. Going to commit the proposed federation");
-
-        provider.setSvpSpendTxHashUnsigned(null);
-        federationSupport.commitProposedFederation();
     }
 
     @VisibleForTesting
@@ -477,12 +471,12 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    protected void processPegIn(
+    protected void registerPegIn(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
         int height
     ) throws IOException, RegisterBtcTransactionException {
-        final String METHOD_NAME = "processPegIn";
+        final String METHOD_NAME = "registerPegIn";
         logger.info("[{}] This is a peg-in tx {}", METHOD_NAME, btcTx.getHash());
 
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
@@ -518,7 +512,6 @@ public class BridgeSupport {
         if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
             logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
             executePegIn(btcTx, peginInformation, totalAmount);
-            markTxAsProcessed(btcTx);
         } else {
             Optional<RejectedPeginReason> rejectedPeginReasonOptional = peginEvaluationResult.getRejectedPeginReason();
             if (!rejectedPeginReasonOptional.isPresent()) {
@@ -562,7 +555,7 @@ public class BridgeSupport {
 
     /**
      * Legacy version for processing peg-ins
-     * Use instead {@link co.rsk.peg.BridgeSupport#processPegIn}
+     * Use instead {@link co.rsk.peg.BridgeSupport#registerPegIn}
      *
      * @param btcTx Peg-in transaction to process
      * @param rskTxHash Hash of the RSK transaction where the prg-in is being processed
@@ -619,8 +612,6 @@ public class BridgeSupport {
                 logger.warn("[legacyProcessPegin] {}", message);
                 throw new RegisterBtcTransactionException(message);
         }
-
-        markTxAsProcessed(btcTx);
     }
 
     private void processPegInVersionLegacy(
@@ -683,7 +674,8 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount)
+        throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -708,7 +700,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        saveNewUTXOs(btcTx);
+        registerPegoutOrMigration(btcTx);
     }
 
     private void refundTxSender(
@@ -744,11 +736,11 @@ public class BridgeSupport {
         );
     }
 
-    protected void processPegoutOrMigration(BtcTransaction btcTx) throws IOException {
-        logger.info("[processPegoutOrMigration] This is a peg-out or migration tx {}", btcTx.getHash());
+    protected void registerPegoutOrMigration(BtcTransaction btcTx) throws IOException {
+        logger.info("[registerPegoutOrMigration] This is a peg-out or migration tx {} (wtxid: {})", btcTx.getHash(), btcTx.getHash(true));
         markTxAsProcessed(btcTx);
         saveNewUTXOs(btcTx);
-        logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTx.getHash(false));
+        logger.info("[registerPegoutOrMigration] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
     private boolean shouldProcessPegInVersionLegacy(
@@ -1037,7 +1029,6 @@ public class BridgeSupport {
     private void updateSvpState(Transaction rskTx) {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (proposedFederationOpt.isEmpty()) {
-            logger.trace("[updateSvpState] Proposed federation does not exist, so there's no svp going on.");
             return;
         }
 
@@ -1045,10 +1036,6 @@ public class BridgeSupport {
         // we can conclude that the svp failed
         Federation proposedFederation = proposedFederationOpt.get();
         if (!validationPeriodIsOngoing(proposedFederation)) {
-            logger.info(
-                "[updateSvpState] Proposed federation validation failed at block {}. SVP failure will be processed",
-                rskExecutionBlock.getNumber()
-            );
             processSvpFailure(proposedFederation);
             return;
         }
@@ -1086,6 +1073,10 @@ public class BridgeSupport {
     }
 
     private void processSvpFailure(Federation proposedFederation) {
+        logger.info(
+            "[processSvpFailure] Proposed federation validation failed at block {}. SVP failure will be processed",
+            rskExecutionBlock.getNumber()
+        );
         eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
 
         logger.info("[processSVPFailure] Federation election will be allowed again.");
