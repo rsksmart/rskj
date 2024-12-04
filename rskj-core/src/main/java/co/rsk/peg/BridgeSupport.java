@@ -415,7 +415,7 @@ public class BridgeSupport {
             );
 
             switch (pegTxType) {
-                case PEGIN -> processPegIn(btcTx, rskTxHash, height);
+                case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
                 case PEGOUT_OR_MIGRATION -> processPegoutOrMigration(btcTx);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
@@ -479,16 +479,16 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    protected void processPegIn(
+    protected void registerPegIn(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
         int height
     ) throws IOException, RegisterBtcTransactionException {
-        final String METHOD_NAME = "processPegIn";
+        final String METHOD_NAME = "registerPegIn";
         logger.info("[{}] This is a peg-in tx {}", METHOD_NAME, btcTx.getHash());
 
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
-            legacyProcessPegin(btcTx, rskTxHash, height);
+            legacyRegisterPegin(btcTx, rskTxHash, height);
             logger.info(
                 "[{}] BTC Tx {} processed in RSK transaction {} using legacy function",
                 METHOD_NAME,
@@ -523,7 +523,7 @@ public class BridgeSupport {
             markTxAsProcessed(btcTx);
         } else {
             Optional<RejectedPeginReason> rejectedPeginReasonOptional = peginEvaluationResult.getRejectedPeginReason();
-            if (!rejectedPeginReasonOptional.isPresent()) {
+            if (rejectedPeginReasonOptional.isEmpty()) {
                 // This flow should never be reached. There should always be a rejected pegin reason.
                 String message = "Invalid state. No rejected reason was returned from evaluatePegin method";
                 logger.error("[{}}] {}", METHOD_NAME, message);
@@ -564,7 +564,7 @@ public class BridgeSupport {
 
     /**
      * Legacy version for processing peg-ins
-     * Use instead {@link co.rsk.peg.BridgeSupport#processPegIn}
+     * Use instead {@link co.rsk.peg.BridgeSupport#registerPegIn}
      *
      * @param btcTx Peg-in transaction to process
      * @param rskTxHash Hash of the RSK transaction where the prg-in is being processed
@@ -572,7 +572,7 @@ public class BridgeSupport {
      * @deprecated
      */
     @Deprecated
-    private void legacyProcessPegin(
+    private void legacyRegisterPegin(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
         int height
@@ -602,12 +602,12 @@ public class BridgeSupport {
                 btcTx.getHash(),
                 e.getMessage()
             );
-            logger.warn("[legacyProcessPegin] {}", message);
+            logger.warn("[legacyRegisterPegin] {}", message);
             throw new RegisterBtcTransactionException(message);
         }
 
         int protocolVersion = peginInformation.getProtocolVersion();
-        logger.debug("[legacyProcessPegin] Protocol version: {}", protocolVersion);
+        logger.debug("[legacyRegisterPegin] Protocol version: {}", protocolVersion);
         switch (protocolVersion) {
             case 0:
                 processPegInVersionLegacy(btcTx, rskTxHash, height, peginInformation, totalAmount);
@@ -618,7 +618,7 @@ public class BridgeSupport {
             default:
                 markTxAsProcessed(btcTx);
                 String message = String.format("Invalid peg-in protocol version: %d", protocolVersion);
-                logger.warn("[legacyProcessPegin] {}", message);
+                logger.warn("[legacyRegisterPegin] {}", message);
                 throw new RegisterBtcTransactionException(message);
         }
 
