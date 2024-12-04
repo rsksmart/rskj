@@ -6785,8 +6785,8 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegInVersionLegacy(
+    void registerPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
+        assertRefundInRegisterPegInVersionLegacy(
             true,
             false,
             TxSenderAddressType.P2SHMULTISIG,
@@ -6795,8 +6795,8 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegInVersionLegacy(
+    void registerPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
+        assertRefundInRegisterPegInVersionLegacy(
             false,
             false,
             TxSenderAddressType.P2PKH,
@@ -6805,8 +6805,8 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegInVersionLegacy(
+    void registerPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
+        assertRefundInRegisterPegInVersionLegacy(
             true,
             true,
             TxSenderAddressType.P2PKH,
@@ -6815,10 +6815,10 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
+    void registerPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
         RegisterBtcTransactionException, PeginInstructionsException {
 
-        assertRefundInProcessPegInVersion1(
+        assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.P2PKH,
             Optional.empty(),
             Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
@@ -6826,13 +6826,13 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
+    void registerPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(btcRegTestParams);
 
-        assertRefundInProcessPegInVersion1(
+        assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.UNKNOWN,
             Optional.of(btcRefundAddress),
             Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
@@ -6840,10 +6840,10 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
+    void registerPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
-        assertRefundInProcessPegInVersion1(
+        assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.UNKNOWN,
             Optional.empty(),
             Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
@@ -6851,7 +6851,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_noPeginInstructions() {
+    void registerPegIn_noPeginInstructions() {
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
             .build();
@@ -6864,7 +6864,7 @@ class BridgeSupportTest {
         BtcTransaction btcTx = mock(BtcTransaction.class);
         when(btcTx.getValueSentToMe(any())).thenReturn(Coin.valueOf(1));
 
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.registerPegIn(
             btcTx,
             PegTestUtils.createHash3(1),
             0
@@ -6872,7 +6872,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
+    void registerPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -6910,7 +6910,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.registerPegIn(
             btcTx,
             PegTestUtils.createHash3(1),
             0
@@ -6919,7 +6919,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_errorParsingPeginInstructions_afterRskip170_refundSender() throws IOException, PeginInstructionsException {
+    void registerPegIn_errorParsingPeginInstructions_afterRskip170_refundSender() throws IOException, PeginInstructionsException {
         // Arrange
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
         Repository repository = createRepository();
@@ -6970,7 +6970,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0));
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.registerPegIn(btcTx, PegTestUtils.createHash3(1), 0));
 
         // Assert
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
@@ -7593,7 +7593,7 @@ class BridgeSupportTest {
         }
     }
 
-    private void assertRefundInProcessPegInVersionLegacy(
+    private void assertRefundInRegisterPegInVersionLegacy(
         boolean isWhitelisted,
         boolean mockLockingCap,
         TxSenderAddressType lockSenderAddressType,
@@ -7657,7 +7657,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0);
+        bridgeSupport.registerPegIn(btcTx, PegTestUtils.createHash3(1), 0);
 
         // Assert
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
@@ -8122,7 +8122,7 @@ class BridgeSupportTest {
         assertEquals(expectedEstimatedFee, estimatedFeesForNextPegOutEvent);
     }
 
-    private void assertRefundInProcessPegInVersion1(
+    private void assertRefundInRegisterPegInVersion1(
         TxSenderAddressType lockSenderAddressType,
         Optional<Address> btcRefundAddress,
         List<ConsensusRule> consensusRules)
@@ -8190,7 +8190,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0);
+        bridgeSupport.registerPegIn(btcTx, PegTestUtils.createHash3(1), 0);
 
         // Assert
         if (lockSenderAddressType == TxSenderAddressType.UNKNOWN && !btcRefundAddress.isPresent()) {
