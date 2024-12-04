@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 public class FederationTestNetConstants extends FederationConstants {
 
-    private static final FederationTestNetConstants instance = new FederationTestNetConstants();
+    private static final FederationTestNetConstants INSTANCE = new FederationTestNetConstants();
 
     private FederationTestNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
@@ -58,5 +58,7 @@ public class FederationTestNetConstants extends FederationConstants {
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
     }
 
-    public static FederationTestNetConstants getInstance() { return instance; }
+    public static FederationTestNetConstants getInstance() {
+        return INSTANCE;
+    }
 }
