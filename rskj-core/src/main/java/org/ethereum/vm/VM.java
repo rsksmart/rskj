@@ -773,7 +773,7 @@ public class VM {
         long copySize = Program.limitToMaxLong(length);
         checkSizeArgument(copySize);
         long newMemSize = memNeeded(offset, copySize);
-        return calcMemGas(oldMemSize, newMemSize, copySize) + GasCost.MEMORY;
+        return GasCost.add(calcMemGas(oldMemSize, newMemSize, copySize), GasCost.MEMORY);
     }
 
     protected void doCODESIZE() {

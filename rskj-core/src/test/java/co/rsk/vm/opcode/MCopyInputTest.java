@@ -26,7 +26,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP445;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MCopyBoundTest {
+public class MCopyInputTest {
 
     private ActivationConfig.ForBlock activationConfig;
 
@@ -52,7 +52,7 @@ public class MCopyBoundTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideParametersForMCOPYBoundTest")
+    @MethodSource("provideParametersForOOGCases")
     void testMCopy_ShouldThrowOOGException(String[] initMemory, int dst, int src, long length) {
         // Given
         byte[] code = compiler.compile("MCOPY");
@@ -71,24 +71,26 @@ public class MCopyBoundTest {
         program.stackPush(DataWord.valueOf(dst));
 
         // Then
-        try {
-            while (!program.isStopped()) {
-                vm.step(program);
-            }
-            Assertions.fail("OutOfGasException should be thrown!");
-        } catch(Program.StackTooSmallException e) {
-            Assertions.fail("Stack too small exception");
-        } catch(Program.OutOfGasException e) {
-            Assertions.assertTrue(e.getMessage().contains("Not enough gas for 'MCOPY' operation"));
-        }
+        Program.OutOfGasException ex = Assertions.assertThrows(Program.OutOfGasException.class, () -> executeProgram(vm, program));
+        Assertions.assertTrue(ex.getMessage().contains("Not enough gas for 'MCOPY' operation"));
     }
 
-    private static Stream<Arguments> provideParametersForMCOPYBoundTest() {
+    private static Stream<Arguments> provideParametersForOOGCases() {
         return Stream.of(
                 Arguments.of(new String[]{ "0000000000000000000000000000000000000000000000000000000000000000" }, 0, 0, -1),
                 Arguments.of(new String[]{}, 0, 0, -(2 * (Long.MAX_VALUE / 3))),
                 Arguments.of(new String[]{}, 0, 0, Integer.MAX_VALUE + 1L)
         );
+    }
+
+    private static void executeProgram(VM vm, Program program) {
+        try {
+            while (!program.isStopped()) {
+                vm.step(program);
+            }
+        } catch(Program.StackTooSmallException e) {
+            Assertions.fail("Stack too small exception");
+        }
     }
 
 }
