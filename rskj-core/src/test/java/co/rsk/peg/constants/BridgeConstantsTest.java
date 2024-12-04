@@ -186,7 +186,7 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), FederationMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), FederationTestNetConstants.getInstance()),
-            Arguments.of(bridgeRegTestConstants, new FederationRegTestConstants(federationRegTestConstants.getGenesisFederationPublicKeys()))
+            Arguments.of(bridgeRegTestConstants, FederationRegTestConstants.getInstance(federationRegTestConstants.getGenesisFederationPublicKeys()))
         );
     }
 
