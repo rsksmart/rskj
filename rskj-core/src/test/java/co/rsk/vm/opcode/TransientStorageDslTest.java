@@ -33,11 +33,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TransientStorageDslTest {
@@ -413,10 +413,10 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
 
         String txTstoreInReentrantCall = "txTstoreInReentrantCall";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTstoreInReentrantCall, "b02", true);
+        assertTransactionReceiptWithStatus(world, txTstoreInReentrantCall, "b02", true);
 
         String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
-        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -431,10 +431,10 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
 
         String txTloadAfterReentrantTstore = "txTloadAfterReentrantTstore";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTloadAfterReentrantTstore, "b02", true);
+        assertTransactionReceiptWithStatus(world, txTloadAfterReentrantTstore, "b02", true);
 
         String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
-        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -449,10 +449,10 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
 
         String txManipulateInReentrantCall = "txManipulateInReentrantCall";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txManipulateInReentrantCall, "b02", true);
+        assertTransactionReceiptWithStatus(world, txManipulateInReentrantCall, "b02", true);
 
         String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
-        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
         Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -467,10 +467,10 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
 
         String txTstorageInReentrantCallTest = "txTstorageInReentrantCallTest";
-       TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTstorageInReentrantCallTest, "b02", true);
+        assertTransactionReceiptWithStatus(world, txTstorageInReentrantCallTest, "b02", true);
 
         String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
-        txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
         Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -487,6 +487,54 @@ class TransientStorageDslTest {
         String txCheckGasMeasures = "txCheckGasMeasures";
         TransactionReceipt txReceipt  = assertTransactionReceiptWithStatus(world, txCheckGasMeasures, "b02", true);
         Assertions.assertEquals(4, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    @Test
+    void testTstoreLoopUntilOutOfGas() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstore_loop_until_out_of_gas.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstoreLoopUntilOutOfGasContract = "txTstoreLoopUntilOutOfGasContract";
+        assertTransactionReceiptWithStatus(world, txTstoreLoopUntilOutOfGasContract, "b01", true);
+
+        String txRunTstoreUntilOutOfGas = "txRunTstoreUntilOutOfGas";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txRunTstoreUntilOutOfGas, "b02", false);
+        long txRunOutOfGas = new BigInteger(1, txReceipt.getGasUsed()).longValue();
+        assertEquals(300000, txRunOutOfGas); // Assert that it consumed all the gas configured in the transaction
+    }
+
+    @Test
+    void testTstoreWideAddressSpaceLoopUntilOutOfGas() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstore_wide_address_space_loop_until_out_of_gas.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstoreWideAddressSpaceLoopUntilOutOfGasContract = "txTstoreWideAddressSpaceLoopUntilOutOfGasContract";
+        assertTransactionReceiptWithStatus(world, txTstoreWideAddressSpaceLoopUntilOutOfGasContract, "b01", true);
+
+        String txRunTstoreWideAddressSpaceUntilOutOfGas = "txRunTstoreWideAddressSpaceUntilOutOfGas";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txRunTstoreWideAddressSpaceUntilOutOfGas, "b02", false);
+        long txRunOutOfGas = new BigInteger(1, txReceipt.getGasUsed()).longValue();
+        assertEquals(500000, txRunOutOfGas); // Assert that it consumed all the gas configured in the transaction
+    }
+
+    @Test
+    void testTstoreAndTloadLoopUntilOutOfGas() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstore_and_tload_loop_until_out_of_gas.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTstoreAndTloadLoopUntilOutOfGasContract = "txTstoreAndTloadLoopUntilOutOfGasContract";
+        assertTransactionReceiptWithStatus(world, txTstoreAndTloadLoopUntilOutOfGasContract, "b01", true);
+
+        String txRunTstoreAndTloadUntilOutOfGas = "txRunTstoreAndTloadUntilOutOfGas";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txRunTstoreAndTloadUntilOutOfGas, "b02", false);
+        long txRunOutOfGas = new BigInteger(1, txReceipt.getGasUsed()).longValue();
+        assertEquals(700000, txRunOutOfGas); // Assert that it consumed all the gas configured in the transaction
     }
 
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
