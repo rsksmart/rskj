@@ -743,12 +743,6 @@ public class BridgeSupport {
         );
     }
 
-    private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
-        markTxAsProcessed(btcTx);
-        saveNewUTXOs(btcTx);
-        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
-    }
-
     private boolean shouldProcessPegInVersionLegacy(
         TxSenderAddressType txSenderAddressType,
         BtcTransaction btcTx,
@@ -806,9 +800,11 @@ public class BridgeSupport {
     }
 
     /*
-      Add the btcTx outputs that send btc to the federation(s) to the UTXO list
+    Add the btcTx outputs that send btc to the federation(s) to the UTXO list,
+    so they can be used as inputs in future peg-out transactions.
+    Finally, mark the btcTx as processed.
      */
-    private void saveNewUTXOs(BtcTransaction btcTx) {
+    private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
@@ -825,7 +821,7 @@ public class BridgeSupport {
             );
             federationSupport.getActiveFederationBtcUTXOs().add(utxo);
         }
-        logger.debug("[saveNewUTXOs] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
+        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
 
         // Outputs to the retiring federation (if any)
         Wallet retiringFederationWallet = getRetiringFederationWallet(false);
@@ -842,8 +838,11 @@ public class BridgeSupport {
                 );
                 federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
             }
-            logger.debug("[saveNewUTXOs] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
+            logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
         }
+
+        markTxAsProcessed(btcTx);
+        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
     /**
