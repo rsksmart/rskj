@@ -61,6 +61,9 @@ public class GasCost {
     public static final long REFUND_SSTORE = 15000;
     public static final long CREATE = 32000;
 
+    public static final long TLOAD = 100;
+    public static final long TSTORE = 100;
+
     public static final long JUMPDEST = 1;
     public static final long CREATE_DATA_BYTE = 5;
     public static final long CALL = 700;

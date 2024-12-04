@@ -1,0 +1,149 @@
+comment
+
+// CONTRACT CODE
+
+pragma solidity ^0.8.24;
+
+contract TstorageReentrancyContext {
+    uint256 reentrantCounter = 0;
+    uint256 valueLoadedFromFFBeforeDefaultCall;
+    uint256 valueLoadedFromFEAfterCall;
+    uint256 valueLoadedFromMloadAfterSecondReentrantCall;
+    uint256 resultFirstReentrantCall;
+    uint256 resultSecondReentrantStaticCall;
+
+    constructor() {
+    }
+
+    event OK();
+    event ERROR(string, uint256);
+
+    function tstoreInCallThenTloadReturnInStaticCall() external {
+        bytes memory data = abi.encodeWithSignature("tstoreInCallThenTloadReturnInStaticCall()");
+
+        assembly {
+            let reentrantValue := sload(reentrantCounter.slot)
+            switch reentrantValue
+            case 1 {
+            // +1 to the counter so it goes to the other case from reentrant call
+                reentrantValue := add(reentrantValue, 1)
+                sstore(reentrantCounter.slot, reentrantValue)
+                tstore(0xFE, 0x101)
+                sstore(resultSecondReentrantStaticCall.slot, staticcall(gas(), address(), add(data, 0x20), mload(data), 0, 32))
+                sstore(valueLoadedFromMloadAfterSecondReentrantCall.slot, mload(0))
+            }
+            case 2 {
+                let value := tload(0xFE)
+                mstore(0, value)
+                return(0, 32)
+            }
+            default {
+            // +1 to the counter so it goes to the other case from reentrant call
+                reentrantValue := add(reentrantValue, 1)
+                sstore(reentrantCounter.slot, reentrantValue)
+
+            // Setup the conditions to be tested
+                tstore(0xFF, 0x100)
+                sstore(valueLoadedFromFFBeforeDefaultCall.slot, tload(0xFF))
+                sstore(resultFirstReentrantCall.slot, call(gas(), address(), 0, add(data, 0x20), mload(data), 0, 0)) // saves result from the call so we can check later
+                sstore(valueLoadedFromFEAfterCall.slot, tload(0xFE))
+            }
+        }
+    }
+
+    function checkValuesStoredInTstorage() external {
+        checkReturnValueExpected(resultFirstReentrantCall, 'Checking result callee execution resultFirstReentrantCall is success', 1);
+        checkReturnValueExpected(resultSecondReentrantStaticCall, 'Checking result callee execution resultSecondReentrantCall is success', 1);
+        checkReturnValueExpected(valueLoadedFromFFBeforeDefaultCall, 'Checking value from tload FF before default call', 0x100);
+        checkReturnValueExpected(valueLoadedFromMloadAfterSecondReentrantCall, 'Checking value from FE after second reentrant call', 0x101);
+        checkReturnValueExpected(valueLoadedFromFEAfterCall, 'Checking value from tload FE after defaul call', 0x101);
+    }
+
+    function checkReturnValueExpected(uint256 valueReceived, string memory message, uint256 expectedValue) private {
+        if( valueReceived == expectedValue){
+            emit OK();
+        } else {
+            emit ERROR(message, valueReceived);
+        }
+    }
+}
+
+// CONTRACT BYTECODE
+
+TstorageReentrancyContext: 60806040525f8055348015610012575f80fd5b506104a5806100205f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063586c69f3146100385780635f6813d114610042575b5f80fd5b61004061004c565b005b61004a61014c565b005b5f6040516024016040516020818303038152906040527f586c69f3000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505090505f548060018114610114576002811461013c57600182019150815f5561010060ff5d60ff5c6001555f808451602086015f305af160045560fe5c600255610147565b600182019150815f5561010160fe5d60205f845160208601305afa6005555f51600355610147565b60fe5c805f5260205ff35b505050565b6101726004546040518060800160405280604481526020016103ce60449139600161020f565b61019860055460405180608001604052806045815260200161035760459139600161020f565b6101bf6001546040518060600160405280603081526020016104126030913961010061020f565b6101e660035460405180606001604052806032815260200161039c6032913961010161020f565b61020d6002546040518060600160405280602e8152602001610442602e913961010161020f565b565b808303610247577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610281565b7fc9e730d5b570f89e168eb8c3d29f8c396b957e540af248c95c9519ac47c2c69f8284604051610278929190610328565b60405180910390a15b505050565b5f81519050919050565b5f82825260208201905092915050565b5f5b838110156102bd5780820151818401526020810190506102a2565b5f8484015250505050565b5f601f19601f8301169050919050565b5f6102e282610286565b6102ec8185610290565b93506102fc8185602086016102a0565b610305816102c8565b840191505092915050565b5f819050919050565b61032281610310565b82525050565b5f6040820190508181035f83015261034081856102d8565b905061034f6020830184610319565b939250505056fe436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c745365636f6e645265656e7472616e7443616c6c2069732073756363657373436865636b696e672076616c75652066726f6d204645206166746572207365636f6e64207265656e7472616e742063616c6c436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c7446697273745265656e7472616e7443616c6c2069732073756363657373436865636b696e672076616c75652066726f6d20746c6f6164204646206265666f72652064656661756c742063616c6c436865636b696e672076616c75652066726f6d20746c6f61642046452061667465722064656661756c2063616c6ca2646970667358221220fb81ff9160d8fbb79af6b7a0900873b90768b55016a5ae78f0763585a925688064736f6c63430008180033
+
+5f6813d1: checkValuesStoredInTstorage()
+586c69f3: tstoreInCallThenTloadReturnInStaticCall()
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TstorageReentrancyContextTest contract
+transaction_build txTstorageReentrancyContextTestContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 60806040525f8055348015610012575f80fd5b506104a5806100205f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063586c69f3146100385780635f6813d114610042575b5f80fd5b61004061004c565b005b61004a61014c565b005b5f6040516024016040516020818303038152906040527f586c69f3000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505090505f548060018114610114576002811461013c57600182019150815f5561010060ff5d60ff5c6001555f808451602086015f305af160045560fe5c600255610147565b600182019150815f5561010160fe5d60205f845160208601305afa6005555f51600355610147565b60fe5c805f5260205ff35b505050565b6101726004546040518060800160405280604481526020016103ce60449139600161020f565b61019860055460405180608001604052806045815260200161035760459139600161020f565b6101bf6001546040518060600160405280603081526020016104126030913961010061020f565b6101e660035460405180606001604052806032815260200161039c6032913961010161020f565b61020d6002546040518060600160405280602e8152602001610442602e913961010161020f565b565b808303610247577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610281565b7fc9e730d5b570f89e168eb8c3d29f8c396b957e540af248c95c9519ac47c2c69f8284604051610278929190610328565b60405180910390a15b505050565b5f81519050919050565b5f82825260208201905092915050565b5f5b838110156102bd5780820151818401526020810190506102a2565b5f8484015250505050565b5f601f19601f8301169050919050565b5f6102e282610286565b6102ec8185610290565b93506102fc8185602086016102a0565b610305816102c8565b840191505092915050565b5f819050919050565b61032281610310565b82525050565b5f6040820190508181035f83015261034081856102d8565b905061034f6020830184610319565b939250505056fe436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c745365636f6e645265656e7472616e7443616c6c2069732073756363657373436865636b696e672076616c75652066726f6d204645206166746572207365636f6e64207265656e7472616e742063616c6c436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c7446697273745265656e7472616e7443616c6c2069732073756363657373436865636b696e672076616c75652066726f6d20746c6f6164204646206265666f72652064656661756c742063616c6c436865636b696e672076616c75652066726f6d20746c6f61642046452061667465722064656661756c2063616c6ca2646970667358221220fb81ff9160d8fbb79af6b7a0900873b90768b55016a5ae78f0763585a925688064736f6c63430008180033
+    gas 1000000
+    build
+
+# Create block to hold txTstorageReentrancyContextTestContract transaction
+block_build b01
+    parent g00
+    transactions txTstorageReentrancyContextTestContract
+    gasLimit 1200000
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Create transaction to execute txTstorageInReentrantCallTest transaction
+transaction_build txTstorageInReentrantCallTest
+    sender acc1
+    nonce 1
+    contract txTstorageReentrancyContextTestContract
+    value 0
+    data 586c69f3
+    gas 300000
+    build
+
+# Create block to hold txTstorageInReentrantCallTest transaction
+block_build b02
+    parent b01
+    transactions txTstorageInReentrantCallTest
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Create transaction to execute txCheckValuesStoredInTstorage transaction
+transaction_build txCheckValuesStoredInTstorage transaction
+    sender acc1
+    nonce 2
+    contract txTstorageReentrancyContextTestContract
+    value 0
+    data 5f6813d1
+    gas 300000
+    build
+
+# Create block to hold txCheckValuesStoredInTstorage transaction
+block_build b03
+    parent b02
+    transactions txCheckValuesStoredInTstorage
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b03
+
+# Check b03 is best block
+assert_best b03

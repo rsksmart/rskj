@@ -1,0 +1,84 @@
+comment
+
+// CONTRACT CODE
+pragma solidity ^0.8.24;
+
+contract TstoreAndTloadLoopUntilOutOfGas {
+
+    constructor()
+    {
+
+    }
+
+    function runTstoreAndTloadUntilOutOfGas() external {
+        // Run tstore and tload in loop until out of gas
+        for (uint256 i = 0; i < 1000000; i++) {
+            assembly {
+                let gasValue := gas()
+                tstore(gasValue, gas())
+                let loadedValue := tload(gasValue)
+                pop(0)
+            }
+        }
+    }
+}
+
+// DESCRIPTION
+
+// CONTRACT BYTECODE
+
+TstoreAndTloadLoopUntilOutOfGas: 6080604052348015600e575f80fd5b5060888061001b5f395ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c8063ae1978d714602a575b5f80fd5b60306032565b005b5f5b620f4240811015604f575a5a815d5080806001019150506034565b5056fea2646970667358221220db37ed7fb5e1de866d127a5da76e02d895a6014e4de7965e57f66ae94ad5d1d764736f6c63430008180033
+
+function hashes:
+
+- ae1978d7: runTstoreAndTloadUntilOutOfGas()
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TstoreWideAddressSpaceLoopUntilOutOfGas contract
+transaction_build txTstoreAndTloadLoopUntilOutOfGasContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b5060888061001b5f395ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c8063ae1978d714602a575b5f80fd5b60306032565b005b5f5b620f4240811015604f575a5a815d5080806001019150506034565b5056fea2646970667358221220db37ed7fb5e1de866d127a5da76e02d895a6014e4de7965e57f66ae94ad5d1d764736f6c63430008180033
+    gas 1000000
+    build
+
+# Create block to hold txTstoreAndTloadLoopUntilOutOfGasContract transaction
+block_build b01
+    parent g00
+    transactions txTstoreAndTloadLoopUntilOutOfGasContract
+    gasLimit 1200000
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Create transaction to execute  txRunTstoreUntilOutOfGas function
+transaction_build txRunTstoreAndTloadUntilOutOfGas
+    sender acc1
+    nonce 1
+    contract txTstoreAndTloadLoopUntilOutOfGasContract
+    value 0
+    data ae1978d7
+    gas 700000
+    build
+
+# Create block to hold txRunTstoreAndTloadUntilOutOfGas transaction
+block_build b02
+    parent b01
+    transactions txRunTstoreAndTloadUntilOutOfGas
+    gasLimit 750000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
