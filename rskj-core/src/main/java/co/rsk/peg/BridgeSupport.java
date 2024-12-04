@@ -442,6 +442,9 @@ public class BridgeSupport {
 
         registerNewUtxos(btcTx); // Need to register the change UTXO
 
+        // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
+        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
+        // This covers the case when the fundTx is registered between the validation period end and the next call to updateCollections
         if (isSvpOngoing()) {
             updateSvpFundTransactionValues(btcTx);
         }
