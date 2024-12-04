@@ -518,7 +518,6 @@ public class BridgeSupport {
         if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
             logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
             executePegIn(btcTx, peginInformation, totalAmount);
-            markTxAsProcessed(btcTx);
         } else {
             Optional<RejectedPeginReason> rejectedPeginReasonOptional = peginEvaluationResult.getRejectedPeginReason();
             if (rejectedPeginReasonOptional.isEmpty()) {
@@ -619,8 +618,6 @@ public class BridgeSupport {
                 logger.warn("[legacyRegisterPegin] {}", message);
                 throw new RegisterBtcTransactionException(message);
         }
-
-        markTxAsProcessed(btcTx);
     }
 
     private void processPegInVersionLegacy(
@@ -683,7 +680,7 @@ public class BridgeSupport {
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -708,7 +705,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        saveNewUTXOs(btcTx);
+        registerNewUtxos(btcTx);
     }
 
     private void refundTxSender(
