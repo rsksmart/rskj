@@ -451,28 +451,25 @@ public class BridgeSupport {
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        logger.info("[registerSvpSpendTx] This is an svp spend tx {}", btcTx.getHash());
+        logger.info(
+            "[registerSvpSpendTx] This is an svp spend tx {}. SVP was successful, going to commit the proposed federation",
+            btcTx.getHash()
+        );
 
         registerNewUtxos(btcTx);
-
-        if (isSvpOngoing()) {
-            processSvpSuccess();
-        }
+        provider.setSvpSpendTxHashUnsigned(null);
+        federationSupport.commitProposedFederation();
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
         logger.info(
-            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values", transaction);
+            "[updateSvpFundTransactionValues] Transaction {} (wtxid:{}) is the svp fund transaction. Going to update its values",
+            transaction.getHash(),
+            transaction.getHash(true)
+        );
 
         provider.setSvpFundTxSigned(transaction);
         provider.setSvpFundTxHashUnsigned(null);
-    }
-
-    private void processSvpSuccess() {
-        logger.info("[processSvpSucess] SVP was successful. Going to commit the proposed federation");
-
-        provider.setSvpSpendTxHashUnsigned(null);
-        federationSupport.commitProposedFederation();
     }
 
     @VisibleForTesting
