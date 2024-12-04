@@ -653,6 +653,7 @@ public class BridgeSupport {
             }
 
             generateRejectionRelease(btcTx, senderBtcAddress, rskTxHash, totalAmount);
+            markTxAsProcessed(btcTx);
         }
     }
 
