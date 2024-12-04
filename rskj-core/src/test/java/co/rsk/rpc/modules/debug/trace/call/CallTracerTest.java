@@ -53,7 +53,6 @@ class CallTracerTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        //Transaction transaction = world.getTransactionByName("tx01");
         TransactionReceipt contractTransactionReceipt = world.getTransactionReceiptByName("tx01");
 
         CallTracer callTracer = new CallTracer(world.getBlockStore(), world.getBlockExecutor(), web3InformationRetriever, receiptStore, world.getBlockChain());
