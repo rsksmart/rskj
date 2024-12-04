@@ -46,7 +46,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         btcParamsString = NetworkParameters.ID_REGTEST;
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
         whitelistConstants = WhitelistRegTestConstants.getInstance();
-        federationConstants = new FederationRegTestConstants(federationPublicKeys);
+        federationConstants = FederationRegTestConstants.getInstance(federationPublicKeys);
         lockingCapConstants = LockingCapRegTestConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 3;
