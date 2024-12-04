@@ -84,7 +84,6 @@ public class BridgeSupportSvpTest {
 
     private Sha256Hash svpFundTransactionHashUnsigned;
     private BtcTransaction svpFundTransaction;
-    private Sha256Hash svpSpendTransactionHashUnsigned;
     private BtcTransaction svpSpendTransaction;
 
     private PartialMerkleTree pmtWithTransactions;
@@ -231,7 +230,7 @@ public class BridgeSupportSvpTest {
         @Test
         void updateCollections_whenSvpSpendTxHashUnsigned_shouldLogValidationFailureAndClearValue() throws IOException {
             // arrange
-            svpSpendTransactionHashUnsigned = BitcoinTestUtils.createHash(2);
+            Sha256Hash svpSpendTransactionHashUnsigned = BitcoinTestUtils.createHash(2);
             bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTransactionHashUnsigned);
 
             // act
@@ -633,7 +632,7 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedIsSavedInStorage();
+            Sha256Hash svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedIsInStorage();
             svpSpendTransaction = assertSvpSpendTxIsWaitingForSignatures();
             assertSvpSpendTxHasExpectedInputsAndOutputs();
 
@@ -694,12 +693,11 @@ public class BridgeSupportSvpTest {
         }
     }
 
-    private Sha256Hash assertSvpSpendTxHashUnsignedIsSavedInStorage() {
+    private Sha256Hash assertSvpSpendTxHashUnsignedIsInStorage() {
         Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
         assertTrue(svpSpendTransactionHashUnsignedOpt.isPresent());
 
-        svpSpendTransactionHashUnsigned = svpSpendTransactionHashUnsignedOpt.get();
-        return svpSpendTransactionHashUnsigned;
+        return svpSpendTransactionHashUnsignedOpt.get();
     }
 
     private BtcTransaction assertSvpSpendTxIsWaitingForSignatures() {
@@ -711,6 +709,7 @@ public class BridgeSupportSvpTest {
         assertEquals(rskTx.getHash(), svpSpendTxWaitingForSignaturesRskTxHash);
 
         BtcTransaction svpSpendTxWaitingForSignaturesSpendTx = svpSpendTxWaitingForSignatures.getValue();
+        Sha256Hash svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedIsInStorage();
         assertEquals(svpSpendTransactionHashUnsigned, svpSpendTxWaitingForSignaturesSpendTx.getHash());
 
         return svpSpendTxWaitingForSignaturesSpendTx;
@@ -978,7 +977,7 @@ public class BridgeSupportSvpTest {
             assertTransactionWasProcessed(svpSpendTransaction.getHash());
 
             // svp success was not processed
-            assertSvpSpendTxHashUnsignedIsSavedInStorage();
+            assertSvpSpendTxHashUnsignedIsInStorage();
             assertNoHandoverToNewFederation();
             assertProposedFederation();
         }
@@ -1013,7 +1012,7 @@ public class BridgeSupportSvpTest {
             assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
 
             // svp success was not processed
-            assertSvpSpendTxHashUnsignedIsSavedInStorage();
+            assertSvpSpendTxHashUnsignedIsInStorage();
             assertNoHandoverToNewFederation();
             assertProposedFederation();
         }
