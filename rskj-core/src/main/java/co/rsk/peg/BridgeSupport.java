@@ -415,14 +415,13 @@ public class BridgeSupport {
             );
 
             switch (pegTxType) {
-                case PEGIN -> registerPegin(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> registerPegoutOrMigration(btcTx);
+                case PEGIN -> processPegIn(btcTx, rskTxHash, height);
+                case PEGOUT_OR_MIGRATION -> processPegoutOrMigration(btcTx);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
                 default -> {
                     String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
                     logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTxHash, message);
-                    panicProcessor.panic("btclock", message);
                 }
             }
         } catch (RegisterBtcTransactionException e) {
@@ -433,18 +432,6 @@ public class BridgeSupport {
                 e.getMessage()
             );
         }
-    }
-
-    private void registerPegin(BtcTransaction btcTx, Keccak256 rskTxHash, int height) throws RegisterBtcTransactionException, IOException {
-        logger.info("[registerPegin] This is a peg-in tx {}", btcTx.getHash());
-
-        processPegIn(btcTx, rskTxHash, height);
-    }
-
-    private void registerPegoutOrMigration(BtcTransaction btcTx) throws IOException {
-        logger.info("[registerPegoutOrMigration] This is a peg-out or migration tx {}", btcTx.getHash());
-
-        processPegoutOrMigration(btcTx);
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
@@ -498,6 +485,7 @@ public class BridgeSupport {
         int height
     ) throws IOException, RegisterBtcTransactionException {
         final String METHOD_NAME = "processPegIn";
+        logger.info("[{}] This is a peg-in tx {}", METHOD_NAME, btcTx.getHash());
 
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
             legacyProcessPegin(btcTx, rskTxHash, height);
@@ -511,7 +499,7 @@ public class BridgeSupport {
         }
 
         Coin totalAmount = computeTotalAmountSent(btcTx);
-        logger.debug("[{}}] Total amount sent: {}", METHOD_NAME, totalAmount);
+        logger.debug("[{}] Total amount sent: {}", METHOD_NAME, totalAmount);
 
         PeginInformation peginInformation = new PeginInformation(
             btcLockSenderProvider,
@@ -759,6 +747,7 @@ public class BridgeSupport {
     }
 
     protected void processPegoutOrMigration(BtcTransaction btcTx) throws IOException {
+        logger.info("[processPegoutOrMigration] This is a peg-out or migration tx {}", btcTx.getHash());
         markTxAsProcessed(btcTx);
         saveNewUTXOs(btcTx);
         logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTx.getHash(false));
