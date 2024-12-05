@@ -3543,7 +3543,7 @@ public class BridgeSupportIT {
         StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(blockHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -3587,11 +3587,11 @@ public class BridgeSupportIT {
         StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), 50);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(blockHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
@@ -3632,7 +3632,7 @@ public class BridgeSupportIT {
         StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), BLOCK_HEIGHT);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(blockHeader, new BigInteger("0"), BLOCK_HEIGHT + 4320 + 1);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -3675,7 +3675,7 @@ public class BridgeSupportIT {
         StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(blockHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -3721,7 +3721,7 @@ public class BridgeSupportIT {
         StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(blockHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -3762,7 +3762,7 @@ public class BridgeSupportIT {
         StoredBlock block = new StoredBlock(null, new BigInteger("0"), 50);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+        when(btcBlockStore.get(blockHash)).thenReturn(block);
 
         BtcBlock btcBlock = mock(BtcBlock.class);
         doReturn(Sha256Hash.of(Hex.decode("aa"))).when(btcBlock).getHash();
