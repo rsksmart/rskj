@@ -39,7 +39,6 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
-import static co.rsk.peg.PegTestUtils.createFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,35 +54,18 @@ public class RegisterBtcTransactionIT {
     private static final ActivationConfig.ForBlock arrowhead600Activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
     private static final ActivationConfig.ForBlock lovell700Activations = ActivationConfigsForTest.lovell700().forBlock(0);
     private WhitelistStorageProvider whitelistStorageProvider;
-
-    private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(ActivationConfigsForTest.all().forBlock(0));
-    private static final Coin belowMinimumPeginTxValue = minimumPeginTxValue.minus(Coin.SATOSHI);
-
     private static final int FIRST_OUTPUT_INDEX = 0;
-    private static final int FIRST_INPUT_INDEX = 0;
-
     private BridgeStorageProvider provider;
     private FederationStorageProvider federationStorageProvider;
-    private Address userAddress;
-
-    private List<BtcECKey> retiredFedSigners;
-    private Federation retiredFed;
-
-    private List<BtcECKey> retiringFedSigners;
     private Federation retiringFederation;
-
-    private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
-
     private BtcBlockStoreWithCache.Factory mockFactory;
     private SignatureCache signatureCache;
     private BridgeEventLogger bridgeEventLogger;
     private BtcLockSenderProvider btcLockSenderProvider;
     private PeginInstructionsProvider peginInstructionsProvider;
-
     private final List<UTXO> retiringFederationUtxos = new ArrayList<>();
     private final List<UTXO> activeFederationUtxos = new ArrayList<>();
-    private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private Block rskExecutionBlock;
     private Transaction rskTx;
 
@@ -233,15 +215,9 @@ public class RegisterBtcTransactionIT {
     void init() throws IOException {
         registerHeader = null;
 
-        userAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userAddress");
         NetworkParameters btcParams = bridgeMainnetConstants.getBtcParams();
 
-        retiredFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"fa01", "fa02", "fa03"}, true
-        );
-        retiredFed = createFederation(bridgeMainnetConstants, retiredFedSigners);
-
-        retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> retiringFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
                 new String[]{"fa04", "fa05", "fa06"}, true
         );
 
@@ -256,7 +232,7 @@ public class RegisterBtcTransactionIT {
                 new FederationArgs(retiringFedMembers, creationTime, retiringFedCreationBlockNumber, btcParams);
         retiringFederation = FederationFactory.buildP2shErpFederation(retiringFedArgs, erpPubKeys, activationDelay);
 
-        activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> activeFedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
                 new String[]{"fa07", "fa08", "fa09", "fa10", "fa11"}, true
         );
         activeFedSigners.sort(BtcECKey.PUBKEY_COMPARATOR);
@@ -288,7 +264,7 @@ public class RegisterBtcTransactionIT {
         when(federationStorageProvider.getNewFederationBtcUTXOs(any(NetworkParameters.class), any(ActivationConfig.ForBlock.class)))
                 .thenReturn(activeFederationUtxos);
 
-        pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         when(federationStorageProvider.getNewFederation(any(FederationConstants.class), any(ActivationConfig.ForBlock.class)))
