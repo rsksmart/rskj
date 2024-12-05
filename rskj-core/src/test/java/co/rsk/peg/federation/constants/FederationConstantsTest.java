@@ -6,16 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.constants.*;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.constants.*;
-import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -25,9 +24,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class FederationConstantsTest {
-    private static final FederationConstants mainnet = FederationMainNetConstants.getInstance();
-    private static final FederationConstants testnet = FederationTestNetConstants.getInstance();
-    private static final FederationConstants regtest = new BridgeRegTestConstants().getFederationConstants();
+    private static final FederationConstants MAINNET = FederationMainNetConstants.getInstance();
+    private static final FederationConstants TESTNET = FederationTestNetConstants.getInstance();
+    private static final FederationConstants REGTEST = new BridgeRegTestConstants().getFederationConstants();
 
     @ParameterizedTest
     @MethodSource("networkArgs")
@@ -37,9 +36,9 @@ class FederationConstantsTest {
 
     private static Stream<Arguments> networkArgs() {
         return Stream.of(
-            Arguments.of(mainnet, NetworkParameters.fromID(NetworkParameters.ID_MAINNET)),
-            Arguments.of(testnet, NetworkParameters.fromID(NetworkParameters.ID_TESTNET)),
-            Arguments.of(regtest, NetworkParameters.fromID(NetworkParameters.ID_REGTEST))
+            Arguments.of(MAINNET, NetworkParameters.fromID(NetworkParameters.ID_MAINNET)),
+            Arguments.of(TESTNET, NetworkParameters.fromID(NetworkParameters.ID_TESTNET)),
+            Arguments.of(REGTEST, NetworkParameters.fromID(NetworkParameters.ID_REGTEST))
         );
     }
 
@@ -82,9 +81,9 @@ class FederationConstantsTest {
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         return Stream.of(
-            Arguments.of(mainnet, genesisFederationPublicKeysMainnet),
-            Arguments.of(testnet, genesisFederationPublicKeysTestnet),
-            Arguments.of(regtest, genesisFederationPublicKeysRegtest)
+            Arguments.of(MAINNET, genesisFederationPublicKeysMainnet),
+            Arguments.of(TESTNET, genesisFederationPublicKeysTestnet),
+            Arguments.of(REGTEST, genesisFederationPublicKeysRegtest)
         );
     }
 
@@ -100,9 +99,9 @@ class FederationConstantsTest {
         Instant genesisFedCreationTimeRegtest = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         return Stream.of(
-            Arguments.of(mainnet, genesisFedCreationTimeMainnet),
-            Arguments.of(testnet, genesisFedCreationTimeTestnet),
-            Arguments.of(regtest, genesisFedCreationTimeRegtest)
+            Arguments.of(MAINNET, genesisFedCreationTimeMainnet),
+            Arguments.of(TESTNET, genesisFedCreationTimeTestnet),
+            Arguments.of(REGTEST, genesisFedCreationTimeRegtest)
         );
     }
 
@@ -114,9 +113,9 @@ class FederationConstantsTest {
 
     private static Stream<Arguments> validationPeriodDurationArgs() {
         return Stream.of(
-            Arguments.of(mainnet, 16000L),
-            Arguments.of(testnet, 80L),
-            Arguments.of(regtest, 125L)
+            Arguments.of(MAINNET, 16000L),
+            Arguments.of(TESTNET, 80L),
+            Arguments.of(REGTEST, 125L)
         );
     }
 
@@ -140,12 +139,12 @@ class FederationConstantsTest {
         when(activationsPostRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
 
         return Stream.of(
-            Arguments.of(mainnet, activationsPreRSKIP383, fedActivationAgeLegacyMainnet),
-            Arguments.of(testnet, activationsPreRSKIP383, fedActivationAgeLegacyTestnet),
-            Arguments.of(regtest, activationsPreRSKIP383, fedActivationAgeLegacyRegtest),
-            Arguments.of(mainnet, activationsPostRSKIP383, fedActivationAgeMainnet),
-            Arguments.of(testnet, activationsPostRSKIP383, fedActivationAgeTestnet),
-            Arguments.of(regtest, activationsPostRSKIP383, fedActivationAgeRegtest)
+            Arguments.of(MAINNET, activationsPreRSKIP383, fedActivationAgeLegacyMainnet),
+            Arguments.of(TESTNET, activationsPreRSKIP383, fedActivationAgeLegacyTestnet),
+            Arguments.of(REGTEST, activationsPreRSKIP383, fedActivationAgeLegacyRegtest),
+            Arguments.of(MAINNET, activationsPostRSKIP383, fedActivationAgeMainnet),
+            Arguments.of(TESTNET, activationsPostRSKIP383, fedActivationAgeTestnet),
+            Arguments.of(REGTEST, activationsPostRSKIP383, fedActivationAgeRegtest)
         );
     }
 
@@ -161,9 +160,9 @@ class FederationConstantsTest {
         long fundsMigrationAgeSinceActivationBeginRegtest = 15L;
 
         return Stream.of(
-            Arguments.of(mainnet, fundsMigrationAgeSinceActivationBeginMainnet),
-            Arguments.of(testnet, fundsMigrationAgeSinceActivationBeginTestnet),
-            Arguments.of(regtest, fundsMigrationAgeSinceActivationBeginRegtest)
+            Arguments.of(MAINNET, fundsMigrationAgeSinceActivationBeginMainnet),
+            Arguments.of(TESTNET, fundsMigrationAgeSinceActivationBeginTestnet),
+            Arguments.of(REGTEST, fundsMigrationAgeSinceActivationBeginRegtest)
         );
     }
 
@@ -192,15 +191,15 @@ class FederationConstantsTest {
         when(activationsPostRSKIP374.isActive(ConsensusRule.RSKIP374)).thenReturn(true);
 
         return Stream.of(
-            Arguments.of(mainnet, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndMainnet),
-            Arguments.of(testnet, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndTestnet),
-            Arguments.of(regtest, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndRegtest),
-            Arguments.of(mainnet, activationsSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndMainnet),
-            Arguments.of(testnet, activationsSpecialCase, fundsMigrationAgeSinceActivationEndTestnet),
-            Arguments.of(regtest, activationsSpecialCase, fundsMigrationAgeSinceActivationEndRegtest),
-            Arguments.of(mainnet, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndMainnet),
-            Arguments.of(testnet, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndTestnet),
-            Arguments.of(regtest, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndRegtest)
+            Arguments.of(MAINNET, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(TESTNET, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(REGTEST, activationsPreRSKIP357, fundsMigrationAgeSinceActivationEndRegtest),
+            Arguments.of(MAINNET, activationsSpecialCase, specialCaseFundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(TESTNET, activationsSpecialCase, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(REGTEST, activationsSpecialCase, fundsMigrationAgeSinceActivationEndRegtest),
+            Arguments.of(MAINNET, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndMainnet),
+            Arguments.of(TESTNET, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndTestnet),
+            Arguments.of(REGTEST, activationsPostRSKIP374, fundsMigrationAgeSinceActivationEndRegtest)
         );
     }
 
@@ -235,9 +234,9 @@ class FederationConstantsTest {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         return Stream.of(
-            Arguments.of(mainnet, fedChangeAuthorizedKeysMainnet),
-            Arguments.of(testnet, fedChangeAuthorizedKeysTestnet),
-            Arguments.of(regtest, fedChangeAuthorizedKeysRegtest)
+            Arguments.of(MAINNET, fedChangeAuthorizedKeysMainnet),
+            Arguments.of(TESTNET, fedChangeAuthorizedKeysTestnet),
+            Arguments.of(REGTEST, fedChangeAuthorizedKeysRegtest)
         );
     }
 
@@ -253,9 +252,9 @@ class FederationConstantsTest {
         long erpActivationDelayRegtest = 500;
 
         return Stream.of(
-            Arguments.of(mainnet, erpActivationDelayMainnet),
-            Arguments.of(testnet, erpActivationDelayTestnet),
-            Arguments.of(regtest, erpActivationDelayRegtest)
+            Arguments.of(MAINNET, erpActivationDelayMainnet),
+            Arguments.of(TESTNET, erpActivationDelayTestnet),
+            Arguments.of(REGTEST, erpActivationDelayRegtest)
         );
     }
 
@@ -288,9 +287,9 @@ class FederationConstantsTest {
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         return Stream.of(
-            Arguments.of(mainnet, erpFedPubKeysMainnet),
-            Arguments.of(testnet, erpFedPubKeysTestnet),
-            Arguments.of(regtest, erpFedPubKeysRegtest)
+            Arguments.of(MAINNET, erpFedPubKeysMainnet),
+            Arguments.of(TESTNET, erpFedPubKeysTestnet),
+            Arguments.of(REGTEST, erpFedPubKeysRegtest)
         );
     }
 
@@ -306,9 +305,9 @@ class FederationConstantsTest {
         String oldFederationAddressRegtest = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
         return Stream.of(
-            Arguments.of(mainnet, oldFederationAddressMainnet),
-            Arguments.of(testnet, oldFederationAddressTestnet),
-            Arguments.of(regtest, oldFederationAddressRegtest)
+            Arguments.of(MAINNET, oldFederationAddressMainnet),
+            Arguments.of(TESTNET, oldFederationAddressTestnet),
+            Arguments.of(REGTEST, oldFederationAddressRegtest)
         );
     }
 }
