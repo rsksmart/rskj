@@ -22,17 +22,27 @@ package org.ethereum.vm.program.invoke;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
+import java.math.BigInteger;
+
 public class TransferInvoke implements InvokeData {
+    private static BigInteger maxMsgData = BigInteger.valueOf(Integer.MAX_VALUE);
+
     private final DataWord ownerAddress;
     private final DataWord callerAddress;
     private final long gas;
     private final DataWord callValue;
+    private final byte[] msgData;
 
     public TransferInvoke(DataWord callerAddress, DataWord ownerAddress, long gas, DataWord callValue) {
+        this(callerAddress, ownerAddress, gas, callValue, ByteUtil.EMPTY_BYTE_ARRAY);
+    }
+
+    public TransferInvoke(DataWord callerAddress, DataWord ownerAddress, long gas, DataWord callValue, byte[] msgData) {
         this.callerAddress = callerAddress;
         this.ownerAddress = ownerAddress;
         this.gas = gas;
         this.callValue = callValue;
+        this.msgData = msgData;
     }
 
     @Override
@@ -57,16 +67,55 @@ public class TransferInvoke implements InvokeData {
 
     @Override
     public DataWord getDataSize() {
-        return DataWord.ZERO;
+        if (msgData == null || msgData.length == 0) {
+            return DataWord.ZERO;
+        }
+        int size = msgData.length;
+        return DataWord.valueOf(size);
     }
 
     @Override
     public DataWord getDataValue(DataWord indexData) {
-        return DataWord.ZERO;
+        if (msgData == null || msgData.length == 0) {
+            return DataWord.ZERO;
+        }
+        BigInteger tempIndex = indexData.value();
+        int index = tempIndex.intValue(); // possible overflow is caught below
+        int size = 32; // maximum datavalue size
+
+        if (index >= msgData.length
+                || tempIndex.compareTo(maxMsgData) > 0) {
+            return DataWord.ZERO;
+        }
+        if (index + size > msgData.length) {
+            size = msgData.length - index;
+        }
+
+        byte[] data = new byte[32];
+        System.arraycopy(msgData, index, data, 0, size);
+        return DataWord.valueOf(data);
     }
 
     @Override
     public byte[] getDataCopy(DataWord offsetData, DataWord lengthData) {
-        return ByteUtil.EMPTY_BYTE_ARRAY;
+        int offset = offsetData.intValueSafe();
+        int length = lengthData.intValueSafe();
+
+        byte[] data = new byte[length];
+
+        if (msgData == null) {
+            return data;
+        }
+
+        if (offset > msgData.length) {
+            return data;
+        }
+        if (offset + length > msgData.length) {
+            length = msgData.length - offset;
+        }
+
+        System.arraycopy(msgData, offset, data, 0, length);
+
+        return data;
     }
 }

@@ -812,7 +812,6 @@ public class Program {
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
             DataWord transferValue = DataWord.valueOf(endowment.getBytes());
-
             TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
             ProgramResult result = new ProgramResult();
 

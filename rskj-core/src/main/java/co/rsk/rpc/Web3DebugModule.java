@@ -21,8 +21,7 @@ package co.rsk.rpc;
 import co.rsk.net.handler.quota.TxQuota;
 import co.rsk.rpc.modules.debug.DebugModule;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import java.util.Map;
+import org.ethereum.rpc.parameters.DebugTracerParam;
 
 @java.lang.SuppressWarnings("squid:S100")
 public interface Web3DebugModule {
@@ -32,27 +31,28 @@ public interface Web3DebugModule {
     }
 
     default JsonNode debug_traceTransaction(String transactionHash) throws Exception {
-        return debug_traceTransaction(transactionHash, null);
+        return getDebugModule().traceTransaction(transactionHash);
     }
 
-    default JsonNode debug_traceTransaction(String transactionHash, Map<String, String> traceOptions) throws Exception {
-        return getDebugModule().traceTransaction(transactionHash, traceOptions);
+    default JsonNode debug_traceTransaction(String transactionHash, DebugTracerParam traceParams) throws Exception {
+        return getDebugModule().traceTransaction(transactionHash, traceParams.getTraceOptions(), traceParams.getTracerType());
     }
 
     default JsonNode debug_traceBlockByHash(String blockHash) throws Exception {
-        return debug_traceBlockByHash(blockHash, null);
+        return getDebugModule().traceBlockByHash(blockHash);
     }
 
-    default JsonNode debug_traceBlockByHash(String blockHash, Map<String, String> traceOptions) throws Exception {
-        return getDebugModule().traceBlockByHash(blockHash, traceOptions);
+    default JsonNode debug_traceBlockByHash(String blockHash, DebugTracerParam debugTracerParam) throws Exception {
+        return getDebugModule().traceBlockByHash(blockHash, debugTracerParam.getTraceOptions(), debugTracerParam.getTracerType());
     }
 
     default JsonNode debug_traceBlockByNumber(String bnOrId) throws Exception {
-        return debug_traceBlockByNumber(bnOrId, null);
+
+        return debug_traceBlockByNumber(bnOrId, new DebugTracerParam());
     }
 
-    default JsonNode debug_traceBlockByNumber(String bnOrId, Map<String, String> traceOptions) throws Exception {
-        return getDebugModule().traceBlockByNumber(bnOrId, traceOptions);
+    default JsonNode debug_traceBlockByNumber(String bnOrId, DebugTracerParam debugTracerParam) throws Exception {
+        return getDebugModule().traceBlockByNumber(bnOrId, debugTracerParam.getTraceOptions(), debugTracerParam.getTracerType());
     }
 
     default TxQuota debug_accountTransactionQuota(String address) {
