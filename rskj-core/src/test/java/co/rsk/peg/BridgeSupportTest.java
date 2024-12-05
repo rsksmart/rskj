@@ -18,6 +18,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
 import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.PegTestUtils.createUTXO;
