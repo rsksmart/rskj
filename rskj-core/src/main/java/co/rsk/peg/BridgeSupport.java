@@ -414,18 +414,12 @@ public class BridgeSupport {
                 height
             );
 
+            logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
                 case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
-                case PEGOUT_OR_MIGRATION -> {
-                    logger.info("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
-                    registerNewUtxos(btcTx);
-                }
+                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
-                default -> {
-                    String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
-                    logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTxHash, message);
-                }
             }
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
@@ -452,8 +446,9 @@ public class BridgeSupport {
 
     private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
         logger.info(
-            "[registerSvpSpendTx] This is an svp spend tx {}. SVP was successful, going to commit the proposed federation",
-            btcTx.getHash()
+            "[registerSvpSpendTx] This is an svp spend tx {} (wtxid: {}). SVP was successful, going to commit the proposed federation",
+            btcTx.getHash(),
+            btcTx.getHash(true)
         );
 
         registerNewUtxos(btcTx);
