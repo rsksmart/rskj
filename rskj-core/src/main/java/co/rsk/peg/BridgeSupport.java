@@ -673,6 +673,7 @@ public class BridgeSupport {
             }
 
             refundTxSender(btcTx, rskTxHash, peginInformation, totalAmount);
+            markTxAsProcessed(btcTx);
         }
     }
 
@@ -2308,7 +2309,6 @@ public class BridgeSupport {
     public Address getRetiringFederationAddress() {
         return federationSupport.getRetiringFederationAddress();
     }
-
 
     public Integer getRetiringFederationSize() {
         return federationSupport.getRetiringFederationSize();
