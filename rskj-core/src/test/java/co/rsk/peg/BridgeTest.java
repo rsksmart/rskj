@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -37,6 +39,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -2111,6 +2114,55 @@ class BridgeTest {
             bridge.execute(data);
             verify(bridgeSupportMock, times(1)).getRetiringFederationCreationTime();
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource("activationsAndExpectedFederationCreationTimeArgs")
+    void getActiveFederationCreationTime_returnsCreationTimeInExpectedTimeUnit(ActivationConfig activationConfig, long expectedActiveFederationCreationTime) {
+        // arrange
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Instant creationTime = Instant.ofEpochMilli(5000);
+        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // act
+        long actualActiveFederationCreationTime = bridge.getFederationCreationTime(new Object[]{});
+
+        assertEquals(expectedActiveFederationCreationTime, actualActiveFederationCreationTime);
+    }
+
+    @ParameterizedTest
+    @MethodSource("activationsAndExpectedFederationCreationTimeArgs")
+    void getRetiringFederationCreationTime_returnsCreationTimeInExpectedTimeUnit(ActivationConfig activationConfig, long expectedRetiringFederationCreationTime) {
+        // arrange
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Instant creationTime = Instant.ofEpochMilli(5000);
+        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // act
+        long actualRetiringFederationCreationTime = bridge.getRetiringFederationCreationTime(new Object[]{});
+
+        // assert
+        assertEquals(expectedRetiringFederationCreationTime, actualRetiringFederationCreationTime);
+    }
+
+    private static Stream<Arguments> activationsAndExpectedFederationCreationTimeArgs() {
+        long creationTimeInMillis = 5000;
+        long creationTimeInSeconds = 5;
+
+        return Stream.of(
+            Arguments.of(ActivationConfigsForTest.arrowhead631(), creationTimeInMillis),
+            Arguments.of(ActivationConfigsForTest.all(), creationTimeInSeconds)
+        );
     }
 
     @ParameterizedTest()
