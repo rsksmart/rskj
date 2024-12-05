@@ -43,12 +43,12 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule, 
     }
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         if (header == null || parent == null) {
             logger.warn("BlockDifficultyRule - block or parent are null");
             return false;
         }
-        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent.getHeader());
+        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
         BlockDifficulty difficulty = header.getDifficulty();
 
         if (!difficulty.equals(calcDifficulty)) {

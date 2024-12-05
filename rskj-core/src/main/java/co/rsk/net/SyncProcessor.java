@@ -178,7 +178,7 @@ public class SyncProcessor implements SyncEventsHandler {
         MessageType messageType = message.getMessageType();
         if (isPending(messageId, messageType)) {
             removePendingMessage(messageId, messageType);
-            syncState.newBlockHeaders(message.getBlockHeaders());
+            syncState.newBlockHeaders(peer, message.getBlockHeaders());
         } else {
             notifyUnexpectedMessageToPeerScoring(peer, "block headers");
         }
@@ -289,8 +289,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync() {
-        logger.info("Start Snap syncing");
+    public void startSnapSync(Peer peer) {
+        logger.info("Start Snap syncing with {}", peer.getPeerNodeID());
         setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration));
     }
 

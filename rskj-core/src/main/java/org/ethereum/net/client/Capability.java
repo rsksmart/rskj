@@ -51,6 +51,10 @@ public class Capability implements Comparable<Capability> {
         return RSK.equals(name);
     }
 
+    public boolean isSNAP() {
+        return SNAP.equals(name);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

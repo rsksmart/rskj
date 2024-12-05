@@ -21,20 +21,22 @@ package co.rsk.net.sync;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
+import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.SnapBlocksResponseMessage;
 import co.rsk.net.messages.SnapStateChunkResponseMessage;
 import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.scoring.EventType;
 import co.rsk.trie.TrieDTO;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -57,13 +59,18 @@ public class SnapSyncState extends BaseSyncState {
 
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
+    private boolean stateFetched;
     private final List<TrieDTO> allNodes;
 
     private long remoteTrieSize;
     private byte[] remoteRootHash;
     private final List<Pair<Block, BlockDifficulty>> blocks;
+
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
+    private Peer lastBlockSender;
+
+    private BlockHeader lastVerifiedBlockHeader;
 
     private long nextExpectedFrom = 0L;
 
@@ -81,13 +88,13 @@ public class SnapSyncState extends BaseSyncState {
         this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
         this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
-        this.thread = new Thread(new SyncMessageHandler("SNAP responses", responseQueue, listener) {
+        this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
 
             @Override
             public boolean isRunning() {
                 return isRunning;
             }
-        }, "snap sync response handler");
+        }, "snap sync client handler");
     }
 
     @Override
@@ -98,12 +105,13 @@ public class SnapSyncState extends BaseSyncState {
         }
         isRunning = Boolean.TRUE;
         thread.start();
-        snapshotProcessor.startSyncing();
+        snapshotProcessor.startSyncing(this);
     }
 
     @Override
     public void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -111,7 +119,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapStatusResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.SNAP_STATUS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -119,6 +127,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -126,7 +135,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapBlocksResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -134,6 +143,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapStateChunk(Peer sender, SnapStateChunkResponseMessage responseMessage) {
         try {
+            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -141,38 +151,52 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("SnapStateChunkResponseMessage processing was interrupted", e);
+            logger.warn("{} processing was interrupted", MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
 
-    public void onNewChunk() {
-        resetTimeElapsed();
+    @Override
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
+        try {
+            resetTimeElapsed();
+            responseQueue.put(new SyncMessageHandler.Job(peer, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE) {
+                @Override
+                public void run() {
+                    snapshotProcessor.processBlockHeaderChunk(SnapSyncState.this, peer, chunk);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn("{} processing was interrupted", MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, e);
+            Thread.currentThread().interrupt();
+        }
     }
 
-    @Override
-    public void tick(Duration duration) {
-        // TODO(snap-poc) handle multiple peers casuistry, similarly to co.rsk.net.sync.DownloadingBodiesSyncState.tick
-
-        timeElapsed = timeElapsed.plus(duration);
-        if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingSnapChunk()) >= 0) {
-            onMessageTimeOut();
-        }
+    public SyncEventsHandler getSyncEventsHandler() {
+        return this.syncEventsHandler;
     }
 
     @Override
     protected void onMessageTimeOut() {
-        // TODO: call syncEventsHandler.onErrorSyncing() and punish peers after SNAP feature discovery is implemented
-
-        finish();
+        fail(getLastBlockSender(), EventType.TIMEOUT_MESSAGE, "Snap sync timed out");
     }
 
     public Block getLastBlock() {
         return lastBlock;
     }
 
-    public void setLastBlock(Block lastBlock) {
+    public void setLastBlock(Block lastBlock, BlockDifficulty lastBlockDifficulty, Peer lastBlockSender) {
         this.lastBlock = lastBlock;
+        this.lastBlockDifficulty = lastBlockDifficulty;
+        this.lastBlockSender = lastBlockSender;
+    }
+
+    public BlockHeader getLastVerifiedBlockHeader() {
+        return lastVerifiedBlockHeader;
+    }
+
+    public void setLastVerifiedBlockHeader(BlockHeader lastVerifiedBlockHeader) {
+        this.lastVerifiedBlockHeader = lastVerifiedBlockHeader;
     }
 
     public long getNextExpectedFrom() {
@@ -187,8 +211,8 @@ public class SnapSyncState extends BaseSyncState {
         return lastBlockDifficulty;
     }
 
-    public void setLastBlockDifficulty(BlockDifficulty lastBlockDifficulty) {
-        this.lastBlockDifficulty = lastBlockDifficulty;
+    public Peer getLastBlockSender() {
+        return lastBlockSender;
     }
 
     public byte[] getRemoteRootHash() {
@@ -211,8 +235,8 @@ public class SnapSyncState extends BaseSyncState {
         blocks.add(blockPair);
     }
 
-    public void addAllBlocks(List<Pair<Block, BlockDifficulty>> blocks) {
-        this.blocks.addAll(blocks);
+    public Pair<Block, BlockDifficulty> getLastBlockPair() {
+        return blocks.isEmpty() ? null : blocks.get(blocks.size() - 1);
     }
 
     public void connectBlocks(BlockConnectorHelper blockConnectorHelper) {
@@ -231,6 +255,14 @@ public class SnapSyncState extends BaseSyncState {
         this.stateSize = stateSize;
     }
 
+    public boolean isStateFetched() {
+        return stateFetched;
+    }
+
+    public void setStateFetched() {
+        this.stateFetched = true;
+    }
+
     public BigInteger getStateChunkSize() {
         return stateChunkSize;
     }
@@ -247,6 +279,14 @@ public class SnapSyncState extends BaseSyncState {
         return chunkTaskQueue;
     }
 
+    public int getBlockHeaderChunkSize() {
+        return syncConfiguration.getChunkSize();
+    }
+
+    public boolean isRunning() {
+        return isRunning == Boolean.TRUE;
+    }
+
     public void finish() {
         if (isRunning != Boolean.TRUE) {
             logger.warn("Invalid state, isRunning: [{}]", isRunning);
@@ -256,13 +296,27 @@ public class SnapSyncState extends BaseSyncState {
         isRunning = Boolean.FALSE;
         thread.interrupt();
 
+        logger.debug("Stopping Snap Sync");
+
         syncEventsHandler.stopSyncing();
+    }
+
+    public void fail(Peer peer, EventType eventType, String message, Object... arguments) {
+        if (isRunning != Boolean.TRUE) {
+            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            return;
+        }
+
+        logger.debug("Snap Sync failed due to: {}", eventType);
+
+        isRunning = Boolean.FALSE;
+        thread.interrupt();
+
+        syncEventsHandler.onErrorSyncing(peer, eventType, message, arguments);
     }
 
     @VisibleForTesting
     public void setRunning() {
         isRunning = true;
     }
-
-
 }

@@ -34,7 +34,7 @@ public class BlockHeaderParentCompositeRule implements BlockHeaderParentDependan
     }
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         String shortHash = header.getPrintableHash();
         long number = header.getNumber();
         logger.debug("Validating parent header {} {}", shortHash, number);

@@ -88,35 +88,30 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
     private boolean tryStartSnapshotSync() {
         if (!syncConfiguration.isClientSnapSyncEnabled()) {
-            logger.trace("Snap syncing disabled");
+            logger.debug("Snap syncing disabled");
             return false;
         }
 
-        // TODO(snap-poc) deal with multiple peers logic here
-        // TODO: To be handled when we implement the multiple peers
-        //List<Peer> bestPeers = peersInformation.getBestPeerCandidates();
-
-        // TODO: for now, use pre-configured snap boot nodes instead (until snap nodes discovery is implemented)
-        SnapshotPeersInformation snapPeersInformation = peersInformation;
-        Optional<Peer> bestPeerOpt = snapPeersInformation.getBestSnapPeer();
+        Optional<Peer> bestPeerOpt = peersInformation.getBestSnapPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 
-        if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
-            logger.trace("Snap syncing not possible, no valid peer");
+        if (bestPeerOpt.isEmpty() || peerBestBlockNumOpt.isEmpty()) {
+            logger.info("Snap syncing not possible, no snap-capable peer available");
             return false;
         }
 
         // we consider Snap as part of the Long Sync
         if (!isValidSnapDistance(peerBestBlockNumOpt.get())) {
-            logger.debug("Snap syncing not required (long sync not required)");
+            logger.info("Snap syncing not required");
             return false;
         }
 
         // we consider Snap as part of the Long Sync
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
 
-        // send the LIST
-        syncEventsHandler.startSnapSync();
+        // start snap syncing
+//        syncEventsHandler.startFindingSnapConnectionPoint(bestPeerOpt.get());
+        syncEventsHandler.startSnapSync(bestPeerOpt.get());
         return true;
     }
 

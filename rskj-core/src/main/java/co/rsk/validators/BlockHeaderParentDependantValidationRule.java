@@ -22,5 +22,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 public interface BlockHeaderParentDependantValidationRule {
-    boolean isValid(BlockHeader header, Block parent);
+    boolean isValid(BlockHeader header, BlockHeader parent);
+
+    default boolean isValid(BlockHeader header, Block parentBlock) {
+        return isValid(header, parentBlock == null ? null : parentBlock.getHeader());
+    }
 }

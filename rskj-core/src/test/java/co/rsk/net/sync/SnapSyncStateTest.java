@@ -19,25 +19,24 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
+import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.SnapBlocksResponseMessage;
 import co.rsk.net.messages.SnapStateChunkResponseMessage;
 import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.scoring.EventType;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
@@ -45,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -76,7 +74,7 @@ class SnapSyncStateTest {
         //given-when
         underTest.onEnter();
         //then
-        verify(snapshotProcessor, times(1)).startSyncing();
+        verify(snapshotProcessor, times(1)).startSyncing(underTest);
     }
 
     @Test
@@ -95,28 +93,7 @@ class SnapSyncStateTest {
         underTest.onEnter();
         underTest.onEnter();
         //then
-        verify(snapshotProcessor, times(1)).startSyncing();
-    }
-
-    @Test
-    void givenOnMessageTimeOutCalled_thenSyncingStops() {
-        //given-when
-        underTest.setRunning();
-        underTest.onMessageTimeOut();
-        //then
-        verify(syncEventsHandler, times(1)).stopSyncing();
-    }
-
-    @Test
-    void givenNewChunk_thenTimerIsReset() {
-        //given
-        underTest.timeElapsed = Duration.ofMinutes(1);
-        assertThat(underTest.timeElapsed, greaterThan(Duration.ZERO));
-
-        // when
-        underTest.onNewChunk();
-        //then
-        assertThat(underTest.timeElapsed, equalTo(Duration.ZERO));
+        verify(snapshotProcessor, times(1)).startSyncing(underTest);
     }
 
     @Test
@@ -130,24 +107,6 @@ class SnapSyncStateTest {
         assertThat(underTest.timeElapsed, equalTo(elapsedTime));
         verify(syncEventsHandler, never()).stopSyncing();
         verify(syncEventsHandler, never()).onErrorSyncing(any(), any(), any(), any());
-    }
-
-    @Test
-    void givenTickIsCalledAfterTimeout_thenTimerIsUpdated_andTimeoutHappens() throws UnknownHostException {
-        //given
-        Duration elapsedTime = Duration.ofMinutes(1);
-        underTest.timeElapsed = Duration.ZERO;
-        Peer mockedPeer = mock(Peer.class);
-        NodeID nodeID = mock(NodeID.class);
-        when(mockedPeer.getPeerNodeID()).thenReturn(nodeID);
-        when(mockedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
-        when(peersInformation.getBestSnapPeer()).thenReturn(Optional.of(mockedPeer));
-        underTest.setRunning();
-        // when
-        underTest.tick(elapsedTime);
-        //then
-        assertThat(underTest.timeElapsed, equalTo(elapsedTime));
-        verify(syncEventsHandler, times(1)).stopSyncing();
     }
 
     @Test
@@ -178,7 +137,7 @@ class SnapSyncStateTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -200,7 +159,30 @@ class SnapSyncStateTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
+    }
+
+    @Test
+    void givenNewBlockHeadersIsCalled_thenJobIsAddedAndRun() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        //noinspection unchecked
+        List<BlockHeader> msg = mock(List.class);
+        CountDownLatch latch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, latch);
+        underTest.onEnter();
+
+        //when
+        underTest.newBlockHeaders(peer, msg);
+
+        //then
+        assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(1)).onJobRun(jobArg.capture());
+
+        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -222,14 +204,34 @@ class SnapSyncStateTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
+    }
+
+    @Test
+    void givenOnMessageTimeOut_thenShouldFail() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        underTest.setLastBlock(mock(Block.class), mock(BlockDifficulty.class), peer);
+        underTest.setRunning();
+
+        //when
+        underTest.onMessageTimeOut();
+
+        //then
+        verify(syncEventsHandler, times(1)).onErrorSyncing(eq(peer), eq(EventType.TIMEOUT_MESSAGE), any());
     }
 
     @Test
     void testSetAndGetLastBlock() {
         Block mockBlock = mock(Block.class);
-        underTest.setLastBlock(mockBlock);
+        BlockDifficulty mockBlockDifficulty = mock(BlockDifficulty.class);
+        Peer mockPeer = mock(Peer.class);
+
+        underTest.setLastBlock(mockBlock, mockBlockDifficulty, mockPeer);
+
         assertEquals(mockBlock, underTest.getLastBlock());
+        assertEquals(mockBlockDifficulty, underTest.getLastBlockDifficulty());
+        assertEquals(mockPeer, underTest.getLastBlockSender());
     }
 
     @Test
@@ -270,13 +272,6 @@ class SnapSyncStateTest {
     void testGetSnapStateChunkQueue() {
         PriorityQueue<SnapStateChunkResponseMessage> queue = underTest.getSnapStateChunkQueue();
         assertNotNull(queue);
-    }
-
-    @Test
-    void testSetAndGetLastBlockDifficulty() {
-        BlockDifficulty mockBlockDifficulty = mock(BlockDifficulty.class);
-        underTest.setLastBlockDifficulty(mockBlockDifficulty);
-        assertEquals(mockBlockDifficulty, underTest.getLastBlockDifficulty());
     }
 
     @Test

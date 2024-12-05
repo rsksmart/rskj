@@ -26,12 +26,15 @@ import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.TimeProvider;
 import co.rsk.validators.*;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.SignatureCache;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
-import org.mockito.Mockito;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by mario on 19/01/17.
@@ -95,11 +98,11 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore) {
-        BlockHeaderValidationRule validationRule = Mockito.mock(BlockHeaderValidationRule.class);
-        Mockito.when(validationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockHeaderValidationRule validationRule = mock(BlockHeaderValidationRule.class);
+        when(validationRule.isValid(any())).thenReturn(true);
 
-        BlockHeaderParentDependantValidationRule parentValidationRule = Mockito.mock(BlockHeaderParentDependantValidationRule.class);
-        Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
+        BlockHeaderParentDependantValidationRule parentValidationRule = mock(BlockHeaderParentDependantValidationRule.class);
+        when(parentValidationRule.isValid(any(), any(Block.class))).thenReturn(true);
 
         this.addBlockUnclesValidationRule(blockStore, validationRule, parentValidationRule);
         return this;

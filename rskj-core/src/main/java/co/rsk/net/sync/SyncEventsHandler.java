@@ -59,5 +59,5 @@ public interface SyncEventsHandler {
 
     void backwardSyncing(Peer peer);
 
-    void startSnapSync();
+    void startSnapSync(Peer peer);
 }

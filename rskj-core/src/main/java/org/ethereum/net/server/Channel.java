@@ -19,13 +19,12 @@
 
 package org.ethereum.net.server;
 
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.MessageQueue;
@@ -51,7 +50,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -77,7 +75,7 @@ public class Channel implements Peer {
     private final PeerStatistics peerStats = new PeerStatistics();
 
     private Stats stats;
-    private final boolean isSnapCapable;
+    private boolean isSnapCapable;
 
     public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
@@ -85,8 +83,7 @@ public class Channel implements Peer {
                    RskWireProtocol.Factory rskWireProtocolFactory,
                    Eth62MessageFactory eth62MessageFactory,
                    StaticMessages staticMessages,
-                   String remoteId,
-                   List<Capability> capabilities) {
+                   String remoteId) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
         this.nodeManager = nodeManager;
@@ -95,19 +92,6 @@ public class Channel implements Peer {
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
         this.stats = new Stats();
-        this.isSnapCapable = capabilities.stream()
-                .anyMatch(capability -> Capability.SNAP.equals(capability.getName()));
-    }
-
-    @VisibleForTesting
-    public Channel(MessageQueue msgQueue,
-                   MessageCodec messageCodec,
-                   NodeManager nodeManager,
-                   RskWireProtocol.Factory rskWireProtocolFactory,
-                   Eth62MessageFactory eth62MessageFactory,
-                   StaticMessages staticMessages,
-                   String remoteId) {
-        this(msgQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId, new ArrayList<>());
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
@@ -170,6 +154,7 @@ public class Channel implements Peer {
     }
 
     public void initMessageCodes(List<Capability> caps) {
+        isSnapCapable = caps.stream().anyMatch(Capability::isSNAP);
         messageCodec.initMessageCodes(caps);
     }
 

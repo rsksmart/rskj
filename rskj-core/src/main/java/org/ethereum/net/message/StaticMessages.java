@@ -19,7 +19,7 @@
 
 package org.ethereum.net.message;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.p2p.*;
@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  */
 public class StaticMessages {
 
-    private final SystemProperties config;
+    private final RskSystemProperties config;
     private final ConfigCapabilities configCapabilities;
 
     public static final PingMessage PING_MESSAGE = new PingMessage();
@@ -45,7 +45,7 @@ public class StaticMessages {
     public static final GetPeersMessage GET_PEERS_MESSAGE = new GetPeersMessage();
     public static final DisconnectMessage DISCONNECT_MESSAGE = new DisconnectMessage(ReasonCode.REQUESTED);
 
-    public StaticMessages(SystemProperties config, ConfigCapabilities configCapabilities) {
+    public StaticMessages(RskSystemProperties config, ConfigCapabilities configCapabilities) {
         this.config = config;
         this.configCapabilities = configCapabilities;
     }
@@ -53,11 +53,14 @@ public class StaticMessages {
     public HelloMessage createHelloMessage(String peerId) {
         return createHelloMessage(peerId, config.getPeerPort());
     }
-    public HelloMessage createHelloMessage(String peerId, int listenPort) {
 
+    public HelloMessage createHelloMessage(String peerId, int listenPort) {
         String helloAnnouncement = buildHelloAnnouncement();
         byte p2pVersion = (byte) config.defaultP2PVersion();
         List<Capability> capabilities = configCapabilities.getConfigCapabilities();
+        if (config.isServerSnapshotSyncEnabled()) {
+            capabilities.add(new Capability(Capability.SNAP, Capability.SNAP_VERSION));
+        }
 
         return new HelloMessage(p2pVersion, helloAnnouncement,
                 capabilities, listenPort, peerId);
