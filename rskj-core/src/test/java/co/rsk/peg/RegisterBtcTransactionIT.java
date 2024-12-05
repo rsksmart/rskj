@@ -328,11 +328,4 @@ public class RegisterBtcTransactionIT {
         assertEquals(1, activeFederationUtxos.size());
         assertTrue(retiringFederationUtxos.isEmpty());
     }
-
-    private BtcTransaction getBtcTransaction(Coin amountToSend) {
-        BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
-        btcTransaction.addInput(BitcoinTestUtils.createHash(1), FIRST_OUTPUT_INDEX, ScriptBuilder.createInputScript(null, new BtcECKey()));
-        btcTransaction.addOutput(amountToSend, activeFederation.getAddress());
-        return btcTransaction;
-    }
 }
