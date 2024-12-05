@@ -432,8 +432,6 @@ public class BridgeSupport {
     }
 
     private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
-        logger.info("[registerSvpFundTx] This is an svp fund tx {}", btcTx.getHash());
-
         registerNewUtxos(btcTx); // Need to register the change UTXO
 
         // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
@@ -445,14 +443,10 @@ public class BridgeSupport {
     }
 
     private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
-        logger.info(
-            "[registerSvpSpendTx] This is an svp spend tx {} (wtxid: {}). SVP was successful, going to commit the proposed federation",
-            btcTx.getHash(),
-            btcTx.getHash(true)
-        );
-
         registerNewUtxos(btcTx);
         provider.setSvpSpendTxHashUnsigned(null);
+
+        logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
         federationSupport.commitProposedFederation();
     }
 
@@ -478,7 +472,6 @@ public class BridgeSupport {
         int height
     ) throws IOException, RegisterBtcTransactionException {
         final String METHOD_NAME = "registerPegIn";
-        logger.info("[{}] This is a peg-in tx {}", METHOD_NAME, btcTx.getHash());
 
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
             legacyRegisterPegin(btcTx, rskTxHash, height);
