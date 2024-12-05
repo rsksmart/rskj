@@ -1569,32 +1569,6 @@ public class BridgeTestIntegration {
         assertEquals(5678, bridge.getFederationThreshold(new Object[]{}).intValue());
     }
 
-    @ParameterizedTest
-    @MethodSource("activationsAndExpectedFederationCreationTimeArgs")
-    void getActiveFederationCreationTime_returnsCreationTimeInExpectedTimeUnit(ActivationConfig activationConfig, long expectedActiveFederationCreationTime) {
-        // arrange
-        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
-                bridgeMainnetConstants,
-                activationConfig,
-                signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactory, signatureCache);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-
-        Instant creationTime = Instant.ofEpochMilli(5000);
-        when(bridgeSupportMock.getActiveFederationCreationTime()).thenReturn(creationTime);
-
-        // act
-        long actualActiveFederationCreationTime = bridge.getFederationCreationTime(new Object[]{});
-
-        assertEquals(expectedActiveFederationCreationTime, actualActiveFederationCreationTime);
-    }
-
     @Test
     void getFederationCreationBlockNumber() {
         Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, null, signatureCache);
@@ -1743,44 +1717,6 @@ public class BridgeTestIntegration {
         when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(5678);
 
         assertEquals(5678, bridge.getRetiringFederationThreshold(new Object[]{}).intValue());
-    }
-
-    @ParameterizedTest
-    @MethodSource("activationsAndExpectedFederationCreationTimeArgs")
-    void getRetiringFederationCreationTime_returnsCreationTimeInExpectedTimeUnit(ActivationConfig activationConfig, long expectedRetiringFederationCreationTime) {
-        // arrange
-        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-            new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
-            bridgeMainnetConstants,
-            activationConfig,
-            signatureCache
-        );
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-            bridgeSupportFactory, signatureCache);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-
-        Instant creationTime = Instant.ofEpochMilli(5000);
-        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
-
-        // act
-        long actualRetiringFederationCreationTime = bridge.getRetiringFederationCreationTime(new Object[]{});
-
-        // assert
-        assertEquals(expectedRetiringFederationCreationTime, actualRetiringFederationCreationTime);
-    }
-
-    private static Stream<Arguments> activationsAndExpectedFederationCreationTimeArgs() {
-        long creationTimeInMillis = 5000;
-        long creationTimeInSeconds = 5;
-
-        return Stream.of(
-            Arguments.of(ActivationConfigsForTest.arrowhead631(), creationTimeInMillis),
-            Arguments.of(ActivationConfigsForTest.all(), creationTimeInSeconds)
-        );
     }
 
     @Test
