@@ -318,6 +318,7 @@ class FederationConstantsTest {
 
     @Test
     void getInstance_whenKeysAreNull_shouldThrowIllegalArgumentException() {
+        // Act & Assert
         assertThrows(IllegalArgumentException.class, () ->
             FederationRegTestConstants.getInstance(null)
         );
@@ -325,6 +326,7 @@ class FederationConstantsTest {
 
     @Test
     void getInstance_whenKeysAreEmpty_shouldThrowIllegalArgumentException() {
+        // Act & Assert
         assertThrows(IllegalArgumentException.class, () ->
             FederationRegTestConstants.getInstance(List.of())
         );

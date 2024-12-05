@@ -59,6 +59,16 @@ public class FederationRegTestConstants extends FederationConstants {
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
     }
 
+    /**
+     * Returns the singleton instance of {@code FederationRegTestConstants} initialized with the provided federation public keys.
+     * If the instance has already been initialized, this method ensures the provided keys match the existing instance's keys.
+     *
+     * @param federationPublicKeys the list of {@code BtcECKey} public keys used to initialize the federation.
+     *                             Must not be {@code null} or empty.
+     * @return the singleton instance of {@code FederationRegTestConstants}.
+     * @throws IllegalArgumentException if the provided {@code federationPublicKeys} is {@code null} or empty.
+     * @throws IllegalStateException if the instance is already initialized with different keys.
+     */
     public static synchronized FederationRegTestConstants getInstance(List<BtcECKey> federationPublicKeys) {
         if (federationPublicKeys == null || federationPublicKeys.isEmpty()) {
             throw new IllegalArgumentException("Federation regtest public keys must not be null or empty.");
@@ -73,6 +83,13 @@ public class FederationRegTestConstants extends FederationConstants {
         return instance;
     }
 
+    /**
+     * Returns the singleton instance of {@code FederationRegTestConstants} if it has already been initialized.
+     *
+     * @return the singleton instance of {@code FederationRegTestConstants}.
+     * @throws IllegalStateException if the instance has not been initialized yet.
+     *                               Ensure {@code getInstance(List<BtcECKey>)} is called first to initialize the instance.
+     */
     public static synchronized FederationRegTestConstants getInstance() {
         if (instance == null) {
             throw new IllegalStateException("Federation regtest constants is not initialized. Call getInstance(List<BtcECKey>) first.");
