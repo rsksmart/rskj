@@ -2283,22 +2283,24 @@ public class BridgeSupport {
         Sha256Hash witnessMerkleRoot,
         byte[] witnessReservedValue
     ) throws BridgeIllegalArgumentException {
-        Optional<Sha256Hash> expectedWitnessCommitment = findWitnessCommitment(coinbaseTransaction);
         Sha256Hash calculatedWitnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
 
-        expectedWitnessCommitment
+        findWitnessCommitment(coinbaseTransaction)
             .filter(commitment -> commitment.equals(calculatedWitnessCommitment))
             .orElseThrow(() -> {
                 String message = String.format(
-                    "[btcTx: %s] Witness commitment does not match. Expected: %s, Calculated: %s",
+                    "[btcTx: %s] Calculated witness commitment %s does not match the expected value",
                     coinbaseTransaction.getHash(),
-                    expectedWitnessCommitment.orElse(null),
                     calculatedWitnessCommitment
                 );
                 logger.warn("[validateWitnessInformation] {}", message);
                 return new BridgeIllegalArgumentException(message);
             });
-        logger.debug("[validateWitnessInformation] Witness commitment validated for btc tx {}", coinbaseTransaction.getHash());
+        logger.debug(
+            "[validateWitnessInformation] Witness commitment {} validated for btc tx {}",
+            calculatedWitnessCommitment,
+            coinbaseTransaction.getHash()
+        );
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
