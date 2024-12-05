@@ -21,11 +21,14 @@ package co.rsk.net.sync;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
+import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.SnapBlocksResponseMessage;
 import co.rsk.net.messages.SnapStateChunkResponseMessage;
 import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.scoring.EventType;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -160,6 +163,29 @@ class SnapSyncStateTest {
     }
 
     @Test
+    void givenNewBlockHeadersIsCalled_thenJobIsAddedAndRun() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        //noinspection unchecked
+        List<BlockHeader> msg = mock(List.class);
+        CountDownLatch latch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, latch);
+        underTest.onEnter();
+
+        //when
+        underTest.newBlockHeaders(peer, msg);
+
+        //then
+        assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(1)).onJobRun(jobArg.capture());
+
+        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, jobArg.getValue().getMsgType());
+    }
+
+    @Test
     void givenOnSnapStateChunkIsCalled_thenJobIsAddedAndRun() throws InterruptedException {
         //given
         Peer peer = mock(Peer.class);
@@ -179,6 +205,20 @@ class SnapSyncStateTest {
 
         assertEquals(peer, jobArg.getValue().getSender());
         assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
+    }
+
+    @Test
+    void givenOnMessageTimeOut_thenShouldFail() throws InterruptedException {
+        //given
+        Peer peer = mock(Peer.class);
+        underTest.setLastBlock(mock(Block.class), mock(BlockDifficulty.class), peer);
+        underTest.setRunning();
+
+        //when
+        underTest.onMessageTimeOut();
+
+        //then
+        verify(syncEventsHandler, times(1)).onErrorSyncing(eq(peer), eq(EventType.TIMEOUT_MESSAGE), any());
     }
 
     @Test
