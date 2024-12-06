@@ -12,8 +12,12 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.util.TransactionReceiptUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileNotFoundException;
+import java.util.stream.Stream;
 
 public class MCopyDslTest {
 
@@ -40,98 +44,6 @@ public class MCopyDslTest {
 
         assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
         assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyNotActivated", false);
-
-    }
-
-    @Test
-    void testMCOPY_testCase1_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testCopying32BytesFromOffset32toOffset0.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world,"b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_testCase2_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testCopying32BytesFromOffset0toOffset0.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_testCase3_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testCopying8BytesFromOffset1toOffset0.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_testCase4_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testCopying8BytesFromOffset0toOffset1.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
 
     }
 
@@ -172,12 +84,11 @@ public class MCopyDslTest {
 
     }
 
-    // Full Memory Copy/Rewrite/Clean Tests
+    @ParameterizedTest
+    @MethodSource("provideParametersForMCOPYTestCases")
+    void testMCOPY_OnEachTestCase_ExecutesAsExpected(String dslFile) throws FileNotFoundException, DslProcessorException {
 
-    @Test
-    void testMCOPY_fullMemoryClean_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testFullMemoryClean.txt");
+        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/" + dslFile);
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -197,190 +108,29 @@ public class MCopyDslTest {
 
     }
 
-    @Test
-    void testMCOPY_fullMemoryCopy_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testFullMemoryCopy.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_fullMemoryCopyOffset_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testFullMemoryCopyOffset.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_fullMemoryRewrite_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testFullMemoryRewrite.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    // Memory Extension Tests
-
-    @Test
-    void testMCOPY_outOfBoundsMemoryExtension_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testOutOfBoundsMemoryExtension.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_singleByteMemoryExtension_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testSingleByteMemoryExtension.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_singleWordMemoryExtension_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testSingleWordMemoryExtension.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_singleWordMinusOneByteMemoryExtension_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testSingleWordMinusOneByteMemoryExtension.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
-    }
-
-    @Test
-    void testMCOPY_singleWordPlusOneByteMemoryExtension_behaveAsExpected() throws FileNotFoundException, DslProcessorException {
-
-        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testSingleWordPlusOneByteMemoryExtension.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        // Assertions
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
-        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
-
-        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
-        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
-
-        // Event Assertions
-
-        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
-        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
-
+    private static Stream<Arguments> provideParametersForMCOPYTestCases() {
+        return Stream.of(
+
+                // Basic Test Cases from 1 to 4 on EIP
+                Arguments.of("testCopying32BytesFromOffset32toOffset0.txt"),
+                Arguments.of("testCopying32BytesFromOffset0toOffset0.txt"),
+                Arguments.of("testCopying8BytesFromOffset1toOffset0.txt"),
+                Arguments.of("testCopying8BytesFromOffset0toOffset1.txt"),
+
+                // Full Memory Copy/Rewrite/Clean Tests
+                Arguments.of("testFullMemoryClean.txt"),
+                Arguments.of("testFullMemoryCopy.txt"),
+                Arguments.of("testFullMemoryCopyOffset.txt"),
+                Arguments.of("testFullMemoryRewrite.txt"),
+
+                // Memory Extension Tests
+                Arguments.of("testOutOfBoundsMemoryExtension.txt"),
+                Arguments.of("testSingleByteMemoryExtension.txt"),
+                Arguments.of("testSingleWordMemoryExtension.txt"),
+                Arguments.of("testSingleWordMinusOneByteMemoryExtension.txt"),
+                Arguments.of("testSingleWordPlusOneByteMemoryExtension.txt")
+
+        );
     }
 
     private static void assertBlockExistsAndContainsExpectedNumberOfTxs(World world, String blockName, int expectedNumberOfTxs) {
