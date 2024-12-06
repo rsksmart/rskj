@@ -614,6 +614,10 @@ public class BridgeStorageProvider {
         this.isSvpFundTxHashUnsignedSet = true;
     }
 
+    public void clearSvpFundTxHashUnsigned() {
+        setSvpFundTxHashUnsigned(null);
+    }
+
     private void saveSvpFundTxHashUnsigned() {
         if (!activations.isActive(RSKIP419) || !isSvpFundTxHashUnsignedSet) {
             return;
@@ -630,6 +634,10 @@ public class BridgeStorageProvider {
         this.isSvpFundTxSignedSet = true;
     }
 
+    public void clearSvpFundTxSigned() {
+        setSvpFundTxSigned(null);
+    }
+
     private void saveSvpFundTxSigned() {
         if (!activations.isActive(RSKIP419) || !isSvpFundTxSignedSet) {
             return;
@@ -644,6 +652,10 @@ public class BridgeStorageProvider {
     public void setSvpSpendTxHashUnsigned(Sha256Hash hash) {
         this.svpSpendTxHashUnsigned = hash;
         this.isSvpSpendTxHashUnsignedSet = true;
+    }
+
+    public void clearSvpSpendTxHashUnsigned() {
+        setSvpSpendTxHashUnsigned(null);
     }
 
     private void saveSvpSpendTxHashUnsigned() {
@@ -670,6 +682,10 @@ public class BridgeStorageProvider {
         this.isSvpSpendTxWaitingForSignaturesSet = true;
     }
 
+    public void clearSvpSpendTxWaitingForSignatures() {
+        setSvpSpendTxWaitingForSignatures(null);
+    }
+
     private void saveSvpSpendTxWaitingForSignatures() {
         if (!activations.isActive(RSKIP419) || !isSvpSpendTxWaitingForSignaturesSet) {
             return;
@@ -685,12 +701,12 @@ public class BridgeStorageProvider {
     public void clearSvpValues() {
         if (svpFundTxHashUnsigned != null) {
             logger.warn("[clearSvpValues] Clearing fund tx hash unsigned {} value.", svpFundTxHashUnsigned);
-            setSvpFundTxHashUnsigned(null);
+            clearSvpFundTxHashUnsigned();
         }
 
         if (svpFundTxSigned != null) {
             logger.warn("[clearSvpValues] Clearing fund tx signed {} value.", svpFundTxSigned.getHash());
-            setSvpFundTxSigned(null);
+            clearSvpFundTxSigned();
         }
 
         if (svpSpendTxWaitingForSignatures != null) {
@@ -700,13 +716,13 @@ public class BridgeStorageProvider {
                 "[clearSvpValues] Clearing spend tx waiting for signatures with spend tx {} and rsk creation hash {} value.",
                 svpSpendTx.getHash(), rskCreationHash
             );
-            setSvpSpendTxWaitingForSignatures(null);
-            setSvpSpendTxHashUnsigned(null);
+            clearSvpSpendTxWaitingForSignatures();
+            clearSvpSpendTxHashUnsigned();
         }
 
         if (svpSpendTxHashUnsigned != null) {
             logger.warn("[clearSvpValues] Clearing spend tx hash unsigned {} value.", svpSpendTxHashUnsigned);
-            setSvpSpendTxHashUnsigned(null);
+            clearSvpSpendTxHashUnsigned();
         }
     }
 

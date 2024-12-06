@@ -444,7 +444,7 @@ public class BridgeSupport {
 
     private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
         registerNewUtxos(btcTx);
-        provider.setSvpSpendTxHashUnsigned(null);
+        provider.clearSvpSpendTxHashUnsigned();
 
         logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
         federationSupport.commitProposedFederation();
@@ -458,7 +458,7 @@ public class BridgeSupport {
         );
 
         provider.setSvpFundTxSigned(transaction);
-        provider.setSvpFundTxHashUnsigned(null);
+        provider.clearSvpFundTxHashUnsigned();
     }
 
     @VisibleForTesting
@@ -1775,7 +1775,7 @@ public class BridgeSupport {
         }
 
         logReleaseBtc(svpSpendTx, svpSpendTxCreationRskTxHash.getBytes());
-        provider.setSvpSpendTxWaitingForSignatures(null);
+        provider.clearSvpSpendTxWaitingForSignatures();
     }
 
     private boolean areSignaturesEnoughToSignAllTxInputs(BtcTransaction releaseTx, List<byte[]> signatures) {
