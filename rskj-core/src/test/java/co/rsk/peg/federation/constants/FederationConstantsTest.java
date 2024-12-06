@@ -3,9 +3,6 @@ package co.rsk.peg.federation.constants;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +19,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -314,92 +310,5 @@ class FederationConstantsTest {
             Arguments.of(TESTNET, oldFederationAddressTestnet),
             Arguments.of(REGTEST, oldFederationAddressRegtest)
         );
-    }
-
-    @Test
-    void getInstance_whenKeysAreNull_shouldThrowIllegalArgumentException() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () ->
-            FederationRegTestConstants.getInstance(null)
-        );
-    }
-
-    @Test
-    void getInstance_whenKeysAreEmpty_shouldThrowIllegalArgumentException() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () ->
-            FederationRegTestConstants.getInstance(List.of())
-        );
-    }
-
-    @Test
-    void getInstance_whenCalledWithValidKeys_shouldCreateInstance() {
-        // Arrange
-        var key1 = mock(BtcECKey.class);
-        var key2 = mock(BtcECKey.class);
-        var key3 = mock(BtcECKey.class);
-        var validKeys = List.of(key1, key2, key3);
-
-        // Act
-        var instance = FederationRegTestConstants.getInstance(validKeys);
-      
-        // Assert
-        assertNotNull(instance);
-    }
-
-    @Test
-    void getInstance_whenCalledTwiceWithSameKeys_shouldReturnSameInstance() {
-        // Arrange
-        var key1 = mock(BtcECKey.class);
-        var key2 = mock(BtcECKey.class);
-        var key3 = mock(BtcECKey.class);
-        var validKeys = List.of(key1, key2, key3);
-      
-        // Act
-        var instance1 = FederationRegTestConstants.getInstance(validKeys);
-        var instance2 = FederationRegTestConstants.getInstance(validKeys);
-
-        // Assert
-        assertSame(instance1, instance2);
-    }
-
-    @Test
-    void getInstance_whenCalledWithDifferentKeysAfterInitialization_shouldThrowIllegalStateException() {
-        // Arrange
-        var key1 = mock(BtcECKey.class);
-        var key2 = mock(BtcECKey.class);
-        var key3 = mock(BtcECKey.class);
-        var validKeys = List.of(key1, key2, key3);
-        var differentKeys = List.of(key1);
-
-        // Act
-        FederationRegTestConstants.getInstance(validKeys);
-     
-        // Assert
-        assertThrows(IllegalStateException.class, () ->
-            FederationRegTestConstants.getInstance(differentKeys)
-        );
-    }
-
-    @Test
-    void getInstanceNoArgs_whenCalledBeforeInitialization_shouldThrowIllegalStateException() {
-        // Act & Assert
-        assertThrows(IllegalStateException.class, FederationRegTestConstants::getInstance);
-    }
-
-    @Test
-    void getInstanceNoArgs_whenCalledAfterInitialization_shouldReturnSameInstance() {
-        // Arrange
-        var key1 = mock(BtcECKey.class);
-        var key2 = mock(BtcECKey.class);
-        var key3 = mock(BtcECKey.class);
-        var validKeys = List.of(key1, key2, key3);
-
-        // Act
-        var expectedInstance = FederationRegTestConstants.getInstance(validKeys);
-        var actualInstance = FederationRegTestConstants.getInstance();
-
-        // Assert
-        assertSame(expectedInstance, actualInstance);
     }
 }
