@@ -13,7 +13,9 @@ import java.util.stream.Stream;
 
 public class FederationRegTestConstants extends FederationConstants {
 
-    public FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
+    private static FederationRegTestConstants instance;
+
+    private FederationRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         // IMPORTANT: BTC, RSK and MST keys are the same.
@@ -55,5 +57,44 @@ public class FederationRegTestConstants extends FederationConstants {
         // 9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
+    }
+
+    /**
+     * Returns the singleton instance of {@code FederationRegTestConstants} initialized with the provided federation public keys.
+     * If the instance has already been initialized, this method ensures the provided keys match the existing instance's keys.
+     *
+     * @param federationPublicKeys the list of {@code BtcECKey} public keys used to initialize the federation.
+     *                             Must not be {@code null} or empty.
+     * @return the singleton instance of {@code FederationRegTestConstants}.
+     * @throws IllegalArgumentException if the provided {@code federationPublicKeys} is {@code null} or empty.
+     * @throws IllegalStateException if the instance is already initialized with different keys.
+     */
+    public static synchronized FederationRegTestConstants getInstance(List<BtcECKey> federationPublicKeys) {
+        if (federationPublicKeys == null || federationPublicKeys.isEmpty()) {
+            throw new IllegalArgumentException("Federation regtest public keys must not be null or empty.");
+        }
+
+        if (instance == null) {
+            instance = new FederationRegTestConstants(federationPublicKeys);
+        } else if (!federationPublicKeys.equals(instance.getGenesisFederationPublicKeys())) {
+            throw new IllegalStateException("Federation regtest constants is already initialized with different keys.");
+        }
+
+        return instance;
+    }
+
+    /**
+     * Returns the singleton instance of {@code FederationRegTestConstants} if it has already been initialized.
+     *
+     * @return the singleton instance of {@code FederationRegTestConstants}.
+     * @throws IllegalStateException if the instance has not been initialized yet.
+     *                               Ensure {@code getInstance(List<BtcECKey>)} is called first to initialize the instance.
+     */
+    public static synchronized FederationRegTestConstants getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("Federation regtest constants is not initialized. Call getInstance(List<BtcECKey>) first.");
+        }
+
+        return instance;
     }
 }

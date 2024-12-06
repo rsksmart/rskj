@@ -3,14 +3,13 @@ package co.rsk.peg.federation.constants;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-import java.time.Instant;
-import java.util.List;
-
-public class FederationConstants {
+public abstract class FederationConstants {
     protected NetworkParameters btcParams;
 
     protected List<BtcECKey> genesisFederationPublicKeys;

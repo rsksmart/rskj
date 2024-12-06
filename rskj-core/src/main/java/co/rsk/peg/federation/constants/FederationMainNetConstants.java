@@ -3,18 +3,17 @@ package co.rsk.peg.federation.constants;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
-
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 public class FederationMainNetConstants extends FederationConstants {
 
-    private static final FederationMainNetConstants instance = new FederationMainNetConstants();
+    private static final FederationMainNetConstants INSTANCE = new FederationMainNetConstants();
 
     private FederationMainNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
@@ -66,6 +65,6 @@ public class FederationMainNetConstants extends FederationConstants {
     }
 
     public static FederationMainNetConstants getInstance() {
-        return instance;
+        return INSTANCE;
     }
 }
