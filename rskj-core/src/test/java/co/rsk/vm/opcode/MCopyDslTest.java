@@ -35,34 +35,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyNotActivated = world.getTransactionByName("txTestMCopyNotActivated");
-        Assertions.assertNotNull(txTestMCopyNotActivated);
-
-        TransactionReceipt txTestMCopyNotActivatedReceipt = world.getTransactionReceiptByName("txTestMCopyNotActivated");
-        Assertions.assertNotNull(txTestMCopyNotActivatedReceipt);
-
-        byte[] txTestMCopyNotActivatedCreationStatus = txTestMCopyNotActivatedReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyNotActivatedCreationStatus);
-        Assertions.assertEquals(0, txTestMCopyNotActivatedCreationStatus.length);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyNotActivated", false);
 
     }
 
@@ -76,35 +53,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world,"b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -123,35 +76,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -170,35 +99,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -217,35 +122,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -267,35 +148,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -327,35 +184,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -374,35 +207,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -421,35 +230,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -468,35 +253,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -517,35 +278,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -564,35 +301,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -611,35 +324,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -658,35 +347,11 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
@@ -705,41 +370,42 @@ public class MCopyDslTest {
 
         // Assertions
 
-        Block block1 = world.getBlockByName("b01");
-        Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getTransactionsList().size());
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
 
-        Transaction txTestMCopy = world.getTransactionByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopy);
-
-        TransactionReceipt txTestMCopyReceipt = world.getTransactionReceiptByName("txTestMCopy");
-        Assertions.assertNotNull(txTestMCopyReceipt);
-
-        byte[] creationStatus = txTestMCopyReceipt.getStatus();
-        Assertions.assertNotNull(creationStatus);
-        Assertions.assertEquals(1, creationStatus.length);
-        Assertions.assertEquals(1, creationStatus[0]);
-
-        Block block2 = world.getBlockByName("b02");
-        Assertions.assertNotNull(block2);
-        Assertions.assertEquals(1, block2.getTransactionsList().size());
-
-        Transaction txTestMCopyOKCall = world.getTransactionByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCall);
-
-        TransactionReceipt txTestMCopyOKCallReceipt = world.getTransactionReceiptByName("txTestMCopyOKCall");
-        Assertions.assertNotNull(txTestMCopyOKCallReceipt);
-
-        byte[] txTestMCopyOKCallCreationStatus = txTestMCopyOKCallReceipt.getStatus();
-        Assertions.assertNotNull(txTestMCopyOKCallCreationStatus);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus.length);
-        Assertions.assertEquals(1, txTestMCopyOKCallCreationStatus[0]);
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", true);
 
         // Event Assertions
 
         Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
         Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
 
+    }
+
+    private static void assertBlockExistsAndContainsExpectedNumberOfTxs(World world, String blockName, int expectedNumberOfTxs) {
+        Block block = world.getBlockByName(blockName);
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals(expectedNumberOfTxs, block.getTransactionsList().size());
+    }
+
+    private static TransactionReceipt assertTxExistsWithExpectedReceiptStatus(World world, String txName, boolean mustBeSuccessful) {
+        Transaction tx = world.getTransactionByName(txName);
+        Assertions.assertNotNull(tx);
+
+        TransactionReceipt txReceipt = world.getTransactionReceiptByName(txName);
+        Assertions.assertNotNull(txReceipt);
+        byte[] creationStatus = txReceipt.getStatus();
+        Assertions.assertNotNull(creationStatus);
+
+        if (mustBeSuccessful) {
+            Assertions.assertEquals(1, creationStatus.length);
+            Assertions.assertEquals(1, creationStatus[0]);
+        } else {
+            Assertions.assertEquals(0, creationStatus.length);
+        }
+
+        return txReceipt;
     }
 
 }
