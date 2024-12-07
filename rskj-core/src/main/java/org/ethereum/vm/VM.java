@@ -42,7 +42,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP103;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP140;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP150;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP151;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP152;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP169;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP191;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP398;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP412;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP446;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP90;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP91;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
 
@@ -1326,6 +1339,42 @@ public class VM {
         program.step();
     }
 
+    protected void doTLOAD(){
+        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
+        // different types of calls
+        DataWord key = program.stackPop();
+        if (isLogEnabled) {
+            logger.info("Executing TLOAD with parameters: key = {}",  key);
+        }
+        DataWord val = program.transientStorageLoad(key);
+
+        if (val == null) {
+            val = DataWord.ZERO;
+        }
+
+        program.stackPush(val);
+        // key could be returned to the pool, but transientStorageLoad semantics should be checked
+        // to make sure storageLoad always gets a copy, not a reference.
+        program.step();
+    }
+
+    protected void doTSTORE(){
+        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
+        // different types of calls
+        if (program.isStaticCall()) {
+            throw Program.ExceptionHelper.modificationException(program);
+        }
+
+        DataWord key = program.stackPop();
+        DataWord value = program.stackPop();
+
+        if (isLogEnabled) {
+            logger.info("Executing TSTORE with parameters: address={} | value = {}",  key, value);
+        }
+        program.transientStorageSave(key, value);
+        program.step();
+    }
+
     protected void doJUMP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1815,13 +1864,14 @@ public class VM {
             break;
             case OpCodes.OP_CALLDATACOPY: doCALLDATACOPY();
             break;
-            case OpCodes.OP_CODESIZE:
-            case OpCodes.OP_EXTCODESIZE: doCODESIZE();
+            case OpCodes.OP_CODESIZE,
+                     OpCodes.OP_EXTCODESIZE:
+                        doCODESIZE();
                 break;
-            case OpCodes.OP_CODECOPY:
-            case OpCodes.OP_EXTCODECOPY: doCODECOPY();
+            case OpCodes.OP_CODECOPY,
+                     OpCodes.OP_EXTCODECOPY:
+                        doCODECOPY();
             break;
-
 
             case OpCodes.OP_EXTCODEHASH:
                 if (!activations.isActive(RSKIP140)) {
@@ -1880,39 +1930,41 @@ public class VM {
 
             case OpCodes.OP_POP: doPOP();
             break;
-            case OpCodes.OP_DUP_1:
-            case OpCodes.OP_DUP_2:
-            case OpCodes.OP_DUP_3:
-            case OpCodes.OP_DUP_4:
-            case OpCodes.OP_DUP_5:
-            case OpCodes.OP_DUP_6:
-            case OpCodes.OP_DUP_7:
-            case OpCodes.OP_DUP_8:
-            case OpCodes.OP_DUP_9:
-            case OpCodes.OP_DUP_10:
-            case OpCodes.OP_DUP_11:
-            case OpCodes.OP_DUP_12:
-            case OpCodes.OP_DUP_13:
-            case OpCodes.OP_DUP_14:
-            case OpCodes.OP_DUP_15:
-            case OpCodes.OP_DUP_16: doDUP();
+            case OpCodes.OP_DUP_1 ,
+                     OpCodes.OP_DUP_2 ,
+                     OpCodes.OP_DUP_3 ,
+                     OpCodes.OP_DUP_4 ,
+                     OpCodes.OP_DUP_5 ,
+                     OpCodes.OP_DUP_6 ,
+                     OpCodes.OP_DUP_7 ,
+                     OpCodes.OP_DUP_8 ,
+                     OpCodes.OP_DUP_9 ,
+                     OpCodes.OP_DUP_10 ,
+                     OpCodes.OP_DUP_11 ,
+                     OpCodes.OP_DUP_12 ,
+                     OpCodes.OP_DUP_13 ,
+                     OpCodes.OP_DUP_14 ,
+                     OpCodes.OP_DUP_15 ,
+                     OpCodes.OP_DUP_16:
+                        doDUP();
             break;
-            case OpCodes.OP_SWAP_1:
-            case OpCodes.OP_SWAP_2:
-            case OpCodes.OP_SWAP_3:
-            case OpCodes.OP_SWAP_4:
-            case OpCodes.OP_SWAP_5:
-            case OpCodes.OP_SWAP_6:
-            case OpCodes.OP_SWAP_7:
-            case OpCodes.OP_SWAP_8:
-            case OpCodes.OP_SWAP_9:
-            case OpCodes.OP_SWAP_10:
-            case OpCodes.OP_SWAP_11:
-            case OpCodes.OP_SWAP_12:
-            case OpCodes.OP_SWAP_13:
-            case OpCodes.OP_SWAP_14:
-            case OpCodes.OP_SWAP_15:
-            case OpCodes.OP_SWAP_16: doSWAP();
+            case OpCodes.OP_SWAP_1,
+                     OpCodes.OP_SWAP_2,
+                     OpCodes.OP_SWAP_3,
+                     OpCodes.OP_SWAP_4,
+                     OpCodes.OP_SWAP_5,
+                     OpCodes.OP_SWAP_6,
+                     OpCodes.OP_SWAP_7,
+                     OpCodes.OP_SWAP_8,
+                     OpCodes.OP_SWAP_9,
+                     OpCodes.OP_SWAP_10,
+                     OpCodes.OP_SWAP_11,
+                     OpCodes.OP_SWAP_12,
+                     OpCodes.OP_SWAP_13,
+                     OpCodes.OP_SWAP_14,
+                     OpCodes.OP_SWAP_15,
+                     OpCodes.OP_SWAP_16:
+                        doSWAP();
             break;
             case OpCodes.OP_SWAPN:
                 if (activations.isActive(RSKIP191)) {
@@ -1923,11 +1975,12 @@ public class VM {
 
                 break;
 
-            case OpCodes.OP_LOG_0:
-            case OpCodes.OP_LOG_1:
-            case OpCodes.OP_LOG_2:
-            case OpCodes.OP_LOG_3:
-            case OpCodes.OP_LOG_4: doLOG();
+            case OpCodes.OP_LOG_0,
+                     OpCodes.OP_LOG_1,
+                     OpCodes.OP_LOG_2,
+                     OpCodes.OP_LOG_3,
+                     OpCodes.OP_LOG_4:
+                        doLOG();
             break;
             case OpCodes.OP_MLOAD: doMLOAD();
             break;
@@ -1938,7 +1991,19 @@ public class VM {
             case OpCodes.OP_SLOAD: doSLOAD();
             break;
             case OpCodes.OP_SSTORE: doSSTORE();
-            break;
+                break;
+            case OpCodes.OP_TLOAD:
+                if (!activations.isActive(RSKIP446)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doTLOAD();
+                break;
+            case OpCodes.OP_TSTORE:
+                if (!activations.isActive(RSKIP446)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doTSTORE();
+                break;
             case OpCodes.OP_JUMP: doJUMP();
             break;
             case OpCodes.OP_JUMPI: doJUMPI();
@@ -1957,38 +2022,39 @@ public class VM {
                 doPUSH0();
             break;
 
-            case OpCodes.OP_PUSH_1:
-            case OpCodes.OP_PUSH_2:
-            case OpCodes.OP_PUSH_3:
-            case OpCodes.OP_PUSH_4:
-            case OpCodes.OP_PUSH_5:
-            case OpCodes.OP_PUSH_6:
-            case OpCodes.OP_PUSH_7:
-            case OpCodes.OP_PUSH_8:
-            case OpCodes.OP_PUSH_9:
-            case OpCodes.OP_PUSH_10:
-            case OpCodes.OP_PUSH_11:
-            case OpCodes.OP_PUSH_12:
-            case OpCodes.OP_PUSH_13:
-            case OpCodes.OP_PUSH_14:
-            case OpCodes.OP_PUSH_15:
-            case OpCodes.OP_PUSH_16:
-            case OpCodes.OP_PUSH_17:
-            case OpCodes.OP_PUSH_18:
-            case OpCodes.OP_PUSH_19:
-            case OpCodes.OP_PUSH_20:
-            case OpCodes.OP_PUSH_21:
-            case OpCodes.OP_PUSH_22:
-            case OpCodes.OP_PUSH_23:
-            case OpCodes.OP_PUSH_24:
-            case OpCodes.OP_PUSH_25:
-            case OpCodes.OP_PUSH_26:
-            case OpCodes.OP_PUSH_27:
-            case OpCodes.OP_PUSH_28:
-            case OpCodes.OP_PUSH_29:
-            case OpCodes.OP_PUSH_30:
-            case OpCodes.OP_PUSH_31:
-            case OpCodes.OP_PUSH_32: doPUSH();
+            case OpCodes.OP_PUSH_1,
+                     OpCodes.OP_PUSH_2,
+                     OpCodes.OP_PUSH_3,
+                     OpCodes.OP_PUSH_4,
+                     OpCodes.OP_PUSH_5,
+                     OpCodes.OP_PUSH_6,
+                     OpCodes.OP_PUSH_7,
+                     OpCodes.OP_PUSH_8,
+                     OpCodes.OP_PUSH_9,
+                     OpCodes.OP_PUSH_10,
+                     OpCodes.OP_PUSH_11,
+                     OpCodes.OP_PUSH_12,
+                     OpCodes.OP_PUSH_13,
+                     OpCodes.OP_PUSH_14,
+                     OpCodes.OP_PUSH_15,
+                     OpCodes.OP_PUSH_16,
+                     OpCodes.OP_PUSH_17,
+                     OpCodes.OP_PUSH_18,
+                     OpCodes.OP_PUSH_19,
+                     OpCodes.OP_PUSH_20,
+                     OpCodes.OP_PUSH_21,
+                     OpCodes.OP_PUSH_22,
+                     OpCodes.OP_PUSH_23,
+                     OpCodes.OP_PUSH_24,
+                     OpCodes.OP_PUSH_25,
+                     OpCodes.OP_PUSH_26,
+                     OpCodes.OP_PUSH_27,
+                     OpCodes.OP_PUSH_28,
+                     OpCodes.OP_PUSH_29,
+                     OpCodes.OP_PUSH_30,
+                     OpCodes.OP_PUSH_31,
+                     OpCodes.OP_PUSH_32:
+                        doPUSH();
             break;
             case OpCodes.OP_JUMPDEST: doJUMPDEST();
             break;
@@ -2000,10 +2066,10 @@ public class VM {
                 }
                 doCREATE2();
             break;
-            case OpCodes.OP_CALL:
-            case OpCodes.OP_CALLCODE:
-            case OpCodes.OP_DELEGATECALL:
-                doCALL();
+            case OpCodes.OP_CALL,
+                     OpCodes.OP_CALLCODE,
+                     OpCodes.OP_DELEGATECALL:
+                        doCALL();
             break;
             case OpCodes.OP_STATICCALL:
                 if (!activations.isActive(RSKIP91)) {
@@ -2170,9 +2236,7 @@ public class VM {
         RskAddress ownerAddress = new RskAddress(program.getOwnerAddress());
         if ("standard+".equals(vmConfig.dumpStyle())) {
             switch (op) {
-                case STOP:
-                case RETURN:
-                case SUICIDE:
+                case STOP, RETURN, SUICIDE:
                     Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
                     while (keysIterator.hasNext()) {
                         DataWord key = keysIterator.next();
