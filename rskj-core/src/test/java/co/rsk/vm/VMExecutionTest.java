@@ -870,9 +870,28 @@ class VMExecutionTest {
         return executeCodeWithActivationConfig(compiler.compile(code), nsteps, activations);
     }
 
+    private Program executeCodeWithActivationConfig(String code, DataWord[] stack, int nsteps, ActivationConfig.ForBlock activations) {
+        return executeCodeWithActivationConfig(compiler.compile(code), stack, nsteps, activations);
+    }
+
     private Program executeCodeWithActivationConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        for (int k = 0; k < nsteps; k++) {
+            vm.step(program);
+        }
+
+        return program;
+    }
+
+    private Program executeCodeWithActivationConfig(byte[] code, DataWord[] stack, int nsteps, ActivationConfig.ForBlock activations) {
+        VM vm = new VM(vmConfig, precompiledContracts);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        for (DataWord element : stack) {
+            program.stackPush(element);
+        }
 
         for (int k = 0; k < nsteps; k++) {
             vm.step(program);
@@ -947,4 +966,31 @@ class VMExecutionTest {
         // See ProgramInvokeMockImpl.getMinimumGasPrice()
         Assertions.assertEquals(DataWord.valueFromHex("000000000000000000000000000000000000000000000000000003104e60a000"), stack.peek());
     }
+
+    @Test
+    void testMCOPY_WhenActive_ExecutesAsExpected() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP445)).thenReturn(true);
+
+        executeMCOPY(activations);
+    }
+
+    @Test
+    void testMCOPY_WhenInactive_ExecutesAsExpected() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP445)).thenReturn(false);
+
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> {
+            executeMCOPY(activations);
+        });
+    }
+
+    private void executeMCOPY(ActivationConfig.ForBlock activations) {
+        DataWord[] stackValues = {DataWord.ZERO, DataWord.ZERO, DataWord.ZERO};
+        Program program = executeCodeWithActivationConfig("MCOPY", stackValues, 1, activations);
+        Stack stack = program.getStack();
+
+        Assertions.assertEquals(0, stack.size());
+    }
+    
 }
