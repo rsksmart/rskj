@@ -33,7 +33,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.ReleaseRequestQueue.Entry;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -387,7 +386,7 @@ class BridgeStorageProviderTest {
         @Test
         void clearSvpFundTxHashUnsigned() {
             // Arrange
-            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
 
             // Ensure it is set
             Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
@@ -678,6 +677,47 @@ class BridgeStorageProviderTest {
             assertTrue(svpFundTxSigned.isPresent());
             assertEquals(anotherSvpFundTx, svpFundTxSigned.get());
         }
+
+        @Test
+        void clearSvpFundTxSigned() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+
+            // Ensure it is set
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxSigned();
+
+            // Assert
+            svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isEmpty());
+        }
+
+        @Test
+        void clearSvpFundTxSigned_whenHashIsCached_shouldClearTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxSigned();
+
+            // Assert
+            svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isEmpty());
+        }
     }
 
     @Nested
@@ -912,7 +952,7 @@ class BridgeStorageProviderTest {
             // Manually saving a hash in storage to then cache it
             repository.addStorageBytes(
                 bridgeAddress,
-                SVP_FUND_TX_HASH_UNSIGNED.getKey(),
+                SVP_SPEND_TX_HASH_UNSIGNED.getKey(),
                 BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash)
             );
 
@@ -922,7 +962,7 @@ class BridgeStorageProviderTest {
             assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
 
             // Act
-            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
 
             // Assert
             svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
