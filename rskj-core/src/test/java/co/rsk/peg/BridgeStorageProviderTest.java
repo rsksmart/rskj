@@ -866,7 +866,11 @@ class BridgeStorageProviderTest {
         void getSvpSpendTxHashUnsigned_whenHashIsCached_shouldReturnTheCachedHash() {
             // Arrange
             // Manually saving a hash in storage to then cache it
-            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash));
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_HASH_UNSIGNED.getKey(),
+                BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash)
+            );
 
             // Calling method, so it retrieves the hash from storage and caches it
             bridgeStorageProvider.getSvpSpendTxHashUnsigned();
@@ -881,6 +885,47 @@ class BridgeStorageProviderTest {
             // Assert
             assertTrue(svpSpendTxHashUnsigned.isPresent());
             assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+
+        @Test
+        void clearSvpSpendTxHashUnsigned() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+
+            // Ensure it is set
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+
+            // Assert
+            svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isEmpty());
+        }
+
+        @Test
+        void clearSvpSpendTxHashUnsigned_whenHashIsCached_shouldClearTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_HASH_UNSIGNED.getKey(),
+                BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash)
+            );
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+
+            // Assert
+            svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isEmpty());
         }
     }
 
