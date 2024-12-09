@@ -328,7 +328,7 @@ public class OpCodes {
     /**
      * (0x5e)
      */
-    static final byte OP_MCOPY = 0x5e;
+    public static final byte OP_MCOPY = 0x5e;
 
     /*  Push Operations */
     /**

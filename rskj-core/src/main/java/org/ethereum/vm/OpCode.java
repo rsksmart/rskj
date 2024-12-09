@@ -331,7 +331,7 @@ public enum OpCode {
     /**
      * (0x5e) Memory copying instruction
      */
-    MCOPY(0x5e, 3, 0, BASE_TIER),
+    MCOPY(0x5e, 3, 0, VERY_LOW_TIER),
 
     /*  Push Operations */
     /**
