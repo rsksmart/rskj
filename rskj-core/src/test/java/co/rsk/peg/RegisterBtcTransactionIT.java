@@ -36,7 +36,7 @@ public class RegisterBtcTransactionIT {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
     @Test
-    void registerNewBtcTransactionXXX() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void whenRegisterALegacyBtcTransactionTheBridgeShouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
         Repository repository = BridgeSupportTestUtil.createRepository();
         Repository track = repository.startTracking();
