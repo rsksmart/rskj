@@ -55,7 +55,7 @@ public class RegisterBtcTransactionIT {
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationConfig);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
-        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activationConfig);
+        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(track, bridgeConstants, bridgeStorageProvider, activationConfig);
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -64,14 +64,14 @@ public class RegisterBtcTransactionIT {
 
         bridgeStorageProvider.save();
 
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activationConfig, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, repository, btcLockSenderProvider);
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activationConfig, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
 
         Transaction rskTx = getRskTransaction();
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(btcPublicKey.getPubKey());
 
         RskAddress receiver = new RskAddress(key.getAddress());
-        co.rsk.core.Coin receiverBalance = repository.getBalance(receiver);
+        co.rsk.core.Coin receiverBalance = track.getBalance(receiver);
 
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
 
