@@ -24,11 +24,6 @@ package org.ethereum.vm;
  * Created by Sergio on 07/07/2016.
  */
 public class OpCodes {
-
-    private OpCodes() {
-
-    }
-
     /**
      * Halts execution (0x00)
      */
@@ -325,6 +320,14 @@ public class OpCodes {
      * (0x5b)
      */
     static final byte OP_JUMPDEST =0x5b ;
+    /**
+     * (0x5c)
+     */
+    public static final byte OP_TLOAD =0x5c ;
+    /**
+     * (0x5d)
+     */
+    public static final byte OP_TSTORE =0x5d ;
 
     /*  Push Operations */
     /**
@@ -664,4 +667,8 @@ public class OpCodes {
      * later deletion
      */
     static final byte OP_SUICIDE =(byte)0xff;
+
+    private OpCodes() {
+
+    }
 }

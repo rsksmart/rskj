@@ -329,6 +329,15 @@ public enum OpCode {
      */
     JUMPDEST(0x5b, 0, 0, SPECIAL_TIER),
 
+    /**
+     * (0x5c) Load word from transient storage at address
+     */
+    TLOAD(0x5c, 1, 1,  SPECIAL_TIER), // Will adjust the correct inputs and outputs later
+
+    /**
+     * (0x5c) Store word from transient storage at address
+     */
+    TSTORE(0x5d, 2, 0, SPECIAL_TIER), // Will adjust the correct inputs and outputs later
 
     /*  Push Operations */
     /**
