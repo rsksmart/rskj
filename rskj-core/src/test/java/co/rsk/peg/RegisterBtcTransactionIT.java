@@ -128,6 +128,24 @@ public class RegisterBtcTransactionIT {
         assertEquals(receiverBalanceBeforeRegisteringTx, receiverBalanceAfterRegisteringTx);
     }
 
+    @Test
+    void whenRegisterATransactionWithNegativeHeightItShouldThrowARegisterBtcTransactionException() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+        List<UTXO> activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs();
+        co.rsk.core.Coin receiverBalanceBeforeRegisteringTx = track.getBalance(receiverRskAccount);
+
+        bridgeSupport.registerBtcTransaction(rskTransaction, bitcoinTransaction.bitcoinSerialize(), -1, pmtWithTransactions.bitcoinSerialize());
+
+        bridgeSupport.save();
+        track.commit();
+
+        List<UTXO> activeFederationUtxosSizeAfterRegisteringTx = federationSupport.getActiveFederationBtcUTXOs();
+        co.rsk.core.Coin receiverBalanceAfterRegisteringTx = track.getBalance(receiverRskAccount);
+
+        assertEquals(activeFederationUtxosSizeBeforeRegisteringTx.size(), activeFederationUtxosSizeAfterRegisteringTx.size());
+        assertEquals(activeFederationUtxosSizeBeforeRegisteringTx, activeFederationUtxosSizeAfterRegisteringTx);
+        assertEquals(receiverBalanceBeforeRegisteringTx, receiverBalanceAfterRegisteringTx);
+    }
+
     private static UTXO getUtxo(BtcTransaction bitcoinTransaction, TransactionOutput output) {
         return new UTXO(
                 bitcoinTransaction.getHash(),
