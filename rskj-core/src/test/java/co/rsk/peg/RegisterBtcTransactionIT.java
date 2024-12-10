@@ -36,8 +36,6 @@ public class RegisterBtcTransactionIT {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private Transaction rskTx;
 
-
-
     @Test
     void registerNewBtcTransactionXXX() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activationsBeforeForks = ActivationConfigsForTest.all().forBlock(0);
@@ -77,7 +75,6 @@ public class RegisterBtcTransactionIT {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activationsBeforeForks);
 
-
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
@@ -111,8 +108,21 @@ public class RegisterBtcTransactionIT {
         bridgeSupport.save();
         track.commit();
 
+        TransactionOutput output = bitcoinTransaction.getOutput(0);
+        UTXO utxo = new UTXO(
+                bitcoinTransaction.getHash(),
+                output.getIndex(),
+                output.getValue(),
+                0,
+                bitcoinTransaction.isCoinBase(),
+                output.getScriptPubKey()
+        );
+
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
-        assertEquals(repository.getBalance(rskAddress), receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred)));
+        assertEquals(Collections.singletonList(utxo), federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred)), repository.getBalance(rskAddress));
+        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash()).isPresent());
+        assertEquals(rskExecutionBlock.getNumber(), bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash()).get());
     }
 
 
