@@ -767,6 +767,16 @@ public class VM {
         return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
+    private long computeMemoryCopyGas() {
+        DataWord length = stack.get(stack.size() - 3);
+        DataWord offset = stack.peek();
+        long copySize = Program.limitToMaxLong(length);
+        checkSizeArgument(copySize);
+        long newMemSize = memNeeded(offset, copySize);
+        // Note: 3 additional units are added outside because of the "Very Low Tier" configuration
+        return calcMemGas(oldMemSize, newMemSize, copySize);
+    }
+
     protected void doCODESIZE() {
         if (computeGas) {
             if (op == OpCode.EXTCODESIZE) {
@@ -1438,13 +1448,7 @@ public class VM {
 
     protected void doMCOPY() {
         if (computeGas) {
-            // See "Gas Cost" section on EIP 5656
-            // gas cost = 3 * (length + 31) + memory expansion cost + very low
-            long length = stack.get(stack.size() - 3).longValue();
-            long newMemSize = memNeeded(stack.peek(), length);
-            long cost = 3 * (length + 31) + calcMemGas(oldMemSize, newMemSize, 0) + 3; // TODO -> Check copy size
-
-            gasCost = GasCost.add(gasCost, cost);
+            gasCost = GasCost.add(gasCost, computeMemoryCopyGas());
             spendOpCodeGas();
         }
 
