@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -40,7 +41,7 @@ public class RegisterBtcTransactionIT {
     @Test
     void registerNewBtcTransactionXXX() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activationsBeforeForks = ActivationConfigsForTest.all().forBlock(0);
-
+        BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
         Repository repository = BridgeSupportTestUtil.createRepository();
         Repository track = repository.startTracking();
 
@@ -68,13 +69,14 @@ public class RegisterBtcTransactionIT {
                 .withActivations(activationsBeforeForks)
                 .build();
 
-        BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), Coin.COIN);
+        BtcECKey btcPublicKey = new BtcECKey();
+        Coin btcTransferred = Coin.COIN;
+        BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationsBeforeForks);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activationsBeforeForks);
 
-        BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -100,12 +102,17 @@ public class RegisterBtcTransactionIT {
         when(rskTx.getHash()).thenReturn(rskTxHash);
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+        org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+        co.rsk.core.Coin receiverBalance = repository.getBalance(rskAddress);
+
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
 
         bridgeSupport.save();
         track.commit();
 
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        assertEquals(repository.getBalance(rskAddress), receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred)));
     }
 
 
@@ -115,10 +122,11 @@ public class RegisterBtcTransactionIT {
         return new FederationStorageProviderImpl(bridgeStorageAccessor);
     }
 
-    private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin) {
+    private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin, BtcECKey pubKey) {
         BtcTransaction btcTx = new BtcTransaction(btcParams);
-        btcTx.addInput(PegTestUtils.createHash(0), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
+        btcTx.addInput(BitcoinTestUtils.createHash(0), 0, ScriptBuilder.createInputScript(null, pubKey));
         btcTx.addOutput(new TransactionOutput(btcParams, btcTx, coin, federationAddress));
+
         return btcTx;
     }
 
