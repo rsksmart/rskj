@@ -63,37 +63,37 @@ import static org.ethereum.vm.OpCode.CALL;
 /**
  * The Ethereum Virtual Machine (EVM) is responsible for initialization
  * and executing a transaction on a contract.
- *
+
  * It is a quasi-Turing-complete machine; the quasi qualification
  * comes from the fact that the computation is intrinsically bounded
  * through a parameter, gas, which limits the total amount of computation done.
- *
+
  * The EVM is a simple stack-based architecture. The word size of the machine
  * (and thus size of stack item) is 256-bit. This was chosen to facilitate
  * the SHA3-256 hash scheme and  elliptic-curve computations. The memory model
  * is a simple word-addressed byte array. The stack has an unlimited size.
  * The machine also has an independent storage model; this is similar in concept
  * to the memory but rather than a byte array, it is a word-addressable word array.
- *
+
  * Unlike memory, which is volatile, storage is non volatile and is
  * maintained as part of the system state. All locations in both storage
  * and memory are well-defined initially as zero.
- *
+
  * The machine does not follow the standard von Neumann architecture.
  * Rather than storing program code in generally-accessible memory or storage,
  * it is stored separately in a virtual ROM interactable only though
  * a specialised instruction.
- *
+
  * The machine can have exceptional execution for several reasons,
  * including stack underflows and invalid instructions. These unambiguously
  * and validly result in immediate halting of the machine with all state changes
  * left intact. The one piece of exceptional execution that does not leave
  * state changes intact is the out-of-gas (OOG) exception.
- *
+
  * Here, the machine halts immediately and reports the issue to
  * the execution agent (either the transaction processor or, recursively,
  * the spawning execution environment) and which will deal with it separately.
- *
+
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
@@ -1340,8 +1340,11 @@ public class VM {
     }
 
     protected void doTLOAD(){
-        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
-        // different types of calls
+        if (computeGas) {
+            gasCost = GasCost.TLOAD;
+            spendOpCodeGas();
+        }
+
         DataWord key = program.stackPop();
         if (isLogEnabled) {
             logger.info("Executing TLOAD with parameters: key = {}",  key);
@@ -1359,8 +1362,11 @@ public class VM {
     }
 
     protected void doTSTORE(){
-        //TODO: Gas cost calculation will be done here and also shared contexts verifications for
-        // different types of calls
+        if (computeGas) {
+            gasCost = GasCost.TSTORE;
+            spendOpCodeGas();
+        }
+
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException(program);
         }
