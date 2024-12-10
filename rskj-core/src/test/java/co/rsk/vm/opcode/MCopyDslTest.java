@@ -19,7 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.FileNotFoundException;
 import java.util.stream.Stream;
 
-public class MCopyDslTest {
+class MCopyDslTest {
 
     @Test
     void testMCOPY_whenNotActivated_behavesAsExpected() throws FileNotFoundException, DslProcessorException {
