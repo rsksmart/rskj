@@ -26,7 +26,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP445;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MCopyInputTest {
+class MCopyInputTest {
 
     private ActivationConfig.ForBlock activationConfig;
 
