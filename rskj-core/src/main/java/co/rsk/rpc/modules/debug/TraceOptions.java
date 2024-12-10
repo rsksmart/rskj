@@ -19,42 +19,62 @@
 
 package co.rsk.rpc.modules.debug;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
+import java.io.IOException;
+import java.io.Serial;
+import java.util.*;
+
+@JsonDeserialize(using = TraceOptions.Deserializer.class)
 public class TraceOptions {
 
-    private final List<String> supportedOptions;
     private final Set<String> disabledFields;
     private final Set<String> unsupportedOptions;
+    private boolean onlyTopCall;
+    private boolean withLog;
 
     public TraceOptions() {
-        supportedOptions = Arrays.stream(DisableOption.values()).map(option -> option.option)
-                .collect(Collectors.toList());
-
         this.disabledFields = new HashSet<>();
         this.unsupportedOptions = new HashSet<>();
     }
 
     public TraceOptions(Map<String, String> traceOptions) {
         this();
-
-        if (traceOptions == null || traceOptions.isEmpty()) return;
-
-        // Disabled Fields Parsing
-
-        for (DisableOption disableOption : DisableOption.values()) {
-            if (Boolean.parseBoolean(traceOptions.get(disableOption.option))) {
-                this.disabledFields.add(disableOption.value);
-            }
+        if (traceOptions == null) {
+            return;
         }
+        traceOptions.forEach(this::addOption);
+    }
 
-        // Unsupported Options
+    public final void addOption(String key, String value) {
+        switch (key) {
+            case "onlyTopCall" -> onlyTopCall = Boolean.parseBoolean(value);
+            case "withLog" -> withLog = Boolean.parseBoolean(value);
+            default -> addDisableOption(key, value);
+        }
+    }
 
-        traceOptions.keySet()
-                .stream()
-                .filter(key -> supportedOptions.stream().noneMatch(option -> option.equals(key)))
-                .forEach(unsupportedOptions::add);
+    private void addDisableOption(String key, String value) {
+        DisableOption disableOption = DisableOption.getDisableOption(key);
+        if (disableOption != null) {
+            if (Boolean.parseBoolean(value)) {
+                disabledFields.add(disableOption.value);
+            }
+        } else {
+            unsupportedOptions.add(key);
+        }
+    }
+
+    public boolean isOnlyTopCall() {
+        return onlyTopCall;
+    }
+
+    public boolean isWithLog() {
+        return withLog;
     }
 
     public Set<String> getDisabledFields() {
@@ -65,4 +85,33 @@ public class TraceOptions {
         return Collections.unmodifiableSet(unsupportedOptions);
     }
 
+    public static class Deserializer extends StdDeserializer<TraceOptions> {
+        @Serial
+        private static final long serialVersionUID = 4222943114560623356L;
+
+        public Deserializer() {
+            this(null);
+        }
+
+        public Deserializer(Class<?> vc) {
+            super(vc);
+        }
+
+        @Override
+        public TraceOptions deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+            JsonNode node = jp.getCodec().readTree(jp);
+            TraceOptions traceOptions = new TraceOptions();
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                if ("tracerConfig".equalsIgnoreCase(entry.getKey())) {
+                    JsonNode tracerConfigNode = entry.getValue();
+                    tracerConfigNode.fields().forEachRemaining(tracerConfigEntry
+                            -> traceOptions.addOption(tracerConfigEntry.getKey(), tracerConfigEntry.getValue().asText()));
+                }
+                traceOptions.addOption(entry.getKey(), entry.getValue().asText());
+            }
+            return traceOptions;
+        }
+    }
 }

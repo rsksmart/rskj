@@ -676,7 +676,7 @@ public class TransactionExecutor {
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
         else {
-            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender(signatureCache).getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender(signatureCache).getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()), tx.getData());
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 

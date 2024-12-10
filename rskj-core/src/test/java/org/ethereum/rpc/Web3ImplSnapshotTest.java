@@ -29,6 +29,9 @@ import co.rsk.mine.*;
 import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.evm.EvmModuleImpl;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -174,8 +177,9 @@ class Web3ImplSnapshotTest {
         );
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
-        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
-
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule dm = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
         ethereum.blockchain = blockchain;
 
         return new Web3Impl(

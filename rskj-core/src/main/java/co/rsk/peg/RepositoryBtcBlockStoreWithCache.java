@@ -126,8 +126,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             logger.trace("[get] Block with hash {} not found in storage", hash);
             return null;
         }
-        StoredBlock storedBlock = byteArrayToStoredBlock(ba);
-        return storedBlock;
+        return byteArrayToStoredBlock(ba);
     }
 
     @Override
@@ -200,7 +199,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
         if (depth < 0) {
             String message = String.format(
-                "Height provided is higher than chain head. provided: %n. chain head: %n",
+                "Height provided is higher than chain head. provided: %s. chain head: %s",
                 height,
                 chainHead.getHeight()
             );

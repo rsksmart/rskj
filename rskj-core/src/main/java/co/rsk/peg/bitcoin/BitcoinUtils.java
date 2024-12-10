@@ -1,20 +1,20 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
+
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.*;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import java.util.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Optional;
-
 public class BitcoinUtils {
-
+    public static final byte WITNESS_COMMITMENT_LENGTH = 36; // 4 bytes for header, 32 for hash
+    public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
+    protected static final byte[]  WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
     private static final int FIRST_INPUT_INDEX = 0;
 
@@ -80,5 +80,39 @@ public class BitcoinUtils {
             Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
             input.setScriptSig(emptyInputScript);
         }
+    }
+
+    public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx) {
+        Preconditions.checkState(tx.isCoinBase());
+        // If more than one witness commitment, take the last one as the valid one
+        List<TransactionOutput> outputsReversed = Lists.reverse(tx.getOutputs());
+
+        for (TransactionOutput output : outputsReversed) {
+            Script scriptPubKey = output.getScriptPubKey();
+            if (isWitnessCommitment(scriptPubKey)) {
+                Sha256Hash witnessCommitment = ScriptPattern.extractWitnessCommitmentHash(scriptPubKey);
+                return Optional.of(witnessCommitment);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static boolean isWitnessCommitment(Script scriptPubKey) {
+        final int MINIMUM_WITNESS_COMMITMENT_SIZE = 38;
+        byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
+
+        return scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE
+            && hasCommitmentStructure(scriptPubKeyProgram);
+    }
+
+    private static boolean hasCommitmentStructure(byte[] scriptPubKeyProgram) {
+        return scriptPubKeyProgram[0] == OP_RETURN
+            && scriptPubKeyProgram[1] == WITNESS_COMMITMENT_LENGTH
+            && hasWitnessCommitmentHeader(Arrays.copyOfRange(scriptPubKeyProgram, 2, 6));
+    }
+
+    private static boolean hasWitnessCommitmentHeader(byte[] header) {
+        return Arrays.equals(header, WITNESS_COMMITMENT_HEADER);
     }
 }

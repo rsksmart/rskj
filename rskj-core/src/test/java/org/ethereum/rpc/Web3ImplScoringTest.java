@@ -27,6 +27,9 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -51,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by ajlopez on 12/07/2017.
@@ -400,7 +404,9 @@ class Web3ImplScoringTest {
                 config.getCallGasCap()
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
-        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule dm = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
         return new Web3RskImpl(
                 rsk,
                 world.getBlockChain(),
