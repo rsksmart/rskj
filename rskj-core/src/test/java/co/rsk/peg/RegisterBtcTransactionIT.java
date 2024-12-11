@@ -6,8 +6,8 @@ import static org.mockito.Mockito.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
@@ -76,7 +76,7 @@ public class RegisterBtcTransactionIT {
 
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activationConfig, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
 
-        Transaction rskTx = getRskTransaction();
+        Transaction rskTx = TransactionUtils.createTransaction();
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(btcPublicKey.getPubKey());
 
         RskAddress receiver = new RskAddress(key.getAddress());
@@ -117,13 +117,6 @@ public class RegisterBtcTransactionIT {
                 bitcoinTransaction.isCoinBase(),
                 output.getScriptPubKey()
         );
-    }
-
-    private static Transaction getRskTransaction() {
-        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
-        Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(rskTxHash);
-        return rskTx;
     }
 
     private static FederationSupport getFederationSupport(FederationStorageProvider federationStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationConstants federationConstants) {
