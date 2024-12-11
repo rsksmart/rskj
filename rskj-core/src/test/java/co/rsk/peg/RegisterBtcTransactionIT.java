@@ -102,7 +102,7 @@ public class RegisterBtcTransactionIT {
         co.rsk.core.Coin expectedReceiverBalance = receiverBalance.add(co.rsk.core.Coin.fromBitcoin(BTC_TRANSFERRED));
 
         // Act
-        registerBtcTransactionOrFail();
+        registerBtcTransactionOrFail(btcBlockWithPmtHeight);
 
         // Assert
         try {
@@ -121,23 +121,38 @@ public class RegisterBtcTransactionIT {
     @Test
     void whenRegisterARepeatedLegacyBtcTransaction_shouldNotPerformAnyChange() {
         // Arrange
-        registerBtcTransactionOrFail();
+        registerBtcTransactionOrFail(btcBlockWithPmtHeight);
 
         RskAddress receiverBalance = new RskAddress(ecKey.getAddress());
         co.rsk.core.Coin expectedReceiverBalance = track.getBalance(receiverBalance);
         List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
 
         // Act
-        registerBtcTransactionOrFail();
+        registerBtcTransactionOrFail(btcBlockWithPmtHeight);
 
         // Assert
         assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
         assertEquals(expectedReceiverBalance, repository.getBalance(receiverBalance));
     }
 
-    private void registerBtcTransactionOrFail() {
+    @Test
+    void whenRegisterALegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() {
+        // Arrange
+        RskAddress receiverBalance = new RskAddress(ecKey.getAddress());
+        co.rsk.core.Coin expectedReceiverBalance = track.getBalance(receiverBalance);
+        List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+
+        // Act
+        registerBtcTransactionOrFail(-1);
+
+        // Assert
+        assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(receiverBalance));
+    }
+
+    private void registerBtcTransactionOrFail(int blockWithPmtHeight) {
         try {
-            bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+            bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), blockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
         } catch (Exception e) {
             fail(e.getMessage());
         }
