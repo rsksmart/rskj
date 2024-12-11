@@ -36,7 +36,7 @@ public class RegisterBtcTransactionIT {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
     @Test
-    void whenRegisterALegacyBtcTransactionTheBridgeShouldRegisterTheNewUtxoAndTransferTheRbtcBalance() {
+    void whenRegisterALegacyBtcTransaction_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() {
         ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
         Repository repository = BridgeSupportTestUtil.createRepository();
         Repository track = repository.startTracking();
