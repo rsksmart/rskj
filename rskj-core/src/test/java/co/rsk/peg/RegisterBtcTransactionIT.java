@@ -13,6 +13,7 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
@@ -31,8 +32,8 @@ import java.util.*;
 
 public class RegisterBtcTransactionIT {
 
-    private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-    private static final NetworkParameters btcParams = bridgeConstants.getBtcParams();
+    private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+    private final NetworkParameters btcParams = bridgeConstants.getBtcParams();
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
     @Test
@@ -47,7 +48,7 @@ public class RegisterBtcTransactionIT {
 
         Federation federation = P2shErpFederationBuilder.builder().build();
         FederationStorageProvider federationStorageProvider = getFederationStorageProvider(track, federation);
-        FederationSupport federationSupport = getFederationSupport(federationStorageProvider, activationConfig);
+        FederationSupport federationSupport = getFederationSupport(federationStorageProvider, activationConfig, bridgeConstants.getFederationConstants());
 
         BtcECKey btcPublicKey = new BtcECKey();
         Coin btcTransferred = Coin.COIN;
@@ -123,9 +124,9 @@ public class RegisterBtcTransactionIT {
         return rskTx;
     }
 
-    private static FederationSupport getFederationSupport(FederationStorageProvider federationStorageProvider, ActivationConfig.ForBlock activationsBeforeForks) {
+    private static FederationSupport getFederationSupport(FederationStorageProvider federationStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationConstants federationConstants) {
         return FederationSupportBuilder.builder()
-                .withFederationConstants(bridgeConstants.getFederationConstants())
+                .withFederationConstants(federationConstants)
                 .withFederationStorageProvider(federationStorageProvider)
                 .withActivations(activationsBeforeForks)
                 .build();
