@@ -1,0 +1,112 @@
+comment
+
+// CONTRACT CODE
+//
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
+
+contract TestMCopy {
+    constructor() {}
+
+    event OK();
+    event ERROR();
+
+    function checkMCopy() external {
+        if (testZeroLengthOutOfBoundsDestination()) {
+            emit OK();
+        } else {
+            emit ERROR();
+        }
+    }
+
+    function testZeroLengthOutOfBoundsDestination() public pure returns (bool status) {
+
+        bytes32 word1 = 0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f;
+        uint256 dst = (2 ** 256) - 1;
+
+        assembly {
+            mstore(0, word1)  // ... Initialize Memory
+            mcopy(dst, 1, 33) // Use MCOPY to copy 0 bytes starting from offset 0 to offset (2^256 - 1) in memory
+        }
+        status = true; // This line must not be reached as OOG Exception should occur when trying to execute MCOPY
+    }
+
+}
+
+// DESCRIPTION
+
+This contract contains two functions: checkMCopy, and testZeroLengthOutOfBoundsDestination.
+
+* checkMCopy simply checks the result of the memory copying against an expected value and:
+    - If returned value is true, then the OK event is emitted.
+    - ERROR event is emitted otherwise.
+
+* testZeroLengthOutOfBoundsDestination manage the memory by initializing the memory, and then executing MCOPY with the corresponding values as follows:
+    - First it stores a value to memory on offset 0
+    - Then uses MCOPY to copy (2 ** 256) - 1 bytes starting on offset 0 to offset 0
+    - Finally it returns true. (This line must never be reached, is added simply to avoid misleading and ugly code).
+
+Executing checkMCopy must never emit any event as executing the MCOPY instruction with the given parameters will produce an Out Of Gas exception.
+
+// CONTRACT BYTECODE
+
+6080604052348015600e575f80fd5b506101928061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80638c2bcab914610038578063cdae7c4114610042575b5f80fd5b610040610060565b005b61004a6100cd565b6040516100579190610143565b60405180910390f35b6100686100cd565b1561009e577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100cb565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b565b5f807e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f1b90505f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9050815f5260216001825e60019250505090565b5f8115159050919050565b61013d81610129565b82525050565b5f6020820190506101565f830184610134565b9291505056fea264697066735822122060f880beef67959f26009305aa48e5f6abb8519686cf1974841b6873d619dfb964736f6c634300081a0033
+
+// CONTRACT CALL
+
+- checkMCopy()
+
+    8c2bcab9
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TestMCopy contract
+transaction_build txTestMCopy
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b506101928061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80638c2bcab914610038578063cdae7c4114610042575b5f80fd5b610040610060565b005b61004a6100cd565b6040516100579190610143565b60405180910390f35b6100686100cd565b1561009e577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100cb565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b565b5f807e0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f5f1b90505f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff9050815f5260216001825e60019250505090565b5f8115159050919050565b61013d81610129565b82525050565b5f6020820190506101565f830184610134565b9291505056fea264697066735822122060f880beef67959f26009305aa48e5f6abb8519686cf1974841b6873d619dfb964736f6c634300081a0033
+    gas 200000
+    build
+
+# Create block to hold txTestMCopy transaction
+block_build b01
+    parent g00
+    transactions txTestMCopy
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Check txTestMCopy succeeded
+assert_tx_success txTestMCopy
+
+# Create transaction to execute checkMCopy() method
+transaction_build txTestMCopyOKCall
+    sender acc1
+    nonce 1
+    contract txTestMCopy
+    value 0
+    data 8c2bcab9
+    gas 30000
+    build
+
+# Create block to hold txTestMCopyOKCall transaction
+block_build b02
+    parent b01
+    transactions txTestMCopyOKCall
+    gasLimit 30000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02

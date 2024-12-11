@@ -108,6 +108,29 @@ class MCopyDslTest {
 
     }
 
+    @Test
+    void testMCOPY_zeroLengthOutOfBoundsDestination_runsOutOfGasAsExpected() throws FileNotFoundException, DslProcessorException {
+
+        DslParser parser = DslParser.fromResource("dsl/opcode/mcopy/testZeroLengthOutOfBoundsDestination.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // Assertions
+
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b01", 1);
+        assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopy", true);
+
+        assertBlockExistsAndContainsExpectedNumberOfTxs(world, "b02", 1);
+        TransactionReceipt txTestMCopyOKCallReceipt = assertTxExistsWithExpectedReceiptStatus(world, "txTestMCopyOKCall", false);
+
+        // Event Assertions
+
+        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "OK", null));
+        Assertions.assertEquals(0, TransactionReceiptUtil.getEventCount(txTestMCopyOKCallReceipt, "ERROR", null));
+
+    }
+
     private static Stream<Arguments> provideParametersForMCOPYTestCases() {
         return Stream.of(
 
