@@ -14,6 +14,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
 public class BitcoinTestUtils {
+    public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
 
     public static BtcECKey getBtcEcKeyFromSeed(String seed) {
         byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
@@ -215,7 +216,7 @@ public class BitcoinTestUtils {
         byte[] wrongWitnessCommitmentWithHeader = ByteUtil.merge(
             new byte[]{ScriptOpCodes.OP_RETURN},
             new byte[]{ScriptOpCodes.OP_PUSHDATA1},
-            new byte[]{BitcoinUtils.WITNESS_COMMITMENT_LENGTH},
+            new byte[]{(byte) BitcoinUtils.WITNESS_COMMITMENT_LENGTH},
             BitcoinUtils.WITNESS_COMMITMENT_HEADER,
             witnessCommitment.getBytes()
         );
@@ -230,7 +231,7 @@ public class BitcoinTestUtils {
         BtcTransaction coinbaseTx = createCoinbaseTransaction(networkParameters);
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, BitcoinUtils.WITNESS_RESERVED_VALUE.getBytes());
+        txWitness.setPush(0, WITNESS_RESERVED_VALUE.getBytes());
         coinbaseTx.setWitness(0, txWitness);
 
         return coinbaseTx;
