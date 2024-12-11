@@ -33,7 +33,7 @@ class BitcoinUtilsTest {
         LinkedList<BtcECKey> keys = new LinkedList<>(pubKeys);
         LinkedList<BtcECKey.ECDSASignature> sigs = new LinkedList<>(signatures);
 
-        while (sigs.size() > 0){
+        while (!sigs.isEmpty()){
             BtcECKey pubKey = keys.pollFirst();
             BtcECKey.ECDSASignature signature = sigs.getFirst();
             if(pubKey.verify(sigHash, signature)){
@@ -272,7 +272,7 @@ class BitcoinUtilsTest {
         assertFalse(btcTx.getInputs().isEmpty());
 
         List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
-        Script expectedRedeemScript = new Script( scriptSigChunks.get(scriptSigChunks.size()- 1).data);
+        Script expectedRedeemScript = new Script(scriptSigChunks.get(scriptSigChunks.size()- 1).data);
 
         // Act
         Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInputs().get(FIRST_INPUT_INDEX));
@@ -512,7 +512,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, BitcoinUtils.WITNESS_RESERVED_VALUE.getBytes());
+        txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
         btcTx.setWitness(0, txWitness);
 
         Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
