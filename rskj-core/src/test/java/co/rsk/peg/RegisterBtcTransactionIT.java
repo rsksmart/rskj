@@ -56,6 +56,7 @@ public class RegisterBtcTransactionIT {
         BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
         TransactionOutput output = bitcoinTransaction.getOutput(0);
         UTXO utxo = getUtxo(bitcoinTransaction, output);
+        List<UTXO> expectedFederationUtxos = Collections.singletonList(utxo);
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationConfig);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
@@ -76,11 +77,11 @@ public class RegisterBtcTransactionIT {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activationConfig, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
 
         Transaction rskTx = getRskTransaction();
-        int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(btcPublicKey.getPubKey());
 
         RskAddress receiver = new RskAddress(key.getAddress());
         co.rsk.core.Coin receiverBalance = track.getBalance(receiver);
+        co.rsk.core.Coin expectedReceiverBalance = receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred));
 
         // Act
         try {
@@ -102,10 +103,8 @@ public class RegisterBtcTransactionIT {
             fail(e.getMessage());
         }
 
-        List<UTXO> activeFederationUtxosSizeAfterRegisteringTx = federationSupport.getActiveFederationBtcUTXOs();
-        assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, activeFederationUtxosSizeAfterRegisteringTx.size());
-        assertEquals(Collections.singletonList(utxo), activeFederationUtxosSizeAfterRegisteringTx);
-        assertEquals(receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred)), repository.getBalance(receiver));
+        assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(receiver));
 
     }
 
