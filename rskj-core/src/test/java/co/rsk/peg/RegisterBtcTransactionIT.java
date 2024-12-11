@@ -1,5 +1,8 @@
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
@@ -21,13 +24,10 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.mockito.Mockito.*;
 
 public class RegisterBtcTransactionIT {
 
