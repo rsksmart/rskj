@@ -2283,7 +2283,7 @@ public class BridgeSupport {
         Sha256Hash witnessMerkleRoot,
         byte[] witnessReservedValue
     ) throws BridgeIllegalArgumentException {
-        Optional<Sha256Hash> expectedWitnessCommitment = findWitnessCommitment(coinbaseTransaction);
+        Optional<Sha256Hash> expectedWitnessCommitment = findWitnessCommitment(coinbaseTransaction, activations);
         Sha256Hash calculatedWitnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
 
         if (expectedWitnessCommitment.isEmpty() || !expectedWitnessCommitment.get().equals(calculatedWitnessCommitment)) {

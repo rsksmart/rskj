@@ -8,6 +8,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +84,7 @@ public class BitcoinUtils {
         }
     }
 
-    public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx) {
+    public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx, ActivationConfig.ForBlock activations) {
         Preconditions.checkState(tx.isCoinBase());
         // If more than one witness commitment, take the last one as the valid one
         List<TransactionOutput> outputsReversed = Lists.reverse(tx.getOutputs());
@@ -100,6 +102,11 @@ public class BitcoinUtils {
                     output,
                     e.getMessage()
                 );
+
+                if (!activations.isActive(ConsensusRule.RSKIP460)) {
+                    // Pre RSKIP460, the exception was not caught and the process could not continue
+                    throw e;
+                }
             }
         }
 
