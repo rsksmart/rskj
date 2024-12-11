@@ -36,7 +36,7 @@ public class RegisterBtcTransactionIT {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
     @Test
-    void whenRegisterALegacyBtcTransactionTheBridgeShouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void whenRegisterALegacyBtcTransactionTheBridgeShouldRegisterTheNewUtxoAndTransferTheRbtcBalance() {
         ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
         Repository repository = BridgeSupportTestUtil.createRepository();
         Repository track = repository.startTracking();
@@ -60,7 +60,12 @@ public class RegisterBtcTransactionIT {
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, bridgeConstants.getBtcParams());
+
+        try {
+            recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, bridgeConstants.getBtcParams());
+        } catch (BlockStoreException e) {
+            fail(e.getMessage());
+        }
 
         bridgeStorageProvider.save();
 
@@ -73,7 +78,11 @@ public class RegisterBtcTransactionIT {
         RskAddress receiver = new RskAddress(key.getAddress());
         co.rsk.core.Coin receiverBalance = track.getBalance(receiver);
 
-        bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+        try {
+            bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
 
         bridgeSupport.save();
         track.commit();
@@ -82,11 +91,18 @@ public class RegisterBtcTransactionIT {
         UTXO utxo = getUtxo(bitcoinTransaction, output);
         List<UTXO> activeFederationUtxosSizeAfterRegisteringTx = federationSupport.getActiveFederationBtcUTXOs();
 
+        try {
+            Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash());
+            assertTrue(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
+            assertEquals(rskExecutionBlock.getNumber(), heightIfBtcTxHashIsAlreadyProcessed.get());
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, activeFederationUtxosSizeAfterRegisteringTx.size());
         assertEquals(Collections.singletonList(utxo), activeFederationUtxosSizeAfterRegisteringTx);
         assertEquals(receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred)), repository.getBalance(receiver));
-        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash()).isPresent());
-        assertEquals(rskExecutionBlock.getNumber(), bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash()).get());
+
     }
 
     private static UTXO getUtxo(BtcTransaction bitcoinTransaction, TransactionOutput output) {
