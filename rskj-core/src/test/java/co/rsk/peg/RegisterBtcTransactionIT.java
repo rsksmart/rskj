@@ -38,6 +38,7 @@ public class RegisterBtcTransactionIT {
 
     @Test
     void whenRegisterALegacyBtcTransaction_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() {
+        // Arrange
         ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
         Repository repository = BridgeSupportTestUtil.createRepository();
         Repository track = repository.startTracking();
@@ -53,6 +54,8 @@ public class RegisterBtcTransactionIT {
         BtcECKey btcPublicKey = new BtcECKey();
         Coin btcTransferred = Coin.COIN;
         BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
+        TransactionOutput output = bitcoinTransaction.getOutput(0);
+        UTXO utxo = getUtxo(bitcoinTransaction, output);
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationConfig);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
@@ -79,6 +82,7 @@ public class RegisterBtcTransactionIT {
         RskAddress receiver = new RskAddress(key.getAddress());
         co.rsk.core.Coin receiverBalance = track.getBalance(receiver);
 
+        // Act
         try {
             bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
         } catch (Exception e) {
@@ -88,9 +92,7 @@ public class RegisterBtcTransactionIT {
         bridgeSupport.save();
         track.commit();
 
-        TransactionOutput output = bitcoinTransaction.getOutput(0);
-        UTXO utxo = getUtxo(bitcoinTransaction, output);
-        List<UTXO> activeFederationUtxosSizeAfterRegisteringTx = federationSupport.getActiveFederationBtcUTXOs();
+        // Assert
 
         try {
             Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash());
@@ -100,6 +102,7 @@ public class RegisterBtcTransactionIT {
             fail(e.getMessage());
         }
 
+        List<UTXO> activeFederationUtxosSizeAfterRegisteringTx = federationSupport.getActiveFederationBtcUTXOs();
         assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, activeFederationUtxosSizeAfterRegisteringTx.size());
         assertEquals(Collections.singletonList(utxo), activeFederationUtxosSizeAfterRegisteringTx);
         assertEquals(receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred)), repository.getBalance(receiver));
