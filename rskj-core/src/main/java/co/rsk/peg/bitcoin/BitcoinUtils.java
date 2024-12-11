@@ -88,10 +88,18 @@ public class BitcoinUtils {
         List<TransactionOutput> outputsReversed = Lists.reverse(tx.getOutputs());
 
         for (TransactionOutput output : outputsReversed) {
-            Script scriptPubKey = output.getScriptPubKey();
-            if (isWitnessCommitment(scriptPubKey)) {
-                Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKey);
-                return Optional.of(witnessCommitment);
+            try {
+                Script scriptPubKey = output.getScriptPubKey();
+                if (isWitnessCommitment(scriptPubKey)) {
+                    Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKey);
+                    return Optional.of(witnessCommitment);
+                }
+            } catch (ScriptException e) {
+                logger.debug(
+                    "[findWitnessCommitment] Failed to extract witness commitment from output {}. {}",
+                    output,
+                    e.getMessage()
+                );
             }
         }
 
