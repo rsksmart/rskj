@@ -12,9 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BitcoinUtils {
-    public static final byte WITNESS_COMMITMENT_LENGTH = 36; // 4 bytes for header, 32 for hash
-    public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
     protected static final byte[]  WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
+    protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
+    private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra by for OP_RETURN and another one for data length
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
     private static final int FIRST_INPUT_INDEX = 0;
 
@@ -90,7 +90,7 @@ public class BitcoinUtils {
         for (TransactionOutput output : outputsReversed) {
             Script scriptPubKey = output.getScriptPubKey();
             if (isWitnessCommitment(scriptPubKey)) {
-                Sha256Hash witnessCommitment = ScriptPattern.extractWitnessCommitmentHash(scriptPubKey);
+                Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKey);
                 return Optional.of(witnessCommitment);
             }
         }
@@ -99,7 +99,6 @@ public class BitcoinUtils {
     }
 
     private static boolean isWitnessCommitment(Script scriptPubKey) {
-        final int MINIMUM_WITNESS_COMMITMENT_SIZE = 38;
         byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
 
         return scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE
@@ -114,5 +113,22 @@ public class BitcoinUtils {
 
     private static boolean hasWitnessCommitmentHeader(byte[] header) {
         return Arrays.equals(header, WITNESS_COMMITMENT_HEADER);
+    }
+
+    /**
+     * Retrieves the hash from a segwit commitment (in an output of the coinbase transaction).
+     */
+    private static Sha256Hash extractWitnessCommitmentHash(Script scriptPubKey) {
+        byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
+        Preconditions.checkState(scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE);
+
+        final int WITNESS_COMMITMENT_HASH_START = 6; // 4 bytes for header + OP_RETURN + data length
+        byte[] witnessCommitmentHash = Arrays.copyOfRange(
+            scriptPubKeyProgram,
+            WITNESS_COMMITMENT_HASH_START,
+            MINIMUM_WITNESS_COMMITMENT_SIZE
+        );
+
+        return Sha256Hash.wrap(witnessCommitmentHash);
     }
 }
