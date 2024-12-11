@@ -71,13 +71,7 @@ class MCopyGasTest {
         program.stackPush(DataWord.valueOf(dst));
 
         // When
-        try {
-            while (!program.isStopped()) {
-                vm.step(program);
-            }
-        } catch(Program.StackTooSmallException e) {
-            Assertions.fail("Stack too small exception");
-        }
+        executeProgram(vm, program);
 
         // Then
         Assertions.assertEquals(0, program.getStack().size());
@@ -93,6 +87,75 @@ class MCopyGasTest {
                 Arguments.of(new String[]{ "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f", "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f", "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f", "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f", "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf", "c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf", "e0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff" }, 256, 256, 1, 9),
                 Arguments.of(new String[]{ "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f", "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f", "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f", "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f", "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf", "c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf", "e0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff" }, 0, 256, 256, 27)
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideParametersForMCOPYOutOfGasExceptionTest")
+    void testMCopy_ShouldThrowOutOfGasException(String[] initMemory, long dst, long src, long length) {
+        // Given
+        byte[] code = compiler.compile("MCOPY");
+        VM vm = new VM(vmConfig, precompiledContracts);
+
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        int address = 0;
+        for (String entry : initMemory) {
+            program.memorySave(DataWord.valueOf(address), DataWord.valueFromHex(entry));
+            address += 32;
+        }
+
+        program.stackPush(DataWord.valueOf(length)); // Mind the stack order!!
+        program.stackPush(DataWord.valueOf(src));
+        program.stackPush(DataWord.valueOf(dst));
+
+        // Then
+        Program.OutOfGasException ex = Assertions.assertThrows(Program.OutOfGasException.class, () -> executeProgram(vm, program));
+        Assertions.assertTrue(ex.getMessage().contains("Not enough gas for 'MCOPY' operation"));
+    }
+
+    private static Stream<Arguments> provideParametersForMCOPYOutOfGasExceptionTest() {
+
+        String[] emptyMemory = new String[]{};
+        String[] existentMemory = new String[]{
+                "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+                "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+                "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+                "606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+                "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+                "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+                "c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf",
+                "e0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
+        };
+
+        return Stream.of(
+
+                // From an empty memory
+                Arguments.of(emptyMemory, Program.MAX_MEMORY, 0, 1),
+                Arguments.of(emptyMemory, Program.MAX_MEMORY, 0, 1),
+                Arguments.of(emptyMemory, Program.MAX_MEMORY, 0, 1),
+                Arguments.of(emptyMemory, 0, 0, Program.MAX_MEMORY + 1),
+                Arguments.of(emptyMemory, 0, 0, Program.MAX_MEMORY + 1),
+                Arguments.of(emptyMemory, 0, 0, Program.MAX_MEMORY + 1),
+
+                // From existent memory
+                Arguments.of(existentMemory, Program.MAX_MEMORY, 0, 1),
+                Arguments.of(existentMemory, Program.MAX_MEMORY, 0, 1),
+                Arguments.of(existentMemory, Program.MAX_MEMORY, 0, 1),
+                Arguments.of(existentMemory, 0, 0, Program.MAX_MEMORY + 1),
+                Arguments.of(existentMemory, 0, 0, Program.MAX_MEMORY + 1),
+                Arguments.of(existentMemory, 0, 0, Program.MAX_MEMORY + 1)
+
+        );
+    }
+
+    private static void executeProgram(VM vm, Program program) {
+        try {
+            while (!program.isStopped()) {
+                vm.step(program);
+            }
+        } catch(Program.StackTooSmallException e) {
+            Assertions.fail("Stack too small exception");
+        }
     }
 
 }
