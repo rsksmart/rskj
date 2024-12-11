@@ -325,6 +325,10 @@ public class OpCodes {
      * (0x5b)
      */
     static final byte OP_JUMPDEST =0x5b ;
+    /**
+     * (0x5e)
+     */
+    public static final byte OP_MCOPY = 0x5e;
 
     /*  Push Operations */
     /**

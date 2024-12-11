@@ -767,6 +767,16 @@ public class VM {
         return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
+    private long computeMemoryCopyGas() {
+        DataWord length = stack.get(stack.size() - 3);
+        DataWord offset = stack.peek();
+        long copySize = Program.limitToMaxLong(length);
+        checkSizeArgument(copySize);
+        long newMemSize = memNeeded(offset, copySize);
+        // Note: 3 additional units are added outside because of the "Very Low Tier" configuration
+        return calcMemGas(oldMemSize, newMemSize, copySize);
+    }
+
     protected void doCODESIZE() {
         if (computeGas) {
             if (op == OpCode.EXTCODESIZE) {
@@ -1436,6 +1446,25 @@ public class VM {
         program.step();
     }
 
+    protected void doMCOPY() {
+        if (computeGas) {
+            gasCost = GasCost.add(gasCost, computeMemoryCopyGas());
+            spendOpCodeGas();
+        }
+
+        // EXECUTION PHASE
+        DataWord dst = program.stackPop();
+        DataWord src = program.stackPop();
+        DataWord length = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = "dst: " + dst + " src: " + src + " length: " + length;
+        }
+
+        program.memoryCopy(dst.intValue(), src.intValue(), length.intValue());
+        program.step();
+    }
+
     protected void doCREATE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException(program);
@@ -1992,6 +2021,12 @@ public class VM {
             break;
             case OpCodes.OP_JUMPDEST: doJUMPDEST();
             break;
+            case OpCodes.OP_MCOPY:
+                if (!activations.isActive(RSKIP445)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doMCOPY();
+                break;
             case OpCodes.OP_CREATE: doCREATE();
             break;
             case OpCodes.OP_CREATE2:
