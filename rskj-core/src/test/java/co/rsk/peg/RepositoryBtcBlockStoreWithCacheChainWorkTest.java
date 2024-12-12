@@ -2,16 +2,10 @@ package co.rsk.peg;
 
 import static co.rsk.bitcoinj.core.StoredBlock.COMPACT_SERIALIZED_SIZE_LEGACY;
 import static co.rsk.bitcoinj.core.StoredBlock.COMPACT_SERIALIZED_SIZE_V2;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -20,6 +14,7 @@ import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.trie.Trie;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -37,7 +32,7 @@ import org.spongycastle.util.encoders.Hex;
 
 class RepositoryBtcBlockStoreWithCacheChainWorkTest {
 
-    private final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
+    private static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
     // Max chain work to fit in 12 bytes
     private static final BigInteger MAX_WORK_V1 = new BigInteger(/* 12 bytes */ "ffffffffffffffffffffffff", 16);
     // Chain work too large to fit in 12 bytes
@@ -54,16 +49,15 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters mainneNetworkParameters = bridgeMainnetConstants.getBtcParams();
-    private Repository repository;
-    private Map<Sha256Hash, StoredBlock> cacheBlocks;
     private static final RskAddress BRIDGE_ADDR = PrecompiledContracts.BRIDGE_ADDR;
-    private BridgeStorageProvider bridgeStorageProvider;
+
+    private Repository repository;
     private RepositoryBtcBlockStoreWithCache repositoryBtcBlockStoreWithCache;
 
     // Just an arbitrary block
-    private static final String blockHeader = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
-    private static final int blockHeight = 849137;
-    private static final BtcBlock BLOCK = new BtcBlock(mainneNetworkParameters, Hex.decode(blockHeader));
+    private static final String BLOCK_HEADER = "00e00820925b77c9ff4d0036aa29f3238cde12e9af9d55c34ed30200000000000000000032a9fa3e12ef87a2327b55db6a16a1227bb381db8b269d90aa3a6e38cf39665f91b47766255d0317c1b1575f";
+    private static final int BLOCK_HEIGHT = 849137;
+    private static final BtcBlock BLOCK = new BtcBlock(mainneNetworkParameters, Hex.decode(BLOCK_HEADER));
 
     @BeforeEach
     void setUp() {
@@ -73,7 +67,9 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     }
 
     void arrange(ActivationConfig.ForBlock activations) {
-        bridgeStorageProvider = new BridgeStorageProvider(repository, BRIDGE_ADDR, mainneNetworkParameters, activations);
+        Map<Sha256Hash, StoredBlock> cacheBlocks = new HashMap<>();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository,
+            BRIDGE_ADDR, mainneNetworkParameters, activations);
 
         repositoryBtcBlockStoreWithCache = new RepositoryBtcBlockStoreWithCache(
             mainneNetworkParameters,
@@ -90,13 +86,11 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     @MethodSource("invalidChainWorkForV1")
     void put_preRskip_whenInvalidChainWorkForV1_shouldFail(BigInteger chainWork) {
         arrange(arrowHeadActivations);
-        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
-        IllegalArgumentException actualException = Assertions.assertThrows(
-            IllegalArgumentException.class, () -> {
-                repositoryBtcBlockStoreWithCache.put(storedBlock);
-            });
+        IllegalArgumentException actualException = assertThrows(
+            IllegalArgumentException.class, () -> repositoryBtcBlockStoreWithCache.put(storedBlock));
 
         String expectedMessage = "The given number does not fit in 12";
         String actualMessage = actualException.getMessage();
@@ -115,7 +109,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     @MethodSource("validChainWorkForV1")
     void put_preRskip_whenValidChainWorkForV1_shouldStoreBlock(BigInteger chainWork) {
         arrange(arrowHeadActivations);
-        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
         repositoryBtcBlockStoreWithCache.put(storedBlock);
@@ -156,7 +150,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
         int expectedCompactSerializedSize = COMPACT_SERIALIZED_SIZE_V2;
 
         arrange(lovellActivations);
-        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
         repositoryBtcBlockStoreWithCache.put(storedBlock);
@@ -196,13 +190,12 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     @MethodSource("invalidChainWorkForV2")
     void put_postRskip_whenInvalidChainWorkForV2_shouldFail(BigInteger chainWork) {
         arrange(lovellActivations);
-        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock storedBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
-        IllegalArgumentException actualException = Assertions.assertThrows(
-            IllegalArgumentException.class, () -> {
-                repositoryBtcBlockStoreWithCache.put(storedBlock);
-            });
+        IllegalArgumentException actualException = assertThrows(
+            IllegalArgumentException.class, () -> repositoryBtcBlockStoreWithCache.put(storedBlock)
+        );
 
         String expectedMessage = "The given number does not fit in 32";
         String actualMessage = actualException.getMessage();
@@ -219,7 +212,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     @MethodSource("validChainWorkForV1")
     void get_preRskip_whenValidChainWorkForV1_shouldGetStoredBlock(BigInteger chainWork) {
         arrange(arrowHeadActivations);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
         Sha256Hash expectedHash = expectedStoreBlock.getHeader().getHash();
         arrangeRepositoryWithExpectedStoredBlock(expectedStoreBlock);
 
@@ -249,7 +242,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     @MethodSource("validChainWorkForV1")
     void get_postRskip_whenChainWorkForV1_shouldGetStoredBlock(BigInteger chainWork) {
         arrange(lovellActivations);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
         Sha256Hash expectedHash = expectedStoreBlock.getHeader().getHash();
         arrangeRepositoryWithExpectedStoredBlockV2(expectedStoreBlock);
 
@@ -279,7 +272,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     @MethodSource("validChainWorkForV2")
     void get_postRskip_whenStoredBLochHasChainWorkOver12Bytes_shouldGetStoredBlock(BigInteger chainWork) {
         arrange(lovellActivations);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
         Sha256Hash expectedHash = expectedStoreBlock.getHeader().getHash();
         arrangeRepositoryWithExpectedStoredBlockV2(expectedStoreBlock);
 
@@ -300,7 +293,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void getChainHead_preRskip_whenValidChainWorkForV1_shouldGetChainHead(BigInteger chainWork) {
         arrange(arrowHeadActivations);
         reset(repository);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         arrangeRepositoryWithExpectedChainHead(expectedStoreBlock);
 
@@ -330,7 +323,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void getChainHead_postRskip_whenChainWorkForV1_shouldGetChainHead(BigInteger chainWork) {
         arrange(lovellActivations);
         reset(repository);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         arrangeRepositoryWithChainHeadV2(expectedStoreBlock);
 
@@ -360,7 +353,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void getChainHead_postRskip_whenStoredBLochHasChainWorkOver12Bytes_shouldGetChainHead(BigInteger chainWork) {
         arrange(lovellActivations);
         reset(repository);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         arrangeRepositoryWithChainHeadV2(expectedStoreBlock);
 
@@ -381,7 +374,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void setChainHead_preRskip_whenValidChainWorkForV1_shouldStoreChainHead(BigInteger chainWork) {
         arrange(arrowHeadActivations);
         reset(repository);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
         repositoryBtcBlockStoreWithCache.setChainHead(expectedStoreBlock);
@@ -402,7 +395,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void setChainHead_postRskip_whenChainWorkForV1_shouldStoreChainHead(BigInteger chainWork) {
         arrange(lovellActivations);
         reset(repository);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
         repositoryBtcBlockStoreWithCache.setChainHead(expectedStoreBlock);
@@ -423,7 +416,7 @@ class RepositoryBtcBlockStoreWithCacheChainWorkTest {
     void setChainHead_postRskip_whenStoredBLochHasChainWorkOver12Bytes1_shouldStoreChainHead(BigInteger chainWork) {
         arrange(lovellActivations);
         reset(repository);
-        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, blockHeight);
+        StoredBlock expectedStoreBlock = new StoredBlock(BLOCK, chainWork, BLOCK_HEIGHT);
 
         // act
         repositoryBtcBlockStoreWithCache.setChainHead(expectedStoreBlock);
