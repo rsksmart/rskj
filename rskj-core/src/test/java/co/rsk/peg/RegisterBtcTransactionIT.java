@@ -25,7 +25,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -39,7 +38,7 @@ public class RegisterBtcTransactionIT {
     @Test
     void whenRegisterALegacyBtcTransaction_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws Exception {
         // Arrange
-        ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.all().forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
         Repository repository = BridgeSupportTestUtil.createRepository();
         Repository track = repository.startTracking();
         Block rskExecutionBlock = getRskExecutionBlock();
@@ -49,7 +48,7 @@ public class RegisterBtcTransactionIT {
 
         Federation federation = P2shErpFederationBuilder.builder().build();
         FederationStorageProvider federationStorageProvider = getFederationStorageProvider(track, federation);
-        FederationSupport federationSupport = getFederationSupport(federationStorageProvider, activationConfig, bridgeConstants.getFederationConstants());
+        FederationSupport federationSupport = getFederationSupport(federationStorageProvider, activations, bridgeConstants.getFederationConstants());
 
         BtcECKey btcPublicKey = new BtcECKey();
         Coin btcTransferred = Coin.COIN;
@@ -58,9 +57,9 @@ public class RegisterBtcTransactionIT {
         UTXO utxo = getUtxo(bitcoinTransaction, output);
         List<UTXO> expectedFederationUtxos = Collections.singletonList(utxo);
 
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activationConfig);
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
-        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(track, bridgeConstants, bridgeStorageProvider, activationConfig);
+        BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(track, bridgeConstants, bridgeStorageProvider, activations);
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -70,7 +69,7 @@ public class RegisterBtcTransactionIT {
 
         bridgeStorageProvider.save();
 
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activationConfig, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activations, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
 
         Transaction rskTx = TransactionUtils.createTransaction();
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(btcPublicKey.getPubKey());
@@ -107,11 +106,11 @@ public class RegisterBtcTransactionIT {
         );
     }
 
-    private static FederationSupport getFederationSupport(FederationStorageProvider federationStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationConstants federationConstants) {
+    private static FederationSupport getFederationSupport(FederationStorageProvider federationStorageProvider, ActivationConfig.ForBlock activationConfig, FederationConstants federationConstants) {
         return FederationSupportBuilder.builder()
                 .withFederationConstants(federationConstants)
                 .withFederationStorageProvider(federationStorageProvider)
-                .withActivations(activationsBeforeForks)
+                .withActivations(activationConfig)
                 .build();
     }
 
