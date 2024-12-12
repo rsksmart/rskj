@@ -17,6 +17,8 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupportTestUtil.createFederationStorageProvider;
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static co.rsk.peg.PegTestUtils.createFederation;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -36,8 +38,6 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
@@ -56,7 +56,6 @@ import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.*;
-import co.rsk.trie.Trie;
 import com.google.common.collect.Lists;
 import java.io.*;
 import java.math.BigInteger;
@@ -75,7 +74,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
@@ -4218,14 +4216,5 @@ public class BridgeSupportIT {
         when(currentStored.getHeader()).thenReturn(currentBlock);
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
-    }
-
-    public static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-    }
-
-    private FederationStorageProvider createFederationStorageProvider(Repository repository) {
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        return new FederationStorageProviderImpl(bridgeStorageAccessor);
     }
 }
