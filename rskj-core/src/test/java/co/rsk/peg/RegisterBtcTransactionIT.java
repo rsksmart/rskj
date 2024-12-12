@@ -50,8 +50,7 @@ public class RegisterBtcTransactionIT {
         Coin btcTransferred = Coin.COIN;
         BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
         TransactionOutput output = bitcoinTransaction.getOutput(0);
-        UTXO utxo = getUtxo(bitcoinTransaction, output);
-        List<UTXO> expectedFederationUtxos = Collections.singletonList(utxo);
+        List<UTXO> expectedFederationUtxos = Collections.singletonList(getUtxo(bitcoinTransaction, output));
 
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
