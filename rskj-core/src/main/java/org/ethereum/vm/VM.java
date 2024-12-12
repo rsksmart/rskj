@@ -769,10 +769,19 @@ public class VM {
 
     private long computeMemoryCopyGas() {
         DataWord length = stack.get(stack.size() - 3);
-        DataWord offset = stack.peek();
+        DataWord src = stack.get(stack.size() - 2);
+        DataWord dst = stack.peek();
+
         long copySize = Program.limitToMaxLong(length);
         checkSizeArgument(copySize);
+
+        DataWord offset = dst;
+        if (src.value().compareTo(dst.value()) > 0) {
+            offset = src;
+        }
+
         long newMemSize = memNeeded(offset, copySize);
+
         // Note: 3 additional units are added outside because of the "Very Low Tier" configuration
         return calcMemGas(oldMemSize, newMemSize, copySize);
     }
