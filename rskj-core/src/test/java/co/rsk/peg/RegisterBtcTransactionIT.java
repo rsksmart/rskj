@@ -82,7 +82,7 @@ class RegisterBtcTransactionIT {
         btcTransferred = bridgeConstants.getMinimumPeginTxValue(activations);
         bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
 
-        pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
+        pmtWithTransactions = createValidPmtForTransactions(List.of(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
 
