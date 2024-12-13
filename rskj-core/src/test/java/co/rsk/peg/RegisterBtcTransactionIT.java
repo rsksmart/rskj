@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 class RegisterBtcTransactionIT {
-
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcParams = bridgeConstants.getBtcParams();
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
