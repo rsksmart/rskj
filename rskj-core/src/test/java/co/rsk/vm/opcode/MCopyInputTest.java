@@ -53,7 +53,7 @@ class MCopyInputTest {
 
     @ParameterizedTest
     @MethodSource("provideParametersForOOGCases")
-    void testMCopy_ShouldThrowOOGException(String[] initMemory, int dst, int src, long length) {
+    void testMCopy_ShouldThrowOOGException(String[] initMemory, long dst, long src, long length) {
         // Given
         byte[] code = compiler.compile("MCOPY");
         VM vm = new VM(vmConfig, precompiledContracts);
@@ -77,9 +77,18 @@ class MCopyInputTest {
 
     private static Stream<Arguments> provideParametersForOOGCases() {
         return Stream.of(
+                // Special Border Cases
                 Arguments.of(new String[]{ "0000000000000000000000000000000000000000000000000000000000000000" }, 0, 0, -1),
                 Arguments.of(new String[]{}, 0, 0, -(2 * (Long.MAX_VALUE / 3))),
-                Arguments.of(new String[]{}, 0, 0, Integer.MAX_VALUE + 1L)
+                Arguments.of(new String[]{}, 0, 0, Integer.MAX_VALUE + 1L),
+                // Max Memory Limits
+                Arguments.of(new String[]{}, Program.MAX_MEMORY, 0, 1L),
+                Arguments.of(new String[]{}, 0, Program.MAX_MEMORY, 1L),
+                Arguments.of(new String[]{}, 0, 0, Program.MAX_MEMORY + 1),
+                // Negative Values
+                Arguments.of(new String[]{}, -1L, 0, 0),
+                Arguments.of(new String[]{}, 0, -1L, 0),
+                Arguments.of(new String[]{}, 0, 0, -1L)
         );
     }
 
