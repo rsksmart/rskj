@@ -65,7 +65,12 @@ class RegisterBtcTransactionIT {
 
         Federation federation = P2shErpFederationBuilder.builder().build();
         FederationStorageProvider federationStorageProvider = getFederationStorageProvider(track, federation);
-        federationSupport = getFederationSupport(federationStorageProvider, activations, bridgeConstants.getFederationConstants());
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationConstants)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withActivations(activations)
+                .build();
 
         bridgeStorageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
@@ -85,7 +90,18 @@ class RegisterBtcTransactionIT {
 
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, bridgeConstants.getBtcParams());
         bridgeStorageProvider.save();
-        bridgeSupport = getBridgeSupport(bridgeEventLogger, bridgeStorageProvider, activations, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
+        bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(activations)
+                .withEventLogger(bridgeEventLogger)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withRepository(track)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .build();
     }
 
     @Test
@@ -145,14 +161,6 @@ class RegisterBtcTransactionIT {
         );
     }
 
-    private static FederationSupport getFederationSupport(FederationStorageProvider federationStorageProvider, ActivationConfig.ForBlock activationConfig, FederationConstants federationConstants) {
-        return FederationSupportBuilder.builder()
-                .withFederationConstants(federationConstants)
-                .withFederationStorageProvider(federationStorageProvider)
-                .withActivations(activationConfig)
-                .build();
-    }
-
     private FederationStorageProvider getFederationStorageProvider(Repository track, Federation federation) {
         FederationStorageProvider federationStorageProvider = createFederationStorageProvider(track);
         federationStorageProvider.setNewFederation(federation);
@@ -166,21 +174,6 @@ class RegisterBtcTransactionIT {
                 bridgeConstants.getFeePerKbConstants(),
                 feePerKbStorageProvider
         );
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeEventLoggerImpl bridgeEventLogger, BridgeStorageProvider bridgeStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationSupport federationSupport, FeePerKbSupport feePerKbSupport, Block rskExecutionBlock, BtcBlockStoreWithCache.Factory btcBlockStoreFactory, Repository repository, BtcLockSenderProvider btcLockSenderProvider) {
-        return bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstants)
-                .withProvider(bridgeStorageProvider)
-                .withEventLogger(bridgeEventLogger)
-                .withActivations(activationsBeforeForks)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withRepository(repository)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
     }
 
     private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin, BtcECKey pubKey) {
