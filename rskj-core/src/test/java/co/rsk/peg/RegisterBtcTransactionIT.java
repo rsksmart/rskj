@@ -15,6 +15,7 @@ import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -60,11 +61,13 @@ public class RegisterBtcTransactionIT {
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
 
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activations, new ArrayList<>()));
+
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, bridgeConstants.getBtcParams());
 
         bridgeStorageProvider.save();
 
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeStorageProvider, activations, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeEventLogger, bridgeStorageProvider, activations, federationSupport, feePerKbSupport, rskExecutionBlock, btcBlockStoreFactory, track, btcLockSenderProvider);
 
         Transaction rskTx = TransactionUtils.createTransaction();
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(btcPublicKey.getPubKey());
@@ -86,6 +89,8 @@ public class RegisterBtcTransactionIT {
         assertEquals(rskExecutionBlock.getNumber(), heightIfBtcTxHashIsAlreadyProcessed.get());
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
         assertEquals(expectedReceiverBalance, repository.getBalance(receiver));
+
+        verify(bridgeEventLogger, times(1)).logPeginBtc(receiver, bitcoinTransaction, btcTransferred, 0);
     }
 
     private static UTXO getUtxo(BtcTransaction bitcoinTransaction, TransactionOutput output) {
@@ -130,10 +135,11 @@ public class RegisterBtcTransactionIT {
         return Block.createBlockFromHeader(blockHeader, true);
     }
 
-    private BridgeSupport getBridgeSupport(BridgeStorageProvider bridgeStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationSupport federationSupport, FeePerKbSupport feePerKbSupport, Block rskExecutionBlock, BtcBlockStoreWithCache.Factory btcBlockStoreFactory, Repository repository, BtcLockSenderProvider btcLockSenderProvider) {
+    private BridgeSupport getBridgeSupport(BridgeEventLoggerImpl bridgeEventLogger, BridgeStorageProvider bridgeStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationSupport federationSupport, FeePerKbSupport feePerKbSupport, Block rskExecutionBlock, BtcBlockStoreWithCache.Factory btcBlockStoreFactory, Repository repository, BtcLockSenderProvider btcLockSenderProvider) {
         return bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstants)
                 .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
                 .withActivations(activationsBeforeForks)
                 .withFederationSupport(federationSupport)
                 .withFeePerKbSupport(feePerKbSupport)
