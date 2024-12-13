@@ -1478,7 +1478,7 @@ public class VM {
             hint = "dst: " + dst + " src: " + src + " length: " + length;
         }
 
-        program.memoryCopy(getPositiveInt(dst), getPositiveInt(src), getPositiveInt(length));
+        program.memoryCopy(dst.intValueSafe(), src.intValueSafe(), length.intValueSafe());
         program.step();
     }
 

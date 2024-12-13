@@ -85,9 +85,7 @@ class MCopyInputTest {
                 Arguments.of(new String[]{}, Program.MAX_MEMORY, 0, 1L),
                 Arguments.of(new String[]{}, 0, Program.MAX_MEMORY, 1L),
                 Arguments.of(new String[]{}, 0, 0, Program.MAX_MEMORY + 1),
-                // Negative Values
-                Arguments.of(new String[]{}, -1L, 0, 0),
-                Arguments.of(new String[]{}, 0, -1L, 0),
+                // Negative Length
                 Arguments.of(new String[]{}, 0, 0, -1L)
         );
     }
