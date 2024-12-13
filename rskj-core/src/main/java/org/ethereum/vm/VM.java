@@ -125,14 +125,6 @@ public class VM {
         }
     }
 
-    private int getPositiveInt(DataWord value) {
-        int intVal = value.intValue();
-        if (intVal < 0) {
-            throw Program.ExceptionHelper.notEnoughOpGas(program, op, Long.MAX_VALUE, program.getRemainingGas());
-        }
-        return intVal;
-    }
-
     private long calcMemGas(long oldMemSize, long newMemSize, long copySize) {
         long currentGasCost = 0;
 
