@@ -14,7 +14,12 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.feeperkb.FeePerKbStorageProvider;
+import co.rsk.peg.feeperkb.FeePerKbStorageProviderImpl;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
+import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
@@ -41,7 +46,7 @@ public class RegisterBtcTransactionIT {
         Block rskExecutionBlock = getRskExecutionBlock();
 
         BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-        FeePerKbSupport feePerKbSupport = getFeePerKbSupport();
+        FeePerKbSupport feePerKbSupport = getFeePerKbSupport(repository, bridgeConstants);
 
         Federation federation = P2shErpFederationBuilder.builder().build();
         FederationStorageProvider federationStorageProvider = getFederationStorageProvider(track, federation);
@@ -118,11 +123,13 @@ public class RegisterBtcTransactionIT {
         return federationStorageProvider;
     }
 
-    private static FeePerKbSupport getFeePerKbSupport() {
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        Coin feePerKb = Coin.valueOf(1000L);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
-        return feePerKbSupport;
+    private static FeePerKbSupport getFeePerKbSupport(Repository repository, BridgeConstants bridgeConstants) {
+        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
+        FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
+        return  new FeePerKbSupportImpl(
+                bridgeConstants.getFeePerKbConstants(),
+                feePerKbStorageProvider
+        );
     }
 
     private static Block getRskExecutionBlock() {
