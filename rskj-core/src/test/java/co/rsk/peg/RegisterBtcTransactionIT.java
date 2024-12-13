@@ -52,7 +52,7 @@ public class RegisterBtcTransactionIT {
         FederationStorageProvider federationStorageProvider = getFederationStorageProvider(track, federation);
         FederationSupport federationSupport = getFederationSupport(federationStorageProvider, activations, bridgeConstants.getFederationConstants());
 
-        BtcECKey btcPublicKey = new BtcECKey();
+        BtcECKey btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
         Coin btcTransferred = bridgeConstants.getMinimumPeginTxValue(activations);
         BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
         TransactionOutput output = bitcoinTransaction.getOutput(0);
