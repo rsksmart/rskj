@@ -15,6 +15,10 @@ import co.rsk.trie.Trie;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 
@@ -89,5 +93,15 @@ public final class BridgeSupportTestUtil {
     public static FederationStorageProvider createFederationStorageProvider(Repository repository) {
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         return new FederationStorageProviderImpl(bridgeStorageAccessor);
+    }
+
+    public static Block getRskExecutionBlock() {
+        long rskExecutionBlockNumber = 1000L;
+        long rskExecutionBlockTimestamp = 10L;
+        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(rskExecutionBlockNumber)
+                .setTimestamp(rskExecutionBlockTimestamp)
+                .build();
+        return Block.createBlockFromHeader(blockHeader, true);
     }
 }

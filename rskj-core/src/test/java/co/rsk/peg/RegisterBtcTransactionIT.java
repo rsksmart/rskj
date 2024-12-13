@@ -132,16 +132,6 @@ public class RegisterBtcTransactionIT {
         );
     }
 
-    private static Block getRskExecutionBlock() {
-        long rskExecutionBlockNumber = 1000L;
-        long rskExecutionBlockTimestamp = 10L;
-        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-                .setNumber(rskExecutionBlockNumber)
-                .setTimestamp(rskExecutionBlockTimestamp)
-                .build();
-        return Block.createBlockFromHeader(blockHeader, true);
-    }
-
     private BridgeSupport getBridgeSupport(BridgeEventLoggerImpl bridgeEventLogger, BridgeStorageProvider bridgeStorageProvider, ActivationConfig.ForBlock activationsBeforeForks, FederationSupport federationSupport, FeePerKbSupport feePerKbSupport, Block rskExecutionBlock, BtcBlockStoreWithCache.Factory btcBlockStoreFactory, Repository repository, BtcLockSenderProvider btcLockSenderProvider) {
         return bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstants)
