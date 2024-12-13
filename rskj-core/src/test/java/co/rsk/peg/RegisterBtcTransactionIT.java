@@ -53,7 +53,7 @@ public class RegisterBtcTransactionIT {
         FederationSupport federationSupport = getFederationSupport(federationStorageProvider, activations, bridgeConstants.getFederationConstants());
 
         BtcECKey btcPublicKey = new BtcECKey();
-        Coin btcTransferred = Coin.COIN;
+        Coin btcTransferred = bridgeConstants.getMinimumPeginTxValue(activations);
         BtcTransaction bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
         TransactionOutput output = bitcoinTransaction.getOutput(0);
         List<UTXO> expectedFederationUtxos = Collections.singletonList(getUtxo(bitcoinTransaction, output));
