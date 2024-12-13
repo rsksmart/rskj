@@ -147,6 +147,20 @@ class RegisterBtcTransactionIT {
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
     }
 
+    @Test
+    void registerBtcTransaction_forALegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
+        // Arrange
+        co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
+        List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+
+        // Act
+        bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), -1, pmtWithTransactions.bitcoinSerialize());
+        bridgeSupport.save();
+
+        // Assert
+        assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
+    }
     private static UTXO utxoOf(BtcTransaction bitcoinTransaction, TransactionOutput output) {
         return new UTXO(
             bitcoinTransaction.getHash(),
