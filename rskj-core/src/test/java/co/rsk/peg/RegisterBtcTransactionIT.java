@@ -30,7 +30,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
 import java.util.*;
 
-
 public class RegisterBtcTransactionIT {
 
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
