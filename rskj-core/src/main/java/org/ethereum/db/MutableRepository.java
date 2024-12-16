@@ -440,7 +440,7 @@ public class MutableRepository implements Repository {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
 
         // Special case: if the value is an empty vector, we pass "null" which commands the trie to remove the item.
-        // Note that if the call comes from addStorageRow(), this method will already have replaced 0 by null, so the
+        // Note that if the call comes from addTransientStorageRow(), this method will already have replaced 0 by null, so the
         // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
         // also occur in precompiled contracts that store data directly using this method.
         if (value == null || value.length == 0) {
