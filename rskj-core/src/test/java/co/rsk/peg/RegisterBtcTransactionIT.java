@@ -45,7 +45,6 @@ class RegisterBtcTransactionIT {
     private PartialMerkleTree pmtWithTransactions;
     private int btcBlockWithPmtHeight;
     private Transaction rskTx;
-    private ECKey ecKey;
     private RskAddress rskReceiver;
     private BridgeSupport bridgeSupport;
     private BridgeEventLoggerImpl bridgeEventLogger;
@@ -77,8 +76,7 @@ class RegisterBtcTransactionIT {
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(track, bridgeConstants, bridgeStorageProvider, activations);
 
         BtcECKey btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
-        ecKey = ECKey.fromPublicOnly(btcPublicKey.getPubKey());
-        rskReceiver = new RskAddress(ecKey.getAddress());
+        rskReceiver = getRskReceiver(btcPublicKey);
         btcTransferred = bridgeConstants.getMinimumPeginTxValue(activations);
         bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
 
@@ -132,8 +130,7 @@ class RegisterBtcTransactionIT {
         // Arrange
         registerBtcTransactionAndCommit();
 
-        RskAddress receiverBalance = new RskAddress(ecKey.getAddress());
-        co.rsk.core.Coin expectedReceiverBalance = track.getBalance(receiverBalance);
+        co.rsk.core.Coin expectedReceiverBalance = track.getBalance(rskReceiver);
         List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
 
         // Act
@@ -141,7 +138,7 @@ class RegisterBtcTransactionIT {
 
         // Assert
         assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
-        assertEquals(expectedReceiverBalance, repository.getBalance(receiverBalance));
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
     }
 
     private void registerBtcTransactionAndCommit() throws Exception {
@@ -159,6 +156,11 @@ class RegisterBtcTransactionIT {
                 bitcoinTransaction.isCoinBase(),
                 output.getScriptPubKey()
         );
+    }
+
+    private RskAddress getRskReceiver(BtcECKey btcPublicKey) {
+        ECKey ecKey = ECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        return new RskAddress(ecKey.getAddress());
     }
 
     private FederationStorageProvider getFederationStorageProvider(Repository track, Federation federation) {
