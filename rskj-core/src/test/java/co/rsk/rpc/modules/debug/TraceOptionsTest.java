@@ -19,9 +19,11 @@
 
 package co.rsk.rpc.modules.debug;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -138,6 +140,125 @@ class TraceOptionsTest {
         Assertions.assertEquals(2, options.getUnsupportedOptions().size());
         Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
         Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
+    }
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void testDeserialize_withValidJson_shouldSetAllFields() throws IOException {
+        // Given
+        String json = """
+            {
+                "onlyTopCall": "true",
+                "withLog": "false",
+                "disableMemory": "true",
+                "disableStack": "false",
+                "disableStorage": "true"
+            }
+        """;
+
+        // When
+        TraceOptions options = objectMapper.readValue(json, TraceOptions.class);
+
+        // Then
+        Assertions.assertTrue(options.isOnlyTopCall());
+        Assertions.assertFalse(options.isWithLog());
+        Assertions.assertTrue(options.getDisabledFields().contains("memory"));
+        Assertions.assertFalse(options.getDisabledFields().contains("stack"));
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+    }
+
+    @Test
+    void testDeserialize_withUnsupportedOptions_shouldAddToUnsupported() throws IOException {
+        // Given
+        String json = """
+            {
+                "onlyTopCall": "true",
+                "withLog": "true",
+                "unsupportedOption1": "true",
+                "unsupportedOption2": "false"
+            }
+        """;
+
+        // When
+        TraceOptions options = objectMapper.readValue(json, TraceOptions.class);
+
+        // Then
+        Assertions.assertTrue(options.isOnlyTopCall());
+        Assertions.assertTrue(options.isWithLog());
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption1"));
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption2"));
+    }
+
+    @Test
+    void testDeserialize_withTracerConfig_shouldHandleNestedOptions() throws IOException {
+        // Given
+        String json = """
+            {
+                "tracerConfig": {
+                    "disableMemory": "true",
+                    "disableStack": "true"
+                },
+                "withLog": "false"
+            }
+        """;
+
+        // When
+        TraceOptions options = objectMapper.readValue(json, TraceOptions.class);
+
+        // Then
+        Assertions.assertFalse(options.isWithLog());
+        Assertions.assertTrue(options.getDisabledFields().contains("memory"));
+        Assertions.assertTrue(options.getDisabledFields().contains("stack"));
+    }
+
+    @Test
+    void testDeserialize_withEmptyJson_shouldReturnDefaultValues() throws IOException {
+        // Given
+        String json = "{}";
+
+        // When
+        TraceOptions options = objectMapper.readValue(json, TraceOptions.class);
+
+        // Then
+        Assertions.assertFalse(options.isOnlyTopCall());
+        Assertions.assertFalse(options.isWithLog());
+        Assertions.assertTrue(options.getDisabledFields().isEmpty());
+        Assertions.assertTrue(options.getUnsupportedOptions().isEmpty());
+    }
+
+    @Test
+    void testDeserialize_withInvalidJson_shouldThrowException() {
+        // Given
+        String invalidJson = "{ invalid json }";
+
+        // Then
+        Assertions.assertThrows(IOException.class, () -> {
+            // When
+            objectMapper.readValue(invalidJson, TraceOptions.class);
+        });
+    }
+
+    @Test
+    void testDeserialize_withConflictingOptions_shouldResolveCorrectly() throws IOException {
+        // Given
+        String json = """
+            {
+                "onlyTopCall": "true",
+                "withLog": "true",
+                "disableMemory": "true",
+                "disableMemory": "false"
+            }
+        """;
+
+        // When
+        TraceOptions options = objectMapper.readValue(json, TraceOptions.class);
+
+        // Then
+        Assertions.assertTrue(options.isOnlyTopCall());
+        Assertions.assertTrue(options.isWithLog());
+        // Last occurrence of conflicting key takes precedence
+        Assertions.assertFalse(options.getDisabledFields().contains("memory"));
     }
 
 }

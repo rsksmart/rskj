@@ -390,6 +390,10 @@ public class Program {
         return memory.read(offset, size);
     }
 
+    public void memoryCopy(int dst, int src, int length) {
+        memorySave(dst, memoryChunk(src, length));
+    }
+
     /**
      * Allocates extra memory in the program for
      * a specified size, calculated from a given offset
@@ -824,7 +828,6 @@ public class Program {
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
             DataWord transferValue = DataWord.valueOf(endowment.getBytes());
-
             TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
             ProgramResult result = new ProgramResult();
 
