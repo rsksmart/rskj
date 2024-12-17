@@ -34,7 +34,7 @@ import java.util.*;
 
 class RegisterBtcTransactionIT {
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-    private final NetworkParameters btcParams = bridgeConstants.getBtcParams();
+    private final NetworkParameters btcNetworkParams = bridgeConstants.getBtcParams();
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
     private final Transaction rskTx = TransactionUtils.createTransaction();
@@ -74,8 +74,8 @@ class RegisterBtcTransactionIT {
                 .withActivations(activations)
                 .build();
 
-        bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations);
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams(), 100, 100);
+        bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, btcNetworkParams, activations);
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcNetworkParams, 100, 100);
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
 
         BtcECKey btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
@@ -83,13 +83,13 @@ class RegisterBtcTransactionIT {
         rskReceiver = new RskAddress(ecKey.getAddress());
         bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey);
 
-        pmtWithTransactions = createValidPmtForTransactions(List.of(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
+        pmtWithTransactions = createValidPmtForTransactions(List.of(bitcoinTransaction.getHash()), btcNetworkParams);
         btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
 
         bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activations, new ArrayList<>()));
 
-        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, bridgeConstants.getBtcParams());
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeStorageProvider.save();
         bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstants)
@@ -159,9 +159,9 @@ class RegisterBtcTransactionIT {
     }
 
     private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin, BtcECKey pubKey) {
-        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
         btcTx.addInput(BitcoinTestUtils.createHash(0), 0, ScriptBuilder.createInputScript(null, pubKey));
-        btcTx.addOutput(new TransactionOutput(btcParams, btcTx, coin, federationAddress));
+        btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, coin, federationAddress));
 
         return btcTx;
     }
