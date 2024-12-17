@@ -328,7 +328,10 @@ public enum OpCode {
      * (0x5b)
      */
     JUMPDEST(0x5b, 0, 0, SPECIAL_TIER),
-
+    /**
+     * (0x5e) Memory copying instruction
+     */
+    MCOPY(0x5e, 3, 0, VERY_LOW_TIER),
 
     /*  Push Operations */
     /**
