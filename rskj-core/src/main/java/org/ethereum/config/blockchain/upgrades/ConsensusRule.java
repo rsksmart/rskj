@@ -100,6 +100,7 @@ public enum ConsensusRule {
     RSKIP434("rskip434"),
     RSKIP438("rskip438"),
     RSKIP445("rskip445"), // From EIP-5656 MCOPY instruction
+    RSKIP453("rskip453"),
     RSKIP454("rskip454"),
     ;
 
