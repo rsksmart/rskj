@@ -31,9 +31,13 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.util.TransactionReceiptUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,7 +48,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTransientStorageOpcodesExecutionsWithRSKIPActivated() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -66,7 +70,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTransientStorageOpcodesShareMemorySameTransaction() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -84,7 +88,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTransientStorageOpcodesDoesntShareMemoryFromOtherContract() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -106,7 +110,7 @@ class TransientStorageDslTest {
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.lovell700", ConfigValueFactory.fromAnyRef(-1))
         );
 
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tload_tstore_basic_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tload_tstore_basic_tests.txt");
         World world = new World(rskip446Disabled);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -123,7 +127,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTransientStorageTestsEip1153BasicScenarios() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/eip1153_basic_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/eip1153_basic_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -150,7 +154,7 @@ class TransientStorageDslTest {
 
     @Test
     void testOnlyConstructorCodeCreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/only_constructor_code_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/only_constructor_code_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -165,7 +169,7 @@ class TransientStorageDslTest {
 
     @Test
     void testInConstructorAndCodeCreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/in_constructor_and_deploy_code_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/in_constructor_and_deploy_code_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -180,7 +184,7 @@ class TransientStorageDslTest {
 
     @Test
     void testAccrossConstructorAndCodeV0CreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/accross_constructor_and_deploy_code_v0_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/accross_constructor_and_deploy_code_v0_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -195,7 +199,7 @@ class TransientStorageDslTest {
 
     @Test
     void testAccrossConstructorAndCodeV1CreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/accross_constructor_and_deploy_code_v1_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/accross_constructor_and_deploy_code_v1_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -210,7 +214,7 @@ class TransientStorageDslTest {
 
     @Test
     void testNoConstructorCodeCreateContext() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/no_constructor_code_create_context.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/no_constructor_code_create_context.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -225,7 +229,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicExecutionContextSimpleScenario() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_simple.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_execution_context_simple.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -244,7 +248,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicExecutionContextWithRevert() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_with_revert.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_execution_context_with_revert.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -267,7 +271,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicExecutionContextWithInvalid() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_with_invalid.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_execution_context_with_invalid.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -290,7 +294,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicExecutionContextWithStackOverflow() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_with_stack_overflow.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_execution_context_with_stack_overflow.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -313,7 +317,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicExecutionCallContextSubcall() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_call_subcall.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_execution_context_call_subcall.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -328,7 +332,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicExecutionStaticCallSubcallCantUseTstore() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_execution_context_staticcall_subcall_cant_call_tstore.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_execution_context_staticcall_subcall_cant_call_tstore.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -343,7 +347,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicReentrancyContextsTstoreBeforeRevertOrInvalidHasNoEffect() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_reentrancy_context_tstore_before_revert_or_invalid_has_no_effect.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_reentrancy_context_tstore_before_revert_or_invalid_has_no_effect.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -361,7 +365,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicReentrancyContextsRevertOrInvalidUndoesAll() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_reentrancy_context_revert_or_invalid_undoes_all.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_reentrancy_context_revert_or_invalid_undoes_all.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -379,7 +383,7 @@ class TransientStorageDslTest {
 
     @Test
     void testDynamicReentrancyContextsRevertOrInvalidUndoesTstorageAfterSuccessfullCall() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/dynamic_reentrancy_context_revert_or_invalid_undoes_tstorage_after_successfull_call.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/dynamic_reentrancy_context_revert_or_invalid_undoes_tstorage_after_successfull_call.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -404,7 +408,7 @@ class TransientStorageDslTest {
 
     @Test
     void testReentrancyContextsTstoreAfterReentrantCall() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_tstore_after_reentrant_call.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/reentrancy_context_tstore_after_reentrant_call.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -422,7 +426,7 @@ class TransientStorageDslTest {
 
     @Test
     void testReentrancyContextsTloadAfterReentrantTstore() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_tload_after_reentrant_tstore.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/reentrancy_context_tload_after_reentrant_tstore.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -440,7 +444,7 @@ class TransientStorageDslTest {
 
     @Test
     void testReentrancyContextsManipulateInReentrantCall() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_manipulate_in_reentrant_call.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/reentrancy_context_manipulate_in_reentrant_call.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -458,7 +462,7 @@ class TransientStorageDslTest {
 
     @Test
     void testReentrancyContextsTstoreInCallThenTloadReturnInStaticCall() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/reentrancy_context_tstore_in_call_then_tload_return_in_static_call.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/reentrancy_context_tstore_in_call_then_tload_return_in_static_call.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -476,7 +480,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTransientStorageGasMeasureTests() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstorage_gas_measure_tests.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tstorage_gas_measure_tests.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -491,7 +495,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTstoreLoopUntilOutOfGas() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstore_loop_until_out_of_gas.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tstore_loop_until_out_of_gas.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -507,7 +511,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTstoreWideAddressSpaceLoopUntilOutOfGas() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstore_wide_address_space_loop_until_out_of_gas.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tstore_wide_address_space_loop_until_out_of_gas.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -523,7 +527,7 @@ class TransientStorageDslTest {
 
     @Test
     void testTstoreAndTloadLoopUntilOutOfGas() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/transaction_storage_rskip446/tstore_and_tload_loop_until_out_of_gas.txt");
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tstore_and_tload_loop_until_out_of_gas.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
@@ -535,6 +539,35 @@ class TransientStorageDslTest {
         TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txRunTstoreAndTloadUntilOutOfGas, "b02", false);
         long txRunOutOfGas = new BigInteger(1, txReceipt.getGasUsed()).longValue();
         assertEquals(700000, txRunOutOfGas); // Assert that it consumed all the gas configured in the transaction
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("provideParametersForSelfDestructCases")
+    void testTstorageSelfDestructCases_OnEachTest_TheEventsEmittedAreTheExpected(String dslFile, Integer numberOfOksEmitted) throws FileNotFoundException, DslProcessorException {
+
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/" + dslFile);
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txDeployTestContract = "txDeployTestContract";
+        assertTransactionReceiptWithStatus(world, txDeployTestContract, "b01", true);
+
+        String txCheckValuesStoredInTstorage = "txPerformTest";
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b02", true);
+        Assertions.assertEquals(numberOfOksEmitted, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
+    }
+
+    private static Stream<Arguments> provideParametersForSelfDestructCases() {
+        return Stream.of(
+                Arguments.of("tload_after_selfdestruct_pre_existing_contract.txt", 3 ),
+                Arguments.of("tload_after_selfdestruct_new_contract.txt", 3 ),
+                Arguments.of("tload_after_inner_selfdestruct_pre_existing_contract.txt", 2 ),
+                Arguments.of("tload_after_inner_selfdestruct_new_contract.txt", 2 ),
+                Arguments.of("tstore_after_selfdestruct_pre_existing_contract.txt", 4 ),
+                Arguments.of("tstore_after_selfdestruct_new_contract.txt", 4 )
+        );
     }
 
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
