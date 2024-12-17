@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -15,13 +16,11 @@ import co.rsk.trie.Trie;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockHeaderBuilder;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
@@ -104,5 +103,28 @@ public final class BridgeSupportTestUtil {
                 .setTimestamp(rskExecutionBlockTimestamp)
                 .build();
         return Block.createBlockFromHeader(blockHeader, true);
+    }
+
+    public static List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
+        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
+        return LogInfo.byteArrayToList(encodedTopicsInBytes);
+    }
+
+    public static byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
+        return bridgeEvent.encodeEventData(args);
+    }
+
+    public static void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics, List<LogInfo> logs) {
+        Optional<LogInfo> topicOpt = logs.stream()
+                .filter(log -> log.getTopics().equals(expectedTopics))
+                .findFirst();
+        assertTrue(topicOpt.isPresent());
+    }
+
+    public static void assertEventWasEmittedWithExpectedData(byte[] expectedData, List<LogInfo> logs) {
+        Optional<LogInfo> data = logs.stream()
+                .filter(log -> Arrays.equals(log.getData(), expectedData))
+                .findFirst();
+        assertTrue(data.isPresent());
     }
 }

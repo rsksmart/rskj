@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -27,6 +26,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,7 @@ class RegisterBtcTransactionIT {
     private RskAddress rskReceiver;
     private BridgeSupport bridgeSupport;
     private BridgeEventLoggerImpl bridgeEventLogger;
+    private ArrayList<LogInfo> logs;
 
 
     @BeforeEach
@@ -87,7 +89,8 @@ class RegisterBtcTransactionIT {
         btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
 
-        bridgeEventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activations, new ArrayList<>()));
+        logs = new ArrayList<>();
+        bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
 
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeStorageProvider.save();
@@ -125,7 +128,7 @@ class RegisterBtcTransactionIT {
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
 
-        verify(bridgeEventLogger, times(1)).logPeginBtc(rskReceiver, bitcoinTransaction, minimumPeginValue, 0);
+        assertLogPegInBtc();
 
     }
 
@@ -164,5 +167,14 @@ class RegisterBtcTransactionIT {
         btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, coin, federationAddress));
 
         return btcTx;
+    }
+
+    private void assertLogPegInBtc() {
+        Sha256Hash peginTransactionHash = bitcoinTransaction.getHash();
+        List<DataWord> encodedTopics = getEncodedTopics(BridgeEvents.PEGIN_BTC.getEvent(), rskReceiver.toString(), peginTransactionHash.getBytes());
+        byte[] encodedData = getEncodedData(BridgeEvents.PEGIN_BTC.getEvent(), minimumPeginValue.getValue(), 0);
+
+        assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
+        assertEventWasEmittedWithExpectedData(encodedData, logs);
     }
 }
