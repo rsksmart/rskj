@@ -49,7 +49,6 @@ class RegisterBtcTransactionIT {
     private int btcBlockWithPmtHeight;
     private RskAddress rskReceiver;
     private BridgeSupport bridgeSupport;
-    private BridgeEventLoggerImpl bridgeEventLogger;
     private ArrayList<LogInfo> logs;
 
 
@@ -90,7 +89,7 @@ class RegisterBtcTransactionIT {
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
 
         logs = new ArrayList<>();
-        bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
+        BridgeEventLoggerImpl bridgeEventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
 
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeStorageProvider.save();
