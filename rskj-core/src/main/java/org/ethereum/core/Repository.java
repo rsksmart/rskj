@@ -27,7 +27,7 @@ import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 
-public interface Repository extends RepositorySnapshot {
+public interface Repository extends RepositorySnapshot, TransientRepository {
     Trie getTrie();
 
     /**
