@@ -389,6 +389,10 @@ public class Program {
         return memory.read(offset, size);
     }
 
+    public void memoryCopy(int dst, int src, int length) {
+        memorySave(dst, memoryChunk(src, length));
+    }
+
     /**
      * Allocates extra memory in the program for
      * a specified size, calculated from a given offset
