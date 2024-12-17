@@ -176,7 +176,7 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long gasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
+        long gasLimit = activations.isActive(RSKIP144) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, gasLimit)) {
             return false;
