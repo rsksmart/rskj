@@ -541,7 +541,6 @@ class TransientStorageDslTest {
         assertEquals(700000, txRunOutOfGas); // Assert that it consumed all the gas configured in the transaction
     }
 
-
     @ParameterizedTest
     @MethodSource("provideParametersForSelfDestructCases")
     void testTstorageSelfDestructCases_OnEachTest_TheEventsEmittedAreTheExpected(String dslFile, Integer numberOfOksEmitted) throws FileNotFoundException, DslProcessorException {
@@ -568,6 +567,43 @@ class TransientStorageDslTest {
                 Arguments.of("tstore_after_selfdestruct_pre_existing_contract.txt", 4 ),
                 Arguments.of("tstore_after_selfdestruct_new_contract.txt", 4 )
         );
+    }
+
+    @Test
+    void testTloadTstoreCheckingBetweenTransactions() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transient_storage_rskip446/tload_tstore_checking_between_transactions.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String txTloadTstoreCheckingBetweenTransactionsContract = "txTloadTstoreCheckingBetweenTransactionsContract";
+        assertTransactionReceiptWithStatus(world, txTloadTstoreCheckingBetweenTransactionsContract, "b01", true);
+
+        String txTstoreAndTloadSomeValue = "txTstoreAndTloadSomeValue";
+        Transaction txCreation = world.getTransactionByName(txTstoreAndTloadSomeValue);
+        assertNotNull(txCreation);
+
+        Block block = world.getBlockByName("b02");
+        assertEquals(2, block.getTransactionsList().size());
+
+        TransactionReceipt txReceipt = world.getTransactionReceiptByName(txTstoreAndTloadSomeValue);
+        assertNotNull(txReceipt);
+        byte[] status = txReceipt.getStatus();
+        assertNotNull(status);
+        assertTrue(txReceipt.isSuccessful());
+
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "ValueStored",  new String[]{"uint256","uint256"}));
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "ValueLoaded",  new String[]{"uint256","uint256"}));
+
+        String txTloadSomeValueAndCheckWithExpected = "txTloadSomeValueAndCheckWithExpected";
+        TransactionReceipt txReceipt2 = world.getTransactionReceiptByName(txTloadSomeValueAndCheckWithExpected);
+        assertNotNull(txReceipt2);
+        status = txReceipt2.getStatus();
+        assertNotNull(status);
+        assertTrue(txReceipt2.isSuccessful());
+
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt2, "ValueLoaded",    new String[]{"uint256","uint256"}));
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt2, "OK",  null));
     }
 
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {

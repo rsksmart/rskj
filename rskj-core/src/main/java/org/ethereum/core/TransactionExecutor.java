@@ -583,6 +583,8 @@ public class TransactionExecutor {
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
 
+        track.clearTransientStorage();
+
         logger.trace("tx listener done");
 
         logger.trace("tx finalization done");

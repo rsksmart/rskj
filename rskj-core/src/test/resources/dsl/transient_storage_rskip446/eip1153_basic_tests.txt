@@ -173,7 +173,7 @@ block_build b03
 # Connect block
 block_connect b03
 
-# Check b02 is best block
+# Check b03 is best block
 assert_best b03
 
 # Create transaction to execute
@@ -196,7 +196,7 @@ block_build b04
 # Connect block
 block_connect b04
 
-# Check b02 is best block
+# Check b04 is best block
 assert_best b04
 
 # Create transaction to execute
@@ -219,5 +219,5 @@ block_build b05
 # Connect block
 block_connect b05
 
-# Check b02 is best block
+# Check b05 is best block
 assert_best b05
