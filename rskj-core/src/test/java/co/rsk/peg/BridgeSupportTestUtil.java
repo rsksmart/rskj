@@ -16,6 +16,7 @@ import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderBuilder;
@@ -98,7 +99,7 @@ public final class BridgeSupportTestUtil {
     public static Block getRskExecutionBlock() {
         long rskExecutionBlockNumber = 1000L;
         long rskExecutionBlockTimestamp = 10L;
-        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+        BlockHeader blockHeader = new BlockHeaderBuilder(ActivationConfigsForTest.all())
                 .setNumber(rskExecutionBlockNumber)
                 .setTimestamp(rskExecutionBlockTimestamp)
                 .build();

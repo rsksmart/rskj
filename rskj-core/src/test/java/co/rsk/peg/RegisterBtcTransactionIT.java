@@ -36,28 +36,27 @@ class RegisterBtcTransactionIT {
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcParams = bridgeConstants.getBtcParams();
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
+    private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+    private final Transaction rskTx = TransactionUtils.createTransaction();
+    private final Coin minimumPeginValue =  bridgeConstants.getMinimumPeginTxValue(activations);
+    private final Block rskExecutionBlock = getRskExecutionBlock();
     private Repository track;
     private Repository repository;
-    private Block rskExecutionBlock;
     private FederationSupport federationSupport;
     private BridgeStorageProvider bridgeStorageProvider;
     private BtcTransaction bitcoinTransaction;
     private PartialMerkleTree pmtWithTransactions;
     private int btcBlockWithPmtHeight;
-    private Transaction rskTx;
     private RskAddress rskReceiver;
     private BridgeSupport bridgeSupport;
     private BridgeEventLoggerImpl bridgeEventLogger;
-    private Coin btcTransferred;
+
+
 
     @BeforeEach
     void setUp() throws Exception{
-        rskTx = TransactionUtils.createTransaction();
         repository = BridgeSupportTestUtil.createRepository();
         track = repository.startTracking();
-
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
-        rskExecutionBlock = getRskExecutionBlock();
 
         BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
         FeePerKbSupport feePerKbSupport = getFeePerKbSupport(repository, bridgeConstants);
@@ -77,8 +76,7 @@ class RegisterBtcTransactionIT {
 
         BtcECKey btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
         rskReceiver = getRskReceiver(btcPublicKey);
-        btcTransferred = bridgeConstants.getMinimumPeginTxValue(activations);
-        bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), btcTransferred, btcPublicKey);
+        bitcoinTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey);
 
         pmtWithTransactions = createValidPmtForTransactions(List.of(bitcoinTransaction.getHash()), bridgeConstants.getBtcParams());
         btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -109,7 +107,7 @@ class RegisterBtcTransactionIT {
         List<UTXO> expectedFederationUtxos = Collections.singletonList(utxoOf(bitcoinTransaction, output));
 
         co.rsk.core.Coin receiverBalance = track.getBalance(rskReceiver);
-        co.rsk.core.Coin expectedReceiverBalance = receiverBalance.add(co.rsk.core.Coin.fromBitcoin(btcTransferred));
+        co.rsk.core.Coin expectedReceiverBalance = receiverBalance.add(co.rsk.core.Coin.fromBitcoin(minimumPeginValue));
 
         // Act
         registerBtcTransactionAndCommit();
@@ -121,7 +119,7 @@ class RegisterBtcTransactionIT {
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
 
-        verify(bridgeEventLogger, times(1)).logPeginBtc(rskReceiver, bitcoinTransaction, btcTransferred, 0);
+        verify(bridgeEventLogger, times(1)).logPeginBtc(rskReceiver, bitcoinTransaction, minimumPeginValue, 0);
 
     }
 
