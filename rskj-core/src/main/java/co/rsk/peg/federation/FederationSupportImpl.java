@@ -425,14 +425,16 @@ public class FederationSupportImpl implements FederationSupport {
     @Override
     public int voteFederationChange(Transaction tx, ABICallSpec callSpec, SignatureCache signatureCache, BridgeEventLogger eventLogger) {
         String calledFunction = callSpec.getFunction();
-        // Must be on one of the allowed functions
-        if (unknownFederationChangeFunction(calledFunction)) {
+        // Must be one of the allowed functions
+        Optional<FederationChangeFunction> federationChangeFunction = Arrays.stream(FederationChangeFunction.values())
+                .filter(function -> function.getKey().equals(calledFunction))
+                .findAny();
+        if (federationChangeFunction.isEmpty()) {
             logger.warn("[voteFederationChange] Federation change function \"{}\" does not exist.", StringUtils.trim(calledFunction));
             return FederationChangeResponseCode.NON_EXISTING_FUNCTION_CALLED.getCode();
         }
 
         AddressBasedAuthorizer authorizer = constants.getFederationChangeAuthorizer();
-
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx, signatureCache)) {
             RskAddress voter = tx.getSender(signatureCache);
@@ -444,7 +446,7 @@ public class FederationSupportImpl implements FederationSupport {
         // call would be successful
         ABICallVoteResult result;
         try {
-            result = executeVoteFederationChangeFunction(true, callSpec, eventLogger);
+            result = executeVoteFederationChangeFunction(true, callSpec.getArguments(), federationChangeFunction.get(), eventLogger);
         } catch (BridgeIllegalArgumentException e) {
             logger.warn("[voteFederationChange] Unexpected federation change vote exception: {}", e.getMessage());
             result = new ABICallVoteResult(false, FederationChangeResponseCode.GENERIC_ERROR.getCode());
@@ -468,7 +470,7 @@ public class FederationSupportImpl implements FederationSupport {
         if (winnerSpecOptional.isPresent()) {
             ABICallSpec winnerSpec = winnerSpecOptional.get();
             try {
-                result = executeVoteFederationChangeFunction(false, winnerSpec, eventLogger);
+                result = executeVoteFederationChangeFunction(false, winnerSpec.getArguments(), federationChangeFunction.get(), eventLogger);
             } catch (BridgeIllegalArgumentException e) {
                 logger.warn("[voteFederationChange] Unexpected federation change vote exception: {}", e.getMessage());
                 return FederationChangeResponseCode.GENERIC_ERROR.getCode();
@@ -481,25 +483,22 @@ public class FederationSupportImpl implements FederationSupport {
         return (int) result.getResult();
     }
 
-    private boolean unknownFederationChangeFunction(String calledFunction) {
-        return Arrays.stream(FederationChangeFunction.values()).noneMatch(fedChangeFunction -> fedChangeFunction.getKey().equals(calledFunction));
-    }
-
-    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec, BridgeEventLogger eventLogger) throws BridgeIllegalArgumentException {
+    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, byte[][] callSpecArguments, FederationChangeFunction federationChangeFunction, BridgeEventLogger eventLogger) throws BridgeIllegalArgumentException {
         // Try to do a dry-run and only register the vote if the
         // call would be successful
         ABICallVoteResult result;
-        Integer executionResult;
-        switch (callSpec.getFunction()) {
-            case "create":
+        int executionResult;
+
+        switch (federationChangeFunction) {
+            case CREATE:
                 executionResult = createPendingFederation(dryRun);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
-            case "add":
-                if(activations.isActive(RSKIP123)) {
+            case ADD:
+                if (activations.isActive(RSKIP123)) {
                     throw new IllegalStateException("The \"add\" function is disabled.");
                 }
-                byte[] publicKeyBytes = callSpec.getArguments()[0];
+                byte[] publicKeyBytes = callSpecArguments[0];
                 BtcECKey publicKey;
                 ECKey publicKeyEc;
                 try {
@@ -511,36 +510,36 @@ public class FederationSupportImpl implements FederationSupport {
                 executionResult = addFederatorPublicKeyMultikey(dryRun, publicKey, publicKeyEc, publicKeyEc);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
-            case "add-multi":
+            case ADD_MULTI:
                 BtcECKey btcPublicKey;
                 ECKey rskPublicKey;
                 ECKey mstPublicKey;
                 try {
-                    btcPublicKey = BtcECKey.fromPublicOnly(callSpec.getArguments()[0]);
+                    btcPublicKey = BtcECKey.fromPublicOnly(callSpecArguments[0]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + Bytes.of(callSpec.getArguments()[0]), e);
+                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + Bytes.of(callSpecArguments[0]), e);
                 }
 
                 try {
-                    rskPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[1]);
+                    rskPublicKey = ECKey.fromPublicOnly(callSpecArguments[1]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + Bytes.of(callSpec.getArguments()[1]), e);
+                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + Bytes.of(callSpecArguments[1]), e);
                 }
 
                 try {
-                    mstPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[2]);
+                    mstPublicKey = ECKey.fromPublicOnly(callSpecArguments[2]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + Bytes.of(callSpec.getArguments()[2]), e);
+                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + Bytes.of(callSpecArguments[2]), e);
                 }
                 executionResult = addFederatorPublicKeyMultikey(dryRun, btcPublicKey, rskPublicKey, mstPublicKey);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
-            case "commit":
-                Keccak256 pendingFederationHash = new Keccak256(callSpec.getArguments()[0]);
+            case COMMIT:
+                Keccak256 pendingFederationHash = new Keccak256(callSpecArguments[0]);
                 executionResult = commitFederation(dryRun, pendingFederationHash, eventLogger).getCode();
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
-            case "rollback":
+            case ROLLBACK:
                 executionResult = rollbackFederation(dryRun);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
