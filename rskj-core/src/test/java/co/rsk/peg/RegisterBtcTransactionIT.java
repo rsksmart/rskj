@@ -34,13 +34,15 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 class RegisterBtcTransactionIT {
+    public static final long RSK_EXECUTION_BLOCK_NUMBER = 1000L;
+    public static final long RSK_EXECUTION_BLOCK_TIMESTAMP = 10L;
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcNetworkParams = bridgeConstants.getBtcParams();
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
     private final Transaction rskTx = TransactionUtils.createTransaction();
     private final Coin minimumPeginValue =  bridgeConstants.getMinimumPeginTxValue(activations);
-    private final Block rskExecutionBlock = getRskExecutionBlock();
+    private final Block rskExecutionBlock = getRskExecutionBlock(RSK_EXECUTION_BLOCK_NUMBER, RSK_EXECUTION_BLOCK_TIMESTAMP);
     private Repository repository;
     private FederationSupport federationSupport;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -60,20 +62,17 @@ class RegisterBtcTransactionIT {
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
 
         FeePerKbStorageProvider feePerKbStorageProvider = new FeePerKbStorageProviderImpl(bridgeStorageAccessor);
-        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(
-                bridgeConstants.getFeePerKbConstants(),
-                feePerKbStorageProvider
-        );
+        FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstants.getFeePerKbConstants(), feePerKbStorageProvider);
 
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         Federation federation = P2shErpFederationBuilder.builder().build();
-        FederationStorageProvider federationStorageProvider = createFederationStorageProvider(repository);
         federationStorageProvider.setNewFederation(federation);
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         federationSupport = FederationSupportBuilder.builder()
-                .withFederationConstants(federationConstants)
-                .withFederationStorageProvider(federationStorageProvider)
-                .withActivations(activations)
-                .build();
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
 
         bridgeStorageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, btcNetworkParams, activations);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcNetworkParams, 100, 100);
@@ -93,29 +92,23 @@ class RegisterBtcTransactionIT {
 
         recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeStorageProvider.save();
+
         bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstants)
-                .withProvider(bridgeStorageProvider)
-                .withActivations(activations)
-                .withEventLogger(bridgeEventLogger)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withExecutionBlock(rskExecutionBlock)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withRepository(repository)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .build();
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(bridgeStorageProvider)
+            .withActivations(activations)
+            .withEventLogger(bridgeEventLogger)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withExecutionBlock(rskExecutionBlock)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withRepository(repository)
+            .withBtcLockSenderProvider(btcLockSenderProvider)
+            .build();
     }
 
     @Test
     void registerBtcTransaction_forALegacyBtcTransaction_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws Exception {
-        // Arrange
-        TransactionOutput output = bitcoinTransaction.getOutput(0);
-        List<UTXO> expectedFederationUtxos = Collections.singletonList(utxoOf(bitcoinTransaction, output));
-
-        co.rsk.core.Coin receiverBalance = repository.getBalance(rskReceiver);
-        co.rsk.core.Coin expectedReceiverBalance = receiverBalance.add(co.rsk.core.Coin.fromBitcoin(minimumPeginValue));
-
         // Act
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
         bridgeSupport.save();
@@ -123,12 +116,17 @@ class RegisterBtcTransactionIT {
         // Assert
         Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(bitcoinTransaction.getHash());
         assertTrue(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
-        assertEquals(rskExecutionBlock.getNumber(), heightIfBtcTxHashIsAlreadyProcessed.get());
+        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, heightIfBtcTxHashIsAlreadyProcessed.get());
+
+        int outputIndex = 0;
+        TransactionOutput output = bitcoinTransaction.getOutput(outputIndex);
+        List<UTXO> expectedFederationUtxos = Collections.singletonList(utxoOf(bitcoinTransaction, output));
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
+
+        co.rsk.core.Coin expectedReceiverBalance = co.rsk.core.Coin.fromBitcoin(output.getValue());
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
 
         assertLogPegInBtc();
-
     }
 
     @Test
@@ -151,12 +149,12 @@ class RegisterBtcTransactionIT {
 
     private static UTXO utxoOf(BtcTransaction bitcoinTransaction, TransactionOutput output) {
         return new UTXO(
-                bitcoinTransaction.getHash(),
-                output.getIndex(),
-                output.getValue(),
-                0,
-                bitcoinTransaction.isCoinBase(),
-                output.getScriptPubKey()
+            bitcoinTransaction.getHash(),
+            output.getIndex(),
+            output.getValue(),
+            0,
+            bitcoinTransaction.isCoinBase(),
+            output.getScriptPubKey()
         );
     }
 

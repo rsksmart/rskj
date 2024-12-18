@@ -93,11 +93,7 @@ public class BridgeSupportSvpTest {
         // rsk execution block
         long rskExecutionBlockNumber = 1000L;
         long rskExecutionBlockTimestamp = 10L;
-        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(rskExecutionBlockNumber)
-            .setTimestamp(rskExecutionBlockTimestamp)
-            .build();
-        rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
+        rskExecutionBlock = getRskExecutionBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
 
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
         rskTx = mock(Transaction.class);

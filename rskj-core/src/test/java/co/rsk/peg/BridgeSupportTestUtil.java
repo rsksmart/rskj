@@ -95,9 +95,7 @@ public final class BridgeSupportTestUtil {
         return new FederationStorageProviderImpl(bridgeStorageAccessor);
     }
 
-    public static Block getRskExecutionBlock() {
-        long rskExecutionBlockNumber = 1000L;
-        long rskExecutionBlockTimestamp = 10L;
+    public static Block getRskExecutionBlock(long rskExecutionBlockNumber, long rskExecutionBlockTimestamp) {
         BlockHeader blockHeader = new BlockHeaderBuilder(ActivationConfigsForTest.all())
                 .setNumber(rskExecutionBlockNumber)
                 .setTimestamp(rskExecutionBlockTimestamp)
