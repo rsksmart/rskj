@@ -93,11 +93,7 @@ public class BridgeSupportSvpTest {
         // rsk execution block
         long rskExecutionBlockNumber = 1000L;
         long rskExecutionBlockTimestamp = 10L;
-        BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(rskExecutionBlockNumber)
-            .setTimestamp(rskExecutionBlockTimestamp)
-            .build();
-        rskExecutionBlock = Block.createBlockFromHeader(blockHeader, true);
+        rskExecutionBlock = getRskExecutionBlock(rskExecutionBlockNumber, rskExecutionBlockTimestamp);
 
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
         rskTx = mock(Transaction.class);
@@ -247,8 +243,8 @@ public class BridgeSupportSvpTest {
             byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
             byte[] encodedData = getEncodedData(commitFederationFailedEvent, proposedFederationRedeemScriptSerialized, rskExecutionBlock.getNumber());
 
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
+            assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
+            assertEventWasEmittedWithExpectedData(encodedData, logs);
         }
 
         private void assertNoSVPValues() {
@@ -387,11 +383,11 @@ public class BridgeSupportSvpTest {
 
             CallTransaction.Function updateCollectionsEvent = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
             List<DataWord> encodedTopics = getEncodedTopics(updateCollectionsEvent);
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
+            assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
 
             String senderData = rskTx.getSender(mock(SignatureCache.class)).toHexString();
             byte[] encodedData = getEncodedData(updateCollectionsEvent, senderData);
-            assertEventWasEmittedWithExpectedData(encodedData);
+            assertEventWasEmittedWithExpectedData(encodedData, logs);
         }
     }
 
@@ -924,8 +920,8 @@ public class BridgeSupportSvpTest {
             BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
             byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
 
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
+            assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
+            assertEventWasEmittedWithExpectedData(encodedData, logs);
         }
 
         private void assertLogReleaseBtc(Keccak256 rskTxHash, BtcTransaction btcTx) {
@@ -935,8 +931,8 @@ public class BridgeSupportSvpTest {
             byte[] btcTxSerialized = btcTx.bitcoinSerialize();
             byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
 
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
+            assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
+            assertEventWasEmittedWithExpectedData(encodedData, logs);
         }
 
         private void assertFederatorSignedInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
@@ -1402,8 +1398,8 @@ public class BridgeSupportSvpTest {
 
         byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
 
-        assertEventWasEmittedWithExpectedTopics(encodedTopics);
-        assertEventWasEmittedWithExpectedData(encodedData);
+        assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
+        assertEventWasEmittedWithExpectedData(encodedData, logs);
     }
 
     private void assertLogPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
@@ -1415,30 +1411,7 @@ public class BridgeSupportSvpTest {
         byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
         byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
 
-        assertEventWasEmittedWithExpectedTopics(encodedTopics);
-        assertEventWasEmittedWithExpectedData(encodedData);
-    }
-
-    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-        return bridgeEvent.encodeEventData(args);
-    }
-
-    private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = logs.stream()
-            .filter(log -> log.getTopics().equals(expectedTopics))
-            .findFirst();
-        assertTrue(topicOpt.isPresent());
-    }
-
-    private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-        Optional<LogInfo> data = logs.stream()
-            .filter(log -> Arrays.equals(log.getData(), expectedData))
-            .findFirst();
-        assertTrue(data.isPresent());
+        assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
+        assertEventWasEmittedWithExpectedData(encodedData, logs);
     }
 }
