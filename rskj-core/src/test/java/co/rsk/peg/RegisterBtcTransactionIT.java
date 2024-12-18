@@ -130,7 +130,7 @@ class RegisterBtcTransactionIT {
     }
 
     @Test
-    void registerBtc_forARepeatedLegacyBtcTransaction_shouldNotPerformAnyChange() throws Exception {
+    void registerBtcTransaction_forARepeatedLegacyBtcTransaction_shouldNotPerformAnyChange() throws Exception {
         // Arrange
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
         bridgeSupport.save();
