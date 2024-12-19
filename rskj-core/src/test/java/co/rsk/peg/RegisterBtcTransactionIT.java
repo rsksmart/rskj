@@ -120,7 +120,7 @@ class RegisterBtcTransactionIT {
 
         int outputIndex = 0;
         TransactionOutput output = bitcoinTransaction.getOutput(outputIndex);
-        List<UTXO> expectedFederationUtxos = Collections.singletonList(utxoOf(bitcoinTransaction, output));
+        List<UTXO> expectedFederationUtxos = List.of(utxoOf(bitcoinTransaction, output));
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
 
         co.rsk.core.Coin expectedReceiverBalance = co.rsk.core.Coin.fromBitcoin(output.getValue());
