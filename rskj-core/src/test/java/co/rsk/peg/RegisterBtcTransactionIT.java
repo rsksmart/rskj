@@ -120,7 +120,7 @@ class RegisterBtcTransactionIT {
 
         int outputIndex = 0;
         TransactionOutput output = bitcoinTransaction.getOutput(outputIndex);
-        List<UTXO> expectedFederationUtxos = Collections.singletonList(utxoOf(bitcoinTransaction, output));
+        List<UTXO> expectedFederationUtxos = List.of(utxoOf(bitcoinTransaction, output));
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
 
         co.rsk.core.Coin expectedReceiverBalance = co.rsk.core.Coin.fromBitcoin(output.getValue());
@@ -136,7 +136,7 @@ class RegisterBtcTransactionIT {
         bridgeSupport.save();
 
         co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
-        List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
 
         // Act
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
@@ -147,6 +147,20 @@ class RegisterBtcTransactionIT {
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
     }
 
+    @Test
+    void registerBtcTransaction_whenLegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
+        // Arrange
+        co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
+
+        // Act
+        bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), -1, pmtWithTransactions.bitcoinSerialize());
+        bridgeSupport.save();
+
+        // Assert
+        assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
+    }
     private static UTXO utxoOf(BtcTransaction bitcoinTransaction, TransactionOutput output) {
         return new UTXO(
             bitcoinTransaction.getHash(),
