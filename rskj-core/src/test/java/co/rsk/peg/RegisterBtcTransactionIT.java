@@ -161,6 +161,7 @@ class RegisterBtcTransactionIT {
         assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
     }
+
     private static UTXO utxoOf(BtcTransaction bitcoinTransaction, TransactionOutput output) {
         return new UTXO(
             bitcoinTransaction.getHash(),
