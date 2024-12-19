@@ -148,7 +148,7 @@ class RegisterBtcTransactionIT {
     }
 
     @Test
-    void registerBtcTransaction_forALegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
+    void registerBtcTransaction_whenLegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
         // Arrange
         co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
         List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
