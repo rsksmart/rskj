@@ -180,7 +180,8 @@ public class ActivationConfigsForTest {
             ConsensusRule.RSKIP427,
             ConsensusRule.RSKIP428,
             ConsensusRule.RSKIP438,
-            ConsensusRule.RSKIP454
+            ConsensusRule.RSKIP454,
+            ConsensusRule.RSKIP459
         ));
     }
 
