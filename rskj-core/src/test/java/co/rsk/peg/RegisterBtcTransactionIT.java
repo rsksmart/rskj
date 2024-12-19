@@ -154,7 +154,8 @@ class RegisterBtcTransactionIT {
         List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
 
         // Act
-        bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), -1, pmtWithTransactions.bitcoinSerialize());
+        int height = -1;
+        bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), height, pmtWithTransactions.bitcoinSerialize());
         bridgeSupport.save();
 
         // Assert
@@ -163,11 +164,12 @@ class RegisterBtcTransactionIT {
     }
 
     private static UTXO utxoOf(BtcTransaction bitcoinTransaction, TransactionOutput output) {
+        int height = 0;
         return new UTXO(
             bitcoinTransaction.getHash(),
             output.getIndex(),
             output.getValue(),
-            0,
+            height,
             bitcoinTransaction.isCoinBase(),
             output.getScriptPubKey()
         );
@@ -175,7 +177,9 @@ class RegisterBtcTransactionIT {
 
     private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin, BtcECKey pubKey) {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
-        btcTx.addInput(BitcoinTestUtils.createHash(0), 0, ScriptBuilder.createInputScript(null, pubKey));
+        int outputIndex = 0;
+        int nHash = 0;
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, ScriptBuilder.createInputScript(null, pubKey));
         btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, coin, federationAddress));
 
         return btcTx;
@@ -184,7 +188,8 @@ class RegisterBtcTransactionIT {
     private void assertLogPegInBtc() {
         Sha256Hash peginTransactionHash = bitcoinTransaction.getHash();
         List<DataWord> encodedTopics = getEncodedTopics(BridgeEvents.PEGIN_BTC.getEvent(), rskReceiver.toString(), peginTransactionHash.getBytes());
-        byte[] encodedData = getEncodedData(BridgeEvents.PEGIN_BTC.getEvent(), minimumPeginValue.getValue(), 0);
+        int protocolVersion = 0;
+        byte[] encodedData = getEncodedData(BridgeEvents.PEGIN_BTC.getEvent(), minimumPeginValue.getValue(), protocolVersion);
 
         assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
         assertEventWasEmittedWithExpectedData(encodedData, logs);
