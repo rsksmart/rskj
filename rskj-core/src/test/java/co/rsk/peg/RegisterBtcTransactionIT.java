@@ -136,7 +136,7 @@ class RegisterBtcTransactionIT {
         bridgeSupport.save();
 
         co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
-        List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
 
         // Act
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
@@ -151,7 +151,7 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_whenLegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
         // Arrange
         co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
-        List<UTXO> expectedFederationUTXOs = federationSupport.getActiveFederationBtcUTXOs();
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
 
         // Act
         bridgeSupport.registerBtcTransaction(rskTx, bitcoinTransaction.bitcoinSerialize(), -1, pmtWithTransactions.bitcoinSerialize());
