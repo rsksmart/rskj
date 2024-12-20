@@ -503,28 +503,37 @@ public class BridgeSupport {
         );
 
         PeginProcessAction peginProcessAction = peginEvaluationResult.getPeginProcessAction();
-        if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
-            logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
-            executePegIn(btcTx, peginInformation, totalAmount);
-        } else {
-            Optional<RejectedPeginReason> rejectedPeginReasonOptional = peginEvaluationResult.getRejectedPeginReason();
-            if (rejectedPeginReasonOptional.isEmpty()) {
-                // This flow should never be reached. There should always be a rejected pegin reason.
-                String message = "Invalid state. No rejected reason was returned from evaluatePegin method";
-                logger.error("[{}}] {}", METHOD_NAME, message);
-                throw new IllegalStateException(message);
+        switch (peginProcessAction) {
+            case CAN_BE_REGISTERED -> {
+                logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
+                executePegIn(btcTx, peginInformation, totalAmount);
             }
-
-            RejectedPeginReason rejectedPeginReason = rejectedPeginReasonOptional.get();
-            logger.debug("[{}] Rejected peg-in, reason {}", METHOD_NAME, rejectedPeginReason);
-            eventLogger.logRejectedPegin(btcTx, rejectedPeginReason);
-            if (peginProcessAction == PeginProcessAction.CAN_BE_REFUNDED) {
-                logger.debug("[{}] Refunding to address {} ", METHOD_NAME, peginInformation.getBtcRefundAddress());
-                generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTxHash, totalAmount);
+            case CAN_BE_REFUNDED -> {
+                logger.debug("[{}] Refunding to address {} ", METHOD_NAME,
+                    peginInformation.getBtcRefundAddress());
+                generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTxHash,
+                    totalAmount);
                 markTxAsProcessed(btcTx);
-            } else {
+            }
+            default -> {
+                Optional<RejectedPeginReason> rejectedPeginReasonOptional = peginEvaluationResult.getRejectedPeginReason();
+                if (rejectedPeginReasonOptional.isEmpty()) {
+                    // This flow should never be reached. There should always be a rejected pegin reason.
+                    String message = "Invalid state. No rejected reason was returned from evaluatePegin method";
+                    logger.error("[{}] {}", METHOD_NAME, message);
+                    throw new IllegalStateException(message);
+                }
+                RejectedPeginReason rejectedPeginReason = rejectedPeginReasonOptional.get();
+                logger.debug("[{}] Rejected peg-in, reason {}", METHOD_NAME, rejectedPeginReason);
+                eventLogger.logRejectedPegin(btcTx, rejectedPeginReason);
                 logger.debug("[{}] Unprocessable transaction {}.", METHOD_NAME, btcTx.getHash());
-                handleUnprocessableBtcTx(btcTx, peginInformation.getProtocolVersion(), rejectedPeginReason);
+                handleUnprocessableBtcTx(btcTx, peginInformation.getProtocolVersion(),
+                    rejectedPeginReason);
+
+                // Since RSKIP459, rejected peg-ins should be marked as processed
+                if (activations.isActive(RSKIP459)) {
+                    markTxAsProcessed(btcTx);
+                }
             }
         }
     }
