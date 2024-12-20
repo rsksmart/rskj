@@ -107,21 +107,8 @@ transaction_build txExecuteCallCode
     contract txCallAndDelegateCallSimpleTest
     value 0
     data a61face90000000000000000000000000000000000000000000000000000000000000001
-    gas 1000000
+    gas 300000
     build
-
-# Create block to hold txExecuteCallCode transaction
-block_build b02
-    parent b01
-    transactions txExecuteCallCode
-    gasLimit 2000000
-    build
-
-# Connect block
-block_connect b02
-
-# Check b02 is best block
-assert_best b02
 
 # Create transaction to execute txExecuteDelegateCall transaction
 transaction_build txExecuteDelegateCall
@@ -130,18 +117,18 @@ transaction_build txExecuteDelegateCall
     contract txCallAndDelegateCallSimpleTest
     value 0
     data a61face90000000000000000000000000000000000000000000000000000000000000000
-    gas 1000000
+    gas 300000
     build
 
-# Create block to hold txExecuteDelegateCall transaction
-block_build b03
-    parent b02
-    transactions txExecuteDelegateCall
-    gasLimit 2000000
+# Create block to hold transactions
+block_build b02
+    parent b01
+    transactions txExecuteCallCode txExecuteDelegateCall
+    gasLimit 1500000
     build
 
 # Connect block
-block_connect b03
+block_connect b02
 
-# Check b03 is best block
-assert_best b03
+# Check b02 is best block
+assert_best b02

@@ -106,19 +106,6 @@ transaction_build txExecuteCallCode
     gas 500000
     build
 
-# Create block to hold txExecuteCallCode transaction
-block_build b02
-    parent b01
-    transactions txExecuteCallCode
-    gasLimit 550000
-    build
-
-# Connect block
-block_connect b02
-
-# Check b02 is best block
-assert_best b02
-
 # Create transaction to execute txExecuteDelegateCall transaction
 transaction_build txExecuteDelegateCall
     sender acc1
@@ -129,20 +116,7 @@ transaction_build txExecuteDelegateCall
     gas 500000
     build
 
-# Create block to hold txExecuteDelegateCall transaction
-block_build b03
-    parent b02
-    transactions txExecuteDelegateCall
-    gasLimit 550000
-    build
-
-# Connect block
-block_connect b03
-
-# Check b03 is best block
-assert_best b03
-
-# Create transaction to execute txExecuteDelegateCall transaction
+# Create transaction to execute txExecuteCall transaction
 transaction_build txExecuteCall
     sender acc1
     nonce 3
@@ -152,15 +126,15 @@ transaction_build txExecuteCall
     gas 500000
     build
 
-# Create block to hold txExecuteCall transaction
-block_build b04
-    parent b03
-    transactions txExecuteCall
-    gasLimit 550000
+# Create block to hold transactions
+block_build b02
+    parent b01
+    transactions txExecuteCallCode txExecuteDelegateCall txExecuteCall
+    gasLimit 2000000
     build
 
 # Connect block
-block_connect b04
+block_connect b02
 
-# Check b04 is best block
-assert_best b04
+# Check b02 is best block
+assert_best b02

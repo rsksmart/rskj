@@ -105,19 +105,6 @@ transaction_build txTestTransientStorageCreateContextsContract
     gas 1000000
     build
 
-# Create block to hold txTestTransientStorageCreateContextsContract transaction
-block_build b01
-    parent g00
-    transactions txTestTransientStorageCreateContextsContract
-    gasLimit 1200000
-    build
-
-# Connect block
-block_connect b01
-
-# Check b01 is best block
-assert_best b01
-
 # Create transaction to execute txInConstructorAndCode transaction
 transaction_build txInConstructorAndCode
     sender acc1
@@ -129,14 +116,14 @@ transaction_build txInConstructorAndCode
     build
 
 # Create block to hold txInConstructorAndCode transaction
-block_build b02
-    parent b01
-    transactions txInConstructorAndCode
+block_build b01
+    parent g00
+    transactions txTestTransientStorageCreateContextsContract txInConstructorAndCode
     gasLimit 3000000
     build
 
 # Connect block
-block_connect b02
+block_connect b01
 
-# Check b02 is best block
-assert_best b02
+# Check b01 is best block
+assert_best b01

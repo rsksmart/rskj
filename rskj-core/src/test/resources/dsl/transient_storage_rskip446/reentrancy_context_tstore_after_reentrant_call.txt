@@ -71,19 +71,6 @@ transaction_build txTstorageReentrancyContextTestContract
     gas 1000000
     build
 
-# Create block to hold txTstorageReentrancyContextTestContract transaction
-block_build b01
-    parent g00
-    transactions txTstorageReentrancyContextTestContract
-    gasLimit 1200000
-    build
-
-# Connect block
-block_connect b01
-
-# Check b01 is best block
-assert_best b01
-
 # Create transaction to execute txTstoreInReentrantCall transaction
 transaction_build txTstoreInReentrantCall
     sender acc1
@@ -93,19 +80,6 @@ transaction_build txTstoreInReentrantCall
     data 21b76bb4
     gas 300000
     build
-
-# Create block to hold txTstoreInReentrantCall transaction
-block_build b02
-    parent b01
-    transactions txTstoreInReentrantCall
-    gasLimit 350000
-    build
-
-# Connect block
-block_connect b02
-
-# Check b02 is best block
-assert_best b02
 
 # Create transaction to execute txCheckValuesStoredInTstorage transaction
 transaction_build txCheckValuesStoredInTstorage transaction
@@ -118,14 +92,14 @@ transaction_build txCheckValuesStoredInTstorage transaction
     build
 
 # Create block to hold txCheckValuesStoredInTstorage transaction
-block_build b03
-    parent b02
-    transactions txCheckValuesStoredInTstorage
-    gasLimit 350000
+block_build b01
+    parent g00
+    transactions txTstorageReentrancyContextTestContract txTstoreInReentrantCall txCheckValuesStoredInTstorage
+    gasLimit 3500000
     build
 
 # Connect block
-block_connect b03
+block_connect b01
 
-# Check b03 is best block
-assert_best b03
+# Check b01 is best block
+assert_best b01

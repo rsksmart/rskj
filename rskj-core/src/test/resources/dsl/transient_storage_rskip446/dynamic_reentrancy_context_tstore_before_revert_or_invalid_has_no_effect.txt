@@ -84,19 +84,6 @@ transaction_build txTstorageDynamicReentrancyContextContract
     gas 1000000
     build
 
-# Create block to hold txTstorageDynamicReentrancyContextContract transaction
-block_build b01
-    parent g00
-    transactions txTstorageDynamicReentrancyContextContract
-    gasLimit 1200000
-    build
-
-# Connect block
-block_connect b01
-
-# Check b01 is best block
-assert_best b01
-
 # Create transaction to execute txTestReentrantContextRevert transaction
 transaction_build txTestReentrantContextRevert
     sender acc1
@@ -106,19 +93,6 @@ transaction_build txTestReentrantContextRevert
     data 902b3cc80000000000000000000000000000000000000000000000000000000000000000
     gas 300000
     build
-
-# Create block to hold txTestReentrantContextRevert transaction
-block_build b02
-    parent b01
-    transactions txTestReentrantContextRevert
-    gasLimit 350000
-    build
-
-# Connect block
-block_connect b02
-
-# Check b02 is best block
-assert_best b02
 
 # Create transaction to execute txTestReentrantContextInvalid transaction
 transaction_build txTestReentrantContextInvalid transaction
@@ -131,14 +105,14 @@ transaction_build txTestReentrantContextInvalid transaction
     build
 
 # Create block to hold txTestReentrantContextInvalid transaction
-block_build b03
-    parent b02
-    transactions txTestReentrantContextInvalid
-    gasLimit 1200000
+block_build b01
+    parent g00
+    transactions txTstorageDynamicReentrancyContextContract txTestReentrantContextRevert txTestReentrantContextInvalid
+    gasLimit 3000000
     build
 
 # Connect block
-block_connect b03
+block_connect b01
 
-# Check b03 is best block
-assert_best b03
+# Check b01 is best block
+assert_best b01

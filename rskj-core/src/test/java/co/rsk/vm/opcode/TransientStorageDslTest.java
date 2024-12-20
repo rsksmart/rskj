@@ -175,10 +175,10 @@ class TransientStorageDslTest {
         processor.processCommands(parser);
 
         String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
-        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true, 2);
 
         String txInConstructorAndCode = "txInConstructorAndCode";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txInConstructorAndCode, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txInConstructorAndCode, "b01", true, 2);
         Assertions.assertEquals(6, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -190,10 +190,10 @@ class TransientStorageDslTest {
         processor.processCommands(parser);
 
         String txTestTransientStorageCreateContextsContract = "txTestTransientStorageCreateContextsContract";
-        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true);
+        assertTransactionReceiptWithStatus(world, txTestTransientStorageCreateContextsContract, "b01", true, 2);
 
         String txAcrossConstructorAndCodeV0 = "txAcrossConstructorAndCodeV0";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txAcrossConstructorAndCodeV0, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txAcrossConstructorAndCodeV0, "b01", true, 2);
         Assertions.assertEquals(6, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -238,11 +238,11 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txCallAndDelegateCallSimpleTest, "b01", true);
 
         String txExecuteCallCode = "txExecuteCallCode";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true,2);
         Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteDelegateCall = "txExecuteDelegateCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b02", true, 2);
         Assertions.assertEquals(5, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -257,15 +257,15 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txDynamicExecutionContextWithRevertTest, "b01", true);
 
         String txExecuteCallCode = "txExecuteCallCode";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteDelegateCall = "txExecuteDelegateCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteCall = "txExecuteCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b04", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -280,15 +280,15 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txDynamicExecutionContextWithInvalidTest, "b01", true);
 
         String txExecuteCallCode = "txExecuteCallCode";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteDelegateCall = "txExecuteDelegateCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteCall = "txExecuteCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b04", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -303,15 +303,15 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txDynamicExecutionContextWithStackOverflowTest, "b01", true);
 
         String txExecuteCallCode = "txExecuteCallCode";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCallCode, "b02", true,3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteDelegateCall = "txExecuteDelegateCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b03", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteDelegateCall, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txExecuteCall = "txExecuteCall";
-        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b04", true);
+        txReceipt = assertTransactionReceiptWithStatus(world, txExecuteCall, "b02", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -353,14 +353,14 @@ class TransientStorageDslTest {
         processor.processCommands(parser);
 
         String txTstorageDynamicReentrancyContextContract = "txTstorageDynamicReentrancyContextContract";
-        assertTransactionReceiptWithStatus(world, txTstorageDynamicReentrancyContextContract, "b01", true);
+        assertTransactionReceiptWithStatus(world, txTstorageDynamicReentrancyContextContract, "b01", true, 3);
 
         String txTestReentrantContextRevert = "txTestReentrantContextRevert";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTestReentrantContextRevert, "b02", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTestReentrantContextRevert, "b01", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
 
         String txTestReentrantContextInvalid = "txTestReentrantContextInvalid";
-        assertTransactionReceiptWithStatus(world, txTestReentrantContextInvalid, "b03", false);
+        assertTransactionReceiptWithStatus(world, txTestReentrantContextInvalid, "b01", false, 3);
     }
 
     @Test
@@ -414,13 +414,13 @@ class TransientStorageDslTest {
         processor.processCommands(parser);
 
         String txTstorageReentrancyContextTestContract = "txTstorageReentrancyContextTestContract";
-        assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true);
+        assertTransactionReceiptWithStatus(world, txTstorageReentrancyContextTestContract, "b01", true, 3);
 
         String txTstoreInReentrantCall = "txTstoreInReentrantCall";
-        assertTransactionReceiptWithStatus(world, txTstoreInReentrantCall, "b02", true);
+        assertTransactionReceiptWithStatus(world, txTstoreInReentrantCall, "b01", true, 3);
 
         String txCheckValuesStoredInTstorage = "txCheckValuesStoredInTstorage";
-        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b03", true);
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txCheckValuesStoredInTstorage, "b01", true, 3);
         Assertions.assertEquals(3, TransactionReceiptUtil.getEventCount(txReceipt, "OK",  null));
     }
 
@@ -580,38 +580,28 @@ class TransientStorageDslTest {
         assertTransactionReceiptWithStatus(world, txTloadTstoreCheckingBetweenTransactionsContract, "b01", true);
 
         String txTstoreAndTloadSomeValue = "txTstoreAndTloadSomeValue";
-        Transaction txCreation = world.getTransactionByName(txTstoreAndTloadSomeValue);
-        assertNotNull(txCreation);
-
-        Block block = world.getBlockByName("b02");
-        assertEquals(2, block.getTransactionsList().size());
-
-        TransactionReceipt txReceipt = world.getTransactionReceiptByName(txTstoreAndTloadSomeValue);
-        assertNotNull(txReceipt);
-        byte[] status = txReceipt.getStatus();
-        assertNotNull(status);
-        assertTrue(txReceipt.isSuccessful());
+        TransactionReceipt txReceipt = assertTransactionReceiptWithStatus(world, txTstoreAndTloadSomeValue, "b02", true, 2);
 
         Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "ValueStored",  new String[]{"uint256","uint256"}));
         Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt, "ValueLoaded",  new String[]{"uint256","uint256"}));
 
         String txTloadSomeValueAndCheckWithExpected = "txTloadSomeValueAndCheckWithExpected";
-        TransactionReceipt txReceipt2 = world.getTransactionReceiptByName(txTloadSomeValueAndCheckWithExpected);
-        assertNotNull(txReceipt2);
-        status = txReceipt2.getStatus();
-        assertNotNull(status);
-        assertTrue(txReceipt2.isSuccessful());
+        TransactionReceipt txReceipt2 = assertTransactionReceiptWithStatus(world, txTloadSomeValueAndCheckWithExpected, "b02", true, 2);
 
         Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt2, "ValueLoaded",    new String[]{"uint256","uint256"}));
         Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(txReceipt2, "OK",  null));
     }
 
     private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess) {
+       return assertTransactionReceiptWithStatus(world, txName, blockName, withSuccess, 1);
+    }
+
+    private static TransactionReceipt assertTransactionReceiptWithStatus(World world, String txName, String blockName, boolean withSuccess, int numberOfTransactionsInBlock) {
         Transaction txCreation = world.getTransactionByName(txName);
         assertNotNull(txCreation);
 
         Block block = world.getBlockByName(blockName);
-        assertEquals(1, block.getTransactionsList().size());
+        assertEquals(numberOfTransactionsInBlock, block.getTransactionsList().size());
 
         TransactionReceipt txReceipt = world.getTransactionReceiptByName(txName);
         assertNotNull(txReceipt);

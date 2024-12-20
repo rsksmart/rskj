@@ -61,15 +61,19 @@ public class MutableRepository implements Repository {
     private final IReadWrittenKeysTracker tracker;
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
-        this(new MutableTrieImpl(trieStore, trie), new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()));
+        this(new MutableTrieImpl(trieStore, trie), aInMemoryMutableTrie());
     }
 
     public MutableRepository(MutableTrie mutableTrie) {
-       this(mutableTrie, new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()));
+       this(mutableTrie, aInMemoryMutableTrie());
     }
 
     public MutableRepository(MutableTrie mutableTrie, IReadWrittenKeysTracker tracker) {
-        this(mutableTrie, new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie()), tracker);
+        this(mutableTrie, aInMemoryMutableTrie(), tracker);
+    }
+
+    private static MutableTrieImpl aInMemoryMutableTrie() {
+        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
     }
 
     public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
@@ -452,7 +456,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public void clearTransientStorage() {
-        this.transientTrie =  new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
+        this.transientTrie = aInMemoryMutableTrie();
     }
 
     @Nullable
