@@ -25,6 +25,7 @@ import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.MessageQueue;
@@ -74,9 +75,10 @@ public class Channel implements Peer {
 
     private final PeerStatistics peerStats = new PeerStatistics();
 
-    private Stats stats;
+    private final Stats stats;
     private boolean isSnapCapable;
 
+    @VisibleForTesting
     public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
                    NodeManager nodeManager,
@@ -84,6 +86,17 @@ public class Channel implements Peer {
                    Eth62MessageFactory eth62MessageFactory,
                    StaticMessages staticMessages,
                    String remoteId) {
+        this(msgQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId, new Stats());
+    }
+
+    public Channel(MessageQueue msgQueue,
+                   MessageCodec messageCodec,
+                   NodeManager nodeManager,
+                   RskWireProtocol.Factory rskWireProtocolFactory,
+                   Eth62MessageFactory eth62MessageFactory,
+                   StaticMessages staticMessages,
+                   String remoteId,
+                   Stats stats) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
         this.nodeManager = nodeManager;
@@ -91,7 +104,7 @@ public class Channel implements Peer {
         this.eth62MessageFactory = eth62MessageFactory;
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
-        this.stats = new Stats();
+        this.stats = stats;
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,

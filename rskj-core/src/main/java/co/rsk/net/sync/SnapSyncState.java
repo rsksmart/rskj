@@ -21,10 +21,7 @@ package co.rsk.net.sync;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
-import co.rsk.net.messages.MessageType;
-import co.rsk.net.messages.SnapBlocksResponseMessage;
-import co.rsk.net.messages.SnapStateChunkResponseMessage;
-import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.trie.TrieDTO;
 import com.google.common.annotations.VisibleForTesting;
@@ -35,17 +32,24 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
+import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
+import static co.rsk.net.sync.SnapSyncRequestManager.SendRequestException;
 
 public class SnapSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("SnapSyncState");
 
     private final SnapshotProcessor snapshotProcessor;
+    private final SnapSyncRequestManager snapRequestManager;
 
     // queue for processing of SNAP responses
     private final BlockingQueue<SyncMessageHandler.Job> responseQueue = new LinkedBlockingQueue<>();
@@ -78,14 +82,16 @@ public class SnapSyncState extends BaseSyncState {
     private final Thread thread;
 
     public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
-        this(syncEventsHandler, snapshotProcessor, syncConfiguration, null);
+        this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null);
     }
 
     @VisibleForTesting
     SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor,
-                  SyncConfiguration syncConfiguration, @Nullable SyncMessageHandler.Listener listener) {
+                  SnapSyncRequestManager snapRequestManager, SyncConfiguration syncConfiguration,
+                  @Nullable SyncMessageHandler.Listener listener) {
         super(syncEventsHandler, syncConfiguration);
-        this.snapshotProcessor = snapshotProcessor; // TODO(snap-poc) code in SnapshotProcessor should be moved here probably
+        this.snapshotProcessor = snapshotProcessor;
+        this.snapRequestManager = snapRequestManager;
         this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
         this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
@@ -110,8 +116,12 @@ public class SnapSyncState extends BaseSyncState {
 
     @Override
     public void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage) {
+        if (!snapRequestManager.processResponse(responseMessage)) {
+            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            return;
+        }
+
         try {
-            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -126,8 +136,12 @@ public class SnapSyncState extends BaseSyncState {
 
     @Override
     public void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage) {
+        if (!snapRequestManager.processResponse(responseMessage)) {
+            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            return;
+        }
+
         try {
-            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -142,8 +156,12 @@ public class SnapSyncState extends BaseSyncState {
 
     @Override
     public void onSnapStateChunk(Peer sender, SnapStateChunkResponseMessage responseMessage) {
+        if (!snapRequestManager.processResponse(responseMessage)) {
+            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            return;
+        }
+
         try {
-            resetTimeElapsed();
             responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
@@ -157,13 +175,17 @@ public class SnapSyncState extends BaseSyncState {
     }
 
     @Override
-    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
+    public void newBlockHeaders(Peer sender, BlockHeadersResponseMessage responseMessage) {
+        if (!snapRequestManager.processResponse(responseMessage)) {
+            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            return;
+        }
+
         try {
-            resetTimeElapsed();
-            responseQueue.put(new SyncMessageHandler.Job(peer, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
                 @Override
                 public void run() {
-                    snapshotProcessor.processBlockHeaderChunk(SnapSyncState.this, peer, chunk);
+                    snapshotProcessor.processBlockHeaderChunk(SnapSyncState.this, sender, responseMessage.getBlockHeaders());
                 }
             });
         } catch (InterruptedException e) {
@@ -176,9 +198,23 @@ public class SnapSyncState extends BaseSyncState {
         return this.syncEventsHandler;
     }
 
+    public synchronized void submitRequest(@Nonnull PeerSelector peerSelector, @Nonnull RequestFactory requestFactory) {
+        try {
+            snapRequestManager.submitRequest(peerSelector, requestFactory);
+        } catch (SendRequestException e) {
+            logger.warn("Failed to submit expired requests. Stopping snap syncing", e);
+            finish();
+        }
+    }
+
     @Override
-    protected void onMessageTimeOut() {
-        fail(getLastBlockSender(), EventType.TIMEOUT_MESSAGE, "Snap sync timed out");
+    public void tick(Duration duration) {
+        try {
+            this.snapRequestManager.resendExpiredRequests();
+        } catch (SendRequestException e) {
+            logger.warn("Failed to re-submit expired requests. Stopping snap syncing", e);
+            finish();
+        }
     }
 
     public Block getLastBlock() {

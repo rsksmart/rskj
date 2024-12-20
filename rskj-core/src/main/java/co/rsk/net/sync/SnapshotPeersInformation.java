@@ -30,8 +30,10 @@ import java.util.Set;
  *     things such as the underlying communication channel.
  */
 public interface SnapshotPeersInformation {
+    Optional<Peer> getBestPeer();
     Optional<Peer> getBestSnapPeer();
     List<Peer> getBestSnapPeerCandidates();
     Optional<Peer> getBestPeer(Set<NodeID> exclude);
+    Optional<Peer> getBestSnapPeer(Set<NodeID> exclude);
     SyncPeerStatus getOrRegisterPeer(Peer peer);
 }

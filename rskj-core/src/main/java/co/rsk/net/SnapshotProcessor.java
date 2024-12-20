@@ -53,8 +53,9 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
 
 /**
  * Snapshot Synchronization consist in 3 steps:
@@ -86,8 +87,7 @@ public class SnapshotProcessor implements InternalService {
     private final BlockHeaderParentDependantValidationRule blockHeaderParentValidator;
     private final BlockHeaderValidationRule blockHeaderValidator;
 
-    private final AtomicLong messageId = new AtomicLong(0);
-
+    private final boolean checkHistoricalHeaders;
     // flag for parallel requests
     private final boolean parallel;
 
@@ -106,10 +106,11 @@ public class SnapshotProcessor implements InternalService {
                              BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                              BlockHeaderValidationRule blockHeaderValidator,
                              int chunkSize,
+                             boolean checkHistoricalHeaders,
                              boolean isParallelEnabled) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, isParallelEnabled, null);
+                chunkSize, checkHistoricalHeaders, isParallelEnabled, null);
     }
 
     @VisibleForTesting
@@ -123,6 +124,7 @@ public class SnapshotProcessor implements InternalService {
                       BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                       BlockHeaderValidationRule blockHeaderValidator,
                       int chunkSize,
+                      boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
                       @Nullable SyncMessageHandler.Listener listener) {
         this.blockchain = blockchain;
@@ -138,6 +140,7 @@ public class SnapshotProcessor implements InternalService {
         this.blockHeaderParentValidator = blockHeaderParentValidator;
         this.blockHeaderValidator = blockHeaderValidator;
 
+        this.checkHistoricalHeaders = checkHistoricalHeaders;
         this.parallel = isParallelEnabled;
         this.thread = new Thread(new SyncMessageHandler("SNAP/server", requestQueue, listener) {
 
@@ -157,7 +160,7 @@ public class SnapshotProcessor implements InternalService {
         }
 
         logger.info("Starting Snap sync");
-        requestSnapStatus(bestPeerOpt.get());
+        requestSnapStatus(state, bestPeerOpt.get());
     }
 
     private void completeSyncing(SnapSyncState state) {
@@ -177,9 +180,22 @@ public class SnapshotProcessor implements InternalService {
     /**
      * STATUS
      */
-    private void requestSnapStatus(Peer peer) {
-        SnapStatusRequestMessage message = new SnapStatusRequestMessage();
-        peer.sendMessage(message);
+    private void requestSnapStatus(SnapSyncState state, Peer peer) {
+        state.submitRequest(snapPeerSelector(peer), SnapStatusRequestMessage::new);
+    }
+
+    private PeerSelector peerSelector(@Nullable Peer peer) {
+        return PeerSelector.builder()
+                .withDefaultPeer(() -> peer)
+                .withAltPeer(peersInformation::getBestPeer)
+                .build();
+    }
+
+    private PeerSelector snapPeerSelector(@Nullable Peer snapPeer) {
+        return PeerSelector.builder()
+                .withDefaultPeer(() -> snapPeer)
+                .withAltPeer(peersInformation::getBestSnapPeer)
+                .build();
     }
 
     public void processSnapStatusRequest(Peer sender, SnapStatusRequestMessage requestMessage) {
@@ -201,7 +217,7 @@ public class SnapshotProcessor implements InternalService {
         }
     }
 
-    void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage ignoredRequestMessage) {
+    void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
         long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
         logger.debug("Processing snapshot status request, checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
@@ -226,7 +242,7 @@ public class SnapshotProcessor implements InternalService {
 
         long trieSize = opt.get().getTotalSize();
         logger.debug("Processing snapshot status request - rootHash: {} trieSize: {}", rootHash, trieSize);
-        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(blocks, difficulties, trieSize);
+        SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(requestMessage.getId(), blocks, difficulties, trieSize);
         sender.sendMessage(responseMessage);
     }
 
@@ -261,7 +277,7 @@ public class SnapshotProcessor implements InternalService {
             generateChunkRequestTasks(state);
             startRequestingChunks(state);
         } else {
-            requestBlocksChunk(sender, blocksFromResponse.get(0).getNumber());
+            requestBlocksChunk(state, blocksFromResponse.get(0).getNumber());
         }
     }
 
@@ -318,9 +334,11 @@ public class SnapshotProcessor implements InternalService {
     /**
      * BLOCK CHUNK
      */
-    private void requestBlocksChunk(Peer sender, long blockNumber) {
-        logger.debug("Requesting block chunk to node {} - block {}", sender.getPeerNodeID(), blockNumber);
-        sender.sendMessage(new SnapBlocksRequestMessage(blockNumber));
+    private void requestBlocksChunk(SnapSyncState state, long blockNumber) {
+        state.submitRequest(
+                peerSelector(null),
+                messageId -> new SnapBlocksRequestMessage(messageId, blockNumber)
+        );
     }
 
     public void processBlockHeaderChunk(SnapSyncState state, Peer sender, List<BlockHeader> chunk) {
@@ -405,7 +423,10 @@ public class SnapshotProcessor implements InternalService {
 
         logger.debug("Requesting block header chunk to node {} - block [{}/{}]", peer.getPeerNodeID(), lastVerifiedBlockHeader.getNumber() - 1, parentHash);
 
-        state.getSyncEventsHandler().sendBlockHeadersRequest(peer, new ChunkDescriptor(parentHash.getBytes(), (int) count));
+        state.submitRequest(
+                peerSelector(sender),
+                messageId -> new BlockHeadersRequestMessage(messageId, parentHash.getBytes(), (int) count)
+        );
     }
 
     public void processSnapBlocksRequest(Peer sender, SnapBlocksRequestMessage requestMessage) {
@@ -447,7 +468,7 @@ public class SnapshotProcessor implements InternalService {
             difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
         }
         logger.debug("Sending snap blocks response. From block {} to block {} - chunksize {}", blocks.get(0).getNumber(), blocks.get(blocks.size() - 1).getNumber(), BLOCK_CHUNK_SIZE);
-        SnapBlocksResponseMessage responseMessage = new SnapBlocksResponseMessage(blocks, difficulties);
+        SnapBlocksResponseMessage responseMessage = new SnapBlocksResponseMessage(requestMessage.getId(), blocks, difficulties);
         sender.sendMessage(responseMessage);
     }
 
@@ -474,7 +495,12 @@ public class SnapshotProcessor implements InternalService {
             generateChunkRequestTasks(state);
             startRequestingChunks(state);
         } else if (nextChunk > lastRequiredBlock) {
-            requestBlocksChunk(sender, nextChunk);
+            requestBlocksChunk(state, nextChunk);
+        } else if (!this.checkHistoricalHeaders) {
+            logger.info("Finished Snap blocks request sending. Start requesting state chunks without historical headers check");
+
+            generateChunkRequestTasks(state);
+            startRequestingChunks(state);
         } else {
             logger.info("Finished Snap blocks request sending. Start requesting state chunks and block headers");
 
@@ -488,10 +514,11 @@ public class SnapshotProcessor implements InternalService {
     /**
      * STATE CHUNK
      */
-    private void requestStateChunk(Peer peer, long from, long blockNumber, int chunkSize) {
-        logger.debug("Requesting state chunk to node {} - block {} - chunkNumber {}", peer.getPeerNodeID(), blockNumber, from / chunkSize);
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(messageId.getAndIncrement(), blockNumber, from, chunkSize);
-        peer.sendMessage(message);
+    private void requestStateChunk(SnapSyncState state, Peer peer, long from, long blockNumber, int chunkSize) {
+        state.submitRequest(
+                snapPeerSelector(peer),
+                messageId -> new SnapStateChunkRequestMessage(messageId, blockNumber, from, chunkSize)
+        );
     }
 
     public void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage requestMessage) {
@@ -573,7 +600,7 @@ public class SnapshotProcessor implements InternalService {
                     state.setNextExpectedFrom(nextExpectedFrom + chunkSize * CHUNK_ITEM_SIZE);
                 } catch (Exception e) {
                     logger.error("Error while processing chunk response. {}", e.getMessage(), e);
-                    onStateChunkResponseError(peer, nextMessage);
+                    onStateChunkResponseError(state, peer, nextMessage);
                 }
             } else {
                 break;
@@ -587,19 +614,18 @@ public class SnapshotProcessor implements InternalService {
     }
 
     @VisibleForTesting
-    void onStateChunkResponseError(Peer peer, SnapStateChunkResponseMessage responseMessage) {
+    void onStateChunkResponseError(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage responseMessage) {
         logger.error("Error while processing chunk response from {} of peer {}. Asking for chunk again.", responseMessage.getFrom(), peer.getPeerNodeID());
         Peer alternativePeer = peersInformation.getBestSnapPeerCandidates().stream()
                 .filter(listedPeer -> !listedPeer.getPeerNodeID().equals(peer.getPeerNodeID()))
                 .findFirst()
                 .orElse(peer);
         logger.debug("Requesting state chunk \"from\" {} to peer {}", responseMessage.getFrom(), peer.getPeerNodeID());
-        requestStateChunk(alternativePeer, responseMessage.getFrom(), responseMessage.getBlockNumber(), chunkSize);
+        requestStateChunk(state, alternativePeer, responseMessage.getFrom(), responseMessage.getBlockNumber(), chunkSize);
     }
 
     private void processOrderedStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage message) throws Exception {
         logger.debug("Processing State chunk received from {} to {}", message.getFrom(), message.getTo());
-        peersInformation.getOrRegisterPeer(peer);
 
         RLPList nodeLists = RLP.decodeList(message.getChunkOfTrieKeyValue());
         final RLPList preRootElements = RLP.decodeList(nodeLists.get(0).getRLPData());
@@ -651,7 +677,7 @@ public class SnapshotProcessor implements InternalService {
             if (!message.isComplete()) {
                 executeNextChunkRequestTask(state, peer);
             } else {
-                if (blocksVerified(state)) {
+                if (!this.checkHistoricalHeaders || blocksVerified(state)) {
                     completeSyncing(state);
                 } else {
                     state.setStateFetched();
@@ -716,7 +742,7 @@ public class SnapshotProcessor implements InternalService {
         if (!taskQueue.isEmpty()) {
             ChunkTask task = taskQueue.poll();
 
-            requestStateChunk(peer, task.getFrom(), task.getBlockNumber(), chunkSize);
+            requestStateChunk(state, peer, task.getFrom(), task.getBlockNumber(), chunkSize);
         } else {
             logger.warn("No more chunk request tasks.");
         }

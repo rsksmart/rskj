@@ -19,8 +19,11 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -28,12 +31,15 @@ import java.math.BigInteger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
 class SnapBlocksRequestMessageTest {
 
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Block block4Test = new BlockGenerator().getBlock(1);
-    private final SnapBlocksRequestMessage underTest = new SnapBlocksRequestMessage(block4Test.getNumber());
+    private final SnapBlocksRequestMessage underTest = new SnapBlocksRequestMessage(1, block4Test.getNumber());
 
 
     @Test
@@ -52,8 +58,26 @@ class SnapBlocksRequestMessageTest {
         //when
         byte[] encodedMessage = underTest.getEncodedMessage();
 
+        byte[] expectedEncodedMessage = RLP.encodeList(
+                RLP.encodeBigInteger(BigInteger.valueOf(underTest.getId())),
+                RLP.encodeList(RLP.encodeBigInteger(BigInteger.ONE)));
+
         //then
-        assertThat(encodedMessage, equalTo(RLP.encodeList(RLP.encodeBigInteger(BigInteger.ONE))));
+        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
+    }
+
+    @Test
+    void decodeMessage_returnExpectedMessage() {
+        //given default block 4 test
+        RLPList encodedRLPList = (RLPList) RLP.decode2(underTest.getEncodedMessage()).get(0);
+
+        //when
+        Message decodedMessage = SnapBlocksRequestMessage.decodeMessage(blockFactory, encodedRLPList);
+
+        //then
+        assertInstanceOf(SnapBlocksRequestMessage.class, decodedMessage);
+        assertThat(underTest.getId(), equalTo(((SnapBlocksRequestMessage) decodedMessage).getId()));
+        assertEquals(1, ((SnapBlocksRequestMessage) decodedMessage).getBlockNumber());
     }
 
     @Test
@@ -68,10 +92,10 @@ class SnapBlocksRequestMessageTest {
     }
 
     @Test
-    void givenAcceptIsCalled_messageVisitorIsAppliedFormessage() {
+    void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
         Block block = new BlockGenerator().getBlock(1);
-        SnapBlocksRequestMessage message = new SnapBlocksRequestMessage(block.getNumber());
+        SnapBlocksRequestMessage message = new SnapBlocksRequestMessage(1, block.getNumber());
         MessageVisitor visitor = mock(MessageVisitor.class);
 
         //when

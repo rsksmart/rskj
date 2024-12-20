@@ -2089,6 +2089,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new ValidGasUsedRule()
                     ),
                     getRskSystemProperties().getSnapshotChunkSize(),
+                    getRskSystemProperties().checkHistoricalHeaders(),
                     getRskSystemProperties().isSnapshotParallelEnabled()
             );
         }

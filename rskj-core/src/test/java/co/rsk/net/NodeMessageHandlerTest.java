@@ -993,8 +993,7 @@ class NodeMessageHandlerTest {
         }
 
         // assert that the surplus was not added
-        Assertions.assertEquals(config.getMessageQueueMaxSize(), (Integer) handler.getMessageQueueSize(sender));
-
+        Assertions.assertEquals(config.getMessageQueueMaxSize(), handler.getMessageQueueSize(sender));
     }
 
     @Test

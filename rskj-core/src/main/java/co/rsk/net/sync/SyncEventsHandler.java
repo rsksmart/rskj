@@ -18,11 +18,13 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
+import co.rsk.net.messages.MessageWithId;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Deque;
 import java.util.List;
@@ -60,4 +62,8 @@ public interface SyncEventsHandler {
     void backwardSyncing(Peer peer);
 
     void startSnapSync(Peer peer);
+
+    void registerPendingMessage(@Nonnull MessageWithId message);
+
+    long nextMessageId();
 }
