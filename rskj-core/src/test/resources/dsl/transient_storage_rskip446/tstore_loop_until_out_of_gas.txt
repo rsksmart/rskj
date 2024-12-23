@@ -1,0 +1,79 @@
+comment
+
+// CONTRACT CODE
+pragma solidity ^0.8.24;
+
+contract TstoreLoopUntilOutOfGas {
+
+    constructor()
+    {
+    }
+
+    function runTstoreUntilOutOfGas() external {
+        // Run tstore in loop until out of gas
+        for (uint256 i = 0; i < 1000000; i++) {
+            assembly {
+                tstore(gas(), gas())
+            }
+        }
+    }
+}
+// DESCRIPTION
+
+// CONTRACT BYTECODE
+
+TstoreLoopUntilOutOfGas: 6080604052348015600e575f80fd5b5060868061001b5f395ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c80637b17abde14602a575b5f80fd5b60306032565b005b5f5b620f4240811015604d575a5a5d80806001019150506034565b5056fea2646970667358221220460f7f44d313897b5627f933b4969a97d228645b5447a4ea286119f6cc66155964736f6c63430008180033
+
+function hashes:
+
+- 7b17abde: runTstoreUntilOutOfGas()
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TstoreLoopUntilOutOfGas contract
+transaction_build txTstoreLoopUntilOutOfGasContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b5060868061001b5f395ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c80637b17abde14602a575b5f80fd5b60306032565b005b5f5b620f4240811015604d575a5a5d80806001019150506034565b5056fea2646970667358221220460f7f44d313897b5627f933b4969a97d228645b5447a4ea286119f6cc66155964736f6c63430008180033
+    gas 1000000
+    build
+
+# Create block to hold txTstoreLoopUntilOutOfGasContract transaction
+block_build b01
+    parent g00
+    transactions txTstoreLoopUntilOutOfGasContract
+    gasLimit 1200000
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Create transaction to execute  txRunTstoreUntilOutOfGas function
+transaction_build txRunTstoreUntilOutOfGas
+    sender acc1
+    nonce 1
+    contract txTstoreLoopUntilOutOfGasContract
+    value 0
+    data 7b17abde
+    gas 300000
+    build
+
+# Create block to hold txRunTstoreUntilOutOfGas transaction
+block_build b02
+    parent b01
+    transactions txRunTstoreUntilOutOfGas
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
