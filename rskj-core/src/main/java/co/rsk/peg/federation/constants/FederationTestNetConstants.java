@@ -4,6 +4,8 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 
 import java.time.ZonedDateTime;
@@ -35,7 +37,7 @@ public class FederationTestNetConstants extends FederationConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 80L;
+        validationPeriodDurationInBlocks = 2000L;
 
         federationActivationAgeLegacy = 60L;
         federationActivationAge = 120L;
@@ -60,5 +62,20 @@ public class FederationTestNetConstants extends FederationConstants {
 
     public static FederationTestNetConstants getInstance() {
         return INSTANCE;
+    }
+
+    @Override
+    public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(ConsensusRule.RSKIP383)) {
+            return federationActivationAgeLegacy;
+        }
+
+        if (!activations.isActive(ConsensusRule.RSKIP419)) {
+            return federationActivationAge;
+        }
+
+        // after lovell, we have to consider the activation age
+        // to be more blocks than the validation period duration
+        return validationPeriodDurationInBlocks + 400L;
     }
 }

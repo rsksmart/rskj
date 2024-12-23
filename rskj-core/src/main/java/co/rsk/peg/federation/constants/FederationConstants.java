@@ -40,7 +40,11 @@ public abstract class FederationConstants {
     public long getValidationPeriodDurationInBlocks() { return validationPeriodDurationInBlocks; }
 
     public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
-        return activations.isActive(ConsensusRule.RSKIP383) ? federationActivationAge  : federationActivationAgeLegacy;
+        if (!activations.isActive(ConsensusRule.RSKIP383)) {
+            return federationActivationAgeLegacy;
+        }
+
+        return federationActivationAge;
     }
 
     public long getFundsMigrationAgeSinceActivationBegin() {
