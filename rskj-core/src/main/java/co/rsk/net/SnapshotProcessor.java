@@ -674,9 +674,7 @@ public class SnapshotProcessor implements InternalService {
             state.getAllNodes().addAll(nodes);
             state.setStateSize(state.getStateSize().add(BigInteger.valueOf(trieElements.size())));
             state.setStateChunkSize(state.getStateChunkSize().add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length)));
-            if (!message.isComplete()) {
-                executeNextChunkRequestTask(state, peer);
-            } else {
+            if (message.isComplete()) {
                 if (!this.checkHistoricalHeaders || blocksVerified(state)) {
                     completeSyncing(state);
                 } else {
