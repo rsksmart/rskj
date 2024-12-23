@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -115,7 +116,7 @@ class FederationConstantsTest {
     private static Stream<Arguments> validationPeriodDurationArgs() {
         return Stream.of(
             Arguments.of(MAINNET, 16000L),
-            Arguments.of(TESTNET, 80L),
+            Arguments.of(TESTNET, 2000L),
             Arguments.of(REGTEST, 125L)
         );
     }
@@ -130,22 +131,26 @@ class FederationConstantsTest {
         long fedActivationAgeLegacyMainnet = 18500L;
         long fedActivationAgeLegacyTestnet = 60L;
         long fedActivationAgeLegacyRegtest = 10L;
-        ActivationConfig.ForBlock activationsPreRSKIP383 = mock(ActivationConfig.ForBlock.class);
-        when(activationsPreRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(false);
+        ActivationConfig.ForBlock activationsPreRSKIP383 = ActivationConfigsForTest.hop401().forBlock(0L);
 
         long fedActivationAgeMainnet = 40320L;
         long fedActivationAgeTestnet = 120L;
         long fedActivationAgeRegtest = 150L;
-        ActivationConfig.ForBlock activationsPostRSKIP383 = mock(ActivationConfig.ForBlock.class);
-        when(activationsPostRSKIP383.isActive(ConsensusRule.RSKIP383)).thenReturn(true);
+        ActivationConfig.ForBlock activationsPostRSKIP383PreRSKIP419 = ActivationConfigsForTest.fingerroot500().forBlock(0L);
+
+        long fedActivationAgeTestnetPostLovell = 2400L;
+        ActivationConfig.ForBlock activationsPostRSKIP419 = ActivationConfigsForTest.all().forBlock(0L);
 
         return Stream.of(
             Arguments.of(MAINNET, activationsPreRSKIP383, fedActivationAgeLegacyMainnet),
             Arguments.of(TESTNET, activationsPreRSKIP383, fedActivationAgeLegacyTestnet),
             Arguments.of(REGTEST, activationsPreRSKIP383, fedActivationAgeLegacyRegtest),
-            Arguments.of(MAINNET, activationsPostRSKIP383, fedActivationAgeMainnet),
-            Arguments.of(TESTNET, activationsPostRSKIP383, fedActivationAgeTestnet),
-            Arguments.of(REGTEST, activationsPostRSKIP383, fedActivationAgeRegtest)
+            Arguments.of(MAINNET, activationsPostRSKIP383PreRSKIP419, fedActivationAgeMainnet),
+            Arguments.of(TESTNET, activationsPostRSKIP383PreRSKIP419, fedActivationAgeTestnet),
+            Arguments.of(REGTEST, activationsPostRSKIP383PreRSKIP419, fedActivationAgeRegtest),
+            Arguments.of(MAINNET, activationsPostRSKIP419, fedActivationAgeMainnet),
+            Arguments.of(TESTNET, activationsPostRSKIP419, fedActivationAgeTestnetPostLovell),
+            Arguments.of(REGTEST, activationsPostRSKIP419, fedActivationAgeRegtest)
         );
     }
 
