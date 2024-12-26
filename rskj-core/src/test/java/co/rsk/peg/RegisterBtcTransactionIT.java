@@ -170,6 +170,36 @@ class RegisterBtcTransactionIT {
     }
 
     @Test
+    void registerBtcTransaction_forMultipleLegacyBtcTransactionBelowMinimumWithSumAboveMinimum_shouldNotPerformAnyPegIn() throws Exception {
+        // Arrange
+        short numberOfOutputs = 2;
+        Coin partOfMinimumValue = Coin.valueOf(minimumPeginValue.getValue() / numberOfOutputs);
+        BtcTransaction btcTransaction = createTransactionWithMultiplePegIns(federationSupport.getActiveFederation().getAddress(), btcPublicKey, partOfMinimumValue, numberOfOutputs);
+        assertTrue((partOfMinimumValue.getValue() * numberOfOutputs) >= minimumPeginValue.getValue());
+
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
+        bridgeStorageProvider.save();
+
+        co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
+
+        // Act
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+        bridgeSupport.save();
+
+        // Assert
+        assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
+
+        assertRejectedPeginTransaction(btcTransaction, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent(), RejectedPeginReason.INVALID_AMOUNT.getValue());
+        Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTransaction.getHash());
+        assertFalse(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
+    }
+
+    @Test
     void registerBtcTransaction_forARepeatedLegacyBtcTransaction_shouldNotPerformAnyChange() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey);
