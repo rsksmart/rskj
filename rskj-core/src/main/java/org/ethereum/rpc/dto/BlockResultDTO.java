@@ -65,11 +65,13 @@ public class BlockResultDTO {
     private final String paidFees;
     private final String cumulativeDifficulty;
     private final short[] rskPteEdges;
+    private final String mixHash;
 
     private BlockResultDTO(
             Long number,
             Keccak256 hash,
             Keccak256 parentHash,
+            Keccak256 mixHash,
             byte[] sha3Uncles,
             byte[] logsBloom,
             byte[] transactionsRoot,
@@ -96,6 +98,7 @@ public class BlockResultDTO {
         this.number = number != null ? HexUtils.toQuantityJsonHex(number) : null;
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
+        this.mixHash = mixHash != null ? mixHash.toJsonString() : null;
         this.sha3Uncles = HexUtils.toUnformattedJsonHex(sha3Uncles);
         this.logsBloom = logsBloom != null ? HexUtils.toUnformattedJsonHex(logsBloom) : null;
         this.transactionsRoot = HexUtils.toUnformattedJsonHex(transactionsRoot);
@@ -160,6 +163,7 @@ public class BlockResultDTO {
                 isPending ? null : b.getNumber(),
                 isPending ? null : b.getHash(),
                 b.getParentHash(),
+                Keccak256.ZERO_HASH,
                 b.getUnclesHash(),
                 isPending ? null : b.getLogBloom(),
                 transactionsRoot,
@@ -298,5 +302,9 @@ public class BlockResultDTO {
 
     public short[] getRskPteEdges() {
         return rskPteEdges;
+    }
+
+    public String getMixHash() {
+        return mixHash;
     }
 }
