@@ -182,7 +182,7 @@ public class PegUtils {
 
         if(!allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPeginTxValue, activations)) {
             logger.debug("[evaluatePegin] Peg-in contains at least one utxo below the minimum value");
-            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, INVALID_AMOUNT);
+            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_REFUNDED, INVALID_AMOUNT);
         }
 
         try {
@@ -197,7 +197,7 @@ public class PegUtils {
 
             PeginProcessAction peginProcessAction = hasRefundAddress ?
                                                         PeginProcessAction.CAN_BE_REFUNDED :
-                                                        PeginProcessAction.CANNOT_BE_PROCESSED;
+                                                        PeginProcessAction.CANNOT_BE_REFUNDED;
 
             return new PeginEvaluationResult(peginProcessAction, PEGIN_V1_INVALID_PAYLOAD);
         }
@@ -225,7 +225,7 @@ public class PegUtils {
             case P2SHP2WSH:
                 return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, LEGACY_PEGIN_MULTISIG_SENDER);
             default:
-                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
+                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_REFUNDED, LEGACY_PEGIN_UNDETERMINED_SENDER);
         }
     }
 

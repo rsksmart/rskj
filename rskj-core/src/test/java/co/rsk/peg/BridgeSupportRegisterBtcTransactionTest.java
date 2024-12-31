@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -108,11 +109,13 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     // After peg-out tx index gets in use
-    private void assertInvalidPeginIsRejectedWithInvalidAmountReason(BtcTransaction btcTransaction) throws IOException {
+    private void assertInvalidPeginIsRejectedWithInvalidAmountReason(BtcTransaction btcTransaction, ActivationConfig.ForBlock activations) throws IOException {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
         verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction, UnrefundablePeginReason.INVALID_AMOUNT);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+
+        var shouldMarkTxAsProcessed = activations == lovell700Activations? times(1) : never();
+        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
     }
@@ -194,7 +197,13 @@ class BridgeSupportRegisterBtcTransactionTest {
     }
 
     // After arrowhead600Activations is activated
-    private void assertLegacyUndeterminedSenderPeginIsRejected(BtcTransaction btcTransaction) throws IOException {
+    private void assertLegacyUndeterminedSenderPeginIsRejected(BtcTransaction btcTransaction,
+        ForBlock activations) throws IOException {
+
+        // tx should be marked as processed since RSKIP459 is active
+        var shouldMarkTxAsProcessed = activations == lovell700Activations? times(1) : never();
+        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
         );
@@ -205,14 +214,18 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
 
         Assertions.assertTrue(activeFederationUtxos.isEmpty());
         Assertions.assertTrue(retiringFederationUtxos.isEmpty());
         Assertions.assertTrue(pegoutsWaitingForConfirmations.getEntries().isEmpty());
     }
 
-    private void assertInvalidPeginV1UndeterminedSenderIsRejected(BtcTransaction btcTransaction) throws IOException {
+    private void assertInvalidPeginV1UndeterminedSenderIsRejected(BtcTransaction btcTransaction,
+        ForBlock activations) throws IOException {
+
+        var shouldMarkTxAsProcessed = activations == lovell700Activations? times(1) : never();
+        verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, PEGIN_V1_INVALID_PAYLOAD
         );
@@ -224,7 +237,6 @@ class BridgeSupportRegisterBtcTransactionTest {
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
         verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
-        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
 
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
@@ -932,7 +944,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction, activations);
         } else {
             assertInvalidPeginIsIgnored();
         }
@@ -970,7 +982,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction, activations);
         } else {
             assertInvalidPeginIsIgnored();
         }
@@ -1012,7 +1024,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction, activations);
         } else {
             assertInvalidPeginIsIgnored();
         }
@@ -1085,7 +1097,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         // assert
         if (shouldUsePegoutTxIndex) {
-            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction);
+            assertInvalidPeginIsRejectedWithInvalidAmountReason(btcTransaction, activations);
         } else {
             assertInvalidPeginIsIgnored();
         }
@@ -1405,7 +1417,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations){
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         } else {
-            assertInvalidPeginV1UndeterminedSenderIsRejected(btcTransaction);
+            assertInvalidPeginV1UndeterminedSenderIsRejected(btcTransaction, activations);
         }
     }
 
@@ -1494,7 +1506,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         if (activations == fingerrootActivations){
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         } else {
-            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
+            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction, activations);
         }
     }
 
@@ -1543,12 +1555,11 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-
-        // SINCE RSKIP379 ONLY TRANSACTIONS THAT REALLY ARE PROCESSED, REFUNDS OR REGISTER WILL BE MARK AS PROCESSED.
         if (activations == fingerrootActivations){
+            // BEFORE RSKIP379 REJECTED PEGIN WERE MARKED AS PROCESSED.
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         } else {
-            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction);
+            assertLegacyUndeterminedSenderPeginIsRejected(btcTransaction, activations);
         }
     }
 

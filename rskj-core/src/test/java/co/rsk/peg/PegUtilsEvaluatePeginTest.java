@@ -54,7 +54,7 @@ class PegUtilsEvaluatePeginTest {
             Arguments.of(BtcLockSender.TxSenderAddressType.P2SHP2WPKH, PeginProcessAction.CAN_BE_REGISTERED, null),
             Arguments.of(BtcLockSender.TxSenderAddressType.P2SHMULTISIG, PeginProcessAction.CAN_BE_REFUNDED, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER),
             Arguments.of(BtcLockSender.TxSenderAddressType.P2SHP2WSH, PeginProcessAction.CAN_BE_REFUNDED, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER),
-            Arguments.of(BtcLockSender.TxSenderAddressType.UNKNOWN, PeginProcessAction.CANNOT_BE_PROCESSED, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER)
+            Arguments.of(BtcLockSender.TxSenderAddressType.UNKNOWN, PeginProcessAction.CANNOT_BE_REFUNDED, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER)
         );
     }
 
@@ -104,7 +104,7 @@ class PegUtilsEvaluatePeginTest {
             activations
         );
 
-        assertEquals(PeginProcessAction.CANNOT_BE_PROCESSED, peginEvaluationResult.getPeginProcessAction());
+        assertEquals(PeginProcessAction.CANNOT_BE_REFUNDED, peginEvaluationResult.getPeginProcessAction());
         assertTrue(peginEvaluationResult.getRejectedPeginReason().isPresent());
         assertEquals(RejectedPeginReason.INVALID_AMOUNT, peginEvaluationResult.getRejectedPeginReason().get());
     }
@@ -129,7 +129,7 @@ class PegUtilsEvaluatePeginTest {
             activations
         );
 
-        assertEquals(PeginProcessAction.CANNOT_BE_PROCESSED, peginEvaluationResult.getPeginProcessAction());
+        assertEquals(PeginProcessAction.CANNOT_BE_REFUNDED, peginEvaluationResult.getPeginProcessAction());
         assertTrue(peginEvaluationResult.getRejectedPeginReason().isPresent());
         assertEquals(RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD, peginEvaluationResult.getRejectedPeginReason().get());
     }
