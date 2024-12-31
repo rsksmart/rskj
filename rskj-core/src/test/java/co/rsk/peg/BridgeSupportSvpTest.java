@@ -9,6 +9,7 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -30,6 +31,7 @@ import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.utils.UnrefundablePeginReason;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
@@ -38,6 +40,7 @@ import java.util.stream.IntStream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
+import org.ethereum.core.CallTransaction.Function;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -1046,8 +1049,14 @@ public class BridgeSupportSvpTest {
             assertProposedFederationExists();
         }
 
+        /*
+         This is a hypothetical case, which is not realistic with the implementation of the svp.
+         A btc tx hash that is not saved as a spend tx, is identified as a pegin, and will be
+         rejected due to invalid amount. This is because the pegin amount is below the minimum.
+         Therefore, this tx should be rejected as pegin and mark as processed
+         */
         @Test
-        void registerBtcTransaction_whenSpendTransactionHashIsNotSaved_shouldNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_whenSpendTransactionHashIsNotSaved_shouldBeIdentifiedAsRejectedPeginAndMarkAsProcessed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             recreateSvpSpendTransactionUnsigned();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1066,7 +1075,8 @@ public class BridgeSupportSvpTest {
             // assert
             // spend tx was not registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
-            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+
+            assertTxIsRejectedPeginAndMarkedAsProcessed(svpSpendTransaction);
 
             // svp success was not processed
             assertNoHandoverToNewFederation();
@@ -1429,6 +1439,28 @@ public class BridgeSupportSvpTest {
     private void assertTransactionWasNotProcessed(Sha256Hash transactionHash) throws IOException {
         Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
         assertFalse(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+    }
+
+    private void assertTxIsRejectedPeginAndMarkedAsProcessed(BtcTransaction rejectedPegin)
+        throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(rejectedPegin.getHash());
+        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+        byte[] btcTxHashSerialized = rejectedPegin.getHash().getBytes();
+
+        Function rejectedPeginEvent = BridgeEvents.REJECTED_PEGIN.getEvent();
+        List<DataWord> rejectedPeginEncodedTopics = getEncodedTopics(rejectedPeginEvent, btcTxHashSerialized);
+        byte[] rejectedPeginEncodedData = getEncodedData(rejectedPeginEvent, INVALID_AMOUNT.getValue());
+
+        assertEventWasEmittedWithExpectedTopics(rejectedPeginEncodedTopics);
+        assertEventWasEmittedWithExpectedData(rejectedPeginEncodedData);
+
+        Function unrefundablePeginEvent = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
+        List<DataWord> encodedTopics = getEncodedTopics(unrefundablePeginEvent, btcTxHashSerialized);
+        byte[] encodedData = getEncodedData(unrefundablePeginEvent, UnrefundablePeginReason.INVALID_AMOUNT.getValue());
+
+        assertEventWasEmittedWithExpectedTopics(encodedTopics);
+        assertEventWasEmittedWithExpectedData(encodedData);
     }
 
     private void assertNoSvpFundTxHashUnsigned() {
