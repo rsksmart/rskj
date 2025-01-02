@@ -1058,16 +1058,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return WhitelistResponseCode.INVALID_ADDRESS_FORMAT.getCode();
         }
 
-        LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
+        Optional<LockWhitelistEntry> entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
 
-        if (entry == null) {
+        if (entry.isEmpty()) {
             // Empty string is returned when address is not found
             logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
             return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
         }
 
-        return entry.getClass() == OneOffWhiteListEntry.class ?
-            ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
+        LockWhitelistEntry lockWhitelistEntry = entry.get();
+        return lockWhitelistEntry.getClass() == OneOffWhiteListEntry.class ?
+            ((OneOffWhiteListEntry) lockWhitelistEntry).maxTransferValue().getValue() :
             WhitelistResponseCode.UNLIMITED_MODE.getCode();
     }
 

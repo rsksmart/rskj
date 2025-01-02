@@ -3,6 +3,8 @@ package co.rsk.peg.whitelist;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import java.math.BigInteger;
+import java.util.Optional;
+
 import org.ethereum.core.Transaction;
 
 /**
@@ -34,7 +36,7 @@ public interface WhitelistSupport {
      * @param addressBase58 the address in base58 format to search for
      * @return the whitelist entry for the given address, or null if the addrres is not whitelisted
      */
-    LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58);
+    Optional<LockWhitelistEntry> getLockWhitelistEntryByAddress(String addressBase58);
 
     /**
      * Adds the given address to the lock whitelist, allowing peg-ins up to certain max value
