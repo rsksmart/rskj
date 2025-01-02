@@ -131,26 +131,26 @@ class FederationConstantsTest {
         long fedActivationAgeLegacyMainnet = 18500L;
         long fedActivationAgeLegacyTestnet = 60L;
         long fedActivationAgeLegacyRegtest = 10L;
-        ActivationConfig.ForBlock activationsPreRSKIP383 = ActivationConfigsForTest.hop401().forBlock(0L);
+        ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop401().forBlock(0L);
 
         long fedActivationAgeMainnet = 40320L;
         long fedActivationAgeTestnet = 120L;
         long fedActivationAgeRegtest = 150L;
-        ActivationConfig.ForBlock activationsPostRSKIP383PreRSKIP419 = ActivationConfigsForTest.fingerroot500().forBlock(0L);
+        ActivationConfig.ForBlock fingerrootActivations = ActivationConfigsForTest.fingerroot500().forBlock(0L);
 
         long fedActivationAgeTestnetPostLovell = 2400L;
-        ActivationConfig.ForBlock activationsPostRSKIP419 = ActivationConfigsForTest.all().forBlock(0L);
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
 
         return Stream.of(
-            Arguments.of(MAINNET, activationsPreRSKIP383, fedActivationAgeLegacyMainnet),
-            Arguments.of(TESTNET, activationsPreRSKIP383, fedActivationAgeLegacyTestnet),
-            Arguments.of(REGTEST, activationsPreRSKIP383, fedActivationAgeLegacyRegtest),
-            Arguments.of(MAINNET, activationsPostRSKIP383PreRSKIP419, fedActivationAgeMainnet),
-            Arguments.of(TESTNET, activationsPostRSKIP383PreRSKIP419, fedActivationAgeTestnet),
-            Arguments.of(REGTEST, activationsPostRSKIP383PreRSKIP419, fedActivationAgeRegtest),
-            Arguments.of(MAINNET, activationsPostRSKIP419, fedActivationAgeMainnet),
-            Arguments.of(TESTNET, activationsPostRSKIP419, fedActivationAgeTestnetPostLovell),
-            Arguments.of(REGTEST, activationsPostRSKIP419, fedActivationAgeRegtest)
+            Arguments.of(MAINNET, hopActivations, fedActivationAgeLegacyMainnet),
+            Arguments.of(TESTNET, hopActivations, fedActivationAgeLegacyTestnet),
+            Arguments.of(REGTEST, hopActivations, fedActivationAgeLegacyRegtest),
+            Arguments.of(MAINNET, fingerrootActivations, fedActivationAgeMainnet),
+            Arguments.of(TESTNET, fingerrootActivations, fedActivationAgeTestnet),
+            Arguments.of(REGTEST, fingerrootActivations, fedActivationAgeRegtest),
+            Arguments.of(MAINNET, allActivations, fedActivationAgeMainnet),
+            Arguments.of(TESTNET, allActivations, fedActivationAgeTestnetPostLovell),
+            Arguments.of(REGTEST, allActivations, fedActivationAgeRegtest)
         );
     }
 
