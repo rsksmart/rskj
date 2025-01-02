@@ -26,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
@@ -211,9 +212,10 @@ class BridgeSupportTest {
         @Test
         void getLockWhitelistEntryByAddress() {
             LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
-            when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(entry);
+            when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(Optional.of(entry));
 
-            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address"));
+            assertTrue(bridgeSupport.getLockWhitelistEntryByAddress("address").isPresent());
+            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address").get());
         }
 
         @Test
