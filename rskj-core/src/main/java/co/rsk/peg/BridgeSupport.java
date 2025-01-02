@@ -1079,15 +1079,12 @@ public class BridgeSupport {
     }
 
     private boolean isSvpOngoing() {
-        Optional<Federation> proposedFederation = federationSupport.getProposedFederation();
-        if (proposedFederation.isEmpty()) {
-            return false;
-        }
-
-        long validationPeriodEndBlock = proposedFederation.get().getCreationBlockNumber() +
-            bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
-
-        return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
+        return federationSupport
+            .getProposedFederation()
+            .map(proposedFederation -> rskExecutionBlock.getNumber() < proposedFederation.getCreationBlockNumber() +
+                bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks()
+            )
+            .orElse(false);
     }
 
     private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
