@@ -1093,7 +1093,17 @@ public class BridgeSupport {
             BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-            settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
+
+            Wallet activeFederationWallet = getActiveFederationWallet(true);
+            List<UTXO> utxosToUse = activeFederationWallet
+                .getUTXOProvider()
+                .getOpenTransactionOutputs(activeFederationWallet.getWatchedAddresses());
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
+        } catch (UTXOProviderException e) {
+            logger.error(
+                "[processSvpFundTransactionUnsigned] Error when trying to remove spent utxos. Error message: {}",
+                e.getMessage()
+            );
         } catch (InsufficientMoneyException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
@@ -1291,7 +1301,7 @@ public class BridgeSupport {
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
         Address activeFederationAddress,
-        List<UTXO> availableUTXOs) throws IOException {
+        List<UTXO> utxosToUse) throws IOException {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
@@ -1306,12 +1316,8 @@ public class BridgeSupport {
         Coin amountMigrated = selectedUTXOs.stream()
             .map(UTXO::getValue)
             .reduce(Coin.ZERO, Coin::add);
-        settleReleaseRequest(pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
 
-        // Mark UTXOs as spent
-        availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-            utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
-        ));
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
     }
 
     /**
@@ -1357,11 +1363,23 @@ public class BridgeSupport {
         }
     }
 
-    private void settleReleaseRequest(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
-        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
-        savePegoutTxSigHash(pegoutTransaction);
-        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
-        logPegoutTransactionCreated(pegoutTransaction);
+    private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        removeSpentUtxos(utxosToUse, releaseTransaction);
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
+        savePegoutTxSigHash(releaseTransaction);
+        logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
+        logPegoutTransactionCreated(releaseTransaction);
+    }
+
+    private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
+        List<UTXO> utxosToRemove = utxosToUse.stream()
+            .filter(utxo -> releaseTx.getInputs().stream().anyMatch(input ->
+                input.getOutpoint().getHash().equals(utxo.getHash()) && input.getOutpoint().getIndex() == utxo.getIndex())
+            ).toList();
+
+        logger.debug("[removeSpentUtxos] Used {} UTXOs for this release", utxosToRemove.size());
+
+        utxosToUse.removeAll(utxosToRemove);
     }
 
     private void addPegoutToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash) {
@@ -1419,7 +1437,7 @@ public class BridgeSupport {
     private void processPegoutsIndividually(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> availableUTXOs,
+        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet
     ) {
@@ -1444,11 +1462,7 @@ public class BridgeSupport {
 
             BtcTransaction generatedTransaction = result.getBtcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
-            settleReleaseRequest(pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
-
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-            availableUTXOs.removeAll(selectedUTXOs);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
             adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
 
@@ -1459,7 +1473,7 @@ public class BridgeSupport {
     private void processPegoutsInBatch(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> availableUTXOs,
+        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
         Transaction rskTx) {
@@ -1508,18 +1522,13 @@ public class BridgeSupport {
             BtcTransaction batchPegoutTransaction = result.getBtcTx();
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
 
-            settleReleaseRequest(pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
 
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-            logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
-            availableUTXOs.removeAll(selectedUTXOs);
-
             eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
-                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
+                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).toList());
 
             adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
         }

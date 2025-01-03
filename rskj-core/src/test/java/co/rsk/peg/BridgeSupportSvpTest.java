@@ -291,6 +291,9 @@ public class BridgeSupportSvpTest {
 
         @Test
         void updateCollections_whenFundTxCanBeCreated_createsExpectedFundTxAndSavesTheHashInStorageEntryAndPerformsPegoutActions() throws Exception {
+            // arrange
+            int activeFederationUtxosSizeBeforeCreatingFundTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
             // act
             bridgeSupport.updateCollections(rskTx);
             bridgeStorageProvider.save();
@@ -298,6 +301,7 @@ public class BridgeSupportSvpTest {
             // assert
             Sha256Hash svpFundTxHashUnsigned = assertSvpFundTxHashUnsignedIsInStorage();
             assertSvpFundTxReleaseWasSettled(svpFundTxHashUnsigned);
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - 1);
             assertSvpFundTransactionHasExpectedInputsAndOutputs();
         }
 
