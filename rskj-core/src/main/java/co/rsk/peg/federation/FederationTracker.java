@@ -16,12 +16,12 @@ public class FederationTracker<T> {
         return this.federation != null;
     }
 
-    public void setNew(T aFederation) {
-        this.federation = aFederation;
-        this.modified = true;
+    public boolean hasBeenSet() {
+        return this.isPresent() || this.isModified();
     }
 
-    public void replace(T aFederation) {
+    public void set(T aFederation, boolean shouldSave) {
         this.federation = aFederation;
+        this.modified = shouldSave;
     }
 }

@@ -139,7 +139,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public Federation getOldFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
-        if (oldFederationTracker.isPresent() || oldFederationTracker.isModified()) {
+        if (oldFederationTracker.hasBeenSet()) {
             return oldFederationTracker.get();
         }
 
@@ -159,18 +159,18 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             }
         );
 
-        oldFederationTracker.replace(oldFederation);
+        oldFederationTracker.set(oldFederation, false);
         return oldFederationTracker.get();
     }
 
     @Override
     public void setOldFederation(Federation federation) {
-        oldFederationTracker.setNew(federation);
+        oldFederationTracker.set(federation, true);
     }
 
     @Override
     public PendingFederation getPendingFederation() {
-        if (pendingFederationTracker.isPresent() || pendingFederationTracker.isModified()) {
+        if (pendingFederationTracker.hasBeenSet()) {
             return pendingFederationTracker.get();
         }
 
@@ -190,13 +190,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
                 }
             );
 
-        pendingFederationTracker.replace(pendingFederation);
+        pendingFederationTracker.set(pendingFederation, false);
         return pendingFederationTracker.get();
     }
 
     @Override
     public void setPendingFederation(PendingFederation federation) {
-        pendingFederationTracker.setNew(federation);
+        pendingFederationTracker.set(federation, true);
     }
 
     @Override
