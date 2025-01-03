@@ -23,11 +23,11 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 public class FederationStorageProviderImpl implements FederationStorageProvider {
     private final StorageAccessor bridgeStorageAccessor;
     private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
+    private final FederationTracker<Federation> oldFederationTracker = new FederationTracker<>();
+    private final FederationTracker<PendingFederation> pendingFederationTracker = new FederationTracker<>();
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
     private Federation newFederation;
-    private final FederationTracker<Federation> oldFederationTracker = new FederationTrackerImpl();
-    private final FederationTracker<PendingFederation> pendingFederationTracker = new PendingFederationTrackerImpl();
     private ABICallElection federationElection;
     private Long activeFederationCreationBlockHeight;
     private Long nextFederationCreationBlockHeight; // if -1, then clear value

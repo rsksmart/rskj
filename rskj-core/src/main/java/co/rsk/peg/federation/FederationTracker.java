@@ -1,6 +1,6 @@
 package co.rsk.peg.federation;
 
-public abstract class FederationTracker<T> {
+public class FederationTracker<T> {
     private T federation;
     private boolean modified = false;
 
