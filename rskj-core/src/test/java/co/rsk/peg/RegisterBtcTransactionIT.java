@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -49,8 +48,6 @@ class RegisterBtcTransactionIT {
     private Repository repository;
     private FederationSupport federationSupport;
     private BridgeStorageProvider bridgeStorageProvider;
-    private PartialMerkleTree pmtWithTransactions;
-    private int btcBlockWithPmtHeight;
     private RskAddress rskReceiver;
     private BridgeSupport bridgeSupport;
     private ArrayList<LogInfo> logs;
@@ -109,7 +106,10 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_forALegacyBtcTransaction_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws Exception {
         // Act
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey);
-        setupChainWithBtcTransaction(btcTransaction);
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeStorageProvider.save();
         bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
         bridgeSupport.save();
@@ -134,7 +134,10 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_forARepeatedLegacyBtcTransaction_shouldNotPerformAnyChange() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey);
-        setupChainWithBtcTransaction(btcTransaction);
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
 
         bridgeStorageProvider.save();
         bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
@@ -156,7 +159,10 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_whenLegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey);
-        setupChainWithBtcTransaction(btcTransaction);
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeStorageProvider.save();
 
         co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
@@ -176,7 +182,10 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_whenLegacyPeginBtcTransactionFromAMultiSig_shouldRefundTheFunds() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = createMultiSigPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue);
-        setupChainWithBtcTransaction(btcTransaction);
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
         bridgeSupport.save();
 
         co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
@@ -231,13 +240,6 @@ class RegisterBtcTransactionIT {
             btcTransaction.isCoinBase(),
             output.getScriptPubKey()
         );
-    }
-
-    private void setupChainWithBtcTransaction(BtcTransaction btcTransaction) throws BlockStoreException {
-        pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
-        btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
     }
 
     private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin, BtcECKey pubKey) {
