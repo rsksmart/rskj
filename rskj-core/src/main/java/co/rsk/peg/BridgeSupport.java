@@ -1029,7 +1029,7 @@ public class BridgeSupport {
         // if the proposed federation exists and the validation period ended,
         // we can conclude that the svp failed
         Federation proposedFederation = proposedFederationOpt.get();
-        if (!validationPeriodIsOngoing(proposedFederation)) {
+        if (!isSvpOngoing()) {
             processSvpFailure(proposedFederation);
             return;
         }
@@ -1079,16 +1079,12 @@ public class BridgeSupport {
     }
 
     private boolean isSvpOngoing() {
-        return federationSupport.getProposedFederation()
-            .filter(this::validationPeriodIsOngoing)
-            .isPresent();
-    }
-
-    private boolean validationPeriodIsOngoing(Federation proposedFederation) {
-        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber() +
-            bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
-
-        return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
+        return federationSupport
+            .getProposedFederation()
+            .map(proposedFederation -> rskExecutionBlock.getNumber() < proposedFederation.getCreationBlockNumber() +
+                bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks()
+            )
+            .orElse(false);
     }
 
     private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
