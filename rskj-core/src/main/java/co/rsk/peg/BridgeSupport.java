@@ -1094,16 +1094,8 @@ public class BridgeSupport {
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-            Wallet activeFederationWallet = getActiveFederationWallet(true);
-            List<UTXO> utxosToUse = activeFederationWallet
-                .getUTXOProvider()
-                .getOpenTransactionOutputs(activeFederationWallet.getWatchedAddresses());
+            List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
-        } catch (UTXOProviderException e) {
-            logger.error(
-                "[processSvpFundTransactionUnsigned] Error when trying to remove spent utxos. Error message: {}",
-                e.getMessage()
-            );
         } catch (InsufficientMoneyException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
