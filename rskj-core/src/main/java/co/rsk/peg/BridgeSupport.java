@@ -505,27 +505,15 @@ public class BridgeSupport {
 
         PeginProcessAction peginProcessAction = peginEvaluationResult.getPeginProcessAction();
 
-        if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
-            logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
-            executePegIn(btcTx, peginInformation, totalAmount);
-            return;
-        }
-
-        // If the peg-in cannot be registered means it should be rejected
-        RejectedPeginReason rejectedPeginReason = peginEvaluationResult.getRejectedPeginReason()
-            .map(reason -> {
-                logger.debug("[{}] Rejected peg-in, reason {}", METHOD_NAME, reason);
-                eventLogger.logRejectedPegin(btcTx, reason);
-                return reason;
-            }).orElseThrow(() -> {
-                // This flow should never be reached. There should always be a rejected pegin reason.
-                String message = "Invalid state. No rejected reason was returned for an invalid pegin.";
-                logger.error("[{}] {}", METHOD_NAME, message);
-                return new IllegalStateException(message);
-            });
-
         switch (peginProcessAction) {
+            case CAN_BE_REGISTERED -> {
+                logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
+                executePegIn(btcTx, peginInformation, totalAmount);
+            }
             case CAN_BE_REFUNDED -> {
+                // If the peg-in cannot be registered means it should be rejected
+                handleRejectedPegin(btcTx,
+                    peginEvaluationResult);
                 logger.debug("[{}] Refunding to address {} ", METHOD_NAME,
                     peginInformation.getBtcRefundAddress());
                 generateRejectionRelease(btcTx, peginInformation.getBtcRefundAddress(), rskTxHash,
@@ -533,18 +521,34 @@ public class BridgeSupport {
                 markTxAsProcessed(btcTx);
             }
             case CANNOT_BE_REFUNDED -> {
-                logger.debug("[{}] Nonrefundable transaction {}.", METHOD_NAME, btcTx.getHash());
+                // If the peg-in cannot be registered means it should be rejected
+                RejectedPeginReason rejectedPeginReason = handleRejectedPegin(btcTx,
+                    peginEvaluationResult);
+
                 handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(),
                     rejectedPeginReason);
 
                 if (!activations.isActive(RSKIP459)) {
                     return;
                 }
-
                 // Since RSKIP459, rejected peg-ins should be marked as processed
                 markTxAsProcessed(btcTx);
             }
         }
+    }
+
+    private RejectedPeginReason handleRejectedPegin(BtcTransaction btcTx,
+        PeginEvaluationResult peginEvaluationResult) {
+        return peginEvaluationResult.getRejectedPeginReason().map(reason -> {
+            logger.debug("[{handleRejectedPegin}] Rejected peg-in, reason {}", reason);
+            eventLogger.logRejectedPegin(btcTx, reason);
+            return reason;
+        }).orElseThrow(() -> {
+            // This flow should never be reached. There should always be a rejected pegin reason.
+            String message = "Invalid state. No rejected reason was returned for an invalid pegin.";
+            logger.error("[{handleRejectedPegin}] {}", message);
+            return new IllegalStateException(message);
+        });
     }
 
     private void handleNonRefundablePegin(
