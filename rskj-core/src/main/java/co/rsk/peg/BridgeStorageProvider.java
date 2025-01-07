@@ -626,7 +626,8 @@ public class BridgeStorageProvider {
         safeSaveToRepository(
             SVP_FUND_TX_HASH_UNSIGNED,
             svpFundTxHashUnsigned,
-            BridgeSerializationUtils::serializeSha256Hash);
+            BridgeSerializationUtils::serializeSha256Hash
+        );
     }
 
     public void setSvpFundTxSigned(BtcTransaction svpFundTxSigned) {
@@ -699,31 +700,18 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpValues() {
-        if (svpFundTxHashUnsigned != null) {
-            logger.warn("[clearSvpValues] Clearing fund tx hash unsigned {} value.", svpFundTxHashUnsigned);
-            clearSvpFundTxHashUnsigned();
-        }
+        logger.warn("[clearSvpValues] Clearing fund tx hash unsigned.");
+        clearSvpFundTxHashUnsigned();
 
-        if (svpFundTxSigned != null) {
-            logger.warn("[clearSvpValues] Clearing fund tx signed {} value.", svpFundTxSigned.getHash());
-            clearSvpFundTxSigned();
-        }
+        logger.warn("[clearSvpValues] Clearing fund tx signed.");
+        clearSvpFundTxSigned();
 
-        if (svpSpendTxWaitingForSignatures != null) {
-            Keccak256 rskCreationHash = svpSpendTxWaitingForSignatures.getKey();
-            BtcTransaction svpSpendTx = svpSpendTxWaitingForSignatures.getValue();
-            logger.warn(
-                "[clearSvpValues] Clearing spend tx waiting for signatures with spend tx {} and rsk creation hash {} value.",
-                svpSpendTx.getHash(), rskCreationHash
-            );
-            clearSvpSpendTxWaitingForSignatures();
-            clearSvpSpendTxHashUnsigned();
-        }
+        logger.warn("[clearSvpValues] Clearing spend tx waiting for signatures.");
+        clearSvpSpendTxWaitingForSignatures();
+        clearSvpSpendTxHashUnsigned();
 
-        if (svpSpendTxHashUnsigned != null) {
-            logger.warn("[clearSvpValues] Clearing spend tx hash unsigned {} value.", svpSpendTxHashUnsigned);
-            clearSvpSpendTxHashUnsigned();
-        }
+        logger.warn("[clearSvpValues] Clearing spend tx hash unsigned.");
+        clearSvpSpendTxHashUnsigned();
     }
 
     public void save() {
