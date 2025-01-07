@@ -1200,7 +1200,7 @@ public class BridgeSupport {
 
     private Coin calculateSvpSpendTxFees(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
-        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the amount sent will be enough
+        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the fees sent will be enough
 
         return feePerKbSupport.getFeePerKb()
             .multiply(svpSpendTransactionBackedUpSize)
