@@ -1555,7 +1555,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         );
 
         // assert
-        if (activations == fingerrootActivations){
+        if (activations == fingerrootActivations) {
             // BEFORE RSKIP379 REJECTED PEGIN WERE MARKED AS PROCESSED.
             assertLegacyUndeterminedSenderPeginIsRejectedAsPeginV1InvalidPayloadBeforeRSKIP379(btcTransaction);
         } else {

@@ -992,7 +992,7 @@ public class BridgeSupportSvpTest {
         /*
          This is a hypothetical case, which is not realistic with the implementation of the svp.
          A btc tx hash that is not saved as a spend tx, is identified as a pegin, and will be
-         rejected due to invalid amount. This is because the pegin amount is below the minimum.
+         rejected due to invalid amount, since the pegin amount is below the minimum.
          Therefore, this tx should be rejected as pegin and mark as processed
          */
         @Test
