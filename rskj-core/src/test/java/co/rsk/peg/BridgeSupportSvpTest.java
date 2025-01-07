@@ -4,8 +4,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
@@ -661,10 +660,14 @@ public class BridgeSupportSvpTest {
             assertEquals(1, outputs.size());
 
             long calculatedTransactionSize = 1762L; // using calculatePegoutTxSize method
-            Coin expectedAmount = feePerKb
+            Coin fees = feePerKb
                 .multiply(calculatedTransactionSize * 12L / 10L) // back up calculation
                 .divide(1000);
-            assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), expectedAmount);
+
+            Coin valueToSend = spendableValueFromProposedFederation
+                .multiply(2)
+                .minus(fees);
+            assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), valueToSend);
         }
 
         private void assertInputsHaveExpectedScriptSig(List<TransactionInput> inputs) {
