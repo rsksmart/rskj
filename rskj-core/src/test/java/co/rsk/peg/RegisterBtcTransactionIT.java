@@ -255,6 +255,7 @@ class RegisterBtcTransactionIT {
 
     private BtcTransaction createMultiSigPegInTransaction(Address federationAddress, Coin coin) {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
+
         btcTx.addInput(
             BitcoinTestUtils.createHash(1),
             0,
