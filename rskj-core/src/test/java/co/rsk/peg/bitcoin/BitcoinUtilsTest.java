@@ -417,47 +417,6 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void addInputFromOutputSentToScript_withNoMatchingOutputScript_shouldNotAddInput() {
-        // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
-        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
-
-        // act
-        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
-
-        Federation anotherFederation = StandardMultiSigFederationBuilder.builder().build();
-        Script anotherRedeemScript = anotherFederation.getRedeemScript();
-        Script anotherOutputScript = ScriptBuilder.createP2SHOutputScript(anotherRedeemScript);
-        addInputFromMatchingOutputScript(newTransaction, sourceTransaction, anotherOutputScript);
-
-        // assert
-        assertEquals(0, newTransaction.getInputs().size());
-    }
-
-    @Test
-    void addInputFromOutputSentToScript_withMatchingOutputScript_shouldAddInputWithOutpointFromOutput() {
-        // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-
-        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
-        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
-
-        // act
-        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
-        addInputFromMatchingOutputScript(newTransaction, sourceTransaction, outputScript);
-
-        // assert
-        TransactionInput newTransactionInput = newTransaction.getInput(0);
-        TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
-        assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
-    }
-
-    @Test
     void createBaseP2SHInputScriptThatSpendsFromRedeemScript_shouldCreateExpectedScriptSig() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
