@@ -1093,7 +1093,9 @@ public class BridgeSupport {
             BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-            settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
+
+            List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
         } catch (InsufficientMoneyException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
@@ -1138,7 +1140,13 @@ public class BridgeSupport {
     }
 
     private void processSvpSpendTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
-        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        BtcTransaction svpSpendTransactionUnsigned;
+        try {
+            svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        } catch (IllegalStateException e){
+            logger.error("[processSvpSpendTransactionUnsigned] Error creating spend transaction {}", e.getMessage());
+            return;
+        }
         updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
 
         Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
@@ -1146,38 +1154,45 @@ public class BridgeSupport {
         logPegoutTransactionCreated(svpSpendTransactionUnsigned);
     }
 
-    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) throws IllegalStateException {
         BtcTransaction svpSpendTransaction = new BtcTransaction(networkParameters);
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
-        addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
+        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+        TransactionOutput outputToProposedFed = searchForOutput(
+            svpFundTxSigned.getOutputs(),
+            proposedFederation.getP2SHScript()
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
+        svpSpendTransaction.addInput(outputToProposedFed);
+        svpSpendTransaction.getInput(0).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
+
+        Script flyoverRedeemScript = getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        TransactionOutput outputToFlyoverProposedFed = searchForOutput(
+            svpFundTxSigned.getOutputs(),
+            flyoverOutputScript
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to flyover proposed federation was not found in fund transaction."));
+        svpSpendTransaction.addInput(outputToFlyoverProposedFed);
+        svpSpendTransaction.getInput(1).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+
+        Coin valueSentToProposedFed = outputToProposedFed.getValue();
+        Coin valueSentToFlyoverProposedFed = outputToFlyoverProposedFed.getValue();
+
+        Coin valueToSend = valueSentToProposedFed
+            .plus(valueSentToFlyoverProposedFed)
+            .minus(calculateSvpSpendTxFees(proposedFederation));
 
         svpSpendTransaction.addOutput(
-            calculateSvpSpendTxAmount(proposedFederation),
+            valueToSend,
             federationSupport.getActiveFederationAddress()
         );
 
         return svpSpendTransaction;
     }
 
-    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
-        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-        Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
-        svpSpendTransaction.getInput(0)
-            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
-
-        Script flyoverRedeemScript =
-            getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverOutputScript);
-        svpSpendTransaction.getInput(1)
-                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
-    }
-
-    private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
+    private Coin calculateSvpSpendTxFees(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
-        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the amount sent will be enough
+        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the fees sent will be enough
 
         return feePerKbSupport.getFeePerKb()
             .multiply(svpSpendTransactionBackedUpSize)
@@ -1291,7 +1306,7 @@ public class BridgeSupport {
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
         Address activeFederationAddress,
-        List<UTXO> availableUTXOs) throws IOException {
+        List<UTXO> utxosToUse) throws IOException {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
@@ -1306,12 +1321,8 @@ public class BridgeSupport {
         Coin amountMigrated = selectedUTXOs.stream()
             .map(UTXO::getValue)
             .reduce(Coin.ZERO, Coin::add);
-        settleReleaseRequest(pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
 
-        // Mark UTXOs as spent
-        availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-            utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
-        ));
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
     }
 
     /**
@@ -1357,11 +1368,23 @@ public class BridgeSupport {
         }
     }
 
-    private void settleReleaseRequest(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
-        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
-        savePegoutTxSigHash(pegoutTransaction);
-        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
-        logPegoutTransactionCreated(pegoutTransaction);
+    private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        removeSpentUtxos(utxosToUse, releaseTransaction);
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
+        savePegoutTxSigHash(releaseTransaction);
+        logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
+        logPegoutTransactionCreated(releaseTransaction);
+    }
+
+    private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
+        List<UTXO> utxosToRemove = utxosToUse.stream()
+            .filter(utxo -> releaseTx.getInputs().stream().anyMatch(input ->
+                input.getOutpoint().getHash().equals(utxo.getHash()) && input.getOutpoint().getIndex() == utxo.getIndex())
+            ).toList();
+
+        logger.debug("[removeSpentUtxos] Used {} UTXOs for this release", utxosToRemove.size());
+
+        utxosToUse.removeAll(utxosToRemove);
     }
 
     private void addPegoutToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash) {
@@ -1419,7 +1442,7 @@ public class BridgeSupport {
     private void processPegoutsIndividually(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> availableUTXOs,
+        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet
     ) {
@@ -1444,11 +1467,7 @@ public class BridgeSupport {
 
             BtcTransaction generatedTransaction = result.getBtcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
-            settleReleaseRequest(pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
-
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-            availableUTXOs.removeAll(selectedUTXOs);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
             adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
 
@@ -1459,7 +1478,7 @@ public class BridgeSupport {
     private void processPegoutsInBatch(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> availableUTXOs,
+        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
         Transaction rskTx) {
@@ -1508,18 +1527,13 @@ public class BridgeSupport {
             BtcTransaction batchPegoutTransaction = result.getBtcTx();
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
 
-            settleReleaseRequest(pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
 
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-            logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
-            availableUTXOs.removeAll(selectedUTXOs);
-
             eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
-                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
+                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).toList());
 
             adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
         }
