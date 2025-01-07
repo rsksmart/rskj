@@ -1,8 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
-import static co.rsk.peg.bitcoin.BitcoinUtils.generateSigHashForP2SHTransactionInput;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -250,5 +249,11 @@ public class BitcoinTestUtils {
         coinbaseTx.setWitness(0, txWitness);
 
         return coinbaseTx;
+    }
+
+    public static void addInputFromMatchingOutputScript(BtcTransaction transaction, BtcTransaction sourceTransaction, Script expectedOutputScript) {
+        List<TransactionOutput> outputs = sourceTransaction.getOutputs();
+        searchForOutput(outputs, expectedOutputScript)
+            .ifPresent(transaction::addInput);
     }
 }

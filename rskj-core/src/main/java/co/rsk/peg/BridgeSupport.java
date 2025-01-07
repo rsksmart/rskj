@@ -1148,7 +1148,13 @@ public class BridgeSupport {
     }
 
     private void processSvpSpendTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
-        BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        BtcTransaction svpSpendTransactionUnsigned;
+        try {
+            svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        } catch (IllegalStateException e){
+            logger.error("[processSvpSpendTransactionUnsigned] Error creating spend transaction {}", e.getMessage());
+            return;
+        }
         updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
 
         Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
@@ -1156,33 +1162,40 @@ public class BridgeSupport {
         logPegoutTransactionCreated(svpSpendTransactionUnsigned);
     }
 
-    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) throws IllegalStateException {
         BtcTransaction svpSpendTransaction = new BtcTransaction(networkParameters);
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
-        addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
+        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+        TransactionOutput outputToProposedFed = searchForOutput(
+            svpFundTxSigned.getOutputs(),
+            proposedFederation.getP2SHScript()
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
+        svpSpendTransaction.addInput(outputToProposedFed);
+        svpSpendTransaction.getInput(0).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
+
+        Script flyoverRedeemScript = getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        TransactionOutput outputToFlyoverProposedFed = searchForOutput(
+            svpFundTxSigned.getOutputs(),
+            flyoverOutputScript
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
+        svpSpendTransaction.addInput(outputToFlyoverProposedFed);
+        svpSpendTransaction.getInput(1).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+
+        Coin valueSentToProposedFed = outputToProposedFed.getValue();
+        Coin valueSentToFlyoverProposedFed = outputToFlyoverProposedFed.getValue();
+
+        Coin valueToSend = valueSentToProposedFed
+            .plus(valueSentToFlyoverProposedFed)
+            .minus(calculateSvpSpendTxAmount(proposedFederation)); // this value covers the fees needed
 
         svpSpendTransaction.addOutput(
-            calculateSvpSpendTxAmount(proposedFederation),
+            valueToSend,
             federationSupport.getActiveFederationAddress()
         );
 
         return svpSpendTransaction;
-    }
-
-    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
-        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-        Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
-        svpSpendTransaction.getInput(0)
-            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
-
-        Script flyoverRedeemScript =
-            getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverOutputScript);
-        svpSpendTransaction.getInput(1)
-                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
     }
 
     private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
