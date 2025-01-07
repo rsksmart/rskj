@@ -92,12 +92,6 @@ public class BitcoinUtils {
         }
     }
 
-    public static void addInputFromMatchingOutputScript(BtcTransaction transaction, BtcTransaction sourceTransaction, Script expectedOutputScript) {
-        List<TransactionOutput> outputs = sourceTransaction.getOutputs();
-        searchForOutput(outputs, expectedOutputScript)
-            .ifPresent(transaction::addInput);
-    }
-
     public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         return outputScript.createEmptyInputScript(null, redeemScript);
