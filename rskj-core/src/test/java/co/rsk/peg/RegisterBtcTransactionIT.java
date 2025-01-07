@@ -45,6 +45,8 @@ class RegisterBtcTransactionIT {
     private final Transaction rskTx = TransactionUtils.createTransaction();
     private final Coin minimumPeginValue =  bridgeConstants.getMinimumPeginTxValue(activations);
     private final Block rskExecutionBlock = getRskExecutionBlock(RSK_EXECUTION_BLOCK_NUMBER, RSK_EXECUTION_BLOCK_TIMESTAMP);
+    private final BtcECKey btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
+    private final Federation federation = P2shErpFederationBuilder.builder().build();
     private Repository repository;
     private FederationSupport federationSupport;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -52,7 +54,6 @@ class RegisterBtcTransactionIT {
     private BridgeSupport bridgeSupport;
     private ArrayList<LogInfo> logs;
     private BtcBlockStoreWithCache btcBlockStoreWithCache;
-    private BtcECKey btcPublicKey;
     private BtcLockSenderProvider btcLockSenderProvider;
 
 
@@ -67,7 +68,6 @@ class RegisterBtcTransactionIT {
         FeePerKbSupport feePerKbSupport = new FeePerKbSupportImpl(bridgeConstants.getFeePerKbConstants(), feePerKbStorageProvider);
 
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        Federation federation = P2shErpFederationBuilder.builder().build();
         federationStorageProvider.setNewFederation(federation);
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
         federationSupport = FederationSupportBuilder.builder()
@@ -80,7 +80,6 @@ class RegisterBtcTransactionIT {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcNetworkParams, 100, 100);
         btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
 
-        btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
         ECKey ecKey = ECKey.fromPublicOnly(btcPublicKey.getPubKey());
         rskReceiver = new RskAddress(ecKey.getAddress());
 
