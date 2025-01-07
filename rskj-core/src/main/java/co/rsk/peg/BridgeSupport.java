@@ -1179,7 +1179,7 @@ public class BridgeSupport {
         TransactionOutput outputToFlyoverProposedFed = searchForOutput(
             svpFundTxSigned.getOutputs(),
             flyoverOutputScript
-        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to flyover proposed federation was not found in fund transaction."));
         svpSpendTransaction.addInput(outputToFlyoverProposedFed);
         svpSpendTransaction.getInput(1).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
 
@@ -1188,7 +1188,7 @@ public class BridgeSupport {
 
         Coin valueToSend = valueSentToProposedFed
             .plus(valueSentToFlyoverProposedFed)
-            .minus(calculateSvpSpendTxAmount(proposedFederation)); // this value covers the fees needed
+            .minus(calculateSvpSpendTxFees(proposedFederation));
 
         svpSpendTransaction.addOutput(
             valueToSend,
@@ -1198,7 +1198,7 @@ public class BridgeSupport {
         return svpSpendTransaction;
     }
 
-    private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
+    private Coin calculateSvpSpendTxFees(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
         long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the amount sent will be enough
 
