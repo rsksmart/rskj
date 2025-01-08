@@ -250,7 +250,6 @@ public class BridgeSupportSvpTest {
         @Test
         void updateCollections_whenSvpSpendTxWFSIsSet_shouldLogValidationFailureAndClearSpendTxValues() throws IOException {
             // arrange
-            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
             svpSpendTransaction = new BtcTransaction(btcMainnetParams);
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTransaction);
             bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
@@ -267,7 +266,6 @@ public class BridgeSupportSvpTest {
         @Test
         void updateCollections_whenSvpSpendTxWFSSavedInStorage_shouldLogValidationFailureAndClearSpendTxValues() throws IOException {
             // arrange
-            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
             svpSpendTransaction = new BtcTransaction(btcMainnetParams);
             Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTransaction);
             byte[] svpSpendTxWfsSerialized = BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWFS);
@@ -806,9 +804,6 @@ public class BridgeSupportSvpTest {
     class SpendTxSigning {
         private final List<BtcECKey> proposedFederationSignersKeys =
             BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // this is needed to have the private keys too
-
-        private final Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
-
         private List<Sha256Hash> svpSpendTxSigHashes;
 
         @BeforeEach
