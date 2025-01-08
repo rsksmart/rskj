@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class BitcoinUtils {
     protected static final byte[]  WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
-    private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra by for OP_RETURN and another one for data length
+    private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra byte for OP_RETURN and another one for data length
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
     private static final int FIRST_INPUT_INDEX = 0;
 
@@ -125,7 +125,7 @@ public class BitcoinUtils {
                     return Optional.of(witnessCommitment);
                 }
             } catch (ScriptException e) {
-                logger.debug(
+                logger.warn(
                     "[findWitnessCommitment] Failed to extract witness commitment from output {}. {}",
                     output,
                     e.getMessage()
