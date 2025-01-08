@@ -385,12 +385,22 @@ public class BridgeSupportSvpTest {
         private void assertSvpFundTransactionHasExpectedInputsAndOutputs() {
             assertInputsAreFromActiveFederation();
 
-            List<TransactionOutput> svpFundTransactionUnsignedOutputs = svpFundTransaction.getOutputs();
             int svpFundTransactionUnsignedOutputsExpectedSize = 3;
-            assertEquals(svpFundTransactionUnsignedOutputsExpectedSize, svpFundTransactionUnsignedOutputs.size());
-            assertOneOutputIsChange(svpFundTransactionUnsignedOutputs);
-            assertOneOutputIsToProposedFederationWithExpectedAmount(svpFundTransactionUnsignedOutputs);
-            assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(svpFundTransactionUnsignedOutputs);
+            assertEquals(svpFundTransactionUnsignedOutputsExpectedSize, svpFundTransaction.getOutputs().size());
+
+            // assert outputs are the expected ones in the expected order
+            TransactionOutput outputToProposedFed = svpFundTransaction.getOutput(0);
+            assertEquals(outputToProposedFed.getScriptPubKey(), proposedFederation.getP2SHScript());
+            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getMinimumPegoutTxValue());
+
+            TransactionOutput outputToFlyoverProposedFed = svpFundTransaction.getOutput(1);
+            Script proposedFederationWithFlyoverPrefixScriptPubKey =
+                PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+            assertEquals(outputToFlyoverProposedFed.getScriptPubKey(), proposedFederationWithFlyoverPrefixScriptPubKey);
+            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getMinimumPegoutTxValue());
+
+            TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
+            assertEquals(changeOutput.getScriptPubKey(), activeFederation.getP2SHScript());
         }
 
         private void assertInputsAreFromActiveFederation() {
@@ -400,26 +410,6 @@ public class BridgeSupportSvpTest {
             for (TransactionInput input : inputs) {
                 assertEquals(activeFederationScriptSig, input.getScriptSig());
             }
-        }
-
-        private void assertOneOutputIsChange(List<TransactionOutput> transactionOutputs) {
-            Script activeFederationScriptPubKey = activeFederation.getP2SHScript();
-
-            Optional<TransactionOutput> changeOutputOpt = searchForOutput(transactionOutputs, activeFederationScriptPubKey);
-            assertTrue(changeOutputOpt.isPresent());
-        }
-
-        private void assertOneOutputIsToProposedFederationWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
-            Script proposedFederationScriptPubKey = proposedFederation.getP2SHScript();
-
-            assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationScriptPubKey, minPegoutTxValue);
-        }
-
-        private void assertOneOutputIsToProposedFederationWithFlyoverPrefixWithExpectedAmount(List<TransactionOutput> svpFundTransactionUnsignedOutputs) {
-            Script proposedFederationWithFlyoverPrefixScriptPubKey =
-                PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-
-            assertOutputWasSentToExpectedScriptWithExpectedAmount(svpFundTransactionUnsignedOutputs, proposedFederationWithFlyoverPrefixScriptPubKey, minPegoutTxValue);
         }
 
         @Test
