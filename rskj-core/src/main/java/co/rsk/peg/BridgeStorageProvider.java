@@ -615,6 +615,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpFundTxHashUnsigned() {
+        logger.info("[clearSvpFundTxHashUnsigned] Clearing fund tx hash unsigned.");
         setSvpFundTxHashUnsigned(null);
     }
 
@@ -636,6 +637,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpFundTxSigned() {
+        logger.info("[clearSvpFundTxSigned] Clearing fund tx signed.");
         setSvpFundTxSigned(null);
     }
 
@@ -656,6 +658,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpSpendTxHashUnsigned() {
+        logger.info("[clearSvpSpendTxHashUnsigned] Clearing spend tx hash unsigned.");
         setSvpSpendTxHashUnsigned(null);
     }
 
@@ -684,6 +687,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpSpendTxWaitingForSignatures() {
+        logger.info("[clearSvpSpendTxWaitingForSignatures] Clearing spend tx waiting for signatures.");
         setSvpSpendTxWaitingForSignatures(null);
     }
 
@@ -700,17 +704,11 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpValues() {
-        logger.warn("[clearSvpValues] Clearing fund tx hash unsigned.");
+        logger.info("[clearSvpValues] Clearing all SVP values.");
+
         clearSvpFundTxHashUnsigned();
-
-        logger.warn("[clearSvpValues] Clearing fund tx signed.");
         clearSvpFundTxSigned();
-
-        logger.warn("[clearSvpValues] Clearing spend tx waiting for signatures.");
         clearSvpSpendTxWaitingForSignatures();
-        clearSvpSpendTxHashUnsigned();
-
-        logger.warn("[clearSvpValues] Clearing spend tx hash unsigned.");
         clearSvpSpendTxHashUnsigned();
     }
 
