@@ -1,6 +1,5 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.addInputFromMatchingOutputScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,6 +13,8 @@ import java.util.*;
 import java.util.stream.Stream;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,9 +22,16 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BitcoinUtilsTest {
+
+    private static final BridgeConstants bridgeTestnetConstants = BridgeMainNetConstants.getInstance();
+    private static final NetworkParameters btcTestnetParams = bridgeTestnetConstants.getBtcParams();
+
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final int FIRST_INPUT_INDEX = 0;
+
+    private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+    private static final ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0);
 
     private Address destinationAddress;
 
@@ -531,17 +539,26 @@ class BitcoinUtilsTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test find witness commitment implementations")
     class FindWitnessCommitment {
-        @Test
-        void findWitnessCommitment_whenTxHasNoOutputs_shouldThrowException() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_whenTxHasNoOutputs_shouldThrowException(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
             // Act
-            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx));
+            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx, activations));
         }
 
-        @Test
-        void findWitnessCommitment_whenTxIsNotCoinbase_shouldThrowException() {
+        private static Stream<Arguments> activationsProvider() {
+            return Stream.of(
+                Arguments.of(arrowHeadActivations),
+                Arguments.of(lovellActivations)
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_whenTxIsNotCoinbase_shouldThrowException(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
@@ -555,23 +572,25 @@ class BitcoinUtilsTest {
             btcTx.addOutput(Coin.COIN, receiver2);
 
             // Act
-            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx));
+            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx, activations));
         }
 
-        @Test
-        void findWitnessCommitment_whenNoWitnessCommitment_shouldReturnEmpty() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_whenNoWitnessCommitment_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
 
             // Act
-            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertFalse(witnessCommitment.isPresent());
         }
 
-        @Test
-        void findWitnessCommitment_withWitnessCommitment_shouldReturnExpectedValue() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withWitnessCommitment_shouldReturnExpectedValue(ActivationConfig.ForBlock activations) {
             // Arrange
             Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransactionWithWitnessCommitment(
@@ -580,15 +599,16 @@ class BitcoinUtilsTest {
             );
 
             // Act
-            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertTrue(witnessCommitmentFound.isPresent());
             assertEquals(witnessCommitment, witnessCommitmentFound.get());
         }
 
-        @Test
-        void findWitnessCommitment_withMultipleWitnessCommitments_shouldReturnLastOne() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withMultipleWitnessCommitments_shouldReturnLastOne(ActivationConfig.ForBlock activations) {
             // Arrange
             Sha256Hash witnessCommitment1 = BitcoinTestUtils.createHash(100);
             Sha256Hash witnessCommitment2 = BitcoinTestUtils.createHash(200);
@@ -599,15 +619,16 @@ class BitcoinUtilsTest {
             );
 
             // Act
-            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertTrue(witnessCommitmentFound.isPresent());
             assertEquals(witnessCommitment3, witnessCommitmentFound.get());
         }
 
-        @Test
-        void findWitnessCommitment_withWrongWitnessCommitment_shouldReturnEmpty() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withWrongWitnessCommitment_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
             // Arrange
             Sha256Hash fakeWitnessCommitment = BitcoinTestUtils.createHash(101);
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransactionWithWrongWitnessCommitment(
@@ -616,14 +637,15 @@ class BitcoinUtilsTest {
             );
 
             // Act
-            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertFalse(witnessCommitment.isPresent());
         }
 
-        @Test
-        void findWitnessCommitment_withRealTransaction_shouldReturnExpectedValue() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withRealTransaction_shouldReturnExpectedValue(ActivationConfig.ForBlock activations) {
             // Arrange
             // https://mempool.space/tx/b6362fb1369a64c4ce4e0449dc9bd7ffc1ba4fa857fce8a502ff53e49a17c1a7
             String rawCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff5803143c0d1b4d696e656420627920416e74506f6f6c39363552000603188e2f24fabe6d6d0a2f234a30b96bbd9118e926736f18b85f55588455058335d2aa379604b51662100000000000000000004ca30900000000d18300ffffffff05220200000000000017a91442402a28dd61f2718a4b27ae72a4791d5bbdade787e3fd38130000000017a9145249bdf2c131d43995cff42e8feee293f79297a8870000000000000000266a24aa21a9ed434c56197e034947917a46b6c302671f952e0c0ce2ea794fad577b3bbdc0408400000000000000002f6a2d434f524501a37cf4faa0758b26dca666f3e36d42fa15cc01064e3ecda72cb7961caa4b541b1e322bcfe0b5a03000000000000000002b6a2952534b424c4f434b3aebe97391ca0a8447635a588b29295e1fa65aa4723216c21112051f1100683fa50120000000000000000000000000000000000000000000000000000000000000000000000000";
@@ -631,37 +653,88 @@ class BitcoinUtilsTest {
             Sha256Hash expectedWitnessCommitment = Sha256Hash.wrap("434c56197e034947917a46b6c302671f952e0c0ce2ea794fad577b3bbdc04084");
 
             // Act
-            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertTrue(witnessCommitment.isPresent());
             assertEquals(expectedWitnessCommitment, witnessCommitment.get());
         }
-    }
 
-    @Test
-    void findWitnessCommitment_withDataLargenThanExpected_shouldReturnEmpty() {
-        // Arrange
-        BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withDataLargenThanExpected_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+            // Arrange
+            BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
-        btcTx.setWitness(0, txWitness);
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
+            btcTx.setWitness(0, txWitness);
 
-        Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
-        byte[] extraData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
-        byte[] witnessCommitmentWithHeaderAndExtraData = ByteUtil.merge(
-            BitcoinUtils.WITNESS_COMMITMENT_HEADER,
-            witnessCommitment.getBytes(),
-            extraData
-        );
-        btcTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeaderAndExtraData));
-        btcTx.verify();
+            Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
+            byte[] extraData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+            byte[] witnessCommitmentWithHeaderAndExtraData = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitment.getBytes(),
+                extraData
+            );
+            btcTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeaderAndExtraData));
+            btcTx.verify();
 
-        // Act
-        Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            // Act
+            Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
-        // Assert, should not find the commitment since the data length != 36 bytes
-        assertFalse(obtainedWitnessCommitment.isPresent());
+            // Assert, should not find the commitment since the data length != 36 bytes
+            assertFalse(obtainedWitnessCommitment.isPresent());
+        }
+
+        @ParameterizedTest
+        @MethodSource("malFormedCoinbaseTxProvider")
+        void findWitnessCommitment_whenMalFormedTxBeforeRSKIP460_shouldThrowException(BtcTransaction malFormedCoinbaseTx) {
+            // Act & Assert
+            assertThrows(ScriptException.class, () -> BitcoinUtils.findWitnessCommitment(malFormedCoinbaseTx, arrowHeadActivations));
+        }
+
+        private static Stream<Arguments> malFormedCoinbaseTxProvider() {
+            // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
+            String rawMalFormedTestnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000";
+            BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode(rawMalFormedTestnetCoinbaseTx));
+
+            // malformed coinbase tx from mainnet: https://mempool.space/tx/079e68032d9a4cdb222f464b9966756ccb749633aee678c6a51536b4fc38e29c
+            String rawMalFormedMainnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff3c03ebba0c040c93ef652f4d41524120506f6f6c202876303232373234292f76649b3c094f135bf4b83108c14ea85f12307cd4bf00d6010000ffffffffffffffff0371c71a27000000001976a9142fc701e2049ee4957b07134b6c1d771dd5a96b2188ac0000000000000000266a24aa21a9ed5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd96900000000000000002cfabe6d6d9797129041127735e99e277241fbc539b327b16ad3e8537125cdc12ccf2d0586010000000000000001200000000000000000000000000000000000000000000000000000000000000000e5a28d27";
+            BtcTransaction malFormedMainnetCoinbaseTx = new BtcTransaction(btcMainnetParams, Hex.decode(rawMalFormedMainnetCoinbaseTx));
+
+            return Stream.of(
+                Arguments.of(malFormedTestnetCoinbaseTx),
+                Arguments.of(malFormedMainnetCoinbaseTx)
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("malFormedCoinbaseTxAndExpectedWitnessProvider")
+        void findWitnessCommitment_whenMalFormedTxAfterRSKIP460_shouldIgnoreMalformedOutputAndReturnFoundWitnessCommitment(
+            BtcTransaction malFormedCoinbaseTx, Sha256Hash expectedWitnessCommitment) {
+            // Act
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(
+                malFormedCoinbaseTx, lovellActivations);
+
+            // Assert
+            assertTrue(witnessCommitment.isPresent());
+            assertEquals(expectedWitnessCommitment, witnessCommitment.get());
+        }
+
+        private static Stream<Arguments> malFormedCoinbaseTxAndExpectedWitnessProvider() {
+            // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
+            String rawMalFormedTestnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000";
+            BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode(rawMalFormedTestnetCoinbaseTx));
+
+            // malformed coinbase tx from mainnet: https://mempool.space/tx/079e68032d9a4cdb222f464b9966756ccb749633aee678c6a51536b4fc38e29c
+            String rawMalFormedMainnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff3c03ebba0c040c93ef652f4d41524120506f6f6c202876303232373234292f76649b3c094f135bf4b83108c14ea85f12307cd4bf00d6010000ffffffffffffffff0371c71a27000000001976a9142fc701e2049ee4957b07134b6c1d771dd5a96b2188ac0000000000000000266a24aa21a9ed5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd96900000000000000002cfabe6d6d9797129041127735e99e277241fbc539b327b16ad3e8537125cdc12ccf2d0586010000000000000001200000000000000000000000000000000000000000000000000000000000000000e5a28d27";
+            BtcTransaction malFormedMainnetCoinbaseTx = new BtcTransaction(btcMainnetParams, Hex.decode(rawMalFormedMainnetCoinbaseTx));
+
+            return Stream.of(
+                Arguments.of(malFormedTestnetCoinbaseTx, Sha256Hash.wrap("e46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b")),
+                Arguments.of(malFormedMainnetCoinbaseTx, Sha256Hash.wrap("5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd969"))
+            );
+        }
     }
 }
