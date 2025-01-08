@@ -105,8 +105,6 @@ public abstract class BridgeConstants {
 
     public Coin getMinimumPegoutTxValue() { return minimumPegoutTxValue; }
 
-    public Coin getSpendableValueFromProposedFederation() { return minimumPegoutTxValue.multiply(2); }
-
     public Keccak256 getProposedFederationFlyoverPrefix() { return new Keccak256("0000000000000000000000000000000000000000000000000000000000000001"); }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
