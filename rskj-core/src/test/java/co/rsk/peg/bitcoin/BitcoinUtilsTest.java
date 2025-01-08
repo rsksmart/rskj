@@ -29,7 +29,7 @@ class BitcoinUtilsTest {
     private static final int FIRST_INPUT_INDEX = 0;
 
     private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
-    private static final ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0);
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
     private Address destinationAddress;
 
@@ -413,7 +413,7 @@ class BitcoinUtilsTest {
         private static Stream<Arguments> activationsProvider() {
             return Stream.of(
                 Arguments.of(arrowHeadActivations),
-                Arguments.of(lovellActivations)
+                Arguments.of(allActivations)
             );
         }
 
@@ -523,7 +523,7 @@ class BitcoinUtilsTest {
 
         @ParameterizedTest
         @MethodSource("activationsProvider")
-        void findWitnessCommitment_withDataLargenThanExpected_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+        void findWitnessCommitment_withDataLargerThanExpected_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
 
@@ -576,7 +576,7 @@ class BitcoinUtilsTest {
             BtcTransaction malFormedCoinbaseTx, Sha256Hash expectedWitnessCommitment) {
             // Act
             Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(
-                malFormedCoinbaseTx, lovellActivations);
+                malFormedCoinbaseTx, allActivations);
 
             // Assert
             assertTrue(witnessCommitment.isPresent());
