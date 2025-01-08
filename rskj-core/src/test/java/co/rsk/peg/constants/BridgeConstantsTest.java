@@ -63,25 +63,6 @@ class BridgeConstantsTest {
         assertEquals(expectedMinimumPegoutTxValue, minimumPegoutTxValue);
     }
 
-    private static Stream<Arguments> spendableValueFromProposedFederationArgProvider() {
-        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
-        BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
-
-        return Stream.of(
-            Arguments.of(bridgeMainnetConstants, bridgeMainnetConstants.getMinimumPegoutTxValue().multiply(2)),
-            Arguments.of(bridgeTestnetConstants, bridgeTestnetConstants.getMinimumPegoutTxValue().multiply(2)),
-            Arguments.of(bridgeRegtestConstants, bridgeRegtestConstants.getMinimumPegoutTxValue().multiply(2))
-        );
-    }
-
-    @ParameterizedTest()
-    @MethodSource("spendableValueFromProposedFederationArgProvider")
-    void getSpendableValueFromProposedFederation(BridgeConstants bridgeConstants, Coin expectedSpendableValueFromProposedFederation) {
-        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
-        assertEquals(expectedSpendableValueFromProposedFederation, spendableValueFromProposedFederation);
-    }
-
     private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
