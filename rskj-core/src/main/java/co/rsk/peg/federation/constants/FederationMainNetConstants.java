@@ -4,9 +4,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -18,7 +16,7 @@ public class FederationMainNetConstants extends FederationConstants {
     private FederationMainNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
-        genesisFederationPublicKeys = Collections.unmodifiableList(Stream.of(
+        genesisFederationPublicKeys = Stream.of(
             "03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2",
             "027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344",
             "0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70",
@@ -34,14 +32,14 @@ public class FederationMainNetConstants extends FederationConstants {
             "03f909ae15558c70cc751aff9b1f495199c325b13a9e5b934fd6299cd30ec50be8",
             "02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259",
             "03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
 
-        List<ECKey> federationChangeAuthorizedKeys =  Collections.unmodifiableList(Stream.of(
+        List<ECKey> federationChangeAuthorizedKeys = Stream.of(
             "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
             "045e7f2563e73d44d149c19cffca36e1898597dc759d76166b8104103c0d3f351a8a48e3a224544e9a649ad8ebcfdbd6c39744ddb85925f19c7e3fd48f07fc1c06",
             "0441945e4e272936106f6200b36162f3510e8083535c15e175ac82deaf828da955b85fd72b7534f2a34cedfb45fa63b728cc696a2bd3c5d39ec799ec2618e9aa9f"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         validationPeriodDurationInBlocks = 16000L;
@@ -53,12 +51,12 @@ public class FederationMainNetConstants extends FederationConstants {
         fundsMigrationAgeSinceActivationEnd = 10585L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 172_800L; // 60 days, considering 1 block every 30 seconds
 
-        erpFedPubKeysList = Collections.unmodifiableList(Stream.of(
+        erpFedPubKeysList = Stream.of(
             "0257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d4",
             "03c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f9",
             "03cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b3",
             "02370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80"
-        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
