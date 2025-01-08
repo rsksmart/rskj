@@ -615,6 +615,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpFundTxHashUnsigned() {
+        logger.info("[clearSvpFundTxHashUnsigned] Clearing fund tx hash unsigned.");
         setSvpFundTxHashUnsigned(null);
     }
 
@@ -626,7 +627,8 @@ public class BridgeStorageProvider {
         safeSaveToRepository(
             SVP_FUND_TX_HASH_UNSIGNED,
             svpFundTxHashUnsigned,
-            BridgeSerializationUtils::serializeSha256Hash);
+            BridgeSerializationUtils::serializeSha256Hash
+        );
     }
 
     public void setSvpFundTxSigned(BtcTransaction svpFundTxSigned) {
@@ -635,6 +637,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpFundTxSigned() {
+        logger.info("[clearSvpFundTxSigned] Clearing fund tx signed.");
         setSvpFundTxSigned(null);
     }
 
@@ -655,6 +658,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpSpendTxHashUnsigned() {
+        logger.info("[clearSvpSpendTxHashUnsigned] Clearing spend tx hash unsigned.");
         setSvpSpendTxHashUnsigned(null);
     }
 
@@ -683,6 +687,7 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpSpendTxWaitingForSignatures() {
+        logger.info("[clearSvpSpendTxWaitingForSignatures] Clearing spend tx waiting for signatures.");
         setSvpSpendTxWaitingForSignatures(null);
     }
 
@@ -699,31 +704,12 @@ public class BridgeStorageProvider {
     }
 
     public void clearSvpValues() {
-        if (svpFundTxHashUnsigned != null) {
-            logger.warn("[clearSvpValues] Clearing fund tx hash unsigned {} value.", svpFundTxHashUnsigned);
-            clearSvpFundTxHashUnsigned();
-        }
+        logger.info("[clearSvpValues] Clearing all SVP values.");
 
-        if (svpFundTxSigned != null) {
-            logger.warn("[clearSvpValues] Clearing fund tx signed {} value.", svpFundTxSigned.getHash());
-            clearSvpFundTxSigned();
-        }
-
-        if (svpSpendTxWaitingForSignatures != null) {
-            Keccak256 rskCreationHash = svpSpendTxWaitingForSignatures.getKey();
-            BtcTransaction svpSpendTx = svpSpendTxWaitingForSignatures.getValue();
-            logger.warn(
-                "[clearSvpValues] Clearing spend tx waiting for signatures with spend tx {} and rsk creation hash {} value.",
-                svpSpendTx.getHash(), rskCreationHash
-            );
-            clearSvpSpendTxWaitingForSignatures();
-            clearSvpSpendTxHashUnsigned();
-        }
-
-        if (svpSpendTxHashUnsigned != null) {
-            logger.warn("[clearSvpValues] Clearing spend tx hash unsigned {} value.", svpSpendTxHashUnsigned);
-            clearSvpSpendTxHashUnsigned();
-        }
+        clearSvpFundTxHashUnsigned();
+        clearSvpFundTxSigned();
+        clearSvpSpendTxWaitingForSignatures();
+        clearSvpSpendTxHashUnsigned();
     }
 
     public void save() {
