@@ -4,7 +4,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
-import static co.rsk.peg.utils.UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
+import static co.rsk.peg.utils.NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -44,7 +44,7 @@ import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.UnrefundablePeginReason;
+import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
@@ -75,7 +75,7 @@ class BridgeSupportRejectedPeginTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600()
         .forBlock(0);
-    private static final ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700()
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all()
         .forBlock(0);
 
     private static final Coin minimumPeginTxValue = bridgeMainnetConstants.getMinimumPeginTxValue(
@@ -110,7 +110,7 @@ class BridgeSupportRejectedPeginTest {
 
     public static Stream<Arguments> activationsProvider() {
         return Stream.of(
-            Arguments.of(lovellActivations),
+            Arguments.of(allActivations),
             Arguments.of(arrowHeadActivations)
         );
     }
@@ -308,13 +308,13 @@ class BridgeSupportRejectedPeginTest {
         // assert
 
         // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == lovellActivations ? times(1) : never();
+        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
         verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
             anyLong());
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction, INVALID_AMOUNT);
-        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction,
-            UnrefundablePeginReason.INVALID_AMOUNT);
+        verify(bridgeEventLogger, times(1)).logNonRefundablePegin(btcTransaction,
+            NonRefundablePeginReason.INVALID_AMOUNT);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
@@ -371,7 +371,7 @@ class BridgeSupportRejectedPeginTest {
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
         );
-        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(
+        verify(bridgeEventLogger, times(1)).logNonRefundablePegin(
             btcTransaction,
             LEGACY_PEGIN_UNDETERMINED_SENDER
         );
@@ -380,7 +380,7 @@ class BridgeSupportRejectedPeginTest {
         verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(), any(), any());
 
         // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == lovellActivations ? times(1) : never();
+        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
         verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
             anyLong());
 
@@ -440,14 +440,14 @@ class BridgeSupportRejectedPeginTest {
         // assert
 
         // tx should be marked as processed since RSKIP459 is active
-        var shouldMarkTxAsProcessed = activations == lovellActivations ? times(1) : never();
+        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
         verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
             anyLong());
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(
             btcTransaction, PEGIN_V1_INVALID_PAYLOAD
         );
-        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(
+        verify(bridgeEventLogger, times(1)).logNonRefundablePegin(
             btcTransaction,
             LEGACY_PEGIN_UNDETERMINED_SENDER
         );
@@ -504,14 +504,14 @@ class BridgeSupportRejectedPeginTest {
         );
 
         // assert
-        var shouldMarkTxAsProcessed = activations == lovellActivations ? times(1) : never();
+        var shouldMarkTxAsProcessed = activations == allActivations ? times(1) : never();
         verify(provider, shouldMarkTxAsProcessed).setHeightBtcTxhashAlreadyProcessed(any(),
             anyLong());
 
         verify(bridgeEventLogger, times(1)).logRejectedPegin(btcTransaction,
             RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
-        verify(bridgeEventLogger, times(1)).logUnrefundablePegin(btcTransaction,
-            UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+        verify(bridgeEventLogger, times(1)).logNonRefundablePegin(btcTransaction,
+            NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         assertTrue(activeFederationUtxos.isEmpty());
         assertTrue(retiringFederationUtxos.isEmpty());
@@ -582,7 +582,7 @@ class BridgeSupportRejectedPeginTest {
 
     private void assertUnknownTxIsIgnored() throws IOException {
         verify(bridgeEventLogger, never()).logRejectedPegin(any(), any());
-        verify(bridgeEventLogger, never()).logUnrefundablePegin(any(), any());
+        verify(bridgeEventLogger, never()).logNonRefundablePegin(any(), any());
         verify(bridgeEventLogger, never()).logPeginBtc(any(), any(), any(), anyInt());
         verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
         assertTrue(activeFederationUtxos.isEmpty());
