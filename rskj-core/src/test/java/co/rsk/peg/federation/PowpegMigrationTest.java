@@ -1,35 +1,48 @@
-/*
 package co.rsk.peg.federation;
+
+import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.*;
-import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.*;
+import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
+import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
+import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
-import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.lockingcap.*;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.vote.ABICallSpec;
-import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.bitcoin.NonStandardErpRedeemScriptBuilder;
-import co.rsk.peg.bitcoin.P2shErpRedeemScriptBuilder;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import co.rsk.trie.Trie;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
@@ -52,32 +65,16 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static co.rsk.peg.PegTestUtils.BTC_TX_LEGACY_VERSION;
-import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 class PowpegMigrationTest {
 
-    */
-/***
+    /*
      * Key is BtcTxHash and output index. Value is the address that received the funds
      * I can use this to validate that a certain redeemscript trying to spend this utxo generates the corresponding address
-     *//*
-
+     */
     private final Map<Sha256Hash, Address> whoCanSpendTheseUtxos = new HashMap<>();
-    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+    private static final BridgeConstants BRIDGE_MAINNET_CONSTANTS = BridgeMainNetConstants.getInstance();
 
-    private void testChangePowpeg(
+    private void executePowpegChange(
         FederationType oldPowPegFederationType,
         List<Triple<BtcECKey, ECKey, ECKey>> oldPowPegKeys,
         Address oldPowPegAddress,
@@ -85,35 +82,31 @@ class PowpegMigrationTest {
         FederationType newPowPegFederationType,
         List<Triple<BtcECKey, ECKey, ECKey>> newPowPegKeys,
         Address newPowPegAddress,
-        BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
         long migrationShouldFinishAfterThisAmountOfBlocks
     ) throws Exception {
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        Repository repository = new MutableRepository(
-            new MutableTrieCache(new MutableTrieImpl(null, new Trie()))
-        );
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+        var repository = new MutableRepository(
+            new MutableTrieCache(
+                new MutableTrieImpl(null, new Trie())));
+        repository.addBalance(
+            PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(BRIDGE_MAINNET_CONSTANTS.getMaxRbtc()));
+
+        var bridgeStorageProvider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
-            btcParams,
-            activations
-        );
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
+            activations);
 
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-            btcParams,
+        var btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             100,
-            100
-        );
-
-        BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(
+            100);
+        var btcBlockStore = btcBlockStoreFactory.newInstance(
             repository,
-            bridgeConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             bridgeStorageProvider,
-            activations
-        );
+            activations);
 
         // Setting a chain head different from genesis to avoid having to read the checkpoints file
         addNewBtcBlockOnTipOfChain(btcBlockStore, bridgeConstants);
@@ -311,10 +304,9 @@ class PowpegMigrationTest {
             oldPowPegAddress
         );
 
-        */
-/*
+         /*
           Activation phase
-         *//*
+         */
 
         // Move the required blocks ahead for the new powpeg to become active
         // (overriding block number to ensure we don't move beyond the activation phase)
@@ -412,10 +404,9 @@ class PowpegMigrationTest {
             true
         );
 
-        */
 /*
          Migration phase
-         *//*
+         */
 
 
         // Move the required blocks ahead for the new powpeg to start migrating
@@ -570,10 +561,9 @@ class PowpegMigrationTest {
             newPowPegAddress
         );
 
-        */
 /*
           After Migration phase
-         *//*
+         */
 
 
         // Move the height to the block previous to the migration finishing, it should keep on migrating
@@ -1354,30 +1344,30 @@ class PowpegMigrationTest {
         return peginBtcTx;
     }
 
-    private void addNewBtcBlockOnTipOfChain(BtcBlockStore blockStore, BridgeConstants bridgeConstants) throws BlockStoreException {
-        StoredBlock chainHead = blockStore.getChainHead();
-        BtcBlock btcBlock = new BtcBlock(
-            bridgeConstants.getBtcParams(),
+    private void addNewBtcBlockOnTipOfChain(BtcBlockStore blockStore) throws Exception {
+        var chainHead = blockStore.getChainHead();
+        var btcBlock = new BtcBlock(
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             1,
             chainHead.getHeader().getHash(),
-            PegTestUtils.createHash(chainHead.getHeight() + 1),
+            BitcoinTestUtils.createHash(chainHead.getHeight() + 1),
             0,
             0,
             0,
-            Collections.emptyList()
-        );
-        StoredBlock storedBlock = new StoredBlock(
+            List.of());
+        var storedBlock = new StoredBlock(
             btcBlock,
             BigInteger.ZERO,
             chainHead.getHeight() + 1
         );
+
         blockStore.put(storedBlock);
         blockStore.setChainHead(storedBlock);
     }
 
     private Address getMainnetPowpegAddress() {
         return Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh"
         );
     }
@@ -1478,11 +1468,11 @@ class PowpegMigrationTest {
         ));
 
         Address newPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3Lqn662zEgbPU4nRYowUo9UY7HNRkbBNgN"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.NON_STANDARD_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1490,9 +1480,9 @@ class PowpegMigrationTest {
             FederationType.NON_STANDARD_ERP,
             newPowpegKeys,
             newPowpegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1504,11 +1494,11 @@ class PowpegMigrationTest {
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
 
         Address newPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.NON_STANDARD_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1516,9 +1506,9 @@ class PowpegMigrationTest {
             FederationType.P2SH_ERP,
             getMainnetPowpegKeys(), // Using same keys as the original powpeg, should result in a different address since it will create a p2sh erp federation
             newPowpegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1527,7 +1517,7 @@ class PowpegMigrationTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1550,11 +1540,11 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1562,9 +1552,9 @@ class PowpegMigrationTest {
             FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1592,7 +1582,7 @@ class PowpegMigrationTest {
     @MethodSource("activationsArgProvider")
     void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg(ActivationConfig.ForBlock activations) throws Exception {
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1615,11 +1605,11 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1627,9 +1617,9 @@ class PowpegMigrationTest {
             FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1640,7 +1630,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1663,11 +1653,11 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1675,9 +1665,9 @@ class PowpegMigrationTest {
             FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1688,7 +1678,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1711,11 +1701,11 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1723,9 +1713,9 @@ class PowpegMigrationTest {
             FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1736,7 +1726,7 @@ class PowpegMigrationTest {
             .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"
         );
         List<UTXO> utxos = createRandomUtxos(originalPowpegAddress);
@@ -1759,11 +1749,11 @@ class PowpegMigrationTest {
         ));
 
         Address newPowPegAddress = Address.fromBase58(
-            bridgeMainnetConstants.getBtcParams(),
+            BRIDGE_MAINNET_CONSTANTS.getBtcParams(),
             "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"
         );
 
-        testChangePowpeg(
+        executePowpegChange(
             FederationType.P2SH_ERP,
             getMainnetPowpegKeys(),
             originalPowpegAddress,
@@ -1771,9 +1761,9 @@ class PowpegMigrationTest {
             FederationType.P2SH_ERP,
             newPowPegKeys,
             newPowPegAddress,
-            bridgeMainnetConstants,
+            BRIDGE_MAINNET_CONSTANTS,
             activations,
-            bridgeMainnetConstants.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
+            BRIDGE_MAINNET_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations)
         );
     }
 
@@ -1795,4 +1785,3 @@ class PowpegMigrationTest {
             federation.getP2SHScript();
     }
 }
-*/
