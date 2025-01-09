@@ -73,6 +73,7 @@ class BridgeConstantsTest {
             Arguments.of(bridgeRegtestConstants, bridgeRegtestConstants.getMinimumPegoutTxValue().multiply(2))
         );
     }
+
     @ParameterizedTest()
     @MethodSource("svpFundTxOutputsValueArgProvider")
     void getSvpFundTxOutputsValue(BridgeConstants bridgeConstants, Coin expectedSvpFundTxOutputsValue) {
