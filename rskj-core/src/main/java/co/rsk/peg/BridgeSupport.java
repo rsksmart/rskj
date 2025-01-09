@@ -1093,10 +1093,7 @@ public class BridgeSupport {
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
-            List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
-            // one output to proposed fed, one output to flyover proposed fed
-            Coin totalValueSentToProposedFederation = bridgeConstants.getSvpFundTxOutputsValue().multiply(2);
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, totalValueSentToProposedFederation);
+            settleSvpFundTransactionRelease(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash);
         } catch (InsufficientMoneyException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
@@ -1219,9 +1216,7 @@ public class BridgeSupport {
             getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
             getRetiringFederationWallet(true);
 
-        List<UTXO> availableUTXOs = federationSupport.getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
-
         if (federationIsInMigrationAge(activeFederation)) {
             long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
             logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
@@ -1236,8 +1231,7 @@ public class BridgeSupport {
                 migrateFunds(
                     rskTx.getHash(),
                     retiringFederationWallet,
-                    activeFederation.getAddress(),
-                    availableUTXOs
+                    activeFederation.getAddress()
                 );
             }
         }
@@ -1255,8 +1249,7 @@ public class BridgeSupport {
                     migrateFunds(
                         rskTx.getHash(),
                         retiringFederationWallet,
-                        activeFederation.getAddress(),
-                        availableUTXOs
+                        activeFederation.getAddress()
                     );
                 } catch (Exception e) {
                     logger.error(
@@ -1270,7 +1263,7 @@ public class BridgeSupport {
 
             logger.info(
                 "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
-                availableUTXOs.size()
+                federationSupport.getRetiringFederationBtcUTXOs().size()
             );
             federationSupport.clearRetiredFederation();
         }
@@ -1307,8 +1300,7 @@ public class BridgeSupport {
     private void migrateFunds(
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
-        Address activeFederationAddress,
-        List<UTXO> utxosToUse) throws IOException {
+        Address activeFederationAddress) throws IOException {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
@@ -1320,11 +1312,7 @@ public class BridgeSupport {
             selectedUTXOs.size()
         );
 
-        Coin amountMigrated = selectedUTXOs.stream()
-            .map(UTXO::getValue)
-            .reduce(Coin.ZERO, Coin::add);
-
-        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
+        settleMigrationRelease(pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash);
     }
 
     /**
@@ -1340,14 +1328,12 @@ public class BridgeSupport {
     private void processPegoutRequests(Transaction rskTx) {
         final Wallet activeFederationWallet;
         final ReleaseRequestQueue pegoutRequests;
-        final List<UTXO> availableUTXOs;
         final PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
 
         try {
             // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
             activeFederationWallet = getActiveFederationWallet(true);
             pegoutRequests = provider.getReleaseRequestQueue();
-            availableUTXOs = federationSupport.getActiveFederationBtcUTXOs();
             pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process pegout requests", e);
@@ -1364,10 +1350,62 @@ public class BridgeSupport {
         );
 
         if (activations.isActive(RSKIP271)) {
-            processPegoutsInBatch(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet, rskTx);
+            processPegoutsInBatch(pegoutRequests, txBuilder, pegoutsWaitingForConfirmations, activeFederationWallet, rskTx);
         } else {
-            processPegoutsIndividually(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet);
+            processPegoutsIndividually(pegoutRequests, txBuilder, pegoutsWaitingForConfirmations, activeFederationWallet);
         }
+    }
+
+    private void settlePegoutRequest(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash) {
+        Coin requestedAmount = getPegoutRequestedAmount(releaseTransaction);
+        List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
+
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash, requestedAmount);
+    }
+
+    private Coin getPegoutRequestedAmount(BtcTransaction pegoutTransaction) {
+        Coin totalAmount = Coin.ZERO;
+        for (int i = 0; i < pegoutTransaction.getInputs().size(); i ++) {
+            TransactionInput input = pegoutTransaction.getInput(i);
+            totalAmount = totalAmount.add(input.getValue());
+        }
+
+        TransactionOutput changeOutput = pegoutTransaction.getOutput(pegoutTransaction.getOutputs().size() - 1);
+        Coin changeOutputAmount = changeOutput.getValue();
+        return totalAmount.minus(changeOutputAmount);
+    }
+
+    private void settleMigrationRelease(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction migrationTransaction, Keccak256 migrationCreationTxHash) {
+        Coin requestedAmount = getMigrationRequestedAmount(migrationTransaction);
+        List<UTXO> utxosToUse = federationSupport.getRetiringFederationBtcUTXOs();
+
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, migrationCreationTxHash, requestedAmount);
+    }
+
+    private Coin getMigrationRequestedAmount(BtcTransaction migrationTransaction) {
+        Coin requestedAmount = Coin.ZERO;
+        for (int i = 0; i < migrationTransaction.getInputs().size(); i ++) {
+            TransactionInput input = migrationTransaction.getInput(i);
+            requestedAmount = requestedAmount.add(input.getValue());
+        }
+
+        return requestedAmount;
+    }
+
+    private void settleSvpFundTransactionRelease(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction svpFundTransaction, Keccak256 svpFundCreationTxHash) {
+        List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
+        Coin requestedAmount = getSvpFundTxRequestedAmount(svpFundTransaction);
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransaction, svpFundCreationTxHash, requestedAmount);
+    }
+
+    private Coin getSvpFundTxRequestedAmount(BtcTransaction svpFundTransaction) {
+        Coin requestedAmount = Coin.ZERO;
+        for (int i = 0; i < svpFundTransaction.getOutputs().size() - 1; i ++) {
+            TransactionOutput output = svpFundTransaction.getOutput(i);
+            requestedAmount = requestedAmount.add(output.getValue());
+        }
+
+        return requestedAmount;
     }
 
     private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
@@ -1444,7 +1482,6 @@ public class BridgeSupport {
     private void processPegoutsIndividually(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet
     ) {
@@ -1469,7 +1506,7 @@ public class BridgeSupport {
 
             BtcTransaction generatedTransaction = result.getBtcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
+            settlePegoutRequest(pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash);
 
             adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
 
@@ -1480,7 +1517,6 @@ public class BridgeSupport {
     private void processPegoutsInBatch(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
         Transaction rskTx) {
@@ -1529,7 +1565,7 @@ public class BridgeSupport {
             BtcTransaction batchPegoutTransaction = result.getBtcTx();
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
 
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
+            settlePegoutRequest(pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
