@@ -31,7 +31,7 @@ import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
-import co.rsk.peg.utils.UnrefundablePeginReason;
+import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
@@ -1457,7 +1457,7 @@ public class BridgeSupportSvpTest {
 
         Function unrefundablePeginEvent = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
         List<DataWord> encodedTopics = getEncodedTopics(unrefundablePeginEvent, btcTxHashSerialized);
-        byte[] encodedData = getEncodedData(unrefundablePeginEvent, UnrefundablePeginReason.INVALID_AMOUNT.getValue());
+        byte[] encodedData = getEncodedData(unrefundablePeginEvent, NonRefundablePeginReason.INVALID_AMOUNT.getValue());
 
         assertEventWasEmittedWithExpectedTopics(encodedTopics);
         assertEventWasEmittedWithExpectedData(encodedData);

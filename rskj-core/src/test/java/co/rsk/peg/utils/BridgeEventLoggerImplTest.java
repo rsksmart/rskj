@@ -398,9 +398,9 @@ class BridgeEventLoggerImplTest {
     }
 
     @Test
-    void logUnrefundablePegin() {
+    void logNonRefundablePegin() {
         // Setup event logger
-        eventLogger.logUnrefundablePegin(BTC_TRANSACTION, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+        eventLogger.logNonRefundablePegin(BTC_TRANSACTION, NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
 
         assertEquals(1, eventLogs.size());
         LogInfo entry = eventLogs.get(0);
@@ -423,7 +423,7 @@ class BridgeEventLoggerImplTest {
 
         // Assert log data
         assertArrayEquals(
-            event.encodeEventData(UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER.getValue()),
+            event.encodeEventData(NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER.getValue()),
             result.getData()
         );
     }
