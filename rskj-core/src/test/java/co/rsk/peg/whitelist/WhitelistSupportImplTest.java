@@ -3,7 +3,6 @@ package co.rsk.peg.whitelist;
 import static co.rsk.peg.whitelist.WhitelistStorageIndexKey.LOCK_ONE_OFF;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
@@ -67,32 +66,33 @@ class WhitelistSupportImplTest {
     }
 
     @Test
-    void getLockWhitelistEntryByIndex_whenLockWhitelistIsEmpty_shouldReturnNull() {
-        LockWhitelistEntry actualEntry = whitelistSupport.getLockWhitelistEntryByIndex(0);
+    void getLockWhitelistEntryByIndex_whenLockWhitelistIsEmpty_shouldReturnAnEmptyOptional() {
+        Optional<LockWhitelistEntry> actualEntry = whitelistSupport.getLockWhitelistEntryByIndex(0);
 
-        assertNull(actualEntry);
+        assertTrue(actualEntry.isEmpty());
     }
 
     @Test
     void getLockWhitelistEntryByIndex_whenLockWhitelistHasEntries_shouldReturnOneOffWhiteListEntry() {
         saveInMemoryStorageOneOffWhiteListEntry();
 
-        LockWhitelistEntry actualLockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByIndex(0);
+        Optional<LockWhitelistEntry> actualLockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByIndex(0);
 
-        assertEquals(btcAddress, actualLockWhitelistEntry.address());
+        assertTrue(actualLockWhitelistEntry.isPresent());
+        assertEquals(btcAddress, actualLockWhitelistEntry.get().address());
     }
 
     @Test
-    void getLockWhitelistEntryByIndex_whenIndexIsOutOfBounds_shouldReturnNull() {
+    void getLockWhitelistEntryByIndex_whenIndexIsOutOfBounds_shouldReturnAnEmptyOptional() {
         saveInMemoryStorageOneOffWhiteListEntry();
 
-        LockWhitelistEntry actualLockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByIndex(1);
+        Optional<LockWhitelistEntry> actualLockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByIndex(1);
 
-        assertNull(actualLockWhitelistEntry);
+        assertTrue(actualLockWhitelistEntry.isEmpty());
     }
 
     @Test
-    void getLockWhitelistEntryByAddress_whenLockWhitelistIsEmpty_shouldReturnNull() {
+    void getLockWhitelistEntryByAddress_whenLockWhitelistIsEmpty_shouldReturnAnEmptyOptional() {
         Optional<LockWhitelistEntry> actualEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
 
         assertTrue(actualEntry.isEmpty());
@@ -123,7 +123,7 @@ class WhitelistSupportImplTest {
     }
 
     @Test
-    void getLockWhitelistEntryByAddress_whenAddressIsInvalid_shouldReturnNull() {
+    void getLockWhitelistEntryByAddress_whenAddressIsInvalid_shouldReturnAnEmptyOptional() {
         Optional<LockWhitelistEntry> actualLockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress("invalidAddress");
         assertTrue(actualLockWhitelistEntry.isEmpty());
     }
@@ -318,8 +318,8 @@ class WhitelistSupportImplTest {
 
         int actualSize = whitelistSupport.getLockWhitelistSize();
         assertEquals(0, actualSize);
-        assertNull(whitelistSupport.getLockWhitelistEntryByIndex(0));
-        assertNull(whitelistSupport.getLockWhitelistEntryByIndex(1));
+        assertTrue(whitelistSupport.getLockWhitelistEntryByIndex(0).isEmpty());
+        assertTrue(whitelistSupport.getLockWhitelistEntryByIndex(1).isEmpty());
     }
 
     @Test
@@ -331,6 +331,8 @@ class WhitelistSupportImplTest {
 
         int actualSize = whitelistSupport.getLockWhitelistSize();
         Optional<LockWhitelistEntry> lockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
+        assertTrue(lockWhitelistEntry.isPresent());
+
         Address actualBtcAddress = lockWhitelistEntry.get().address();
         assertEquals(1, actualSize);
         assertEquals(btcAddress, actualBtcAddress);
@@ -345,6 +347,8 @@ class WhitelistSupportImplTest {
 
         int actualSize = whitelistSupport.getLockWhitelistSize();
         Optional<LockWhitelistEntry> lockWhitelistEntry = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
+        assertTrue(lockWhitelistEntry.isPresent());
+
         Address actualBtcAddress = lockWhitelistEntry.get().address();
         assertEquals(1, actualSize);
         assertEquals(btcAddress, actualBtcAddress);
@@ -360,8 +364,11 @@ class WhitelistSupportImplTest {
 
         int actualSize = whitelistSupport.getLockWhitelistSize();
         Optional<LockWhitelistEntry> lockWhitelistEntryBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(btcAddress.toString());
+        assertTrue(lockWhitelistEntryBtcAddress.isPresent());
         Address actualBtcAddress = lockWhitelistEntryBtcAddress.get().address();
+
         Optional<LockWhitelistEntry> lockWhitelistEntrySecondBtcAddress = whitelistSupport.getLockWhitelistEntryByAddress(secondBtcAddress.toString());
+        assertTrue(lockWhitelistEntrySecondBtcAddress.isPresent());
         Address actualSecondBtcAddress = lockWhitelistEntrySecondBtcAddress.get().address();
         assertEquals(2, actualSize);
         assertEquals(btcAddress, actualBtcAddress);
