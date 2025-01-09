@@ -1136,6 +1136,7 @@ public class BridgeSupport {
         sendRequest.feePerKb = feePerKbSupport.getFeePerKb();
         sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
         sendRequest.recipientsPayFees = false;
+        sendRequest.shuffleOutputs = false;
 
         return sendRequest;
     }
