@@ -45,16 +45,16 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     }
 
     @Override
-    public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
+    public Optional<LockWhitelistEntry> getLockWhitelistEntryByIndex(int index) {
         List<LockWhitelistEntry> entries = storageProvider.getLockWhitelist(
             activations,
             networkParameters
         ).getAll();
 
         if (index < 0 || index >= entries.size()) {
-            return null;
+            return Optional.empty();
         }
-        return entries.get(index);
+        return Optional.ofNullable(entries.get(index));
     }
 
     @Override
