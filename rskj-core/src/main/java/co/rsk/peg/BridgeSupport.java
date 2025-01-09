@@ -1094,6 +1094,7 @@ public class BridgeSupport {
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
             List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
+            // minPegoutValue to proposed fed, minPegoutValue to flyover proposed fed
             Coin totalValueSentToProposedFederation = bridgeConstants.getMinimumPegoutTxValue().multiply(2);
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, totalValueSentToProposedFederation);
         } catch (InsufficientMoneyException e) {
