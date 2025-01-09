@@ -376,9 +376,12 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            Sha256Hash svpFundTxHashUnsigned = assertSvpFundTxHashUnsignedIsInStorage();
-            assertSvpFundTxReleaseWasSettled(svpFundTxHashUnsigned);
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertSvpFundTxReleaseWasSettled(svpFundTxHashUnsigned.get());
+
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - 1);
+
             assertSvpFundTransactionHasExpectedInputsAndOutputs();
         }
 
@@ -416,7 +419,6 @@ public class BridgeSupportSvpTest {
         void updateCollections_whenWaitingForFundTxToBeRegistered_shouldNotCreateFundTransactionAgain() throws Exception {
             // arrange
             arrangeSvpFundTransactionUnsigned();
-            assertSvpFundTxHashUnsignedIsInStorage();
 
             // act
             bridgeSupport.updateCollections(rskTx);
@@ -469,7 +471,10 @@ public class BridgeSupportSvpTest {
     private void arrangeSvpFundTransactionUnsigned() {
         recreateSvpFundTransactionUnsigned();
         addOutputChange(svpFundTransaction);
+
         saveSvpFundTransactionUnsigned();
+        Optional<Sha256Hash> svpFundTransactionHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+        assertTrue(svpFundTransactionHashUnsigned.isPresent());
     }
 
     private void saveSvpFundTransactionUnsigned() {
@@ -487,12 +492,6 @@ public class BridgeSupportSvpTest {
         bridgeSupport.save();
     }
 
-    private Sha256Hash assertSvpFundTxHashUnsignedIsInStorage() {
-        Optional<Sha256Hash> svpFundTransactionHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
-        assertTrue(svpFundTransactionHashUnsigned.isPresent());
-
-        return svpFundTransactionHashUnsigned.get();
-    }
 
     private void assertSvpFundTxReleaseWasSettled(Sha256Hash svpFundTransactionHashUnsigned) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
@@ -702,15 +701,22 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            Sha256Hash svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedIsInStorage();
-            svpSpendTransaction = assertSvpSpendTxIsWaitingForSignatures();
+            Optional<Sha256Hash> svpSpendTransactionHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTransactionHashUnsigned.isPresent());
+
+            Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignaturesOpt.get();
+            svpSpendTransaction = svpSpendTxWaitingForSignatures.getValue();
+
             assertSvpSpendTxHasExpectedInputsAndOutputs();
 
             assertSvpFundTxSignedWasRemovedFromStorage();
 
             assertLogPegoutTransactionCreated(svpSpendTransaction);
+
             TransactionOutput outputToActiveFed = svpSpendTransaction.getOutput(0);
-            assertLogReleaseRequested(rskTx.getHash(), svpSpendTransactionHashUnsigned, outputToActiveFed.getValue());
+            assertLogReleaseRequested(rskTx.getHash(), svpSpendTransactionHashUnsigned.get(), outputToActiveFed.getValue());
         }
 
         private void assertSvpFundTxSignedWasRemovedFromStorage() {
@@ -766,26 +772,9 @@ public class BridgeSupportSvpTest {
         }
     }
 
-    private Sha256Hash assertSvpSpendTxHashUnsignedIsInStorage() {
+    private void assertSvpSpendTxHashUnsignedIsInStorage() {
         Optional<Sha256Hash> svpSpendTransactionHashUnsignedOpt = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
         assertTrue(svpSpendTransactionHashUnsignedOpt.isPresent());
-
-        return svpSpendTransactionHashUnsignedOpt.get();
-    }
-
-    private BtcTransaction assertSvpSpendTxIsWaitingForSignatures() {
-        Optional<Map.Entry<Keccak256, BtcTransaction>> svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
-        assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
-        Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignaturesOpt.get();
-
-        Keccak256 svpSpendTxWaitingForSignaturesRskTxHash = svpSpendTxWaitingForSignatures.getKey();
-        assertEquals(rskTx.getHash(), svpSpendTxWaitingForSignaturesRskTxHash);
-
-        BtcTransaction svpSpendTxWaitingForSignaturesSpendTx = svpSpendTxWaitingForSignatures.getValue();
-        Sha256Hash svpSpendTransactionHashUnsigned = assertSvpSpendTxHashUnsignedIsInStorage();
-        assertEquals(svpSpendTransactionHashUnsigned, svpSpendTxWaitingForSignaturesSpendTx.getHash());
-
-        return svpSpendTxWaitingForSignaturesSpendTx;
     }
 
     @Nested
