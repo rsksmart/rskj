@@ -2121,7 +2121,7 @@ public class BridgeSupport {
         return whitelistSupport.getLockWhitelistSize();
     }
 
-    public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
+    public Optional<LockWhitelistEntry> getLockWhitelistEntryByIndex(int index) {
         return whitelistSupport.getLockWhitelistEntryByIndex(index);
     }
 
