@@ -1088,14 +1088,15 @@ public class BridgeSupport {
     }
 
     private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
-        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
         try {
-            BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
+            BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation);
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
             List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
-            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, spendableValueFromProposedFederation);
+            // minPegoutValue to proposed fed, minPegoutValue to flyover proposed fed
+            Coin totalValueSentToProposedFederation = bridgeConstants.getMinimumPegoutTxValue().multiply(2);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, totalValueSentToProposedFederation);
         } catch (InsufficientMoneyException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
@@ -1109,18 +1110,18 @@ public class BridgeSupport {
         }
     }
 
-    private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
+    private BtcTransaction createSvpFundTransaction(Federation proposedFederation) throws InsufficientMoneyException {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
 
         BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
         svpFundTransaction.setVersion(BTC_TX_VERSION_2);
 
+        Coin minPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
         // add outputs to proposed fed and proposed fed with flyover prefix
-        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
-
+        svpFundTransaction.addOutput(minPegoutTxValue, proposedFederation.getAddress());
         Address proposedFederationWithFlyoverPrefixAddress =
             getFlyoverAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixAddress);
+        svpFundTransaction.addOutput(minPegoutTxValue, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
         SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);
