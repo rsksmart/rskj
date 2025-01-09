@@ -391,13 +391,13 @@ public class BridgeSupportSvpTest {
             // assert outputs are the expected ones in the expected order
             TransactionOutput outputToProposedFed = svpFundTransaction.getOutput(0);
             assertEquals(outputToProposedFed.getScriptPubKey(), proposedFederation.getP2SHScript());
-            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getMinimumPegoutTxValue());
+            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
 
             TransactionOutput outputToFlyoverProposedFed = svpFundTransaction.getOutput(1);
             Script proposedFederationWithFlyoverPrefixScriptPubKey =
                 PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
             assertEquals(outputToFlyoverProposedFed.getScriptPubKey(), proposedFederationWithFlyoverPrefixScriptPubKey);
-            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getMinimumPegoutTxValue());
+            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
 
             TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
             assertEquals(changeOutput.getScriptPubKey(), activeFederation.getP2SHScript());
