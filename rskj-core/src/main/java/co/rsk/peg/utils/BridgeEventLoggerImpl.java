@@ -212,7 +212,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
+    public void logNonRefundablePegin(BtcTransaction btcTx, NonRefundablePeginReason reason) {
         CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
 
         byte[] btcTxHashSerialized = btcTx.getHash().getBytes();
