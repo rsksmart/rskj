@@ -23,8 +23,8 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 public class FederationStorageProviderImpl implements FederationStorageProvider {
     private final StorageAccessor bridgeStorageAccessor;
     private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
-    private final FederationTracker<Federation> oldFederationTracker = new FederationTracker<>();
-    private final FederationTracker<PendingFederation> pendingFederationTracker = new FederationTracker<>();
+    private final ValueTracker<Federation> oldFederationTracker = new ValueTracker<>();
+    private final ValueTracker<PendingFederation> pendingFederationTracker = new ValueTracker<>();
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
     private Federation newFederation;
@@ -139,7 +139,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public Federation getOldFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
-        if (oldFederationTracker.hasBeenSet()) {
+        if (oldFederationTracker.isPresent()) {
             return oldFederationTracker.get();
         }
 
@@ -159,18 +159,18 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             }
         );
 
-        oldFederationTracker.set(oldFederation, false);
+        oldFederationTracker.set(oldFederation);
         return oldFederationTracker.get();
     }
 
     @Override
     public void setOldFederation(Federation federation) {
-        oldFederationTracker.set(federation, true);
+        oldFederationTracker.setNew(federation);
     }
 
     @Override
     public PendingFederation getPendingFederation() {
-        if (pendingFederationTracker.hasBeenSet()) {
+        if (pendingFederationTracker.isPresent()) {
             return pendingFederationTracker.get();
         }
 
@@ -190,13 +190,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
                 }
             );
 
-        pendingFederationTracker.set(pendingFederation, false);
+        pendingFederationTracker.set(pendingFederation);
         return pendingFederationTracker.get();
     }
 
     @Override
     public void setPendingFederation(PendingFederation federation) {
-        pendingFederationTracker.set(federation, true);
+        pendingFederationTracker.setNew(federation);
     }
 
     @Override
@@ -338,7 +338,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private int getOldFederationFormatVersion() {
-        if (!oldFederationTracker.isPresent()) {
+        if (oldFederationTracker.isNull()) {
             // assume it is a standard federation to keep backwards compatibility
             return STANDARD_MULTISIG_FEDERATION.getFormatVersion();
         }
@@ -363,7 +363,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Nullable
     private byte[] serializePendingFederation(ActivationConfig.ForBlock activations) {
-        if (!pendingFederationTracker.isPresent()) {
+        if (pendingFederationTracker.isNull()) {
             return null;
         }
 
