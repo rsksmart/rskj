@@ -1204,14 +1204,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getLockWhitelistAddress");
 
         int index = ((BigInteger) args[0]).intValue();
-        LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByIndex(index);
+        Optional<LockWhitelistEntry> entry = bridgeSupport.getLockWhitelistEntryByIndex(index);
 
-        if (entry == null) {
-            // Empty string is returned when address is not found
-            return "";
-        }
+        // Empty string is returned when address is not found
+        return entry.map(lockWhitelistEntry -> lockWhitelistEntry.address().toBase58()).orElse("");
 
-        return entry.address().toBase58();
     }
 
     public long getLockWhitelistEntryByAddress(Object[] args) {
@@ -1225,18 +1222,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return WhitelistResponseCode.INVALID_ADDRESS_FORMAT.getCode();
         }
 
-        Optional<LockWhitelistEntry> entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
+        return bridgeSupport.getLockWhitelistEntryByAddress(addressBase58)
+            .map(lockWhitelistEntry -> {
+                if (lockWhitelistEntry.getClass() == OneOffWhiteListEntry.class) {
+                    return ((OneOffWhiteListEntry) lockWhitelistEntry).maxTransferValue().getValue();
+                }
 
-        if (entry.isEmpty()) {
-            // Empty string is returned when address is not found
-            logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
-            return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
-        }
-
-        LockWhitelistEntry lockWhitelistEntry = entry.get();
-        return lockWhitelistEntry.getClass() == OneOffWhiteListEntry.class ?
-            ((OneOffWhiteListEntry) lockWhitelistEntry).maxTransferValue().getValue() :
-            WhitelistResponseCode.UNLIMITED_MODE.getCode();
+                return WhitelistResponseCode.UNLIMITED_MODE.getCode();
+            })
+            .orElseGet(() -> {
+                // Empty string is returned when address is not found
+                logger.debug("[getLockWhitelistEntryByAddress] Address not found: {}", addressBase58);
+                return WhitelistResponseCode.ADDRESS_NOT_EXIST.getCode();
+            }).longValue();
     }
 
     public Integer addOneOffLockWhitelistAddress(Object[] args) {

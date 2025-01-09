@@ -204,9 +204,11 @@ class BridgeSupportTest {
         @Test
         void getLockWhitelistEntryByIndex() {
             LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
-            when(whitelistSupport.getLockWhitelistEntryByIndex(0)).thenReturn(entry);
+            when(whitelistSupport.getLockWhitelistEntryByIndex(0)).thenReturn(Optional.of(entry));
 
-            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByIndex(0));
+            Optional<LockWhitelistEntry> lockWhitelistEntryByIndex = bridgeSupport.getLockWhitelistEntryByIndex(0);
+            assertTrue(lockWhitelistEntryByIndex.isPresent());
+            assertEquals(entry, lockWhitelistEntryByIndex.get());
         }
 
         @Test
@@ -214,8 +216,9 @@ class BridgeSupportTest {
             LockWhitelistEntry entry = mock(LockWhitelistEntry.class);
             when(whitelistSupport.getLockWhitelistEntryByAddress("address")).thenReturn(Optional.of(entry));
 
-            assertTrue(bridgeSupport.getLockWhitelistEntryByAddress("address").isPresent());
-            assertEquals(entry, bridgeSupport.getLockWhitelistEntryByAddress("address").get());
+            Optional<LockWhitelistEntry> lockWhitelistEntry = bridgeSupport.getLockWhitelistEntryByAddress("address");
+            assertTrue(lockWhitelistEntry.isPresent());
+            assertEquals(entry, lockWhitelistEntry.get());
         }
 
         @Test
