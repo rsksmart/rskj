@@ -1094,8 +1094,8 @@ public class BridgeSupport {
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
             List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
-            // minPegoutValue to proposed fed, minPegoutValue to flyover proposed fed
-            Coin totalValueSentToProposedFederation = bridgeConstants.getMinimumPegoutTxValue().multiply(2);
+            // one output to proposed fed, one output to flyover proposed fed
+            Coin totalValueSentToProposedFederation = bridgeConstants.getSvpFundTxOutputsValue().multiply(2);
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, totalValueSentToProposedFederation);
         } catch (InsufficientMoneyException e) {
             logger.error(
@@ -1116,12 +1116,12 @@ public class BridgeSupport {
         BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
         svpFundTransaction.setVersion(BTC_TX_VERSION_2);
 
-        Coin minPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
+        Coin svpFundTxOutputsValue = bridgeConstants.getSvpFundTxOutputsValue();
         // add outputs to proposed fed and proposed fed with flyover prefix
-        svpFundTransaction.addOutput(minPegoutTxValue, proposedFederation.getAddress());
+        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
         Address proposedFederationWithFlyoverPrefixAddress =
             getFlyoverAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-        svpFundTransaction.addOutput(minPegoutTxValue, proposedFederationWithFlyoverPrefixAddress);
+        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
         SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);

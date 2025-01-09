@@ -63,6 +63,22 @@ class BridgeConstantsTest {
         assertEquals(expectedMinimumPegoutTxValue, minimumPegoutTxValue);
     }
 
+    private static Stream<Arguments> svpFundTxOutputsValueArgProvider() {
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
+        return Stream.of(
+            Arguments.of(bridgeMainnetConstants, bridgeMainnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeTestnetConstants, bridgeTestnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeRegtestConstants, bridgeRegtestConstants.getMinimumPegoutTxValue().multiply(2))
+        );
+    }
+    @ParameterizedTest()
+    @MethodSource("svpFundTxOutputsValueArgProvider")
+    void getSvpFundTxOutputsValue(BridgeConstants bridgeConstants, Coin expectedSvpFundTxOutputsValue) {
+        assertEquals(expectedSvpFundTxOutputsValue, bridgeConstants.getSvpFundTxOutputsValue());
+    }
+
     private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
