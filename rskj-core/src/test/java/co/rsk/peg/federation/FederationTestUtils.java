@@ -45,6 +45,11 @@ public final class FederationTestUtils {
         final List<BtcECKey> fedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
         );
+
+        return getErpFederationWithPrivKeys(networkParameters, fedSigners);
+    }
+
+    public static ErpFederation getErpFederationWithPrivKeys(NetworkParameters networkParameters, List<BtcECKey> fedSigners) {
         final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fb01", "fb02", "fb03", "fb04"}, true
         );
@@ -72,6 +77,18 @@ public final class FederationTestUtils {
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
+            Instant.ofEpochMilli(0),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        return FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
+        );
+    }
+
+    public static Federation getFederationWithPrivateKeys(List<BtcECKey> federationMemberKeys) {
+        FederationArgs federationArgs = new FederationArgs(
+            getFederationMembersWithBtcKeys(federationMemberKeys),
             Instant.ofEpochMilli(0),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
