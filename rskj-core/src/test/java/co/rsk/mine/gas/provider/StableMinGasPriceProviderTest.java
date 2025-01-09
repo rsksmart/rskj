@@ -20,23 +20,22 @@ package co.rsk.mine.gas.provider;
 import co.rsk.core.Coin;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.*;
 
 class StableMinGasPriceProviderTest {
+    private static final Long FALLBACK_PRICE = 10L;
     private MinGasPriceProvider fallBackProvider;
     private StableMinGasPriceProvider stableMinGasPriceProvider;
 
     @BeforeEach
     void setUp() {
-        fallBackProvider = Mockito.mock(MinGasPriceProvider.class);
-        when(fallBackProvider.getMinGasPrice()).thenReturn(10L);
-        when(fallBackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
+        fallBackProvider = spy(new FixedMinGasPriceProvider(FALLBACK_PRICE));
         stableMinGasPriceProvider = new TestStableMingGasPriceProvider(fallBackProvider, 100, Duration.ofSeconds(10));
     }
 
@@ -64,9 +63,6 @@ class StableMinGasPriceProviderTest {
 
     @Test
     void whenRequestingTheValueTwiceCachedValueIsUsed() {
-        MinGasPriceProvider fallbackProvider = mock(MinGasPriceProvider.class);
-        when(fallbackProvider.getType()).thenReturn(MinGasPriceProviderType.FIXED);
-
         stableMinGasPriceProvider = spy(new TestStableMingGasPriceProvider(fallBackProvider, 100, Duration.ofSeconds(10)));
 
         stableMinGasPriceProvider.getMinGasPrice();
@@ -81,11 +77,35 @@ class StableMinGasPriceProviderTest {
         assertEquals(Coin.valueOf(6L), result);
     }
 
+    @Test
+    void fallBackPriceIsReturnedWhenProvidedValueIsAboveMaxRange() {
+        StableMinGasPriceProvider spyProvider = spy(stableMinGasPriceProvider);
+        doReturn(Optional.of(500L)).when(spyProvider).getBtcExchangeRate();
+
+        Long price = spyProvider.getMinGasPrice(true);
+
+        boolean isIntoRangeResult = verify(spyProvider, times(1)).isIntoRange(500L);
+        assertFalse(isIntoRangeResult);
+        assertEquals(FALLBACK_PRICE, price);
+    }
+
+    @Test
+    void fallBackPriceIsReturnedWhenProvidedValueIsBelowMinRange() {
+        StableMinGasPriceProvider spyProvider = spy(stableMinGasPriceProvider);
+        doReturn(Optional.of(5L)).when(spyProvider).getBtcExchangeRate();
+
+        Long price = spyProvider.getMinGasPrice(true);
+
+        boolean isIntoRangeResult = verify(spyProvider, times(1)).isIntoRange(5L);
+        assertFalse(isIntoRangeResult);
+        assertEquals(FALLBACK_PRICE, price);
+    }
+
 
     public static class TestStableMingGasPriceProvider extends StableMinGasPriceProvider {
 
         protected TestStableMingGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, Duration refreshRate) {
-            super(fallBackProvider, minStableGasPrice, refreshRate);
+            super(fallBackProvider, minStableGasPrice, refreshRate,10L, 100L);
         }
 
         @Override
