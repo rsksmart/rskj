@@ -23,7 +23,10 @@ FROM eclipse-temurin:17-jre@sha256:38e0afc86a10bf4cadbf1586fb617b3a9a4d09c9a0be8
 LABEL org.opencontainers.image.authors="ops@rootstocklabs.com"
 
 RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
-USER rsk
+
+RUN mkdir -p /var/lib/rsk/.rsk && \
+    chown -R rsk:rsk /var/lib/rsk && \
+    chmod -R 755 /var/lib/rsk/.rsk
 
 WORKDIR /var/lib/rsk
 COPY --from=build --chown=rsk:rsk /home/rsk/rsk.jar ./
