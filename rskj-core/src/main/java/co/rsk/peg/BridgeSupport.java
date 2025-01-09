@@ -1396,42 +1396,47 @@ public class BridgeSupport {
             totalAmount = totalAmount.add(input.getValue());
         }
 
-        TransactionOutput changeOutput = pegoutTransaction.getOutput(pegoutTransaction.getOutputs().size() - 1);
+        int changeOutputIndex = pegoutTransaction.getOutputs().size() - 1;
+        TransactionOutput changeOutput = pegoutTransaction.getOutput(changeOutputIndex);
         Coin changeOutputAmount = changeOutput.getValue();
+        // since the user pays for the pegout fees, the actual amount
+        // being sent is different from the requested amount,
+        // that is the total amount from used inputs, minus the change output
         return totalAmount.minus(changeOutputAmount);
     }
 
     private void settleMigrationRelease(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction migrationTransaction, Keccak256 migrationCreationTxHash) {
-        Coin requestedAmount = getMigrationRequestedAmount(migrationTransaction);
+        Coin amountToMigrate = amountToMigrate(migrationTransaction);
         List<UTXO> utxosToUse = federationSupport.getRetiringFederationBtcUTXOs();
 
-        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, migrationCreationTxHash, requestedAmount);
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, migrationCreationTxHash, amountToMigrate);
     }
 
-    private Coin getMigrationRequestedAmount(BtcTransaction migrationTransaction) {
-        Coin requestedAmount = Coin.ZERO;
+    private Coin amountToMigrate(BtcTransaction migrationTransaction) {
+        Coin amountToMigrate = Coin.ZERO;
         for (int i = 0; i < migrationTransaction.getInputs().size(); i ++) {
             TransactionInput input = migrationTransaction.getInput(i);
-            requestedAmount = requestedAmount.add(input.getValue());
+            amountToMigrate = amountToMigrate.add(input.getValue());
         }
 
-        return requestedAmount;
+        return amountToMigrate;
     }
 
     private void settleSvpFundTransactionRelease(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction svpFundTransaction, Keccak256 svpFundCreationTxHash) {
         List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
-        Coin requestedAmount = getSvpFundTxRequestedAmount(svpFundTransaction);
-        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransaction, svpFundCreationTxHash, requestedAmount);
+        Coin svpFundTxSentAmount = getSvpFundTxSentAmount(svpFundTransaction);
+
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransaction, svpFundCreationTxHash, svpFundTxSentAmount);
     }
 
-    private Coin getSvpFundTxRequestedAmount(BtcTransaction svpFundTransaction) {
-        Coin requestedAmount = Coin.ZERO;
+    private Coin getSvpFundTxSentAmount(BtcTransaction svpFundTransaction) {
+        Coin svpFundTxSentAmount = Coin.ZERO;
         for (int i = 0; i < svpFundTransaction.getOutputs().size() - 1; i ++) {
             TransactionOutput output = svpFundTransaction.getOutput(i);
-            requestedAmount = requestedAmount.add(output.getValue());
+            svpFundTxSentAmount = svpFundTxSentAmount.add(output.getValue());
         }
 
-        return requestedAmount;
+        return svpFundTxSentAmount;
     }
 
     private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
