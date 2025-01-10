@@ -52,8 +52,8 @@ public class BridgeSupportSvpTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
 
-    private static final Coin minPegoutTxValue = bridgeMainNetConstants.getMinimumPegoutTxValue();
-    private static final Coin totalValueSentToProposedFederation = bridgeMainNetConstants.getMinimumPegoutTxValue().multiply(2);
+    private static final Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
+    private static final Coin totalValueSentToProposedFederation = svpFundTxOutputsValue.multiply(2);
     private static final Coin feePerKb = Coin.valueOf(1000L);
     private static final Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
 
@@ -391,13 +391,13 @@ public class BridgeSupportSvpTest {
             // assert outputs are the expected ones in the expected order
             TransactionOutput outputToProposedFed = svpFundTransaction.getOutput(0);
             assertEquals(outputToProposedFed.getScriptPubKey(), proposedFederation.getP2SHScript());
-            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getMinimumPegoutTxValue());
+            assertEquals(outputToProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
 
             TransactionOutput outputToFlyoverProposedFed = svpFundTransaction.getOutput(1);
             Script proposedFederationWithFlyoverPrefixScriptPubKey =
                 PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
             assertEquals(outputToFlyoverProposedFed.getScriptPubKey(), proposedFederationWithFlyoverPrefixScriptPubKey);
-            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getMinimumPegoutTxValue());
+            assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
 
             TransactionOutput changeOutput = svpFundTransaction.getOutput(2);
             assertEquals(changeOutput.getScriptPubKey(), activeFederation.getP2SHScript());
@@ -1309,13 +1309,13 @@ public class BridgeSupportSvpTest {
         Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
         addInput(svpFundTransaction, parentTxHash, proposedFederation.getRedeemScript());
 
-        svpFundTransaction.addOutput(minPegoutTxValue, proposedFederation.getAddress());
+        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
         Address flyoverProposedFederationAddress = PegUtils.getFlyoverAddress(
             btcMainnetParams,
             bridgeMainNetConstants.getProposedFederationFlyoverPrefix(),
             proposedFederation.getRedeemScript()
         );
-        svpFundTransaction.addOutput(minPegoutTxValue, flyoverProposedFederationAddress);
+        svpFundTransaction.addOutput(svpFundTxOutputsValue, flyoverProposedFederationAddress);
     }
 
     private BtcTransaction createPegout(Script redeemScript) {
