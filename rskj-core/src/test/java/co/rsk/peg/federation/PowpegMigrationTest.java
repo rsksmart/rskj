@@ -516,7 +516,7 @@ class PowpegMigrationTest {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
     }
 
-    private Federation createOriginalFederation(
+    private void createOriginalFederation(
           FederationType federationType,
           List<UTXO> federationAddress,
           ActivationConfig.ForBlock activations) {
@@ -556,31 +556,21 @@ class PowpegMigrationTest {
         federationStorageProvider.setNewFederation(originalFederation);
         federationStorageProvider.getNewFederationBtcUTXOs(
             BRIDGE_MAINNET_CONSTANTS.getBtcParams(), activations).addAll(federationAddress);
-       
-        return originalFederation;
     }  
 
     private void commitPendingFederation(
           FederationType federationType,
           List<Triple<BtcECKey, ECKey, ECKey>> federationKeys,
-          Address newFederationAddress,
           ActivationConfig.ForBlock activations) {
         // Create Pending federation (doing this to avoid voting the pending Federation)
-        var newPowpegMembers = federationKeys.stream()
-            .map(newPowpegKey ->
+        var newFederationMembers = federationKeys.stream()
+            .map(newFederatorKey ->
                 new FederationMember(
-                    newPowpegKey.getLeft(),
-                    newPowpegKey.getMiddle(),
-                    newPowpegKey.getRight()))
+                    newFederatorKey.getLeft(),
+                    newFederatorKey.getMiddle(),
+                    newFederatorKey.getRight()))
             .toList();
-        var pendingFederation = new PendingFederation(newPowpegMembers);
-
-        // Create the Federation just to provide it to utility methods
-        var newFederation = pendingFederation.buildFederation(
-            Instant.EPOCH,
-            0,
-            BRIDGE_MAINNET_CONSTANTS.getFederationConstants(),
-            activations);
+        var pendingFederation = new PendingFederation(newFederationMembers);
 
         // Set pending federation
         federationStorageProvider.setPendingFederation(pendingFederation);
@@ -607,6 +597,28 @@ class PowpegMigrationTest {
         assertNull(
             federationStorageProvider.getProposedFederation(
                 BRIDGE_MAINNET_CONSTANTS.getFederationConstants(), activations));
+    }
+    
+    private void assertUTXOsMovedFromNewToOldFederation(
+          Federation oldFederation,
+          Federation newFederation,
+          List<UTXO> originalUTXOs,
+          ActivationConfig.ForBlock activations) {
+        // Assert old federation exists in storage and matches
+        assertEquals(
+            oldFederation, 
+            federationStorageProvider.getOldFederation(BRIDGE_MAINNET_CONSTANTS.getFederationConstants(), activations));
+        // Assert new federation exists in storage and matches
+        assertEquals(
+            newFederation, 
+            federationStorageProvider.getNewFederation(BRIDGE_MAINNET_CONSTANTS.getFederationConstants(), activations));
+        // Assert old federation holds the original utxos
+        List<UTXO> utxosToMigrate = federationStorageProvider.getOldFederationBtcUTXOs();
+        assertTrue(originalUTXOs.stream().allMatch(utxosToMigrate::contains));
+        // Assert the new federation does not have any utxos yet
+        assertTrue(federationStorageProvider
+            .getNewFederationBtcUTXOs(BRIDGE_MAINNET_CONSTANTS.getBtcParams(), activations)
+            .isEmpty());
     }
 
     private void executePowpegChange(
@@ -651,15 +663,6 @@ class PowpegMigrationTest {
 
 
 
-
-        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-        LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(new InMemoryStorage());
-        LockingCapSupport lockingCapSupport = new LockingCapSupportImpl(
-            lockingCapStorageProvider,
-            activations,
-            LockingCapMainNetConstants.getInstance(),
-            signatureCache
-        );
 
         // Trying to create a new powpeg again should fail
         // -2 corresponds to a new powpeg was elected and the Bridge is waiting for this new powpeg to activate
