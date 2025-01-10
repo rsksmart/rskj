@@ -60,7 +60,7 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
-    default void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
+    default void logNonRefundablePegin(BtcTransaction btcTx, NonRefundablePeginReason reason) {
         throw new UnsupportedOperationException();
     }
 
