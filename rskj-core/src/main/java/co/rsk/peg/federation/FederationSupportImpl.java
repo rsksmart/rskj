@@ -656,7 +656,7 @@ public class FederationSupportImpl implements FederationSupport {
      * PENDING_FEDERATION_MISMATCHED_HASH if the given hash doesn't match the current pending federation's hash.
      * SUCCESSFUL upon success.
      */
-    private FederationChangeResponseCode commitFederation(boolean dryRun, Keccak256 pendingFederationHash, BridgeEventLogger eventLogger) {
+    FederationChangeResponseCode commitFederation(boolean dryRun, Keccak256 pendingFederationHash, BridgeEventLogger eventLogger) {
         // first check that we can commit the pending federation
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
