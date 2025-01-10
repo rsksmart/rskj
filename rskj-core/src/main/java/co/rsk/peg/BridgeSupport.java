@@ -1419,6 +1419,9 @@ public class BridgeSupport {
             amountToMigrate = amountToMigrate.add(input.getValue());
         }
 
+        // since the retiring fed pays for the migrations fees, the actual amount
+        // being sent is different from the requested amount,
+        // that is the total amount from used inputs since there is no change output
         return amountToMigrate;
     }
 
@@ -1431,11 +1434,15 @@ public class BridgeSupport {
 
     private Coin getSvpFundTxSentAmount(BtcTransaction svpFundTransaction) {
         Coin svpFundTxSentAmount = Coin.ZERO;
-        for (int i = 0; i < svpFundTransaction.getOutputs().size() - 1; i ++) {
+        int changeOutputIndex = svpFundTransaction.getOutputs().size() - 1;
+        for (int i = 0; i < changeOutputIndex; i ++) {
             TransactionOutput output = svpFundTransaction.getOutput(i);
             svpFundTxSentAmount = svpFundTxSentAmount.add(output.getValue());
         }
 
+        // since the active fed pays for the svp fund tx fees, the actual amount
+        // being sent is calculated as the addition of outputs value,
+        // not considering the change output
         return svpFundTxSentAmount;
     }
 
