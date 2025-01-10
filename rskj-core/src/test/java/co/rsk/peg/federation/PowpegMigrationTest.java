@@ -135,6 +135,7 @@ class PowpegMigrationTest {
     private StorageAccessor bridgeStorageAccessor;
     private FederationStorageProvider federationStorageProvider;
     private FederationSupportImpl federationSupport;
+    private LockingCapSupport lockingCapSupport;
 
     /*
      * Key is BtcTxHash and output index. Value is the address that received the funds
@@ -514,6 +515,14 @@ class PowpegMigrationTest {
 
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+
+        var signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        var lockingCapStorageProvider = new LockingCapStorageProviderImpl(new InMemoryStorage());
+        lockingCapSupport = new LockingCapSupportImpl(
+            lockingCapStorageProvider,
+            activations,
+            BRIDGE_MAINNET_CONSTANTS.getLockingCapConstants(),
+            signatureCache);
     }
 
     private void createOriginalFederation(
