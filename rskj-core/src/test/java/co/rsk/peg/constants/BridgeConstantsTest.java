@@ -63,11 +63,10 @@ class BridgeConstantsTest {
         assertEquals(expectedMinimumPegoutTxValue, minimumPegoutTxValue);
     }
 
-    private static Stream<Arguments> spendableValueFromProposedFederationArgProvider() {
+    private static Stream<Arguments> svpFundTxOutputsValueArgProvider() {
         BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
         BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
-
         return Stream.of(
             Arguments.of(bridgeMainnetConstants, bridgeMainnetConstants.getMinimumPegoutTxValue().multiply(2)),
             Arguments.of(bridgeTestnetConstants, bridgeTestnetConstants.getMinimumPegoutTxValue().multiply(2)),
@@ -76,10 +75,9 @@ class BridgeConstantsTest {
     }
 
     @ParameterizedTest()
-    @MethodSource("spendableValueFromProposedFederationArgProvider")
-    void getSpendableValueFromProposedFederation(BridgeConstants bridgeConstants, Coin expectedSpendableValueFromProposedFederation) {
-        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
-        assertEquals(expectedSpendableValueFromProposedFederation, spendableValueFromProposedFederation);
+    @MethodSource("svpFundTxOutputsValueArgProvider")
+    void getSvpFundTxOutputsValue(BridgeConstants bridgeConstants, Coin expectedSvpFundTxOutputsValue) {
+        assertEquals(expectedSvpFundTxOutputsValue, bridgeConstants.getSvpFundTxOutputsValue());
     }
 
     private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
@@ -186,7 +184,7 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), FederationMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), FederationTestNetConstants.getInstance()),
-            Arguments.of(bridgeRegTestConstants, new FederationRegTestConstants(federationRegTestConstants.getGenesisFederationPublicKeys()))
+            Arguments.of(bridgeRegTestConstants, FederationRegTestConstants.getInstance(federationRegTestConstants.getGenesisFederationPublicKeys()))
         );
     }
 

@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.getMultiSigTransactionHashWithoutSignatures;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -15,11 +16,11 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationContext;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -89,34 +90,16 @@ public class PegUtils {
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         BridgeConstants bridgeConstants,
-        Federation activeFederation,
-        Federation retiringFederation,
-        Script retiredFederationP2SHScript,
+        FederationContext federationContext,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
-        List<Federation> liveFeds = new ArrayList<>();
-        liveFeds.add(activeFederation);
-        if (retiringFederation != null){
-            liveFeds.add(retiringFederation);
-        }
+        List<Federation> liveFeds = federationContext.getLiveFederations();
         Context context = Context.getOrCreate(bridgeConstants.getBtcParams());
         Wallet liveFederationsWallet = new BridgeBtcWallet(context, liveFeds);
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) &&
-            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
-
-        if (shouldUsePegoutTxIndex){
-            return getTransactionTypeUsingPegoutIndex(
-                activations,
-                provider,
-                liveFederationsWallet,
-                btcTransaction
-            );
-        } else {
+        if (!isPegoutTxIndexEnabled(bridgeConstants, activations, btcTransactionHeight)) {
+            // Use legacy logic
             Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
             FederationConstants federationConstants = bridgeConstants.getFederationConstants();
             Address oldFederationAddress = Address.fromBase58(
@@ -126,15 +109,64 @@ public class PegUtils {
 
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,
-                activeFederation,
-                retiringFederation,
-                retiredFederationP2SHScript,
+                federationContext,
                 oldFederationAddress,
                 activations,
                 minimumPeginTxValue,
                 liveFederationsWallet
             );
         }
+
+        // Check first if the transaction is part of an SVP process
+        if (isTheSvpFundTransaction(bridgeConstants.getBtcParams(), provider, btcTransaction)) {
+            return PegTxType.SVP_FUND_TX;
+        }
+        if (isTheSvpSpendTransaction(bridgeConstants.getBtcParams(), provider, btcTransaction)) {
+            return PegTxType.SVP_SPEND_TX;
+        }
+
+        return getTransactionTypeUsingPegoutIndex(
+            activations,
+            provider,
+            liveFederationsWallet,
+            btcTransaction
+        );
+    }
+
+    private static boolean isPegoutTxIndexEnabled(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        long btcTransactionHeight
+    ) {
+        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        return activations.isActive(ConsensusRule.RSKIP379) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
+    }
+
+    private static boolean isTheSvpFundTransaction(
+        NetworkParameters networkParameters,
+        BridgeStorageProvider provider,
+        BtcTransaction transaction
+    ) {
+        return provider.getSvpFundTxHashUnsigned()
+            .filter(svpFundTransactionHashUnsigned ->
+                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpFundTransactionHashUnsigned)
+            )
+            .isPresent();
+    }
+
+    private static boolean isTheSvpSpendTransaction(
+        NetworkParameters networkParameters,
+        BridgeStorageProvider provider,
+        BtcTransaction transaction
+    ) {
+        return provider.getSvpSpendTxHashUnsigned()
+            .filter(svpSpendTransactionHashUnsigned ->
+                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpSpendTransactionHashUnsigned)
+            )
+            .isPresent();
     }
 
     static PeginEvaluationResult evaluatePegin(

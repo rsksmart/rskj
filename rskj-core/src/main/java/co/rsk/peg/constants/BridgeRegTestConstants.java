@@ -25,28 +25,29 @@ import co.rsk.peg.federation.constants.FederationRegTestConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbRegTestConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapRegTestConstants;
 import co.rsk.peg.whitelist.constants.WhitelistRegTestConstants;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-    private static final List<BtcECKey> defaultFederationPublicKeys = Collections.unmodifiableList(Stream.of(
+
+    private static final List<BtcECKey> DEFAULT_FEDERATION_PUBLIC_KEYS = Stream.of(
         "0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124",
         "03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db",
-        "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"
-    ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
+        "02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1")
+        .map(Hex::decode)
+        .map(BtcECKey::fromPublicOnly)
+        .toList();
 
     public BridgeRegTestConstants() {
-        this(defaultFederationPublicKeys);
+        this(DEFAULT_FEDERATION_PUBLIC_KEYS);
     }
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
         feePerKbConstants = FeePerKbRegTestConstants.getInstance();
         whitelistConstants = WhitelistRegTestConstants.getInstance();
-        federationConstants = new FederationRegTestConstants(federationPublicKeys);
+        federationConstants = FederationRegTestConstants.getInstance(federationPublicKeys);
         lockingCapConstants = LockingCapRegTestConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 3;

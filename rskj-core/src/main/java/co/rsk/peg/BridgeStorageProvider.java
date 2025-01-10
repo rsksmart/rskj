@@ -31,6 +31,8 @@ import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 /**
@@ -40,6 +42,7 @@ import org.spongycastle.util.encoders.Hex;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
+    private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
 
     // Dummy value to use when saving key only indexes
     private static final byte TRUE_VALUE = (byte) 1;
@@ -611,6 +614,11 @@ public class BridgeStorageProvider {
         this.isSvpFundTxHashUnsignedSet = true;
     }
 
+    public void clearSvpFundTxHashUnsigned() {
+        logger.info("[clearSvpFundTxHashUnsigned] Clearing fund tx hash unsigned.");
+        setSvpFundTxHashUnsigned(null);
+    }
+
     private void saveSvpFundTxHashUnsigned() {
         if (!activations.isActive(RSKIP419) || !isSvpFundTxHashUnsignedSet) {
             return;
@@ -619,12 +627,18 @@ public class BridgeStorageProvider {
         safeSaveToRepository(
             SVP_FUND_TX_HASH_UNSIGNED,
             svpFundTxHashUnsigned,
-            BridgeSerializationUtils::serializeSha256Hash);
+            BridgeSerializationUtils::serializeSha256Hash
+        );
     }
 
     public void setSvpFundTxSigned(BtcTransaction svpFundTxSigned) {
         this.svpFundTxSigned = svpFundTxSigned;
         this.isSvpFundTxSignedSet = true;
+    }
+
+    public void clearSvpFundTxSigned() {
+        logger.info("[clearSvpFundTxSigned] Clearing fund tx signed.");
+        setSvpFundTxSigned(null);
     }
 
     private void saveSvpFundTxSigned() {
@@ -641,6 +655,11 @@ public class BridgeStorageProvider {
     public void setSvpSpendTxHashUnsigned(Sha256Hash hash) {
         this.svpSpendTxHashUnsigned = hash;
         this.isSvpSpendTxHashUnsignedSet = true;
+    }
+
+    public void clearSvpSpendTxHashUnsigned() {
+        logger.info("[clearSvpSpendTxHashUnsigned] Clearing spend tx hash unsigned.");
+        setSvpSpendTxHashUnsigned(null);
     }
 
     private void saveSvpSpendTxHashUnsigned() {
@@ -667,6 +686,11 @@ public class BridgeStorageProvider {
         this.isSvpSpendTxWaitingForSignaturesSet = true;
     }
 
+    public void clearSvpSpendTxWaitingForSignatures() {
+        logger.info("[clearSvpSpendTxWaitingForSignatures] Clearing spend tx waiting for signatures.");
+        setSvpSpendTxWaitingForSignatures(null);
+    }
+
     private void saveSvpSpendTxWaitingForSignatures() {
         if (!activations.isActive(RSKIP419) || !isSvpSpendTxWaitingForSignaturesSet) {
             return;
@@ -677,6 +701,15 @@ public class BridgeStorageProvider {
             svpSpendTxWaitingForSignatures,
             BridgeSerializationUtils::serializeRskTxWaitingForSignatures
         );
+    }
+
+    public void clearSvpValues() {
+        logger.info("[clearSvpValues] Clearing all SVP values.");
+
+        clearSvpFundTxHashUnsigned();
+        clearSvpFundTxSigned();
+        clearSvpSpendTxWaitingForSignatures();
+        clearSvpSpendTxHashUnsigned();
     }
 
     public void save() {

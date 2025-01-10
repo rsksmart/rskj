@@ -340,7 +340,13 @@ public class BridgeSupport {
      *
      */
     public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFlyoverCompatible) {
-        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos, isFlyoverCompatible, provider);
+        return BridgeUtils.getFederationsSpendWallet(
+            btcContext,
+            federationSupport.getLiveFederations(),
+            utxos,
+            isFlyoverCompatible,
+            provider
+        );
     }
 
     /**
@@ -349,7 +355,12 @@ public class BridgeSupport {
      *
      */
     public Wallet getNoSpendWalletForLiveFederations(boolean isFlyoverCompatible) {
-        return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations(), isFlyoverCompatible, provider);
+        return BridgeUtils.getFederationsNoSpendWallet(
+            btcContext,
+            federationSupport.getLiveFederations(),
+            isFlyoverCompatible,
+            provider
+        );
     }
 
     /**
@@ -393,33 +404,22 @@ public class BridgeSupport {
                 throw new RegisterBtcTransactionException("Transaction already processed");
             }
 
+            FederationContext federationContext = federationSupport.getFederationContext();
             PegTxType pegTxType = PegUtils.getTransactionType(
                 activations,
                 provider,
                 bridgeConstants,
-                getActiveFederation(),
-                getRetiringFederation(),
-                getLastRetiredFederationP2SHScript(),
+                federationContext,
                 btcTx,
                 height
             );
 
+            logger.info("[registerBtcTransaction][btctx: {}] This is a {} transaction type", btcTx.getHash(), pegTxType);
             switch (pegTxType) {
-                case PEGIN:
-                    logger.debug("[registerBtcTransaction] This is a peg-in tx {}", btcTx.getHash());
-                    processPegIn(btcTx, rskTxHash, height);
-                    break;
-                case PEGOUT_OR_MIGRATION:
-                    logger.debug("[registerBtcTransaction] This is a peg-out or migration tx {}", btcTx.getHash());
-                    processPegoutOrMigration(btcTx);
-                    if (svpIsOngoing()) {
-                        updateSvpFundTransactionValuesIfPossible(btcTx);
-                    }
-                    break;
-                default:
-                    String message = String.format("This is not a peg-in, a peg-out nor a migration tx %s", btcTx.getHash());
-                    logger.warn("[registerBtcTransaction][rsk tx {}] {}", rskTxHash, message);
-                    panicProcessor.panic("btclock", message);
+                case PEGIN -> registerPegIn(btcTx, rskTxHash, height);
+                case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx);
+                case SVP_FUND_TX -> registerSvpFundTx(btcTx);
+                case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
             }
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
@@ -431,34 +431,34 @@ public class BridgeSupport {
         }
     }
 
-    private void updateSvpFundTransactionValuesIfPossible(BtcTransaction transaction) {
-        provider.getSvpFundTxHashUnsigned()
-            .filter(svpFundTxHashUnsigned -> isTheSvpFundTransaction(svpFundTxHashUnsigned, transaction))
-            .ifPresent(isTheSvpFundTransaction -> updateSvpFundTransactionValues(transaction));
+    private void registerSvpFundTx(BtcTransaction btcTx) throws IOException {
+        registerNewUtxos(btcTx); // Need to register the change UTXO
+
+        // If the SVP validation period is over, SVP related values should be cleared in the next call to updateCollections
+        // In that case, the fundTx will be identified as a regular peg-out tx and processed via #registerPegoutOrMigration
+        // This covers the case when the fundTx is registered between the validation period end and the next call to updateCollections
+        if (isSvpOngoing()) {
+            updateSvpFundTransactionValues(btcTx);
+        }
     }
 
-    private boolean isTheSvpFundTransaction(Sha256Hash svpFundTransactionHashUnsigned, BtcTransaction transaction) {
-        Sha256Hash transactionHash = transaction.getHash();
+    private void registerSvpSpendTx(BtcTransaction btcTx) throws IOException {
+        registerNewUtxos(btcTx);
+        provider.clearSvpSpendTxHashUnsigned();
 
-        if (!transaction.hasWitness()) {
-            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
-            transactionHash = transactionCopyWithoutSignatures.getHash();
-        }
-        return transactionHash.equals(svpFundTransactionHashUnsigned);
+        logger.info("[registerSvpSpendTx] Going to commit the proposed federation.");
+        federationSupport.commitProposedFederation();
     }
 
     private void updateSvpFundTransactionValues(BtcTransaction transaction) {
-        logger.debug(
-            "[updateSvpFundTransactionValues] Transaction {} is the svp fund transaction. Going to update its values.", transaction
+        logger.info(
+            "[updateSvpFundTransactionValues] Transaction {} (wtxid:{}) is the svp fund transaction. Going to update its values",
+            transaction.getHash(),
+            transaction.getHash(true)
         );
 
         provider.setSvpFundTxSigned(transaction);
-        provider.setSvpFundTxHashUnsigned(null);
-    }
-
-    private Script getLastRetiredFederationP2SHScript() {
-        return federationSupport.getLastRetiredFederationP2SHScript().orElse(null);
+        provider.clearSvpFundTxHashUnsigned();
     }
 
     @VisibleForTesting
@@ -466,15 +466,15 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    protected void processPegIn(
+    protected void registerPegIn(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
         int height
     ) throws IOException, RegisterBtcTransactionException {
-        final String METHOD_NAME = "processPegIn";
+        final String METHOD_NAME = "registerPegIn";
 
         if (!activations.isActive(ConsensusRule.RSKIP379)) {
-            legacyProcessPegin(btcTx, rskTxHash, height);
+            legacyRegisterPegin(btcTx, rskTxHash, height);
             logger.info(
                 "[{}] BTC Tx {} processed in RSK transaction {} using legacy function",
                 METHOD_NAME,
@@ -485,7 +485,7 @@ public class BridgeSupport {
         }
 
         Coin totalAmount = computeTotalAmountSent(btcTx);
-        logger.debug("[{}}] Total amount sent: {}", METHOD_NAME, totalAmount);
+        logger.debug("[{}] Total amount sent: {}", METHOD_NAME, totalAmount);
 
         PeginInformation peginInformation = new PeginInformation(
             btcLockSenderProvider,
@@ -506,10 +506,9 @@ public class BridgeSupport {
         if (peginProcessAction == PeginProcessAction.CAN_BE_REGISTERED) {
             logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
             executePegIn(btcTx, peginInformation, totalAmount);
-            markTxAsProcessed(btcTx);
         } else {
             Optional<RejectedPeginReason> rejectedPeginReasonOptional = peginEvaluationResult.getRejectedPeginReason();
-            if (!rejectedPeginReasonOptional.isPresent()) {
+            if (rejectedPeginReasonOptional.isEmpty()) {
                 // This flow should never be reached. There should always be a rejected pegin reason.
                 String message = "Invalid state. No rejected reason was returned from evaluatePegin method";
                 logger.error("[{}}] {}", METHOD_NAME, message);
@@ -550,7 +549,7 @@ public class BridgeSupport {
 
     /**
      * Legacy version for processing peg-ins
-     * Use instead {@link co.rsk.peg.BridgeSupport#processPegIn}
+     * Use instead {@link co.rsk.peg.BridgeSupport#registerPegIn}
      *
      * @param btcTx Peg-in transaction to process
      * @param rskTxHash Hash of the RSK transaction where the prg-in is being processed
@@ -558,7 +557,7 @@ public class BridgeSupport {
      * @deprecated
      */
     @Deprecated
-    private void legacyProcessPegin(
+    private void legacyRegisterPegin(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
         int height
@@ -588,12 +587,12 @@ public class BridgeSupport {
                 btcTx.getHash(),
                 e.getMessage()
             );
-            logger.warn("[legacyProcessPegin] {}", message);
+            logger.warn("[legacyRegisterPegin] {}", message);
             throw new RegisterBtcTransactionException(message);
         }
 
         int protocolVersion = peginInformation.getProtocolVersion();
-        logger.debug("[legacyProcessPegin] Protocol version: {}", protocolVersion);
+        logger.debug("[legacyRegisterPegin] Protocol version: {}", protocolVersion);
         switch (protocolVersion) {
             case 0:
                 processPegInVersionLegacy(btcTx, rskTxHash, height, peginInformation, totalAmount);
@@ -604,11 +603,9 @@ public class BridgeSupport {
             default:
                 markTxAsProcessed(btcTx);
                 String message = String.format("Invalid peg-in protocol version: %d", protocolVersion);
-                logger.warn("[legacyProcessPegin] {}", message);
+                logger.warn("[legacyRegisterPegin] {}", message);
                 throw new RegisterBtcTransactionException(message);
         }
-
-        markTxAsProcessed(btcTx);
     }
 
     private void processPegInVersionLegacy(
@@ -644,6 +641,7 @@ public class BridgeSupport {
             }
 
             generateRejectionRelease(btcTx, senderBtcAddress, rskTxHash, totalAmount);
+            markTxAsProcessed(btcTx);
         }
     }
 
@@ -668,10 +666,11 @@ public class BridgeSupport {
             }
 
             refundTxSender(btcTx, rskTxHash, peginInformation, totalAmount);
+            markTxAsProcessed(btcTx);
         }
     }
 
-    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) {
+    private void executePegIn(BtcTransaction btcTx, PeginInformation peginInformation, Coin amount) throws IOException {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -696,7 +695,7 @@ public class BridgeSupport {
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
-        saveNewUTXOs(btcTx);
+        registerNewUtxos(btcTx);
     }
 
     private void refundTxSender(
@@ -726,16 +725,11 @@ public class BridgeSupport {
         long rskHeight = rskExecutionBlock.getNumber();
         provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskHeight);
         logger.debug(
-            "[markTxAsProcessed] Mark btc transaction {} as processed at height {}",
+            "[markTxAsProcessed] Mark btc transaction {} (wtxid: {}) as processed at height {}",
             btcTx.getHash(),
+            btcTx.getHash(true),
             rskHeight
         );
-    }
-
-    protected void processPegoutOrMigration(BtcTransaction btcTx) throws IOException {
-        markTxAsProcessed(btcTx);
-        saveNewUTXOs(btcTx);
-        logger.info("[processPegoutOrMigration] BTC Tx {} processed in RSK", btcTx.getHash(false));
     }
 
     private boolean shouldProcessPegInVersionLegacy(
@@ -795,9 +789,11 @@ public class BridgeSupport {
     }
 
     /*
-      Add the btcTx outputs that send btc to the federation(s) to the UTXO list
+    Add the btcTx outputs that send btc to the federation(s) to the UTXO list,
+    so they can be used as inputs in future peg-out transactions.
+    Finally, mark the btcTx as processed.
      */
-    private void saveNewUTXOs(BtcTransaction btcTx) {
+    private void registerNewUtxos(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
         Wallet activeFederationWallet = getActiveFederationWallet(false);
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(
@@ -814,7 +810,7 @@ public class BridgeSupport {
             );
             federationSupport.getActiveFederationBtcUTXOs().add(utxo);
         }
-        logger.debug("[saveNewUTXOs] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
+        logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the active federation", outputsToTheActiveFederation.size());
 
         // Outputs to the retiring federation (if any)
         Wallet retiringFederationWallet = getRetiringFederationWallet(false);
@@ -831,8 +827,11 @@ public class BridgeSupport {
                 );
                 federationSupport.getRetiringFederationBtcUTXOs().add(utxo);
             }
-            logger.debug("[saveNewUTXOs] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
+            logger.debug("[registerNewUtxos] Registered {} UTXOs sent to the retiring federation", outputsToTheRetiringFederation.size());
         }
+
+        markTxAsProcessed(btcTx);
+        logger.info("[registerNewUtxos] BTC Tx {} (wtxid: {}) processed in RSK", btcTx.getHash(), btcTx.getHash(true));
     }
 
     /**
@@ -1012,6 +1011,8 @@ public class BridgeSupport {
         processConfirmedPegouts(rskTx);
 
         updateFederationCreationBlockHeights();
+
+        updateSvpState(rskTx);
     }
 
     private void logUpdateCollections(Transaction rskTx) {
@@ -1019,48 +1020,108 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
-    private boolean svpIsOngoing() {
-        return federationSupport.getProposedFederation()
-            .filter(this::validationPeriodIsOngoing)
-            .isPresent();
-    }
-
-    private boolean validationPeriodIsOngoing(Federation proposedFederation) {
-        long validationPeriodEndBlock = proposedFederation.getCreationBlockNumber() +
-            bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks();
-
-        return rskExecutionBlock.getNumber() < validationPeriodEndBlock;
-    }
-
-    protected void processSvpFundTransactionUnsigned(Transaction rskTx) throws IOException, InsufficientMoneyException {
+    private void updateSvpState(Transaction rskTx) {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (proposedFederationOpt.isEmpty()) {
-            String message = "Proposed federation should be present when processing SVP fund transaction.";
-            logger.warn(message);
-            throw new IllegalStateException(message);
+            return;
         }
+
+        // if the proposed federation exists and the validation period ended,
+        // we can conclude that the svp failed
         Federation proposedFederation = proposedFederationOpt.get();
+        if (!isSvpOngoing()) {
+            processSvpFailure(proposedFederation);
+            return;
+        }
 
-        Coin spendableValueFromProposedFederation = bridgeConstants.getSpendableValueFromProposedFederation();
-        BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation, spendableValueFromProposedFederation);
+        Keccak256 rskTxHash = rskTx.getHash();
 
-        provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
-        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
-        settleReleaseRequest(pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTx.getHash(), spendableValueFromProposedFederation);
+        if (shouldCreateAndProcessSvpFundTransaction()) {
+            logger.info("[updateSvpState] No svp values were found, so fund tx creation will be processed.");
+            processSvpFundTransactionUnsigned(rskTxHash, proposedFederation);
+        }
+
+        // if the fund tx signed is present, then the fund transaction change was registered,
+        // meaning we can create the spend tx.
+        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
+        if (svpFundTxSigned.isPresent()) {
+            logger.info(
+                "[updateSvpState] Fund tx signed was found, so spend tx creation will be processed."
+            );
+            processSvpSpendTransactionUnsigned(rskTxHash, proposedFederation, svpFundTxSigned.get());
+        }
     }
 
-    private BtcTransaction createSvpFundTransaction(Federation proposedFederation, Coin spendableValueFromProposedFederation) throws InsufficientMoneyException {
+    private boolean shouldCreateAndProcessSvpFundTransaction() {
+        // the fund tx will be created when the svp starts,
+        // so we must ensure all svp values are clear to proceed with its creation
+        Optional<Sha256Hash> svpFundTxHashUnsigned = provider.getSvpFundTxHashUnsigned();
+        Optional<BtcTransaction> svpFundTxSigned = provider.getSvpFundTxSigned();
+        Optional<Sha256Hash> svpSpendTxHashUnsigned = provider.getSvpSpendTxHashUnsigned(); // spendTxHash will be removed the last, after spendTxWFS, so is enough checking just this value
+
+        return svpFundTxHashUnsigned.isEmpty()
+            && svpFundTxSigned.isEmpty()
+            && svpSpendTxHashUnsigned.isEmpty();
+    }
+
+    private void processSvpFailure(Federation proposedFederation) {
+        logger.info(
+            "[processSvpFailure] Proposed federation validation failed at block {}. SVP failure will be processed and Federation election will be allowed again.",
+            rskExecutionBlock.getNumber()
+        );
+        eventLogger.logCommitFederationFailure(rskExecutionBlock, proposedFederation);
+        allowFederationElectionAgain();
+    }
+
+    private void allowFederationElectionAgain() {
+        federationSupport.clearProposedFederation();
+        provider.clearSvpValues();
+    }
+
+    private boolean isSvpOngoing() {
+        return federationSupport
+            .getProposedFederation()
+            .map(proposedFederation -> rskExecutionBlock.getNumber() < proposedFederation.getCreationBlockNumber() +
+                bridgeConstants.getFederationConstants().getValidationPeriodDurationInBlocks()
+            )
+            .orElse(false);
+    }
+
+    private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
+        try {
+            BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation);
+            provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
+            PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+
+            List<UTXO> utxosToUse = federationSupport.getActiveFederationBtcUTXOs();
+            // one output to proposed fed, one output to flyover proposed fed
+            Coin totalValueSentToProposedFederation = bridgeConstants.getSvpFundTxOutputsValue().multiply(2);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, totalValueSentToProposedFederation);
+        } catch (InsufficientMoneyException e) {
+            logger.error(
+                "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
+                e.getMessage()
+            );
+        } catch (IOException e) {
+            logger.error(
+                "[processSvpFundTransactionUnsigned] IOException getting the pegouts waiting for confirmations. Error message: {}",
+                e.getMessage()
+            );
+        }
+    }
+
+    private BtcTransaction createSvpFundTransaction(Federation proposedFederation) throws InsufficientMoneyException {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
 
         BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
         svpFundTransaction.setVersion(BTC_TX_VERSION_2);
 
+        Coin svpFundTxOutputsValue = bridgeConstants.getSvpFundTxOutputsValue();
         // add outputs to proposed fed and proposed fed with flyover prefix
-        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederation.getAddress());
-
+        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
         Address proposedFederationWithFlyoverPrefixAddress =
             getFlyoverAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
-        svpFundTransaction.addOutput(spendableValueFromProposedFederation, proposedFederationWithFlyoverPrefixAddress);
+        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
         SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);
@@ -1075,57 +1136,65 @@ public class BridgeSupport {
         sendRequest.feePerKb = feePerKbSupport.getFeePerKb();
         sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
         sendRequest.recipientsPayFees = false;
+        sendRequest.shuffleOutputs = false;
 
         return sendRequest;
     }
 
-    protected void processSvpSpendTransactionUnsigned(Transaction rskTx) {
-        federationSupport.getProposedFederation()
-            .ifPresent(proposedFederation -> provider.getSvpFundTxSigned()
-            .ifPresent(svpFundTxSigned -> {
-                BtcTransaction svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+    private void processSvpSpendTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
+        BtcTransaction svpSpendTransactionUnsigned;
+        try {
+            svpSpendTransactionUnsigned = createSvpSpendTransaction(svpFundTxSigned, proposedFederation);
+        } catch (IllegalStateException e){
+            logger.error("[processSvpSpendTransactionUnsigned] Error creating spend transaction {}", e.getMessage());
+            return;
+        }
+        updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
 
-                Keccak256 rskTxHash = rskTx.getHash();
-                updateSvpSpendTransactionValues(rskTxHash, svpSpendTransactionUnsigned);
-
-                Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
-                logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, amountSentToActiveFed);
-                logPegoutTransactionCreated(svpSpendTransactionUnsigned);
-            }));
+        Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
+        logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, amountSentToActiveFed);
+        logPegoutTransactionCreated(svpSpendTransactionUnsigned);
     }
 
-    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) {
+    private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) throws IllegalStateException {
         BtcTransaction svpSpendTransaction = new BtcTransaction(networkParameters);
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
-        addSvpSpendTransactionInputs(svpSpendTransaction, svpFundTxSigned, proposedFederation);
+        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+        TransactionOutput outputToProposedFed = searchForOutput(
+            svpFundTxSigned.getOutputs(),
+            proposedFederation.getP2SHScript()
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
+        svpSpendTransaction.addInput(outputToProposedFed);
+        svpSpendTransaction.getInput(0).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
+
+        Script flyoverRedeemScript = getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        TransactionOutput outputToFlyoverProposedFed = searchForOutput(
+            svpFundTxSigned.getOutputs(),
+            flyoverOutputScript
+        ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to flyover proposed federation was not found in fund transaction."));
+        svpSpendTransaction.addInput(outputToFlyoverProposedFed);
+        svpSpendTransaction.getInput(1).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+
+        Coin valueSentToProposedFed = outputToProposedFed.getValue();
+        Coin valueSentToFlyoverProposedFed = outputToFlyoverProposedFed.getValue();
+
+        Coin valueToSend = valueSentToProposedFed
+            .plus(valueSentToFlyoverProposedFed)
+            .minus(calculateSvpSpendTxFees(proposedFederation));
 
         svpSpendTransaction.addOutput(
-            calculateSvpSpendTxAmount(proposedFederation),
+            valueToSend,
             federationSupport.getActiveFederationAddress()
         );
 
         return svpSpendTransaction;
     }
 
-    private void addSvpSpendTransactionInputs(BtcTransaction svpSpendTransaction, BtcTransaction svpFundTxSigned, Federation proposedFederation) {
-        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-        Script proposedFederationOutputScript = proposedFederation.getP2SHScript();
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, proposedFederationOutputScript);
-        svpSpendTransaction.getInput(0)
-            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
-
-        Script flyoverRedeemScript =
-            getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTxSigned, flyoverOutputScript);
-        svpSpendTransaction.getInput(1)
-                .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
-    }
-
-    private Coin calculateSvpSpendTxAmount(Federation proposedFederation) {
+    private Coin calculateSvpSpendTxFees(Federation proposedFederation) {
         int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
-        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the amount sent will be enough
+        long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the fees sent will be enough
 
         return feePerKbSupport.getFeePerKb()
             .multiply(svpSpendTransactionBackedUpSize)
@@ -1239,7 +1308,7 @@ public class BridgeSupport {
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
         Address activeFederationAddress,
-        List<UTXO> availableUTXOs) throws IOException {
+        List<UTXO> utxosToUse) throws IOException {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
@@ -1254,12 +1323,8 @@ public class BridgeSupport {
         Coin amountMigrated = selectedUTXOs.stream()
             .map(UTXO::getValue)
             .reduce(Coin.ZERO, Coin::add);
-        settleReleaseRequest(pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
 
-        // Mark UTXOs as spent
-        availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-            utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
-        ));
+        settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, migrationTransaction, rskTxHash, amountMigrated);
     }
 
     /**
@@ -1305,11 +1370,23 @@ public class BridgeSupport {
         }
     }
 
-    private void settleReleaseRequest(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
-        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
-        savePegoutTxSigHash(pegoutTransaction);
-        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
-        logPegoutTransactionCreated(pegoutTransaction);
+    private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        removeSpentUtxos(utxosToUse, releaseTransaction);
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
+        savePegoutTxSigHash(releaseTransaction);
+        logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
+        logPegoutTransactionCreated(releaseTransaction);
+    }
+
+    private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
+        List<UTXO> utxosToRemove = utxosToUse.stream()
+            .filter(utxo -> releaseTx.getInputs().stream().anyMatch(input ->
+                input.getOutpoint().getHash().equals(utxo.getHash()) && input.getOutpoint().getIndex() == utxo.getIndex())
+            ).toList();
+
+        logger.debug("[removeSpentUtxos] Used {} UTXOs for this release", utxosToRemove.size());
+
+        utxosToUse.removeAll(utxosToRemove);
     }
 
     private void addPegoutToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash) {
@@ -1367,7 +1444,7 @@ public class BridgeSupport {
     private void processPegoutsIndividually(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> availableUTXOs,
+        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet
     ) {
@@ -1392,11 +1469,7 @@ public class BridgeSupport {
 
             BtcTransaction generatedTransaction = result.getBtcTx();
             Keccak256 pegoutCreationTxHash = pegoutRequest.getRskTxHash();
-            settleReleaseRequest(pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
-
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-            availableUTXOs.removeAll(selectedUTXOs);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, generatedTransaction, pegoutCreationTxHash, pegoutRequest.getAmount());
 
             adjustBalancesIfChangeOutputWasDust(generatedTransaction, pegoutRequest.getAmount(), wallet);
 
@@ -1407,7 +1480,7 @@ public class BridgeSupport {
     private void processPegoutsInBatch(
         ReleaseRequestQueue pegoutRequests,
         ReleaseTransactionBuilder txBuilder,
-        List<UTXO> availableUTXOs,
+        List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
         Transaction rskTx) {
@@ -1456,18 +1529,13 @@ public class BridgeSupport {
             BtcTransaction batchPegoutTransaction = result.getBtcTx();
             Keccak256 batchPegoutCreationTxHash = rskTx.getHash();
 
-            settleReleaseRequest(pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
+            settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, batchPegoutTransaction, batchPegoutCreationTxHash, totalPegoutValue);
 
             // Remove batched requests from the queue after successfully batching pegouts
             pegoutRequests.removeEntries(pegoutEntries);
 
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
-            logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
-            availableUTXOs.removeAll(selectedUTXOs);
-
             eventLogger.logBatchPegoutCreated(batchPegoutTransaction.getHash(),
-                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
+                pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).toList());
 
             adjustBalancesIfChangeOutputWasDust(batchPegoutTransaction, totalPegoutValue, wallet);
         }
@@ -1605,13 +1673,13 @@ public class BridgeSupport {
 
         Context.propagate(btcContext);
 
-        if (svpIsOngoing() && isSvpSpendTx(releaseCreationRskTxHash)) {
-            logger.trace("[addSignature] Going to sign svp spend transaction with federator public key {}", federatorBtcPublicKey);
+        if (isSvpOngoing() && isSvpSpendTx(releaseCreationRskTxHash)) {
+            logger.info("[addSignature] Going to sign svp spend transaction with federator public key {}", federatorBtcPublicKey);
             addSvpSpendTxSignatures(federatorBtcPublicKey, signatures);
             return;
         }
 
-        logger.trace("[addSignature] Going to sign release transaction with federator public key {}", federatorBtcPublicKey);
+        logger.info("[addSignature] Going to sign release transaction with federator public key {}", federatorBtcPublicKey);
         addReleaseSignatures(federatorBtcPublicKey, signatures, releaseCreationRskTxHash);
     }
 
@@ -1694,30 +1762,32 @@ public class BridgeSupport {
         Federation proposedFederation = federationSupport.getProposedFederation()
             // This flow should never be reached. There should always be a proposed federation if svpIsOngoing.
             .orElseThrow(() -> new IllegalStateException("Proposed federation must exist when trying to sign the svp spend transaction."));
+        Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = provider.getSvpSpendTxWaitingForSignatures()
+            // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
+            .orElseThrow(() -> new IllegalStateException("Svp spend tx waiting for signatures must exist"));
         FederationMember federationMember = proposedFederation.getMemberByBtcPublicKey(proposedFederatorPublicKey)
             .orElseThrow(() -> new IllegalStateException("Federator must belong to proposed federation to sign the svp spend transaction."));
 
-        provider.getSvpSpendTxWaitingForSignatures()
-            // The svpSpendTxWFS should always be present at this point, since we already checked isTheSvpSpendTx.
-            .ifPresent(svpSpendTxWFS -> {
+        Keccak256 svpSpendTxCreationRskTxHash = svpSpendTxWFS.getKey();
+        BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
 
-                Keccak256 svpSpendTxCreationRskTxHash = svpSpendTxWFS.getKey();
-                BtcTransaction svpSpendTx = svpSpendTxWFS.getValue();
+        if (!areSignaturesEnoughToSignAllTxInputs(svpSpendTx, signatures)) {
+            return;
+        }
 
-                if (!areSignaturesEnoughToSignAllTxInputs(svpSpendTx, signatures)) {
-                    return;
-                }
+        processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
+       
+        // save current fed signature back in storage
+        svpSpendTxWFS.setValue(svpSpendTx);
+        provider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
 
-                processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
+        if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx)) {
+            logMissingSignatures(svpSpendTx, svpSpendTxCreationRskTxHash, proposedFederation);
+            return;
+        }
 
-                if (!BridgeUtils.hasEnoughSignatures(btcContext, svpSpendTx)) {
-                    logMissingSignatures(svpSpendTx, svpSpendTxCreationRskTxHash, proposedFederation);
-                    return;
-                }
-
-                logReleaseBtc(svpSpendTx, svpSpendTxCreationRskTxHash.getBytes());
-                provider.setSvpSpendTxWaitingForSignatures(null);
-            });
+        logReleaseBtc(svpSpendTx, svpSpendTxCreationRskTxHash.getBytes());
+        provider.clearSvpSpendTxWaitingForSignatures();
     }
 
     private boolean areSignaturesEnoughToSignAllTxInputs(BtcTransaction releaseTx, List<byte[]> signatures) {
@@ -1879,19 +1949,20 @@ public class BridgeSupport {
 
    /**
      * Retrieves the current SVP spend transaction state for the SVP client.
+     *
      * <p>
      * This method checks if there is an SVP spend transaction waiting for signatures, and if so, it serializes 
      * the state into RLP format. If no transaction is waiting, it returns an encoded empty RLP list.
      * </p>
      *
      * @return A byte array representing the RLP-encoded state of the SVP spend transaction. If no transaction 
-     *         is waiting, returns an RLP-encoded empty list.
+     *         is waiting, returns a double RLP-encoded empty list.
      */
     public byte[] getStateForSvpClient() {
         return provider.getSvpSpendTxWaitingForSignatures()
             .map(StateForProposedFederator::new)
             .map(StateForProposedFederator::encodeToRlp)
-            .orElse(RLP.encodedEmptyList());
+            .orElse(RLP.encodeList(RLP.encodedEmptyList()));
     }
 
     /**
@@ -2206,186 +2277,84 @@ public class BridgeSupport {
         return federationSupport.getActiveFederation();
     }
 
-    /**
-     * Returns the currently retiring federation.
-     * See getRetiringFederationReference() for details.
-     * @return the retiring federation.
-     */
+
     @Nullable
     public Federation getRetiringFederation() {
         return federationSupport.getRetiringFederation();
     }
 
-    /**
-     * Returns the active federation bitcoin address.
-     * @return the active federation bitcoin address.
-     */
     public Address getActiveFederationAddress() {
         return federationSupport.getActiveFederationAddress();
     }
 
-    /**
-     * Returns the active federation's size
-     * @return the active federation size
-     */
     public Integer getActiveFederationSize() {
         return federationSupport.getActiveFederationSize();
     }
 
-    /**
-     * Returns the active federation's minimum required signatures
-     * @return the active federation minimum required signatures
-     */
     public Integer getActiveFederationThreshold() {
         return federationSupport.getActiveFederationThreshold();
     }
 
-    /**
-     * Returns the public key of the active federation's federator at the given index
-     * @param index the federator's index (zero-based)
-     * @return the federator's public key
-     */
     public byte[] getActiveFederatorBtcPublicKey(int index) {
         return federationSupport.getActiveFederatorBtcPublicKey(index);
     }
 
-    /**
-     * Returns the public key of given type of the active federation's federator at the given index
-     * @param index the federator's index (zero-based)
-     * @param keyType the key type
-     * @return the federator's public key
-     */
     public byte[] getActiveFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getActiveFederatorPublicKeyOfType(index, keyType);
     }
 
-    /**
-     * Returns the active federation's creation time
-     * @return the active federation creation time
-     */
     public Instant getActiveFederationCreationTime() {
         return federationSupport.getActiveFederationCreationTime();
     }
 
-    /**
-     * Returns the active federation's creation block number
-     * @return the active federation creation block number
-     */
     public long getActiveFederationCreationBlockNumber() {
         return federationSupport.getActiveFederationCreationBlockNumber();
     }
 
-    /**
-     * Returns the retiring federation bitcoin address.
-     * @return the retiring federation bitcoin address, null if no retiring federation exists
-     */
     public Address getRetiringFederationAddress() {
         return federationSupport.getRetiringFederationAddress();
     }
 
-    /**
-     * Returns the retiring federation's size
-     * @return the retiring federation size, -1 if no retiring federation exists
-     */
     public Integer getRetiringFederationSize() {
         return federationSupport.getRetiringFederationSize();
     }
 
-    /**
-     * Returns the retiring federation's minimum required signatures
-     * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
-     */
     public Integer getRetiringFederationThreshold() {
         return federationSupport.getRetiringFederationThreshold();
     }
 
-    /**
-     * Returns the public key of the retiring federation's federator at the given index
-     * @param index the retiring federator's index (zero-based)
-     * @return the retiring federator's public key, null if no retiring federation exists
-     */
     public byte[] getRetiringFederatorBtcPublicKey(int index) {
         return federationSupport.getRetiringFederatorBtcPublicKey(index);
     }
 
-    /**
-     * Returns the public key of the given type of the retiring federation's federator at the given index
-     * @param index the retiring federator's index (zero-based)
-     * @param keyType the key type
-     * @return the retiring federator's public key of the given type, null if no retiring federation exists
-     */
     public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
     }
 
-    /**
-     * Returns the retiring federation's creation time
-     * @return the retiring federation creation time, null if no retiring federation exists
-     */
     public Instant getRetiringFederationCreationTime() {
         return federationSupport.getRetiringFederationCreationTime();
     }
 
-    /**
-     * Returns the retiring federation's creation block number
-     * @return the retiring federation creation block number,
-     * -1 if no retiring federation exists
-     */
     public long getRetiringFederationCreationBlockNumber() {
         return federationSupport.getRetiringFederationCreationBlockNumber();
-    }
-
-    /**
-     * Returns the currently live federations
-     * This would be the active federation plus
-     * potentially the retiring federation
-     * @return a list of live federations
-     */
-    private List<Federation> getLiveFederations() {
-        List<Federation> liveFederations = new ArrayList<>();
-        liveFederations.add(getActiveFederation());
-        Federation retiringFederation = getRetiringFederation();
-        if (retiringFederation != null) {
-            liveFederations.add(retiringFederation);
-        }
-        return liveFederations;
     }
 
     public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         return federationSupport.voteFederationChange(tx, callSpec, signatureCache, eventLogger);
     }
 
-    /**
-     * Returns the currently pending federation hash, or null if none exists
-     * @return the currently pending federation hash, or null if none exists
-     */
     public Keccak256 getPendingFederationHash() {
         return federationSupport.getPendingFederationHash();
     }
 
-    /**
-     * Returns the currently pending federation size, or -1 if none exists
-     * @return the currently pending federation size, or -1 if none exists
-     */
     public Integer getPendingFederationSize() {
         return federationSupport.getPendingFederationSize();
     }
 
-    /**
-     * Returns the currently pending federation federator's public key at the given index, or null if none exists
-     * @param index the federator's index (zero-based)
-     * @return the pending federation's federator public key
-     */
     public byte[] getPendingFederatorBtcPublicKey(int index) {
         return federationSupport.getPendingFederatorBtcPublicKey(index);
     }
 
-    /**
-     * Returns the public key of the given type of the pending federation's federator at the given index
-     * @param index the federator's index (zero-based)
-     * @param keyType the key type
-     * @return the pending federation's federator public key of given type
-     */
     public byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         return federationSupport.getPendingFederatorPublicKeyOfType(index, keyType);
     }
@@ -2452,11 +2421,6 @@ public class BridgeSupport {
         return lockingCapSupport.getLockingCap().orElse(null);
     }
 
-    /**
-     * Returns the redeemScript of the current active federation
-     *
-     * @return Returns the redeemScript of the current active federation
-     */
     public Optional<Script> getActiveFederationRedeemScript() {
         return federationSupport.getActiveFederationRedeemScript();
     }
@@ -2858,10 +2822,15 @@ public class BridgeSupport {
     }
 
     protected Wallet getFlyoverWallet(Context btcContext, List<UTXO> utxos, List<FlyoverFederationInformation> fbFederations) {
-        Wallet wallet = new FlyoverCompatibleBtcWalletWithMultipleScripts(btcContext, getLiveFederations(), fbFederations);
+        Wallet wallet = new FlyoverCompatibleBtcWalletWithMultipleScripts(
+            btcContext,
+            federationSupport.getLiveFederations(),
+            fbFederations
+        );
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
+
         return wallet;
     }
 

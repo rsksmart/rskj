@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.addInputFromMatchingOutputScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -304,20 +305,20 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionDoesNotHaveInputs_shouldReturnSameTransaction() {
+    void getTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnSameTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionHashBeforeRemovingSignatures, transaction.getHash());
+        assertEquals(transactionHashBeforeRemovingSignatures, transactionHashWithoutSignatures);
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionIsSegwit_shouldThrowIllegalArgumentException() {
+    void getTransactionHashWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -325,14 +326,15 @@ class BitcoinUtilsTest {
         transactionWitness.setPush(0, new byte[]{});
         transaction.setWitness(0, transactionWitness);
 
-        // act & assert
-        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
-        assertEquals("Removing signatures from SegWit transactions is not allowed.", exception.getMessage());
+        // act
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+
+        // assert
+        assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
+    void getTransactionHashWithoutSignatures_whenTxIsNotSegwitAndTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
@@ -341,12 +343,12 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
         assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenNotAllTransactionInputsHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
+    void getTransactionHashWithoutSignatures_whenTxIsNotSegwitButNotAllTransactionInputsHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script p2shMultiSigScriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -359,12 +361,12 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
         assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldRemoveSignatures() {
+    void getTransactionHashWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTxHash() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -373,7 +375,7 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, scriptSig);
         transaction.addOutput(Coin.COIN, destinationAddress);
-        Sha256Hash transactionWithoutSignaturesHash = transaction.getHash();
+        Sha256Hash transactionHashBeforeSigning = transaction.getHash();
 
         List<BtcECKey> keysToSign = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
             "member01",
@@ -392,51 +394,26 @@ class BitcoinUtilsTest {
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionWithoutSignaturesHash, transaction.getHash());
+        assertEquals(transactionHashBeforeSigning, transactionHashWithoutSignatures);
     }
 
     @Test
-    void addInputFromOutputSentToScript_withNoMatchingOutputScript_shouldNotAddInput() {
+    void getTransactionHashWithoutSignatures_forRealPegout() {
         // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
-        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+        // getting the btc raw tx from a real release_btc event
+        byte[] btcRawTxFromReleaseBtcEvent = Hex.decode("0200000001de890a3fcdf7391f8f66d0b04e26d8ef05c342c4ad5b5feb64e24b525aa1721001000000fd3a0300483045022100ba4f30ded162d3203c89c73c03e8c6001255ab62fb7e258a92b112f7cefe2e8e0220683d7e552b0e812257be4fb41f9d2a0b99a91e2cd8bc5e9eb2305a0ddf6b833c01483045022100c8705daac34ec164ef1a441a24f9f9661ecf5bd271d2d6d85d4bd11d444d65e7022065599fc87a8d335f0ddee2a93ed442fae55e08d514f16ba087d4442f3cb2fca001483045022100a85719ee3b3e8bc3716900575b059fd40b1f3852d4de58efa6de1185d6ed5bda022052beda3d8597f4071918136c2cfd8f80aede4aaf6e8710585d2e5fbe988fd0ce0147304402205e90f4c98d2187a1021d7200f40b11623d4e6d3e99d5481b70bedadda10be759022071a3bac20aa917abd46bdedd52d97033050cb8da28f9b93507c93af69ffe67f201483045022100eb2fc5dd75c210311bbb0a0f9eacbd0675e61d413a2b227422232735fd95238602204f92e268e55b113c732b4351ba2049ff48b6347ba6e9a4efe9da70fb97f321e601004dc901645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68ffffffff0258369b02000000001976a91481769a94a036ceba700a71467f6cef39652acfd688ac33aa0c9d0000000017a914d3530b561910c250f58fbd572d2f7a7d847354ef8700000000");
+        BtcTransaction btcTxFromReleaseBtcEvent = new BtcTransaction(btcMainnetParams, btcRawTxFromReleaseBtcEvent);
 
         // act
-        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
-
-        Federation anotherFederation = StandardMultiSigFederationBuilder.builder().build();
-        Script anotherRedeemScript = anotherFederation.getRedeemScript();
-        Script anotherOutputScript = ScriptBuilder.createP2SHOutputScript(anotherRedeemScript);
-        addInputFromMatchingOutputScript(newTransaction, sourceTransaction, anotherOutputScript);
+        Sha256Hash btcTxHashWithoutSigs = getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, btcTxFromReleaseBtcEvent);
 
         // assert
-        assertEquals(0, newTransaction.getInputs().size());
-    }
-
-    @Test
-    void addInputFromOutputSentToScript_withMatchingOutputScript_shouldAddInputWithOutpointFromOutput() {
-        // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-
-        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
-        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
-
-        // act
-        BtcTransaction newTransaction = new BtcTransaction(btcMainnetParams);
-        addInputFromMatchingOutputScript(newTransaction, sourceTransaction, outputScript);
-
-        // assert
-        TransactionInput newTransactionInput = newTransaction.getInput(0);
-        TransactionOutput sourceTransactionOutput = sourceTransaction.getOutput(0);
-        assertEquals(newTransactionInput.getOutpoint().getHash(), sourceTransactionOutput.getParentTransactionHash());
+        // the tx hash emitted in the release_requested event does not have the signatures
+        Sha256Hash hashFromReleaseRequestedEvent = Sha256Hash.wrap("7fba184a41c4ca22e2b806bdd961c4e52b1bd2a1d2552bbe61cbba4d56c00fae");
+        assertEquals(hashFromReleaseRequestedEvent, btcTxHashWithoutSigs);
     }
 
     @Test
