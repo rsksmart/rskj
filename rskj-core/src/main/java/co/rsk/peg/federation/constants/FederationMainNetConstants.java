@@ -42,7 +42,7 @@ public class FederationMainNetConstants extends FederationConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 16000L;
+        validationPeriodDurationInBlocks = 20000L;
 
         federationActivationAgeLegacy = 18500L;
         federationActivationAge = 40320L;

@@ -115,7 +115,7 @@ class FederationConstantsTest {
 
     private static Stream<Arguments> validationPeriodDurationArgs() {
         return Stream.of(
-            Arguments.of(MAINNET, 16000L),
+            Arguments.of(MAINNET, 20000L),
             Arguments.of(TESTNET, 2000L),
             Arguments.of(REGTEST, 125L)
         );
