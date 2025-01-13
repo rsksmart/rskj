@@ -163,6 +163,9 @@ public class BridgeSerializationUtils {
         }
 
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        if (rlpList.size() == 0) {
+            return null;
+        }
         return deserializeRskTxWaitingForSignaturesEntry(rlpList, 0, networkParameters);
     }
 
@@ -190,9 +193,6 @@ public class BridgeSerializationUtils {
 
     private static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignaturesEntry(
             RLPList rlpList, int index, NetworkParameters networkParameters) {
-        if (rlpList.size() == 0) {
-            return null;
-        }
 
         RLPElement rskTxHashRLPElement = rlpList.get(index * 2);
         byte[] rskTxHashData = rskTxHashRLPElement.getRLPData();
