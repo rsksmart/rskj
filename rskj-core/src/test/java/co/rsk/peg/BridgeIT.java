@@ -18,6 +18,7 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
+import static co.rsk.peg.federation.FederationTestUtils.getErpFederationWithPrivKeys;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
@@ -99,7 +100,7 @@ import co.rsk.util.HexUtils;
 @ExtendWith(MockitoExtension.class)
 // to avoid Junit5 unnecessary stub error due to some setup generalizations
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class BridgeTestIntegration {
+public class BridgeIT {
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeRegTestConstants;
 
@@ -110,10 +111,8 @@ public class BridgeTestIntegration {
     private static final String DATA = "80af2871";
     private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "Sender is not part of the active or retiring federation";
     private static ECKey fedECPrivateKey;
-    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
-        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
-        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    private static final List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        new String[]{"fa01", "fa02", "fa03"}, true
     );
 
     private TestSystemProperties config = new TestSystemProperties();
@@ -125,16 +124,16 @@ public class BridgeTestIntegration {
 
     @BeforeAll
      static void setUpBeforeClass() {
-        bridgeRegTestConstants = new BridgeRegTestConstants();
+        bridgeRegTestConstants = new BridgeRegTestConstants(fedKeys);
         networkParameters = bridgeRegTestConstants.getBtcParams();
-        BtcECKey fedBTCPrivateKey = REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
+        BtcECKey fedBTCPrivateKey = fedKeys.get(0);
         fedECPrivateKey = ECKey.fromPrivate(fedBTCPrivateKey.getPrivKey());
     }
 
     @BeforeEach
     void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
-        constants = Constants.regtest();
+        constants = Constants.regtestWithFederation(fedKeys);
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
@@ -1356,7 +1355,7 @@ public class BridgeTestIntegration {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -3156,7 +3155,9 @@ public class BridgeTestIntegration {
     void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
-        RskAddress sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getAddress());
+        byte[] privKeyBytes = fedKeys.get(0).getPrivKeyBytes();
+        RskAddress sender = new RskAddress(ECKey.fromPrivate(privKeyBytes).getAddress());
+
         Transaction txMock = mock(Transaction.class);
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
@@ -3337,7 +3338,7 @@ public class BridgeTestIntegration {
             );
         }
 
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
