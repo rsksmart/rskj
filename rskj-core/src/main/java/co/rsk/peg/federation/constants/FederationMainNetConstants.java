@@ -42,13 +42,13 @@ public class FederationMainNetConstants extends FederationConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 20000L;
+        validationPeriodDurationInBlocks = 20_000L;
 
-        federationActivationAgeLegacy = 18500L;
-        federationActivationAge = 40320L;
+        federationActivationAgeLegacy = 18_500L;
+        federationActivationAge = 40_320L;
 
         fundsMigrationAgeSinceActivationBegin = 0L;
-        fundsMigrationAgeSinceActivationEnd = 10585L;
+        fundsMigrationAgeSinceActivationEnd = 10_585L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 172_800L; // 60 days, considering 1 block every 30 seconds
 
         erpFedPubKeysList = Stream.of(
