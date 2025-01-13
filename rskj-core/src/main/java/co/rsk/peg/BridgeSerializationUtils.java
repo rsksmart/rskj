@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.federation.FederationFormatVersion.*;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
 import co.rsk.bitcoinj.core.*;
@@ -163,6 +164,9 @@ public class BridgeSerializationUtils {
         }
 
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        if (rlpList.size() == 0) {
+            return null;
+        }
         return deserializeRskTxWaitingForSignaturesEntry(rlpList, 0, networkParameters);
     }
 
@@ -190,9 +194,7 @@ public class BridgeSerializationUtils {
 
     private static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignaturesEntry(
             RLPList rlpList, int index, NetworkParameters networkParameters) {
-        if (rlpList.size() == 0) {
-            return null;
-        }
+        checkArgument(rlpList.size() > 0, "RLPList cannot be empty when deserializing an rsk tx WFS entry.");
 
         RLPElement rskTxHashRLPElement = rlpList.get(index * 2);
         byte[] rskTxHashData = rskTxHashRLPElement.getRLPData();
