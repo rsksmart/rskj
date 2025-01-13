@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.rsk.bitcoinj.core.BtcECKey;
 import java.util.Arrays;
 import java.util.List;
+
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -40,11 +42,8 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 class TxValidatorIntrinsicGasLimitValidatorTest {
-
-    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
-        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
-        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    private static final List<BtcECKey> retiringFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        new String[]{"fa01", "fa02", "fa03"}, true
     );
 
     private Constants constants;
@@ -52,7 +51,7 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @BeforeEach
     void setUp() {
-        constants = Constants.regtest();
+        constants = Constants.regtestWithFederation(retiringFedKeys);
         activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
@@ -102,7 +101,7 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(BigInteger.ZERO)
             .build();
-        tx4.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        tx4.sign(retiringFedKeys.get(0).getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(
             constants,
