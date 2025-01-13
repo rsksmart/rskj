@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP124;
@@ -31,12 +31,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class BridgeCostsTest {
-    private static BridgeRegTestConstants bridgeConstants;
-    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
-        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
-        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    private static final List<BtcECKey> fedECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        new String[]{"fa01", "fa02", "fa03"}, true
     );
+    private static BridgeRegTestConstants bridgeConstants;
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -45,13 +43,13 @@ class BridgeCostsTest {
 
     @BeforeAll
      static void setUpBeforeClass() {
-        bridgeConstants = new BridgeRegTestConstants();
+        bridgeConstants = new BridgeRegTestConstants(fedECKeys);
     }
 
     @BeforeEach
     void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
-        constants = Constants.regtest();
+        constants = Constants.regtestWithFederation(fedECKeys);
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
@@ -149,7 +147,7 @@ class BridgeCostsTest {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedECKeys.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -252,7 +250,7 @@ class BridgeCostsTest {
             );
         }
 
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedECKeys.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
