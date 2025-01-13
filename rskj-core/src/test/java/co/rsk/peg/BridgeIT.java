@@ -27,14 +27,12 @@ import static org.mockito.Mockito.*;
 
 import co.rsk.RskTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.whitelist.WhitelistResponseCode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -51,7 +49,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
@@ -1616,7 +1613,7 @@ public class BridgeTestIntegration {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -3384,7 +3381,9 @@ public class BridgeTestIntegration {
     void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
-        RskAddress sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getAddress());
+        byte[] privKeyBytes = fedKeys.get(0).getPrivKeyBytes();
+        RskAddress sender = new RskAddress(ECKey.fromPrivate(privKeyBytes).getAddress());
+
         Transaction txMock = mock(Transaction.class);
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
@@ -3565,7 +3564,7 @@ public class BridgeTestIntegration {
             );
         }
 
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
