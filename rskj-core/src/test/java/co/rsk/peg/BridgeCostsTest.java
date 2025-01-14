@@ -31,7 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class BridgeCostsTest {
-    private static final List<BtcECKey> fedECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+    private static final List<BtcECKey> fedBtcECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fa01", "fa02", "fa03"}, true
     );
     private static BridgeRegTestConstants bridgeConstants;
@@ -43,13 +43,13 @@ class BridgeCostsTest {
 
     @BeforeAll
      static void setUpBeforeClass() {
-        bridgeConstants = new BridgeRegTestConstants(fedECKeys);
+        bridgeConstants = new BridgeRegTestConstants(fedBtcECKeys);
     }
 
     @BeforeEach
     void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
-        constants = Constants.regtestWithFederation(fedECKeys);
+        constants = Constants.regtestWithFederation(fedBtcECKeys);
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
@@ -147,7 +147,7 @@ class BridgeCostsTest {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(fedECKeys.get(0).getPrivKeyBytes());
+        rskTx.sign(fedBtcECKeys.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -250,7 +250,7 @@ class BridgeCostsTest {
             );
         }
 
-        rskTx.sign(fedECKeys.get(0).getPrivKeyBytes());
+        rskTx.sign(fedBtcECKeys.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
