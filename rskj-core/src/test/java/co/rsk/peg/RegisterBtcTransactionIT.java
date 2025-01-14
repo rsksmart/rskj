@@ -128,7 +128,45 @@ class RegisterBtcTransactionIT {
         co.rsk.core.Coin expectedReceiverBalance = co.rsk.core.Coin.fromBitcoin(output.getValue());
         assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
 
-        assertLogPegInBtc(btcTransaction);
+        assertLogPegInBtc(btcTransaction, minimumPeginValue.getValue());
+    }
+
+    @Test
+    void registerBtcTransaction_forMultipleLegacyBtcTransaction_shouldRegisterTheNewUtxosAndTransferTheRbtcBalance() throws Exception {
+        // Arrange
+        short numberOfOutputs = 3;
+        BtcTransaction btcTransaction = createTransactionWithMultiplePegIns(federationSupport.getActiveFederation().getAddress(), btcPublicKey, minimumPeginValue, numberOfOutputs);
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
+        bridgeStorageProvider.save();
+
+        // Act
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+        bridgeSupport.save();
+
+        // Assert
+        Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTransaction.getHash());
+        assertTrue(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
+        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, heightIfBtcTxHashIsAlreadyProcessed.get());
+
+        List<UTXO> expectedFederationUtxos = new ArrayList<>();
+        for (short outputIndex = 0; outputIndex < numberOfOutputs; outputIndex++) {
+            TransactionOutput output = btcTransaction.getOutput(outputIndex);
+            expectedFederationUtxos.add(utxoOf(btcTransaction, output));
+        }
+
+        assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
+
+        co.rsk.core.Coin expectedReceiverBalance = co.rsk.core.Coin.ZERO;
+        for (short outputIndex = 0; outputIndex < numberOfOutputs; outputIndex++) {
+            TransactionOutput output = btcTransaction.getOutput(outputIndex);
+            expectedReceiverBalance = expectedReceiverBalance.add(co.rsk.core.Coin.fromBitcoin(output.getValue()));
+        }
+
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
+        assertLogPegInBtc(btcTransaction, minimumPeginValue.getValue() * numberOfOutputs);
     }
 
     @Test
@@ -280,6 +318,17 @@ class RegisterBtcTransactionIT {
         return btcTx;
     }
 
+    private BtcTransaction createTransactionWithMultiplePegIns(Address federationAddress, BtcECKey pubKey, Coin value, short numberOfOutputs) {
+        BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
+        int outputIndex = 0;
+        int nHash = 0;
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, ScriptBuilder.createInputScript(null, pubKey));
+        for (int i = 0; i < numberOfOutputs; i++) {
+            btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, value, federationAddress));
+        }
+        return btcTx;
+    }
+
     private BtcTransaction createMultiSigPegInTransaction(Address federationAddress, Coin coin) {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
 
@@ -293,14 +342,14 @@ class RegisterBtcTransactionIT {
         return btcTx;
     }
 
-    private void assertLogPegInBtc(BtcTransaction btcTransaction) {
+    private void assertLogPegInBtc(BtcTransaction btcTransaction, long value) {
         CallTransaction.Function pegInBtcEvent = BridgeEvents.PEGIN_BTC.getEvent();
         Sha256Hash peginTransactionHash = btcTransaction.getHash();
 
         List<DataWord> encodedTopics = getEncodedTopics(pegInBtcEvent, rskReceiver.toString(), peginTransactionHash.getBytes());
 
         int protocolVersion = 0;
-        byte[] encodedData = getEncodedData(pegInBtcEvent, minimumPeginValue.getValue(), protocolVersion);
+        byte[] encodedData = getEncodedData(pegInBtcEvent, value, protocolVersion);
 
         assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
         assertEventWasEmittedWithExpectedData(encodedData, logs);
