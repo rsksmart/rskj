@@ -58,7 +58,7 @@ class RegisterBtcTransactionIT {
 
 
     @BeforeEach
-    void setUp() throws Exception{
+    void setUp() {
         repository = BridgeSupportTestUtil.createRepository().startTracking();
 
         btcLockSenderProvider = new BtcLockSenderProvider();
