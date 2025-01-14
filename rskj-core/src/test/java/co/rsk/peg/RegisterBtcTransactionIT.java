@@ -180,6 +180,33 @@ class RegisterBtcTransactionIT {
     }
 
     @Test
+    void registerBtcTransaction_whenLegacyBtcTransactionWithBalanceBelowMinimum_shouldNotRefundFunds() throws Exception {
+        // Arrange
+        Coin valueBelowMinimumPegin = minimumPeginValue.subtract(Coin.SATOSHI);
+        BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), valueBelowMinimumPegin, btcPublicKey);
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
+        bridgeStorageProvider.save();
+
+        co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
+
+        // Act
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+        bridgeSupport.save();
+
+        // Assert
+        assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
+
+        assertRejectedPeginTransaction(btcTransaction, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent(), RejectedPeginReason.INVALID_AMOUNT.getValue());
+        Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTransaction.getHash());
+        assertFalse(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
+    }
+
+    @Test
     void registerBtcTransaction_whenLegacyPeginBtcTransactionFromAMultiSig_shouldRefundTheFunds() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = createMultiSigPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue);
@@ -219,7 +246,7 @@ class RegisterBtcTransactionIT {
         Address pegoutReceiver = pegOutOutput.getAddressFromP2SH(btcNetworkParams);
         assertEquals(pegInTxSender, pegoutReceiver);
 
-        assertRejectedPeginTransaction(btcTransaction);
+        assertRejectedPeginTransaction(btcTransaction, BridgeEvents.REJECTED_PEGIN.getEvent(), RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER.getValue());
         assertReleaseBtcRequested(rskTx.getHash().getBytes(), pegOut, minimumPeginValue);
         assertPegoutTransactionCreated(pegOut.getHash(), UtxoUtils.extractOutpointValues(pegOut));
 
@@ -279,11 +306,10 @@ class RegisterBtcTransactionIT {
         assertEventWasEmittedWithExpectedData(encodedData, logs);
     }
 
-    private void assertRejectedPeginTransaction(BtcTransaction btcTransaction) {
-        CallTransaction.Function rejectedPeginEvent = BridgeEvents.REJECTED_PEGIN.getEvent();
+    private void assertRejectedPeginTransaction(BtcTransaction btcTransaction, CallTransaction.Function rejectionEvent, int rejectionReason) {
         Sha256Hash peginTransactionHash = btcTransaction.getHash();
-        List<DataWord> encodedTopics = getEncodedTopics(rejectedPeginEvent, peginTransactionHash.getBytes());
-        byte[] encodedData = getEncodedData(rejectedPeginEvent, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER.getValue());
+        List<DataWord> encodedTopics = getEncodedTopics(rejectionEvent, peginTransactionHash.getBytes());
+        byte[] encodedData = getEncodedData(rejectionEvent, rejectionReason);
 
         assertEventWasEmittedWithExpectedTopics(encodedTopics, logs);
         assertEventWasEmittedWithExpectedData(encodedData, logs);
