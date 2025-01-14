@@ -145,7 +145,7 @@ class FederationChangeIT {
     private BridgeSupport bridgeSupport;
 
     @Test
-    void whenAllActivationsArePresentAndFederationChanges_shouldCreateNewActiveFederation() throws Exception {
+    void whenAllActivationsArePresentAndFederationChanges_shouldCreateCommitAndActiveNewFed() throws Exception {
         // Arrange
         var activations = ActivationConfigsForTest.all().forBlock(0);
         setUpFederationChange(activations);
