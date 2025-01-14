@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 class TxValidatorIntrinsicGasLimitValidatorTest {
-    private static final List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+    private static final List<BtcECKey> fedBtcECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fa01", "fa02", "fa03"}, true
     );
 
@@ -51,7 +51,7 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @BeforeEach
     void setUp() {
-        constants = Constants.regtestWithFederation(fedKeys);
+        constants = Constants.regtestWithFederation(fedBtcECKeys);
         activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
@@ -101,7 +101,7 @@ class TxValidatorIntrinsicGasLimitValidatorTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(BigInteger.ZERO)
             .build();
-        tx4.sign(fedKeys.get(0).getPrivKeyBytes());
+        tx4.sign(fedBtcECKeys.get(0).getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(
             constants,
