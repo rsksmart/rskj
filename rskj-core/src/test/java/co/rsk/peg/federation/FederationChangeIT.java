@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,6 +20,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache;
@@ -48,6 +50,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
@@ -65,9 +68,6 @@ class FederationChangeIT {
     }
 
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
-    private static final Address ORIGINAL_FEDERATION_ADDRESS = Address.fromBase58(
-        BRIDGE_CONSTANTS.getBtcParams(),
-        "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh");
     private static final List<Triple<BtcECKey, ECKey, ECKey>> ORIGINAL_FEDERATION_KEYS = List.of(
         Triple.of(
             BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
@@ -114,9 +114,6 @@ class FederationChangeIT {
             ECKey.fromPublicOnly(Hex.decode("03f4d76ec9a7a2722c0b06f5f4a489152244c8801e5ff2a43df7fefd75ce8e068f")),
             ECKey.fromPublicOnly(Hex.decode("02a935a8d59b92f9df82265cb983a76cca0308f82e9dc9dd92ff8887e2667d2a38"))
         ));
-    private static final Address NEW_FEDERATION_ADDRESS = Address.fromBase58(
-            BRIDGE_CONSTANTS.getBtcParams(),
-            "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU");
     private static final List<Triple<BtcECKey, ECKey, ECKey>> NEW_FEDERATION_KEYS = List.of(
         Triple.of(
             BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
@@ -152,14 +149,15 @@ class FederationChangeIT {
         // Arrange
         var activations = ActivationConfigsForTest.all().forBlock(0);
         setUpFederationChange(activations);
-
         // Create a default original federation using the list of UTXOs
-        var originalUTXOs = createRandomUTXOs(ORIGINAL_FEDERATION_ADDRESS);
-        createOriginalFederation(FederationType.NON_STANDARD_ERP, originalUTXOs, activations);
+        var originalFederation = createOriginalFederation(
+            FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+        var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(
+            BRIDGE_CONSTANTS.getBtcParams(), activations);
        
         // Act
         // Commit pending federation using the new federation
-        commitPendingFederation(NEW_FEDERATION_KEYS, activations);
+        var newFederation = commitPendingFederation(NEW_FEDERATION_KEYS, activations);
         // Since Lovell is activated we will commit the proposed federation
         commitProposedFederation(activations);
         // Move blockchain until the activation phase
@@ -167,7 +165,7 @@ class FederationChangeIT {
 
         // Assert
         assertUTXOsMovedFromNewToOldFederation(originalUTXOs, activations);
-        assertNewFederationIsActive(NEW_FEDERATION_ADDRESS, ORIGINAL_FEDERATION_ADDRESS);
+        assertNewFederationIsActive(newFederation.getAddress(), originalFederation.getAddress());
         assertNoMigrationHasStarted();
     }
   
@@ -205,15 +203,17 @@ class FederationChangeIT {
 
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
-        var blockNumber = 0L;
-        initialBlock = mock(Block.class);
-        when(initialBlock.getNumber()).thenReturn(blockNumber);
+        var initialBlockNumber = 0L;
+        var initialBlockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(initialBlockNumber)
+            .build();
+        initialBlock = Block.createBlockFromHeader(initialBlockHeader, true);
 
         federationSupport = new FederationSupportImpl(
             BRIDGE_CONSTANTS.getFederationConstants(), federationStorageProvider, initialBlock, activations);
 
         var signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-        var lockingCapStorageProvider = new LockingCapStorageProviderImpl(new InMemoryStorage());
+        var lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
         lockingCapSupport = new LockingCapSupportImpl(
             lockingCapStorageProvider,
             activations,
@@ -224,11 +224,11 @@ class FederationChangeIT {
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
     }
 
-    private void createOriginalFederation(
+    private Federation createOriginalFederation(
           FederationType federationType,
-          List<UTXO> federationAddress,
+          List<Triple<BtcECKey, ECKey, ECKey>> federationKeys,
           ActivationConfig.ForBlock activations) throws Exception {
-        var originalFederationMembers = ORIGINAL_FEDERATION_KEYS.stream()
+        var originalFederationMembers = federationKeys.stream()
             .map(originalFederatorKey ->
                 new FederationMember(
                     originalFederatorKey.getLeft(),
@@ -253,20 +253,24 @@ class FederationChangeIT {
             case P2SH_ERP -> {
                 originalFederation = FederationFactory.buildP2shErpFederation(
                     originalFederationArgs, erpPubKeys, activationDelay);
-                // TODO: CHECK REDEEMSCRIPT
             }
             default -> throw new Exception(
                 String.format("Federation type %s is not supported", federationType));
         }
-        assertEquals(ORIGINAL_FEDERATION_ADDRESS, originalFederation.getAddress());
 
         // Set original federation
+        assertNotNull(originalFederation);
         federationStorageProvider.setNewFederation(originalFederation);
-        federationStorageProvider.getNewFederationBtcUTXOs(
-            BRIDGE_CONSTANTS.getBtcParams(), activations).addAll(federationAddress);
+
+        // Set new UTXOs
+        var originalUTXOs = createRandomUTXOs(originalFederation.getAddress());
+        bridgeStorageAccessor.saveToRepository(
+            NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+         return originalFederation;
     }  
 
-    private void commitPendingFederation(
+    private Federation commitPendingFederation(
           List<Triple<BtcECKey, ECKey, ECKey>> federationKeys,
           ActivationConfig.ForBlock activations) {
         // Create Pending federation (doing this to avoid voting the pending Federation)
@@ -278,7 +282,6 @@ class FederationChangeIT {
                     newFederatorKey.getRight()))
             .toList();
         var pendingFederation = new PendingFederation(newFederationMembers);
-
         // Set pending federation
         federationStorageProvider.setPendingFederation(pendingFederation);
         federationStorageProvider.save(BRIDGE_CONSTANTS.getBtcParams(), activations);
@@ -288,6 +291,13 @@ class FederationChangeIT {
 
         // Since the proposed federation is commited, it should be null in storage
         assertNull(federationStorageProvider.getPendingFederation());
+
+        // return the new federation
+        return pendingFederation.buildFederation(
+            Instant.EPOCH,
+            0,
+            BRIDGE_CONSTANTS.getFederationConstants(),
+            activations);
     }
 
     private void commitProposedFederation(ActivationConfig.ForBlock activations) {
@@ -319,7 +329,7 @@ class FederationChangeIT {
     }
     
     private BridgeSupport getBridgeSupportFromExecutionBlock(Block executionBlock, ActivationConfig.ForBlock activations) {
-        FederationSupport federationSupport = FederationSupportBuilder.builder()
+        FederationSupport fedSupport = FederationSupportBuilder.builder()
             .withFederationConstants(BRIDGE_CONSTANTS.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(executionBlock)
@@ -334,7 +344,7 @@ class FederationChangeIT {
             .withBridgeConstants(BRIDGE_CONSTANTS)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withPeginInstructionsProvider(new PeginInstructionsProvider())
-            .withFederationSupport(federationSupport)
+            .withFederationSupport(fedSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .withLockingCapSupport(lockingCapSupport)
             .build();
