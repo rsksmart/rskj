@@ -2180,8 +2180,8 @@ public class BridgeTestIntegration {
         OneOffWhiteListEntry mockedEntry10 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
         OneOffWhiteListEntry mockedEntry20 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
         TestUtils.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getLockWhitelistEntryByIndex(10)).then((InvocationOnMock invocation) -> mockedEntry10);
-        when(bridgeSupportMock.getLockWhitelistEntryByIndex(20)).then((InvocationOnMock invocation) -> mockedEntry20);
+        when(bridgeSupportMock.getLockWhitelistEntryByIndex(10)).then((InvocationOnMock invocation) -> Optional.of(mockedEntry10));
+        when(bridgeSupportMock.getLockWhitelistEntryByIndex(20)).then((InvocationOnMock invocation) -> Optional.of(mockedEntry20));
 
         assertEquals(mockedEntry10.address().toBase58(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(10)}));
         assertEquals(mockedEntry20.address().toBase58(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(20)}));
@@ -2227,9 +2227,9 @@ public class BridgeTestIntegration {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForUnlimited.toBase58()))
-                .then((InvocationOnMock invocation) -> new UnlimitedWhiteListEntry(mockedAddressForUnlimited));
+                .then((InvocationOnMock invocation) -> Optional.of(new UnlimitedWhiteListEntry(mockedAddressForUnlimited)));
         when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForOneOff.toBase58()))
-                .then((InvocationOnMock invocation) -> new OneOffWhiteListEntry(mockedAddressForOneOff, Coin.COIN));
+                .then((InvocationOnMock invocation) -> Optional.of(new OneOffWhiteListEntry(mockedAddressForOneOff, Coin.COIN)));
 
         mockedTransaction = mock(Transaction.class);
 
