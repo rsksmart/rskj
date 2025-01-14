@@ -75,7 +75,7 @@ class BridgeUtilsTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
-    private static final List<BtcECKey> federationPrivateKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03"}, true);
+    private static final List<BtcECKey> fedBtcECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03"}, true);
 
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -86,10 +86,10 @@ class BridgeUtilsTest {
 
     @BeforeEach
     void setupConfig() {
-        constants = Constants.regtestWithFederation(federationPrivateKeys);
+        constants = Constants.regtestWithFederation(fedBtcECKeys);
         activationConfig = spy(ActivationConfigsForTest.all());
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstantsRegtest = new BridgeRegTestConstants(federationPrivateKeys);
+        bridgeConstantsRegtest = new BridgeRegTestConstants(fedBtcECKeys);
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
     }
@@ -318,19 +318,19 @@ class BridgeUtilsTest {
     @Test
     void isFreeBridgeTxTrue() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, federationPrivateKeys.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, fedBtcECKeys.get(0).getPrivKeyBytes());
     }
 
     @Test
     void isFreeBridgeTxOtherContract() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, federationPrivateKeys.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, fedBtcECKeys.get(0).getPrivKeyBytes());
     }
 
     @Test
     void isFreeBridgeTxFreeTxDisabled() {
         activationConfig = ActivationConfigsForTest.only(ConsensusRule.ARE_BRIDGE_TXS_PAID);
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, federationPrivateKeys.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, fedBtcECKeys.get(0).getPrivKeyBytes());
     }
 
     @Test
