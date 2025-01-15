@@ -19,6 +19,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.findWitnessCommitment;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -52,6 +53,7 @@ import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +62,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -1765,7 +1768,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         try {
             this.ensureBtcBlockStore();
-            final StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+            final StoredBlock block = getBlockKeepingTestnetConsensus(btcBlockHash);
 
             // Block not found, default to basic cost
             if (block == null) {
@@ -1803,7 +1806,7 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
 
         // Get the block using the given block hash
-        StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+        StoredBlock block = getBlockKeepingTestnetConsensus(btcBlockHash);
         if (block == null) {
             return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
         }
@@ -1837,6 +1840,31 @@ public class BridgeSupport {
         }
 
         return bestChainHeight - block.getHeight() + 1;
+    }
+
+    private StoredBlock getBlockKeepingTestnetConsensus(Sha256Hash btcBlockHash) throws BlockStoreException {
+        long rskBlockNumber = 5_148_285;
+
+        boolean networkIsTestnet = bridgeConstants.getBtcParams().equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+        Sha256Hash blockHash = Sha256Hash.wrap("00000000e8e7b540df01a7067e020fd7e2026bf86289def2283a35120c1af379");
+
+        // DO NOT MODIFY.
+        // This check is needed since this block caused a misbehaviour
+        // for being stored in the cache but not in the storage
+        if (rskExecutionBlock.getNumber() == rskBlockNumber
+            && networkIsTestnet
+            && btcBlockHash.equals(blockHash)
+        ) {
+            byte[] rawBtcBlockHeader = HexUtils.stringHexToByteArray("000000203b5d178405c4e6e7dc07d63d6de5db1342044791721654760c00000000000000796cf6743a036300b43fb3abe6703d04a7999751b6d5744f20327d1175320bd37b954e66ffff001d56dc11ce");
+
+            BtcBlock btcBlockHeader = new BtcBlock(bridgeConstants.getBtcParams(), rawBtcBlockHeader);
+            BigInteger btcBlockChainWork = new BigInteger("000000000000000000000000000000000000000000000ddeb5fbcd969312a77c", 16);
+            int btcBlockNumber = 2_817_125;
+
+            return new StoredBlock(btcBlockHeader, btcBlockChainWork, btcBlockNumber);
+        }
+
+        return btcBlockStore.get(btcBlockHash);
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {
@@ -2144,49 +2172,88 @@ public class BridgeSupport {
         return lockingCapSupport.increaseLockingCap(tx, newLockingCap);
     }
 
-    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
+    public void registerBtcCoinbaseTransaction(
+        byte[] btcTxSerialized,
+        Sha256Hash blockHash,
+        byte[] pmtSerialized,
+        Sha256Hash witnessMerkleRoot,
+        byte[] witnessReservedValue
+    ) throws VMException {
         Context.propagate(btcContext);
         try{
             this.ensureBtcBlockStore();
         }catch (BlockStoreException | IOException e) {
-            logger.warn("Exception in registerBtcCoinbaseTransaction", e);
-            throw new VMException("Exception in registerBtcCoinbaseTransaction", e);
+            String message = String.format("Exception in registerBtcCoinbaseTransaction. %s", e.getMessage());
+            logger.warn("[registerBtcCoinbaseTransaction] {}", message);
+            throw new VMException(message, e);
         }
 
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+        logger.debug("[registerBtcCoinbaseTransaction] Going to register coinbase information for btcTx: {}", btcTxHash);
 
         if (witnessReservedValue.length != 32) {
-            logger.warn("[btcTx:{}] WitnessResevedValue length can't be different than 32 bytes", btcTxHash);
-            throw new BridgeIllegalArgumentException("WitnessResevedValue length can't be different than 32 bytes");
+            String message = String.format(
+                "Witness reserved value length can't be different than 32 bytes. Value received: %s",
+                Bytes.of(witnessReservedValue)
+            );
+            logger.warn("[registerBtcCoinbaseTransaction] {}", message);
+            throw new BridgeIllegalArgumentException(message);
         }
+        logger.trace("[registerBtcCoinbaseTransaction] Witness reserved value: {}", Bytes.of(witnessReservedValue));
 
         if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            logger.warn("[btcTx:{}] PartialMerkleTree doesn't have expected size", btcTxHash);
-            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
+            String message = String.format(
+                "PartialMerkleTree doesn't have expected size. Value received: %s",
+                Bytes.of(pmtSerialized)
+            );
+            logger.warn("[registerBtcCoinbaseTransaction] {}", message);
+            throw new BridgeIllegalArgumentException(message);
         }
 
         Sha256Hash merkleRoot;
-
         try {
             PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, pmtSerialized, 0);
             List<Sha256Hash> hashesInPmt = new ArrayList<>();
             merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
             if (!hashesInPmt.contains(btcTxHash)) {
-                logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
+                logger.warn(
+                    "[registerBtcCoinbaseTransaction] Supplied btc tx {} is not in the supplied partial merkle tree {}",
+                    btcTxHash,
+                    pmt
+                );
                 return;
             }
         } catch (VerificationException e) {
-            logger.warn("[btcTx:{}] PartialMerkleTree could not be parsed", btcTxHash);
-            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Bytes.of(pmtSerialized)), e);
+            String message = String.format("Partial merkle tree could not be parsed. %s", Bytes.of(pmtSerialized));
+            logger.warn("[registerBtcCoinbaseTransaction] {}", message);
+            throw new BridgeIllegalArgumentException(message, e);
         }
+        logger.trace("[registerBtcCoinbaseTransaction] Merkle root: {}", merkleRoot);
 
         // Check merkle root equals btc block merkle root at the specified height in the btc best chain
         // Btc blockstore is available since we've already queried the best chain height
-        StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
-        if (storedBlock == null) {
-            logger.warn("[btcTx:{}] Block not registered", btcTxHash);
-            throw new BridgeIllegalArgumentException(String.format("Block not registered %s", blockHash.toString()));
+        StoredBlock storedBlock = null;
+        try {
+            storedBlock = btcBlockStore.get(blockHash);
+        } catch (BlockStoreException e) {
+            logger.error(
+                "[registerBtcCoinbaseTransaction] Error gettin block {} from block store. {}",
+                blockHash,
+                e.getMessage()
+            );
         }
+
+        if (storedBlock == null) {
+            String message = String.format("Block %s not yet registered", blockHash);
+            logger.warn("[registerBtcCoinbaseTransaction] {}", message);
+            throw new BridgeIllegalArgumentException(message);
+        }
+        logger.trace(
+            "[registerBtcCoinbaseTransaction] Found block with hash {} at height {}",
+            blockHash,
+            storedBlock.getHeight()
+        );
+
         BtcBlock blockHeader = storedBlock.getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
             String panicMessage = String.format(
@@ -2195,7 +2262,7 @@ public class BridgeSupport {
                 merkleRoot,
                 blockHeader.getMerkleRoot()
             );
-            logger.warn(panicMessage);
+            logger.warn("[registerBtcCoinbaseTransaction] {}", panicMessage);
             panicProcessor.panic("btclock", panicMessage);
             return;
         }
@@ -2203,17 +2270,33 @@ public class BridgeSupport {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, btcTxSerialized);
         btcTx.verify();
 
-        Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
-
-        if(!witnessCommitment.equals(btcTx.findWitnessCommitment())){
-            logger.warn("[btcTx:{}] WitnessCommitment does not match", btcTxHash);
-            throw new BridgeIllegalArgumentException("WitnessCommitment does not match");
-        }
+        validateWitnessInformation(btcTx, witnessMerkleRoot, witnessReservedValue);
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
         provider.setCoinbaseInformation(blockHeader.getHash(), coinbaseInformation);
 
-        logger.warn("[btcTx:{}] Registered coinbase information", btcTxHash);
+        logger.debug("[registerBtcCoinbaseTransaction] Registered coinbase information for btc tx {}", btcTxHash);
+    }
+
+    private void validateWitnessInformation(
+        BtcTransaction coinbaseTransaction,
+        Sha256Hash witnessMerkleRoot,
+        byte[] witnessReservedValue
+    ) throws BridgeIllegalArgumentException {
+        Optional<Sha256Hash> expectedWitnessCommitment = findWitnessCommitment(coinbaseTransaction);
+        Sha256Hash calculatedWitnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
+
+        if (expectedWitnessCommitment.isEmpty() || !expectedWitnessCommitment.get().equals(calculatedWitnessCommitment)) {
+            String message = String.format(
+                "[btcTx: %s] Witness commitment does not match. Expected: %s, Calculated: %s",
+                coinbaseTransaction.getHash(),
+                expectedWitnessCommitment.orElse(null),
+                calculatedWitnessCommitment
+            );
+            logger.warn("[validateWitnessInformation] {}", message);
+            throw new BridgeIllegalArgumentException(message);
+        }
+        logger.debug("[validateWitnessInformation] Witness commitment {} validated for btc tx {}", calculatedWitnessCommitment, coinbaseTransaction.getHash());
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {

@@ -37,28 +37,32 @@ public class MinGasPriceProviderFactory {
         FixedMinGasPriceProvider fixedMinGasPriceProvider = new FixedMinGasPriceProvider(fixedMinGasPrice);
 
         if (stableMinGasPriceSystemConfig == null) {
-            logger.warn("Could not find stable min gas price system config, using {} provider", fixedMinGasPriceProvider.getType().name());
+            logger.warn("Could not find stable min gas price config. Falling back to {} with fixedMinGasPrice: {}", fixedMinGasPriceProvider.getType(), fixedMinGasPrice);
             return fixedMinGasPriceProvider;
         }
         if (!stableMinGasPriceSystemConfig.isEnabled()) {
+            logger.info("Stable min gas price is disabled. Falling back to {} with fixedMinGasPrice: {}", fixedMinGasPriceProvider.getType(), fixedMinGasPrice);
             return fixedMinGasPriceProvider;
         }
 
         MinGasPriceProviderType method = stableMinGasPriceSystemConfig.getMethod();
         if (method == null) {
-            logger.error("Could not find valid method in config, using fallback provider: {}", fixedMinGasPriceProvider.getType().name());
+            logger.warn("Could not find valid method in config. Falling back to {} with fixedMinGasPrice: {}", fixedMinGasPriceProvider.getType(), fixedMinGasPrice);
             return fixedMinGasPriceProvider;
         }
 
         switch (method) {
             case HTTP_GET:
+                logger.info("Creating 'Http-Get' stable min gas price provider");
                 return new HttpGetMinGasPriceProvider(stableMinGasPriceSystemConfig, fixedMinGasPriceProvider);
             case ETH_CALL:
+                logger.info("Creating 'Eth-Call' stable min gas price provider");
                 return new EthCallMinGasPriceProvider(fixedMinGasPriceProvider, stableMinGasPriceSystemConfig, ethModuleSupplier);
             case FIXED:
+                logger.info("Creating 'Fixed' min gas price provider with fixedMinGasPrice: {}", fixedMinGasPrice);
                 return fixedMinGasPriceProvider;
             default:
-                logger.debug("Could not find a valid implementation for the method {}. Returning fallback provider {}", method, fixedMinGasPriceProvider.getType().name());
+                logger.warn("Could not find a valid implementation for the method {}. Creating {} fallback provider with fixedMinGasPrice: {}", method, fixedMinGasPriceProvider.getType(), fixedMinGasPrice);
                 return fixedMinGasPriceProvider;
         }
     }

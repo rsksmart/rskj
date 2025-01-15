@@ -51,4 +51,9 @@ public class BlockGasPriceRange {
     public Coin getLowerLimit() {
         return lowerLimit;
     }
+
+    @Override
+    public String toString() {
+        return "[" + lowerLimit + "; " + upperLimit + "]";
+    }
 }

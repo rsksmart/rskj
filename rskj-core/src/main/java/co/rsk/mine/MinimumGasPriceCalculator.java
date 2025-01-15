@@ -20,6 +20,8 @@ package co.rsk.mine;
 
 import co.rsk.core.Coin;
 import co.rsk.mine.gas.provider.MinGasPriceProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the implementation of RSKIP-09
@@ -27,7 +29,9 @@ import co.rsk.mine.gas.provider.MinGasPriceProvider;
  */
 public class MinimumGasPriceCalculator {
 
-    private MinGasPriceProvider minGasPriceProvider;
+    private static final Logger logger = LoggerFactory.getLogger(MinimumGasPriceCalculator.class);
+
+    private final MinGasPriceProvider minGasPriceProvider;
 
     public MinimumGasPriceCalculator(MinGasPriceProvider minGasPriceProvider) {
         this.minGasPriceProvider = minGasPriceProvider;
@@ -37,14 +41,16 @@ public class MinimumGasPriceCalculator {
         BlockGasPriceRange priceRange = new BlockGasPriceRange(previousMGP);
         Coin targetMGP = minGasPriceProvider.getMinGasPriceAsCoin();
         if (priceRange.inRange(targetMGP)) {
+            logger.debug("Previous MGP: {}. Target MGP: {} is in range: {}. Returning target MGP", previousMGP, targetMGP, priceRange);
             return targetMGP;
         }
 
         if (previousMGP.compareTo(targetMGP) < 0) {
+            logger.debug("Previous MGP: {}. Target MGP: {} is not in range: {}. Returning upper boundary: {}", previousMGP, targetMGP, priceRange, priceRange.getUpperLimit());
             return priceRange.getUpperLimit();
         }
 
+        logger.debug("Previous MGP: {}. Target MGP: {} is not in range: {}. Returning lower boundary: {}", previousMGP, targetMGP, priceRange, priceRange.getLowerLimit());
         return priceRange.getLowerLimit();
     }
-
 }

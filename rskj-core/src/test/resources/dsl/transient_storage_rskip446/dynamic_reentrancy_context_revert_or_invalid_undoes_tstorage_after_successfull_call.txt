@@ -1,0 +1,200 @@
+comment
+
+// CONTRACT CODE
+
+pragma solidity ^0.8.24;
+
+contract TstorageDynamicReentrancyContext {
+    uint256 reentrantCounter = 0;
+    uint256 valueLoadedFromFFBefore;
+    uint256 valueLoadedFromFFAfter;
+    uint256 resultFirstReentrantCall;
+    uint256 resultSecondReentrantCall;
+
+    constructor() {
+    }
+
+    event OK();
+    event ERROR(string, uint256);
+
+    function opcodeUndoesTstorageAfterSuccessfullCall(uint256 opcodeSelector) external {
+        bytes memory data = abi.encodeWithSignature("opcodeUndoesTstorageAfterSuccessfullCall(uint256)", opcodeSelector);
+
+        assembly {
+            let reentrantValue := sload(reentrantCounter.slot)
+            switch reentrantValue
+            case 1 {
+            // +1 to the counter so it goes to the other case from reentrant call
+                reentrantValue := add(reentrantValue, 1)
+                sstore(reentrantCounter.slot, reentrantValue)
+                // Switch to select if failure will be caused by  opcode revert or invalid opcode
+                switch opcodeSelector
+                case 0 {
+                    sstore(resultSecondReentrantCall.slot, call(gas(), address(), 0, add(data, 0x20), mload(data), 0, 0))
+                    revert(0, 32)
+                }
+                case 1 {
+                    sstore(resultSecondReentrantCall.slot, call(0xFFFF, address(), 0, add(data, 0x20), mload(data), 0, 0))
+                    invalid()
+                }
+            }
+            case 2 {
+                tstore(0xFF, 0x101)
+            }
+            default {
+            // +1 to the counter so it goes to the other case from reentrant call
+                reentrantValue := add(reentrantValue, 1)
+                sstore(reentrantCounter.slot, reentrantValue)
+
+            // Setup the conditions to be tested
+                tstore(0xFF, 0x100)
+                sstore(valueLoadedFromFFBefore.slot, tload(0xFF))
+                sstore(resultFirstReentrantCall.slot, call(gas(), address(), 0, add(data, 0x20), mload(data), 0, 0)) // saves result from the call so we can check later
+                sstore(valueLoadedFromFFAfter.slot, tload(0xFF))
+            }
+        }
+    }
+
+    function checkValuesStoredInTstorage() external {
+        checkReturnValueExpected(resultFirstReentrantCall, 'Checking result callee execution resultFirstReentrantCall is failed', 0);
+        checkReturnValueExpected(resultSecondReentrantCall, 'Checking result callee execution resultSecondReentrantCall is failed', 0);
+        checkReturnValueExpected(valueLoadedFromFFBefore, 'Checking value from tload FF before', 0x100);
+        checkReturnValueExpected(valueLoadedFromFFAfter, 'Checking value from tload FF after', 0x100);
+    }
+
+    function checkReturnValueExpected(uint256 valueReceived, string memory message, uint256 expectedValue) private {
+        if( valueReceived == expectedValue){
+            emit OK();
+        } else {
+            emit ERROR(message, valueReceived);
+        }
+    }
+}
+
+// CONTRACT BYTECODE
+
+TstorageDynamicReentrancyContext:  60806040525f8055348015610012575f80fd5b506104de806100205f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80634abdbf22146100385780635f6813d114610054575b5f80fd5b610052600480360381019061004d91906102d1565b61005e565b005b61005c610189565b005b5f81604051602401610070919061030b565b6040516020818303038152906040527f4abdbf22000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505090505f548060018114610131576002811461017c57600182019150815f5561010060ff5d60ff5c6001555f808451602086015f305af160035560ff5c600255610183565b600182019150815f55835f811461014f576001811461016357610176565b5f808551602087015f305af160045560205ffd5b5f808551602087015f3061fffff1600455fe5b50610183565b61010160ff5d5b50505050565b6101ae6003546040518060800160405280604381526020016103ff604391395f610223565b6101d3600454604051806080016040528060448152602001610442604491395f610223565b6101fa60015460405180606001604052806023815260200161048660239139610100610223565b6102216002546040518060600160405280602281526020016103dd60229139610100610223565b565b80830361025b577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610295565b7fc9e730d5b570f89e168eb8c3d29f8c396b957e540af248c95c9519ac47c2c69f828460405161028c9291906103ae565b60405180910390a15b505050565b5f80fd5b5f819050919050565b6102b08161029e565b81146102ba575f80fd5b50565b5f813590506102cb816102a7565b92915050565b5f602082840312156102e6576102e561029a565b5b5f6102f3848285016102bd565b91505092915050565b6103058161029e565b82525050565b5f60208201905061031e5f8301846102fc565b92915050565b5f81519050919050565b5f82825260208201905092915050565b5f5b8381101561035b578082015181840152602081019050610340565b5f8484015250505050565b5f601f19601f8301169050919050565b5f61038082610324565b61038a818561032e565b935061039a81856020860161033e565b6103a381610366565b840191505092915050565b5f6040820190508181035f8301526103c68185610376565b90506103d560208301846102fc565b939250505056fe436865636b696e672076616c75652066726f6d20746c6f6164204646206166746572436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c7446697273745265656e7472616e7443616c6c206973206661696c6564436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c745365636f6e645265656e7472616e7443616c6c206973206661696c6564436865636b696e672076616c75652066726f6d20746c6f6164204646206265666f7265a2646970667358221220ddbb9e72364b1b79e927453462ad5f3aa80de1475c599317f83708e1ef5ca17b64736f6c63430008180033
+
+Function hashes
+
+4abdbf22: opcodeUndoesTstorageAfterSuccessfullCall(uint256)
+5f6813d1: checkValuesStoredInTstorage()
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TstorageDynamicReentrancyContext contract
+transaction_build txTstorageDynamicReentrancyContextContract
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 60806040525f8055348015610012575f80fd5b506104de806100205f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80634abdbf22146100385780635f6813d114610054575b5f80fd5b610052600480360381019061004d91906102d1565b61005e565b005b61005c610189565b005b5f81604051602401610070919061030b565b6040516020818303038152906040527f4abdbf22000000000000000000000000000000000000000000000000000000007bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505090505f548060018114610131576002811461017c57600182019150815f5561010060ff5d60ff5c6001555f808451602086015f305af160035560ff5c600255610183565b600182019150815f55835f811461014f576001811461016357610176565b5f808551602087015f305af160045560205ffd5b5f808551602087015f3061fffff1600455fe5b50610183565b61010160ff5d5b50505050565b6101ae6003546040518060800160405280604381526020016103ff604391395f610223565b6101d3600454604051806080016040528060448152602001610442604491395f610223565b6101fa60015460405180606001604052806023815260200161048660239139610100610223565b6102216002546040518060600160405280602281526020016103dd60229139610100610223565b565b80830361025b577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a1610295565b7fc9e730d5b570f89e168eb8c3d29f8c396b957e540af248c95c9519ac47c2c69f828460405161028c9291906103ae565b60405180910390a15b505050565b5f80fd5b5f819050919050565b6102b08161029e565b81146102ba575f80fd5b50565b5f813590506102cb816102a7565b92915050565b5f602082840312156102e6576102e561029a565b5b5f6102f3848285016102bd565b91505092915050565b6103058161029e565b82525050565b5f60208201905061031e5f8301846102fc565b92915050565b5f81519050919050565b5f82825260208201905092915050565b5f5b8381101561035b578082015181840152602081019050610340565b5f8484015250505050565b5f601f19601f8301169050919050565b5f61038082610324565b61038a818561032e565b935061039a81856020860161033e565b6103a381610366565b840191505092915050565b5f6040820190508181035f8301526103c68185610376565b90506103d560208301846102fc565b939250505056fe436865636b696e672076616c75652066726f6d20746c6f6164204646206166746572436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c7446697273745265656e7472616e7443616c6c206973206661696c6564436865636b696e6720726573756c742063616c6c656520657865637574696f6e20726573756c745365636f6e645265656e7472616e7443616c6c206973206661696c6564436865636b696e672076616c75652066726f6d20746c6f6164204646206265666f7265a2646970667358221220ddbb9e72364b1b79e927453462ad5f3aa80de1475c599317f83708e1ef5ca17b64736f6c63430008180033
+    gas 1000000
+    build
+
+# Create block to hold txTstorageDynamicReentrancyContextContract transaction
+block_build b01
+    parent g00
+    transactions txTstorageDynamicReentrancyContextContract
+    gasLimit 1200000
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Create transaction to execute txTstoreInDoubleReentrantCallWithRevert transaction
+transaction_build txTstoreInDoubleReentrantCallWithRevert
+    sender acc1
+    nonce 1
+    contract txTstorageDynamicReentrancyContextContract
+    value 0
+    data 4abdbf220000000000000000000000000000000000000000000000000000000000000000
+    gas 300000
+    build
+
+# Create block to hold txTstoreInDoubleReentrantCallWithRevert transaction
+block_build b02
+    parent b01
+    transactions txTstoreInDoubleReentrantCallWithRevert
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02
+
+# Create transaction to execute txCheckValuesStoredInTstorageForRevert transaction
+transaction_build txCheckValuesStoredInTstorageForRevert transaction
+    sender acc1
+    nonce 2
+    contract txTstorageDynamicReentrancyContextContract
+    value 0
+    data 5f6813d1
+    gas 300000
+    build
+
+# Create block to hold txCheckValuesStoredInTstorageForRevert transaction
+block_build b03
+    parent b02
+    transactions txCheckValuesStoredInTstorageForRevert
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b03
+
+# Check b03 is best block
+assert_best b03
+
+# Create transaction to execute txTstoreInDoubleReentrantCallWithInvalid transaction
+transaction_build txTstoreInDoubleReentrantCallWithInvalid
+    sender acc1
+    nonce 3
+    contract txTstorageDynamicReentrancyContextContract
+    value 0
+    data 4abdbf220000000000000000000000000000000000000000000000000000000000000001
+    gas 300000
+    build
+
+# Create block to hold txTstoreInDoubleReentrantCallWithInvalid transaction
+block_build b04
+    parent b03
+    transactions txTstoreInDoubleReentrantCallWithInvalid
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b04
+
+# Check b04 is best block
+assert_best b04
+
+# Create transaction to execute txCheckValuesStoredInTstorageForInvalid transaction
+transaction_build txCheckValuesStoredInTstorageForInvalid transaction
+    sender acc1
+    nonce 4
+    contract txTstorageDynamicReentrancyContextContract
+    value 0
+    data 5f6813d1
+    gas 300000
+    build
+
+# Create block to hold txCheckValuesStoredInTstorageForInvalid transaction
+block_build b05
+    parent b04
+    transactions txCheckValuesStoredInTstorageForInvalid
+    gasLimit 350000
+    build
+
+# Connect block
+block_connect b05
+
+# Check b05 is best block
+assert_best b05

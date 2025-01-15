@@ -75,6 +75,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -5279,7 +5280,7 @@ class BridgeSupportTest {
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(block);
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
@@ -5348,7 +5349,7 @@ class BridgeSupportTest {
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -5430,7 +5431,7 @@ class BridgeSupportTest {
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -5509,7 +5510,7 @@ class BridgeSupportTest {
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -5567,7 +5568,7 @@ class BridgeSupportTest {
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -5638,7 +5639,7 @@ class BridgeSupportTest {
         StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(block);
 
         StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
@@ -5894,7 +5895,7 @@ class BridgeSupportTest {
         int height = 5;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 5, height);
         Sha256Hash hash = registerHeader.getHash();
-        when(btcBlockStore.getFromCache(hash)).thenReturn(new StoredBlock(registerHeader, BigInteger.ZERO, 0));
+        when(btcBlockStore.get(hash)).thenReturn(new StoredBlock(registerHeader, BigInteger.ZERO, 0));
 
         byte[] btcTxSerialized = tx.bitcoinSerialize();
         byte[] pmtSerialized = pmt.bitcoinSerialize();
@@ -5971,7 +5972,7 @@ class BridgeSupportTest {
         StoredBlock storedBlock = mock(StoredBlock.class);
         when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
         when(storedBlock.getHeader()).thenReturn(btcBlock);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(storedBlock);
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(storedBlock);
 
         bridgeSupport.registerBtcCoinbaseTransaction(
             txWithoutWitness.bitcoinSerialize(),
@@ -6130,7 +6131,7 @@ class BridgeSupportTest {
         //Leaving no confirmation blocks
         int height = 5;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 5, height);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(new StoredBlock(registerHeader, BigInteger.ZERO, 0));
+        when(btcBlockStore.get(registerHeader.getHash())).thenReturn(new StoredBlock(registerHeader, BigInteger.ZERO, 0));
         bridgeSupport.registerBtcCoinbaseTransaction(
             txWithoutWitness.bitcoinSerialize(),
             registerHeader.getHash(),
@@ -7057,6 +7058,97 @@ class BridgeSupportTest {
         verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
         assertEquals(-4, result);
     }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("test the methods involved are keeping testnet consensus")
+    class BuildBlockThatKeepsTestnetConsensusTests {
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+        BtcBlockStoreWithCache btcBlockStoreWithCache;
+
+        BridgeSupport bridgeSupport;
+        FederationSupport federationSupport = mock(FederationSupport.class);
+        Block rskExecutionBlock = mock(Block.class);
+        Sha256Hash btcBlockHash = Sha256Hash.wrap("00000000e8e7b540df01a7067e020fd7e2026bf86289def2283a35120c1af379");
+
+        @BeforeEach
+        void setUp() {
+            long rskBlockNumber = 5_148_285;
+            when(rskExecutionBlock.getNumber()).thenReturn(rskBlockNumber);
+
+            Repository repository = createRepository();
+            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeTestnetConstants.getBtcParams(),
+                activationsAfterForks
+            );
+
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeTestnetConstants.getBtcParams(), 100, 100);
+            btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeTestnetConstants, bridgeStorageProvider, activationsAfterForks);
+
+            Federation activeFederation = P2shErpFederationBuilder.builder().build();
+            when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
+
+            bridgeSupport = BridgeSupportBuilder.builder()
+                .withBridgeConstants(bridgeTestnetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withExecutionBlock(rskExecutionBlock)
+                .withActivations(activationsAfterForks)
+                .withFederationSupport(federationSupport)
+                .build();
+        }
+
+        @Test
+        void getBtcTransactionConfirmations() throws BlockStoreException, IOException {
+            // act
+            int result = bridgeSupport.getBtcTransactionConfirmations(mock(Sha256Hash.class), btcBlockHash, mock(MerkleBranch.class)); // we dont reach the use of btcTxHash and merkleBranch in this situation
+
+            // assert
+            // checking the block is not in the storage
+            assertNull(btcBlockStoreWithCache.get(btcBlockHash));
+            // checking the method returns the expected code from the error thrown
+            // when block from cache and block from storage dont match
+            assertEquals(BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE, result);
+        }
+
+        @Test
+        void getBtcTransactionConfirmationsGetCost() throws BlockStoreException {
+            // arrange
+            Object[] args = new Object[4];
+            args[1] = btcBlockHash.getBytes();
+            args[3] = new Object[]{};
+
+            // recreating the chainHead as real btc block 2_817_200 so blockDepth is not 0
+            byte[] chainHeadRawHeader = HexUtils.stringHexToByteArray("0000642d6b8df2c8ae4a20e20a10ae3b34e485701b8ae7e80ede0828040000000000000063a17c3e5063da2f8f952e496beee729932d35f62c0765baaf12f32931f01c9b49354f66ecd410190f25f402");
+            BtcBlock chainHeadHeader = new BtcBlock(bridgeTestnetConstants.getBtcParams(), chainHeadRawHeader);
+            int chainHeadBlockNumber = 2_817_200;
+            BigInteger chainHeadChainWork = BigInteger.ONE;
+            StoredBlock chainHead = new StoredBlock(chainHeadHeader, chainHeadChainWork, chainHeadBlockNumber);
+            btcBlockStoreWithCache.setChainHead(chainHead);
+
+            // act
+            Long result = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
+
+            // assert
+            long BASIC_COST = 27_000;
+            long STEP_COST = 315;
+            long DOUBLE_HASH_COST = 144;
+            int blockDepth = chainHeadBlockNumber - 2_817_125;
+            int branchHashesSize = 0; // since branchHashesSize = args[3].length
+            Long expectedResult = BASIC_COST + blockDepth * STEP_COST + branchHashesSize * DOUBLE_HASH_COST;
+
+            // checking the block is not in the storage
+            assertNull(btcBlockStoreWithCache.get(btcBlockHash));
+            // check the result is different from BASIC_COST (result = BASIC_COST would break consensus)
+            assertTrue(result > BASIC_COST);
+            assertEquals(expectedResult, result);
+        }
+    }
+
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
