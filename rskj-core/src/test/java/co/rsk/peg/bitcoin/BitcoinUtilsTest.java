@@ -398,7 +398,6 @@ class BitcoinUtilsTest {
 
             // Act
             assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx));
-            assertThrows(IllegalStateException.class, btcTx::findWitnessCommitment);
         }
 
         @Test
@@ -417,7 +416,6 @@ class BitcoinUtilsTest {
 
             // Act
             assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx));
-            assertThrows(IllegalStateException.class, btcTx::findWitnessCommitment);
         }
 
         @Test
@@ -430,7 +428,6 @@ class BitcoinUtilsTest {
 
             // Assert
             assertFalse(witnessCommitment.isPresent());
-            assertNull(btcTx.findWitnessCommitment());
         }
 
         @Test
@@ -448,7 +445,6 @@ class BitcoinUtilsTest {
             // Assert
             assertTrue(witnessCommitmentFound.isPresent());
             assertEquals(witnessCommitment, witnessCommitmentFound.get());
-            assertEquals(witnessCommitment, btcTx.findWitnessCommitment());
         }
 
         @Test
@@ -468,7 +464,6 @@ class BitcoinUtilsTest {
             // Assert
             assertTrue(witnessCommitmentFound.isPresent());
             assertEquals(witnessCommitment3, witnessCommitmentFound.get());
-            assertEquals(witnessCommitment3, btcTx.findWitnessCommitment());
         }
 
         @Test
@@ -485,7 +480,6 @@ class BitcoinUtilsTest {
 
             // Assert
             assertFalse(witnessCommitment.isPresent());
-            assertEquals(fakeWitnessCommitment, btcTx.findWitnessCommitment()); // bitcoinj implementation detects it as a valid witness commitment
         }
 
         @Test
@@ -502,7 +496,6 @@ class BitcoinUtilsTest {
             // Assert
             assertTrue(witnessCommitment.isPresent());
             assertEquals(expectedWitnessCommitment, witnessCommitment.get());
-            assertEquals(expectedWitnessCommitment, btcTx.findWitnessCommitment());
         }
     }
 
@@ -530,6 +523,5 @@ class BitcoinUtilsTest {
 
         // Assert, should not find the commitment since the data length != 36 bytes
         assertFalse(obtainedWitnessCommitment.isPresent());
-        assertNull(btcTx.findWitnessCommitment());
     }
 }
