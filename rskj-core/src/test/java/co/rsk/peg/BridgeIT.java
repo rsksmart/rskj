@@ -30,7 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -48,7 +47,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
@@ -99,7 +97,7 @@ import co.rsk.util.HexUtils;
 @ExtendWith(MockitoExtension.class)
 // to avoid Junit5 unnecessary stub error due to some setup generalizations
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class BridgeTestIntegration {
+public class BridgeIT {
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeRegTestConstants;
 
@@ -110,10 +108,8 @@ public class BridgeTestIntegration {
     private static final String DATA = "80af2871";
     private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "Sender is not part of the active or retiring federation";
     private static ECKey fedECPrivateKey;
-    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
-        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
-        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    private static final List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        new String[]{"fa01", "fa02", "fa03"}, true
     );
 
     private TestSystemProperties config = new TestSystemProperties();
@@ -125,16 +121,16 @@ public class BridgeTestIntegration {
 
     @BeforeAll
      static void setUpBeforeClass() {
-        bridgeRegTestConstants = new BridgeRegTestConstants();
+        bridgeRegTestConstants = new BridgeRegTestConstants(fedKeys);
         networkParameters = bridgeRegTestConstants.getBtcParams();
-        BtcECKey fedBTCPrivateKey = REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
+        BtcECKey fedBTCPrivateKey = fedKeys.get(0);
         fedECPrivateKey = ECKey.fromPrivate(fedBTCPrivateKey.getPrivKey());
     }
 
     @BeforeEach
     void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
-        constants = Constants.regtest();
+        constants = Constants.regtestWithFederation(fedKeys);
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
@@ -512,8 +508,6 @@ public class BridgeTestIntegration {
         } catch (Exception ex) {
             assertTrue(ex.getMessage().contains(ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED));
         }
-
-        //track.commit();
     }
 
     @Test
@@ -971,7 +965,6 @@ public class BridgeTestIntegration {
             public void bitcoinSerializeToStream(OutputStream stream) throws IOException {
                 uint32ToByteStreamLE(getTransactionCount(), stream);
                 stream.write(new VarInt(Integer.MAX_VALUE).encode());
-                //stream.write(new VarInt(hashes.size()).encode());
                 for (Sha256Hash hash : hashes) {
                     stream.write(hash.getReversedBytes());
                 }
@@ -1356,7 +1349,7 @@ public class BridgeTestIntegration {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -1471,8 +1464,8 @@ public class BridgeTestIntegration {
             bridge.isBtcTxHashAlreadyProcessed(new Object[]{"notahash"});
             fail();
         } catch (VMException e) {
+            verify(bridgeSupportMock, never()).isBtcTxHashAlreadyProcessed(any());
         }
-        verify(bridgeSupportMock, never()).isBtcTxHashAlreadyProcessed(any());
     }
 
     @Test
@@ -1519,8 +1512,8 @@ public class BridgeTestIntegration {
             bridge.getBtcTxHashProcessedHeight(new Object[]{"notahash"});
             fail();
         } catch (VMException e) {
+            verify(bridgeSupportMock, never()).getBtcTxHashProcessedHeight(any());
         }
-        verify(bridgeSupportMock, never()).getBtcTxHashProcessedHeight(any());
     }
 
     @Test
@@ -1888,23 +1881,17 @@ public class BridgeTestIntegration {
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
-        assertTrue(Arrays.equals(new byte[]{10},
-                (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)}))
-                )[0]
-        ));
+        assertArrayEquals(new byte[]{10}, (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)}))
+        )[0]);
 
-        assertTrue(Arrays.equals(new byte[]{20},
-                (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(20)}))
-                )[0]
-        ));
+        assertArrayEquals(new byte[]{20}, (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(20)}))
+        )[0]);
 
-        assertTrue(Arrays.equals(new byte[]{1, 0},
-                (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(256)}))
-                )[0]
-        ));
+        assertArrayEquals(new byte[]{1, 0}, (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(256)}))
+        )[0]);
     }
 
     @Test
@@ -1955,17 +1942,13 @@ public class BridgeTestIntegration {
         );
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
-        assertTrue(Arrays.equals("10btc".getBytes(),
-                (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"}))
-                )[0]
-        ));
+        assertArrayEquals("10btc".getBytes(), (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"}))
+        )[0]);
 
-        assertTrue(Arrays.equals("82rsk".getBytes(),
-                (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
-                        bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(82), "rsk"}))
-                )[0]
-        ));
+        assertArrayEquals("82rsk".getBytes(), (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
+            bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(82), "rsk"}))
+        )[0]);
 
         assertArrayEquals(
             "123mst".getBytes(),
@@ -1976,7 +1959,7 @@ public class BridgeTestIntegration {
     }
 
     @Test
-    void createFederation() throws BridgeIllegalArgumentException {
+    void createFederation() {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
@@ -2094,7 +2077,7 @@ public class BridgeTestIntegration {
     }
 
     @Test
-    void commitFederation_ok() throws BridgeIllegalArgumentException {
+    void commitFederation_ok() {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
@@ -2113,7 +2096,7 @@ public class BridgeTestIntegration {
     }
 
     @Test
-    void commitFederation_wrongParameterType() throws BridgeIllegalArgumentException {
+    void commitFederation_wrongParameterType() {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(networkParameters),
                 bridgeRegTestConstants,
@@ -2130,7 +2113,7 @@ public class BridgeTestIntegration {
     }
 
     @Test
-    void rollbackFederation() throws BridgeIllegalArgumentException {
+    void rollbackFederation() {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
@@ -2309,7 +2292,7 @@ public class BridgeTestIntegration {
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         try {
-            bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{"i-am-an-address", BigInteger.valueOf(25L)}));
+            bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode("i-am-an-address", BigInteger.valueOf(25L)));
             fail();
         } catch (Exception e) {
             Throwable causeException = e.getCause();
@@ -2477,7 +2460,7 @@ public class BridgeTestIntegration {
     }
 
     @Test
-    void voteFeePerKb_wrongParameterType() throws BridgeIllegalArgumentException {
+    void voteFeePerKb_wrongParameterType() {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
@@ -2621,12 +2604,12 @@ public class BridgeTestIntegration {
 
     @Test
     void executeMethodWithAnyCallsAllowed_localCallTx() throws Exception {
-        executeAndCheckMethodWithAnyCallsAllowed(true);
+        executeAndCheckMethodWithAnyCallsAllowed();
     }
 
     @Test
     void executeMethodWithAnyCallsAllowed_nonLocalCallTx() throws Exception {
-        executeAndCheckMethodWithAnyCallsAllowed(false);
+        executeAndCheckMethodWithAnyCallsAllowed();
     }
 
     @Test
@@ -2639,9 +2622,7 @@ public class BridgeTestIntegration {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactoryMock, signatureCache);
 
-
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
         byte[][] arr = new byte[1][];
         arr[0] = new byte[]{};
@@ -2895,9 +2876,6 @@ public class BridgeTestIntegration {
 
     @Test
     void testCallFromContract_beforeOrchid() {
-//        GenesisConfig mockedConfig = spy(new GenesisConfig());
-//        when(mockedConfig.isRskip88()).thenReturn(false);
-//        config.setBlockchainConfig(mockedConfig);
         blockFactory = new BlockFactory(config.getActivationConfig());
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, signatureCache);
@@ -3156,7 +3134,9 @@ public class BridgeTestIntegration {
     void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
-        RskAddress sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getAddress());
+        byte[] privKeyBytes = fedKeys.get(0).getPrivKeyBytes();
+        RskAddress sender = new RskAddress(ECKey.fromPrivate(privKeyBytes).getAddress());
+
         Transaction txMock = mock(Transaction.class);
         when(txMock.getSender(any(SignatureCache.class))).thenReturn(sender);
 
@@ -3234,7 +3214,7 @@ public class BridgeTestIntegration {
         return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
 
-    private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
+    private void executeAndCheckMethodWithAnyCallsAllowed() throws Exception {
         Transaction tx = mock(Transaction.class);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
@@ -3337,7 +3317,7 @@ public class BridgeTestIntegration {
             );
         }
 
-        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));

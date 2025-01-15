@@ -304,7 +304,7 @@ public class Constants {
         );
     }
 
-    public static Constants regtestWithFederation(List<BtcECKey> genesisFederationPublicKeys) {
+    public static Constants regtestWithFederation(List<BtcECKey> federationPublicKeys) {
         return new Constants(
                 REGTEST_CHAIN_ID,
                 true,
@@ -313,7 +313,7 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                new BridgeRegTestConstants(genesisFederationPublicKeys),
+                new BridgeRegTestConstants(federationPublicKeys),
                 new BlockDifficulty(new BigInteger("550000000")),
                 1_000_000L
         );
