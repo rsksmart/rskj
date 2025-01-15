@@ -35,8 +35,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         federationConstants = FederationTestNetConstants.getInstance();
         lockingCapConstants = LockingCapTestNetConstants.getInstance();
 
-        btc2RskMinimumAcceptableConfirmations = 10;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
+        btc2RskMinimumAcceptableConfirmations = 5;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
