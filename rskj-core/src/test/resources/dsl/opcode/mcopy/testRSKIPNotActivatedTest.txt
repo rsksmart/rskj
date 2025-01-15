@@ -1,0 +1,111 @@
+comment
+
+// CONTRACT CODE
+
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
+
+import "hardhat/console.sol";
+
+contract TestMCopy {
+    constructor() {}
+
+    event OK();
+    event ERROR();
+    event LOG(bytes32 l);
+
+    function checkMCopy() external {
+        bytes32 expected = 0x0000000000000000000000000000000000000000000000000000000000000077;
+        bytes32 result = getCopiedValue();
+
+        if (result == expected) {
+            emit OK();
+        } else {
+            emit ERROR();
+        }
+    }
+
+    function getCopiedValue() public pure returns (bytes32 x) {
+        assembly {
+            mstore(0x20, 0x77)   // Store 0x77 at word 1 in memory
+            mcopy(0, 0x20, 0x20) // Use MCOPY to copy value at word 1 to word 0 in memory
+            x := mload(0)        // Returns the value at word 0
+        }
+    }
+
+}
+
+// DESCRIPTION
+
+This contract contains two functions: checkMCopy, and getCopiedValue.
+
+* checkMCopy simply checks the result of the memory copying against an expected value and:
+    - If returned value matches the expected one, then the OK event is emitted
+    - ERROR event is emitted otherwise.
+
+* getCopiedValue manage the memory by storing, copying and reading values as follows:
+    - First it stores a value to memory on word 1
+    - Then uses MCOPY to copy the value on word 1 to word 0
+    - Finally it returns the value stored on word 0
+
+// CONTRACT BYTECODE
+
+6080604052348015600e575f80fd5b506101548061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c806389448792146100385780638c2bcab914610056575b5f80fd5b610040610060565b60405161004d9190610105565b60405180910390f35b61005e610072565b005b5f60776020526020805f5e5f51905090565b5f60775f1b90505f610082610060565b90508181036100bc577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100e9565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b5050565b5f819050919050565b6100ff816100ed565b82525050565b5f6020820190506101185f8301846100f6565b9291505056fea26469706673582212206199acac4caca83f6a604881008d178a60fad43ca326fb08e555757e3a0161da64736f6c634300081a0033
+
+// CONTRACT CALL
+
+- checkMCopy()
+
+    8c2bcab9
+
+end
+
+# Create and fund new account
+account_new acc1 10000000
+
+# Create transaction to deploy TestMCopy contract
+transaction_build txTestMCopy
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b506101548061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c806389448792146100385780638c2bcab914610056575b5f80fd5b610040610060565b60405161004d9190610105565b60405180910390f35b61005e610072565b005b5f60776020526020805f5e5f51905090565b5f60775f1b90505f610082610060565b90508181036100bc577fd48fe2800bace8f5ca2450feacbd6efc681b1cd0115019bb49fa529b6171bf6760405160405180910390a16100e9565b7f1c9c433b57013295d61f5c5738f5e2cb1de70bb5ba5b2896edfa8efae345965e60405160405180910390a15b5050565b5f819050919050565b6100ff816100ed565b82525050565b5f6020820190506101185f8301846100f6565b9291505056fea26469706673582212206199acac4caca83f6a604881008d178a60fad43ca326fb08e555757e3a0161da64736f6c634300081a0033
+    gas 200000
+    build
+
+# Create block to hold txTestMCopy transaction
+block_build b01
+    parent g00
+    transactions txTestMCopy
+    build
+
+# Connect block
+block_connect b01
+
+# Check b01 is best block
+assert_best b01
+
+# Check txTestMCopy succeded
+assert_tx_success txTestMCopy
+
+# Create transaction to execute checkMCopy() method
+transaction_build txTestMCopyNotActivated
+    sender acc1
+    nonce 1
+    contract txTestMCopy
+    value 0
+    data 8c2bcab9
+    gas 30000
+    build
+
+# Create block to hold txTestMCopyNotActivated transaction
+block_build b02
+    parent b01
+    transactions txTestMCopyNotActivated
+    gasLimit 30000
+    build
+
+# Connect block
+block_connect b02
+
+# Check b02 is best block
+assert_best b02

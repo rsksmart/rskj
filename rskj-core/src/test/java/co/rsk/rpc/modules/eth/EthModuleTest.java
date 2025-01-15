@@ -606,6 +606,49 @@ class EthModuleTest {
     }
 
     @Test
+    void testwhenExecuteEstimateGasWithDataParameter_callExecutorWithData() {
+        CallArguments args = new CallArguments();
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        when(blockResult.getBlock()).thenReturn(block);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest")).thenReturn(blockResult);
+        Blockchain blockchain = mock(Blockchain.class);
+
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.isRevert()).thenReturn(true);
+        TransactionExecutor transactionExecutor = mock(TransactionExecutor.class);
+        when(transactionExecutor.getResult())
+                .thenReturn(executorResult);
+
+        ReversibleTransactionExecutor reversibleTransactionExecutor = mock(ReversibleTransactionExecutor.class);
+        when(reversibleTransactionExecutor.estimateGas(eq(block), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(transactionExecutor);
+
+        EthModule eth = new EthModule(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                blockchain,
+                null,
+                reversibleTransactionExecutor,
+                retriever,
+                mock(RepositoryLocator.class),
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            eth.estimateGas(callArgumentsParam, new BlockIdentifierParam("latest"));
+        });
+        assertThat(exception.getMessage(), Matchers.containsString("transaction reverted"));
+    }
+
+    @Test
     void whenExecuteEstimateGasWithInputParameter_callExecutorWithInput() {
         CallArguments args = new CallArguments();
         args.setInput(TEST_DATA);

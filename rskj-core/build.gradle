@@ -1,9 +1,158 @@
 plugins {
     id 'application'
+    id 'checkstyle'
+    id "com.diffplug.spotless" version "6.13.0"
 }
 
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
+
+import java.nio.file.Paths
+
+// Define static timestamp
+def staticTimestamp = '2024-10-31T10:24:00'
+ext.timestamp = staticTimestamp
+
+def filteredFiles = getFilteredFiles()
+
+checkstyle {
+    toolVersion = '8.45'
+    configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
+}
+
+spotless {
+    enforceCheck false
+    java {
+        googleJavaFormat()
+        indentWithTabs(2)
+        trimTrailingWhitespace()
+        endWithNewline()
+        target filteredFiles
+    }
+}
+
+def getFilteredFiles() {
+    def timestamp = ext.timestamp
+
+    def commandLog = [
+            'git', 'log', '--since=' + timestamp, '--name-only', '--pretty=format:', '--abbrev-commit'
+    ]
+    def commandDiff = [
+            'git', 'diff', '--name-only'
+    ]
+    def commandStaged = [
+            'git', 'diff', '--cached', '--name-only'
+    ]
+
+    def outputLog = new ByteArrayOutputStream()
+    def outputDiff = new ByteArrayOutputStream()
+    def outputStaged = new ByteArrayOutputStream()
+
+    exec {
+        commandLine commandLog
+        standardOutput = outputLog
+        errorOutput = outputLog
+        ignoreExitValue = true
+    }
+
+    exec {
+        commandLine commandDiff
+        standardOutput = outputDiff
+        errorOutput = outputDiff
+        ignoreExitValue = true
+    }
+
+    exec {
+        commandLine commandStaged
+        standardOutput = outputStaged
+        errorOutput = outputStaged
+        ignoreExitValue = true
+    }
+
+    def committedFiles = outputLog.toString().trim().split('\n').toList().unique()
+    def uncommittedFiles = outputDiff.toString().trim().split('\n').toList().unique()
+    def stagedFiles = outputStaged.toString().trim().split('\n').toList().unique()
+    def allFiles = committedFiles + uncommittedFiles + stagedFiles
+
+    allFiles = allFiles.unique().findAll { file -> file }
+
+    def projectRoot = project.projectDir.toPath().toAbsolutePath()
+
+    allFiles = allFiles.findAll { file ->
+        file.endsWith('.java')
+    }.collect { file ->
+        def relativePath = Paths.get(file).subpath(1, Paths.get(file).getNameCount()) // Adjust the subpath as necessary
+        def absolutePath = projectRoot.resolve(relativePath).toFile()
+
+        return absolutePath.exists() ? absolutePath : null
+    }.findAll { it != null }
+
+    return allFiles
+}
+
+
+def configureCheckstyleTask(Checkstyle task, String sourceDir) {
+    def filteredFilesCheckstyle = getFilteredFilesForCheckstyle(sourceDir)
+
+   if (!filteredFilesCheckstyle.isEmpty()) {
+        task.source = project.files(filteredFilesCheckstyle)
+    } else {
+        println "No files to assign to Checkstyle for ${sourceDir}. Skipping task."
+        task.enabled = false
+    }
+
+    task.classpath = project.files(
+            sourceSets.main.output.classesDirs,
+            sourceSets.main.output.resourcesDir
+    )
+    task.reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    task.onlyIf {
+        !filteredFilesCheckstyle.isEmpty()
+    }
+}
+
+def getFilteredFilesForCheckstyle(String sourceDir) {
+    def files = getFilteredFiles()
+    return files.findAll { file ->
+        def filePath = file.toPath().normalize()
+        def isJavaFile = filePath.toString().endsWith('.java')
+        def containsSourceSegment = filePath.toString().contains(sourceDir)
+
+        isJavaFile && containsSourceSegment
+    }
+}
+
+
+// Configure each Checkstyle task
+tasks.withType(Checkstyle).configureEach { Checkstyle task ->
+    def sourceDirMapping = [
+            'checkstyleMain': 'src/main/java',
+            'checkstyleTest': 'src/test/java',
+            'checkstyleIntegrationTest': 'src/integrationTest/java',
+            'checkstyleJmh': 'src/jmh/java'
+    ]
+
+    sourceDirMapping.each { taskName, sourceDir ->
+        if (task.name == taskName) {
+            configureCheckstyleTask(task, sourceDir)
+        }
+    }
+
+    if (task.name in ['checkstyleJmh', 'checkstyleIntegrationTest']) {
+        task.doFirst {
+            def relevantSourceDir = task.name == 'checkstyleJmh' ? 'src/jmh/java' : 'src/integrationTest/java'
+            def checkstyleFiles = getFilteredFilesForCheckstyle(relevantSourceDir)
+
+            if (!checkstyleFiles.isEmpty()) {
+                task.source = project.files(checkstyleFiles)
+            }
+        }
+    }
+    task.dependsOn processResources
+}
 
 configurations {
     jmh
@@ -81,6 +230,7 @@ tasks.withType(Javadoc) {
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
     maven {
         url "https://deps.rsklabs.io"
     }
@@ -123,7 +273,7 @@ ext {
             jaxwsRtVer             : '2.3.5',
             picocliVer             : '4.6.3',
 
-            bitcoinjThinVer: '0.14.4-rsk-16-SNAPSHOT',
+            bitcoinjThinVer: '0.14.4-rsk-17-SNAPSHOT',
             rskjNativeVer: '1.3.0',
     ]
 
@@ -252,8 +402,6 @@ javadoc {
     options.encoding = "UTF-8"
 }
 
-def generatedResources = "$buildDir/generated-resources"
-
 publishing {
     publications {
         rskj(MavenPublication) {
@@ -275,8 +423,9 @@ task generateResources {
     def buildInfoFile = 'build-info.properties'
 
     doLast {
-        mkdir generatedResources
-        def generated = new File(generatedResources as String, buildInfoFile)
+        def generatedDir = new File(buildDir, 'generatedResources')
+        mkdir(generatedDir)
+        def generated = new File(generatedDir, buildInfoFile)
         def commitHash = gitCommitHash()
         def currentBranch = gitCurrentBranch()
         generated.text = """
@@ -297,7 +446,7 @@ task javadocJar(type: Jar) {
 }
 
 jar {
-    dependsOn 'generateResources'
+    dependsOn generateResources
     def commitHash = gitCommitHash()
     def currentBranch = gitCurrentBranch()
     manifest {
@@ -306,7 +455,7 @@ jar {
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
-    from generatedResources
+    from new File(buildDir, 'generatedResources') // Reference the generated resources directory
 }
 
 task generatePom(dependsOn: jar) {
@@ -416,4 +565,16 @@ static def amendPathIfNeeded(details) {
         def newPath = originalFile.parentFile.name + "/" + jarName + "_" + originalFile.name
         details.path = newPath
     }
+}
+
+task checkstyleAll {
+    group = 'Verification'
+    description = 'Run all Checkstyle checks'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest'
+}
+
+task spotlessAll {
+    group = 'Verification'
+    description = 'Run all Spotless checks'
+    dependsOn 'spotlessJavaCheck'
 }

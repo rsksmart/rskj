@@ -46,7 +46,7 @@ jobs:
 
       - name: Build
         run: |
-          ./gradlew --no-daemon --stacktrace build -x test
+          ./gradlew --no-daemon --stacktrace build -x test -x checkstyleMain -x checkstyleTest -x checkstyleJmh -x checkstyleIntegrationTest -x spotlessApply -x spotlessJavaCheck
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 #v4.4.3
@@ -107,34 +107,22 @@ jobs:
           GH_PR_HEAD_REF: ${{ github.head_ref }}
           GH_REF: ${{ github.ref }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           if [ "$GH_EVENT" = "pull_request" ]; then
-            if [ "$IS_FORK" != "true" ]; then
-              ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
+            if [ "$SONAR_TOKEN" != "" ]; then
+              ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
                 -Dsonar.pullrequest.base="$GH_PR_BASE_REF" \
                 -Dsonar.pullrequest.branch="$GH_PR_HEAD_REF" \
                 -Dsonar.pullrequest.key="$GH_PR_NUMBER" \
-                -Dsonar.organization=rsksmart \
-                -Dsonar.projectKey=rskj \
-                -Dsonar.host.url="https://sonarcloud.io" \
-                -Dsonar.junit.reportPaths=rskj-core/build/test-results/ \
-                -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
                 -Dsonar.token="$SONAR_TOKEN"
             else
-              echo "Skipping SonarQube analysis for pull request from a forked repo."
+              echo "Skipping SonarQube analysis."
             fi
           else
-            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonarqube --no-daemon -x build -x test \
+            ./gradlew -Dorg.gradle.jvmargs=-Xmx5g sonar --no-daemon -x build -x test \
               -Dsonar.branch.name="$GH_REF" \
-              -Dsonar.organization=rsksmart \
-              -Dsonar.projectKey=rskj \
-              -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.junit.reportPaths=rskj-core/build/test-results/ \
-              -Dsonar.coverage.jacoco.xmlReportPaths=rskj-core/build/reports/jacoco/test/jacocoTestReport.xml \
               -Dsonar.token="$SONAR_TOKEN"
           fi
-
 
   mining-tests:
     needs: build

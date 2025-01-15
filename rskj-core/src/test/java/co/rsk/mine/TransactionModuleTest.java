@@ -35,6 +35,9 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
@@ -82,6 +85,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 
@@ -650,7 +654,9 @@ class TransactionModuleTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule debugModule = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
 
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(

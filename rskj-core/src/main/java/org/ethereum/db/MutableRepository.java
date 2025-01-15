@@ -25,19 +25,29 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.*;
+import co.rsk.trie.IterationElement;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
@@ -47,21 +57,36 @@ public class MutableRepository implements Repository {
 
     private final TrieKeyMapper trieKeyMapper;
     private final MutableTrie mutableTrie;
+    private MutableTrie transientTrie;
     private final IReadWrittenKeysTracker tracker;
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
-        this(new MutableTrieImpl(trieStore, trie));
+        this(new MutableTrieImpl(trieStore, trie), aInMemoryMutableTrie());
     }
 
     public MutableRepository(MutableTrie mutableTrie) {
-        this.trieKeyMapper = new TrieKeyMapper();
-        this.mutableTrie = mutableTrie;
-        this.tracker = new DummyReadWrittenKeysTracker();
+       this(mutableTrie, aInMemoryMutableTrie());
     }
 
     public MutableRepository(MutableTrie mutableTrie, IReadWrittenKeysTracker tracker) {
+        this(mutableTrie, aInMemoryMutableTrie(), tracker);
+    }
+
+    private static MutableTrieImpl aInMemoryMutableTrie() {
+        return new MutableTrieImpl(new TrieStoreImpl(new HashMapDB()), new Trie());
+    }
+
+    public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
+        this.transientTrie = transientTrie;
+        this.tracker = new DummyReadWrittenKeysTracker();
+    }
+
+    public MutableRepository(MutableTrie mutableTrie, MutableTrie transientTrie, IReadWrittenKeysTracker tracker) {
+        this.trieKeyMapper = new TrieKeyMapper();
+        this.mutableTrie = mutableTrie;
+        this.transientTrie = transientTrie;
         this.tracker = tracker;
     }
 
@@ -327,7 +352,7 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie), tracker);
+        return new MutableRepository(new MutableTrieCache(mutableTrie), new MutableTrieCache(transientTrie), tracker);
     }
 
     @Override
@@ -338,11 +363,13 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void commit() {
         mutableTrie.commit();
+        transientTrie.commit();
     }
 
     @Override
     public synchronized void rollback() {
         mutableTrie.rollback();
+        transientTrie.rollback();
     }
 
     @Override
@@ -405,5 +432,48 @@ public class MutableRepository implements Repository {
     private Optional<Keccak256> internalGetValueHash(byte[] key) {
         tracker.addNewReadKey(new ByteArrayWrapper(key));
         return mutableTrie.getValueHash(key);
+    }
+
+    @Override
+    public void addTransientStorageRow(RskAddress addr, DataWord key, DataWord value) {
+        addTransientStorageBytes(addr, key, value.getByteArrayForStorage());
+    }
+
+    @Override
+    public void addTransientStorageBytes(RskAddress addr, DataWord key, byte[] value) {
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+
+        // Special case: if the value is an empty vector, we pass "null" which commands the trie to remove the item.
+        // Note that if the call comes from addTransientStorageRow(), this method will already have replaced 0 by null, so the
+        // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
+        // also occur in precompiled contracts that store data directly using this method.
+        if (value == null || value.length == 0) {
+            transientTrie.put(triekey, null);
+        } else {
+            transientTrie.put(triekey, value);
+        }
+    }
+
+    @Override
+    public void clearTransientStorage() {
+        this.transientTrie = aInMemoryMutableTrie();
+    }
+
+    @Nullable
+    @Override
+    public DataWord getTransientStorageValue(RskAddress addr, DataWord key) {
+        byte[] value = getTransientStorageBytes(addr, key);
+        if (value == null) {
+            return null;
+        }
+
+        return DataWord.valueOf(value);
+    }
+
+    @Nullable
+    @Override
+    public byte[] getTransientStorageBytes(RskAddress addr, DataWord key) {
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        return transientTrie.get(triekey);
     }
 }
