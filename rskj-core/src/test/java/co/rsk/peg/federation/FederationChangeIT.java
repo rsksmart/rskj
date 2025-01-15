@@ -23,6 +23,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
+import co.rsk.peg.BridgeSupportTestUtil;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -156,25 +157,24 @@ class FederationChangeIT {
             BRIDGE_CONSTANTS.getBtcParams(), activations);
        
         // Act
-        // Commit pending federation using the new federation
-        var newFederation = commitPendingFederation(NEW_FEDERATION_KEYS, activations);
+        // Create pending federation using the new federation keys
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
         // Since Lovell is activated we will commit the proposed federation
         commitProposedFederation(activations);
         // Move blockchain until the activation phase
         activateNewFederation(activations);
 
         // Assert
-        assertUTXOsMovedFromNewToOldFederation(originalUTXOs, activations);
-        assertNewFederationIsActive(newFederation.getAddress(), originalFederation.getAddress());
-        assertNoMigrationHasStarted();
+        assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs, activations);
+        assertNewAndOldFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+        assertFundsWereNotMigrated();
     }
   
     /* Change federation related methods */
 
     private void setUpFederationChange(ActivationConfig.ForBlock activations) throws Exception {
-        repository = new MutableRepository(
-            new MutableTrieCache(
-                new MutableTrieImpl(null, new Trie())));
+        repository = BridgeSupportTestUtil.createRepository();
         repository.addBalance(
             PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMaxRbtc()));
 
@@ -221,7 +221,7 @@ class FederationChangeIT {
             signatureCache);
 
         feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
     }
 
     private Federation createOriginalFederation(
@@ -259,7 +259,6 @@ class FederationChangeIT {
         }
 
         // Set original federation
-        assertNotNull(originalFederation);
         federationStorageProvider.setNewFederation(originalFederation);
 
         // Set new UTXOs
@@ -270,10 +269,10 @@ class FederationChangeIT {
          return originalFederation;
     }  
 
-    private Federation commitPendingFederation(
+    private Federation createPendingFederation(
           List<Triple<BtcECKey, ECKey, ECKey>> federationKeys,
           ActivationConfig.ForBlock activations) {
-        // Create Pending federation (doing this to avoid voting the pending Federation)
+        // Create pending federation (doing this to avoid voting the pending Federation)
         var newFederationMembers = federationKeys.stream()
             .map(newFederatorKey ->
                 new FederationMember(
@@ -282,22 +281,27 @@ class FederationChangeIT {
                     newFederatorKey.getRight()))
             .toList();
         var pendingFederation = new PendingFederation(newFederationMembers);
+
         // Set pending federation
         federationStorageProvider.setPendingFederation(pendingFederation);
         federationStorageProvider.save(BRIDGE_CONSTANTS.getBtcParams(), activations);
 
+        // Return what will be the new federation
+        return pendingFederation.buildFederation(
+            Instant.EPOCH, 0L, BRIDGE_CONSTANTS.getFederationConstants(), activations);
+    }
+
+    private void commitPendingFederation() {
+        // Pending Federation should exist
+        var pendingFederation = federationStorageProvider.getPendingFederation();
+        assertNotNull(pendingFederation);
+    
         // Proceed with the powpeg change
         federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
 
-        // Since the proposed federation is commited, it should be null in storage
-        assertNull(federationStorageProvider.getPendingFederation());
-
-        // return the new federation
-        return pendingFederation.buildFederation(
-            Instant.EPOCH,
-            0,
-            BRIDGE_CONSTANTS.getFederationConstants(),
-            activations);
+        // Since the proposed federation is committed, it should be null in storage
+        pendingFederation = federationStorageProvider.getPendingFederation();
+        assertNull(pendingFederation);
     }
 
     private void commitProposedFederation(ActivationConfig.ForBlock activations) {
@@ -310,7 +314,7 @@ class FederationChangeIT {
         // we will commit directly
         federationSupport.commitProposedFederation();
     
-        // Since the proposed federation is commited, it should be null in storage
+        // Since the proposed federation is committed, it should be null in storage
         proposedFederation = 
             federationStorageProvider.getProposedFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations);
         assertTrue(proposedFederation.isEmpty());
@@ -320,8 +324,10 @@ class FederationChangeIT {
         // Move the required blocks ahead for the new powpeg to become active
         var blockNumber = 
             initialBlock.getNumber() + BRIDGE_CONSTANTS.getFederationConstants().getFederationActivationAge(activations);
-        Block activationBlock = mock(Block.class);
-        when(activationBlock.getNumber()).thenReturn(blockNumber);
+        var initialBlockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
+            .build();
+        var activationBlock = Block.createBlockFromHeader(initialBlockHeader, true);
 
         // Now the new bridgeSupport points to the new block where the new federation
         // is considered to be active
@@ -343,7 +349,6 @@ class FederationChangeIT {
             .withActivations(activations)
             .withBridgeConstants(BRIDGE_CONSTANTS)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
-            .withPeginInstructionsProvider(new PeginInstructionsProvider())
             .withFederationSupport(fedSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .withLockingCapSupport(lockingCapSupport)
@@ -373,16 +378,16 @@ class FederationChangeIT {
 
     private List<UTXO> createRandomUTXOs(Address owner) {
         Script outputScript = ScriptBuilder.createOutputScript(owner);
-        List<UTXO> result = new ArrayList<>();
+        List<UTXO> utxos = new ArrayList<>();
 
         int howMany = getRandomInt(50, 500);
         for (int i = 1; i <= howMany; i++) {
             Coin randomValue = Coin.valueOf(getRandomInt(10_000, 1_000_000_000));
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
-            result.add(new UTXO(utxoHash, 0, randomValue, 0, false, outputScript));
+            utxos.add(new UTXO(utxoHash, 0, randomValue, 0, false, outputScript));
         }
 
-        return result;
+        return utxos;
     }
     
     private int getRandomInt(int min, int max) {
@@ -391,11 +396,11 @@ class FederationChangeIT {
     
     /* Assert federation change related methods */
 
-    private void assertUTXOsMovedFromNewToOldFederation(List<UTXO> originalUTXOs, ActivationConfig.ForBlock activations) {
-        // Assert old federation exists in storage and matches
+    private void assertUTXOsReferenceMovedFromNewToOldFederation(List<UTXO> originalUTXOs, ActivationConfig.ForBlock activations) {
+        // Assert old federation exists in storage
         assertNotNull(
             federationStorageProvider.getOldFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations));
-        // Assert new federation exists in storage and matches
+        // Assert new federation exists in storage
         assertNotNull(
             federationStorageProvider.getNewFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations));
         // Assert old federation holds the original utxos
@@ -407,13 +412,14 @@ class FederationChangeIT {
             .isEmpty());
     }
 
-    private void assertNewFederationIsActive(Address newFederationAddress, Address oldFederationAddress) {
+    private void assertNewAndOldFederationsHaveExpectedAddress(
+          Address expectedNewFederationAddress, Address expectedOldFederationAddress) {
         // New active and retiring federation
-        assertEquals(newFederationAddress, bridgeSupport.getActiveFederationAddress());
-        assertEquals(oldFederationAddress, bridgeSupport.getRetiringFederationAddress());
+        assertEquals(expectedNewFederationAddress, bridgeSupport.getActiveFederationAddress());
+        assertEquals(expectedOldFederationAddress, bridgeSupport.getRetiringFederationAddress());
     }
     
-    private void assertNoMigrationHasStarted() throws Exception {
+    private void assertFundsWereNotMigrated() throws Exception {
         // Pegouts waiting for confirmations should be empty
         assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
     }
