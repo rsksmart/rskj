@@ -23,21 +23,14 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 public class FederationStorageProviderImpl implements FederationStorageProvider {
     private final StorageAccessor bridgeStorageAccessor;
     private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
-
+    private final ValueTracker<Federation> oldFederationTracker = new ValueTracker<>();
+    private final ValueTracker<PendingFederation> pendingFederationTracker = new ValueTracker<>();
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
     private Federation newFederation;
-    private Federation oldFederation;
-    private boolean shouldSaveOldFederation = false;
-
-    private PendingFederation pendingFederation;
-    private boolean shouldSavePendingFederation = false;
-
     private ABICallElection federationElection;
-
     private Long activeFederationCreationBlockHeight;
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
-
     private Script lastRetiredFederationP2SHScript;
 
     public FederationStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
@@ -146,13 +139,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Override
     public Federation getOldFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
-        if (oldFederation != null || shouldSaveOldFederation) {
-            return oldFederation;
+        if (oldFederationTracker.isPresent()) {
+            return oldFederationTracker.get();
         }
 
         Optional<Integer> storageVersion = getStorageVersion(OLD_FEDERATION_FORMAT_VERSION.getKey());
 
-        oldFederation = bridgeStorageAccessor.getFromRepository(
+        Federation oldFederation = bridgeStorageAccessor.getFromRepository(
             OLD_FEDERATION_KEY.getKey(),
             data -> {
                 if (data == null) {
@@ -166,24 +159,24 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
             }
         );
 
-        return oldFederation;
+        oldFederationTracker.set(oldFederation);
+        return oldFederationTracker.get();
     }
 
     @Override
     public void setOldFederation(Federation federation) {
-        shouldSaveOldFederation = true;
-        oldFederation = federation;
+        oldFederationTracker.setNew(federation);
     }
 
     @Override
     public PendingFederation getPendingFederation() {
-        if (pendingFederation != null || shouldSavePendingFederation) {
-            return pendingFederation;
+        if (pendingFederationTracker.isPresent()) {
+            return pendingFederationTracker.get();
         }
 
         Optional<Integer> storageVersion = getStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey());
 
-        pendingFederation =
+        PendingFederation pendingFederation =
             bridgeStorageAccessor.getFromRepository(PENDING_FEDERATION_KEY.getKey(),
                 data -> {
                     if (data == null) {
@@ -197,13 +190,13 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
                 }
             );
 
-        return pendingFederation;
+        pendingFederationTracker.set(pendingFederation);
+        return pendingFederationTracker.get();
     }
 
     @Override
     public void setPendingFederation(PendingFederation federation) {
-        shouldSavePendingFederation = true;
-        pendingFederation = federation;
+        pendingFederationTracker.setNew(federation);
     }
 
     @Override
@@ -329,10 +322,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private void saveOldFederation(ActivationConfig.ForBlock activations) {
-        if (!shouldSaveOldFederation) {
+        if (!oldFederationTracker.isModified()) {
             return;
         }
 
+        Federation oldFederation = oldFederationTracker.get();
         if (!activations.isActive(RSKIP123)) {
             bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_KEY.getKey(), oldFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
             return;
@@ -344,16 +338,16 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     private int getOldFederationFormatVersion() {
-        if (oldFederation == null) {
+        if (oldFederationTracker.isNull()) {
             // assume it is a standard federation to keep backwards compatibility
             return STANDARD_MULTISIG_FEDERATION.getFormatVersion();
         }
 
-        return oldFederation.getFormatVersion();
+        return oldFederationTracker.get().getFormatVersion();
     }
 
     private void savePendingFederation(ActivationConfig.ForBlock activations) {
-        if (!shouldSavePendingFederation) {
+        if (!pendingFederationTracker.isModified()) {
             return;
         }
 
@@ -369,11 +363,11 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     @Nullable
     private byte[] serializePendingFederation(ActivationConfig.ForBlock activations) {
-        if (pendingFederation == null) {
+        if (pendingFederationTracker.isNull()) {
             return null;
         }
 
-        return pendingFederation.serialize(activations);
+        return pendingFederationTracker.get().serialize(activations);
     }
 
     private void saveFederationFormatVersion(DataWord versionKey, Integer version) {
