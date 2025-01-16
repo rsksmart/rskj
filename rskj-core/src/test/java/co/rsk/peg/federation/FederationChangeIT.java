@@ -2,29 +2,47 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.script.ScriptParser;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportTestUtil;
 import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.PegoutsWaitingForConfirmations;
+import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
@@ -41,16 +59,21 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
@@ -133,7 +156,7 @@ class FederationChangeIT {
     private BtcBlockStore btcBlockStore;
     private BridgeEventLogger bridgeEventLogger;
     private FeePerKbSupport feePerKbSupport;
-    private Block initialBlock;
+    private Block currentBlock;
     private StorageAccessor bridgeStorageAccessor;
     private FederationStorageProvider federationStorageProvider;
     private FederationSupportImpl federationSupport;
@@ -143,6 +166,7 @@ class FederationChangeIT {
     @Test
     void whenAllActivationsArePresentAndFederationChanges_shouldCreateCommitAndActiveNewFed() throws Exception {
         // Arrange
+   
         var activations = ActivationConfigsForTest.all().forBlock(0);
         setUpFederationChange(activations);
         // Create a default original federation using the list of UTXOs
@@ -152,6 +176,7 @@ class FederationChangeIT {
             BRIDGE_CONSTANTS.getBtcParams(), activations);
        
         // Act
+   
         // Create pending federation using the new federation keys
         var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
         commitPendingFederation();
@@ -161,9 +186,54 @@ class FederationChangeIT {
         activateNewFederation(activations);
 
         // Assert
+   
         assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs, activations);
         assertNewAndOldFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
-        assertFundsWereNotMigrated();
+        assertMigrationHasNotStarted();
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndFederationChanges_shouldMigrateAllFunds() throws Exception {
+        // Arrange
+    
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUpFederationChange(activations);
+        // Create a default original federation using the list of UTXOs
+        var originalFederation = createOriginalFederation(
+            FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act & Assert
+    
+        // Create pending federation using the new federation keys
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        // Since Lovell is activated we will commit the proposed federation
+        commitProposedFederation(activations);
+        // Move blockchain until the activation phase
+        activateNewFederation(activations);
+
+        assertNewAndOldFederationsHaveExpectedAddress(
+            newFederation.getAddress(), originalFederation.getAddress());
+        assertMigrationHasNotStarted();
+
+        // Move blockchain until the migration phase
+        activateMigration(activations);
+        // Migrate
+        migrateUTXOs();
+
+        assertNewAndOldFederationsHaveExpectedAddress(
+            newFederation.getAddress(), originalFederation.getAddress());
+        assertMigrationHasStarted();
+        verifySigHashes(activations);
+        verifyPegoutTransactionCreatedEventWasEmitted(activations);
+        verifyPegouts(activations);
+        
+        // Move blockchain until the end of the migration phase
+        endMigration(activations);
+
+        assertMigrationHasEnded(newFederation);
+        assertLastRetiredFederationP2SHMatchesWithOriginalFederation(
+            FederationType.P2SH_ERP, originalFederation, activations);
     }
   
     /* Change federation related methods */
@@ -192,20 +262,21 @@ class FederationChangeIT {
         addNewBtcBlockOnTipOfChain(btcBlockStore);
         repository.save();
 
-        bridgeEventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, new ArrayList<>());
+        var bridgeEventLoggerImpl = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, activations, new ArrayList<>());
+        bridgeEventLogger = spy(bridgeEventLoggerImpl);
 
         bridgeStorageAccessor = new InMemoryStorage();
 
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
-        var initialBlockNumber = 0L;
-        var initialBlockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(initialBlockNumber)
+        var blockNumber = 0L;
+        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
             .build();
-        initialBlock = Block.createBlockFromHeader(initialBlockHeader, true);
+        currentBlock = Block.createBlockFromHeader(blockHeader, true);
 
         federationSupport = new FederationSupportImpl(
-            BRIDGE_CONSTANTS.getFederationConstants(), federationStorageProvider, initialBlock, activations);
+            BRIDGE_CONSTANTS.getFederationConstants(), federationStorageProvider, currentBlock, activations);
 
         var signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         var lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
@@ -318,17 +389,58 @@ class FederationChangeIT {
     private void activateNewFederation(ActivationConfig.ForBlock activations) {
         // Move the required blocks ahead for the new powpeg to become active
         var blockNumber = 
-            initialBlock.getNumber() + BRIDGE_CONSTANTS.getFederationConstants().getFederationActivationAge(activations);
-        var initialBlockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            currentBlock.getNumber() + BRIDGE_CONSTANTS.getFederationConstants().getFederationActivationAge(activations);
+        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
             .setNumber(blockNumber)
             .build();
-        var activationBlock = Block.createBlockFromHeader(initialBlockHeader, true);
+        currentBlock = Block.createBlockFromHeader(blockHeader, true);
 
         // Now the new bridgeSupport points to the new block where the new federation
         // is considered to be active
-        bridgeSupport = getBridgeSupportFromExecutionBlock(activationBlock, activations);
+        bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock, activations);
     }
-    
+
+    private void activateMigration(ActivationConfig.ForBlock activations) {
+        // Move the required blocks ahead for the new federation to start migrating,
+        // adding 1 as the migration is exclusive
+        var blockNumber = 
+            currentBlock.getNumber() + BRIDGE_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationBegin() + 1L;
+        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
+            .build();
+        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+
+        bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock, activations);
+    }
+
+    private void endMigration(ActivationConfig.ForBlock activations) throws Exception {
+        // Move the required blocks ahead for the new federation to finish migrating,
+        // adding 1 as the migration is exclusive
+        var blockNumber = 
+            currentBlock.getNumber() + BRIDGE_CONSTANTS.getFederationConstants().getFundsMigrationAgeSinceActivationEnd(activations) + 1L;
+        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
+            .build();
+        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+
+        bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock, activations);
+
+        // The first update collections after the migration finished should get rid of the retiring powpeg
+        var updateCollectionsTx = buildUpdateCollectionsTx();
+        bridgeSupport.updateCollections(updateCollectionsTx);
+        bridgeSupport.save();
+    }
+
+    private void migrateUTXOs() throws Exception {
+        // Migrate while there are still utxos to migrate
+        var remainingUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
+        while (!remainingUTXOs.isEmpty()) {
+            var updateCollectionsTx = buildUpdateCollectionsTx();
+            bridgeSupport.updateCollections(updateCollectionsTx);
+            bridgeSupport.save();
+        }
+    }
+
     private BridgeSupport getBridgeSupportFromExecutionBlock(Block executionBlock, ActivationConfig.ForBlock activations) {
         FederationSupport fedSupport = FederationSupportBuilder.builder()
             .withFederationConstants(BRIDGE_CONSTANTS.getFederationConstants())
@@ -388,10 +500,36 @@ class FederationChangeIT {
     private int getRandomInt(int min, int max) {
         return TestUtils.generateInt(FederationChangeIT.class.toString() + min, max - min + 1) + min;
     }
-    
-    /* Assert federation change related methods */
 
-    private void assertUTXOsReferenceMovedFromNewToOldFederation(List<UTXO> originalUTXOs, ActivationConfig.ForBlock activations) {
+    private Script getFederationDefaultRedeemScript(Federation federation) {
+        return federation instanceof ErpFederation ?
+            ((ErpFederation) federation).getDefaultRedeemScript() :
+            federation.getRedeemScript();
+    }
+   
+    private static Script getFederationDefaultP2SHScript(Federation federation) {
+        return federation instanceof ErpFederation ?
+            ((ErpFederation) federation).getDefaultP2SHScript() :
+            federation.getP2SHScript();
+    }
+
+    private Transaction buildUpdateCollectionsTx() {
+        var nonce = 3;
+        var value = 0;
+        var gasPrice = BigInteger.valueOf(0);
+        var gasLimit = BigInteger.valueOf(100000);
+        var rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                Bridge.UPDATE_COLLECTIONS, Constants.MAINNET_CHAIN_ID);
+        var randomKey = BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32"));
+        rskTx.sign(randomKey.getPrivKeyBytes());
+        return rskTx;
+    }
+    
+    
+    /* Assert and verify federation change related methods */
+
+    private void assertUTXOsReferenceMovedFromNewToOldFederation(List<UTXO> utxos, ActivationConfig.ForBlock activations) {
         // Assert old federation exists in storage
         assertNotNull(
             federationStorageProvider.getOldFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations));
@@ -400,7 +538,7 @@ class FederationChangeIT {
             federationStorageProvider.getNewFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations));
         // Assert old federation holds the original utxos
         List<UTXO> utxosToMigrate = federationStorageProvider.getOldFederationBtcUTXOs();
-        assertTrue(originalUTXOs.stream().allMatch(utxosToMigrate::contains));
+        assertTrue(utxos.stream().allMatch(utxosToMigrate::contains));
         // Assert the new federation does not have any utxos yet
         assertTrue(federationStorageProvider
             .getNewFederationBtcUTXOs(BRIDGE_CONSTANTS.getBtcParams(), activations)
@@ -414,8 +552,130 @@ class FederationChangeIT {
         assertEquals(expectedOldFederationAddress, bridgeSupport.getRetiringFederationAddress());
     }
     
-    private void assertFundsWereNotMigrated() throws Exception {
+    private void assertMigrationHasNotStarted() throws Exception {
         // Pegouts waiting for confirmations should be empty
         assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
+    }
+     
+    private void assertMigrationHasStarted() throws Exception {
+        // Pegouts waiting for confirmations should not be empty
+        assertFalse(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
+    }
+
+    private void assertMigrationHasEnded(Federation newFederation) {
+        // New active federation still there, retiring federation no longer there
+        assertEquals(newFederation, bridgeSupport.getActiveFederation());
+        assertNull(bridgeSupport.getRetiringFederationAddress());
+    }
+    
+    private void assertLastRetiredFederationP2SHMatchesWithOriginalFederation(FederationType federationType, Federation originalFederation, ActivationConfig.ForBlock activations) {
+        var lastRetiredFederationP2SHScriptOptional = 
+            federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
+        assertTrue(lastRetiredFederationP2SHScriptOptional.isPresent());
+        Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
+
+        if (activations.isActive(ConsensusRule.RSKIP377)){
+            if (federationType == FederationType.NON_STANDARD_ERP
+                || federationType == FederationType.P2SH_ERP) {
+                assertNotEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
+            }
+            assertEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
+        } else {
+            if (federationType == FederationType.NON_STANDARD_ERP
+                || federationType == FederationType.P2SH_ERP) {
+                assertEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
+                assertNotEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
+            } else {
+                assertEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
+                assertEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
+            }
+        }
+    }
+   
+    private void verifySigHashes(ActivationConfig.ForBlock activations) throws Exception {
+        var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+            .getEntries().stream()
+            .map(Entry::getBtcTransaction)
+            .toList();
+
+        pegoutsTxs.forEach(
+            pegoutTx -> verifyPegoutTxSigHashIndex(pegoutTx, activations));
+    }
+
+    private void verifyPegoutTransactionCreatedEventWasEmitted(ActivationConfig.ForBlock activations) throws Exception {
+        var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+            .getEntries().stream()
+            .map(Entry::getBtcTransaction)
+            .toList();
+
+        if (activations.isActive(ConsensusRule.RSKIP428)) {
+            pegoutsTxs.forEach(this::verifyPegoutTransactionCreatedEvent);
+        } else {
+            verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
+        }
+    }
+    
+    private void verifyPegouts(ActivationConfig.ForBlock activations) throws Exception {
+        var activeFederation = federationStorageProvider.getNewFederation(
+            BRIDGE_CONSTANTS.getFederationConstants(), activations);
+        var retiringFederation = federationStorageProvider.getOldFederation(
+            BRIDGE_CONSTANTS.getFederationConstants(), activations);
+
+        for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
+            var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
+            for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
+                // Each input should contain the right scriptsig
+                var inputScriptChunks = input.getScriptSig().getChunks();
+                var inputRedeemScript = new Script(inputScriptChunks.get(inputScriptChunks.size() - 1).data);
+
+                // Get the standard redeem script to compare against, since it could be a flyover redeem script
+                var redeemScriptChunks = ScriptParser.parseScriptProgram(
+                    inputRedeemScript.getProgram());
+
+                var redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptChunks);
+                var inputStandardRedeemScriptChunks = redeemScriptParser.extractStandardRedeemScriptChunks();
+                var inputStandardRedeemScript = new ScriptBuilder().addChunks(inputStandardRedeemScriptChunks).build();
+
+                Optional<Federation> spendingFederationOptional = Optional.empty();
+                if (inputStandardRedeemScript.equals(getFederationDefaultRedeemScript(activeFederation))) {
+                    spendingFederationOptional = Optional.of(activeFederation);
+                } else if (retiringFederation != null &&
+                    inputStandardRedeemScript.equals(getFederationDefaultRedeemScript(retiringFederation))) {
+                    spendingFederationOptional = Optional.of(retiringFederation);
+                } else {
+                    fail("Pegout scriptsig does not match any Federation");
+                }
+
+                // Check the script sig composition
+                Federation spendingFederation = spendingFederationOptional.get();
+                assertEquals(ScriptOpCodes.OP_0, inputScriptChunks.get(0).opcode);
+                for (int i = 1; i <= spendingFederation.getNumberOfSignaturesRequired(); i++) {
+                    assertEquals(ScriptOpCodes.OP_0, inputScriptChunks.get(i).opcode);
+                }
+
+                int index = spendingFederation.getNumberOfSignaturesRequired() + 1;
+                if (spendingFederation instanceof ErpFederation) {
+                    // Should include an additional OP_0
+                    assertEquals(ScriptOpCodes.OP_0, inputScriptChunks.get(index).opcode);
+                }
+            }
+        }
+    }
+
+    private void verifyPegoutTxSigHashIndex(BtcTransaction pegoutTx, ActivationConfig.ForBlock activations) {
+        var lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        assertTrue(lastPegoutSigHash.isPresent());
+
+        if (activations.isActive(ConsensusRule.RSKIP379)) {
+            assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
+        } else {
+            assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
+        }
+    }
+
+    private void verifyPegoutTransactionCreatedEvent(BtcTransaction pegoutTx) {
+        var pegoutTxHash = pegoutTx.getHash();
+        var outpointValues = UtxoUtils.extractOutpointValues(pegoutTx);
+        verify(bridgeEventLogger).logPegoutTransactionCreated(pegoutTxHash, outpointValues);
     }
 }
