@@ -40,6 +40,8 @@ import java.util.*;
 class RegisterBtcTransactionIT {
     public static final long RSK_EXECUTION_BLOCK_NUMBER = 1000L;
     public static final long RSK_EXECUTION_BLOCK_TIMESTAMP = 10L;
+    private static int spendTxHashSeed = 0;
+    private static int outputIndex = 0;
     private final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcNetworkParams = bridgeConstants.getBtcParams();
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
@@ -106,8 +108,6 @@ class RegisterBtcTransactionIT {
     @Test
     void registerBtcTransaction_forALegacyBtcTransaction_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws Exception {
         // Arrange
-        int spendTxHashSeed = 0;
-        int outputIndex = 0;
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey, spendTxHashSeed, outputIndex);
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -137,7 +137,7 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_forMultipleLegacyBtcTransaction_shouldRegisterTheNewUtxosAndTransferTheRbtcBalance() throws Exception {
         // Arrange
         short numberOfOutputs = 3;
-        BtcTransaction btcTransaction = createTransactionWithMultiplePegIns(federationSupport.getActiveFederation().getAddress(), btcPublicKey, minimumPeginValue, numberOfOutputs);
+        BtcTransaction btcTransaction = createTransactionWithMultiplePegIns(federationSupport.getActiveFederation().getAddress(), btcPublicKey, minimumPeginValue, numberOfOutputs, outputIndex, spendTxHashSeed);
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
@@ -152,16 +152,16 @@ class RegisterBtcTransactionIT {
         assertItWasProcessed(btcTransaction);
 
         List<UTXO> expectedFederationUtxos = new ArrayList<>();
-        for (short outputIndex = 0; outputIndex < numberOfOutputs; outputIndex++) {
-            TransactionOutput output = btcTransaction.getOutput(outputIndex);
+        for (short newOutputIndex = 0; newOutputIndex < numberOfOutputs; newOutputIndex++) {
+            TransactionOutput output = btcTransaction.getOutput(newOutputIndex);
             expectedFederationUtxos.add(utxoOf(btcTransaction, output));
         }
 
         assertEquals(expectedFederationUtxos, federationSupport.getActiveFederationBtcUTXOs());
 
         co.rsk.core.Coin expectedReceiverBalance = co.rsk.core.Coin.ZERO;
-        for (short outputIndex = 0; outputIndex < numberOfOutputs; outputIndex++) {
-            TransactionOutput output = btcTransaction.getOutput(outputIndex);
+        for (short newOutputIndex = 0; newOutputIndex < numberOfOutputs; newOutputIndex++) {
+            TransactionOutput output = btcTransaction.getOutput(newOutputIndex);
             expectedReceiverBalance = expectedReceiverBalance.add(co.rsk.core.Coin.fromBitcoin(output.getValue()));
         }
 
@@ -174,7 +174,7 @@ class RegisterBtcTransactionIT {
         // Arrange
         short numberOfOutputs = 2;
         Coin partOfMinimumValue = Coin.valueOf(minimumPeginValue.getValue() / numberOfOutputs);
-        BtcTransaction btcTransaction = createTransactionWithMultiplePegIns(federationSupport.getActiveFederation().getAddress(), btcPublicKey, partOfMinimumValue, numberOfOutputs);
+        BtcTransaction btcTransaction = createTransactionWithMultiplePegIns(federationSupport.getActiveFederation().getAddress(), btcPublicKey, partOfMinimumValue, numberOfOutputs, outputIndex, spendTxHashSeed);
         assertTrue((partOfMinimumValue.getValue() * numberOfOutputs) >= minimumPeginValue.getValue());
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
@@ -202,8 +202,6 @@ class RegisterBtcTransactionIT {
     @Test
     void registerBtcTransaction_forARepeatedLegacyBtcTransaction_shouldNotPerformAnyChange() throws Exception {
         // Arrange
-        int outputIndex = 0;
-        int spendTxHashSeed = 0;
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey, spendTxHashSeed, outputIndex);
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -229,8 +227,6 @@ class RegisterBtcTransactionIT {
     @Test
     void registerBtcTransaction_whenLegacyBtcTransactionWithNegativeHeight_shouldNotPerformAnyChange() throws Exception {
         // Arrange
-        int spendTxHashSeed = 0;
-        int outputIndex = 0;
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey, spendTxHashSeed, outputIndex);
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -255,8 +251,6 @@ class RegisterBtcTransactionIT {
     void registerBtcTransaction_whenLegacyBtcTransactionWithBalanceBelowMinimum_shouldNotRefundFunds() throws Exception {
         // Arrange
         Coin valueBelowMinimumPegin = minimumPeginValue.subtract(Coin.SATOSHI);
-        int spendTxHashSeed = 0;
-        int outputIndex = 0;
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), valueBelowMinimumPegin, btcPublicKey, spendTxHashSeed, outputIndex);
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -283,7 +277,7 @@ class RegisterBtcTransactionIT {
     @Test
     void registerBtcTransaction_whenLegacyPeginBtcTransactionFromAMultiSig_shouldRefundTheFunds() throws Exception {
         // Arrange
-        BtcTransaction btcTransaction = createMultiSigPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue);
+        BtcTransaction btcTransaction = createMultiSigPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, outputIndex, spendTxHashSeed);
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
@@ -311,8 +305,8 @@ class RegisterBtcTransactionIT {
 
         // Pegout value + fee == Pegin value
         BtcTransaction pegOut = pegOutWaitingForConfirmationEntry.getBtcTransaction();
-        int outputIndex = 0;
-        TransactionOutput pegOutOutput = pegOut.getOutput(outputIndex);
+        int newOutputIndex = 0;
+        TransactionOutput pegOutOutput = pegOut.getOutput(newOutputIndex);
         Coin pegOutTotalValue = pegOutOutput.getValue().add(pegOut.getFee());
         assertEquals(minimumPeginValue, pegOutTotalValue);
 
@@ -333,15 +327,13 @@ class RegisterBtcTransactionIT {
     @Test
     void registerBtcTransaction_forALegacyBtcTransactionWithMultipleInputs_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws Exception {
         // Arrange
-        int outputIndex = 0;
-        int nHash = 0;
-        BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey, outputIndex, nHash);
+        BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey, outputIndex, spendTxHashSeed);
 
         List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"seed1", "seed2"}, true);
         for (BtcECKey fedKey : fedKeys) {
-            nHash++;
+            spendTxHashSeed++;
             outputIndex++;
-            btcTransaction.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, ScriptBuilder.createInputScript(null, fedKey));
+            btcTransaction.addInput(BitcoinTestUtils.createHash(spendTxHashSeed), outputIndex, ScriptBuilder.createInputScript(null, fedKey));
         }
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
@@ -374,12 +366,6 @@ class RegisterBtcTransactionIT {
         assertLogPegInBtc(btcTransaction, minimumPeginValue.getValue());
     }
 
-    private void assertItWasProcessed(BtcTransaction btcTransaction) throws IOException {
-        Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTransaction.getHash());
-        assertTrue(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
-        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, heightIfBtcTxHashIsAlreadyProcessed.get());
-    }
-
     private static UTXO utxoOf(BtcTransaction btcTransaction, TransactionOutput output) {
         int height = 0;
         return new UTXO(
@@ -400,29 +386,31 @@ class RegisterBtcTransactionIT {
         return btcTx;
     }
 
-    private BtcTransaction createTransactionWithMultiplePegIns(Address federationAddress, BtcECKey pubKey, Coin value, short numberOfOutputs) {
+    private BtcTransaction createTransactionWithMultiplePegIns(Address federationAddress, BtcECKey pubKey, Coin value, short numberOfOutputs, int outputIndex, int spendTxHashSeed) {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
-        int outputIndex = 0;
-        int nHash = 0;
-        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, ScriptBuilder.createInputScript(null, pubKey));
+        btcTx.addInput(BitcoinTestUtils.createHash(spendTxHashSeed), outputIndex, ScriptBuilder.createInputScript(null, pubKey));
         for (int i = 0; i < numberOfOutputs; i++) {
             btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, value, federationAddress));
         }
         return btcTx;
     }
 
-    private BtcTransaction createMultiSigPegInTransaction(Address federationAddress, Coin coin) {
+    private BtcTransaction createMultiSigPegInTransaction(Address federationAddress, Coin coin, int outputIndex, int spendTxHashSeed) {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
-        int outputIndex = 0;
-        int nHash = 0;
         btcTx.addInput(
-            BitcoinTestUtils.createHash(nHash),
+            BitcoinTestUtils.createHash(spendTxHashSeed),
             outputIndex,
             ScriptBuilder.createP2SHMultiSigInputScript(null, federationSupport.getActiveFederation().getRedeemScript())
         );
         btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, coin, federationAddress));
 
         return btcTx;
+    }
+
+    private void assertItWasProcessed(BtcTransaction btcTransaction) throws IOException {
+        Optional<Long> heightIfBtcTxHashIsAlreadyProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTransaction.getHash());
+        assertTrue(heightIfBtcTxHashIsAlreadyProcessed.isPresent());
+        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, heightIfBtcTxHashIsAlreadyProcessed.get());
     }
 
     private void assertLogPegInBtc(BtcTransaction btcTransaction, long value) {
