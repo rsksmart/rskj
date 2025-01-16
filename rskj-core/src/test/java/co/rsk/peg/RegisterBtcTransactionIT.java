@@ -325,7 +325,7 @@ class RegisterBtcTransactionIT {
     }
 
     @Test
-    void registerBtcTransaction_forALegacyBtcTransactionWithMultipleInputs_shouldRegisterTheNewUtxoAndTransferTheRbtcBalance() throws Exception {
+    void registerBtcTransaction_forALegacyBtcTransactionWithMultipleInputs_shouldRegisterTheNewUtxoAndTransferTheRbtcBalanceToTheFirstInputAddress() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = createPegInTransaction(federationSupport.getActiveFederation().getAddress(), minimumPeginValue, btcPublicKey, outputIndex, spendTxHashSeed);
 
