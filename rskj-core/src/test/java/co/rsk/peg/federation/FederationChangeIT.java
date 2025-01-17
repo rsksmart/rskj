@@ -201,6 +201,8 @@ class FederationChangeIT {
         // Create a default original federation using the list of UTXOs
         var originalFederation = createOriginalFederation(
             FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+        var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(
+            BRIDGE_CONSTANTS.getBtcParams(), activations);
        
         // Act & Assert
     
@@ -212,6 +214,8 @@ class FederationChangeIT {
         // Move blockchain until the activation phase
         activateNewFederation(activations);
 
+        assertUTXOsReferenceMovedFromNewToOldFederation(
+            originalUTXOs, activations);
         assertNewAndOldFederationsHaveExpectedAddress(
             newFederation.getAddress(), originalFederation.getAddress());
         assertMigrationHasNotStarted();
@@ -624,7 +628,7 @@ class FederationChangeIT {
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
             for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
-                // Each input should contain the right scriptsig
+                // Each input should contain the right scriptSig
                 var inputScriptChunks = input.getScriptSig().getChunks();
                 var inputRedeemScript = new Script(inputScriptChunks.get(inputScriptChunks.size() - 1).data);
 
