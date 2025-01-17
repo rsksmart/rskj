@@ -22,10 +22,13 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
 FROM eclipse-temurin:17-jre@sha256:38e0afc86a10bf4cadbf1586fb617b3a9a4d09c9a0be882e29ada4ed0895fc84
 LABEL org.opencontainers.image.authors="ops@rootstocklabs.com"
 
-RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
+RUN mkdir -p /var/lib/rsk && \
+    chown -R 1000:1000 /var/lib/rsk
+
+USER ubuntu
 
 RUN mkdir -p /var/lib/rsk/.rsk && \
-    chown -R rsk:rsk /var/lib/rsk && \
+    chown -R ubuntu:ubuntu /var/lib/rsk && \
     chmod -R 755 /var/lib/rsk/.rsk
 
 WORKDIR /var/lib/rsk
