@@ -18,10 +18,7 @@
 
 package org.ethereum.util;
 
-import java.math.BigInteger;
-import java.util.Optional;
-import java.util.function.Supplier;
-
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Account;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
@@ -29,7 +26,9 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
 
-import co.rsk.util.HexUtils;
+import java.math.BigInteger;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class TransactionArgumentsUtil {
 
@@ -38,10 +37,13 @@ public class TransactionArgumentsUtil {
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 	public static final String ERR_COULD_NOT_FIND_ACCOUNT = "Could not find account for address: ";
 
-	/**
-	 * transform the Web3.CallArguments in TransactionArguments that can be used in
-	 * the TransactionBuilder
-	 */
+	public static TransactionArguments processArguments(CallArguments argsParam, byte defaultChainId) {
+		return processArguments(argsParam, null, null, defaultChainId);
+	}
+		/**
+         * transform the Web3.CallArguments in TransactionArguments that can be used in
+         * the TransactionBuilder
+         */
 	public static TransactionArguments processArguments(CallArguments argsParam, TransactionPool transactionPool, Account senderAccount, byte defaultChainId) {
 
 		TransactionArguments argsRet = new TransactionArguments();
@@ -50,7 +52,13 @@ public class TransactionArgumentsUtil {
 
 		argsRet.setTo(stringHexToByteArray(argsParam.getTo()));
 
-		argsRet.setNonce(strHexOrStrNumberToBigInteger(argsParam.getNonce(), () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
+		if(transactionPool == null || senderAccount == null) {
+			argsRet.setNonce(Optional.ofNullable(argsParam.getNonce())
+					.map(HexUtils::strHexOrStrNumberToBigInteger)
+					.orElse(null));
+		}else {
+			argsRet.setNonce(strHexOrStrNumberToBigInteger(argsParam.getNonce(), () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
+		}
 
 		argsRet.setValue(strHexOrStrNumberToBigInteger(argsParam.getValue(), () -> BigInteger.ZERO));
 
@@ -75,18 +83,12 @@ public class TransactionArgumentsUtil {
 		return argsRet;
 	}
 
-	private static byte[] stringHexToByteArray(String value) {
-
-		byte[] ret = Optional.ofNullable(value).map(HexUtils::stringHexToByteArray).orElse(null);
-
-		return ret;
-	}
+    private static byte[] stringHexToByteArray(String value) {
+        return Optional.ofNullable(value).map(HexUtils::stringHexToByteArray).orElse(null);
+    }
 
 	private static BigInteger strHexOrStrNumberToBigInteger(String value, Supplier<BigInteger> getDefaultValue) {
-
-		BigInteger ret = Optional.ofNullable(value).map(HexUtils::strHexOrStrNumberToBigInteger).orElseGet(getDefaultValue);
-
-		return ret;
+		return Optional.ofNullable(value).map(HexUtils::strHexOrStrNumberToBigInteger).orElseGet(getDefaultValue);
 	}
 
 	private static byte hexToChainId(String hex) {
