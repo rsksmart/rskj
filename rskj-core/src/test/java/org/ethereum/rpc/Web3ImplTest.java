@@ -42,6 +42,9 @@ import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
@@ -749,7 +752,9 @@ class Web3ImplTest {
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule debugModule = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
         Web3 web3 = new Web3Impl(
                 ethMock,
                 blockchain,
@@ -2773,7 +2778,9 @@ class Web3ImplTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule debugModule = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -2891,7 +2898,9 @@ class Web3ImplTest {
                 config.getCallGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule debugModule = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, flusher, nodeStopper);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -2954,7 +2963,9 @@ class Web3ImplTest {
                 config.getGasEstimationCap(),
                 config.getCallGasCap());
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null, null);
+        DebugTracer debugTracer = new RskTracer(null, null, null, null);
+        TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
+        DebugModule debugModule = new DebugModuleImpl(traceProvider, Web3Mocks.getMockMessageHandler(), null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, mock(Flusher.class));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();

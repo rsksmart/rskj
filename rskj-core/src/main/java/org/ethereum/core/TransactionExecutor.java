@@ -176,7 +176,7 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long gasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
+        long gasLimit = activations.isActive(RSKIP144) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, gasLimit)) {
             return false;
@@ -583,6 +583,8 @@ public class TransactionExecutor {
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
 
+        track.clearTransientStorage();
+
         logger.trace("tx listener done");
 
         logger.trace("tx finalization done");
@@ -676,7 +678,7 @@ public class TransactionExecutor {
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
         else {
-            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender(signatureCache).getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender(signatureCache).getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()), tx.getData());
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 
