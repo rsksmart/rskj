@@ -515,7 +515,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getProposedFederation_whenProposedFederationExists_shouldReturnProposedFed() {
+        void getProposedFederation_whenFederationSupportReturnsProposedFederation_shouldReturnProposedFed() {
             when(federationSupport.getProposedFederation()).thenReturn(Optional.of(federation));
 
             Optional<Federation> proposedFed = bridgeSupport.getProposedFederation();
@@ -524,7 +524,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getProposedFederation_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+        void getProposedFederation_whenNoProposedFederation_shouldReturnEmpty() {
             // Act
             var actualProposedFederation = bridgeSupport.getProposedFederation();
 
@@ -533,7 +533,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getProposedFederationAddress_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+        void getProposedFederationAddress_whenNoProposedFederationAddress_shouldReturnEmpty() {
             // Act
             var actualProposedFederationAddress = bridgeSupport.getProposedFederationAddress();
 
@@ -542,7 +542,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getProposedFederationAddress_whenProposedFederationExists_shouldReturnAddress() {
+        void getProposedFederationAddress_whenFederationSupportReturnsAddress_shouldReturnAddress() {
             // Arrange
             var expectedAddress = federation.getAddress();
             when(federationSupport.getProposedFederationAddress()).thenReturn(Optional.of(expectedAddress));
