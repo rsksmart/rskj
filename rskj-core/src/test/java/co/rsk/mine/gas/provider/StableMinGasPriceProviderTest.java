@@ -84,7 +84,7 @@ class StableMinGasPriceProviderTest {
 
         Long price = spyProvider.getMinGasPrice(true);
 
-        boolean isIntoRangeResult = verify(spyProvider, times(1)).isIntoRange(500L);
+        boolean isIntoRangeResult = verify(spyProvider, times(1)).valueBetweenConfiguredRange(500L);
         assertFalse(isIntoRangeResult);
         assertEquals(FALLBACK_PRICE, price);
     }
@@ -96,7 +96,7 @@ class StableMinGasPriceProviderTest {
 
         Long price = spyProvider.getMinGasPrice(true);
 
-        boolean isIntoRangeResult = verify(spyProvider, times(1)).isIntoRange(5L);
+        boolean isIntoRangeResult = verify(spyProvider, times(1)).valueBetweenConfiguredRange(5L);
         assertFalse(isIntoRangeResult);
         assertEquals(FALLBACK_PRICE, price);
     }

@@ -131,7 +131,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private Optional<Long> fetchPriceSync() {
         logger.debug("fetchPriceSync...");
         Optional<Long> priceResponse = getBtcExchangeRate();
-        if (priceResponse.isPresent() && isIntoRange(priceResponse.get())) {
+        if (priceResponse.isPresent() && valueBetweenConfiguredRange(priceResponse.get())) {
             long result = calculateMinGasPriceBasedOnBtcPrice(priceResponse.get());
             lastMinGasPrice = result;
             lastUpdateTimeMillis = System.currentTimeMillis();
@@ -153,7 +153,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     }
 
     @VisibleForTesting
-    boolean isIntoRange(long value) {
+    boolean valueBetweenConfiguredRange(long value) {
         if (value >= minValidPrice && value <= maxValidPrice) {
             return true;
         }
