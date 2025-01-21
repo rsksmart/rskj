@@ -26,6 +26,7 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
@@ -399,6 +400,65 @@ class RegisterBtcTransactionIT {
         assertRejectedPeginTransaction(btcTransaction, BridgeEvents.UNREFUNDABLE_PEGIN.getEvent(), LEGACY_PEGIN_UNDETERMINED_SENDER.getValue());
     }
 
+    @Test
+    void registerBtcTransaction_WhenLegacyPeginBtcTransactionFromP2WSHAddress_shouldRefundTheFunds() throws Exception {
+        // Arrange
+        // TODO(juli): At the moment rskj does not supports P2SHP2WSH we need to change this test,
+        // The rawTx is obtained from the code on the bottom of this file when executed in bitcoinj-thin.
+        String rawTx = "020000000001010100000000000000000000000000000000000000000000000000000000000000000000002322002051b06d" +
+            "bcfc7138cb09fc31d5caa882dc3b9ad81f03a400474f81e7d8b130f4ebffffffff0120a107000000000017a914eba536f25415ec64caa23" +
+            "28897dffb101b48743e870400483045022100c547bc3a0af10bd7ea4834a48336687dd386567b44abc5bc76d24f0cdf14e20a022006b2162" +
+            "6a722c2ac9f5239755c37c79449187f3a790c614137e18dd63162cf75010025512102c8f031561c4758c9551cff47246f2c347189fe684c04" +
+            "da35cf88e813f810e3c251ae00000000";
+
+        BtcTransaction btcTransaction = new BtcTransaction(btcNetworkParams, Hex.decode(rawTx));
+
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash(true)), btcNetworkParams);
+        int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int chainHeight = btcBlockWithPmtHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStoreWithCache, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcNetworkParams);
+        bridgeSupport.save();
+
+        // Act
+        bridgeSupport.registerBtcTransaction(rskTx, btcTransaction.bitcoinSerialize(), btcBlockWithPmtHeight, pmtWithTransactions.bitcoinSerialize());
+        bridgeSupport.save();
+
+        co.rsk.core.Coin expectedReceiverBalance = repository.getBalance(rskReceiver);
+        List<UTXO> expectedFederationUTXOs = List.copyOf(federationSupport.getActiveFederationBtcUTXOs());
+
+        // Assert
+        assertItWasProcessed(btcTransaction);
+
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries();
+        int expectedPegoutsWaitingForConfirmations = 1;
+        assertEquals(expectedPegoutsWaitingForConfirmations, pegoutEntries.size());
+
+        Optional<PegoutsWaitingForConfirmations.Entry> pegOutWaitingForConfirmationOptional = pegoutEntries.stream().findFirst();
+        assertTrue(pegOutWaitingForConfirmationOptional.isPresent());
+
+        PegoutsWaitingForConfirmations.Entry pegOutWaitingForConfirmationEntry = pegOutWaitingForConfirmationOptional.get();
+        assertEquals(rskTx.getHash(), pegOutWaitingForConfirmationEntry.getPegoutCreationRskTxHash());
+        assertEquals(rskExecutionBlock.getNumber() ,pegOutWaitingForConfirmationEntry.getPegoutCreationRskBlockNumber());
+
+        // Pegout value + fee == Pegin value
+        BtcTransaction pegOut = pegOutWaitingForConfirmationEntry.getBtcTransaction();
+        int newOutputIndex = 0;
+        TransactionOutput pegOutOutput = pegOut.getOutput(newOutputIndex);
+        Coin pegOutTotalValue = pegOutOutput.getValue().add(pegOut.getFee());
+        assertEquals(minimumPeginValue, pegOutTotalValue);
+
+        Address pegInTxSender = btcLockSenderProvider.tryGetBtcLockSender(btcTransaction).get().getBTCAddress();
+        Address pegoutReceiver = pegOutOutput.getAddressFromP2SH(btcNetworkParams);
+        assertEquals(pegInTxSender, pegoutReceiver);
+
+        assertRejectedPeginTransaction(btcTransaction, BridgeEvents.REJECTED_PEGIN.getEvent(), RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER.getValue());
+        assertReleaseBtcRequested(rskTx.getHash().getBytes(), pegOut, minimumPeginValue);
+        assertPegoutTransactionCreated(pegOut.getHash(), UtxoUtils.extractOutpointValues(pegOut));
+
+        assertEquals(expectedFederationUTXOs, federationSupport.getActiveFederationBtcUTXOs());
+        assertEquals(expectedReceiverBalance, repository.getBalance(rskReceiver));
+    }
+
     private static UTXO utxoOf(BtcTransaction btcTransaction, TransactionOutput output) {
         int height = 0;
         return new UTXO(
@@ -489,3 +549,47 @@ class RegisterBtcTransactionIT {
         assertEventWasEmittedWithExpectedData(encodedData, logs);
     }
 }
+
+
+/*
+    public void obtainTheHexCodeForTheP2WSH() {
+        NetworkParameters btcNetworkParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+        Address receiver = Address.fromP2SHHash(btcNetworkParams, HEX.decode("eba536f25415ec64caa2328897dffb101b48743e"));
+        Coin value = Coin.valueOf(500_000);
+
+        BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
+        Sha256Hash spendTxHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
+        btcTx.addInput(spendTxHash, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, receiver);
+        btcTx.setVersion(2);
+
+        // Multisig 1-of-1
+        // data comes from BitcoinTestUtils.getBtcEcKeyFromSeed("seed") in rskj
+        BtcECKey btcPublicKey = BtcECKey.fromPublicOnly(Hex.decode("03ebc18a8b308fdd3efeae515861cb4b553d854ff6a40ce7bf1c3ced2524dc80ad"));
+        Script redeemScript = ScriptBuilder.createRedeemScript(1, Collections.singletonList(btcPublicKey));
+
+        Sha256Hash sigHash = btcTx.hashForWitnessSignature(
+            0, // Input index
+            redeemScript,
+            value,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+        byte[] redeemScriptHash = Sha256Hash.hash(redeemScript.getProgram());
+        Script scriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+        Script segwitScriptSig = new ScriptBuilder().data(scriptSig.getProgram()).build();
+        btcTx.getInput(0).setScriptSig(segwitScriptSig);
+
+        BtcECKey.ECDSASignature signature = btcPublicKey.sign(sigHash);
+        TransactionSignature txSignature = new TransactionSignature(
+            signature,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+        List<TransactionSignature> signatures = Collections.singletonList(txSignature);
+        TransactionWitness txWitness = TransactionWitness.createWitnessErpStandardScript(redeemScript, signatures);
+        btcTx.setWitness(0, txWitness);
+
+        System.out.println(Hex.toHexString(btcTx.bitcoinSerialize()));
+    }
+ */
