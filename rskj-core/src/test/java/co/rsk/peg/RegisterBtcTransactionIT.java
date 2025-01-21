@@ -11,6 +11,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.UtxoUtils;
+import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -375,7 +376,7 @@ class RegisterBtcTransactionIT {
         BtcTransaction btcTransaction = new BtcTransaction(btcNetworkParams);
         Script scriptForAnUnknownSender = new Script(new byte[]{});
         btcTransaction.addInput(BitcoinTestUtils.createHash(spendTxHashSeed), outputIndex, scriptForAnUnknownSender);
-        btcTransaction.addOutput(new TransactionOutput(btcNetworkParams, btcTransaction, minimumPeginValue, federationSupport.getActiveFederation().getAddress()));
+        btcTransaction.addOutput(minimumPeginValue, federationSupport.getActiveFederation().getAddress());
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash()), btcNetworkParams);
         int btcBlockWithPmtHeight = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
@@ -403,14 +404,13 @@ class RegisterBtcTransactionIT {
     @Test
     void registerBtcTransaction_WhenLegacyPeginBtcTransactionFromP2WSHAddress_shouldRefundTheFunds() throws Exception {
         // Arrange
-        // TODO(juli): At the moment rskj does not supports P2SHP2WSH we need to change this test,
+        // TODO(juli): At the moment rskj does not supports P2SHP2WSH we need to change this test.
         // The rawTx is obtained from the code on the bottom of this file when executed in bitcoinj-thin.
         String rawTx = "020000000001010100000000000000000000000000000000000000000000000000000000000000000000002322002051b06d" +
             "bcfc7138cb09fc31d5caa882dc3b9ad81f03a400474f81e7d8b130f4ebffffffff0120a107000000000017a914eba536f25415ec64caa23" +
             "28897dffb101b48743e870400483045022100c547bc3a0af10bd7ea4834a48336687dd386567b44abc5bc76d24f0cdf14e20a022006b2162" +
             "6a722c2ac9f5239755c37c79449187f3a790c614137e18dd63162cf75010025512102c8f031561c4758c9551cff47246f2c347189fe684c04" +
             "da35cf88e813f810e3c251ae00000000";
-
         BtcTransaction btcTransaction = new BtcTransaction(btcNetworkParams, Hex.decode(rawTx));
 
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTransaction.getHash(true)), btcNetworkParams);
@@ -447,7 +447,10 @@ class RegisterBtcTransactionIT {
         Coin pegOutTotalValue = pegOutOutput.getValue().add(pegOut.getFee());
         assertEquals(minimumPeginValue, pegOutTotalValue);
 
-        Address pegInTxSender = btcLockSenderProvider.tryGetBtcLockSender(btcTransaction).get().getBTCAddress();
+        Optional<BtcLockSender> btcLockSender = btcLockSenderProvider.tryGetBtcLockSender(btcTransaction);
+        assertTrue(btcLockSender.isPresent());
+
+        Address pegInTxSender = btcLockSender.get().getBTCAddress();
         Address pegoutReceiver = pegOutOutput.getAddressFromP2SH(btcNetworkParams);
         assertEquals(pegInTxSender, pegoutReceiver);
 
@@ -474,7 +477,7 @@ class RegisterBtcTransactionIT {
     private BtcTransaction createPegInTransaction(Address federationAddress, Coin coin, BtcECKey pubKey, int spendTxHashSeed, int outputIndex) {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
         btcTx.addInput(BitcoinTestUtils.createHash(spendTxHashSeed), outputIndex, ScriptBuilder.createInputScript(null, pubKey));
-        btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, coin, federationAddress));
+        btcTx.addOutput(coin, federationAddress);
 
         return btcTx;
     }
@@ -483,7 +486,7 @@ class RegisterBtcTransactionIT {
         BtcTransaction btcTx = new BtcTransaction(btcNetworkParams);
         btcTx.addInput(BitcoinTestUtils.createHash(spendTxHashSeed), outputIndex, ScriptBuilder.createInputScript(null, pubKey));
         for (int i = 0; i < numberOfOutputs; i++) {
-            btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, value, federationAddress));
+            btcTx.addOutput(value, federationAddress);
         }
         return btcTx;
     }
@@ -495,7 +498,7 @@ class RegisterBtcTransactionIT {
             outputIndex,
             ScriptBuilder.createP2SHMultiSigInputScript(null, federationSupport.getActiveFederation().getRedeemScript())
         );
-        btcTx.addOutput(new TransactionOutput(btcNetworkParams, btcTx, coin, federationAddress));
+        btcTx.addOutput(coin, federationAddress);
 
         return btcTx;
     }
