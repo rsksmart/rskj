@@ -2277,10 +2277,13 @@ public class BridgeSupport {
         return federationSupport.getActiveFederation();
     }
 
-
     @Nullable
     public Federation getRetiringFederation() {
         return federationSupport.getRetiringFederation();
+    }
+
+    public Optional<Federation> getProposedFederation() {
+        return federationSupport.getProposedFederation();
     }
 
     public Address getActiveFederationAddress() {

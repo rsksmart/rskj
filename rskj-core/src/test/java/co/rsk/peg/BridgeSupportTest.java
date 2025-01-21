@@ -515,6 +515,24 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getProposedFederation_whenProposedFederationExists_shouldReturnProposedFed() {
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.of(federation));
+
+            Optional<Federation> proposedFed = bridgeSupport.getProposedFederation();
+            assertTrue(proposedFed.isPresent());
+            assertThat(proposedFed.get(), is(federation));
+        }
+
+        @Test
+        void getProposedFederation_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederation = bridgeSupport.getProposedFederation();
+
+            // Assert
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
         void getProposedFederationAddress_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
             // Act
             var actualProposedFederationAddress = bridgeSupport.getProposedFederationAddress();

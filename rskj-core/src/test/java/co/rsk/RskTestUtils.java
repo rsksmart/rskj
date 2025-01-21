@@ -45,6 +45,12 @@ public class RskTestUtils {
         return createRskBlock(defaultBlockNumber, defaultBlockTimestamp.toEpochMilli());
     }
 
+    public static Block createRskBlock(long blockNumber) {
+        final Instant defaultBlockTimestamp = ZonedDateTime.parse("2020-01-20T12:00:08.400Z").toInstant();
+
+        return createRskBlock(blockNumber, defaultBlockTimestamp.toEpochMilli());
+    }
+
     public static Block createRskBlock(long blockNumber, long blockTimestamp) {
         BlockHeader blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
             .setNumber(blockNumber)

@@ -101,7 +101,7 @@ public enum BridgeMethods {
             new String[]{}
         ),
         fixedCost(70000L),
-        Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
+        Bridge.activeRetiringAndProposedFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
         fixedPermission(false)
     ),
     COMMIT_FEDERATION(
