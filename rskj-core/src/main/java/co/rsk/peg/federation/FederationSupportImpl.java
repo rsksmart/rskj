@@ -767,7 +767,7 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private Federation buildFederationFromPendingFederation(PendingFederation pendingFederation) {
-        Instant federationCreationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
+        Instant federationCreationTime = Instant.ofEpochSecond(rskExecutionBlock.getTimestamp());
         long federationCreationBlockNumber = rskExecutionBlock.getNumber();
 
         return pendingFederation.buildFederation(federationCreationTime, federationCreationBlockNumber, constants, activations);
