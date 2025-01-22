@@ -169,8 +169,8 @@ public class BridgeTestIntegration {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "Sender is not part of the active or retiring federation";
-    private static final String ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED = "Sender is not part of the active, retiring or proposed federations";
+    private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "The sender is not a member of the active or retiring federations";
+    private static final String ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED = "The sender is not a member of the active, retiring, or proposed federations";
 
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
@@ -3375,7 +3375,7 @@ public class BridgeTestIntegration {
             bridge.execute(data);
             fail();
         } catch (VMException e) {
-            assertTrue(e.getMessage().contains("Sender is not part of the active"));
+            assertTrue(e.getMessage().contains("The sender is not a member of the active"));
         }
         verify(bridgeSupportMock, never()).receiveHeaders(any(BtcBlock[].class));
     }

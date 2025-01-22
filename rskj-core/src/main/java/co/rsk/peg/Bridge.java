@@ -1481,7 +1481,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
 
             if (!isFromActiveFed && !isFromRetiringFed) {
-                String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
+                String errorMessage = String.format(
+                    "The sender is not a member of the active or retiring federations and is therefore not authorized to invoke the function: '%s'",
+                    funcName
+                );
                 logger.warn(errorMessage);
                 throw new VMException(errorMessage);
             }
@@ -1501,7 +1504,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             boolean isFromProposedFed = proposedFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, proposedFederation.get(), self.signatureCache);
 
             if (!isFromActiveFed && !isFromRetiringFed && !isFromProposedFed) {
-                String errorMessage = String.format("Sender is not part of the active, retiring or proposed federations, so he is not enabled to call the function '%s'",funcName);
+                String errorMessage = String.format(
+                    "The sender is not a member of the active, retiring, or proposed federations and is therefore not authorized to call the function: '%s'",
+                    funcName
+                );
                 logger.warn(errorMessage);
                 throw new VMException(errorMessage);
             }
