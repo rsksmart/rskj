@@ -19,11 +19,13 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
+import co.rsk.net.messages.MessageWithId;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Deque;
 import java.util.List;
@@ -105,5 +107,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync() { }
+    public void startSnapSync(Peer peer) { }
+
+    @Override
+    public long nextMessageId() { return 0; }
+
+    @Override
+    public void registerPendingMessage(@Nonnull MessageWithId message) { }
 }

@@ -143,7 +143,7 @@ public class PeersInformation implements SnapshotPeersInformation {
             return Optional.of(entriesToConsider.get(randomIndex).getKey());
         }
 
-        return getBestCandidatesStream()
+        return bestCandidatesStream
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
     }
@@ -202,6 +202,20 @@ public class PeersInformation implements SnapshotPeersInformation {
                 .filter(entry -> entry.getKey().isSnapCapable())
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Peer> getBestPeer(Set<NodeID> exclude) {
+        return getBestPeer(getBestCandidatesStream().filter(p -> !exclude.contains(p.getKey().getPeerNodeID())));
+    }
+
+    @Override
+    public Optional<Peer> getBestSnapPeer(Set<NodeID> exclude) {
+        return getBestPeer(
+                getBestCandidatesStream()
+                        .filter(this::isSnapPeerCandidateOrCapable)
+                        .filter(p -> !exclude.contains(p.getKey().getPeerNodeID()))
+        );
     }
 
     public Set<NodeID> knownNodeIds() {

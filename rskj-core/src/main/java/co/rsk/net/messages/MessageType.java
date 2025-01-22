@@ -21,11 +21,11 @@ package co.rsk.net.messages;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -260,19 +260,19 @@ public enum MessageType {
     SNAP_STATE_CHUNK_REQUEST_MESSAGE(20) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return SnapStateChunkRequestMessage.create(blockFactory, list);
+            return SnapStateChunkRequestMessage.decodeMessage(blockFactory, list);
         }
     },
     SNAP_STATE_CHUNK_RESPONSE_MESSAGE(21) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return SnapStateChunkResponseMessage.create(blockFactory, list);
+            return SnapStateChunkResponseMessage.decodeMessage(blockFactory, list);
         }
     },
     SNAP_STATUS_REQUEST_MESSAGE(22) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return new SnapStatusRequestMessage();
+            return SnapStatusRequestMessage.decodeMessage(blockFactory, list);
         }
     },
     SNAP_STATUS_RESPONSE_MESSAGE(23) {

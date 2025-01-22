@@ -32,7 +32,6 @@ import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.listener.GasPriceCalculator;
-import org.ethereum.net.client.Capability;
 import org.ethereum.vm.PrecompiledContracts;
 
 import javax.annotation.Nonnull;
@@ -74,6 +73,7 @@ public class RskSystemProperties extends SystemProperties {
     public static final String USE_PEERS_FROM_LAST_SESSION = "peer.discovery.usePeersFromLastSession";
 
     public static final String PROPERTY_SNAP_CLIENT_ENABLED = "sync.snapshot.client.enabled";
+    public static final String PROPERTY_SNAP_CLIENT_CHECK_HISTORICAL_HEADERS = "sync.snapshot.client.checkHistoricalHeaders";
     public static final String PROPERTY_SNAP_NODES = "sync.snapshot.client.snapBootNodes";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
@@ -430,20 +430,7 @@ public class RskSystemProperties extends SystemProperties {
     public boolean isServerSnapshotSyncEnabled() { return configFromFiles.getBoolean("sync.snapshot.server.enabled");}
     public boolean isClientSnapshotSyncEnabled() { return configFromFiles.getBoolean(PROPERTY_SNAP_CLIENT_ENABLED);}
 
-    @Override
-    public List<String> peerCapabilities() {
-        List<String> capabilities = super.peerCapabilities();
-
-        if (isSnapshotSyncEnabled()) {
-            capabilities.add(Capability.SNAP);
-        }
-
-        return capabilities;
-    }
-
-    public int getSnapshotChunkTimeout() {
-        return configFromFiles.getInt("sync.snapshot.client.chunkRequestTimeout");
-    }
+    public boolean checkHistoricalHeaders() { return configFromFiles.getBoolean(PROPERTY_SNAP_CLIENT_CHECK_HISTORICAL_HEADERS);}
 
     public boolean isSnapshotParallelEnabled() { return configFromFiles.getBoolean("sync.snapshot.client.parallel");}
 
@@ -528,8 +515,12 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 
-    public Integer getMessageQueueMaxSize() {
+    public int getMessageQueueMaxSize() {
         return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
+    }
+
+    public int getMessageQueuePerMinuteThreshold() {
+        return configFromFiles.getInt("peer.messageQueue.thresholdPerMinutePerPeer");
     }
 
     public boolean rpcZeroSignatureIfRemasc() {
@@ -568,10 +559,6 @@ public class RskSystemProperties extends SystemProperties {
             throw new RskConfigurationException("Invalid gasPriceCalculatorType: " + value);
         }
         return gasCalculatorType;
-    }
-
-    public boolean isSnapshotSyncEnabled(){
-        return isServerSnapshotSyncEnabled() || isClientSnapshotSyncEnabled();
     }
 
     private void fetchMethodTimeout(Config configElement, Map<String, Long> methodTimeoutMap) {

@@ -17,10 +17,12 @@
  */
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * This is mostly a workaround because SyncProcessor needs to access Peer instances.
@@ -28,7 +30,10 @@ import java.util.Optional;
  *     things such as the underlying communication channel.
  */
 public interface SnapshotPeersInformation {
+    Optional<Peer> getBestPeer();
     Optional<Peer> getBestSnapPeer();
     List<Peer> getBestSnapPeerCandidates();
+    Optional<Peer> getBestPeer(Set<NodeID> exclude);
+    Optional<Peer> getBestSnapPeer(Set<NodeID> exclude);
     SyncPeerStatus getOrRegisterPeer(Peer peer);
 }

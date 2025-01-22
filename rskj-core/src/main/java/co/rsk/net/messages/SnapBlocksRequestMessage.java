@@ -25,10 +25,13 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
-public class SnapBlocksRequestMessage extends Message {
+public class SnapBlocksRequestMessage extends MessageWithId {
+    private final long id;
+
     private final long blockNumber;
 
-    public SnapBlocksRequestMessage(long blockNumber) {
+    public SnapBlocksRequestMessage(long id, long blockNumber) {
+        this.id = id;
         this.blockNumber = blockNumber;
     }
 
@@ -38,17 +41,30 @@ public class SnapBlocksRequestMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
+    public MessageType getResponseMessageType() {
+        return MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE;
+    }
+
+    @Override
+    public long getId() {
+        return this.id;
+    }
+
+    @Override
+    protected byte[] getEncodedMessageWithoutId() {
         byte[] encodedBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(blockNumber));
         return RLP.encodeList(encodedBlockNumber);
     }
 
     public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
-        byte[] rlpBlockNumber = list.get(0).getRLPData();
+        byte[] rlpId = list.get(0).getRLPData();
+        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
+        RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+        byte[] rlpBlockNumber = message.get(0).getRLPData();
         long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
 
-        return new SnapBlocksRequestMessage(blockNumber);
+        return new SnapBlocksRequestMessage(id, blockNumber);
     }
 
     public long getBlockNumber() {

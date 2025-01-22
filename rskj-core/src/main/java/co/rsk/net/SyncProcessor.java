@@ -41,6 +41,7 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
@@ -69,6 +70,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private final Map<Long, MessageInfo> pendingMessages;
     private final AtomicBoolean isSyncing = new AtomicBoolean();
     private final SnapshotProcessor snapshotProcessor;
+    private final AtomicLong lastRequestId = new AtomicLong();
 
     private volatile long initialBlockNumber;
     private volatile long highestBlockNumber;
@@ -76,7 +78,6 @@ public class SyncProcessor implements SyncEventsHandler {
     private volatile long lastDelayWarn = System.currentTimeMillis();
 
     private SyncState syncState;
-    private long lastRequestId;
 
     @VisibleForTesting
     public SyncProcessor(Blockchain blockchain,
@@ -119,7 +120,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.difficultyRule = new DifficultyRule(difficultyCalculator);
         this.genesis = genesis;
         this.ethereumListener = ethereumListener;
-        this.pendingMessages = new LinkedHashMap<Long, MessageInfo>() {
+        this.pendingMessages = Collections.synchronizedMap(new LinkedHashMap<>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Long, MessageInfo> eldest) {
                 boolean shouldDiscard = size() > MAX_PENDING_MESSAGES;
@@ -128,7 +129,7 @@ public class SyncProcessor implements SyncEventsHandler {
                 }
                 return shouldDiscard;
             }
-        };
+        });
 
         this.peersInformation = peersInformation;
         this.snapshotProcessor = snapshotProcessor;
@@ -178,7 +179,7 @@ public class SyncProcessor implements SyncEventsHandler {
         MessageType messageType = message.getMessageType();
         if (isPending(messageId, messageType)) {
             removePendingMessage(messageId, messageType);
-            syncState.newBlockHeaders(message.getBlockHeaders());
+            syncState.newBlockHeaders(peer, message);
         } else {
             notifyUnexpectedMessageToPeerScoring(peer, "block headers");
         }
@@ -205,7 +206,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         if (syncState instanceof PeerAndModeDecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             peersInformation.getOrRegisterPeer(peer);
-            sendMessage(peer, new BlockRequestMessage(++lastRequestId, hash));
+            sendMessage(peer, new BlockRequestMessage(nextMessageId(), hash));
         }
     }
 
@@ -224,29 +225,56 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processSnapStatusResponse(Peer sender, SnapStatusResponseMessage responseMessage) {
-        syncState.onSnapStatus(sender, responseMessage);
+    public void processSnapStatusResponse(Peer peer, SnapStatusResponseMessage responseMessage) {
+        peersInformation.getOrRegisterPeer(peer);
+
+        long messageId = responseMessage.getId();
+        MessageType messageType = responseMessage.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.onSnapStatus(peer, responseMessage);
+        } else {
+            notifyUnexpectedMessageToPeerScoring(peer, "snap status");
+        }
     }
 
-    public void processSnapBlocksResponse(Peer sender, SnapBlocksResponseMessage responseMessage) {
-        syncState.onSnapBlocks(sender, responseMessage);
+    public void processSnapBlocksResponse(Peer peer, SnapBlocksResponseMessage responseMessage) {
+        peersInformation.getOrRegisterPeer(peer);
+
+        long messageId = responseMessage.getId();
+        MessageType messageType = responseMessage.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.onSnapBlocks(peer, responseMessage);
+        } else {
+            notifyUnexpectedMessageToPeerScoring(peer, "snap blocks");
+        }
     }
 
     public void processStateChunkResponse(Peer peer, SnapStateChunkResponseMessage responseMessage) {
-        syncState.onSnapStateChunk(peer, responseMessage);
+        peersInformation.getOrRegisterPeer(peer);
+
+        long messageId = responseMessage.getId();
+        MessageType messageType = responseMessage.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.onSnapStateChunk(peer, responseMessage);
+        } else {
+            notifyUnexpectedMessageToPeerScoring(peer, "snap state chunk");
+        }
     }
 
     @Override
     public void sendSkeletonRequest(Peer peer, long height) {
         logger.debug("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
-        MessageWithId message = new SkeletonRequestMessage(++lastRequestId, height);
+        MessageWithId message = new SkeletonRequestMessage(nextMessageId(), height);
         sendMessage(peer, message);
     }
 
     @Override
     public void sendBlockHashRequest(Peer peer, long height) {
         logger.debug("Send hash request to node {} height {}", peer.getPeerNodeID(), height);
-        BlockHashRequestMessage message = new BlockHashRequestMessage(++lastRequestId, height);
+        BlockHashRequestMessage message = new BlockHashRequestMessage(nextMessageId(), height);
         sendMessage(peer, message);
     }
 
@@ -255,7 +283,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.debug("Send headers request to node {}", peer.getPeerNodeID());
 
         BlockHeadersRequestMessage message =
-                new BlockHeadersRequestMessage(++lastRequestId, chunk.getHash(), chunk.getCount());
+                new BlockHeadersRequestMessage(nextMessageId(), chunk.getHash(), chunk.getCount());
         sendMessage(peer, message);
     }
 
@@ -264,7 +292,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(),
                 HashUtil.toPrintableHash(header.getHash().getBytes()), peer.getPeerNodeID());
 
-        BodyRequestMessage message = new BodyRequestMessage(++lastRequestId, header.getHash().getBytes());
+        BodyRequestMessage message = new BodyRequestMessage(nextMessageId(), header.getHash().getBytes());
         sendMessage(peer, message);
         return message.getId();
     }
@@ -289,8 +317,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync() {
-        logger.info("Start Snap syncing");
+    public void startSnapSync(Peer peer) {
+        logger.info("Start Snap syncing with {}", peer.getPeerNodeID());
         setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration));
     }
 
@@ -462,6 +490,15 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         return this.peersInformation.countIf(s -> chainStatus.hasLowerTotalDifficultyThan(s.getStatus()));
+    }
+
+    public long nextMessageId() {
+        return lastRequestId.incrementAndGet();
+    }
+
+    @Override
+    public void registerPendingMessage(@Nonnull MessageWithId message) {
+        pendingMessages.put(message.getId(), new MessageInfo(message.getResponseMessageType()));
     }
 
     @VisibleForTesting

@@ -47,7 +47,7 @@ class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assertions.assertFalse(pmgpv.isValid(header, null));
+        Assertions.assertFalse(pmgpv.isValid(header, (Block) null));
     }
 
     @Test
@@ -61,7 +61,7 @@ class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assertions.assertTrue(pmgpv.isValid(header, null));
+        Assertions.assertTrue(pmgpv.isValid(header, (Block) null));
     }
 
     @Test

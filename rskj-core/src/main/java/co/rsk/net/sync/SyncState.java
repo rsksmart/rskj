@@ -18,10 +18,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
-import co.rsk.net.messages.BodyResponseMessage;
-import co.rsk.net.messages.SnapBlocksResponseMessage;
-import co.rsk.net.messages.SnapStateChunkResponseMessage;
-import co.rsk.net.messages.SnapStatusResponseMessage;
+import co.rsk.net.messages.*;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
@@ -29,7 +26,11 @@ import java.time.Duration;
 import java.util.List;
 
 public interface SyncState {
-    void newBlockHeaders(List<BlockHeader> chunk);
+    void newBlockHeaders(Peer peer, List<BlockHeader> chunk);
+
+    default void newBlockHeaders(Peer peer, BlockHeadersResponseMessage message) {
+        newBlockHeaders(peer, message.getBlockHeaders());
+    }
 
     // TODO(mc) don't receive a full message
     void newBody(BodyResponseMessage message, Peer peer);

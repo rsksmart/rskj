@@ -25,6 +25,10 @@ import co.rsk.net.sync.SnapshotPeersInformation;
 import co.rsk.net.sync.SyncMessageHandler;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStore;
+import co.rsk.validators.BlockHeaderParentDependantValidationRule;
+import co.rsk.validators.BlockHeaderValidationRule;
+import co.rsk.validators.BlockParentDependantValidationRule;
+import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
@@ -41,6 +45,8 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
+import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -57,6 +63,10 @@ public class SnapshotProcessorTest {
     private final SnapshotPeersInformation peersInformation = mock(SnapshotPeersInformation.class);
     private final SnapSyncState snapSyncState = mock(SnapSyncState.class);
     private final SyncMessageHandler.Listener listener = mock(SyncMessageHandler.Listener.class);
+    private final BlockParentDependantValidationRule blockParentValidator = mock(BlockParentDependantValidationRule.class);
+    private final BlockValidationRule blockValidator = mock(BlockValidationRule.class);
+    private final BlockHeaderParentDependantValidationRule blockHeaderParentValidator = mock(BlockHeaderParentDependantValidationRule.class);
+    private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
     private SnapshotProcessor underTest;
 
     @BeforeEach
@@ -82,12 +92,18 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false);
+        doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
         //when
-        underTest.startSyncing();
+        underTest.startSyncing(snapSyncState);
         //then
-        verify(peer).sendMessage(any(SnapStatusRequestMessage.class));
+        verify(snapSyncState).submitRequest(any(PeerSelector.class), any(RequestFactory.class));
     }
 
     @Test
@@ -102,7 +118,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false);
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
@@ -111,20 +132,24 @@ public class SnapshotProcessorTest {
             difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
         }
 
-        SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(blocks, difficulties, 100000L);
+        SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(1, blocks, difficulties, 100000L);
 
         doReturn(blocks.get(blocks.size() - 1)).when(snapSyncState).getLastBlock();
         doReturn(snapStatusResponseMessage.getTrieSize()).when(snapSyncState).getRemoteTrieSize();
         doReturn(new LinkedList<>()).when(snapSyncState).getChunkTaskQueue();
+        doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(true).when(blockValidator).isValid(any());
+        doReturn(true).when(blockParentValidator).isValid(any(), any());
 
-        underTest.startSyncing();
+        underTest.startSyncing(snapSyncState);
 
         //when
         underTest.processSnapStatusResponse(snapSyncState, peer, snapStatusResponseMessage);
 
         //then
-        verify(peer, atLeast(3)).sendMessage(any()); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
-        verify(peersInformation, times(2)).getBestSnapPeerCandidates();
+        verify(snapSyncState, times(2)).submitRequest(any(PeerSelector.class), any(RequestFactory.class)); // 1 for SnapStatusRequestMessage, 1 for SnapBlocksRequestMessage and 1 for SnapStateChunkRequestMessage
+        verify(peersInformation, times(1)).getBestSnapPeer();
     }
 
     @Test
@@ -137,7 +162,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false);
         //when
         underTest.processSnapStatusRequestInternal(peer, mock(SnapStatusRequestMessage.class));
@@ -156,10 +186,15 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false);
 
-        SnapBlocksRequestMessage snapBlocksRequestMessage = new SnapBlocksRequestMessage(460);
+        SnapBlocksRequestMessage snapBlocksRequestMessage = new SnapBlocksRequestMessage(1, 460);
         //when
         underTest.processSnapBlocksRequestInternal(peer, snapBlocksRequestMessage);
 
@@ -179,7 +214,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 200,
+                true,
                 false);
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
@@ -188,20 +228,23 @@ public class SnapshotProcessorTest {
             difficulties.add(blockStore.getTotalDifficultyForHash(currentBlock.getHash().getBytes()));
         }
 
-        SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(blocks, difficulties, 100000L);
+        SnapStatusResponseMessage snapStatusResponseMessage = new SnapStatusResponseMessage(1, blocks, difficulties, 100000L);
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(true).when(blockValidator).isValid(any());
+        doReturn(true).when(blockParentValidator).isValid(any(), any());
         doReturn(new LinkedList<>()).when(snapSyncState).getChunkTaskQueue();
 
-        underTest.startSyncing();
+        underTest.startSyncing(snapSyncState);
         underTest.processSnapStatusResponse(snapSyncState, peer, snapStatusResponseMessage);
 
-        SnapBlocksResponseMessage snapBlocksResponseMessage = new SnapBlocksResponseMessage(blocks, difficulties);
+        SnapBlocksResponseMessage snapBlocksResponseMessage = new SnapBlocksResponseMessage(1, blocks, difficulties);
 
         when(snapSyncState.getLastBlock()).thenReturn(blocks.get(blocks.size() - 1));
         //when
         underTest.processSnapBlocksResponse(snapSyncState, peer, snapBlocksResponseMessage);
 
         //then
-        verify(peer, atLeast(2)).sendMessage(any(SnapBlocksRequestMessage.class));
+        verify(snapSyncState, atLeast(2)).submitRequest(any(PeerSelector.class), any(RequestFactory.class));
     }
 
     @Test
@@ -214,7 +257,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false);
 
         SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1, TEST_CHUNK_SIZE);
@@ -239,7 +287,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false,
                 listener) {
             @Override
@@ -259,7 +312,7 @@ public class SnapshotProcessorTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -275,7 +328,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false,
                 listener) {
             @Override
@@ -295,7 +353,7 @@ public class SnapshotProcessorTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -311,7 +369,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false,
                 listener) {
             @Override
@@ -331,7 +394,7 @@ public class SnapshotProcessorTest {
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
         assertEquals(peer, jobArg.getValue().getSender());
-        assertEquals(msg, jobArg.getValue().getMsg());
+        assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
@@ -342,7 +405,12 @@ public class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                true,
                 false);
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = new PriorityQueue<>(
@@ -353,14 +421,15 @@ public class SnapshotProcessorTest {
         when(snapSyncState.getNextExpectedFrom()).thenReturn(1L);
         when(responseMessage.getFrom()).thenReturn(1L);
         when(responseMessage.getChunkOfTrieKeyValue()).thenReturn(RLP.encodedEmptyList());
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(true).when(blockValidator).isValid(any());
+        doReturn(true).when(blockParentValidator).isValid(any(), any());
         underTest = spy(underTest);
 
         underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
 
-        verify(snapSyncState, times(1)).onNewChunk();
-        verify(underTest, times(1)).onStateChunkResponseError(peer, responseMessage);
-        verify(peer, times(1)).sendMessage(any(SnapStateChunkRequestMessage.class));
-
+        verify(underTest, times(1)).onStateChunkResponseError(snapSyncState, peer, responseMessage);
+        verify(snapSyncState, times(1)).submitRequest(any(PeerSelector.class), any(RequestFactory.class));
     }
 
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {

@@ -30,10 +30,10 @@ import java.util.stream.Collectors;
 @Immutable
 public final class SyncConfiguration {
     @VisibleForTesting
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 60, 0);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 0);
 
     @VisibleForTesting
-    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false, false, 60, 0);
+    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false, false, 0);
 
     private final int expectedPeers;
     private final Duration timeoutWaitingPeers;
@@ -46,8 +46,6 @@ public final class SyncConfiguration {
     private final double topBest;
     private final boolean isServerSnapSyncEnabled;
     private final boolean isClientSnapSyncEnabled;
-
-    private final Duration timeoutWaitingSnapChunk;
 
     private final int snapshotSyncLimit;
     private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
@@ -64,7 +62,6 @@ public final class SyncConfiguration {
      * @param topBest                  % of top best nodes that  will be considered for random selection.
      * @param isServerSnapSyncEnabled  Flag that indicates if server-side snap sync is enabled
      * @param isClientSnapSyncEnabled  Flag that indicates if client-side snap sync is enabled
-     * @param timeoutWaitingSnapChunk  Specific request timeout for snap sync
      * @param snapshotSyncLimit        Distance to the tip of the peer's blockchain to enable snap synchronization.
      */
     public SyncConfiguration(
@@ -79,7 +76,6 @@ public final class SyncConfiguration {
             double topBest,
             boolean isServerSnapSyncEnabled,
             boolean isClientSnapSyncEnabled,
-            int timeoutWaitingSnapChunk,
             int snapshotSyncLimit) {
         this(expectedPeers,
                 timeoutWaitingPeers,
@@ -92,7 +88,6 @@ public final class SyncConfiguration {
                 topBest,
                 isServerSnapSyncEnabled,
                 isClientSnapSyncEnabled,
-                timeoutWaitingSnapChunk,
                 snapshotSyncLimit,
                 Collections.emptyList());
     }
@@ -109,7 +104,6 @@ public final class SyncConfiguration {
             double topBest,
             boolean isServerSnapSyncEnabled,
             boolean isClientSnapSyncEnabled,
-            int timeoutWaitingSnapChunk,
             int snapshotSyncLimit,
             List<Node> snapBootNodes) {
         this.expectedPeers = expectedPeers;
@@ -123,11 +117,7 @@ public final class SyncConfiguration {
         this.topBest = topBest;
         this.isServerSnapSyncEnabled = isServerSnapSyncEnabled;
         this.isClientSnapSyncEnabled = isClientSnapSyncEnabled;
-        // TODO(snap-poc) re-visit the need of this specific timeout as the algorithm evolves
-        this.timeoutWaitingSnapChunk = Duration.ofSeconds(timeoutWaitingSnapChunk);
         this.snapshotSyncLimit = snapshotSyncLimit;
-
-
 
         List<Node> snapBootNodesList = snapBootNodes != null ? snapBootNodes : Collections.emptyList();
 
@@ -135,27 +125,27 @@ public final class SyncConfiguration {
                 .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer)));
     }
 
-    public final int getExpectedPeers() {
+    public int getExpectedPeers() {
         return expectedPeers;
     }
 
-    public final int getMaxSkeletonChunks() {
+    public int getMaxSkeletonChunks() {
         return maxSkeletonChunks;
     }
 
-    public final Duration getTimeoutWaitingPeers() {
+    public Duration getTimeoutWaitingPeers() {
         return timeoutWaitingPeers;
     }
 
-    public final Duration getTimeoutWaitingRequest() {
+    public Duration getTimeoutWaitingRequest() {
         return  timeoutWaitingRequest;
     }
 
-    public final Duration getExpirationTimePeerStatus() {
+    public Duration getExpirationTimePeerStatus() {
         return expirationTimePeerStatus;
     }
 
-    public final int getChunkSize() {
+    public int getChunkSize() {
         return chunkSize;
     }
 
@@ -177,10 +167,6 @@ public final class SyncConfiguration {
 
     public boolean isClientSnapSyncEnabled() {
         return isClientSnapSyncEnabled;
-    }
-
-    public Duration getTimeoutWaitingSnapChunk() {
-        return timeoutWaitingSnapChunk;
     }
 
     public int getSnapshotSyncLimit() {
