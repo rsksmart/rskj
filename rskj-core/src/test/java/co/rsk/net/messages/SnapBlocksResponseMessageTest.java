@@ -28,14 +28,18 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
 class SnapBlocksResponseMessageTest {
@@ -46,7 +50,7 @@ class SnapBlocksResponseMessageTest {
     private final Block block4Test = new BlockGenerator().getBlock(1);
     private final List<Block> blockList = Collections.singletonList(new BlockGenerator().getBlock(1));
     private final List<BlockDifficulty> blockDifficulties = Collections.singletonList(indexedBlockStore.getTotalDifficultyForHash(block4Test.getHash().getBytes()));
-    private final SnapBlocksResponseMessage underTest = new SnapBlocksResponseMessage(blockList, blockDifficulties);
+    private final SnapBlocksResponseMessage underTest = new SnapBlocksResponseMessage(1, blockList, blockDifficulties);
 
 
     @Test
@@ -62,13 +66,32 @@ class SnapBlocksResponseMessageTest {
     void getEncodedMessage_returnExpectedByteArray() {
         //given default block 4 test
         byte[] expectedEncodedMessage = RLP.encodeList(
-                RLP.encodeList(RLP.encode(block4Test.getEncoded())),
-                RLP.encodeList(RLP.encode(blockDifficulties.get(0).getBytes())));
+                RLP.encodeBigInteger(BigInteger.valueOf(underTest.getId())),
+                RLP.encodeList(
+                        RLP.encodeList(RLP.encode(block4Test.getEncoded())),
+                        RLP.encodeList(RLP.encode(blockDifficulties.get(0).getBytes()))));
         //when
         byte[] encodedMessage = underTest.getEncodedMessage();
 
         //then
         assertThat(encodedMessage, equalTo(expectedEncodedMessage));
+    }
+
+    @Test
+    void decodeMessage_returnExpectedMessage() {
+        //given default block 4 test
+        RLPList encodedRLPList = (RLPList) RLP.decode2(underTest.getEncodedMessage()).get(0);
+
+        //when
+        Message decodedMessage = SnapBlocksResponseMessage.decodeMessage(blockFactory, encodedRLPList);
+
+        //then
+        assertInstanceOf(SnapBlocksResponseMessage.class, decodedMessage);
+        assertThat(underTest.getId(), equalTo(((SnapBlocksResponseMessage) decodedMessage).getId()));
+        assertThat(1, is(((SnapBlocksResponseMessage) decodedMessage).getBlocks().size()));
+        assertThat(block4Test.getHash(), is(((SnapBlocksResponseMessage) decodedMessage).getBlocks().get(0).getHash()));
+        assertThat(1, is(((SnapBlocksResponseMessage) decodedMessage).getDifficulties().size()));
+        assertThat(blockDifficulties.get(0), is(((SnapBlocksResponseMessage) decodedMessage).getDifficulties().get(0)));
     }
 
     @Test
@@ -94,7 +117,7 @@ class SnapBlocksResponseMessageTest {
     @Test
     void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
-        SnapBlocksResponseMessage message = new SnapBlocksResponseMessage(blockList, blockDifficulties);
+        SnapBlocksResponseMessage message = new SnapBlocksResponseMessage(1, blockList, blockDifficulties);
         MessageVisitor visitor = mock(MessageVisitor.class);
 
         //when

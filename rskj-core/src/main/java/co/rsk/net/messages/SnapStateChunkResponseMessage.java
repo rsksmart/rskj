@@ -26,8 +26,9 @@ import org.ethereum.util.RLPList;
 import java.math.BigInteger;
 
 public class SnapStateChunkResponseMessage extends MessageWithId {
-    private final long to;
     private final long id;
+
+    private final long to;
     private final byte[] chunkOfTrieKeyValue;
 
     private final long from;
@@ -59,38 +60,34 @@ public class SnapStateChunkResponseMessage extends MessageWithId {
         return this.id;
     }
 
-
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        try {
-            byte[] rlpBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
-            byte[] rlpFrom = RLP.encodeBigInteger(BigInteger.valueOf(this.from));
-            byte[] rlpTo = RLP.encodeBigInteger(BigInteger.valueOf(this.to));
-            byte[] rlpComplete = new byte[]{this.complete ? (byte) 1 : (byte) 0};
-            return RLP.encodeList(chunkOfTrieKeyValue, rlpBlockNumber, rlpFrom, rlpTo, rlpComplete);
-        } catch (Exception e) {
-            throw e;
-        }
+        byte[] rlpChunkOfTrieKeyValue = RLP.encodeElement(chunkOfTrieKeyValue);
+        byte[] rlpBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
+        byte[] rlpFrom = RLP.encodeBigInteger(BigInteger.valueOf(this.from));
+        byte[] rlpTo = RLP.encodeBigInteger(BigInteger.valueOf(this.to));
+        byte[] rlpComplete = RLP.encodeInt(this.complete ? 1 : 0);
+
+        return RLP.encodeList(rlpChunkOfTrieKeyValue, rlpBlockNumber, rlpFrom, rlpTo, rlpComplete);
     }
 
-    public static Message create(BlockFactory blockFactory, RLPList list) {
-        try {
-            byte[] rlpId = list.get(0).getRLPData();
-            RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] chunkOfTrieKeys = message.get(0).getRLPData();
-            byte[] rlpBlockNumber = message.get(1).getRLPData();
-            byte[] rlpFrom = message.get(2).getRLPData();
-            byte[] rlpTo = message.get(3).getRLPData();
-            byte[] rlpComplete = message.get(4).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
-            long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
-            long to = rlpTo == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTo).longValue();
-            boolean complete = rlpComplete == null ? Boolean.FALSE : rlpComplete[0] != 0;
-            return new SnapStateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, to, complete);
-        } catch (Exception e) {
-            throw e;
-        }
+    public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
+        byte[] rlpId = list.get(0).getRLPData();
+        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+        RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
+        byte[] rlpChunkOfTrieKeys = message.get(0).getRLPData();
+        byte[] rlpBlockNumber = message.get(1).getRLPData();
+        byte[] rlpFrom = message.get(2).getRLPData();
+        byte[] rlpTo = message.get(3).getRLPData();
+        byte[] rlpComplete = message.get(4).getRLPData();
+
+        byte[] chunkOfTrieKeys = rlpChunkOfTrieKeys == null ? new byte[0] : rlpChunkOfTrieKeys;
+        long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+        long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
+        long to = rlpTo == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTo).longValue();
+        boolean complete = rlpComplete != null && rlpComplete.length != 0 && rlpComplete[0] != 0;
+        return new SnapStateChunkResponseMessage(id, chunkOfTrieKeys, blockNumber, from, to, complete);
     }
 
     public byte[] getChunkOfTrieKeyValue() {

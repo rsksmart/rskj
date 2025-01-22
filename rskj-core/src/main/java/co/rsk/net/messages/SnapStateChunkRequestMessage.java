@@ -44,6 +44,11 @@ public class SnapStateChunkRequestMessage extends MessageWithId {
     }
 
     @Override
+    public MessageType getResponseMessageType() {
+        return MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE;
+    }
+
+    @Override
     public void accept(MessageVisitor v) {
         v.apply(this);
     }
@@ -61,21 +66,18 @@ public class SnapStateChunkRequestMessage extends MessageWithId {
         return RLP.encodeList(rlpBlockNumber, rlpFrom, rlpChunkSize);
     }
 
-    public static Message create(BlockFactory blockFactory, RLPList list) {
-        try {
-            byte[] rlpId = list.get(0).getRLPData();
-            RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpBlockNumber = message.get(0).getRLPData();
-            byte[] rlpFrom = message.get(1).getRLPData();
-            byte[] rlpChunkSize = message.get(2).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
-            long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
-            long chunkSize = rlpChunkSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpChunkSize).longValue();
-            return new SnapStateChunkRequestMessage(id, blockNumber, from, chunkSize);
-        } catch (Exception e) {
-            throw e;
-        }
+    public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
+        byte[] rlpId = list.get(0).getRLPData();
+        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+        RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
+        byte[] rlpBlockNumber = message.get(0).getRLPData();
+        byte[] rlpFrom = message.get(1).getRLPData();
+        byte[] rlpChunkSize = message.get(2).getRLPData();
+        long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+        long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
+        long chunkSize = rlpChunkSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpChunkSize).longValue();
+        return new SnapStateChunkRequestMessage(id, blockNumber, from, chunkSize);
     }
 
     public long getFrom() {

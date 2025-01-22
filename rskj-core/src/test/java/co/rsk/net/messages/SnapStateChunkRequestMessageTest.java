@@ -19,8 +19,11 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -28,9 +31,13 @@ import java.math.BigInteger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
 public class SnapStateChunkRequestMessageTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
     void getMessageType_returnCorrectMessageType() {
@@ -45,6 +52,7 @@ public class SnapStateChunkRequestMessageTest {
         //then
         assertThat(messageType, equalTo(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE));
     }
+
     @Test
     void givenParameters4Test_assureExpectedValues() {
         //given
@@ -102,6 +110,28 @@ public class SnapStateChunkRequestMessageTest {
 
         //then
         assertThat(encodedMessage, equalTo(expectedEncodedMessage));
+    }
+
+    @Test
+    void decodeMessage_returnExpectedMessage() {
+        //given default block 4 test
+        long blockNumber = 1L;
+        long id4Test = 42L;
+        long from = 1L;
+        long chunkSize = 20L;
+
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from, chunkSize);
+        RLPList encodedRLPList = (RLPList) RLP.decode2(message.getEncodedMessage()).get(0);
+
+        //when
+        Message decodedMessage = SnapStateChunkRequestMessage.decodeMessage(blockFactory, encodedRLPList);
+
+        //then
+        assertInstanceOf(SnapStateChunkRequestMessage.class, decodedMessage);
+        assertEquals(id4Test,((SnapStateChunkRequestMessage) decodedMessage).getId());
+        assertEquals(from,((SnapStateChunkRequestMessage) decodedMessage).getFrom());
+        assertEquals(blockNumber,((SnapStateChunkRequestMessage) decodedMessage).getBlockNumber());
+        assertEquals(chunkSize,((SnapStateChunkRequestMessage) decodedMessage).getChunkSize());
     }
 
     @Test

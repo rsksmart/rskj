@@ -28,6 +28,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -36,7 +37,8 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
 class SnapStatusResponseMessageTest {
@@ -48,7 +50,7 @@ class SnapStatusResponseMessageTest {
     private final List<Block> blockList = Collections.singletonList(new BlockGenerator().getBlock(1));
     private final List<BlockDifficulty> blockDifficulties = Collections.singletonList(indexedBlockStore.getTotalDifficultyForHash(block4Test.getHash().getBytes()));
     private final long trieSize = 1L;
-    private final SnapStatusResponseMessage underTest = new SnapStatusResponseMessage(blockList, blockDifficulties, trieSize);
+    private final SnapStatusResponseMessage underTest = new SnapStatusResponseMessage(1, blockList, blockDifficulties, trieSize);
 
 
     @Test
@@ -64,14 +66,33 @@ class SnapStatusResponseMessageTest {
     void getEncodedMessage_returnExpectedByteArray() {
         //given default block 4 test
         byte[] expectedEncodedMessage = RLP.encodeList(
-                RLP.encodeList(RLP.encode(block4Test.getEncoded())),
-                RLP.encodeList(RLP.encode(blockDifficulties.get(0).getBytes())),
-                RLP.encodeBigInteger(BigInteger.valueOf(this.trieSize)));
+                RLP.encodeBigInteger(BigInteger.valueOf(underTest.getId())),
+                RLP.encodeList(
+                        RLP.encodeList(RLP.encode(block4Test.getEncoded())),
+                        RLP.encodeList(RLP.encode(blockDifficulties.get(0).getBytes())),
+                        RLP.encodeBigInteger(BigInteger.valueOf(this.trieSize))));
         //when
         byte[] encodedMessage = underTest.getEncodedMessage();
 
         //then
         assertThat(encodedMessage, equalTo(expectedEncodedMessage));
+    }
+
+    @Test
+    void decodeMessage_returnExpectedMessage() {
+        //given default block 4 test
+        RLPList encodedRLPList = (RLPList) RLP.decode2(underTest.getEncodedMessage()).get(0);
+
+        //when
+        Message decodedMessage = SnapStatusResponseMessage.decodeMessage(blockFactory, encodedRLPList);
+
+        //then
+        assertInstanceOf(SnapStatusResponseMessage.class, decodedMessage);
+        assertEquals(underTest.getId(), ((SnapStatusResponseMessage) decodedMessage).getId());
+        assertEquals(1, ((SnapStatusResponseMessage) decodedMessage).getBlocks().size());
+        assertEquals(underTest.getBlocks().get(0).getHash(), ((SnapStatusResponseMessage) decodedMessage).getBlocks().get(0).getHash());
+        assertEquals(1, ((SnapStatusResponseMessage) decodedMessage).getDifficulties().size());
+        assertEquals(underTest.getDifficulties().get(0), ((SnapStatusResponseMessage) decodedMessage).getDifficulties().get(0));
     }
 
     @Test
@@ -107,7 +128,7 @@ class SnapStatusResponseMessageTest {
     @Test
     void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
-        SnapStatusResponseMessage message = new SnapStatusResponseMessage(blockList, blockDifficulties, trieSize);
+        SnapStatusResponseMessage message = new SnapStatusResponseMessage(1, blockList, blockDifficulties, trieSize);
         MessageVisitor visitor = mock(MessageVisitor.class);
 
         //when

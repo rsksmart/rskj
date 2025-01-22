@@ -19,18 +19,25 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SnapStateChunkResponseMessageTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
     void getMessageType_returnCorrectMessageType() {
@@ -81,11 +88,11 @@ public class SnapStateChunkResponseMessageTest {
         boolean complete = true;
 
         byte[] expectedEncodedMessage = RLP.encodeList(
-                trieValueBytes,
+                RLP.encodeElement(trieValueBytes),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
                 RLP.encodeBigInteger(BigInteger.valueOf(from)),
                 RLP.encodeBigInteger(BigInteger.valueOf(to)),
-                new byte[]{(byte) 1});
+                RLP.encodeInt(complete ? 1 : 0));
 
         SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, blockNumber, from, to, complete);
 
@@ -114,7 +121,33 @@ public class SnapStateChunkResponseMessageTest {
         byte[] encodedMessage = message.getEncodedMessage();
 
         //then
-        assertThat(encodedMessage, equalTo(expectedEncodedMessage));
+        assertArrayEquals(encodedMessage, expectedEncodedMessage);
+    }
+
+    @Test
+    void decodeMessage_returnExpectedMessage() {
+        //given default block 4 test
+        long blockNumber = 111L;
+        long id4Test = 42L;
+        byte[] trieValueBytes = "any random data".getBytes();
+        long from = 5L;
+        long to = 20L;
+        boolean complete = false;
+
+        SnapStateChunkResponseMessage message = new SnapStateChunkResponseMessage(id4Test, trieValueBytes, blockNumber, from, to, complete);
+        RLPList encodedRLPList = (RLPList) RLP.decode2(message.getEncodedMessage()).get(0);
+
+        //when
+        Message decodedMessage = SnapStateChunkResponseMessage.decodeMessage(blockFactory, encodedRLPList);
+
+        //then
+        assertInstanceOf(SnapStateChunkResponseMessage.class, decodedMessage);
+        assertEquals(id4Test,((SnapStateChunkResponseMessage) decodedMessage).getId());
+        assertEquals(from,((SnapStateChunkResponseMessage) decodedMessage).getFrom());
+        assertEquals(to,((SnapStateChunkResponseMessage) decodedMessage).getTo());
+        assertEquals(blockNumber,((SnapStateChunkResponseMessage) decodedMessage).getBlockNumber());
+        assertEquals(complete, ((SnapStateChunkResponseMessage) decodedMessage).isComplete());
+        assertThat(trieValueBytes, is(((SnapStateChunkResponseMessage) decodedMessage).getChunkOfTrieKeyValue()));
     }
 
     @Test

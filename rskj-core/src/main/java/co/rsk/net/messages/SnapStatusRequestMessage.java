@@ -18,11 +18,17 @@
 
 package co.rsk.net.messages;
 
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
-public class SnapStatusRequestMessage extends Message {
+public class SnapStatusRequestMessage extends MessageWithId {
 
-    public SnapStatusRequestMessage() {
+    private final long id;
+
+    public SnapStatusRequestMessage(long id) {
+        this.id = id;
     }
 
     @Override
@@ -31,12 +37,29 @@ public class SnapStatusRequestMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
+    public MessageType getResponseMessageType() {
+        return MessageType.SNAP_STATUS_RESPONSE_MESSAGE;
+    }
+
+    @Override
+    public long getId() {
+        return this.id;
+    }
+
+    @Override
+    protected byte[] getEncodedMessageWithoutId() {
         return RLP.encodedEmptyList();
     }
 
     @Override
     public void accept(MessageVisitor v) {
         v.apply(this);
+    }
+
+    public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
+        byte[] rlpId = list.get(0).getRLPData();
+        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+        return new SnapStatusRequestMessage(id);
     }
 }

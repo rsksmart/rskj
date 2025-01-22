@@ -29,9 +29,10 @@ public class Stats {
 
     // Current minute messages counter
     private long minute;
-    // Reject messages over this treshold
+
+    // Reject messages over this threshold
     // Is calculated using Exponential moving average
-    private long perMinuteThreshold;
+    private final long perMinuteThreshold;
 
     // events counters
     // 100% heuristics
@@ -44,25 +45,28 @@ public class Stats {
     private double avg; //in ms
 
     // how fast avg and mpm update
-    private double alpha_m;
-    private double alpha_a;
+    private final double alpha_m;
+    private final double alpha_a;
 
     // scores for blocks and others
-    private double maxBlock;
-    private double maxOther;
+    private final double maxBlock;
+    private final double maxOther;
 
     public Stats() {
+        this(1000);
+    }
+
+    public Stats(long perMinuteThreshold) {
         avg = 500;
         alpha_m = 0.3;
         alpha_a = 0.03;
 
-        perMinuteThreshold = 1000;
+        this.perMinuteThreshold = perMinuteThreshold;
 
         maxBlock = 200;
         maxOther = 100;
         mpm = 1;
     }
-
 
     public synchronized double update(long timestamp, MessageType type) {
         long min = timestamp / 60000;
@@ -166,6 +170,7 @@ public class Stats {
                 return 0.0;
         }
     }
+
     public synchronized void imported(boolean best) {
         if (best) {
             importedBest++;
@@ -173,7 +178,6 @@ public class Stats {
             importedNotBest++;
         }
     }
-
 
     @Override
     public String toString() {
@@ -197,7 +201,6 @@ public class Stats {
         return mpm;
     }
 
-
     @VisibleForTesting
     public long getMinute() {
         return minute;
@@ -217,5 +220,4 @@ public class Stats {
     public void setImportedNotBest(int importedNotBest) {
         this.importedNotBest = importedNotBest;
     }
-
 }

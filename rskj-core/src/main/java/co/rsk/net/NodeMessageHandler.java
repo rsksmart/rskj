@@ -211,7 +211,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      */
     private boolean controlMessageIngress(Peer sender, Message message, double score) {
         return
-                allowByScore(score) &&
+                allowByScore(sender, message, score) &&
                         allowByMessageCount(sender) &&
                         allowByMinerNotBanned(sender, message) &&
                         allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last
@@ -221,8 +221,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     /**
      * assert score is acceptable
      */
-    private boolean allowByScore(double score) {
-        return score >= 0;
+    private boolean allowByScore(Peer sender, Message message, double score) {
+        boolean allow = score >= 0;
+        if (!allow) {
+            logger.debug("Message: [{}] from: [{}] with score: [{}] was not allowed", message.getMessageType(), sender, score);
+        }
+
+        return allow;
     }
 
     /**

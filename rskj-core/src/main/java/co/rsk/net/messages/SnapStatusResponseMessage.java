@@ -30,7 +30,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SnapStatusResponseMessage extends Message {
+public class SnapStatusResponseMessage extends MessageWithId {
+    private final long id;
     private final List<Block> blocks;
     private final List<BlockDifficulty> difficulties;
     private final long trieSize;
@@ -43,7 +44,8 @@ public class SnapStatusResponseMessage extends Message {
         return this.trieSize;
     }
 
-    public SnapStatusResponseMessage(List<Block> blocks, List<BlockDifficulty> difficulties, long trieSize) {
+    public SnapStatusResponseMessage(long id, List<Block> blocks, List<BlockDifficulty> difficulties, long trieSize) {
+        this.id = id;
         this.blocks = blocks;
         this.difficulties = difficulties;
         this.trieSize = trieSize;
@@ -59,7 +61,12 @@ public class SnapStatusResponseMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
+    public long getId() {
+        return this.id;
+    }
+
+    @Override
+    protected byte[] getEncodedMessageWithoutId() {
         List<byte[]> rlpBlocks = this.blocks.stream().map(Block::getEncoded).map(RLP::encode).collect(Collectors.toList());
         List<byte[]> rlpDifficulties = this.difficulties.stream().map(BlockDifficulty::getBytes).map(RLP::encode).collect(Collectors.toList());
         byte[] rlpTrieSize = RLP.encodeBigInteger(BigInteger.valueOf(this.trieSize));
@@ -68,8 +75,12 @@ public class SnapStatusResponseMessage extends Message {
     }
 
     public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
-        RLPList rlpBlocks = RLP.decodeList(list.get(0).getRLPData());
-        RLPList rlpDifficulties = RLP.decodeList(list.get(1).getRLPData());
+        byte[] rlpId = list.get(0).getRLPData();
+        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+        RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+        RLPList rlpBlocks = RLP.decodeList(message.get(0).getRLPData());
+        RLPList rlpDifficulties = RLP.decodeList(message.get(1).getRLPData());
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
         for (int i = 0; i < rlpBlocks.size(); i++) {
@@ -79,10 +90,10 @@ public class SnapStatusResponseMessage extends Message {
             difficulties.add(new BlockDifficulty(new BigInteger(rlpDifficulties.get(i).getRLPData())));
         }
 
-        byte[] rlpTrieSize = list.get(2).getRLPData();
+        byte[] rlpTrieSize = message.get(2).getRLPData();
         long trieSize = rlpTrieSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTrieSize).longValue();
 
-        return new SnapStatusResponseMessage(blocks, difficulties, trieSize);
+        return new SnapStatusResponseMessage(id, blocks, difficulties, trieSize);
     }
 
     @Override
