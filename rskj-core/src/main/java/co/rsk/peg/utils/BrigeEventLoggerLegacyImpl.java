@@ -19,15 +19,12 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.DeprecatedMethodCallException;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.constants.FederationConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
@@ -37,8 +34,8 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static co.rsk.peg.utils.EcKeyUtils.flatKeysAsRlpCollection;
 
 /**
  * Responsible for logging events triggered by BridgeContract in RLP format.
@@ -51,18 +48,15 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
 
     private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
-    private final BridgeConstants bridgeConstants;
     private final ActivationConfig.ForBlock activations;
     private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
 
     public BrigeEventLoggerLegacyImpl(
-        BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
         List<LogInfo> logs,
         SignatureCache signatureCache
     ) {
-        this.bridgeConstants = bridgeConstants;
         this.activations = activations;
         this.signatureCache = signatureCache;
         this.logs = logs;
@@ -112,7 +106,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
+    public void logCommitFederation(long newFedActivationBlockNumber, Federation oldFederation, Federation newFederation) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             throw new DeprecatedMethodCallException(
                 "Calling BrigeEventLoggerLegacyImpl.logCommitFederation method after RSKIP146 activation"
@@ -125,32 +119,8 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
 
         byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getBtcPublicKeys());
         byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
-
-        FederationConstants federationConstants = this.bridgeConstants.getFederationConstants();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + federationConstants.getFederationActivationAge(activations);
-
         byte[] data = RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
-    }
-
-    private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
-        return flatKeys(keys, (k -> RLP.encodeElement(k.getPubKey())));
-    }
-
-    private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
-        List<byte[]> pubKeys = keys.stream()
-            .map(parser)
-            .collect(Collectors.toList());
-        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
-
-        byte[] flatPubKeys = new byte[pubKeysLength];
-        int copyPos = 0;
-        for (byte[] key : pubKeys) {
-            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
-            copyPos += key.length;
-        }
-
-        return flatPubKeys;
     }
 }

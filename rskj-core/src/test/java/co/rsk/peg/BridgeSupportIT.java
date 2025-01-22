@@ -3429,7 +3429,8 @@ public class BridgeSupportIT {
         verify(mocksProvider.getElection(), times(1)).clear();
 
         // Check logs are made
-        verify(eventLoggerMock, times(1)).logCommitFederation(executionBlock, newFederation, expectedFederation);
+        long newFedActivationBlockNumber = executionBlock.getNumber() + federationConstants.getFederationActivationAge(activations);
+        verify(eventLoggerMock, times(1)).logCommitFederation(newFedActivationBlockNumber, newFederation, expectedFederation);
     }
 
     @Test

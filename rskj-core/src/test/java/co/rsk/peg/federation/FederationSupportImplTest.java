@@ -32,7 +32,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
@@ -2213,7 +2212,7 @@ class FederationSupportImplTest {
             activations = ActivationConfigsForTest.all().forBlock(0L);
             signatureCache = mock(SignatureCache.class);
             logs = new ArrayList<>();
-            bridgeEventLogger = new BridgeEventLoggerImpl(BridgeMainNetConstants.getInstance(), activations, logs, signatureCache);
+            bridgeEventLogger = new BridgeEventLoggerImpl(activations, logs, signatureCache);
             StorageAccessor inMemoryStorageAccessor = new InMemoryStorage();
             storageProvider = new FederationStorageProviderImpl(inMemoryStorageAccessor);
 

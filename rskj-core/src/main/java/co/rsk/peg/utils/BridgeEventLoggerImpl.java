@@ -22,13 +22,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.bitcoin.UtxoUtils;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
-import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -36,6 +33,8 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
+
+import static co.rsk.peg.utils.EcKeyUtils.flatKeysAsByteArray;
 
 /**
  * Responsible for logging events triggered by BridgeContract.
@@ -46,19 +45,16 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
-    private final BridgeConstants bridgeConstants;
     private final SignatureCache signatureCache;
     private final List<LogInfo> logs;
     private final ActivationConfig.ForBlock activations;
 
     public BridgeEventLoggerImpl(
-        BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations,
         List<LogInfo> logs,
         SignatureCache signatureCache) {
 
         this.activations = activations;
-        this.bridgeConstants = bridgeConstants;
         this.signatureCache = signatureCache;
         this.logs = logs;
     }
@@ -112,15 +108,12 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
+    public void logCommitFederation(long newFedActivationBlockNumber, Federation oldFederation, Federation newFederation) {
         // Convert old federation public keys in bytes array
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + federationConstants.getFederationActivationAge(activations);
 
         CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();
@@ -269,26 +262,6 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
         byte[] encodedData = event.encodeEventData(serializedOutpointValues);
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
-    }
-
-    private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
-        List<byte[]> pubKeys = keys.stream()
-                .map(parser)
-                .collect(Collectors.toList());
-        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
-
-        byte[] flatPubKeys = new byte[pubKeysLength];
-        int copyPos = 0;
-        for (byte[] key : pubKeys) {
-            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
-            copyPos += key.length;
-        }
-
-        return flatPubKeys;
-    }
-
-    private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
-        return flatKeys(keys, BtcECKey::getPubKey);
     }
 
     private byte[] serializeRskTxHashes(List<Keccak256> rskTxHashes) {
