@@ -56,7 +56,7 @@ public class TransactionArgumentsUtil {
 			argsRet.setNonce(Optional.ofNullable(argsParam.getNonce())
 					.map(HexUtils::strHexOrStrNumberToBigInteger)
 					.orElse(null));
-		}else {
+		} else {
 			argsRet.setNonce(strHexOrStrNumberToBigInteger(argsParam.getNonce(), () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
 		}
 
