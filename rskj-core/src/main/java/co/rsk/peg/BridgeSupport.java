@@ -1020,7 +1020,7 @@ public class BridgeSupport {
         eventLogger.logUpdateCollections(sender);
     }
 
-    private void updateSvpState(Transaction rskTx) {
+    private void updateSvpState(Transaction rskTx) throws IOException {
         Optional<Federation> proposedFederationOpt = federationSupport.getProposedFederation();
         if (proposedFederationOpt.isEmpty()) {
             return;
@@ -1087,7 +1087,7 @@ public class BridgeSupport {
             .orElse(false);
     }
 
-    private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
+    private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) throws IOException {
         try {
             BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation);
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
@@ -1100,11 +1100,6 @@ public class BridgeSupport {
         } catch (InsufficientMoneyException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
-                e.getMessage()
-            );
-        } catch (IOException e) {
-            logger.error(
-                "[processSvpFundTransactionUnsigned] IOException getting the pegouts waiting for confirmations. Error message: {}",
                 e.getMessage()
             );
         }
