@@ -420,6 +420,7 @@ public class BridgeSupport {
                 case PEGOUT_OR_MIGRATION -> registerNewUtxos(btcTx);
                 case SVP_FUND_TX -> registerSvpFundTx(btcTx);
                 case SVP_SPEND_TX -> registerSvpSpendTx(btcTx);
+                case UNKNOWN -> logger.warn("[registerBtcTransaction] Unknown peg tx type won't be registered.");
             }
         } catch (RegisterBtcTransactionException e) {
             logger.warn(
