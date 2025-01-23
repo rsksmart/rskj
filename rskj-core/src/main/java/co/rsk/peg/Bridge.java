@@ -1165,7 +1165,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
      * @param args an array of arguments, where {@code args[0]} is a {@link BigInteger} for the federator's index,
      *             and {@code args[1]} is a {@link String} for the key type.
      * @return a byte array containing the federator's public key, or an empty byte array if not found.
-     * @throws VMException if an error occurs while processing the key type.
+     * @throws VMException if an error occurs while processing the key type or if getting an index out of bound exception from method call.
      */
     public byte[] getProposedFederatorPublicKeyOfType(Object[] args) throws VMException {
         logger.trace("getProposedFederatorPublicKeyOfType");
@@ -1176,11 +1176,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
         } catch (Exception e) {
-            logger.warn("Exception in getProposedFederatorPublicKeyOfType", e);
-            throw new VMException("Exception in getProposedFederatorPublicKeyOfType", e);
+            String errorMessage = "[getProposedFederatorPublicKeyOfType] Exception processing public key type";
+            logger.warn(errorMessage, e);
+            throw new VMException(errorMessage, e);
         }
 
-        return bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType)
+        Optional<byte[]> publicKey;
+        try {
+            publicKey = bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType);
+        } catch (IndexOutOfBoundsException e) {
+            String errorMessage = String.format(
+                "[getProposedFederatorPublicKeyOfType] Exception getting the %s key of member %d", keyType, index
+            );
+            logger.warn(errorMessage, e);
+            throw new VMException(errorMessage, e);
+        }
+
+        return publicKey
             .orElse(new byte[]{});
     }
 

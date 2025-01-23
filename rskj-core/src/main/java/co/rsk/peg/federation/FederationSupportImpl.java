@@ -851,7 +851,7 @@ public class FederationSupportImpl implements FederationSupport {
 
     /**
      * Returns the compressed public key of given type of the member list at the
-     * given index. Throws a custom index out of bounds exception when appropiate.
+     * given index. Throws a custom index out of bounds exception when appropriate.
      * 
      * @param members     list of federation members
      * @param index       federator's index (zero-based)
