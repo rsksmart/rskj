@@ -531,7 +531,7 @@ public enum BridgeMethods {
             new String[]{},
             new String[]{"bytes"}
         ),
-        fixedCost(4000L), // TODO: check fixed cost value
+        fixedCost(4000L),
         (BridgeMethodExecutorTyped<byte[]>) Bridge::getStateForSvpClient,
         activations -> activations.isActive(RSKIP419),
         fixedPermission(true),
