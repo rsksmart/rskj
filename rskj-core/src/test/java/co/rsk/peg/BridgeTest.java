@@ -347,7 +347,7 @@ class BridgeTest {
             bridge.execute(data);
             fail();
         } catch (VMException e) {
-            assertEquals("Exception executing bridge: Sender is not part of the active or retiring federations, so he is not enabled to call the function 'registerBtcTransaction'", e.getMessage());
+            assertEquals("Exception executing bridge: The sender is not a member of the active or retiring federations and is therefore not authorized to invoke the function: 'registerBtcTransaction'", e.getMessage());
         }
 
         verify(bridgeSupportMock, never()).registerBtcTransaction(
