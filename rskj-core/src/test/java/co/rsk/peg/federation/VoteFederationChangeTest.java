@@ -455,16 +455,15 @@ class VoteFederationChangeTest {
     }
 
     private void assertIsTheExpectedFederation(Federation federation) {
+        assertEquals(RSK_EXECUTION_BLOCK_TIMESTAMP, federation.getCreationTime().getEpochSecond());
+        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, federation.getCreationBlockNumber());
+
         Federation federationBuiltFromPendingFederation = pendingFederationToBe.buildFederation(
             Instant.ofEpochSecond(RSK_EXECUTION_BLOCK_TIMESTAMP),
             RSK_EXECUTION_BLOCK_NUMBER,
             federationMainnetConstants,
             activations
         );
-
-        assertEquals(federationBuiltFromPendingFederation.getCreationTime(), federation.getCreationTime());
-        assertEquals(federationBuiltFromPendingFederation.getCreationBlockNumber(), federation.getCreationBlockNumber());
-
         assertEquals(federationBuiltFromPendingFederation, federation);
     }
 
