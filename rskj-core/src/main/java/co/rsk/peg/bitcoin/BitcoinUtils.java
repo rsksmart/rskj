@@ -118,32 +118,29 @@ public class BitcoinUtils {
         List<TransactionOutput> outputsReversed = Lists.reverse(tx.getOutputs());
 
         for (TransactionOutput output : outputsReversed) {
-            try {
-                Script scriptPubKey = output.getScriptPubKey();
-                if (isWitnessCommitment(scriptPubKey)) {
-                    Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKey);
-                    return Optional.of(witnessCommitment);
-                }
-            } catch (ScriptException e) {
-                logger.warn(
-                    "[findWitnessCommitment] Failed to extract witness commitment from output {}. {}",
-                    output,
-                    e.getMessage()
-                );
+            byte[] scriptPubKeyBytes = getOutputScriptPubKeyBytes(activations, output);
 
-                if (!activations.isActive(ConsensusRule.RSKIP460)) {
-                    // Pre RSKIP460, the exception was not caught and the process could not continue
-                    throw e;
-                }
+            if (isWitnessCommitment(scriptPubKeyBytes)) {
+                Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKeyBytes);
+                return Optional.of(witnessCommitment);
             }
         }
 
         return Optional.empty();
     }
 
-    private static boolean isWitnessCommitment(Script scriptPubKey) {
-        byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
+    private static byte[] getOutputScriptPubKeyBytes(ActivationConfig.ForBlock activations, TransactionOutput output) {
+        if (!activations.isActive(ConsensusRule.RSKIP460)) {
+            /*
+                Calling `getScriptPubKey` pre RSKIP460 keeps consensus by throwing a ScripException
+                when the output has a non-standard format that bitcoinj-thin is not able to parse
+            */
+            return output.getScriptPubKey().getProgram();
+        }
+        return output.getScriptBytes();
+    }
 
+    private static boolean isWitnessCommitment(byte[] scriptPubKeyProgram) {
         return scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE
             && hasCommitmentStructure(scriptPubKeyProgram);
     }
@@ -161,8 +158,7 @@ public class BitcoinUtils {
     /**
      * Retrieves the hash from a segwit commitment (in an output of the coinbase transaction).
      */
-    private static Sha256Hash extractWitnessCommitmentHash(Script scriptPubKey) {
-        byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
+    private static Sha256Hash extractWitnessCommitmentHash(byte[] scriptPubKeyProgram) {
         Preconditions.checkState(scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE);
 
         final int WITNESS_COMMITMENT_HASH_START = 6; // 4 bytes for header + OP_RETURN + data length
