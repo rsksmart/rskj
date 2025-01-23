@@ -18,13 +18,16 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
+import static co.rsk.peg.federation.FederationStorageIndexKey.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.whitelist.WhitelistResponseCode;
 import java.io.ByteArrayOutputStream;
@@ -34,10 +37,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.federation.*;
@@ -63,9 +64,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -113,7 +111,57 @@ public class BridgeTestIntegration {
         BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
     );
     private static final ECKey federatorECKey = ECKey.fromPrivate(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey());
+    private static final String[] ACTIVE_FED_SEEDS = new String[] {
+        "activeFedMember1",
+        "activeFedMember2",
+        "activeFedMember3",
+        "activeFedMember4",
+        "activeFedMember5",
+        "activeFedMember6",
+        "activeFedMember7",
+        "activeFedMember8",
+        "activeFedMember9"
+    };
+    private static final List<BtcECKey> ACTIVE_FEDERATION_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(ACTIVE_FED_SEEDS, true);
+    private static final BtcECKey ACTIVE_FEDERATOR_SIGNER_KEY = ACTIVE_FEDERATION_KEYS.get(0);
+    private static final Federation ACTIVE_FEDERATION = P2shErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(ACTIVE_FEDERATION_KEYS)
+        .build();
+    private static final String[] RETIRING_FED_SEEDS = new String[] {
+        "retiringFedMember1",
+        "retiringFedMember2",
+        "retiringFedMember3",
+        "retiringFedMember4",
+        "retiringFedMember5",
+        "retiringFedMember6",
+        "retiringFedMember7",
+        "retiringFedMember8",
+        "retiringFedMember9"
+    };
+    private static final List<BtcECKey> RETIRING_FEDERATION_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(RETIRING_FED_SEEDS, true);
+    private static final BtcECKey RETIRING_FEDERATOR_SIGNER_KEY = RETIRING_FEDERATION_KEYS.get(0);
+    private static final Federation RETIRING_FEDERATION = P2shErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(RETIRING_FEDERATION_KEYS)
+        .build();
+    private static final String[] PROPOSED_FED_SEEDS = new String[] {
+        "proposedFedMember1",
+        "proposedFedMember2",
+        "proposedFedMember3",
+        "proposedFedMember4",
+        "proposedFedMember5",
+        "proposedFedMember6",
+        "proposedFedMember7",
+        "proposedFedMember8",
+        "proposedFedMember9"
+    };
+    private static final List<BtcECKey> PROPOSED_FEDERATION_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(PROPOSED_FED_SEEDS, true);
+    private static final BtcECKey PROPOSED_FEDERATOR_SIGNER_KEY = PROPOSED_FEDERATION_KEYS.get(0);
+    private static final Federation PROPOSED_FEDERATION = P2shErpFederationBuilder.builder()
+        .withMembersBtcPublicKeys(PROPOSED_FEDERATION_KEYS)
+        .build();
+
     private static final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+    private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters regtestParameters = bridgeRegTestConstants.getBtcParams();
 
     private static final BigInteger AMOUNT = new BigInteger("1000000000000000000");
@@ -121,7 +169,8 @@ public class BridgeTestIntegration {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "Sender is not part of the active or retiring federation";
+    private static final String ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED = "The sender is not a member of the active or retiring federations";
+    private static final String ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED = "The sender is not a member of the active, retiring, or proposed federations";
 
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
@@ -129,6 +178,8 @@ public class BridgeTestIntegration {
     private ActivationConfig.ForBlock activationConfigAll;
     private BlockFactory blockFactory;
     private SignatureCache signatureCache;
+    private Bridge bridge;
+    private Repository track;
 
     @BeforeEach
     void resetConfigToRegTest() {
@@ -1035,42 +1086,240 @@ public class BridgeTestIntegration {
     }
 
     @Test
-    void addSignatureNotFromFederation() throws Exception {
+    void addSignature_fromNewFederator_whenNewAndOldFederationsAndNewFedIsActive_shouldCall() {
+        // arrange
+        setUp();
+
+        saveRetiringFederationAsOldFederation();
+        saveActiveFederationAsNewFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with active federator, so he is the one calling the method
+        BtcECKey activeFederatorSignerKey = ACTIVE_FEDERATION_KEYS.get(0);
+        rskTx.sign(activeFederatorSignerKey.getPrivKeyBytes());
+
+        long blockNumberForNewFedToBeActive = bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationConfigAll)
+            + ACTIVE_FEDERATION.getCreationBlockNumber();
+        org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeActive);
+        initializeBridge(rskTx, rskExecutionBlock);
+
+        // get the data to call method
+        byte[] data = getAddSignatureEncodedData(activeFederatorSignerKey);
+
+        // act & assert
+        assertDoesNotThrow(() -> bridge.execute(data));
+    }
+
+    @Test
+    void addSignature_fromOldFederator_whenNewAndOldFederationsAndNewFedIsActive_shouldCall() {
+        // arrange
+        setUp();
+
+        saveRetiringFederationAsOldFederation();
+        saveActiveFederationAsNewFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with retiring federator, so he is the one calling the method
+        rskTx.sign(RETIRING_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
+
+        long blockNumberForNewFedToBeActive = bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationConfigAll)
+            + ACTIVE_FEDERATION.getCreationBlockNumber();
+        org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeActive);
+        initializeBridge(rskTx, rskExecutionBlock);
+
+        byte[] data = getAddSignatureEncodedData(RETIRING_FEDERATOR_SIGNER_KEY);
+
+        // act & assert
+        assertDoesNotThrow(() -> bridge.execute(data));
+    }
+
+    @Test
+    void addSignature_fromOldFederator_whenNewAndOldFederationsAndNewFedIsInactive_shouldCall() {
+        // arrange
+        setUp();
+
+        saveRetiringFederationAsOldFederation();
+        saveActiveFederationAsNewFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with retiring federator, so he is the one calling the method
+        rskTx.sign(RETIRING_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
+
+        long blockNumberForNewFedToBeInactive = bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationConfigAll)
+            + ACTIVE_FEDERATION.getCreationBlockNumber()
+            - 1;
+        org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeInactive);
+        initializeBridge(rskTx, rskExecutionBlock);
+
+        byte[] data = getAddSignatureEncodedData(RETIRING_FEDERATOR_SIGNER_KEY);
+
+        // act & assert
+        assertDoesNotThrow(() -> bridge.execute(data));
+    }
+
+    @Test
+    void addSignature_fromNewFederator_whenNewAndOldFederationsAndNewFedIsInactive_shouldThrow() {
+        // arrange
+        setUp();
+
+        saveRetiringFederationAsOldFederation();
+        saveActiveFederationAsNewFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with retiring federator, so he is the one calling the method
+        BtcECKey activeFederatorSignerKey = ACTIVE_FEDERATION_KEYS.get(0);
+        rskTx.sign(activeFederatorSignerKey.getPrivKeyBytes());
+
+        long blockNumberForNewFedToBeInactive = bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationConfigAll)
+            + ACTIVE_FEDERATION.getCreationBlockNumber()
+            - 1;
+        org.ethereum.core.Block rskExecutionBlock = RskTestUtils.createRskBlock(blockNumberForNewFedToBeInactive);
+        initializeBridge(rskTx, rskExecutionBlock);
+
+        byte[] data = getAddSignatureEncodedData(activeFederatorSignerKey);
+
+        // act & assert
+        VMException result = assertThrows(VMException.class, () -> bridge.execute(data));
+        assertTrue(result.getMessage().contains(ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED));
+    }
+
+    @Test
+    void addSignature_fromNewFederator_whenNoOldFederation_shouldCall() {
+        // arrange
+        setUp();
+
+        saveActiveFederationAsNewFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with active federator, so he is the one calling the method
+        rskTx.sign(ACTIVE_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
+
+        initializeBridge(rskTx, getGenesisBlock());
+
+        byte[] data = getAddSignatureEncodedData(ACTIVE_FEDERATOR_SIGNER_KEY);
+
+        // act & assert
+        assertDoesNotThrow(() -> bridge.execute(data));
+    }
+
+    private void saveActiveFederationAsNewFederation() {
+        byte[] activeFederationSerialized = BridgeSerializationUtils.serializeFederation(ACTIVE_FEDERATION);
+        track.addStorageBytes(BRIDGE_ADDRESS, NEW_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils.serializeInteger(3000));
+        track.addStorageBytes(BRIDGE_ADDRESS, NEW_FEDERATION_KEY.getKey(), activeFederationSerialized);
+    }
+
+    private void saveRetiringFederationAsOldFederation() {
+        byte[] retiringFederationSerialized = BridgeSerializationUtils.serializeFederation(RETIRING_FEDERATION);
+        track.addStorageBytes(BRIDGE_ADDRESS, OLD_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils.serializeInteger(3000));
+        track.addStorageBytes(BRIDGE_ADDRESS, OLD_FEDERATION_KEY.getKey(), retiringFederationSerialized);
+    }
+
+    @Test
+    void addSignature_fromProposedFederator_whenProposedFederation_shouldCall() {
+        // arrange
+        setUp();
+
+        saveProposedFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with proposed federator, so he is the one calling the method
+        rskTx.sign(PROPOSED_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
+
+        initializeBridge(rskTx, getGenesisBlock());
+
+        byte[] data = getAddSignatureEncodedData(PROPOSED_FEDERATOR_SIGNER_KEY);
+
+        // act & assert
+        assertDoesNotThrow(() -> bridge.execute(data));
+    }
+
+    private void saveProposedFederation() {
+        byte[] proposedFederationSerialized = BridgeSerializationUtils.serializeFederation(PROPOSED_FEDERATION);
+        track.addStorageBytes(BRIDGE_ADDRESS, PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), BridgeSerializationUtils.serializeInteger(3000));
+        track.addStorageBytes(BRIDGE_ADDRESS, FederationStorageIndexKey.PROPOSED_FEDERATION.getKey(), proposedFederationSerialized);
+    }
+
+    @Test
+    void addSignature_fromProposedFederator_whenNoProposedFederation_shouldThrow() {
+        // arrange
+        setUp();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with proposed federator, so he is the one calling the method
+        rskTx.sign(PROPOSED_FEDERATOR_SIGNER_KEY.getPrivKeyBytes());
+
+        initializeBridge(rskTx, getGenesisBlock());
+
+        byte[] data = getAddSignatureEncodedData(PROPOSED_FEDERATOR_SIGNER_KEY);
+
+        // act & assert
+        VMException result = assertThrows(VMException.class, () -> bridge.execute(data));
+        assertTrue(result.getMessage().contains(ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED));
+    }
+
+    private void setUp() {
+        constants = Constants.mainnet();
+        activationConfig = ActivationConfigsForTest.all();
+
         Repository repository = createRepository();
-        Repository track = repository.startTracking();
+        track = repository.startTracking();
+    }
 
-        Transaction rskTx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(BRIDGE_ADDRESS_TO_STRING))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(AMOUNT)
-                .build();
-        rskTx.sign(new ECKey().getPrivKeyBytes());
+    private Transaction recreateRskTx() {
+        return Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(BRIDGE_ADDRESS_TO_STRING))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.MAINNET_CHAIN_ID)
+            .value(AMOUNT)
+            .build();
+    }
 
+    private void initializeBridge(Transaction rskTx, Block block) {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(regtestParameters),
-                bridgeRegTestConstants,
-                activationConfig,
-                signatureCache);
-        Bridge bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig,
-                bridgeSupportFactory, signatureCache);
-        bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
+            new RepositoryBtcBlockStoreWithCache.Factory(bridgeMainnetConstants.getBtcParams()),
+            bridgeMainnetConstants,
+            activationConfig,
+            signatureCache
+        );
 
-        byte[] federatorPublicKeySerialized = new byte[3];
-        Object[] signaturesObjectArray = new Object[0];
+        bridge = new Bridge(BRIDGE_ADDRESS, constants, activationConfig, bridgeSupportFactory, signatureCache);
+        bridge.init(rskTx, block, track, null, null, null);
+    }
+
+    private byte[] getAddSignatureEncodedData(BtcECKey signerKey) {
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
+        byte[] signerPublicKeySerialized = signerKey.getPubKey();
+        BtcECKey.ECDSASignature signature = signerKey.sign(Sha256Hash.ZERO_HASH);
+        Object[] signaturesObjectArray = new Object[]{ signature.encodeToDER() };
+        return Bridge.ADD_SIGNATURE.encode(signerPublicKeySerialized, signaturesObjectArray, rskTxHash);
+    }
 
-        try {
-            bridge.execute(data);
-            fail();
-        } catch (Exception ex) {
-            assertTrue(ex.getMessage().contains(ERR_NOT_FROM_ACTIVE_OR_RETIRING_FED));
-        }
+    @Test
+    void addSignature_fromNotFederatorSigner_shouldThrow() {
+        // arrange
+        setUp();
+
+        // this is not a situation that can happen in real life, but it simplifies the test
+        saveActiveFederationAsNewFederation();
+        saveRetiringFederationAsOldFederation();
+        saveProposedFederation();
+
+        Transaction rskTx = recreateRskTx();
+        // sign rskTx with not federator, so he is the one calling the method
+        BtcECKey notFederatorSigner = BitcoinTestUtils.getBtcEcKeyFromSeed("notFederator");
+        rskTx.sign(notFederatorSigner.getPrivKeyBytes());
+
+        initializeBridge(rskTx, getGenesisBlock());
+
+        byte[] data = getAddSignatureEncodedData(notFederatorSigner);
+
+        // act & assert
+        VMException result = assertThrows(VMException.class, () -> bridge.execute(data));
+        assertTrue(result.getMessage().contains(ERR_NOT_FROM_ACTIVE_RETIRING_OR_PROPOSED_FED));
     }
 
     @Test
@@ -3126,7 +3375,7 @@ public class BridgeTestIntegration {
             bridge.execute(data);
             fail();
         } catch (VMException e) {
-            assertTrue(e.getMessage().contains("Sender is not part of the active"));
+            assertTrue(e.getMessage().contains("The sender is not a member of the active"));
         }
         verify(bridgeSupportMock, never()).receiveHeaders(any(BtcBlock[].class));
     }

@@ -1475,14 +1475,43 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
-            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache)
-                    && (retiringFederation == null || !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache))) {
-                String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
+            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+
+            if (!isFromActiveFed && !isFromRetiringFed) {
+                String errorMessage = String.format(
+                    "The sender is not a member of the active or retiring federations and is therefore not authorized to invoke the function: '%s'",
+                    funcName
+                );
                 logger.warn(errorMessage);
                 throw new VMException(errorMessage);
             }
+
+            return decoratee.execute(self, args);
+        };
+    }
+
+    public static BridgeMethods.BridgeMethodExecutor activeRetiringAndProposedFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+        return (self, args) -> {
+            boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
+
+            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+
+            Optional<Federation> proposedFederation = self.bridgeSupport.getProposedFederation();
+            boolean isFromProposedFed = proposedFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, proposedFederation.get(), self.signatureCache);
+
+            if (!isFromActiveFed && !isFromRetiringFed && !isFromProposedFed) {
+                String errorMessage = String.format(
+                    "The sender is not a member of the active, retiring, or proposed federations and is therefore not authorized to call the function: '%s'",
+                    funcName
+                );
+                logger.warn(errorMessage);
+                throw new VMException(errorMessage);
+            }
+
             return decoratee.execute(self, args);
         };
     }
