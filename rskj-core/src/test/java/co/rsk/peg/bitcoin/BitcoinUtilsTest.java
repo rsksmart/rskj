@@ -35,6 +35,15 @@ class BitcoinUtilsTest {
 
     private Address destinationAddress;
 
+    // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
+    private static final BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
+
+    // malformed coinbase tx from mainnet: https://mempool.space/tx/079e68032d9a4cdb222f464b9966756ccb749633aee678c6a51536b4fc38e29c
+    private static final BtcTransaction malFormedMainnetCoinbaseTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff3c03ebba0c040c93ef652f4d41524120506f6f6c202876303232373234292f76649b3c094f135bf4b83108c14ea85f12307cd4bf00d6010000ffffffffffffffff0371c71a27000000001976a9142fc701e2049ee4957b07134b6c1d771dd5a96b2188ac0000000000000000266a24aa21a9ed5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd96900000000000000002cfabe6d6d9797129041127735e99e277241fbc539b327b16ad3e8537125cdc12ccf2d0586010000000000000001200000000000000000000000000000000000000000000000000000000000000000e5a28d27"));
+
+    // witness commitment output script in non-standard format
+    private static final BtcTransaction coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a24aa21a9ed4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
+
     @BeforeEach
     void init() {
         destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
@@ -630,10 +639,10 @@ class BitcoinUtilsTest {
         @MethodSource("activationsProvider")
         void findWitnessCommitment_withWrongWitnessCommitment_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
             // Arrange
-            Sha256Hash fakeWitnessCommitment = BitcoinTestUtils.createHash(101);
+            Sha256Hash wrongWitnessCommitment = BitcoinTestUtils.createHash(101);
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransactionWithWrongWitnessCommitment(
                 btcMainnetParams,
-                fakeWitnessCommitment
+                wrongWitnessCommitment
             );
 
             // Act
@@ -695,17 +704,10 @@ class BitcoinUtilsTest {
         }
 
         private static Stream<Arguments> malFormedCoinbaseTxProvider() {
-            // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
-            String rawMalFormedTestnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000";
-            BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode(rawMalFormedTestnetCoinbaseTx));
-
-            // malformed coinbase tx from mainnet: https://mempool.space/tx/079e68032d9a4cdb222f464b9966756ccb749633aee678c6a51536b4fc38e29c
-            String rawMalFormedMainnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff3c03ebba0c040c93ef652f4d41524120506f6f6c202876303232373234292f76649b3c094f135bf4b83108c14ea85f12307cd4bf00d6010000ffffffffffffffff0371c71a27000000001976a9142fc701e2049ee4957b07134b6c1d771dd5a96b2188ac0000000000000000266a24aa21a9ed5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd96900000000000000002cfabe6d6d9797129041127735e99e277241fbc539b327b16ad3e8537125cdc12ccf2d0586010000000000000001200000000000000000000000000000000000000000000000000000000000000000e5a28d27";
-            BtcTransaction malFormedMainnetCoinbaseTx = new BtcTransaction(btcMainnetParams, Hex.decode(rawMalFormedMainnetCoinbaseTx));
-
             return Stream.of(
                 Arguments.of(malFormedTestnetCoinbaseTx),
-                Arguments.of(malFormedMainnetCoinbaseTx)
+                Arguments.of(malFormedMainnetCoinbaseTx),
+                Arguments.of(coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat)
             );
         }
 
@@ -723,17 +725,13 @@ class BitcoinUtilsTest {
         }
 
         private static Stream<Arguments> malFormedCoinbaseTxAndExpectedWitnessProvider() {
-            // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
-            String rawMalFormedTestnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000";
-            BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode(rawMalFormedTestnetCoinbaseTx));
-
-            // malformed coinbase tx from mainnet: https://mempool.space/tx/079e68032d9a4cdb222f464b9966756ccb749633aee678c6a51536b4fc38e29c
-            String rawMalFormedMainnetCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff3c03ebba0c040c93ef652f4d41524120506f6f6c202876303232373234292f76649b3c094f135bf4b83108c14ea85f12307cd4bf00d6010000ffffffffffffffff0371c71a27000000001976a9142fc701e2049ee4957b07134b6c1d771dd5a96b2188ac0000000000000000266a24aa21a9ed5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd96900000000000000002cfabe6d6d9797129041127735e99e277241fbc539b327b16ad3e8537125cdc12ccf2d0586010000000000000001200000000000000000000000000000000000000000000000000000000000000000e5a28d27";
-            BtcTransaction malFormedMainnetCoinbaseTx = new BtcTransaction(btcMainnetParams, Hex.decode(rawMalFormedMainnetCoinbaseTx));
-
             return Stream.of(
-                Arguments.of(malFormedTestnetCoinbaseTx, Sha256Hash.wrap("e46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b")),
-                Arguments.of(malFormedMainnetCoinbaseTx, Sha256Hash.wrap("5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd969"))
+                Arguments.of(malFormedTestnetCoinbaseTx, Sha256Hash.wrap(
+                    "e46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b")),
+                Arguments.of(malFormedMainnetCoinbaseTx, Sha256Hash.wrap(
+                    "5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd969")),
+                Arguments.of(coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat, Sha256Hash.wrap(
+                    "4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b"))
             );
         }
     }
