@@ -9,19 +9,14 @@ import static org.mockito.Mockito.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
-import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.test.builders.BridgeBuilder;
 import java.io.IOException;
@@ -30,7 +25,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -39,7 +33,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -2451,6 +2444,32 @@ class BridgeTest {
             // Pre RSKIP419 this method is not enabled, should fail for all message types
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenBridgeSupportCallThrowsIOOBE_throwsVMException() {
+        // arrange
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        MessageCall.MsgType msgType = MessageCall.MsgType.CALL;
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        // this value is not being actually tested since we are mocking the response
+        int outOfBoundsIndex = 1000;
+        KeyType keyType = KeyType.BTC;
+        when(bridgeSupportMock.getProposedFederatorPublicKeyOfType(outOfBoundsIndex, keyType)).thenThrow(IndexOutOfBoundsException.class);
+
+        // act & assert
+        Object[] args = new Object[]{ BigInteger.valueOf(outOfBoundsIndex), keyType.getValue() };
+        assertThrows(VMException.class, () -> bridge.getProposedFederatorPublicKeyOfType(args));
     }
 
     @ParameterizedTest()
