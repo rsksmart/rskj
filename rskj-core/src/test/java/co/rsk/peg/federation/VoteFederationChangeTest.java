@@ -416,15 +416,15 @@ class VoteFederationChangeTest {
         voteAndAssertCommitPendingFederation();
 
         // assertions
+        Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
+        assertIsTheExpectedFederation(newFederation);
+
         List<UTXO> utxosToMove = List.copyOf(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
-        Federation federationBuiltFromPendingFederation =
-            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP), RSK_EXECUTION_BLOCK_NUMBER, federationMainnetConstants, activations);
-        assertHandoverToNewFederation(utxosToMove, federationBuiltFromPendingFederation);
+        assertHandoverToNewFederation(utxosToMove, newFederation);
 
         assertPendingFederationVotingWasCleaned();
 
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
-        Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
         assertLogCommitFederation(oldFederation, newFederation);
     }
 
@@ -434,9 +434,6 @@ class VoteFederationChangeTest {
         Federation activeFederation = federationSupport.getActiveFederation();
         List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-        Federation federationBuiltFromPendingFederation =
-            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP), RSK_EXECUTION_BLOCK_NUMBER, federationMainnetConstants, activations);
 
         voteAndAssertCreateEmptyPendingFederation();
         voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
@@ -448,13 +445,26 @@ class VoteFederationChangeTest {
         // assert proposed federation was set correctly
         Optional<Federation> proposedFederation = storageProvider.getProposedFederation(federationMainnetConstants, activations);
         assertTrue(proposedFederation.isPresent());
-        assertEquals(federationBuiltFromPendingFederation, proposedFederation.get());
+        assertIsTheExpectedFederation(proposedFederation.get());
 
         assertPendingFederationVotingWasCleaned();
 
         assertLogCommitFederation(activeFederation, proposedFederation.get());
 
         assertNoHandoverToNewFederation();
+    }
+
+    private void assertIsTheExpectedFederation(Federation federation) {
+        assertEquals(RSK_EXECUTION_BLOCK_TIMESTAMP, federation.getCreationTime().getEpochSecond());
+        assertEquals(RSK_EXECUTION_BLOCK_NUMBER, federation.getCreationBlockNumber());
+
+        Federation federationBuiltFromPendingFederation = pendingFederationToBe.buildFederation(
+            Instant.ofEpochSecond(RSK_EXECUTION_BLOCK_TIMESTAMP),
+            RSK_EXECUTION_BLOCK_NUMBER,
+            federationMainnetConstants,
+            activations
+        );
+        assertEquals(federationBuiltFromPendingFederation, federation);
     }
 
     @Test
