@@ -1177,7 +1177,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
         } catch (Exception e) {
             String errorMessage = "[getProposedFederatorPublicKeyOfType] Exception processing public key type";
-            logger.warn(errorMessage, e);
             throw new VMException(errorMessage, e);
         }
 
@@ -1188,7 +1187,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             String errorMessage = String.format(
                 "[getProposedFederatorPublicKeyOfType] Exception getting the %s key of member %d", keyType, index
             );
-            logger.warn(errorMessage, e);
             throw new VMException(errorMessage, e);
         }
 
