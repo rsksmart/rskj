@@ -329,6 +329,14 @@ public class OpCodes {
      * (0x5e)
      */
     public static final byte OP_MCOPY = 0x5e;
+    /**
+     * (0x5c)
+     */
+    public static final byte OP_TLOAD =0x5c ;
+    /**
+     * (0x5d)
+     */
+    public static final byte OP_TSTORE =0x5d ;
 
     /*  Push Operations */
     /**

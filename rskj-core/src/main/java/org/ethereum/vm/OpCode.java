@@ -333,6 +333,16 @@ public enum OpCode {
      */
     MCOPY(0x5e, 3, 0, VERY_LOW_TIER),
 
+    /**
+     * (0x5c) Load word from transient storage at address
+     */
+    TLOAD(0x5c, 1, 1,  SPECIAL_TIER), // Will adjust the correct inputs and outputs later
+
+    /**
+     * (0x5c) Store word from transient storage at address
+     */
+    TSTORE(0x5d, 2, 0, SPECIAL_TIER), // Will adjust the correct inputs and outputs later
+
     /*  Push Operations */
     /**
      * (0x5f) Pushes the constant value 0 onto the stack.
