@@ -182,7 +182,7 @@ public class PegUtils {
 
         if(!allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPeginTxValue, activations)) {
             logger.debug("[evaluatePegin] Peg-in contains at least one utxo below the minimum value");
-            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, INVALID_AMOUNT);
+            return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, INVALID_AMOUNT);
         }
 
         try {
@@ -196,8 +196,8 @@ public class PegUtils {
             boolean hasRefundAddress = peginInformation.getBtcRefundAddress() != null;
 
             PeginProcessAction peginProcessAction = hasRefundAddress ?
-                                                        PeginProcessAction.CAN_BE_REFUNDED :
-                                                        PeginProcessAction.CANNOT_BE_PROCESSED;
+                                                        PeginProcessAction.REFUND :
+                                                        PeginProcessAction.NO_REFUND;
 
             return new PeginEvaluationResult(peginProcessAction, PEGIN_V1_INVALID_PAYLOAD);
         }
@@ -207,7 +207,7 @@ public class PegUtils {
             case 0:
                 return evaluateLegacyPeginSender(peginInformation.getSenderBtcAddressType());
             case 1:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+                return new PeginEvaluationResult(PeginProcessAction.REGISTER);
             default:
                 // This flow should never be reached.
                 String message = String.format("Invalid state. Unexpected pegin protocol %d", protocolVersion);
@@ -220,12 +220,12 @@ public class PegUtils {
         switch (senderAddressType) {
             case P2PKH:
             case P2SHP2WPKH:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+                return new PeginEvaluationResult(PeginProcessAction.REGISTER);
             case P2SHMULTISIG:
             case P2SHP2WSH:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, LEGACY_PEGIN_MULTISIG_SENDER);
+                return new PeginEvaluationResult(PeginProcessAction.REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
             default:
-                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
+                return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_UNDETERMINED_SENDER);
         }
     }
 

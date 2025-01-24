@@ -101,9 +101,10 @@ public enum ConsensusRule {
     RSKIP434("rskip434"),
     RSKIP438("rskip438"),
     RSKIP445("rskip445"), // From EIP-5656 MCOPY instruction
-    RSKIP446("rskip446") ,// Transient storage opcodes addition implementing EIP-1153
+    RSKIP446("rskip446"), // Transient storage opcodes addition implementing EIP-1153
     RSKIP453("rskip453"),
-    RSKIP454("rskip454")
+    RSKIP454("rskip454"),
+    RSKIP459("rskip459"),
     ;
 
     private final String configKey;

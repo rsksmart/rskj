@@ -64,10 +64,10 @@ class BridgeEventLoggerTest {
     }
 
     @Test
-    void logUnrefundablePegin() {
-        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logUnrefundablePegin(
+    void logNonRefundablePegin() {
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logNonRefundablePegin(
             btcTxMock,
-            UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
+            NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER
         ));
     }
 

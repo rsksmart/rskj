@@ -55,7 +55,7 @@ import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.storage.*;
 import co.rsk.peg.utils.*;
-import co.rsk.peg.utils.UnrefundablePeginReason;
+import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
@@ -1169,7 +1169,8 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         verify(mockedEventLogger, never()).logRejectedPegin(any(BtcTransaction.class), any(RejectedPeginReason.class));
-        verify(mockedEventLogger, never()).logUnrefundablePegin(any(BtcTransaction.class), any(UnrefundablePeginReason.class));
+        verify(mockedEventLogger, never()).logNonRefundablePegin(any(BtcTransaction.class), any(
+            NonRefundablePeginReason.class));
     }
 
     @Test
@@ -1265,7 +1266,8 @@ class BridgeSupportTest {
         );
 
         verify(mockedEventLogger, atLeastOnce()).logRejectedPegin(any(BtcTransaction.class), any(RejectedPeginReason.class));
-        verify(mockedEventLogger, atLeastOnce()).logUnrefundablePegin(any(BtcTransaction.class), any(UnrefundablePeginReason.class));
+        verify(mockedEventLogger, atLeastOnce()).logNonRefundablePegin(any(BtcTransaction.class), any(
+            NonRefundablePeginReason.class));
     }
 
     @Test
