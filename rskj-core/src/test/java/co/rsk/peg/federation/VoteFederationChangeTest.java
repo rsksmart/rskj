@@ -379,12 +379,13 @@ class VoteFederationChangeTest {
         voteAndAssertCommitPendingFederation();
 
         // assertions
+        Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
+        long expectedNewFederationCreationTimeValue = newFederation.getCreationTime().toEpochMilli();
+        Instant expectedNewFederationCreationTime = Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP);
+        assertIsTheExpectedFederation(newFederation, expectedNewFederationCreationTimeValue, expectedNewFederationCreationTime);
+
         List<UTXO> utxosToMove = new ArrayList<>(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
         assertUTXOsWereMovedFromNewToOldFederation(utxosToMove);
-
-        Federation federationBuiltFromPendingFederation =
-            pendingFederationToBe.buildFederation(Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP), RSK_EXECUTION_BLOCK_NUMBER, federationMainnetConstants, activations);
-        assertNewAndOldFederationsWereSet(federationBuiltFromPendingFederation);
 
         // pre rskip186 these values are not being set
         assertNewActiveFederationCreationBlockHeightWasNotSet();
@@ -393,7 +394,6 @@ class VoteFederationChangeTest {
         assertPendingFederationVotingWasCleaned();
 
         Federation oldFederation = storageProvider.getOldFederation(federationMainnetConstants, activations);
-        Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
         assertLogCommitFederation(oldFederation, newFederation);
     }
 
@@ -417,7 +417,9 @@ class VoteFederationChangeTest {
 
         // assertions
         Federation newFederation = storageProvider.getNewFederation(federationMainnetConstants, activations);
-        assertIsTheExpectedFederation(newFederation);
+        long expectedNewFederationCreationTimeValue = newFederation.getCreationTime().toEpochMilli();
+        Instant expectedNewFederationCreationTime = Instant.ofEpochMilli(RSK_EXECUTION_BLOCK_TIMESTAMP);
+        assertIsTheExpectedFederation(newFederation, expectedNewFederationCreationTimeValue, expectedNewFederationCreationTime);
 
         List<UTXO> utxosToMove = List.copyOf(storageProvider.getNewFederationBtcUTXOs(federationMainnetConstants.getBtcParams(), activations));
         assertHandoverToNewFederation(utxosToMove, newFederation);
@@ -443,23 +445,26 @@ class VoteFederationChangeTest {
 
         // assertions
         // assert proposed federation was set correctly
-        Optional<Federation> proposedFederation = storageProvider.getProposedFederation(federationMainnetConstants, activations);
-        assertTrue(proposedFederation.isPresent());
-        assertIsTheExpectedFederation(proposedFederation.get());
+        Optional<Federation> proposedFederationOpt = storageProvider.getProposedFederation(federationMainnetConstants, activations);
+        assertTrue(proposedFederationOpt.isPresent());
+        Federation proposedFederation = proposedFederationOpt.get();
+        long expectedProposedFederationCreationTimeValue = proposedFederation.getCreationTime().getEpochSecond();
+        Instant expectedProposedFederationCreationTime = Instant.ofEpochSecond(RSK_EXECUTION_BLOCK_TIMESTAMP);
+        assertIsTheExpectedFederation(proposedFederation, expectedProposedFederationCreationTimeValue, expectedProposedFederationCreationTime);
 
         assertPendingFederationVotingWasCleaned();
 
-        assertLogCommitFederation(activeFederation, proposedFederation.get());
+        assertLogCommitFederation(activeFederation, proposedFederation);
 
         assertNoHandoverToNewFederation();
     }
 
-    private void assertIsTheExpectedFederation(Federation federation) {
-        assertEquals(RSK_EXECUTION_BLOCK_TIMESTAMP, federation.getCreationTime().getEpochSecond());
+    private void assertIsTheExpectedFederation(Federation federation, long expectedCreationTimeValue, Instant expectedCreationTime) {
+        assertEquals(RSK_EXECUTION_BLOCK_TIMESTAMP, expectedCreationTimeValue);
         assertEquals(RSK_EXECUTION_BLOCK_NUMBER, federation.getCreationBlockNumber());
 
         Federation federationBuiltFromPendingFederation = pendingFederationToBe.buildFederation(
-            Instant.ofEpochSecond(RSK_EXECUTION_BLOCK_TIMESTAMP),
+            expectedCreationTime,
             RSK_EXECUTION_BLOCK_NUMBER,
             federationMainnetConstants,
             activations
