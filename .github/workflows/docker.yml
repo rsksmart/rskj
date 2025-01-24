@@ -6,6 +6,11 @@ on:
       - master
     tags:
       - '*'
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/docker.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -43,3 +48,16 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Run Docker container
+        run: |
+          docker run -d --name rskj-container rsksmart/rskj:latest
+
+      - name: Check Docker container
+        run: |
+          if [ $(docker inspect -f '{{.State.Running}}' rskj-container) = "true" ]; then
+            echo "Container is running properly"
+          else
+            echo "Container failed to start"
+            exit 1
+          fi
