@@ -767,10 +767,18 @@ public class FederationSupportImpl implements FederationSupport {
     }
 
     private Federation buildFederationFromPendingFederation(PendingFederation pendingFederation) {
-        Instant federationCreationTime = Instant.ofEpochSecond(rskExecutionBlock.getTimestamp());
+        Instant federationCreationTime = getFederationCreationTime(rskExecutionBlock.getTimestamp());
         long federationCreationBlockNumber = rskExecutionBlock.getNumber();
 
         return pendingFederation.buildFederation(federationCreationTime, federationCreationBlockNumber, constants, activations);
+    }
+
+    private Instant getFederationCreationTime(long rskExecutionBlockTimestamp) {
+        if (!activations.isActive(RSKIP419)) {
+            return Instant.ofEpochMilli(rskExecutionBlockTimestamp);
+        }
+
+        return Instant.ofEpochSecond(rskExecutionBlockTimestamp);
     }
 
     private static Script getFederationMembersP2SHScript(ActivationConfig.ForBlock activations, Federation federation) {
