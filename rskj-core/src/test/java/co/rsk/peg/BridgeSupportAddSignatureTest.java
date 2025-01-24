@@ -546,7 +546,7 @@ class BridgeSupportAddSignatureTest {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs, signatureCache);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(activations, logs, signatureCache);
 
         FederationSupport federationSupport = createDefaultFederationSupport(bridgeRegTestConstants.getFederationConstants());
 
@@ -679,7 +679,7 @@ class BridgeSupportAddSignatureTest {
 
         LinkedList<LogInfo> eventLogs = new LinkedList<>();
         BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeMainNetConstants, activations, eventLogs, signatureCache);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(activations, eventLogs, signatureCache);
 
         // Build prev btc tx
         BtcTransaction prevTx = new BtcTransaction(btcParams);
@@ -791,7 +791,7 @@ class BridgeSupportAddSignatureTest {
         track = repository.startTracking();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeRegTestConstants, activations, logs, signatureCache);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(activations, logs, signatureCache);
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
             track,
             bridgeAddress,

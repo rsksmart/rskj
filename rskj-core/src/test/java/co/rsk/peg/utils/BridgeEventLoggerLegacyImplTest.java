@@ -20,6 +20,7 @@ package co.rsk.peg.utils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -64,7 +65,6 @@ class BridgeEventLoggerLegacyImplTest {
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
         eventLogger = new BrigeEventLoggerLegacyImpl(
-            constantsMock,
             activations,
             eventLogs,
             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
@@ -224,7 +224,8 @@ class BridgeEventLoggerLegacyImplTest {
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFedArgs);
 
         // Act
-        eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
+        long newFedActivationBlockNumber = executionBlock.getNumber() + constantsMock.getFederationConstants().getFederationActivationAge(activations);
+        eventLogger.logCommitFederation(newFedActivationBlockNumber, oldFederation, newFederation);
 
         // Assert log size
         assertEquals(1, eventLogs.size());
@@ -286,7 +287,11 @@ class BridgeEventLoggerLegacyImplTest {
         // Act
         assertThrows(
             DeprecatedMethodCallException.class,
-            () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class))
+            () -> {
+                Federation oldFederation = mock(Federation.class);
+                Federation newFederation = mock(Federation.class);
+                eventLogger.logCommitFederation(anyLong(), oldFederation, newFederation);
+            }
         );
     }
 

@@ -209,7 +209,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             hopActivations,
             logInfo,
             signatureCache
@@ -257,7 +256,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             arrowheadActivations,
             logInfo,
             signatureCache
@@ -299,7 +297,6 @@ class BridgeSupportReleaseBtcTest {
     void release_after_lovell_logPegoutTransactionCreated_use_value_in_weis() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -344,7 +341,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             papyrusActivations,
             logInfo,
             signatureCache
@@ -372,7 +368,6 @@ class BridgeSupportReleaseBtcTest {
     void release_after_iris_rejected_lowAmount() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -415,7 +410,6 @@ class BridgeSupportReleaseBtcTest {
     void release_after_iris_rejected_contractCaller_emits_rejection_event() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -446,7 +440,6 @@ class BridgeSupportReleaseBtcTest {
     void release_after_fingerroot() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -484,7 +477,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             papyrusActivations,
             logInfo,
             signatureCache
@@ -514,7 +506,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             papyrusActivations,
             logInfo,
             signatureCache
@@ -541,7 +532,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             irisActivations,
             logInfo,
             signatureCache
@@ -574,7 +564,6 @@ class BridgeSupportReleaseBtcTest {
     void release_after_fingerroot_minimum_inclusive() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -1134,7 +1123,6 @@ class BridgeSupportReleaseBtcTest {
     private void testPegoutMinimumWithFeeVerificationPass(Coin feePerKB, co.rsk.core.Coin pegoutRequestedValue) throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -1174,7 +1162,6 @@ class BridgeSupportReleaseBtcTest {
     ) throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -1218,7 +1205,6 @@ class BridgeSupportReleaseBtcTest {
     ) throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -1267,7 +1253,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             arrowheadActivations,
             logInfo,
             signatureCache
@@ -1320,7 +1305,6 @@ class BridgeSupportReleaseBtcTest {
     void low_amount_release_request_rejected_after_lovell() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -1365,7 +1349,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             arrowheadActivations,
             logInfo,
             signatureCache
@@ -1413,7 +1396,6 @@ class BridgeSupportReleaseBtcTest {
     void contract_caller_release_request_rejected_after_lovell() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache
@@ -1460,7 +1442,6 @@ class BridgeSupportReleaseBtcTest {
 
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             arrowheadActivations,
             logInfo,
             signatureCache
@@ -1524,7 +1505,6 @@ class BridgeSupportReleaseBtcTest {
     void fee_above_value_release_request_rejected_after_lovell() throws IOException {
         List<LogInfo> logInfo = new ArrayList<>();
         eventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
             logInfo,
             signatureCache

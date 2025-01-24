@@ -76,7 +76,6 @@ class BridgeEventLoggerImplTest {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         eventLogs = new LinkedList<>();
         eventLogger = new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             activations,
             eventLogs,
             signatureCache
@@ -210,7 +209,6 @@ class BridgeEventLoggerImplTest {
     void logAddSignature(ActivationConfig.ForBlock activations, FederationMember federationMember, RskAddress expectedRskAddress) {
         // Arrange
         BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             activations,
             eventLogs,
             signatureCache
@@ -253,7 +251,7 @@ class BridgeEventLoggerImplTest {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0);
         ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
         if (!isRSKIP383Active) {
-            eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, eventLogs, signatureCache);
+            eventLogger = new BridgeEventLoggerImpl(hopActivations, eventLogs, signatureCache);
         }
 
         long federationActivationAgePreRskip383 = FEDERATION_CONSTANTS.getFederationActivationAge(hopActivations);
@@ -298,8 +296,12 @@ class BridgeEventLoggerImplTest {
 
         Federation newFederation = FederationFactory.buildStandardMultiSigFederation(newFedArgs);
 
+        long newFedActivationBlockNumber = isRSKIP383Active ?
+            executionBlock.getNumber() + federationActivationAgePostRskip383 :
+            executionBlock.getNumber() + federationActivationAgePreRskip383;
+
         // Act
-        eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
+        eventLogger.logCommitFederation(newFedActivationBlockNumber, oldFederation, newFederation);
         commonAssertLogs(eventLogs);
         assertTopics(1, eventLogs);
 
@@ -308,9 +310,6 @@ class BridgeEventLoggerImplTest {
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = isRSKIP383Active ?
-            executionBlock.getNumber() + federationActivationAgePostRskip383 :
-            executionBlock.getNumber() + federationActivationAgePreRskip383;
 
         Object[] data = new Object[]{
             oldFederationFlatPubKeys,
@@ -419,7 +418,6 @@ class BridgeEventLoggerImplTest {
     void logReleaseBtcRequestReceived_preRSKIP326_destinationAddressAsHash160() {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
         eventLogger = new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             hopActivations,
             eventLogs,
             signatureCache
@@ -449,7 +447,6 @@ class BridgeEventLoggerImplTest {
     void logReleaseBtcRequestReceived_postRSKIP326_destinationAddressAsBase58() {
         ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
         eventLogger = new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
             arrowheadActivations,
             eventLogs,
             signatureCache
@@ -500,7 +497,7 @@ class BridgeEventLoggerImplTest {
     @Test
     void logReleaseBtcRequestRejected_preRSKIP427_logAmountAsSatoshis() {
         ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0);
-        eventLogger = new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, arrowheadActivations, eventLogs, signatureCache);
+        eventLogger = new BridgeEventLoggerImpl(arrowheadActivations, eventLogs, signatureCache);
 
         co.rsk.core.Coin amount = co.rsk.core.Coin.valueOf(100_000_000_000_000_000L);
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;

@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.pegin.RejectedPeginReason;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import java.util.List;
 
@@ -41,7 +40,7 @@ public interface BridgeEventLogger {
 
     void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash);
 
-    void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
+    void logCommitFederation(long newFedActivationBlockNumber, Federation oldFederation, Federation newFederation);
 
     default void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
         throw new UnsupportedOperationException();

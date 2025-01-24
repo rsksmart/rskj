@@ -195,7 +195,7 @@ class PowpegMigrationTest {
 
         ArgumentCaptor<Federation> argumentCaptor = ArgumentCaptor.forClass(Federation.class);
         verify(bridgeEventLogger).logCommitFederation(
-            any(),
+            anyLong(),
             eq(originalPowpeg),
             argumentCaptor.capture()
         );

@@ -666,7 +666,8 @@ public class FederationSupportImpl implements FederationSupport {
         Federation newFederation = provider.getNewFederation(constants, activations);
 
         logger.debug("[commitFederation] New Federation committed: {}", newFederation.getAddress());
-        eventLogger.logCommitFederation(rskExecutionBlock, oldFederation, newFederation);
+        long newFedActivationBlockNumber = rskExecutionBlock.getNumber() + constants.getFederationActivationAge(activations);
+        eventLogger.logCommitFederation(newFedActivationBlockNumber, oldFederation, newFederation);
 
         return FederationChangeResponseCode.SUCCESSFUL.getCode();
     }
