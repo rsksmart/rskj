@@ -31,4 +31,13 @@ public enum DisableOption {
         this.option = option;
         this.value = value;
     }
+
+    public static DisableOption getDisableOption(String option) {
+        for (DisableOption disableOption : DisableOption.values()) {
+            if (disableOption.option.equalsIgnoreCase(option)) {
+                return disableOption;
+            }
+        }
+        return null;
+    }
 }

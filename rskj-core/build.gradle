@@ -21,6 +21,7 @@ checkstyle {
 }
 
 spotless {
+    enforceCheck false
     java {
         googleJavaFormat()
         indentWithTabs(2)
@@ -150,6 +151,7 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             }
         }
     }
+    task.dependsOn processResources
 }
 
 configurations {
@@ -271,7 +273,7 @@ ext {
             jaxwsRtVer             : '2.3.5',
             picocliVer             : '4.6.3',
 
-            bitcoinjThinVer: '0.14.4-rsk-16-SNAPSHOT',
+            bitcoinjThinVer: '0.14.4-rsk-17',
             rskjNativeVer: '1.3.0',
     ]
 
@@ -565,9 +567,14 @@ static def amendPathIfNeeded(details) {
     }
 }
 
-tasks.named('check').configure {
-    dependsOn 'checkstyleMain'
-    dependsOn 'checkstyleTest'
-    dependsOn 'checkstyleJmh'
-    dependsOn 'checkstyleIntegrationTest'
+task checkstyleAll {
+    group = 'Verification'
+    description = 'Run all Checkstyle checks'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest'
+}
+
+task spotlessAll {
+    group = 'Verification'
+    description = 'Run all Spotless checks'
+    dependsOn 'spotlessJavaCheck'
 }

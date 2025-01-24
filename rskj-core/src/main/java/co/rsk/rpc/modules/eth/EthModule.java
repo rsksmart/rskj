@@ -146,20 +146,7 @@ public class EthModule
             } else {
                 res = callConstant(args, block);
             }
-            if (res.isRevert()) {
-                Pair<String, byte[]> programRevert = decodeProgramRevert(res);
-                String revertReason = programRevert.getLeft();
-                byte[] revertData = programRevert.getRight();
-                if (revertData == null) {
-                    throw RskJsonRpcRequestException.transactionRevertedExecutionError();
-                }
-
-                if (revertReason == null) {
-                    throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertData);
-                }
-
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
-            }
+            handleTransactionRevertIfHappens(res);
             hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
 
             return hReturn;
@@ -192,6 +179,9 @@ public class EthModule
                     hexArgs.getFromAddress(),
                     snapshot
             );
+
+            ProgramResult res = executor.getResult();
+            handleTransactionRevertIfHappens(res);
 
             estimation = internalEstimateGas(executor.getResult());
 
@@ -356,5 +346,23 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    private void handleTransactionRevertIfHappens(ProgramResult res) {
+        if (res.isRevert()) {
+            Pair<String, byte[]> programRevert = decodeProgramRevert(res);
+            String revertReason = programRevert.getLeft();
+            byte[] revertData = programRevert.getRight();
+
+            if (revertData == null) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+            }
+
+            if (revertReason == null) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertData);
+            }
+
+            throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
+        }
     }
 }

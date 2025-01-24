@@ -38,7 +38,7 @@ public class P2shErpFederationBuilder {
         this.membersMstPublicKeys = new ArrayList<>();
         this.erpPublicKeys = FederationMainNetConstants.getInstance().getErpFedPubKeysList();
         this.erpActivationDelay = 52_560;
-        this.creationTime = Instant.ofEpochMilli(10L);
+        this.creationTime = Instant.ofEpochSecond(100_000_000L);
         this.creationBlockNumber = 1L;
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
     }
