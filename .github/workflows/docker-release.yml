@@ -1,4 +1,4 @@
-name: Docker image
+name: Docker image release
 
 on:
   push:
@@ -6,11 +6,6 @@ on:
       - master
     tags:
       - '*'
-  pull_request:
-    paths:
-      - 'Dockerfile'
-      - '.github/workflows/docker.yml'
-    types: [opened, synchronize, reopened]
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -36,35 +31,15 @@ jobs:
             type=match,pattern=(\w+-\d+)\.\d+\.\d+.*,group=1
 
       - name: DockerHub login
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push to registry
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
         uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 #v6.9.0
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Build Docker image for validation
-        if: github.event_name == 'pull_request'
-        run: |
-          docker build -t rsksmart/rskj:latest .
-
-      - name: Run Docker container
-        run: |
-          docker run -d --name rskj-container rsksmart/rskj:latest
-
-      - name: Check Docker container built
-        run: |
-          if [ $(docker inspect -f '{{.State.Running}}' rskj-container) = "true" ]; then
-            echo "Container is running properly"
-          else
-            echo "Container failed to start"
-            exit 1
-          fi
