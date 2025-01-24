@@ -2553,7 +2553,6 @@ public class BridgeSupport {
                 blockHeader.getMerkleRoot()
             );
             logger.warn("{} {}", LOG_PREFIX, panicMessage);
-            panicProcessor.panic("btclock", panicMessage);
             return;
         }
 
@@ -3192,7 +3191,6 @@ public class BridgeSupport {
         } catch (Exception e) {
             String panicMessage = String.format("[validationsForRegisterBtcTransaction] Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
             logger.warn(panicMessage);
-            panicProcessor.panic("btclock", panicMessage);
             return false;
         }
 
@@ -3231,7 +3229,6 @@ public class BridgeSupport {
                 blockHeader.getMerkleRoot()
             );
             logger.warn(panicMessage);
-            panicProcessor.panic("btclock", panicMessage);
             return false;
         }
 
