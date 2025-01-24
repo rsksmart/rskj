@@ -176,7 +176,7 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long gasLimit = activations.isActive(RSKIP144)? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
+        long gasLimit = activations.isActive(RSKIP144) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, gasLimit)) {
             return false;
@@ -582,6 +582,8 @@ public class TransactionExecutor {
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
+
+        track.clearTransientStorage();
 
         logger.trace("tx listener done");
 
