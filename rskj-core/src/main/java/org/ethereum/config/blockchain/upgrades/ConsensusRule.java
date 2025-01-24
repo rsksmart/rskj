@@ -95,6 +95,7 @@ public enum ConsensusRule {
     RSKIP412("rskip412"), // From EIP-3198 BASEFEE opcode
     RSKIP415("rskip415"),
     RSKIP417("rskip417"),
+    RSKIP419("rskip419"),
     RSKIP427("rskip427"),
     RSKIP428("rskip428"),
     RSKIP434("rskip434"),

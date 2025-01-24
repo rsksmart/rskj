@@ -60,7 +60,17 @@ public class BitcoinUtils {
         }
     }
 
-    public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
+    public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+        if (!transaction.hasWitness()) {
+            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
+            return transactionCopyWithoutSignatures.getHash();
+        }
+
+        return transaction.getHash();
+    }
+
+    private static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             String message = "Removing signatures from SegWit transactions is not allowed.";
             logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
@@ -80,6 +90,24 @@ public class BitcoinUtils {
             Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
             input.setScriptSig(emptyInputScript);
         }
+    }
+
+    public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        return outputScript.createEmptyInputScript(null, redeemScript);
+    }
+
+    public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
+        return transactionOutputs.stream()
+            .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
+            .findFirst();
+    }
+
+    public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
+        return Optional.ofNullable(btcTx.getInput(inputIndex))
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
     }
 
     public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx) {

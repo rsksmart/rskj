@@ -18,32 +18,34 @@
 
 package co.rsk.remasc;
 
+import static co.rsk.RskTestUtils.createRepository;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.*;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.peg.*;
-import co.rsk.peg.federation.FederationStorageProvider;
-import co.rsk.peg.federation.FederationStorageProviderImpl;
-import co.rsk.peg.federation.FederationSupport;
-import co.rsk.peg.federation.FederationSupportImpl;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import java.math.BigInteger;
+import java.util.*;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -52,15 +54,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by usuario on 13/04/2017.
@@ -510,9 +503,5 @@ class RemascStorageProviderTest {
                 assertEquals(Coin.valueOf(1999167L), RemascTestRunner.getAccountBalance(repository, coinbase));
             }
         }
-    }
-
-    private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

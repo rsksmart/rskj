@@ -176,6 +176,7 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getLovell700Rskips() {
         return new ArrayList<>(Arrays.asList(
+            ConsensusRule.RSKIP419,
             ConsensusRule.RSKIP427,
             ConsensusRule.RSKIP428,
             ConsensusRule.RSKIP438,

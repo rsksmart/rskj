@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.*;
@@ -63,12 +64,7 @@ class BridgeEventLoggerLegacyImplTest {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BrigeEventLoggerLegacyImpl(
-            constantsMock,
-            activations,
-            eventLogs,
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-        );
+        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         rskTxHash = RskTestUtils.createHash(1);
     }
@@ -83,7 +79,7 @@ class BridgeEventLoggerLegacyImplTest {
         when(tx.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         // Act
-        eventLogger.logUpdateCollections(tx);
+        eventLogger.logUpdateCollections(sender);
 
         commonAssertLogs(eventLogs);
         assertTopics(1, eventLogs);
@@ -102,8 +98,8 @@ class BridgeEventLoggerLegacyImplTest {
     @Test
     void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        Transaction anyTx = any();
-        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
+
+        assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(any(RskAddress.class)));
     }
 
     @Test
@@ -288,6 +284,15 @@ class BridgeEventLoggerLegacyImplTest {
             DeprecatedMethodCallException.class,
             () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class))
         );
+    }
+
+    @Test
+    void testLogCommitFederationFailure_throwsUnsupportedOperationException() {
+        // Setup event logger
+        activations = ActivationConfigsForTest.all().forBlock(0);
+
+        // Act
+        assertThrows(UnsupportedOperationException.class, () -> eventLogger.logCommitFederationFailure(mock(Block.class), mock(Federation.class)));
     }
 
     /**********************************
