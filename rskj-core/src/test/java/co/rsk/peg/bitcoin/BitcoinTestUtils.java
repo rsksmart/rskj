@@ -11,8 +11,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 
 public class BitcoinTestUtils {
+    public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
 
     public static BtcECKey getBtcEcKeyFromSeed(String seed) {
         byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
@@ -153,5 +155,85 @@ public class BitcoinTestUtils {
             inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
             input.setScriptSig(inputScriptSig);
         }
+    }
+
+    public static BtcTransaction createCoinbaseTransaction(NetworkParameters networkParameters) {
+        Address rewardAddress = createP2PKHAddress(networkParameters, "miner");
+        Script inputScript = new Script(new byte[]{ 1, 0 }); // Free-form, as long as it's has at least 2 bytes
+
+        BtcTransaction coinbaseTx = new BtcTransaction(networkParameters);
+        coinbaseTx.addInput(
+            Sha256Hash.ZERO_HASH,
+            -1L,
+            inputScript
+        );
+        coinbaseTx.addOutput(Coin.COIN, rewardAddress);
+        coinbaseTx.verify();
+
+        return coinbaseTx;
+    }
+
+    public static BtcTransaction createCoinbaseTransactionWithWitnessCommitment(
+        NetworkParameters networkParameters,
+        Sha256Hash witnessCommitment
+    ) {
+        BtcTransaction coinbaseTx = createCoinbaseTxWithWitnessReservedValue(networkParameters);
+
+        byte[] witnessCommitmentWithHeader = ByteUtil.merge(
+            BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+            witnessCommitment.getBytes()
+        );
+        coinbaseTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeader));
+        coinbaseTx.verify();
+
+        return coinbaseTx;
+    }
+
+    public static BtcTransaction createCoinbaseTransactionWithMultipleWitnessCommitments(
+        NetworkParameters networkParameters,
+        List<Sha256Hash> witnessCommitments
+    ) {
+        BtcTransaction coinbaseTx = createCoinbaseTxWithWitnessReservedValue(networkParameters);
+
+        for (Sha256Hash witnessCommitment : witnessCommitments) {
+            byte[] witnessCommitmentWithHeader = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitment.getBytes()
+            );
+            coinbaseTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeader));
+        }
+        coinbaseTx.verify();
+
+        return coinbaseTx;
+    }
+
+    public static BtcTransaction createCoinbaseTransactionWithWrongWitnessCommitment(
+        NetworkParameters networkParameters,
+        Sha256Hash witnessCommitment
+    ) {
+        BtcTransaction coinbaseTx = createCoinbaseTxWithWitnessReservedValue(networkParameters);
+
+        byte[] wrongWitnessCommitmentWithHeader = ByteUtil.merge(
+            new byte[]{ScriptOpCodes.OP_RETURN},
+            new byte[]{ScriptOpCodes.OP_PUSHDATA1},
+            new byte[]{(byte) BitcoinUtils.WITNESS_COMMITMENT_LENGTH},
+            BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+            witnessCommitment.getBytes()
+        );
+        Script wrongWitnessCommitmentScript = new Script(wrongWitnessCommitmentWithHeader);
+        coinbaseTx.addOutput(Coin.ZERO, wrongWitnessCommitmentScript);
+        coinbaseTx.verify();
+
+        return coinbaseTx;
+    }
+
+    private static BtcTransaction createCoinbaseTxWithWitnessReservedValue(NetworkParameters networkParameters) {
+        BtcTransaction coinbaseTx = createCoinbaseTransaction(networkParameters);
+
+        TransactionWitness txWitness = new TransactionWitness(1);
+        txWitness.setPush(0, WITNESS_RESERVED_VALUE.getBytes());
+        coinbaseTx.setWitness(0, txWitness);
+
+        return coinbaseTx;
     }
 }

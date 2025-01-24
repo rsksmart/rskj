@@ -19,10 +19,14 @@
 package co.rsk.rpc.modules.debug;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.handler.quota.TxQuota;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.rpc.modules.debug.trace.DebugTracer;
+import co.rsk.rpc.modules.debug.trace.RskTracer;
+import co.rsk.rpc.modules.debug.trace.TraceProvider;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -44,10 +48,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -69,8 +70,7 @@ class DebugModuleImplTest {
         messageHandlerMock = Web3Mocks.getMockMessageHandler();
         txQuotaCheckerMock = mock(TxQuotaChecker.class);
         web3InformationRetrieverMock = mock(Web3InformationRetriever.class);
-
-        mockedDebugModule = new DebugModuleImpl(blockStoreMock, receiptStoreMock, messageHandlerMock, Web3Mocks.getMockBlockExecutor(), txQuotaCheckerMock, web3InformationRetrieverMock);
+        mockedDebugModule = getDebugModule(blockStoreMock, Web3Mocks.getMockBlockExecutor(), receiptStoreMock, messageHandlerMock, txQuotaCheckerMock, web3InformationRetrieverMock);
     }
 
     @Test
@@ -96,12 +96,12 @@ class DebugModuleImplTest {
     }
 
     @Test
-    void debug_traceTransaction_retrieveUnknownTransactionAsNull() {
+    void debug_traceTransaction_retrieveUnknownTransactionAsNull() throws Exception {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
         when(receiptStoreMock.getInMainChain(hash, blockStoreMock)).thenReturn(Optional.empty());
 
-        JsonNode result = mockedDebugModule.traceTransaction("0x00", null);
+        JsonNode result = mockedDebugModule.traceTransaction("0x00");
 
         Assertions.assertNull(result);
     }
@@ -117,9 +117,9 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
+        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString());
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isObject());
@@ -143,9 +143,9 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
+        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString());
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isObject());
@@ -168,9 +168,9 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
+        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString());
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isObject());
@@ -194,9 +194,9 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
+        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString());
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isObject());
@@ -219,28 +219,29 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        JsonNode resultWithNoOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
-        JsonNode resultWithEmptyOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), Collections.emptyMap());
+        JsonNode resultWithNoOptions = debugModule.traceTransaction(transaction.getHash().toJsonString());
+        TraceOptions traceOptions = new TraceOptions(Collections.emptyMap());
+        JsonNode resultWithEmptyOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), traceOptions, null);
 
         Assertions.assertEquals(resultWithNoOptions, resultWithEmptyOptions);
 
-        Map<String, String> traceOptions = new HashMap<>();
-        traceOptions.put("disableStorage", "true");
-
-        JsonNode resultWithNonEmptyOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), traceOptions);
+        Map<String, String> traceOptionMap = new HashMap<>();
+        traceOptionMap.put("disableStorage", "true");
+        TraceOptions traceOptions2 = new TraceOptions(traceOptionMap);
+        JsonNode resultWithNonEmptyOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), traceOptions2, null);
 
         Assertions.assertEquals(resultWithNoOptions, resultWithNonEmptyOptions);
     }
 
     @Test
-    void debug_traceBlockByHash_retrieveUnknownBlockAsNull() throws Exception {
+    void debug_traceBlockByHash_retrieveUnknownBlockAsNull() {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
         when(blockStoreMock.getBlockByHash(hash)).thenReturn(null);
 
-        JsonNode result = mockedDebugModule.traceBlockByHash("0x00", null);
+        JsonNode result = mockedDebugModule.traceBlockByHash("0x00", null, null);
 
         Assertions.assertNull(result);
     }
@@ -256,9 +257,10 @@ class DebugModuleImplTest {
 
         Block block = world.getBlockByName("b01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        JsonNode result = debugModule.traceBlockByHash(block.getHash().toJsonString(), null);
+
+        JsonNode result = debugModule.traceBlockByHash(block.getHash().toJsonString(), null, null);
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isArray());
@@ -279,7 +281,7 @@ class DebugModuleImplTest {
     void debug_traceBlockByNumber_retrieveUnknownBlockAsNull() throws Exception {
         when(web3InformationRetrieverMock.getBlock("0x1")).thenReturn(Optional.empty());
 
-        JsonNode result = mockedDebugModule.traceBlockByNumber("0x1", null);
+        JsonNode result = mockedDebugModule.traceBlockByNumber("0x1", null, null);
 
         Assertions.assertNull(result);
     }
@@ -297,9 +299,9 @@ class DebugModuleImplTest {
         String blockNumber = HexUtils.toQuantityJsonHex(block.getNumber());
         when(web3InformationRetrieverMock.getBlock(blockNumber)).thenReturn(Optional.of(block));
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, web3InformationRetrieverMock);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, web3InformationRetrieverMock);
 
-        JsonNode result = debugModule.traceBlockByNumber(blockNumber, null);
+        JsonNode result = debugModule.traceBlockByNumber(blockNumber, null, null);
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isArray());
@@ -327,15 +329,15 @@ class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandlerMock, world.getBlockExecutor(), null, null);
+        DebugModuleImpl debugModule = getDebugModule(world.getBlockStore(),  world.getBlockExecutor(), receiptStore, messageHandlerMock, null, null);
 
-        Map<String, String> traceOptions = new HashMap<>();
-        traceOptions.put("disableStack", "true");
-        traceOptions.put("disableMemory", "true");
-        traceOptions.put("disableStorage", "true");
-
-        JsonNode witnessResult = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
-        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), traceOptions);
+        Map<String, String> traceOptionsMap = new HashMap<>();
+        traceOptionsMap.put("disableStack", "true");
+        traceOptionsMap.put("disableMemory", "true");
+        traceOptionsMap.put("disableStorage", "true");
+        TraceOptions traceOptions = new TraceOptions(traceOptionsMap);
+        JsonNode witnessResult = debugModule.traceTransaction(transaction.getHash().toJsonString());
+        JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), traceOptions, null);
 
         // Sanity Check
 
@@ -405,5 +407,11 @@ class DebugModuleImplTest {
         TxQuota txQuotaRetrieved = mockedDebugModule.accountTransactionQuota("0xbe182646a44fb90dc6501ab50d19e7c91078a35a");
 
         Assertions.assertNull(txQuotaRetrieved);
+    }
+
+    private DebugModuleImpl getDebugModule(BlockStore bockStore, BlockExecutor blockExecutor, ReceiptStore receiptStore, MessageHandler messageHandler, TxQuotaChecker txQuotaChecker, Web3InformationRetriever web3InformationRetriever) {
+        DebugTracer tracer = new RskTracer(bockStore, receiptStore, blockExecutor, web3InformationRetriever);
+        TraceProvider traceProvider = new TraceProvider(List.of(tracer));
+        return new DebugModuleImpl(traceProvider, messageHandler, txQuotaChecker);
     }
 }

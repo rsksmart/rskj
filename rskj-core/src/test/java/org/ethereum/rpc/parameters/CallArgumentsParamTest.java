@@ -13,14 +13,15 @@ public class CallArgumentsParamTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final String FROM = "0x7986b3df570230288501eea3d890bd66948c9b79";
-    private final String TO = "0xe7b8e91401bf4d1669f54dc5f98109d7efbc4eea";
-    private final String GAS = "0x76c0";
-    private final String GAS_PRICE = "0x9184e72a000";
-    private final String VALUE = "0x9184e72a";
-    private final String DATA = "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675";
-    private final String NONCE = "0x1";
-    private final String CHAIN_ID = "0x539";
+    private static final String FROM = "0x7986b3df570230288501eea3d890bd66948c9b79";
+    private static final String TO = "0xe7b8e91401bf4d1669f54dc5f98109d7efbc4eea";
+    private static final String GAS = "0x76c0";
+    private static final String GAS_PRICE = "0x9184e72a000";
+    private static final String VALUE = "0x9184e72a";
+    private static final String DATA = "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675";
+    private static final String NONCE = "0x1";
+    private static final String CHAIN_ID = "0x539";
+    private static final String NULL = "null";
 
     @Test
     public void testValidCallArgumentsParam() throws JsonProcessingException {
@@ -199,5 +200,51 @@ public class CallArgumentsParamTest {
         assertEquals(VALUE, callArguments.getValue());
         assertEquals(DATA, callArguments.getData());
         assertEquals(DATA, callArguments.getInput());
+    }
+
+    @Test
+    public void testNullCallArgumentsParams() throws JsonProcessingException {
+        String callArgumentsInput = "{\n" +
+                "            \"from\": " + NULL + ", " +
+                "            \"to\" : " + NULL + ", " +
+                "            \"gas\": " + NULL + ", " +
+                "            \"gasPrice\": " + NULL + ", " +
+                "            \"value\": " + NULL + ", " +
+                "            \"data\": " + NULL + ", " +
+                "            \"nonce\": " + NULL + ", " +
+                "            \"chainId\": " + NULL + "}";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam);
+
+        assertNull(callArgumentsParam.getFrom());
+        assertNull(callArgumentsParam.getTo());
+        assertNull(callArgumentsParam.getGas());
+        assertNull(callArgumentsParam.getGasPrice());
+        assertNull(callArgumentsParam.getValue());
+        assertNull(callArgumentsParam.getData());
+        assertNull(callArgumentsParam.getNonce());
+        assertNull(callArgumentsParam.getChainId());
+    }
+
+    @Test
+    public void testNoCallArgumentsParams() throws JsonProcessingException {
+        String callArgumentsInput = "{ }";
+
+        JsonNode jsonNode = objectMapper.readTree(callArgumentsInput);
+        CallArgumentsParam callArgumentsParam = objectMapper.convertValue(jsonNode, CallArgumentsParam.class);
+
+        assertNotNull(callArgumentsParam);
+
+        assertNull(callArgumentsParam.getFrom());
+        assertNull(callArgumentsParam.getTo());
+        assertNull(callArgumentsParam.getGas());
+        assertNull(callArgumentsParam.getGasPrice());
+        assertNull(callArgumentsParam.getValue());
+        assertNull(callArgumentsParam.getData());
+        assertNull(callArgumentsParam.getNonce());
+        assertNull(callArgumentsParam.getChainId());
     }
 }
