@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -693,6 +694,66 @@ class BitcoinUtilsTest {
             Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert, should not find the commitment since the data length != 36 bytes
+            assertFalse(obtainedWitnessCommitment.isPresent());
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withWitnessCommitmentIsShorterThanExpected_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+            // Arrange
+            BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
+
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
+            btcTx.setWitness(0, txWitness);
+
+            byte[] witnessCommitment = BitcoinTestUtils.createHash(100).getBytes();
+
+            // Create a new witness commitment array with one byte less than the expected 32 bytes
+            byte[] witnessCommitmentTooShort = new byte[Sha256Hash.LENGTH-1];
+
+            // Copy the elements from the original array to the new array
+            System.arraycopy(witnessCommitment, 0, witnessCommitmentTooShort, 0, witnessCommitmentTooShort.length);
+
+            byte[] witnessCommitmentWithHeaderAndExtraData = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitmentTooShort
+            );
+            btcTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeaderAndExtraData));
+            btcTx.verify();
+
+            // Act
+            Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
+
+            // Assert, should not find the commitment since the data length != 36 bytes
+            assertFalse(obtainedWitnessCommitment.isPresent());
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withNoOpReturn_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+            // Arrange
+            BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
+
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
+            btcTx.setWitness(0, txWitness);
+
+            Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
+            byte[] witnessCommitmentWithHeader = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitment.getBytes()
+            );
+
+            Script witnessCommitmentOutputScript = (new ScriptBuilder()).op(OP_NOT).data(witnessCommitmentWithHeader)
+                .build();
+            btcTx.addOutput(Coin.ZERO, witnessCommitmentOutputScript);
+            btcTx.verify();
+
+            // Act
+            Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
+
+            // Assert, should not find the commitment since the output is not an OP_RETURN
             assertFalse(obtainedWitnessCommitment.isPresent());
         }
 
