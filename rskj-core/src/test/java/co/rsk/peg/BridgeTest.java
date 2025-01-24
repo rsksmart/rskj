@@ -2379,6 +2379,43 @@ class BridgeTest {
         }
     }
 
+    @Test
+    void getProposedFederationCreationTime_shouldReturnValueFromSeconds() {
+        // arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        long creationTimeInSeconds = 1000;
+        Instant creationTime = Instant.ofEpochSecond(creationTimeInSeconds);
+        when(bridgeSupportMock.getProposedFederationCreationTime()).thenReturn(Optional.of(creationTime));
+
+        // act & assert
+        assertEquals(creationTimeInSeconds, bridge.getProposedFederationCreationTime(new Object[]{}));
+    }
+
+    @Test
+    void getProposedFederationCreationTime_whenBridgeSupportReturnsEmpty_shouldReturnMinusOne() {
+        // arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        when(bridgeSupportMock.getProposedFederationCreationTime()).thenReturn(Optional.empty());
+
+        // act & assert
+        long expectedCreationTime = -1L;
+        assertEquals(expectedCreationTime, bridge.getProposedFederationCreationTime(new Object[]{}));
+    }
+
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
     void getProposedFederationCreationBlockNumber(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
