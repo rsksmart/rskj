@@ -30,6 +30,7 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Set;
@@ -222,5 +223,32 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void addTransientStorageRow(RskAddress addr, DataWord key, DataWord value) {
+        repository.addTransientStorageRow(addr, key, value);
+    }
+
+    @Override
+    public void addTransientStorageBytes(RskAddress addr, DataWord key, byte[] value) {
+        repository.addTransientStorageBytes(addr, key, value);
+    }
+
+    @Override
+    public void clearTransientStorage() {
+        repository.clearTransientStorage();
+    }
+
+    @Nullable
+    @Override
+    public DataWord getTransientStorageValue(RskAddress addr, DataWord key) {
+        return repository.getTransientStorageValue(addr, key);
+    }
+
+    @Nullable
+    @Override
+    public byte[] getTransientStorageBytes(RskAddress addr, DataWord key) {
+        return repository.getTransientStorageBytes(addr, key);
     }
 }

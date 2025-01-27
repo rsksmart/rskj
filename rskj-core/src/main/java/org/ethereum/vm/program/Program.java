@@ -95,7 +95,6 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
-
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -388,6 +387,10 @@ public class Program {
 
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
+    }
+
+    public void memoryCopy(int dst, int src, int length) {
+        memorySave(dst, memoryChunk(src, length));
     }
 
     /**
@@ -684,12 +687,24 @@ public class Program {
                                 this,
                                 "No gas to return just created contract",
                                 storageCost));
+
+                if (activations.isActive(ConsensusRule.RSKIP453)) {
+                    track.rollback();
+                    stackPushZero();
+                    return null;
+                }
             } else if (codeLength > Constants.getMaxContractSize()) {
                 programResult.setException(
                         ExceptionHelper.tooLargeContractSize(
                                 this,
                                 Constants.getMaxContractSize(),
                                 codeLength));
+
+                if (activations.isActive(ConsensusRule.RSKIP453)) {
+                    track.rollback();
+                    stackPushZero();
+                    return null;
+                }
             } else {
                 programResult.spendGas(storageCost);
                 track.saveCode(contractAddress, code);
@@ -984,6 +999,10 @@ public class Program {
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
     }
 
+    public void transientStorageSave(DataWord key, DataWord value) {
+        getStorage().addTransientStorageRow(getOwnerRskAddress(), key, value);
+    }
+
     private RskAddress getOwnerRskAddress() {
         if (rskOwnerAddress == null) {
             rskOwnerAddress = new RskAddress(getOwnerAddress());
@@ -1092,6 +1111,10 @@ public class Program {
 
     public DataWord storageLoad(DataWord key) {
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
+    }
+
+    public DataWord transientStorageLoad(DataWord key) {
+        return getStorage().getTransientStorageValue(getOwnerRskAddress(), key);
     }
 
     public DataWord getPrevHash() {

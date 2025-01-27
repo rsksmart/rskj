@@ -25,8 +25,6 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -39,19 +37,16 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.*;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
-import co.rsk.trie.Trie;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -66,7 +61,7 @@ class BridgeSupportReleaseBtcTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private static final ECKey SENDER = new ECKey();
+    private static final ECKey SENDER = RskTestUtils.getEcKeyFromSeed("sender");
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
@@ -88,7 +83,7 @@ class BridgeSupportReleaseBtcTest {
     void setUpOnEachTest() {
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         activeFederation = P2shErpFederationBuilder.builder().build();
-        repository = spy(createRepository());
+        repository = spy(RskTestUtils.createRepository());
         eventLogger = mock(BridgeEventLogger.class);
         provider = initProvider();
         federationStorageProvider = initFederationStorageProvider();
@@ -96,7 +91,7 @@ class BridgeSupportReleaseBtcTest {
         feePerKbSupport = mock(FeePerKbSupportImpl.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.valueOf(5_000L));
         bridgeSupport = spy(initBridgeSupport(eventLogger, ACTIVATIONS_ALL));
-        releaseTx = buildReleaseRskTx();
+        releaseTx = buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(Coin.COIN));
     }
 
     @Test
@@ -208,12 +203,7 @@ class BridgeSupportReleaseBtcTest {
         ActivationConfig.ForBlock hopActivations = ActivationConfigsForTest.hop400().forBlock(0L);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
-            BRIDGE_CONSTANTS,
-            hopActivations,
-            logInfo,
-            signatureCache
-        ));
+        BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(BRIDGE_CONSTANTS, hopActivations, logInfo));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, hopActivations);
 
         // Get a value between old and new minimum pegout values
@@ -259,8 +249,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, arrowheadActivations);
 
@@ -301,8 +290,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -346,8 +334,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             papyrusActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
@@ -374,8 +361,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -417,8 +403,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -448,8 +433,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -486,8 +470,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             papyrusActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
@@ -516,8 +499,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             papyrusActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, papyrusActivations);
 
@@ -543,8 +525,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             irisActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, irisActivations);
 
@@ -576,8 +557,7 @@ class BridgeSupportReleaseBtcTest {
         BridgeEventLoggerImpl bridgeEventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(bridgeEventLogger, ACTIVATIONS_ALL);
 
@@ -1136,8 +1116,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
@@ -1176,8 +1155,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
@@ -1196,9 +1174,6 @@ class BridgeSupportReleaseBtcTest {
         bridgeSupport.releaseBtc(buildReleaseRskTx(pegoutRequestValue));
 
         RskAddress senderAddress = new RskAddress(SENDER.getAddress());
-
-        Transaction rskTx = buildUpdateTx();
-        rskTx.sign(SENDER.getPrivKeyBytes());
 
         verify(repository, times(1)).transfer(BRIDGE_ADDRESS, senderAddress, pegoutRequestValue);
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -1220,8 +1195,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKB);
@@ -1269,8 +1243,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
@@ -1322,8 +1295,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
@@ -1367,8 +1339,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
 
@@ -1415,8 +1386,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
 
@@ -1462,8 +1432,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             arrowheadActivations,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, arrowheadActivations);
         // Set a high fee per kb to ensure the resulting pegout is above the min pegout value
@@ -1526,8 +1495,7 @@ class BridgeSupportReleaseBtcTest {
         eventLogger = spy(new BridgeEventLoggerImpl(
             BRIDGE_CONSTANTS,
             ACTIVATIONS_ALL,
-            logInfo,
-            signatureCache
+            logInfo
         ));
         bridgeSupport = initBridgeSupport(eventLogger, ACTIVATIONS_ALL);
         // Set a high fee per kb to ensure the resulting pegout is above the min pegout value
@@ -1585,7 +1553,7 @@ class BridgeSupportReleaseBtcTest {
 
     private UTXO buildUTXO() {
         return new UTXO(
-            Sha256Hash.wrap(TestUtils.generateBytes("utxo",32)),
+            BitcoinTestUtils.createHash(11),
             0,
             Coin.COIN.multiply(2),
             1,
@@ -1594,13 +1562,8 @@ class BridgeSupportReleaseBtcTest {
         );
     }
 
-    private Transaction buildReleaseRskTx() {
-        return buildReleaseRskTx(co.rsk.core.Coin.fromBitcoin(Coin.COIN));
-    }
-
     private Transaction buildReleaseRskTx(co.rsk.core.Coin coin) {
-        Transaction releaseTransaction = Transaction
-            .builder()
+        Transaction releaseTransaction = Transaction.builder()
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
@@ -1615,8 +1578,10 @@ class BridgeSupportReleaseBtcTest {
     }
 
     private Transaction buildReleaseRskTx_fromContract(co.rsk.core.Coin pegoutRequestValue) {
+        Keccak256 parentHash = RskTestUtils.createHash(4);
+
         return new InternalTransaction(
-            RskTestUtils.createHash(4).getBytes(),
+            parentHash.getBytes(),
             400,
             0,
             NONCE.toByteArray(),
@@ -1634,8 +1599,7 @@ class BridgeSupportReleaseBtcTest {
     private Transaction buildUpdateTx() {
         final BigInteger value = new BigInteger("1");
 
-        return Transaction
-            .builder()
+        Transaction updateCollectionsTx = Transaction.builder()
             .nonce(NONCE)
             .gasPrice(GAS_PRICE)
             .gasLimit(GAS_LIMIT)
@@ -1644,6 +1608,9 @@ class BridgeSupportReleaseBtcTest {
             .chainId(Constants.MAINNET_CHAIN_ID)
             .value(value)
             .build();
+        updateCollectionsTx.sign(SENDER.getPrivKeyBytes());
+
+        return updateCollectionsTx;
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activations) {
@@ -1681,9 +1648,5 @@ class BridgeSupportReleaseBtcTest {
         storageProvider.setNewFederation(activeFederation);
 
         return storageProvider;
-    }
-
-    private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

@@ -1,7 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
-import static co.rsk.peg.bitcoin.BitcoinUtils.extractRedeemScriptFromInput;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -9,11 +9,13 @@ import co.rsk.bitcoinj.script.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
 public class BitcoinTestUtils {
+    public static final Sha256Hash WITNESS_RESERVED_VALUE = Sha256Hash.ZERO_HASH;
 
     public static BtcECKey getBtcEcKeyFromSeed(String seed) {
         byte[] serializedSeed = HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8));
@@ -156,6 +158,19 @@ public class BitcoinTestUtils {
         }
     }
 
+    public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
+        return IntStream.range(0, btcTx.getInputs().size())
+            .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
+            .toList();
+    }
+
+    public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
+        return sigHashes.stream()
+            .map(signingKey::sign)
+            .map(BtcECKey.ECDSASignature::encodeToDER)
+            .toList();
+    }
+
     public static BtcTransaction createCoinbaseTransaction(NetworkParameters networkParameters) {
         Address rewardAddress = createP2PKHAddress(networkParameters, "miner");
         Script inputScript = new Script(new byte[]{ 1, 0 }); // Free-form, as long as it's has at least 2 bytes
@@ -215,7 +230,7 @@ public class BitcoinTestUtils {
         byte[] wrongWitnessCommitmentWithHeader = ByteUtil.merge(
             new byte[]{ScriptOpCodes.OP_RETURN},
             new byte[]{ScriptOpCodes.OP_PUSHDATA1},
-            new byte[]{BitcoinUtils.WITNESS_COMMITMENT_LENGTH},
+            new byte[]{(byte) BitcoinUtils.WITNESS_COMMITMENT_LENGTH},
             BitcoinUtils.WITNESS_COMMITMENT_HEADER,
             witnessCommitment.getBytes()
         );
@@ -230,9 +245,15 @@ public class BitcoinTestUtils {
         BtcTransaction coinbaseTx = createCoinbaseTransaction(networkParameters);
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, BitcoinUtils.WITNESS_RESERVED_VALUE.getBytes());
+        txWitness.setPush(0, WITNESS_RESERVED_VALUE.getBytes());
         coinbaseTx.setWitness(0, txWitness);
 
         return coinbaseTx;
+    }
+
+    public static void addInputFromMatchingOutputScript(BtcTransaction transaction, BtcTransaction sourceTransaction, Script expectedOutputScript) {
+        List<TransactionOutput> outputs = sourceTransaction.getOutputs();
+        searchForOutput(outputs, expectedOutputScript)
+            .ifPresent(transaction::addInput);
     }
 }
