@@ -52,6 +52,7 @@ import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import java.math.BigInteger;
@@ -209,6 +210,25 @@ class FederationChangeIT {
         endMigration(activations);
 
         assertMigrationHasEnded(newFederation);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndAttemptingToCreateNewFederationAfterCommitFederation_shouldNotBeAllowed() throws Exception {
+        // Arrange
+   
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUpFederationChange(activations);
+        createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act 
+   
+        createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        var federationChangeResult = attemptToCreateNewFederation();
+
+        // Assert
+        assertEquals(-2, federationChangeResult);
     }
   
     /* Change federation related methods */
@@ -414,6 +434,16 @@ class FederationChangeIT {
             bridgeSupport.updateCollections(updateCollectionsTx);
             bridgeSupport.save();
         }
+    }
+
+    private int attemptToCreateNewFederation() {
+        var createSpec = new ABICallSpec("create", new byte[][]{});
+        // Known authorized address to vote the federation change
+        var federationChangeAuthorizer = new RskAddress("56bc5087ac97bc85a877bd20dfef910b78b1dc5a");
+        var voteTx = mock(Transaction.class);
+        when(voteTx.getSender(any())).thenReturn(federationChangeAuthorizer);
+
+        return bridgeSupport.voteFederationChange(voteTx, createSpec);
     }
 
     private BridgeSupport getBridgeSupportFromExecutionBlock(Block executionBlock, ActivationConfig.ForBlock activations) {
