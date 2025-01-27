@@ -215,13 +215,11 @@ class FederationChangeIT {
     @Test
     void whenAllActivationsArePresentAndAttemptingToCreateNewFederationAfterCommitFederation_shouldNotBeAllowed() throws Exception {
         // Arrange
-   
         var activations = ActivationConfigsForTest.all().forBlock(0);
         setUpFederationChange(activations);
         createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
        
         // Act 
-   
         createPendingFederation(NEW_FEDERATION_KEYS, activations); 
         commitPendingFederation();
         commitProposedFederation(activations);
@@ -229,6 +227,24 @@ class FederationChangeIT {
 
         // Assert
         assertEquals(-2, federationChangeResult);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndUpdatingCollectionsAfterComittingFederation_shouldNotStartMigration() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUpFederationChange(activations);
+        createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act 
+        createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        var updateCollectionTx = buildUpdateCollectionsTx();
+        bridgeSupport.updateCollections(updateCollectionTx);
+
+        // Assert
+        assertMigrationHasStarted();
     }
   
     /* Change federation related methods */
