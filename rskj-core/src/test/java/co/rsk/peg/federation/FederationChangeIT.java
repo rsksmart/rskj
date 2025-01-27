@@ -206,7 +206,7 @@ class FederationChangeIT {
         endMigration(activations);
 
         assertMigrationHasEnded(newFederation);
-        assertLastRetiredFederationP2SHMatchesWithOriginalFederation(
+        assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
             FederationType.P2SH_ERP, originalFederation, activations);
     }
   
@@ -542,7 +542,8 @@ class FederationChangeIT {
         assertNull(bridgeSupport.getRetiringFederationAddress());
     }
     
-    private void assertLastRetiredFederationP2SHMatchesWithOriginalFederation(FederationType federationType, Federation originalFederation, ActivationConfig.ForBlock activations) {
+    private void assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
+          FederationType federationType, Federation originalFederation, ActivationConfig.ForBlock activations) {
         var lastRetiredFederationP2SHScriptOptional = 
             federationStorageProvider.getLastRetiredFederationP2SHScript(activations);
         assertTrue(lastRetiredFederationP2SHScriptOptional.isPresent());
@@ -573,7 +574,7 @@ class FederationChangeIT {
             .toList();
 
         pegoutsTxs.forEach(
-            pegoutTx -> verifyPegoutTxSigHashIndex(pegoutTx, activations));
+            pegoutTx -> assertPegoutTxSigHashesAreSaved(pegoutTx, activations));
     }
 
     private void verifyPegoutTransactionCreatedEventWasEmitted(ActivationConfig.ForBlock activations) throws Exception {
@@ -636,15 +637,16 @@ class FederationChangeIT {
         }
     }
 
-    private void verifyPegoutTxSigHashIndex(BtcTransaction pegoutTx, ActivationConfig.ForBlock activations) {
+    private void assertPegoutTxSigHashesAreSaved(BtcTransaction pegoutTx, ActivationConfig.ForBlock activations) {
         var lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
         assertTrue(lastPegoutSigHash.isPresent());
-
-        if (activations.isActive(ConsensusRule.RSKIP379)) {
-            assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
-        } else {
-            assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
-        }
+        assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
+    }
+    
+    private void assertPegoutTxSigHashesAreNotSaved(BtcTransaction pegoutTx, ActivationConfig.ForBlock activations) {
+        var lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        assertTrue(lastPegoutSigHash.isPresent());
+        assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
     }
 
     private void verifyPegoutTransactionCreatedEvent(BtcTransaction pegoutTx) {
