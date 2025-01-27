@@ -753,6 +753,14 @@ public class Trie {
         return right;
     }
 
+    public Optional<Trie> getLeftNodeDetached() {
+        return left.getNodeDetached();
+    }
+
+    public Optional<Trie> getRightNodeDetached() {
+        return right.getNodeDetached();
+    }
+
     /**
      * put key with associated value, returning a new NewTrie
      *
