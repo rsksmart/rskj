@@ -164,38 +164,9 @@ class FederationChangeIT {
     private BridgeSupport bridgeSupport;
 
     @Test
-    void whenAllActivationsArePresentAndFederationChanges_shouldCreateCommitAndActiveNewFed() throws Exception {
+    void whenAllActivationsArePresentAndFederationChanges_shouldSuccesfullyChangeFederation() throws Exception {
         // Arrange
    
-        var activations = ActivationConfigsForTest.all().forBlock(0);
-        setUpFederationChange(activations);
-        // Create a default original federation using the list of UTXOs
-        var originalFederation = createOriginalFederation(
-            FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
-        var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(
-            BRIDGE_CONSTANTS.getBtcParams(), activations);
-       
-        // Act
-   
-        // Create pending federation using the new federation keys
-        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
-        commitPendingFederation();
-        // Since Lovell is activated we will commit the proposed federation
-        commitProposedFederation(activations);
-        // Move blockchain until the activation phase
-        activateNewFederation(activations);
-
-        // Assert
-   
-        assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs, activations);
-        assertNewAndOldFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
-        assertMigrationHasNotStarted();
-    }
-
-    @Test
-    void whenAllActivationsArePresentAndFederationChanges_shouldMigrateAllFunds() throws Exception {
-        // Arrange
-    
         var activations = ActivationConfigsForTest.all().forBlock(0);
         setUpFederationChange(activations);
         // Create a default original federation using the list of UTXOs
@@ -205,7 +176,7 @@ class FederationChangeIT {
             BRIDGE_CONSTANTS.getBtcParams(), activations);
        
         // Act & Assert
-    
+   
         // Create pending federation using the new federation keys
         var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
         commitPendingFederation();
@@ -213,16 +184,14 @@ class FederationChangeIT {
         commitProposedFederation(activations);
         // Move blockchain until the activation phase
         activateNewFederation(activations);
-
-        assertUTXOsReferenceMovedFromNewToOldFederation(
-            originalUTXOs, activations);
-        assertNewAndOldFederationsHaveExpectedAddress(
-            newFederation.getAddress(), originalFederation.getAddress());
+   
+        assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs, activations);
+        assertNewAndOldFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
         assertMigrationHasNotStarted();
 
         // Move blockchain until the migration phase
         activateMigration(activations);
-        // Migrate
+        // Migrate funds
         migrateUTXOs();
 
         assertNewAndOldFederationsHaveExpectedAddress(
