@@ -186,7 +186,8 @@ class FederationChangeIT {
         activateNewFederation(activations);
    
         assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs, activations);
-        assertNewAndOldFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
+        assertNewAndOldFederationsHaveExpectedAddress(
+            newFederation.getAddress(), originalFederation.getAddress());
         assertMigrationHasNotStarted();
 
         // Move blockchain until the migration phase
@@ -407,8 +408,8 @@ class FederationChangeIT {
     private void migrateUTXOs() throws Exception {
         // Migrate while there are still utxos to migrate
         var remainingUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
+        var updateCollectionsTx = buildUpdateCollectionsTx();
         while (!remainingUTXOs.isEmpty()) {
-            var updateCollectionsTx = buildUpdateCollectionsTx();
             bridgeSupport.updateCollections(updateCollectionsTx);
             bridgeSupport.save();
         }
