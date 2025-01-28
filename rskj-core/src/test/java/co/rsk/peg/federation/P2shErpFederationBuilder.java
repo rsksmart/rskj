@@ -5,11 +5,9 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import org.ethereum.crypto.ECKey;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class P2shErpFederationBuilder {
@@ -96,18 +94,21 @@ public class P2shErpFederationBuilder {
 
     private List<FederationMember> getFederationMembers() {
         if (membersRskPublicKeys.isEmpty()) {
-            membersRskPublicKeys = membersBtcPublicKeys.stream()
-                .map(btcKey -> ECKey.fromPublicOnly(btcKey.getPubKey()))
-                .collect(Collectors.toList());
-        }
-        if (membersMstPublicKeys.isEmpty()) {
-            membersMstPublicKeys = new ArrayList<>(membersRskPublicKeys);
+            this.membersRskPublicKeys = membersBtcPublicKeys.stream()
+                .map(BtcECKey::getPubKey)
+                .map(ECKey::fromPublicOnly)
+                .toList();
         }
 
-        return IntStream.range(0, membersBtcPublicKeys.size()).mapToObj(i -> new FederationMember(
-            membersBtcPublicKeys.get(i),
-            membersRskPublicKeys.get(i),
-            membersMstPublicKeys.get(i)
-        )).collect(Collectors.toList());
+        if (membersMstPublicKeys.isEmpty()) {
+            this.membersMstPublicKeys = new ArrayList<>(membersRskPublicKeys);
+        }
+
+        return IntStream.range(0, membersBtcPublicKeys.size())
+            .mapToObj(i -> new FederationMember(
+                membersBtcPublicKeys.get(i),
+                membersRskPublicKeys.get(i),
+                membersMstPublicKeys.get(i)))
+            .toList();
     }
 }

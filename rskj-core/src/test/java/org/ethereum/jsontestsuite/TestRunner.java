@@ -18,6 +18,7 @@
  */
 package org.ethereum.jsontestsuite;
 
+import co.rsk.RskTestUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -28,7 +29,6 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.*;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -237,7 +237,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(createRepository().startTracking(), testCase.getPre());
+        Repository repository = loadRepository(RskTestUtils.createRepository().startTracking(), testCase.getPre());
 
         try {
 
@@ -670,10 +670,6 @@ public class TestRunner {
 
     public ProgramTrace getTrace() {
         return trace;
-    }
-
-    private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     public Block build(

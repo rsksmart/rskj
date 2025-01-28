@@ -22,6 +22,11 @@ public enum BridgeStorageIndexKey {
     FAST_BRIDGE_FEDERATION_INFORMATION("fastBridgeFederationInformation"),
 
     PEGOUT_TX_SIG_HASH("pegoutTxSigHash"),
+
+    SVP_FUND_TX_HASH_UNSIGNED("svpFundTxHashUnsigned"),
+    SVP_FUND_TX_SIGNED("svpFundTxSigned"),
+    SVP_SPEND_TX_HASH_UNSIGNED("svpSpendTxHashUnsigned"),
+    SVP_SPEND_TX_WAITING_FOR_SIGNATURES("svpSpendTxWaitingForSignatures"),
     ;
 
     private final String key;
