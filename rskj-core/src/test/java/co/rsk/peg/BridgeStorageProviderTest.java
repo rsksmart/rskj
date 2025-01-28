@@ -19,11 +19,13 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeStorageIndexKey.*;
+import static org.ethereum.TestUtils.assertThrows;
 import static org.ethereum.TestUtils.mockAddress;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -41,7 +43,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -49,8 +53,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -69,6 +72,7 @@ class BridgeStorageProviderTest {
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final NetworkParameters testnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+    private final NetworkParameters mainnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
     private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -173,6 +177,1236 @@ class BridgeStorageProviderTest {
         assertEquals(tx1.getHash(), signatures.get(hash1).getHash());
         assertEquals(tx2.getHash(), signatures.get(hash2).getHash());
         assertEquals(tx3.getHash(), signatures.get(hash3).getHash());
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp fund transaction hash unsigned tests")
+    class SvpFundTxHashUnsignedTests {
+        private final Sha256Hash svpFundTxHash = BitcoinTestUtils.createHash(123_456_789);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_preLovell700_shouldNotSaveInStorage() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_postLovell700_shouldSaveInStorage() {
+            // Act
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpFundTxHashSerialized = BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash);
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertArrayEquals(svpFundTxHashSerialized, actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
+            // Initially setting a valid hash in storage
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpFundTxHashSerialized);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_preLovell700_shouldReturnEmpty() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Manually setting the value in storage to then assert that pre fork the method doesn't access the storage
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenThereIsNoSvpFundTxHashUnsignedSavedNorSet_shouldReturnEmpty() {
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashSetButNotSavedToStorage_shouldReturnTheHash() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenDifferentHashIsInStorageAndAnotherIsSetButNotSaved_shouldReturnTheSetHash() {
+            // Arrange
+            Sha256Hash anotherSvpFundTxHash = BitcoinTestUtils.createHash(987_654_321);
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(anotherSvpFundTxHash));
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenStorageIsNotEmptyAndHashSetToNullButNotSaved_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashSetAndSaved_shouldReturnTheHash() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashDirectlySavedInStorage_shouldReturnTheHash() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenSetToNull_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashIsNullInStorage_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), null);
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenNullHashIsSetAndSaved_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenHashIsCached_shouldReturnTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash));
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Setting a different hash in storage to make sure that when calling the method again it returns the cached one, not this one
+            Sha256Hash anotherSvpFundTxHash = BitcoinTestUtils.createHash(987_654_321);
+            repository.addStorageBytes(bridgeAddress, SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(anotherSvpFundTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+        }
+
+        @Test
+        void clearSvpFundTxHashUnsigned() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHash);
+
+            // Ensure it is set
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+
+            // Assert
+            svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isEmpty());
+        }
+
+        @Test
+        void clearSvpFundTxHashUnsigned_whenHashIsCached_shouldClearTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_HASH_UNSIGNED.getKey(),
+                BridgeSerializationUtils.serializeSha256Hash(svpFundTxHash)
+            );
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            Optional<Sha256Hash> svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isPresent());
+            assertEquals(svpFundTxHash, svpFundTxHashUnsigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxHashUnsigned();
+
+            // Assert
+            svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+            assertTrue(svpFundTxHashUnsigned.isEmpty());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp fund transaction signed tests")
+    class SvpFundTxSignedTests {
+        private final BtcTransaction svpFundTx = new BtcTransaction(mainnetBtcParams);
+        private final BtcTransaction anotherSvpFundTx = new BtcTransaction(mainnetBtcParams);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+
+            BtcTransaction prevTx = new BtcTransaction(mainnetBtcParams);
+            Address address = BitcoinTestUtils.createP2PKHAddress(mainnetBtcParams, "address");
+            prevTx.addOutput(Coin.FIFTY_COINS, address);
+            svpFundTx.addInput(prevTx.getOutput(0));
+        }
+
+        @Test
+        void saveSvpFundTxSigned_preLovell700_shouldNotSaveInStorage() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_SIGNED.getKey());
+            assertNull(actualSvpFundTxSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxSigned_postLovell700_shouldSaveInStorage() {
+            // Act
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpFundTxSerialized = BridgeSerializationUtils.serializeBtcTransaction(svpFundTx);
+            byte[] actualSvpFundTxSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_SIGNED.getKey());
+            assertArrayEquals(svpFundTxSerialized, actualSvpFundTxSerialized);
+        }
+
+        @Test
+        void saveSvpFundTxSigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
+            // Initially setting a valid tx in storage
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxSigned();
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpFundTxSerialized = repository.getStorageBytes(bridgeAddress, SVP_FUND_TX_SIGNED.getKey());
+            assertNull(actualSvpFundTxSerialized);
+        }
+
+        @Test
+        void getSvpFundTxSigned_preLovell700_whenHashSet_shouldReturnEmpty() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxSigned);
+        }
+
+        @Test
+        void getSvpFundTxSigned_preLovell700_whenHashSaved_shouldReturnEmpty() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Manually setting the value in storage to then assert that pre fork the method doesn't access the storage
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxSigned);
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenThereIsNosvpFundTxSignedSavedNorSet_shouldReturnEmpty() {
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertEquals(Optional.empty(), svpFundTxSigned);
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenHashSet_shouldReturnTheHash() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenHashSetToNull_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpFundTxSigned();
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxSigned);
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenHashSavedAndHashSet_shouldReturnTheSetHash() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+            bridgeStorageProvider.setSvpFundTxSigned(anotherSvpFundTx);
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(anotherSvpFundTx, svpFundTxSigned.get());
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenHashSavedAndHashSetToNull_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+            bridgeStorageProvider.clearSvpFundTxSigned();
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxSigned);
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenHashSaved_shouldReturnTheHash() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenNullHashSaved_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                null
+            );
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpFundTxSigned);
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenHashIsCached_shouldReturnTheCachedHash() {
+            // Arrange
+            // Manually saving a tx in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+
+            // Calling method, so it retrieves the tx from storage and caches it
+            bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Setting a different tx in storage to make sure that when calling the method again it returns the cached one, not this one
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(anotherSvpFundTx)
+            );
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+        }
+
+        @Test
+        void getSvpFundTxSigned_whenNullHashIsCached_shouldReturnNewSavedHash() {
+            // Arrange
+            // Manually saving a null tx in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                null
+            );
+
+            // Calling method, so it retrieves the tx from storage and caches it
+            bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Setting a tx in storage
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(anotherSvpFundTx)
+            );
+
+            // Act
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+
+            // Assert
+            // since null tx was directly saved and not set, method returns new saved tx
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(anotherSvpFundTx, svpFundTxSigned.get());
+        }
+
+        @Test
+        void clearSvpFundTxSigned() {
+            // Arrange
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTx);
+
+            // Ensure it is set
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxSigned();
+
+            // Assert
+            svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isEmpty());
+        }
+
+        @Test
+        void clearSvpFundTxSigned_whenHashIsCached_shouldClearTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_FUND_TX_SIGNED.getKey(),
+                BridgeSerializationUtils.serializeBtcTransaction(svpFundTx)
+            );
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            Optional<BtcTransaction> svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isPresent());
+            assertEquals(svpFundTx, svpFundTxSigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpFundTxSigned();
+
+            // Assert
+            svpFundTxSigned = bridgeStorageProvider.getSvpFundTxSigned();
+            assertTrue(svpFundTxSigned.isEmpty());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp spend transaction hash unsigned tests")
+    class SvpSpendTxHashUnsignedTests {
+        private final Sha256Hash svpSpendTxHash = BitcoinTestUtils.createHash(123_456_789);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void saveSvpSpendTxHashUnsigned_preLovell700_shouldNotSaveInStorage() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpSpendTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpSpendTxHashUnsigned_postLovell700_shouldSaveInStorage() {
+            // Act
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpSpendTxHashSerialized = BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash);
+            byte[] actualSvpSpendTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey());
+            assertArrayEquals(svpSpendTxHashSerialized, actualSvpSpendTxHashSerialized);
+        }
+
+        @Test
+        void saveSvpSpendTxHashUnsigned_postLovell700AndResettingToNull_shouldSaveNullInStorage() {
+            // Initially setting a valid hash in storage
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxHashSerialized = repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey());
+            assertNull(actualSvpSpendTxHashSerialized);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_preLovell700_shouldReturnEmpty() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Manually setting the value in storage to then assert that pre fork the method doesn't access the storage
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpSpendTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenThereIsNoSvpSpendTxHashUnsignedSavedNorSet_shouldReturnEmpty() {
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertEquals(Optional.empty(), svpSpendTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenHashSetButNotSavedToStorage_shouldReturnTheHash() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenDifferentHashIsInStorageAndAnotherIsSetButNotSaved_shouldReturnTheSetHash() {
+            // Arrange
+            Sha256Hash anotherSvpSpendTxHash = BitcoinTestUtils.createHash(987_654_321);
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(anotherSvpSpendTxHash));
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpFundTxHashUnsigned_whenStorageIsNotEmptyAndHashSetToNullButNotSaved_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash));
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpSpendTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenHashSetAndSaved_shouldReturnTheHash() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenHashDirectlySavedInStorage_shouldReturnTheHash() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenSetToNull_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpSpendTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenHashIsNullInStorage_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), null);
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpSpendTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenNullHashIsSetAndSaved_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertEquals(Optional.empty(), svpSpendTxHashUnsigned);
+        }
+
+        @Test
+        void getSvpSpendTxHashUnsigned_whenHashIsCached_shouldReturnTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_HASH_UNSIGNED.getKey(),
+                BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash)
+            );
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Setting a different hash in storage to make sure that when calling the method again it returns the cached one, not this one
+            Sha256Hash anotherSvpSpendTxHash = BitcoinTestUtils.createHash(987_654_321);
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils.serializeSha256Hash(anotherSvpSpendTxHash));
+
+            // Act
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+
+            // Assert
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+        }
+
+        @Test
+        void clearSvpSpendTxHashUnsigned() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxHash);
+
+            // Ensure it is set
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+
+            // Assert
+            svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isEmpty());
+        }
+
+        @Test
+        void clearSvpSpendTxHashUnsigned_whenHashIsCached_shouldClearTheCachedHash() {
+            // Arrange
+            // Manually saving a hash in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_HASH_UNSIGNED.getKey(),
+                BridgeSerializationUtils.serializeSha256Hash(svpSpendTxHash)
+            );
+
+            // Calling method, so it retrieves the hash from storage and caches it
+            Optional<Sha256Hash> svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isPresent());
+            assertEquals(svpSpendTxHash, svpSpendTxHashUnsigned.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxHashUnsigned();
+
+            // Assert
+            svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+            assertTrue(svpSpendTxHashUnsigned.isEmpty());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get svp spend transaction waiting for signatures tests")
+    class SvpSpendTxWaitingForSignaturesTests {
+        private final Keccak256 spendTxCreationHash = RskTestUtils.createHash(1);
+        private final BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
+        private final Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
+            new AbstractMap.SimpleEntry<>(spendTxCreationHash, svpSpendTx);
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(
+                repository,
+                mainnetBtcParams,
+                activationsAllForks
+            );
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_preLovell700_shouldNotSaveInStorage() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndInvalidEntry_shouldThrowIllegalArgumentException() {
+            // Arrange
+            Map.Entry<Keccak256, BtcTransaction> invalidSvpSpendTxWaitingForSignatures =
+                new AbstractMap.SimpleEntry<>(null, null);
+
+            // Act
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(invalidSvpSpendTxWaitingForSignatures)
+            );
+
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndNullKeyInEntry_shouldThrowIllegalArgumentException() {
+            // Arrange
+            Map.Entry<Keccak256, BtcTransaction> invalidSvpSpendTxWaitingForSignatures =
+                new AbstractMap.SimpleEntry<>(null, svpSpendTx);
+
+            // Act
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(invalidSvpSpendTxWaitingForSignatures)
+            );
+
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndNullValueInEntry_shouldThrowIllegalArgumentException() {
+            // Arrange
+            Map.Entry<Keccak256, BtcTransaction> invalidSvpSpendTxWaitingForSignatures =
+                new AbstractMap.SimpleEntry<>(spendTxCreationHash, null);
+
+            // Act
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(invalidSvpSpendTxWaitingForSignatures)
+            );
+
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_postLovell700_shouldSaveInStorage() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] svpSpendTxWaitingForSignaturesSerialized = 
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+            byte[] actualSvpSpendTxWaitingForSignaturesSerialized =
+                repository.getStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey());
+            assertArrayEquals(svpSpendTxWaitingForSignaturesSerialized, actualSvpSpendTxWaitingForSignaturesSerialized);
+        }
+
+        @Test
+        void saveSvpSpendTxWaitingForSignatures_postLovell700AndNullSvpSpendTxWaitingForSignatures_shouldSaveInStorage() {
+            // Initially setting a valid entry in storage
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.save();
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxWaitingForSignatures();
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
+            );
+            assertNull(actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_preLovell700_shouldReturnEmpty() {
+            // Arrange
+            ActivationConfig.ForBlock arrowheadActivations = ActivationConfigsForTest.arrowhead631().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, arrowheadActivations);
+
+            // Manually setting the value in storage to then assert that pre fork the method doesn't access the storage
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures));
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertEquals(Optional.empty(), actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenThereIsNoSvpSpendTxWaitingForSignaturesSaved_shouldReturnEmpty() {
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertEquals(Optional.empty(), actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenEntrySetButNotSavedToStorage_shouldReturnTheSetEntry() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenDifferentEntryIsInStorageAndAnotherIsSetButNotSaved_shouldReturnTheSetEntry() {
+            // Arrange
+            Keccak256 anotherSvSpendTxCreationHash = RskTestUtils.createHash(2);
+            BtcTransaction anotherSvpSpendTx = new BtcTransaction(mainnetBtcParams);
+            Map.Entry<Keccak256, BtcTransaction> anotherSvpSpendTxWaitingForSignatures =
+              new AbstractMap.SimpleEntry<>(anotherSvSpendTxCreationHash, anotherSvpSpendTx);
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(anotherSvpSpendTxWaitingForSignatures));
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenDifferentEntryIsInStorageAndEntrySetToNullButNotSaved_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures));
+            bridgeStorageProvider.clearSvpSpendTxWaitingForSignatures();
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertEquals(Optional.empty(), actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenEntrySetAndSaved_shouldReturnTheEntry() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenEntryDirectlySavedInStorage_shouldReturnTheEntry() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures));
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenSetToNull_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpSpendTxWaitingForSignatures();
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertEquals(Optional.empty(), actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenNullEntryIsSetAndSaved_shouldReturnEmpty() {
+            // Arrange
+            bridgeStorageProvider.clearSvpSpendTxWaitingForSignatures();
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertEquals(Optional.empty(), actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenEntryIsNullInStorage_shouldReturnEmpty() {
+            // Arrange
+            repository.addStorageBytes(bridgeAddress, SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(), null);
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertEquals(Optional.empty(), actualSvpSpendTxWaitingForSignatures);
+        }
+
+        @Test
+        void getSvpSpendTxWaitingForSignatures_whenEntryIsCached_shouldReturnTheCachedEntry() {
+            // Arrange
+            // Manually saving a entry in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures));
+
+            // Calling method, so it retrieves the entry from storage and caches it
+            bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Setting a different entry in storage to make sure that when calling
+            // the method again it returns the cached one, not this one
+            Keccak256 anotherSvpSpendTxCreationHash = RskTestUtils.createHash(2);
+            BtcTransaction anotherSvpSpendTx = new BtcTransaction(mainnetBtcParams);
+            Map.Entry<Keccak256, BtcTransaction> anotherSvpSpendTxWaitingForSignatures =
+              new AbstractMap.SimpleEntry<>(anotherSvpSpendTxCreationHash, anotherSvpSpendTx);
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(anotherSvpSpendTxWaitingForSignatures)
+            );
+
+            // Act
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures =
+                bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+        }
+
+        @Test
+        void clearSvpSpendTxWaitingForSignatures() {
+            // Arrange
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWaitingForSignatures);
+
+            // Ensure it is set
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            actualSvpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isEmpty());
+        }
+
+        @Test
+        void clearSvpSpendTxWaitingForSignatures_whenValueIsCached_shouldClearTheCachedValue() {
+            // Arrange
+            // Manually saving a value in storage to then cache it
+            repository.addStorageBytes(
+                bridgeAddress,
+                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxWaitingForSignatures(svpSpendTxWaitingForSignatures)
+            );
+
+            // Calling method, so it retrieves the value from storage and caches it
+            Optional<Map.Entry<Keccak256, BtcTransaction>> actualSvpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isPresent());
+            assertEquals(svpSpendTxWaitingForSignatures, actualSvpSpendTxWaitingForSignatures.get());
+
+            // Act
+            bridgeStorageProvider.clearSvpSpendTxWaitingForSignatures();
+
+            // Assert
+            actualSvpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+            assertTrue(actualSvpSpendTxWaitingForSignatures.isEmpty());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("clear svp values tests")
+    class ClearSvpValuesTests {
+        private BridgeStorageProvider bridgeStorageProvider;
+
+        @BeforeEach
+        void setup() {
+            Repository repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void clearSvpValues_whenFundTxHashUnsigned_shouldClearValue() {
+            // arrange
+            Sha256Hash svpFundTxHashUnsigned = BitcoinTestUtils.createHash(1);
+            bridgeStorageProvider.setSvpFundTxHashUnsigned(svpFundTxHashUnsigned);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        @Test
+        void clearSvpValues_whenFundTxSigned_shouldClearValue() {
+            // arrange
+            BtcTransaction svpFundTxSigned = new BtcTransaction(mainnetBtcParams);
+            bridgeStorageProvider.setSvpFundTxSigned(svpFundTxSigned);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        @Test
+        void clearSvpValues_whenSpendTxWFS_shouldClearSpendTxValues() {
+            // arrange
+            Keccak256 svpSpendTxCreationHash = RskTestUtils.createHash(1);
+            BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
+            Map.Entry<Keccak256, BtcTransaction> svpSpendTxWFS = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTx);
+            bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(svpSpendTxWFS);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        @Test
+        void clearSvpValues_whenSpendTxHashUnsigned_shouldClearValue() {
+            // arrange
+            Sha256Hash svpSpendTxCreationHash = BitcoinTestUtils.createHash(1);
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTxCreationHash);
+
+            // act
+            bridgeStorageProvider.clearSvpValues();
+
+            // assert
+            assertNoSVPValues();
+        }
+
+        private void assertNoSVPValues() {
+            assertFalse(bridgeStorageProvider.getSvpFundTxHashUnsigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
+            assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
+        }
     }
 
     @Test

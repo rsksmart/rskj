@@ -4,7 +4,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 
 public enum BridgeEvents {
-
     LOCK_BTC("lock_btc", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
         new CallTransaction.Param(false, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
@@ -43,6 +42,10 @@ public enum BridgeEvents {
         new CallTransaction.Param(false, "newFederationBtcPublicKeys", SolidityType.getType(SolidityType.BYTES)),
         new CallTransaction.Param(false, "newFederationBtcAddress", SolidityType.getType(SolidityType.STRING)),
         new CallTransaction.Param(false, "activationHeight", SolidityType.getType(SolidityType.INT256))
+    }),
+    COMMIT_FEDERATION_FAILED("commit_federation_failed", new CallTransaction.Param[] {
+        new CallTransaction.Param(false, "proposedFederationRedeemScript", SolidityType.getType(SolidityType.BYTES)),
+        new CallTransaction.Param(false, "blockNumber", SolidityType.getType(SolidityType.INT256))
     }),
     RELEASE_REQUESTED("release_requested", new CallTransaction.Param[] {
         new CallTransaction.Param(true, "rskTxHash", SolidityType.getType(SolidityType.BYTES32)),
@@ -90,14 +93,14 @@ public enum BridgeEvents {
     }
 
     private static class Fields {
-        private static final String RECEIVER = "receiver";
-        private static final String SENDER = "sender";
         private static final String AMOUNT = "amount";
-        private static final String REASON = "reason";
+        private static final String BTC_DESTINATION_ADDRESS = "btcDestinationAddress";
         private static final String BTC_TX_HASH = "btcTxHash";
+        private static final String REASON = "reason";
+        private static final String RECEIVER = "receiver";
         private static final String RELEASE_RSK_TX_HASH = "releaseRskTxHash";
         private static final String RELEASE_RSK_TX_HASHES = "releaseRskTxHashes";
+        private static final String SENDER = "sender";
         private static final String UTXO_OUTPOINT_VALUES = "utxoOutpointValues";
-        private static final String BTC_DESTINATION_ADDRESS = "btcDestinationAddress";
     }
 }

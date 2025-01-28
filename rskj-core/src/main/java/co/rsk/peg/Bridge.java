@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP417;
 
 import co.rsk.bitcoinj.core.*;
@@ -33,6 +34,7 @@ import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -95,6 +97,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function ADD_SIGNATURE = BridgeMethods.ADD_SIGNATURE.getFunction();
     // Returns a StateForFederator encoded in RLP
     public static final CallTransaction.Function GET_STATE_FOR_BTC_RELEASE_CLIENT = BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT.getFunction();
+    // Returns a StateForProposedFederator encoded in RLP
+    public static final CallTransaction.Function GET_STATE_FOR_SVP_CLIENT = BridgeMethods.GET_STATE_FOR_SVP_CLIENT.getFunction();
     // Returns a BridgeState encoded in RLP
     public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = BridgeMethods.GET_STATE_FOR_DEBUGGING.getFunction();
     // Return the bitcoin blockchain best chain height know by the bridge contract
@@ -151,6 +155,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the retiring federation
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
+
+    // Returns the proposed federation bitcoin address
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_ADDRESS = BridgeMethods.GET_PROPOSED_FEDERATION_ADDRESS.getFunction();
+    // Returns the number of federates in the proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_SIZE = BridgeMethods.GET_PROPOSED_FEDERATION_SIZE.getFunction();
+    // Returns the public key of given type the federator at the specified index for the current proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+    // Returns the creation time of the proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_CREATION_TIME = BridgeMethods.GET_PROPOSED_FEDERATION_CREATION_TIME.getFunction();
+    // Returns the block number of the creation of the proposed federation
+    public static final CallTransaction.Function GET_PROPOSED_FEDERATION_CREATION_BLOCK_NUMBER = BridgeMethods.GET_PROPOSED_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
 
     // Creates a new pending federation and returns its id
     public static final CallTransaction.Function CREATE_FEDERATION = BridgeMethods.CREATE_FEDERATION.getFunction();
@@ -614,14 +629,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
             signatures.add(signatureByteArray);
         }
-        byte[] rskTxHash = (byte[]) args[2];
-        if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHash));
+        byte[] rskTxHashSerialized = (byte[]) args[2];
+        Keccak256 rskTxHash;
+        try {
+            rskTxHash = deserializeRskTxHash(rskTxHashSerialized);
+        } catch (IllegalArgumentException e) {
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Bytes.of(rskTxHashSerialized));
         }
         try {
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
-        } catch (BridgeIllegalArgumentException e) {
-            throw e;
         } catch (Exception e) {
             logger.warn("Exception in addSignature", e);
             throw new VMException("Exception in addSignature", e);
@@ -636,6 +652,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (Exception e) {
             logger.warn("Exception in getStateForBtcReleaseClient", e);
             throw new VMException("Exception in getStateForBtcReleaseClient", e);
+        }
+    }
+
+    public byte[] getStateForSvpClient(Object[] args) throws VMException {
+        logger.trace("getStateForSvpClient");
+
+        try {
+            return bridgeSupport.getStateForSvpClient();
+        } catch (Exception e) {
+            logger.warn("Exception in getStateForSvpClient", e);
+            throw new VMException("Exception in getStateForSvpClient", e);
         }
     }
 
@@ -812,9 +839,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
+        Instant activeFederationCreationTime = bridgeSupport.getActiveFederationCreationTime();
 
-        // Return the creation time in milliseconds from the epoch
-        return bridgeSupport.getActiveFederationCreationTime().toEpochMilli();
+        if (!activations.isActive(ConsensusRule.RSKIP419)) {
+            // Return the creation time in milliseconds from the epoch
+            return activeFederationCreationTime.toEpochMilli();
+        }
+
+        // Return the creation time in seconds from the epoch
+        return activeFederationCreationTime.getEpochSecond();
     }
 
     public long getFederationCreationBlockNumber(Object[] args) {
@@ -887,15 +920,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Long getRetiringFederationCreationTime(Object[] args) {
         logger.trace("getRetiringFederationCreationTime");
 
-        Instant creationTime = bridgeSupport.getRetiringFederationCreationTime();
+        Instant retiringFederationCreationTime = bridgeSupport.getRetiringFederationCreationTime();
 
-        if (creationTime == null) {
+        if (retiringFederationCreationTime == null) {
             // -1 is returned when no retiring federation
             return -1L;
         }
 
-        // Return the creation time in milliseconds from the epoch
-        return creationTime.toEpochMilli();
+        if (!activations.isActive(ConsensusRule.RSKIP419)) {
+            // Return the creation time in milliseconds from the epoch
+            return retiringFederationCreationTime.toEpochMilli();
+        }
+
+        // Return the creation time in seconds from the epoch
+        return retiringFederationCreationTime.getEpochSecond();
     }
 
     public long getRetiringFederationCreationBlockNumber(Object[] args) {
@@ -1025,6 +1063,135 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return publicKey;
+    }
+
+    /**
+     * Retrieves the proposed federation Bitcoin address as a Base58 string.
+     *
+     * <p>
+     * This method attempts to fetch the address of the proposed federation. If the 
+     * proposed federation is present, it converts the address to its Base58 representation.
+     * If not, an empty string is returned.
+     * <p>
+     *
+     * @param args Additional arguments (currently unused)
+     * @return The Base58 encoded Bitcoin address of the proposed federation, or an empty 
+     *         string if no proposed federation is present.
+     */
+    public String getProposedFederationAddress(Object[] args) {
+        logger.trace("getProposedFederationAddress");
+        
+        return bridgeSupport.getProposedFederationAddress()
+            .map(Address::toBase58)
+            .orElse("");
+    }
+
+    /**
+     * Retrieves the size of the proposed federation, if it exists.
+     *
+     * <p>
+     * This method returns the number of members in the proposed federation. If no proposed federation exists,
+     * it returns a default response code {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT} that indicates
+     * the federation does not exist.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the size of the proposed federation (number of members), or the default code from
+     *         {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT} if no proposed federation is available.
+     */
+    public int getProposedFederationSize(Object[] args) {
+        logger.trace("getProposedFederationSize");
+
+        return bridgeSupport.getProposedFederationSize()
+            .orElse(FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
+
+    /**
+     * Retrieves the creation time of the proposed federation in seconds since the epoch.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and returns its creation time in
+     * seconds since the Unix epoch. If no proposed federation exists, it returns -1.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the creation time of the proposed federation in seconds since the epoch,
+     *         or -1 if no proposed federation exists.
+     */
+    public Long getProposedFederationCreationTime(Object[] args) {
+        logger.trace("getProposedFederationCreationTime");
+
+        return bridgeSupport.getProposedFederationCreationTime()
+            .map(Instant::getEpochSecond)
+            .orElse(-1L);
+    }
+
+    /**
+     * Retrieves the block number of the proposed federation's creation.
+     *
+     * <p>
+     * This method checks if a proposed federation exists and returns the block number at which it was created.
+     * If no proposed federation exists, it returns the default code defined in
+     * {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT}.
+     * </p>
+     *
+     * @param args unused arguments for this method (can be null or empty).
+     * @return the block number of the proposed federation's creation, or
+     *         the code from {@link FederationChangeResponseCode#FEDERATION_NON_EXISTENT}
+     *         if no proposed federation exists.
+     */
+    public long getProposedFederationCreationBlockNumber(Object[] args) {
+        logger.trace("getProposedFederationCreationBlockNumber");
+
+        return bridgeSupport.getProposedFederationCreationBlockNumber()
+            .orElse((long) FederationChangeResponseCode.FEDERATION_NON_EXISTENT.getCode());
+    }
+
+    /**
+     * Retrieves the public key of the proposed federator at the specified index and key type.
+     *
+     * <p>
+     * This method extracts the index and key type from the provided arguments, retrieves the
+     * public key of the proposed federator, and returns it. If no public key is found, an empty byte
+     * array is returned.
+     * </p>
+     *
+     * <p>
+     * The first argument in the {@code args} array is expected to be a {@link BigInteger} representing
+     * the federator's index. The second argument is expected to be a {@link String} representing
+     * the key type, which is converted into a {@link FederationMember.KeyType}.
+     * </p>
+     *
+     * @param args an array of arguments, where {@code args[0]} is a {@link BigInteger} for the federator's index,
+     *             and {@code args[1]} is a {@link String} for the key type.
+     * @return a byte array containing the federator's public key, or an empty byte array if not found.
+     * @throws VMException if an error occurs while processing the key type or if getting an index out of bound exception from method call.
+     */
+    public byte[] getProposedFederatorPublicKeyOfType(Object[] args) throws VMException {
+        logger.trace("getProposedFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            String errorMessage = "[getProposedFederatorPublicKeyOfType] Exception processing public key type";
+            throw new VMException(errorMessage, e);
+        }
+
+        Optional<byte[]> publicKey;
+        try {
+            publicKey = bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType);
+        } catch (IndexOutOfBoundsException e) {
+            String errorMessage = String.format(
+                "[getProposedFederatorPublicKeyOfType] Exception getting the %s key of member %d", keyType, index
+            );
+            throw new VMException(errorMessage, e);
+        }
+
+        return publicKey
+            .orElse(new byte[]{});
     }
 
     public Integer getLockWhitelistSize(Object[] args) {
@@ -1318,14 +1485,43 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
-            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache)
-                    && (retiringFederation == null || !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache))) {
-                String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
+            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+
+            if (!isFromActiveFed && !isFromRetiringFed) {
+                String errorMessage = String.format(
+                    "The sender is not a member of the active or retiring federations and is therefore not authorized to invoke the function: '%s'",
+                    funcName
+                );
                 logger.warn(errorMessage);
                 throw new VMException(errorMessage);
             }
+
+            return decoratee.execute(self, args);
+        };
+    }
+
+    public static BridgeMethods.BridgeMethodExecutor activeRetiringAndProposedFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+        return (self, args) -> {
+            boolean isFromActiveFed = BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache);
+
+            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+            boolean isFromRetiringFed = retiringFederation != null && BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache);
+
+            Optional<Federation> proposedFederation = self.bridgeSupport.getProposedFederation();
+            boolean isFromProposedFed = proposedFederation.isPresent() && BridgeUtils.isFromFederateMember(self.rskTx, proposedFederation.get(), self.signatureCache);
+
+            if (!isFromActiveFed && !isFromRetiringFed && !isFromProposedFed) {
+                String errorMessage = String.format(
+                    "The sender is not a member of the active, retiring, or proposed federations and is therefore not authorized to call the function: '%s'",
+                    funcName
+                );
+                logger.warn(errorMessage);
+                throw new VMException(errorMessage);
+            }
+
             return decoratee.execute(self, args);
         };
     }

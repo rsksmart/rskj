@@ -3,14 +3,13 @@ package co.rsk.peg.federation.constants;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-import java.time.Instant;
-import java.util.List;
-
-public class FederationConstants {
+public abstract class FederationConstants {
     protected NetworkParameters btcParams;
 
     protected List<BtcECKey> genesisFederationPublicKeys;
@@ -18,6 +17,7 @@ public class FederationConstants {
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
     protected String oldFederationAddress;
+    protected long validationPeriodDurationInBlocks;
     protected long federationActivationAge;
     protected long federationActivationAgeLegacy;
     protected long fundsMigrationAgeSinceActivationBegin;
@@ -37,8 +37,14 @@ public class FederationConstants {
         return genesisFederationCreationTime;
     }
 
+    public long getValidationPeriodDurationInBlocks() { return validationPeriodDurationInBlocks; }
+
     public long getFederationActivationAge(ActivationConfig.ForBlock activations) {
-        return activations.isActive(ConsensusRule.RSKIP383) ? federationActivationAge  : federationActivationAgeLegacy;
+        if (!activations.isActive(ConsensusRule.RSKIP383)) {
+            return federationActivationAgeLegacy;
+        }
+
+        return federationActivationAge;
     }
 
     public long getFundsMigrationAgeSinceActivationBegin() {
