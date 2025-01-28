@@ -24,6 +24,7 @@ import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.rpc.modules.trace.TraceType;
 import co.rsk.util.HexUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
@@ -53,6 +54,9 @@ public class CallTraceTransformer {
         if (trace.getReverted()) {
             programResult.setRevert();
         }
+        if (!StringUtils.isEmpty(trace.getError())) {
+            programResult.setException(new Exception(trace.getError()));
+        }
 
         if (withLog) {
             programResult.addLogInfos(txInfo.getReceipt().getLogInfoList());
@@ -80,7 +84,7 @@ public class CallTraceTransformer {
             }
         }
 
-        return new TransactionTrace(txInfo.getReceipt().getTransaction().getHash().toHexString(), traceOutput);
+        return new TransactionTrace(txInfo.getReceipt().getTransaction().getHash().toJsonString(), traceOutput);
     }
 
     private static TxTraceResult toTrace(ProgramSubtrace programSubtrace, boolean withLog) {
@@ -152,14 +156,13 @@ public class CallTraceTransformer {
             }
 
             if (programResult.getException() != null) {
-                error = programResult.getException().toString();
+                error = programResult.getException().getMessage();
             }
         }
 
         if (withLog) {
             logInfoResultList = getLogs(programResult);
         }
-
 
         return TxTraceResult.builder()
                 .type(type)
