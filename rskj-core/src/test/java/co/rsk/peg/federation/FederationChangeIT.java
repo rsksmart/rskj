@@ -168,7 +168,7 @@ class FederationChangeIT {
         // Arrange
    
         var activations = ActivationConfigsForTest.all().forBlock(0);
-        setUpFederationChange(activations);
+        setUp(activations);
         // Create a default original federation using the list of UTXOs
         var originalFederation = createOriginalFederation(
             FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
@@ -182,6 +182,9 @@ class FederationChangeIT {
         commitPendingFederation();
         // Since Lovell is activated we will commit the proposed federation
         commitProposedFederation(activations);
+        // Next federation creation block height should be as expected
+        assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
+            FederationType.P2SH_ERP, originalFederation, activations);
         // Move blockchain until the activation phase
         activateNewFederation(activations);
    
@@ -206,13 +209,11 @@ class FederationChangeIT {
         endMigration(activations);
 
         assertMigrationHasEnded(newFederation);
-        assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
-            FederationType.P2SH_ERP, originalFederation, activations);
     }
   
     /* Change federation related methods */
 
-    private void setUpFederationChange(ActivationConfig.ForBlock activations) throws Exception {
+    private void setUp(ActivationConfig.ForBlock activations) throws Exception {
         repository = BridgeSupportTestUtil.createRepository();
         repository.addBalance(
             PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(BRIDGE_CONSTANTS.getMaxRbtc()));
