@@ -30,7 +30,6 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.script.ScriptParser;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
@@ -149,6 +148,7 @@ class FederationChangeIT {
             ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
             ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
         ));
+    private static final Transaction UPDATE_COLLECTIONS = buildUpdateCollectionsTx();
 
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -400,7 +400,7 @@ class FederationChangeIT {
         bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock, activations);
 
         // The first update collections after the migration finished should get rid of the retiring powpeg
-        var updateCollectionsTx = buildUpdateCollectionsTx();
+        var updateCollectionsTx = UPDATE_COLLECTIONS;
         bridgeSupport.updateCollections(updateCollectionsTx);
         bridgeSupport.save();
     }
@@ -408,7 +408,7 @@ class FederationChangeIT {
     private void migrateUTXOs() throws Exception {
         // Migrate while there are still utxos to migrate
         var remainingUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
-        var updateCollectionsTx = buildUpdateCollectionsTx();
+        var updateCollectionsTx = UPDATE_COLLECTIONS;
         while (!remainingUTXOs.isEmpty()) {
             bridgeSupport.updateCollections(updateCollectionsTx);
             bridgeSupport.save();
@@ -487,7 +487,7 @@ class FederationChangeIT {
             federation.getP2SHScript();
     }
 
-    private Transaction buildUpdateCollectionsTx() {
+    private static Transaction buildUpdateCollectionsTx() {
         var nonce = 3;
         var value = 0;
         var gasPrice = BigInteger.valueOf(0);
