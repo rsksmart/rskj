@@ -20,9 +20,11 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
@@ -30,18 +32,21 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.script.ScriptParser;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportTestUtil;
 import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.PegoutsWaitingForConfirmations;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.UtxoUtils;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
@@ -163,6 +168,8 @@ class FederationChangeIT {
     private FederationSupportImpl federationSupport;
     private LockingCapSupport lockingCapSupport;
     private BridgeSupport bridgeSupport;
+    private BtcLockSenderProvider btcLockSenderProvider;
+
 
     @Test
     void whenAllActivationsArePresentAndFederationChanges_shouldSuccesfullyChangeFederation() throws Exception {
@@ -216,7 +223,7 @@ class FederationChangeIT {
     void whenAllActivationsArePresentAndAttemptingToCreateNewFederationAfterCommitFederation_shouldNotBeAllowed() throws Exception {
         // Arrange
         var activations = ActivationConfigsForTest.all().forBlock(0);
-        setUpFederationChange(activations);
+        setUp(activations);
         createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
        
         // Act 
@@ -230,21 +237,148 @@ class FederationChangeIT {
     }
 
     @Test
-    void whenAllActivationsArePresentAndUpdatingCollectionsAfterComittingFederation_shouldNotStartMigration() throws Exception {
+    void whenAllActivationsArePresentAndAttemptingToCreateNewFederationAfterActivationPhase_shouldNotBeAllowed() throws Exception {
         // Arrange
         var activations = ActivationConfigsForTest.all().forBlock(0);
-        setUpFederationChange(activations);
+        setUp(activations);
         createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
        
         // Act 
         createPendingFederation(NEW_FEDERATION_KEYS, activations); 
         commitPendingFederation();
         commitProposedFederation(activations);
-        var updateCollectionTx = buildUpdateCollectionsTx();
+        activateNewFederation(activations);
+        var federationChangeResult = attemptToCreateNewFederation();
+
+        // Assert
+        assertEquals(-3, federationChangeResult);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndAttemptingToCreateNewFederationAfterMigrationBegins_shouldNotBeAllowed() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act 
+        createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+        activateMigration(activations);
+        migrateUTXOs();
+        var federationChangeResult = attemptToCreateNewFederation();
+
+        // Assert
+        assertEquals(-3, federationChangeResult);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndUpdatingCollectionsAfterComittingFederation_shouldNotStartMigration() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act 
+        createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        var updateCollectionTx = UPDATE_COLLECTIONS;
         bridgeSupport.updateCollections(updateCollectionTx);
 
         // Assert
-        assertMigrationHasStarted();
+        assertMigrationHasNotStarted(activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndPeginsAreSentAfterCommittingFederation_shouldBeAbleToSendPeginsToOldFederationSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations);
+        commitPendingFederation();
+        commitProposedFederation(activations);
+
+        testPegins(
+            originalFederation.getAddress(),
+            newFederation.getAddress(),
+            true,
+            false,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndPeginsAreSentAfterActivationPhaseBegins_shouldBeAbleToSendPeginsToOldAndNewFederationsSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(
+            FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+
+        testPegins(
+            originalFederation.getAddress(),
+            newFederation.getAddress(),
+            true,
+            true,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndPeginsAreSentDuringMigration_shouldBeAbleToSendPeginsToOldAndNewFederationsSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations);
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+        activateMigration(activations);
+        migrateUTXOs();
+
+        testPegins(
+            originalFederation.getAddress(),
+            newFederation.getAddress(),
+            true,
+            true,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndPeginsAreSentAfterMigration_shouldBeAbleToSendPeginsToOldAndNewFederationsSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations);
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+        activateMigration(activations);
+        migrateUTXOs();
+        endMigration(activations);
+
+        testPegins(
+            originalFederation.getAddress(),
+            newFederation.getAddress(),
+            false,
+            true,
+            activations);
     }
   
     /* Change federation related methods */
@@ -298,7 +432,11 @@ class FederationChangeIT {
             signatureCache);
 
         feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.SATOSHI);
+     
+        btcLockSenderProvider = new BtcLockSenderProvider();
+      
+        bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock, activations);
     }
 
     private Federation createOriginalFederation(
@@ -462,6 +600,55 @@ class FederationChangeIT {
         return bridgeSupport.voteFederationChange(voteTx, createSpec);
     }
 
+    private void testPegins(
+        Address oldFederationAddress,
+        Address newFederationAddress,
+        boolean shouldPeginToOldFederationWork,
+        boolean shouldPeginToNewFederationWork,
+        ActivationConfig.ForBlock activations
+    ) throws Exception {
+        // Perform peg-in to the old powpeg address
+        var peginToRetiringPowPeg = createPegin(
+                oldFederationAddress);
+        var peginToRetiringFederationHash = peginToRetiringPowPeg.getHash();
+        var isPeginToRetiringFederationRegistered = federationStorageProvider.getOldFederationBtcUTXOs()
+            .stream()
+            .anyMatch(utxo -> utxo.getHash().equals(peginToRetiringFederationHash));
+
+        if (activations.isActive(ConsensusRule.RSKIP379) && !shouldPeginToOldFederationWork) {
+            assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringFederationHash));
+        } else {
+            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringFederationHash));
+        }
+
+        assertEquals(shouldPeginToOldFederationWork, isPeginToRetiringFederationRegistered);
+        assertFalse(
+            federationStorageProvider.getNewFederationBtcUTXOs(BRIDGE_CONSTANTS.getBtcParams(), activations)
+              .stream()
+              .anyMatch(utxo ->
+                utxo.getHash().equals(peginToRetiringFederationHash)));
+
+        // Perform peg-in to the new federation address
+        var peginToFutureFederation = createPegin(
+                newFederationAddress);
+        var peginToFutureFederationHash = peginToFutureFederation.getHash();
+        var isPeginToNewFederationRegistered = federationStorageProvider.getNewFederationBtcUTXOs(BRIDGE_CONSTANTS.getBtcParams(), activations)
+            .stream()
+            .anyMatch(utxo -> utxo.getHash().equals(peginToFutureFederationHash));
+
+        if (activations.isActive(ConsensusRule.RSKIP379) && !shouldPeginToNewFederationWork) {
+            assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFutureFederationHash));
+        } else {
+            assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFutureFederationHash));
+        }
+
+        assertFalse(
+            federationStorageProvider.getOldFederationBtcUTXOs()
+                .stream()
+                .anyMatch(utxo -> utxo.getHash().equals(peginToFutureFederationHash)));
+        assertEquals(shouldPeginToNewFederationWork, isPeginToNewFederationRegistered);
+    }
+
     private BridgeSupport getBridgeSupportFromExecutionBlock(Block executionBlock, ActivationConfig.ForBlock activations) {
         FederationSupport fedSupport = FederationSupportBuilder.builder()
             .withFederationConstants(BRIDGE_CONSTANTS.getFederationConstants())
@@ -480,6 +667,7 @@ class FederationChangeIT {
             .withFederationSupport(fedSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .withLockingCapSupport(lockingCapSupport)
+            .withBtcLockSenderProvider(btcLockSenderProvider)
             .build();
     }
 
@@ -510,7 +698,7 @@ class FederationChangeIT {
 
         int howMany = getRandomInt(50, 500);
         for (int i = 1; i <= howMany; i++) {
-            Coin randomValue = Coin.valueOf(getRandomInt(10_000, 1_000_000_000));
+            Coin randomValue = Coin.COIN;
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
             utxos.add(new UTXO(utxoHash, 0, randomValue, 0, false, outputScript));
         }
@@ -546,7 +734,81 @@ class FederationChangeIT {
         rskTx.sign(randomKey.getPrivKeyBytes());
         return rskTx;
     }
-    
+
+    private BtcTransaction createPegin(Address federationAddress) throws Exception {
+        var peginRegistrationTx = mock(Transaction.class);
+        var btcPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed("seed");
+        var peginBtcTx = new BtcTransaction(BRIDGE_CONSTANTS.getBtcParams());
+        peginBtcTx.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, btcPublicKey));
+        peginBtcTx.addOutput(new TransactionOutput(BRIDGE_CONSTANTS.getBtcParams(), peginBtcTx, Coin.COIN, federationAddress));
+        // Adding OP_RETURN output to identify this peg-in as v1 and avoid sender identification
+        peginBtcTx.addOutput(
+            Coin.ZERO,
+            PegTestUtils.createOpReturnScriptForRsk(
+                1,
+                PrecompiledContracts.BRIDGE_ADDR,
+                Optional.empty()
+            )
+        );
+
+        // Randomize the input to avoid repeating same Btc tx hash
+        // peginBtcTx.addInput(
+        //     BitcoinTestUtils.createHash(btcBlockStore.getChainHead().getHeight() + 1),
+        //     0,
+        //     new Script(new byte[]{})
+        // );
+        // outputs.forEach(peginBtcTx::addOutput);
+        // Adding OP_RETURN output to identify this peg-in as v1 and avoid sender identification
+        // peginBtcTx.addOutput(
+        //     Coin.ZERO,
+        //     PegTestUtils.createOpReturnScriptForRsk(
+        //         1,
+        //         PrecompiledContracts.BRIDGE_ADDR,
+        //         Optional.empty()
+        //     )
+        // );
+
+        var height = 0;
+        var chainHead = btcBlockStore.getChainHead();
+        var btcBlock = new BtcBlock(
+            BRIDGE_CONSTANTS.getBtcParams(),
+            1,
+            chainHead.getHeader().getHash(),
+            peginBtcTx.getHash(),
+            0,
+            0,
+            0,
+            List.of(peginBtcTx)
+        );
+        height = chainHead.getHeight() + 1;
+        var storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO, height);
+        btcBlockStore.put(storedBlock);
+        btcBlockStore.setChainHead(storedBlock);
+
+        int requiredConfirmations = BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        for (int i = 0; i < requiredConfirmations; i++) {
+            addNewBtcBlockOnTipOfChain(btcBlockStore);
+        }
+
+        var hashForPmt = peginBtcTx.getHash();
+        var pmt = new PartialMerkleTree(
+            BRIDGE_CONSTANTS.getBtcParams(),
+            new byte[]{1},
+            List.of(hashForPmt),
+            1
+        );
+
+        bridgeSupport.registerBtcTransaction(
+            peginRegistrationTx,
+            peginBtcTx.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize()
+        );
+
+        bridgeSupport.save();
+
+        return peginBtcTx;
+    }
     
     /* Assert and verify federation change related methods */
 
