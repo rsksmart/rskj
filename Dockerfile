@@ -35,4 +35,3 @@ ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
 
 ENTRYPOINT ["/bin/sh", "-c", "exec java $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
-
