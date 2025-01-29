@@ -18,64 +18,10 @@
  */
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.net.utils.TransactionUtils;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.constants.*;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.peg.feeperkb.*;
-import co.rsk.peg.lockingcap.*;
-import co.rsk.peg.lockingcap.constants.LockingCapConstants;
-import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
-import co.rsk.peg.storage.*;
-import co.rsk.peg.bitcoin.*;
-import co.rsk.peg.btcLockSender.*;
-import co.rsk.peg.federation.*;
-import co.rsk.peg.feeperkb.FeePerKbSupportImpl;
-import co.rsk.peg.pegininstructions.*;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.MerkleTreeUtils;
-import co.rsk.peg.pegin.RejectedPeginReason;
-import co.rsk.peg.utils.UnrefundablePeginReason;
-import co.rsk.peg.vote.ABICallSpec;
-import co.rsk.peg.whitelist.*;
-import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
-import co.rsk.test.builders.BridgeSupportBuilder;
-import co.rsk.util.HexUtils;
-import co.rsk.test.builders.FederationSupportBuilder;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.*;
-import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
+import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.PegTestUtils.createUTXO;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -83,8 +29,63 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
-import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.PegTestUtils.createUTXO;
+
+import co.rsk.RskTestUtils;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.net.utils.TransactionUtils;
+import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.constants.*;
+import co.rsk.peg.federation.*;
+import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.feeperkb.*;
+import co.rsk.peg.lockingcap.*;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
+import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
+import co.rsk.peg.pegin.RejectedPeginReason;
+import co.rsk.peg.pegininstructions.*;
+import co.rsk.peg.storage.*;
+import co.rsk.peg.utils.*;
+import co.rsk.peg.utils.NonRefundablePeginReason;
+import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.whitelist.*;
+import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
+import co.rsk.test.builders.BridgeSupportBuilder;
+import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.util.HexUtils;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.*;
+import org.ethereum.vm.exception.VMException;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 class BridgeSupportTest {
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
@@ -511,6 +512,173 @@ class BridgeSupportTest {
 
             when(federationSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)).thenReturn(mstKey.getPubKey());
             assertThat(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), is(mstKey.getPubKey()));
+        }
+
+        @Test
+        void getProposedFederation_whenFederationSupportReturnsProposedFederation_shouldReturnProposedFed() {
+            when(federationSupport.getProposedFederation()).thenReturn(Optional.of(federation));
+
+            Optional<Federation> proposedFed = bridgeSupport.getProposedFederation();
+            assertTrue(proposedFed.isPresent());
+            assertThat(proposedFed.get(), is(federation));
+        }
+
+        @Test
+        void getProposedFederation_whenNoProposedFederation_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederation = bridgeSupport.getProposedFederation();
+
+            // Assert
+            assertFalse(actualProposedFederation.isPresent());
+        }
+
+        @Test
+        void getProposedFederationAddress_whenNoProposedFederationAddress_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationAddress = bridgeSupport.getProposedFederationAddress();
+
+            // Assert
+            assertFalse(actualProposedFederationAddress.isPresent());
+        }
+
+        @Test
+        void getProposedFederationAddress_whenFederationSupportReturnsAddress_shouldReturnAddress() {
+            // Arrange
+            var expectedAddress = federation.getAddress();
+            when(federationSupport.getProposedFederationAddress()).thenReturn(Optional.of(expectedAddress));
+
+            // Act
+            var actualProposedFederationAddress = bridgeSupport.getProposedFederationAddress();
+
+            // Assert
+            assertTrue(actualProposedFederationAddress.isPresent());
+            assertEquals(expectedAddress, actualProposedFederationAddress.get());
+        }
+
+        @ParameterizedTest
+        @EnumSource(FederationMember.KeyType.class)
+        void getProposedFederatorPublicKeyOfType_whenBridgeSupportReturnsEmpty_shouldReturnEmpty(FederationMember.KeyType keyType) {
+            // Arrange
+            var index = 1;
+
+            // Act
+            var actualProposedFederatorPublicKey = bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType);
+
+            // Assert
+            assertFalse(actualProposedFederatorPublicKey.isPresent());
+        }
+
+        @ParameterizedTest
+        @EnumSource(FederationMember.KeyType.class)
+        void getProposedFederatorPublicKeyOfType_whenProposedFederationExists_shouldReturnExpectedPublicKey(FederationMember.KeyType keyType) {
+            var index = 0;
+            var member = federation.getMembers().get(index);
+            
+            // Set up public keys based on the keyType
+            byte[] expectedPublicKey;
+            switch (keyType) {
+                case BTC:
+                    expectedPublicKey = member.getBtcPublicKey().getPubKey();
+                    when(federationSupport.getProposedFederatorPublicKeyOfType(index, FederationMember.KeyType.BTC))
+                        .thenReturn(Optional.of(expectedPublicKey));
+                    break;
+                case RSK:
+                    expectedPublicKey = member.getRskPublicKey().getPubKey();
+                    when(federationSupport.getProposedFederatorPublicKeyOfType(index, FederationMember.KeyType.RSK))
+                        .thenReturn(Optional.of(expectedPublicKey));
+                    break;
+                case MST:
+                    expectedPublicKey = member.getMstPublicKey().getPubKey();
+                    when(federationSupport.getProposedFederatorPublicKeyOfType(index, FederationMember.KeyType.MST))
+                        .thenReturn(Optional.of(expectedPublicKey));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown KeyType");
+            }
+
+            assertArrayEquals(expectedPublicKey, bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType).get());
+        }
+
+        @Test
+        void getProposedFederationSize_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationSize = bridgeSupport.getProposedFederationSize();
+
+            // Assert
+            assertFalse(actualProposedFederationSize.isPresent());
+        }
+
+        @Test
+        void getProposedFederationSize_whenProposedFederationExists_shouldReturnSize() {
+            // Arrange
+            var expectedSize = federation.getSize();
+            when(federationSupport.getProposedFederationSize()).thenReturn(Optional.of(expectedSize));
+
+            // Act
+            var actualProposedFederationSize = bridgeSupport.getProposedFederationSize();
+
+            // Assert
+            assertTrue(actualProposedFederationSize.isPresent());
+            assertEquals(expectedSize, actualProposedFederationSize.get());
+        }
+
+        @Test
+        void getProposedFederationCreationTime_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationCreationTime = bridgeSupport.getProposedFederationCreationTime();
+
+            // Assert
+            assertFalse(actualProposedFederationCreationTime.isPresent());
+        }
+
+        @Test
+        void getProposedFederationCreationTime_whenProposedFederationExists_shouldReturnCreationTime() {
+            // Arrange
+            var expectedCreationTime = federation.getCreationTime();
+            when(federationSupport.getProposedFederationCreationTime()).thenReturn(Optional.of(expectedCreationTime));
+
+            // Act
+            var actualProposedFederationCreationTime = bridgeSupport.getProposedFederationCreationTime();
+
+            // Assert
+            assertTrue(actualProposedFederationCreationTime.isPresent());
+            assertEquals(expectedCreationTime, actualProposedFederationCreationTime.get());
+        }
+
+        @Test
+        void getProposedFederationCreationBlockNumber_whenBridgeSupportReturnsEmpty_shouldReturnEmpty() {
+            // Act
+            var actualProposedFederationCreationBlockNumber = bridgeSupport.getProposedFederationCreationBlockNumber();
+
+            // Assert
+            assertFalse(actualProposedFederationCreationBlockNumber.isPresent());
+        }
+
+        @Test
+        void getProposedFederationCreationBlockNumber_whenProposedFederationExists_shouldReturnCreationBlockNumber() {
+            // Arrange
+            var expectedCreationBlockNumber = federation.getCreationBlockNumber();
+            when(federationSupport.getProposedFederationCreationBlockNumber()).thenReturn(Optional.of(expectedCreationBlockNumber));
+
+            // Act
+            var actualProposedFederationCreationBlockNumber = bridgeSupport.getProposedFederationCreationBlockNumber();
+
+            // Assert
+            assertTrue(actualProposedFederationCreationBlockNumber.isPresent());
+            assertEquals(expectedCreationBlockNumber, actualProposedFederationCreationBlockNumber.get());
+        }
+
+        @Test
+        void getProposedFederatorPublicKeyOfType_whenIndexOutOfBoundsForMemberList_shouldThrowException() {
+            // Arrange
+            var index = 1;
+            var keyType = FederationMember.KeyType.BTC;
+            when(federationSupport.getProposedFederatorPublicKeyOfType(index, keyType))
+                .thenThrow(new IndexOutOfBoundsException());
+
+            // Act & Assert
+            assertThrows(IndexOutOfBoundsException.class,
+                () -> bridgeSupport.getProposedFederatorPublicKeyOfType(index, keyType));
         }
 
         @Test
@@ -1001,7 +1169,8 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         verify(mockedEventLogger, never()).logRejectedPegin(any(BtcTransaction.class), any(RejectedPeginReason.class));
-        verify(mockedEventLogger, never()).logUnrefundablePegin(any(BtcTransaction.class), any(UnrefundablePeginReason.class));
+        verify(mockedEventLogger, never()).logNonRefundablePegin(any(BtcTransaction.class), any(
+            NonRefundablePeginReason.class));
     }
 
     @Test
@@ -1097,7 +1266,8 @@ class BridgeSupportTest {
         );
 
         verify(mockedEventLogger, atLeastOnce()).logRejectedPegin(any(BtcTransaction.class), any(RejectedPeginReason.class));
-        verify(mockedEventLogger, atLeastOnce()).logUnrefundablePegin(any(BtcTransaction.class), any(UnrefundablePeginReason.class));
+        verify(mockedEventLogger, atLeastOnce()).logNonRefundablePegin(any(BtcTransaction.class), any(
+            NonRefundablePeginReason.class));
     }
 
     @Test
@@ -1846,6 +2016,9 @@ class BridgeSupportTest {
             .value(DUST_AMOUNT)
             .build();
 
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
+
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
             .withFederationStorageProvider(federationStorageProviderMock)
@@ -1992,6 +2165,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2062,6 +2237,9 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2142,6 +2320,9 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2230,6 +2411,9 @@ class BridgeSupportTest {
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
+
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
         sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
         when(federationStorageProviderMock.getOldFederationBtcUTXOs())
@@ -2295,6 +2479,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2339,15 +2525,17 @@ class BridgeSupportTest {
             .build();
 
         Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         verify(eventLogger, times(1)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
@@ -2392,15 +2580,17 @@ class BridgeSupportTest {
             .build();
 
         Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
@@ -2442,15 +2632,17 @@ class BridgeSupportTest {
             .build();
 
         Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), 1L);
@@ -2499,6 +2691,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2549,6 +2743,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(rskTxHash));
@@ -2600,6 +2796,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2684,6 +2882,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         // Assert two transactions are added to pegoutsWaitingForConfirmations, one pegout batch and one migration tx
@@ -2736,6 +2936,7 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         // Get the transaction that was confirmed and the one that stayed unconfirmed
@@ -2771,6 +2972,7 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        throwsExceptionTx.sign(senderKey.getPrivKeyBytes());
 
         assertThrows(IllegalStateException.class, () -> bridgeSupportForFailingTx.updateCollections(throwsExceptionTx));
 
@@ -2803,6 +3005,7 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        tx.sign(senderKey.getPrivKeyBytes());
 
         bridgeSupport.updateCollections(tx);
 
@@ -2855,6 +3058,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertNull(provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2905,6 +3110,9 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
 
         TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
         BtcTransaction existingBtcTxEntryValue = mock(BtcTransaction.class);
@@ -2972,6 +3180,8 @@ class BridgeSupportTest {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
 
         assertThrows(IllegalStateException.class, () -> bridgeSupport.updateCollections(tx));
     }
@@ -6595,8 +6805,8 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegInVersionLegacy(
+    void registerPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
+        assertRefundInRegisterPegInVersionLegacy(
             true,
             false,
             TxSenderAddressType.P2SHMULTISIG,
@@ -6605,8 +6815,8 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegInVersionLegacy(
+    void registerPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
+        assertRefundInRegisterPegInVersionLegacy(
             false,
             false,
             TxSenderAddressType.P2PKH,
@@ -6615,8 +6825,8 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegInVersionLegacy(
+    void registerPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
+        assertRefundInRegisterPegInVersionLegacy(
             true,
             true,
             TxSenderAddressType.P2PKH,
@@ -6625,10 +6835,10 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
+    void registerPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
         RegisterBtcTransactionException, PeginInstructionsException {
 
-        assertRefundInProcessPegInVersion1(
+        assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.P2PKH,
             Optional.empty(),
             Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
@@ -6636,13 +6846,13 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
+    void registerPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(btcRegTestParams);
 
-        assertRefundInProcessPegInVersion1(
+        assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.UNKNOWN,
             Optional.of(btcRefundAddress),
             Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
@@ -6650,10 +6860,10 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
+    void registerPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
-        assertRefundInProcessPegInVersion1(
+        assertRefundInRegisterPegInVersion1(
             TxSenderAddressType.UNKNOWN,
             Optional.empty(),
             Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
@@ -6661,7 +6871,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_noPeginInstructions() {
+    void registerPegIn_noPeginInstructions() {
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
             .build();
@@ -6674,7 +6884,7 @@ class BridgeSupportTest {
         BtcTransaction btcTx = mock(BtcTransaction.class);
         when(btcTx.getValueSentToMe(any())).thenReturn(Coin.valueOf(1));
 
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.registerPegIn(
             btcTx,
             PegTestUtils.createHash3(1),
             0
@@ -6682,7 +6892,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
+    void registerPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -6720,7 +6930,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.registerPegIn(
             btcTx,
             PegTestUtils.createHash3(1),
             0
@@ -6729,7 +6939,7 @@ class BridgeSupportTest {
     }
 
     @Test
-    void processPegIn_errorParsingPeginInstructions_afterRskip170_refundSender() throws IOException, PeginInstructionsException {
+    void registerPegIn_errorParsingPeginInstructions_afterRskip170_refundSender() throws IOException, PeginInstructionsException {
         // Arrange
         ActivationConfig.ForBlock irisActivations = ActivationConfigsForTest.iris300().forBlock(0L);
         Repository repository = createRepository();
@@ -6780,7 +6990,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0));
+        assertThrows(RegisterBtcTransactionException.class, () -> bridgeSupport.registerPegIn(btcTx, PegTestUtils.createHash3(1), 0));
 
         // Assert
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
@@ -7403,7 +7613,7 @@ class BridgeSupportTest {
         }
     }
 
-    private void assertRefundInProcessPegInVersionLegacy(
+    private void assertRefundInRegisterPegInVersionLegacy(
         boolean isWhitelisted,
         boolean mockLockingCap,
         TxSenderAddressType lockSenderAddressType,
@@ -7467,7 +7677,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0);
+        bridgeSupport.registerPegIn(btcTx, PegTestUtils.createHash3(1), 0);
 
         // Assert
         assertEquals(1, pegoutsWaitingForConfirmations.getEntries().size());
@@ -7932,7 +8142,7 @@ class BridgeSupportTest {
         assertEquals(expectedEstimatedFee, estimatedFeesForNextPegOutEvent);
     }
 
-    private void assertRefundInProcessPegInVersion1(
+    private void assertRefundInRegisterPegInVersion1(
         TxSenderAddressType lockSenderAddressType,
         Optional<Address> btcRefundAddress,
         List<ConsensusRule> consensusRules)
@@ -8000,7 +8210,7 @@ class BridgeSupportTest {
             .build();
 
         // Act
-        bridgeSupport.processPegIn(btcTx, PegTestUtils.createHash3(1), 0);
+        bridgeSupport.registerPegIn(btcTx, PegTestUtils.createHash3(1), 0);
 
         // Assert
         if (lockSenderAddressType == TxSenderAddressType.UNKNOWN && !btcRefundAddress.isPresent()) {
