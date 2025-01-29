@@ -91,16 +91,16 @@ class CallTracerTest {
 
         assertNotNull(traceResult);
 
-        assertError(traceResult);
+        assertOOGError(traceResult);
 
         assertFalse(traceResult.getCalls().isEmpty());
-        assertError(traceResult.getCalls().get(0));
+        assertOOGError(traceResult.getCalls().get(0));
 
         assertFalse(traceResult.getCalls().get(0).getCalls().isEmpty());
-        assertError(traceResult.getCalls().get(0).getCalls().get(0));
+        assertOOGError(traceResult.getCalls().get(0).getCalls().get(0));
     }
 
-    private static void assertError(TxTraceResult trace) {
+    private static void assertOOGError(TxTraceResult trace) {
         String error = trace.getError();
         assertNotNull(error);
         assertTrue(error.contains("Not enough gas for"));
