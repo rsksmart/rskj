@@ -18,37 +18,62 @@
 
 package co.rsk.peg;
 
-import co.rsk.crypto.Keccak256;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.crypto.Keccak256;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.SortedMap;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.SortedMap;
-
-/**
- * Created by mario on 20/04/17.
- */
 public class StateForFederator {
-    private SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
+
+    private final SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
 
     public StateForFederator(SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures) {
-        this.rskTxsWaitingForSignatures = rskTxsWaitingForSignatures;
+        Objects.requireNonNull(rskTxsWaitingForSignatures);
+
+        this.rskTxsWaitingForSignatures = Collections.unmodifiableSortedMap(rskTxsWaitingForSignatures);
     }
 
-    public StateForFederator(byte[] rlpData, NetworkParameters parameters) {
-        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
-        byte[] encodedWaitingForSign = rlpList.get(0).getRLPData();
-
-        this.rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);
+    public StateForFederator(byte[] rlpData, NetworkParameters networkParameters) {
+        this(
+            BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(
+                decodeRlpToMap(rlpData), networkParameters));
     }
 
+    /**
+     * Retrieves a sorted map of RSK transactions that are waiting for signatures.
+     *
+     * <p>
+     * The returned {@code SortedMap<Keccak256, BtcTransaction>} contains entries where the key
+     * is the hash of the RSK transaction, and the value is the {@code BtcTransaction} object.
+     * This method guarantees a non-null result, returning an empty map if no transactions are pending.
+     * </p>
+     *
+     * @return a non-null {@code SortedMap<Keccak256, BtcTransaction>} of transactions waiting for signatures;
+     *         if no transactions are pending, an empty map is returned.
+     */
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
         return rskTxsWaitingForSignatures;
     }
 
-    public byte[] getEncoded() {
-        byte[] encodedWaitingForSign = BridgeSerializationUtils.serializeMap(this.rskTxsWaitingForSignatures);
-        return RLP.encodeList(encodedWaitingForSign);
+    /**
+     * Encodes the current state into RLP format.
+     * 
+     * @return The RLP-encoded byte array representing the current state.
+     */
+    public byte[] encodeToRlp() {
+        byte[] serializedRskTxsWaitingForSignatures = 
+            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(rskTxsWaitingForSignatures);
+        return RLP.encodeList(serializedRskTxsWaitingForSignatures);
+    }
+
+    private static byte[] decodeRlpToMap(byte[] rlpData) {
+        Objects.requireNonNull(rlpData);
+
+        RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
+        return rlpList.get(0).getRLPData();
     }
 }

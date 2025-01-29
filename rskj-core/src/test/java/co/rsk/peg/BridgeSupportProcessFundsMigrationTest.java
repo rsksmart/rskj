@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.UTXO;
@@ -19,6 +20,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -183,6 +185,8 @@ class BridgeSupportProcessFundsMigrationTest {
         when(federationStorageProvider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration);
 
         Transaction updateCollectionsTx = buildUpdateCollectionsTransaction();
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        updateCollectionsTx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(updateCollectionsTx);
 
         assertEquals(activations.isActive(ConsensusRule.RSKIP146)? 0 : 1, provider.getPegoutsWaitingForConfirmations().getEntriesWithoutHash().size());

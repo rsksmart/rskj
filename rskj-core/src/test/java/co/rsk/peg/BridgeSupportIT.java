@@ -25,6 +25,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
@@ -581,11 +582,13 @@ public class BridgeSupportIT {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(BigIntegers.asUnsignedByteArray(DUST_AMOUNT))
             .build();
+
         ECKey key = new ECKey();
+        RskAddress sender = new RskAddress(key.getAddress());
         tx.sign(key.getPrivKeyBytes());
 
         bridgeSupport.updateCollections(tx);
-        verify(eventLogger, times(1)).logUpdateCollections(tx);
+        verify(eventLogger).logUpdateCollections(sender);
     }
 
     @Test
@@ -897,6 +900,9 @@ public class BridgeSupportIT {
             .chainId(Constants.REGTEST_CHAIN_ID)
             .value(DUST_AMOUNT)
             .build();
+
+        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
+        tx.sign(senderKey.getPrivKeyBytes());
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
