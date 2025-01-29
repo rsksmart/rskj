@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 #v4.2.1
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 #v4.4.0
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b #v4.6.0
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -64,7 +64,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 #v4.4.0
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b #v4.6.0
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -177,7 +177,7 @@ jobs:
           node --unhandled-rejections=strict generateBtcBlocks.js
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 #v4.4.0
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b #v4.6.0
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -230,7 +230,7 @@ jobs:
       - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 #v4.2.1
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 #v4.4.0
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b #v4.6.0
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -262,31 +262,6 @@ jobs:
           path: |
             rskj-core/build/reports/
 
-  unit-tests-java21:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 #v4.2.1
-
-      - name: Setup Java & Gradle
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 #v4.4.0
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      - uses: actions/cache/restore@3624ceb22c1c5a301c8db4169662070a689d9ea8 #v4.1.1
-        name: Restore Gradle Wrapper
-        with:
-          path: |
-            gradle/wrapper/gradle-wrapper.jar
-          key: gradle-wrapper-v1
-          fail-on-cache-miss: true
-
-      - name: Run tests
-        run: |
-          ./gradlew --no-daemon --stacktrace test
-
   integration-tests:
     needs: build
     runs-on: ubuntu-latest
@@ -294,7 +269,7 @@ jobs:
       - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 #v4.2.1
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@b36c23c0d998641eff861008f374ee103c25ac73 #v4.4.0
+        uses: actions/setup-java@7a6d8a8234af8eb26422e24e3006232cccaa061b #v4.6.0
         with:
           java-version: '17'
           distribution: 'temurin'

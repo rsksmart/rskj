@@ -17,6 +17,8 @@
  */
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
@@ -48,9 +50,6 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 
 /**
  * @author Oscar Guindzberg

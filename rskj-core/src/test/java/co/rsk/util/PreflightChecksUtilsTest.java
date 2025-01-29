@@ -71,7 +71,7 @@ class PreflightChecksUtilsTest {
 
     @Test
     void runChecks_runAllChecks_OK() throws Exception {
-        for (String ver : Arrays.asList("17.0.3", "21.0.1")) {
+        for (String ver : Arrays.asList("17.0.3")) {
             try (RskContext rskContext = new RskTestContext(tempDir)) {
                 PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
