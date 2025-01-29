@@ -1,5 +1,7 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -10,7 +12,10 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
 import java.util.*;
 import java.util.stream.Stream;
+import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,11 +23,27 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BitcoinUtilsTest {
+
+    private static final BridgeConstants bridgeTestnetConstants = BridgeMainNetConstants.getInstance();
+    private static final NetworkParameters btcTestnetParams = bridgeTestnetConstants.getBtcParams();
+
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final int FIRST_INPUT_INDEX = 0;
 
+    private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+
     private Address destinationAddress;
+
+    // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
+    private static final BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
+
+    // malformed coinbase tx from mainnet: https://mempool.space/tx/079e68032d9a4cdb222f464b9966756ccb749633aee678c6a51536b4fc38e29c
+    private static final BtcTransaction malFormedMainnetCoinbaseTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff3c03ebba0c040c93ef652f4d41524120506f6f6c202876303232373234292f76649b3c094f135bf4b83108c14ea85f12307cd4bf00d6010000ffffffffffffffff0371c71a27000000001976a9142fc701e2049ee4957b07134b6c1d771dd5a96b2188ac0000000000000000266a24aa21a9ed5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd96900000000000000002cfabe6d6d9797129041127735e99e277241fbc539b327b16ad3e8537125cdc12ccf2d0586010000000000000001200000000000000000000000000000000000000000000000000000000000000000e5a28d27"));
+
+    // witness commitment output script in non-standard format
+    private static final BtcTransaction coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a24aa21a9ed4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
 
     @BeforeEach
     void init() {
@@ -36,7 +57,7 @@ class BitcoinUtilsTest {
         while (!sigs.isEmpty()){
             BtcECKey pubKey = keys.pollFirst();
             BtcECKey.ECDSASignature signature = sigs.getFirst();
-            if(pubKey.verify(sigHash, signature)){
+            if (pubKey.verify(sigHash, signature)) {
                 sigs.pollFirst();
             }
             if (sigs.size() > keys.size()) {
@@ -67,7 +88,7 @@ class BitcoinUtilsTest {
 
     @ParameterizedTest
     @MethodSource("pegoutOrMigrationArgProvider")
-    void test_getFirstInputSigHash_pegout_or_migration(String btcTxHex) {
+    void getFirstInputSigHash_pegout_or_migration(String btcTxHex) {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
         TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
@@ -79,7 +100,7 @@ class BitcoinUtilsTest {
         assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertEquals(signatures.size(), redeemScriptParser.getM());
+        assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
@@ -141,7 +162,7 @@ class BitcoinUtilsTest {
         assertFalse(pubKeys.isEmpty());
 
         List<BtcECKey.ECDSASignature> signatures = BitcoinTestUtils.extractSignaturesFromTxInput(txInput);
-        Assertions.assertEquals(signatures.size(), redeemScriptParser.getM());
+        assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
@@ -246,7 +267,7 @@ class BitcoinUtilsTest {
 
         // Assert
         assertTrue(redeemScript.isPresent());
-        Assertions.assertEquals(expectedRedeemScript, redeemScript.get());
+        assertEquals(expectedRedeemScript, redeemScript.get());
     }
 
     @Test
@@ -302,20 +323,20 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionDoesNotHaveInputs_shouldReturnSameTransaction() {
+    void getTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnSameTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionHashBeforeRemovingSignatures, transaction.getHash());
+        assertEquals(transactionHashBeforeRemovingSignatures, transactionHashWithoutSignatures);
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionIsSegwit_shouldThrowIllegalArgumentException() {
+    void getTransactionHashWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -323,14 +344,15 @@ class BitcoinUtilsTest {
         transactionWitness.setPush(0, new byte[]{});
         transaction.setWitness(0, transactionWitness);
 
-        // act & assert
-        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
-        assertEquals("Removing signatures from SegWit transactions is not allowed.", exception.getMessage());
+        // act
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+
+        // assert
+        assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
+    void getTransactionHashWithoutSignatures_whenTxIsNotSegwitAndTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
@@ -339,12 +361,12 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
         assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenNotAllTransactionInputsHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
+    void getTransactionHashWithoutSignatures_whenTxIsNotSegwitButNotAllTransactionInputsHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script p2shMultiSigScriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -357,12 +379,12 @@ class BitcoinUtilsTest {
 
         // act & assert
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
         assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
     }
 
     @Test
-    void removeSignaturesFromTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldRemoveSignatures() {
+    void getTransactionHashWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTxHash() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -371,37 +393,182 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, scriptSig);
         transaction.addOutput(Coin.COIN, destinationAddress);
-        Sha256Hash transactionWithoutSignaturesHash = transaction.getHash();
+        Sha256Hash transactionHashBeforeSigning = transaction.getHash();
 
-        List<BtcECKey> keysToSign =
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // using private keys from federation declared above
+        List<BtcECKey> keysToSign = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01",
+            "member02",
+            "member03",
+            "member04",
+            "member05"
+        }, true); // using private keys from federation declared above
         List<TransactionInput> inputs = transaction.getInputs();
         for (TransactionInput input : inputs) {
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, inputs.indexOf(input), keysToSign);
+            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(
+                transaction,
+                inputs.indexOf(input),
+                keysToSign
+            );
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionWithoutSignaturesHash, transaction.getHash());
+        assertEquals(transactionHashBeforeSigning, transactionHashWithoutSignatures);
+    }
+
+    @Test
+    void getTransactionHashWithoutSignatures_forRealPegout() {
+        // arrange
+        // getting the btc raw tx from a real release_btc event
+        byte[] btcRawTxFromReleaseBtcEvent = Hex.decode("0200000001de890a3fcdf7391f8f66d0b04e26d8ef05c342c4ad5b5feb64e24b525aa1721001000000fd3a0300483045022100ba4f30ded162d3203c89c73c03e8c6001255ab62fb7e258a92b112f7cefe2e8e0220683d7e552b0e812257be4fb41f9d2a0b99a91e2cd8bc5e9eb2305a0ddf6b833c01483045022100c8705daac34ec164ef1a441a24f9f9661ecf5bd271d2d6d85d4bd11d444d65e7022065599fc87a8d335f0ddee2a93ed442fae55e08d514f16ba087d4442f3cb2fca001483045022100a85719ee3b3e8bc3716900575b059fd40b1f3852d4de58efa6de1185d6ed5bda022052beda3d8597f4071918136c2cfd8f80aede4aaf6e8710585d2e5fbe988fd0ce0147304402205e90f4c98d2187a1021d7200f40b11623d4e6d3e99d5481b70bedadda10be759022071a3bac20aa917abd46bdedd52d97033050cb8da28f9b93507c93af69ffe67f201483045022100eb2fc5dd75c210311bbb0a0f9eacbd0675e61d413a2b227422232735fd95238602204f92e268e55b113c732b4351ba2049ff48b6347ba6e9a4efe9da70fb97f321e601004dc901645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68ffffffff0258369b02000000001976a91481769a94a036ceba700a71467f6cef39652acfd688ac33aa0c9d0000000017a914d3530b561910c250f58fbd572d2f7a7d847354ef8700000000");
+        BtcTransaction btcTxFromReleaseBtcEvent = new BtcTransaction(btcMainnetParams, btcRawTxFromReleaseBtcEvent);
+
+        // act
+        Sha256Hash btcTxHashWithoutSigs = getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, btcTxFromReleaseBtcEvent);
+
+        // assert
+        // the tx hash emitted in the release_requested event does not have the signatures
+        Sha256Hash hashFromReleaseRequestedEvent = Sha256Hash.wrap("7fba184a41c4ca22e2b806bdd961c4e52b1bd2a1d2552bbe61cbba4d56c00fae");
+        assertEquals(hashFromReleaseRequestedEvent, btcTxHashWithoutSigs);
+    }
+
+    @Test
+    void createBaseP2SHInputScriptThatSpendsFromRedeemScript_shouldCreateExpectedScriptSig() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        // act
+        TransactionInput input = transaction.getInput(0);
+        input.setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript));
+
+        // assert
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
+
+        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
+
+        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
+            assertEquals(0, chunk.opcode);
+        }
+    }
+
+    @Test
+    void generateSigHashForP2SHInput_shouldGenerateExpectedSigHash() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        int inputIndex = 0;
+        TransactionInput input = transaction.getInput(inputIndex);
+        Script p2shInputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+        input.setScriptSig(p2shInputScript);
+
+        // act
+        Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(transaction, inputIndex);
+
+        // assert
+        Sha256Hash expectedSigHash = transaction.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
+        assertEquals(expectedSigHash, sigHash);
+    }
+
+    @Test
+    void generateSigHashForP2SHInput_forEmptyInputScript_shouldThrowIllegalArgumentException() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+        int inputIndex = 0;
+
+        // act & assert
+        assertThrows(IllegalArgumentException.class,
+            () -> generateSigHashForP2SHTransactionInput(transaction, inputIndex));
+    }
+
+    @Test
+    void searchForOutput_whenTheOutputIsThere_shouldReturnOutputSentToExpectedScript() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        // act
+        Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), outputScript);
+
+        // assert
+        assertTrue(transactionOutput.isPresent());
+        assertEquals(outputScript, transactionOutput.get().getScriptPubKey());
+    }
+
+    @Test
+    void searchForOutput_whenTheOutputIsNotThere_shouldReturnEmpty() {
+        // arrange
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        BtcTransaction sourceTransaction = new BtcTransaction(btcMainnetParams);
+        sourceTransaction.addOutput(Coin.valueOf(1000L), outputScript);
+
+        Federation anotherFederation = StandardMultiSigFederationBuilder.builder().build();
+        Script anotherRedeemScript = anotherFederation.getRedeemScript();
+        Script anotherOutputScript = ScriptBuilder.createP2SHOutputScript(anotherRedeemScript);
+
+        // act
+        Optional<TransactionOutput> transactionOutput = searchForOutput(sourceTransaction.getOutputs(), anotherOutputScript);
+
+        // assert
+        assertFalse(transactionOutput.isPresent());
     }
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test find witness commitment implementations")
     class FindWitnessCommitment {
-        @Test
-        void findWitnessCommitment_whenTxHasNoOutputs_shouldThrowException() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_whenTxHasNoOutputs_shouldThrowException(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
             // Act
-            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx));
+            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx, activations));
         }
 
-        @Test
-        void findWitnessCommitment_whenTxIsNotCoinbase_shouldThrowException() {
+        private static Stream<Arguments> activationsProvider() {
+            return Stream.of(
+                Arguments.of(arrowHeadActivations),
+                Arguments.of(allActivations)
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_whenTxIsNotCoinbase_shouldThrowException(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
@@ -415,23 +582,25 @@ class BitcoinUtilsTest {
             btcTx.addOutput(Coin.COIN, receiver2);
 
             // Act
-            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx));
+            assertThrows(IllegalStateException.class, () -> BitcoinUtils.findWitnessCommitment(btcTx, activations));
         }
 
-        @Test
-        void findWitnessCommitment_whenNoWitnessCommitment_shouldReturnEmpty() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_whenNoWitnessCommitment_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
             // Arrange
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
 
             // Act
-            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertFalse(witnessCommitment.isPresent());
         }
 
-        @Test
-        void findWitnessCommitment_withWitnessCommitment_shouldReturnExpectedValue() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withWitnessCommitment_shouldReturnExpectedValue(ActivationConfig.ForBlock activations) {
             // Arrange
             Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransactionWithWitnessCommitment(
@@ -440,15 +609,16 @@ class BitcoinUtilsTest {
             );
 
             // Act
-            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertTrue(witnessCommitmentFound.isPresent());
             assertEquals(witnessCommitment, witnessCommitmentFound.get());
         }
 
-        @Test
-        void findWitnessCommitment_withMultipleWitnessCommitments_shouldReturnLastOne() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withMultipleWitnessCommitments_shouldReturnLastOne(ActivationConfig.ForBlock activations) {
             // Arrange
             Sha256Hash witnessCommitment1 = BitcoinTestUtils.createHash(100);
             Sha256Hash witnessCommitment2 = BitcoinTestUtils.createHash(200);
@@ -459,31 +629,33 @@ class BitcoinUtilsTest {
             );
 
             // Act
-            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitmentFound = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertTrue(witnessCommitmentFound.isPresent());
             assertEquals(witnessCommitment3, witnessCommitmentFound.get());
         }
 
-        @Test
-        void findWitnessCommitment_withWrongWitnessCommitment_shouldReturnEmpty() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withWrongWitnessCommitment_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
             // Arrange
-            Sha256Hash fakeWitnessCommitment = BitcoinTestUtils.createHash(101);
+            Sha256Hash wrongWitnessCommitment = BitcoinTestUtils.createHash(101);
             BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransactionWithWrongWitnessCommitment(
                 btcMainnetParams,
-                fakeWitnessCommitment
+                wrongWitnessCommitment
             );
 
             // Act
-            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertFalse(witnessCommitment.isPresent());
         }
 
-        @Test
-        void findWitnessCommitment_withRealTransaction_shouldReturnExpectedValue() {
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withRealTransaction_shouldReturnExpectedValue(ActivationConfig.ForBlock activations) {
             // Arrange
             // https://mempool.space/tx/b6362fb1369a64c4ce4e0449dc9bd7ffc1ba4fa857fce8a502ff53e49a17c1a7
             String rawCoinbaseTx = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff5803143c0d1b4d696e656420627920416e74506f6f6c39363552000603188e2f24fabe6d6d0a2f234a30b96bbd9118e926736f18b85f55588455058335d2aa379604b51662100000000000000000004ca30900000000d18300ffffffff05220200000000000017a91442402a28dd61f2718a4b27ae72a4791d5bbdade787e3fd38130000000017a9145249bdf2c131d43995cff42e8feee293f79297a8870000000000000000266a24aa21a9ed434c56197e034947917a46b6c302671f952e0c0ce2ea794fad577b3bbdc0408400000000000000002f6a2d434f524501a37cf4faa0758b26dca666f3e36d42fa15cc01064e3ecda72cb7961caa4b541b1e322bcfe0b5a03000000000000000002b6a2952534b424c4f434b3aebe97391ca0a8447635a588b29295e1fa65aa4723216c21112051f1100683fa50120000000000000000000000000000000000000000000000000000000000000000000000000";
@@ -491,37 +663,137 @@ class BitcoinUtilsTest {
             Sha256Hash expectedWitnessCommitment = Sha256Hash.wrap("434c56197e034947917a46b6c302671f952e0c0ce2ea794fad577b3bbdc04084");
 
             // Act
-            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
             // Assert
             assertTrue(witnessCommitment.isPresent());
             assertEquals(expectedWitnessCommitment, witnessCommitment.get());
         }
-    }
 
-    @Test
-    void findWitnessCommitment_withDataLargenThanExpected_shouldReturnEmpty() {
-        // Arrange
-        BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withDataLargerThanExpected_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+            // Arrange
+            BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
-        btcTx.setWitness(0, txWitness);
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
+            btcTx.setWitness(0, txWitness);
 
-        Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
-        byte[] extraData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
-        byte[] witnessCommitmentWithHeaderAndExtraData = ByteUtil.merge(
-            BitcoinUtils.WITNESS_COMMITMENT_HEADER,
-            witnessCommitment.getBytes(),
-            extraData
-        );
-        btcTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeaderAndExtraData));
-        btcTx.verify();
+            Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
+            byte[] extraData = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+            byte[] witnessCommitmentWithHeaderAndExtraData = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitment.getBytes(),
+                extraData
+            );
+            btcTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeaderAndExtraData));
+            btcTx.verify();
 
-        // Act
-        Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx);
+            // Act
+            Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
 
-        // Assert, should not find the commitment since the data length != 36 bytes
-        assertFalse(obtainedWitnessCommitment.isPresent());
+            // Assert, should not find the commitment since the data length != 36 bytes
+            assertFalse(obtainedWitnessCommitment.isPresent());
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withWitnessCommitmentIsShorterThanExpected_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+            // Arrange
+            BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
+
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
+            btcTx.setWitness(0, txWitness);
+
+            byte[] witnessCommitment = BitcoinTestUtils.createHash(100).getBytes();
+
+            // Create a new witness commitment array with one byte less than the expected 32 bytes
+            byte[] witnessCommitmentTooShort = new byte[Sha256Hash.LENGTH-1];
+
+            // Copy the elements from the original array to the new array
+            System.arraycopy(witnessCommitment, 0, witnessCommitmentTooShort, 0, witnessCommitmentTooShort.length);
+
+            byte[] witnessCommitmentWithHeaderAndExtraData = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitmentTooShort
+            );
+            btcTx.addOutput(Coin.ZERO, ScriptBuilder.createOpReturnScript(witnessCommitmentWithHeaderAndExtraData));
+            btcTx.verify();
+
+            // Act
+            Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
+
+            // Assert, should not find the commitment since the data length != 36 bytes
+            assertFalse(obtainedWitnessCommitment.isPresent());
+        }
+
+        @ParameterizedTest
+        @MethodSource("activationsProvider")
+        void findWitnessCommitment_withNoOpReturn_shouldReturnEmpty(ActivationConfig.ForBlock activations) {
+            // Arrange
+            BtcTransaction btcTx = BitcoinTestUtils.createCoinbaseTransaction(btcMainnetParams);
+
+            TransactionWitness txWitness = new TransactionWitness(1);
+            txWitness.setPush(0, BitcoinTestUtils.WITNESS_RESERVED_VALUE.getBytes());
+            btcTx.setWitness(0, txWitness);
+
+            Sha256Hash witnessCommitment = BitcoinTestUtils.createHash(100);
+            byte[] witnessCommitmentWithHeader = ByteUtil.merge(
+                BitcoinUtils.WITNESS_COMMITMENT_HEADER,
+                witnessCommitment.getBytes()
+            );
+
+            Script witnessCommitmentOutputScript = (new ScriptBuilder()).op(OP_NOT).data(witnessCommitmentWithHeader)
+                .build();
+            btcTx.addOutput(Coin.ZERO, witnessCommitmentOutputScript);
+            btcTx.verify();
+
+            // Act
+            Optional<Sha256Hash> obtainedWitnessCommitment = BitcoinUtils.findWitnessCommitment(btcTx, activations);
+
+            // Assert, should not find the commitment since the output is not an OP_RETURN
+            assertFalse(obtainedWitnessCommitment.isPresent());
+        }
+
+        @ParameterizedTest
+        @MethodSource("malFormedCoinbaseTxProvider")
+        void findWitnessCommitment_whenMalFormedTxBeforeRSKIP460_shouldThrowException(BtcTransaction malFormedCoinbaseTx) {
+            // Act & Assert
+            assertThrows(ScriptException.class, () -> BitcoinUtils.findWitnessCommitment(malFormedCoinbaseTx, arrowHeadActivations));
+        }
+
+        private static Stream<Arguments> malFormedCoinbaseTxProvider() {
+            return Stream.of(
+                Arguments.of(malFormedTestnetCoinbaseTx),
+                Arguments.of(malFormedMainnetCoinbaseTx),
+                Arguments.of(coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat)
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("malFormedCoinbaseTxAndExpectedWitnessProvider")
+        void findWitnessCommitment_whenMalFormedTxAfterRSKIP460_shouldIgnoreMalformedOutputAndReturnFoundWitnessCommitment(
+            BtcTransaction malFormedCoinbaseTx, Sha256Hash expectedWitnessCommitment) {
+            // Act
+            Optional<Sha256Hash> witnessCommitment = BitcoinUtils.findWitnessCommitment(
+                malFormedCoinbaseTx, allActivations);
+
+            // Assert
+            assertTrue(witnessCommitment.isPresent());
+            assertEquals(expectedWitnessCommitment, witnessCommitment.get());
+        }
+
+        private static Stream<Arguments> malFormedCoinbaseTxAndExpectedWitnessProvider() {
+            return Stream.of(
+                Arguments.of(malFormedTestnetCoinbaseTx, Sha256Hash.wrap(
+                    "e46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b")),
+                Arguments.of(malFormedMainnetCoinbaseTx, Sha256Hash.wrap(
+                    "5e4aae37309d88e9f49d3a4c6fb424e491cbdbac754b8ef06bb90d2a149bd969")),
+                Arguments.of(coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat, Sha256Hash.wrap(
+                    "4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b"))
+            );
+        }
     }
 }

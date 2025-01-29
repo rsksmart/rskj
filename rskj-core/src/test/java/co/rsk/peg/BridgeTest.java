@@ -15,12 +15,8 @@ import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationArgs;
-import co.rsk.peg.federation.FederationFactory;
-import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
-import co.rsk.peg.federation.FederationTestUtils;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.test.builders.BridgeBuilder;
 import java.io.IOException;
@@ -344,7 +340,7 @@ class BridgeTest {
             bridge.execute(data);
             fail();
         } catch (VMException e) {
-            assertEquals("Exception executing bridge: Sender is not part of the active or retiring federations, so he is not enabled to call the function 'registerBtcTransaction'", e.getMessage());
+            assertEquals("Exception executing bridge: The sender is not a member of the active or retiring federations and is therefore not authorized to invoke the function: 'registerBtcTransaction'", e.getMessage());
         }
 
         verify(bridgeSupportMock, never()).registerBtcTransaction(
@@ -2113,6 +2109,55 @@ class BridgeTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("activationsAndExpectedFederationCreationTimeArgs")
+    void getActiveFederationCreationTime_returnsCreationTimeInExpectedTimeUnit(ActivationConfig activationConfig, long expectedActiveFederationCreationTime) {
+        // arrange
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Instant creationTime = Instant.ofEpochMilli(5000);
+        when(bridgeSupportMock.getActiveFederationCreationTime()).thenReturn(creationTime);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // act
+        long actualActiveFederationCreationTime = bridge.getFederationCreationTime(new Object[]{});
+
+        assertEquals(expectedActiveFederationCreationTime, actualActiveFederationCreationTime);
+    }
+
+    @ParameterizedTest
+    @MethodSource("activationsAndExpectedFederationCreationTimeArgs")
+    void getRetiringFederationCreationTime_returnsCreationTimeInExpectedTimeUnit(ActivationConfig activationConfig, long expectedRetiringFederationCreationTime) {
+        // arrange
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Instant creationTime = Instant.ofEpochMilli(5000);
+        when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(creationTime);
+
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        // act
+        long actualRetiringFederationCreationTime = bridge.getRetiringFederationCreationTime(new Object[]{});
+
+        // assert
+        assertEquals(expectedRetiringFederationCreationTime, actualRetiringFederationCreationTime);
+    }
+
+    private static Stream<Arguments> activationsAndExpectedFederationCreationTimeArgs() {
+        long creationTimeInMillis = 5000;
+        long creationTimeInSeconds = 5;
+
+        return Stream.of(
+            Arguments.of(ActivationConfigsForTest.arrowhead631(), creationTimeInMillis),
+            Arguments.of(ActivationConfigsForTest.all(), creationTimeInSeconds)
+        );
+    }
+
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
     void getRetiringFederationSize(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
@@ -2234,6 +2279,238 @@ class BridgeTest {
 
     @ParameterizedTest()
     @MethodSource("msgTypesAndActivations")
+    void getProposedFederationAddress(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Address expectedAddress = Address.fromBase58(networkParameters, "32Bhwee9FzQbuaG29RcXpdrvYnvZeMk11M");
+        when(bridgeSupportMock.getProposedFederationAddress()).thenReturn(Optional.of(expectedAddress));
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATION_ADDRESS.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederationAddress();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getProposedFederationSize(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Integer expectedSize = 9;
+        when(bridgeSupportMock.getProposedFederationSize()).thenReturn(Optional.of(expectedSize));
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATION_SIZE.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederationSize();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getProposedFederationCreationTime(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Instant expectedCreationTime = Instant.EPOCH;
+        when(bridgeSupportMock.getProposedFederationCreationTime()).thenReturn(Optional.of(expectedCreationTime));
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATION_CREATION_TIME.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederationCreationTime();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @Test
+    void getProposedFederationCreationTime_shouldReturnValueFromSeconds() {
+        // arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        long creationTimeInSeconds = 1000;
+        Instant creationTime = Instant.ofEpochSecond(creationTimeInSeconds);
+        when(bridgeSupportMock.getProposedFederationCreationTime()).thenReturn(Optional.of(creationTime));
+
+        // act & assert
+        assertEquals(creationTimeInSeconds, bridge.getProposedFederationCreationTime(new Object[]{}));
+    }
+
+    @Test
+    void getProposedFederationCreationTime_whenBridgeSupportReturnsEmpty_shouldReturnMinusOne() {
+        // arrange
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .build();
+
+        when(bridgeSupportMock.getProposedFederationCreationTime()).thenReturn(Optional.empty());
+
+        // act & assert
+        long expectedCreationTime = -1L;
+        assertEquals(expectedCreationTime, bridge.getProposedFederationCreationTime(new Object[]{}));
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getProposedFederationCreationBlockNumber(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        long expectedCreationBlockNumber = 123456L;
+        when(bridgeSupportMock.getProposedFederationCreationBlockNumber()).thenReturn(Optional.of(expectedCreationBlockNumber));
+
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederationCreationBlockNumber();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getProposedFederatorPublicKeyOfType(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        int federatorIndex = 1;
+        KeyType keyType = KeyType.BTC;
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_PROPOSED_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+        byte[] data = function.encode(federatorIndex, keyType.getValue());
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (!(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getProposedFederatorPublicKeyOfType(federatorIndex, keyType);
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+    }
+
+    @Test
+    void getProposedFederatorPublicKeyOfType_whenBridgeSupportCallThrowsIOOBE_throwsVMException() {
+        // arrange
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        MessageCall.MsgType msgType = MessageCall.MsgType.CALL;
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        // this value is not being actually tested since we are mocking the response
+        int outOfBoundsIndex = 1000;
+        KeyType keyType = KeyType.BTC;
+        when(bridgeSupportMock.getProposedFederatorPublicKeyOfType(outOfBoundsIndex, keyType)).thenThrow(IndexOutOfBoundsException.class);
+
+        // act & assert
+        Object[] args = new Object[]{ BigInteger.valueOf(outOfBoundsIndex), keyType.getValue() };
+        assertThrows(VMException.class, () -> bridge.getProposedFederatorPublicKeyOfType(args));
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
     void getStateForBtcReleaseClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
         Transaction rskTxMock = mock(Transaction.class);
         doReturn(true).when(rskTxMock).isLocalCallTransaction();
@@ -2256,6 +2533,38 @@ class BridgeTest {
         } else {
             bridge.execute(data);
             verify(bridgeSupportMock, times(1)).getStateForBtcReleaseClient();
+        }
+    }
+
+    @ParameterizedTest()
+    @MethodSource("msgTypesAndActivations")
+    void getStateForSvpClient(MessageCall.MsgType msgType, ActivationConfig activationConfig) throws VMException, IOException {
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(true).when(rskTxMock).isLocalCallTransaction();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = bridgeBuilder
+            .transaction(rskTxMock)
+            .activationConfig(activationConfig)
+            .bridgeSupport(bridgeSupportMock)
+            .msgType(msgType)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.GET_STATE_FOR_SVP_CLIENT.getFunction();
+        byte[] data = function.encode();
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP419, 0)) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP417, 0) &&
+                !(msgType.equals(MessageCall.MsgType.CALL) || msgType.equals(MessageCall.MsgType.STATICCALL))) {
+                // Post arrowhead should fail for any msg type != CALL or STATIC CALL
+                assertThrows(VMException.class, () -> bridge.execute(data));
+            } else {
+                bridge.execute(data);
+                verify(bridgeSupportMock).getStateForSvpClient();
+            }
+        } else {
+            // Pre RSKIP419 this method is not enabled, should fail for all message types
+            assertThrows(VMException.class, () -> bridge.execute(data));
         }
     }
 
@@ -3087,11 +3396,12 @@ class BridgeTest {
             ActivationConfigsForTest.iris300(),
             ActivationConfigsForTest.hop400(),
             ActivationConfigsForTest.fingerroot500(),
-            ActivationConfigsForTest.arrowhead600()
+            ActivationConfigsForTest.arrowhead600(),
+            ActivationConfigsForTest.lovell700()
         );
 
         for (MessageCall.MsgType msgType : MessageCall.MsgType.values()) {
-            for(ActivationConfig activationConfig : activationConfigs) {
+            for (ActivationConfig activationConfig : activationConfigs) {
                 argumentsList.add(Arguments.of(msgType, activationConfig));
             }
         }
