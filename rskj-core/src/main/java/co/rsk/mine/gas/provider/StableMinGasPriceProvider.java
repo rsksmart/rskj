@@ -33,20 +33,23 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private static final Logger logger = LoggerFactory.getLogger("StableMinGasPrice");
     private static final int ERR_NUM_OF_FAILURES = 20;
-
     private final MinGasPriceProvider fallBackProvider;
     private final long minStableGasPrice;
     private final long refreshRateInMillis;
+    private final long minValidPrice;
+    private final long maxValidPrice;
     private final AtomicInteger numOfFailures = new AtomicInteger();
     private final AtomicReference<Future<Long>> priceFuture = new AtomicReference<>();
 
     private volatile long lastMinGasPrice;
     private volatile long lastUpdateTimeMillis;
 
-    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, Duration refreshRate) {
+    protected StableMinGasPriceProvider(MinGasPriceProvider fallBackProvider, long minStableGasPrice, Duration refreshRate, long minValidPrice, long maxValidPrice) {
         this.minStableGasPrice = minStableGasPrice;
         this.fallBackProvider = fallBackProvider;
         this.refreshRateInMillis = refreshRate.toMillis();
+        this.minValidPrice = minValidPrice;
+        this.maxValidPrice = maxValidPrice;
     }
 
     protected abstract Optional<Long> getBtcExchangeRate();
@@ -128,7 +131,7 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
     private Optional<Long> fetchPriceSync() {
         logger.debug("fetchPriceSync...");
         Optional<Long> priceResponse = getBtcExchangeRate();
-        if (priceResponse.isPresent() && priceResponse.get() > 0) {
+        if (priceResponse.isPresent() && valueBetweenConfiguredRange(priceResponse.get())) {
             long result = calculateMinGasPriceBasedOnBtcPrice(priceResponse.get());
             lastMinGasPrice = result;
             lastUpdateTimeMillis = System.currentTimeMillis();
@@ -147,5 +150,14 @@ public abstract class StableMinGasPriceProvider implements MinGasPriceProvider {
         }
 
         return Optional.empty();
+    }
+
+    @VisibleForTesting
+    boolean valueBetweenConfiguredRange(long value) {
+        if (value >= minValidPrice && value <= maxValidPrice) {
+            return true;
+        }
+        logger.warn("Gas price value {} is not in the valid range {} - {}", value, minValidPrice, maxValidPrice);
+        return false;
     }
 }
