@@ -33,6 +33,7 @@ import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.script.ScriptParser;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
@@ -45,6 +46,7 @@ import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
@@ -65,6 +67,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -80,7 +84,10 @@ import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Test;
 
 class FederationChangeIT {
@@ -358,7 +365,7 @@ class FederationChangeIT {
     }
 
     @Test
-    void whenAllActivationsArePresentAndPeginsAreSentAfterMigration_shouldBeAbleToSendPeginsToOldAndNewFederationsSuccessfully() throws Exception {
+    void whenAllActivationsArePresentAndPeginsAreSentAfterMigration_shouldBeAbleToSendPeginsNewFederationsSuccessfully() throws Exception {
         // Arrange
         var activations = ActivationConfigsForTest.all().forBlock(0);
         setUp(activations);
@@ -376,6 +383,95 @@ class FederationChangeIT {
         testPegins(
             originalFederation.getAddress(),
             newFederation.getAddress(),
+            false,
+            true,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndFlyoverPeginsAreSentAfterCommittingFederation_shouldBeAbleToSendFlyoverPeginsToOldFederationSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations);
+        commitPendingFederation();
+        commitProposedFederation(activations);
+
+        testFlyoverPegins(
+            originalFederation,
+            newFederation,
+            true,
+            false,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndFlyoverPeginsAreSentAfterActivationPhaseBegins_shouldBeAbleToSendFlyoverPeginsToOldAndNewFederationsSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(
+            FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+       
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+
+        testFlyoverPegins(
+            originalFederation,
+            newFederation,
+            true,
+            true,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndFlyoverPeginsAreSentDuringMigration_shouldBeAbleToSendFlyoverPeginsToOldAndNewFederationsSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations);
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+        activateMigration(activations);
+        migrateUTXOs();
+
+        testFlyoverPegins(
+            originalFederation,
+            newFederation,
+            true,
+            true,
+            activations);
+    }
+
+    @Test
+    void whenAllActivationsArePresentAndFlyoversPeginsAreSentAfterMigration_shouldBeAbleToSendFlyoverPeginsNewFederationsSuccessfully() throws Exception {
+        // Arrange
+        var activations = ActivationConfigsForTest.all().forBlock(0);
+        setUp(activations);
+        var originalFederation = createOriginalFederation(FederationType.P2SH_ERP, ORIGINAL_FEDERATION_KEYS, activations);
+
+        // Act & Assert
+        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations);
+        commitPendingFederation();
+        commitProposedFederation(activations);
+        activateNewFederation(activations);
+        activateMigration(activations);
+        migrateUTXOs();
+        endMigration(activations);
+
+        testFlyoverPegins(
+            originalFederation,
+            newFederation,
             false,
             true,
             activations);
@@ -649,6 +745,52 @@ class FederationChangeIT {
         assertEquals(shouldPeginToNewFederationWork, isPeginToNewFederationRegistered);
     }
 
+    private void testFlyoverPegins(
+        Federation recipientOldFederation,
+        Federation recipientNewFederation,
+        boolean shouldPeginToOldPowpegWork,
+        boolean shouldPeginToNewPowpegWork,
+        ActivationConfig.ForBlock activations
+    ) throws Exception {
+        var flyoverPeginToRetiringFederation = createFlyoverPegin(recipientOldFederation);
+
+        assertEquals(
+            shouldPeginToOldPowpegWork,
+            bridgeStorageProvider.isFlyoverDerivationHashUsed(
+                flyoverPeginToRetiringFederation.getLeft().getHash(),
+                flyoverPeginToRetiringFederation.getRight()
+            )
+        );
+        assertEquals(
+            shouldPeginToOldPowpegWork,
+            federationStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
+                utxo.getHash().equals(flyoverPeginToRetiringFederation.getLeft().getHash())
+            )
+        );
+        assertFalse(federationStorageProvider.getNewFederationBtcUTXOs(BRIDGE_CONSTANTS.getBtcParams(), activations).stream().anyMatch(utxo ->
+            utxo.getHash().equals(flyoverPeginToRetiringFederation.getLeft().getHash())
+        ));
+
+        var flyoverPeginToNewFederation = createFlyoverPegin(recipientNewFederation);
+
+        assertEquals(
+            shouldPeginToNewPowpegWork,
+            bridgeStorageProvider.isFlyoverDerivationHashUsed(
+                flyoverPeginToNewFederation.getLeft().getHash(),
+                flyoverPeginToNewFederation.getRight()
+            )
+        );
+        assertFalse(federationStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo ->
+            utxo.getHash().equals(flyoverPeginToNewFederation.getLeft().getHash())
+        ));
+        assertEquals(
+            shouldPeginToNewPowpegWork,
+            federationStorageProvider.getNewFederationBtcUTXOs(BRIDGE_CONSTANTS.getBtcParams(), activations).stream().anyMatch(utxo ->
+                utxo.getHash().equals(flyoverPeginToNewFederation.getLeft().getHash())
+            )
+        );
+    }
+
     private BridgeSupport getBridgeSupportFromExecutionBlock(Block executionBlock, ActivationConfig.ForBlock activations) {
         FederationSupport fedSupport = FederationSupportBuilder.builder()
             .withFederationConstants(BRIDGE_CONSTANTS.getFederationConstants())
@@ -722,6 +864,13 @@ class FederationChangeIT {
             federation.getP2SHScript();
     }
 
+    private Address getAddressFromRedeemScript(Script redeemScript) {
+        return Address.fromP2SHHash(
+            BRIDGE_CONSTANTS.getBtcParams(),
+            ScriptBuilder.createP2SHOutputScript(redeemScript).getPubKeyHash()
+        );
+    }
+
     private static Transaction buildUpdateCollectionsTx() {
         var nonce = 3;
         var value = 0;
@@ -750,23 +899,6 @@ class FederationChangeIT {
                 Optional.empty()
             )
         );
-
-        // Randomize the input to avoid repeating same Btc tx hash
-        // peginBtcTx.addInput(
-        //     BitcoinTestUtils.createHash(btcBlockStore.getChainHead().getHeight() + 1),
-        //     0,
-        //     new Script(new byte[]{})
-        // );
-        // outputs.forEach(peginBtcTx::addOutput);
-        // Adding OP_RETURN output to identify this peg-in as v1 and avoid sender identification
-        // peginBtcTx.addOutput(
-        //     Coin.ZERO,
-        //     PegTestUtils.createOpReturnScriptForRsk(
-        //         1,
-        //         PrecompiledContracts.BRIDGE_ADDR,
-        //         Optional.empty()
-        //     )
-        // );
 
         var height = 0;
         var chainHead = btcBlockStore.getChainHead();
@@ -808,6 +940,169 @@ class FederationChangeIT {
         bridgeSupport.save();
 
         return peginBtcTx;
+    }
+
+    private Pair<BtcTransaction, Keccak256> createFlyoverPegin(Federation recipientFederation) throws Exception {
+        var lbcAddress = PegTestUtils.createRandomRskAddress();
+
+        var flyoverPeginTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+
+        var peginBtcTx = new BtcTransaction(BRIDGE_CONSTANTS.getBtcParams());
+        // Randomize the input to avoid repeating same Btc tx hash
+        peginBtcTx.addInput(
+            BitcoinTestUtils.createHash(btcBlockStore.getChainHead().getHeight() + 1),
+            0,
+            new Script(new byte[]{})
+        );
+
+        // The derivation arguments will be randomly calculated
+        // The serialization and hashing was extracted from https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP176.md#bridge
+        var derivationArgumentsHash = PegTestUtils.createHash3(btcBlockStore.getChainHead().getHeight() + 1);
+        var userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(BRIDGE_CONSTANTS.getBtcParams());
+        var liquidityProviderBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(BRIDGE_CONSTANTS.getBtcParams());
+
+        var infoToHash = new byte[94];
+        var pos = 0;
+
+        // Derivation hash
+        var derivationArgumentsHashSerialized = derivationArgumentsHash.getBytes();
+        System.arraycopy(
+            derivationArgumentsHashSerialized,
+            0,
+            infoToHash,
+            pos,
+            derivationArgumentsHashSerialized.length
+        );
+        pos += derivationArgumentsHashSerialized.length;
+
+        // User BTC refund address version
+        var userRefundBtcAddressVersionSerialized = userRefundBtcAddress.getVersion() != 0 ?
+            ByteUtil.intToBytesNoLeadZeroes(userRefundBtcAddress.getVersion()) :
+            new byte[]{0};
+        System.arraycopy(
+            userRefundBtcAddressVersionSerialized,
+            0,
+            infoToHash,
+            pos,
+            userRefundBtcAddressVersionSerialized.length
+        );
+        pos += userRefundBtcAddressVersionSerialized.length;
+
+        // User BTC refund address
+        var userRefundBtcAddressHash160 = userRefundBtcAddress.getHash160();
+        System.arraycopy(
+            userRefundBtcAddressHash160,
+            0,
+            infoToHash,
+            pos,
+            userRefundBtcAddressHash160.length
+        );
+        pos += userRefundBtcAddressHash160.length;
+
+        // LBC address
+        var lbcAddressSerialized = lbcAddress.getBytes();
+        System.arraycopy(
+            lbcAddressSerialized,
+            0,
+            infoToHash,
+            pos,
+            lbcAddressSerialized.length
+        );
+        pos += lbcAddressSerialized.length;
+
+        // Liquidity provider BTC address version
+        var liquidityProviderBtcAddressVersionSerialized = liquidityProviderBtcAddress.getVersion() != 0 ?
+            ByteUtil.intToBytesNoLeadZeroes(liquidityProviderBtcAddress.getVersion()) :
+            new byte[]{0};
+        System.arraycopy(
+            liquidityProviderBtcAddressVersionSerialized,
+            0,
+            infoToHash,
+            pos,
+            liquidityProviderBtcAddressVersionSerialized.length
+        );
+        pos += liquidityProviderBtcAddressVersionSerialized.length;
+
+        // Liquidity provider BTC address
+        var liquidityProviderBtcAddressHash160 = liquidityProviderBtcAddress.getHash160();
+        System.arraycopy(
+            liquidityProviderBtcAddressHash160,
+            0,
+            infoToHash,
+            pos,
+            liquidityProviderBtcAddressHash160.length
+        );
+
+        var flyoverDerivationHash = new Keccak256(HashUtil.keccak256(infoToHash));
+        var flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            flyoverDerivationHash,
+            recipientFederation.getRedeemScript()
+        );
+
+        var recipient = getAddressFromRedeemScript(flyoverRedeemScript);
+        peginBtcTx.addOutput(
+            Coin.COIN,
+            recipient
+        );
+
+        var height = 0;
+        var chainHead = btcBlockStore.getChainHead();
+        var btcBlock = new BtcBlock(
+            BRIDGE_CONSTANTS.getBtcParams(),
+            1,
+            chainHead.getHeader().getHash(),
+            peginBtcTx.getHash(),
+            0,
+            0,
+            0,
+            List.of(peginBtcTx)
+        );
+        height = chainHead.getHeight() + 1;
+        var storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO, height);
+        btcBlockStore.put(storedBlock);
+        btcBlockStore.setChainHead(storedBlock);
+
+        var requiredConfirmations = BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        for (int i = 0; i < requiredConfirmations; i++) {
+            addNewBtcBlockOnTipOfChain(btcBlockStore);
+        }
+
+        var hashForPmt = peginBtcTx.getHash();
+        var pmt = new PartialMerkleTree(
+            BRIDGE_CONSTANTS.getBtcParams(),
+            new byte[]{1},
+            List.of(hashForPmt),
+            1
+        );
+
+        bridgeSupport.registerFlyoverBtcTransaction(
+            flyoverPeginTx,
+            peginBtcTx.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize(),
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lbcAddress,
+            liquidityProviderBtcAddress,
+            true
+        );
+
+        bridgeSupport.save();
+
+        return Pair.of(peginBtcTx, flyoverDerivationHash);
     }
     
     /* Assert and verify federation change related methods */
