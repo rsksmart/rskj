@@ -50,15 +50,14 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
 
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         if (header == null || parent == null) {
             logger.warn("BlockParentGasLimitRule - block or parent are null");
             return false;
         }
 
-        BlockHeader parentHeader = parent.getHeader();
         BigInteger headerGasLimit = new BigInteger(1, header.getGasLimit());
-        BigInteger parentGasLimit = new BigInteger(1, parentHeader.getGasLimit());
+        BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
 
         if (headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor - 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) < 0 ||
             headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor + 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) > 0) {

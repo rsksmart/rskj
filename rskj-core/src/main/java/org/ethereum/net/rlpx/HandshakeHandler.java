@@ -377,13 +377,15 @@ public class HandshakeHandler extends ByteToMessageDecoder {
         List<Capability> capInCommon = configCapabilities.getSupportedCapabilities(helloMessage);
         channel.initMessageCodes(capInCommon);
         for (Capability capability : capInCommon) {
-            // It seems that the only supported capability is RSK, and everything else is ignored.
+            // RSK Capability is the condition needed to be able to finish the Handshake successfully.
             if (Capability.RSK.equals(capability.getName())) {
                 publicRLPxHandshakeFinished(ctx, helloMessage, fromCode(capability.getVersion()));
                 return;
             }
         }
 
+        // RSK must be present. If RSK is not found, the handshake process does not complete.
+        // Other capabilities, such as SNAP, cannot be considered if RSK is not supported.
         throw new RuntimeException("The remote peer didn't support the RSK capability");
     }
 
