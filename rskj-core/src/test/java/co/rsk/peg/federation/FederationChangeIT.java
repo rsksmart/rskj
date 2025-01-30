@@ -147,8 +147,38 @@ class FederationChangeIT {
             BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
             ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
             ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+        ),
+        Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("026b472f7d59d201ff1f540f111b6eb329e071c30a9d23e3d2bcd128fe73dc254c")),
+            ECKey.fromPublicOnly(Hex.decode("0353dda9ae319eab0d3e1235896d58bd9840eadcf76c84244a5d7f60b1c66e45ce")),
+            ECKey.fromPublicOnly(Hex.decode("030165892c353cd3752143b5b6c55372528e7279259fe1088d6f4dc957e146e557"))
+        ),
+        Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+            ECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+            ECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93"))
+        ),
+        Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("0357f7ed4c118e581f49cd3b4d9dd1edb4295f4def49d6dcf2faaaaac87a1a0a42")),
+            ECKey.fromPublicOnly(Hex.decode("03ff13a966f1e53af37ad1fa3681b1352238f4885c1d4159730f3503bb52d63b20")),
+            ECKey.fromPublicOnly(Hex.decode("03ff13a966f1e53af37ad1fa3681b1352238f4885c1d4159730f3503bb52d63b20"))
+        ),
+        Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("03ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f6")),
+            ECKey.fromPublicOnly(Hex.decode("03d7ff9b1de5cc746a93036b36f8d832ac1bfc64099f8aa37612745770d7fc4961")),
+            ECKey.fromPublicOnly(Hex.decode("0300754b9dc92f27cd6702f06c460607a43c16de4531bfdc569bcdecdb12c54ccf"))
+        ),
+        Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("03e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff6780299")),
+            ECKey.fromPublicOnly(Hex.decode("03095aba7a4f1fa0f98728e5230823d603abe517bdfeeb928861a73c4b9404aaf1")),
+            ECKey.fromPublicOnly(Hex.decode("02b3e34f0898759a2b5e6acd88281638d41c8da04e1fba13b5b9c3c4bf42bea3b0"))
+        ),
+        Triple.of(
+            BtcECKey.fromPublicOnly(Hex.decode("03ecd8af1e93c57a1b8c7f917bd9980af798adeb0205e9687865673353eb041e8d")),
+            ECKey.fromPublicOnly(Hex.decode("03f4d76ec9a7a2722c0b06f5f4a489152244c8801e5ff2a43df7fefd75ce8e068f")),
+            ECKey.fromPublicOnly(Hex.decode("02a935a8d59b92f9df82265cb983a76cca0308f82e9dc9dd92ff8887e2667d2a38"))
         ));
-    private static final Transaction UPDATE_COLLECTIONS = buildUpdateCollectionsTx();
+    private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
 
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -401,7 +431,7 @@ class FederationChangeIT {
         bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock, activations);
 
         // The first update collections after the migration finished should get rid of the retiring powpeg
-        var updateCollectionsTx = UPDATE_COLLECTIONS;
+        var updateCollectionsTx = UPDATE_COLLECTIONS_TX;
         bridgeSupport.updateCollections(updateCollectionsTx);
         bridgeSupport.save();
     }
@@ -409,7 +439,7 @@ class FederationChangeIT {
     private void migrateUTXOs() throws Exception {
         // Migrate while there are still utxos to migrate
         var remainingUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
-        var updateCollectionsTx = UPDATE_COLLECTIONS;
+        var updateCollectionsTx = UPDATE_COLLECTIONS_TX;
         while (!remainingUTXOs.isEmpty()) {
             bridgeSupport.updateCollections(updateCollectionsTx);
             bridgeSupport.save();
