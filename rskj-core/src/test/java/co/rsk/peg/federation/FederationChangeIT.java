@@ -30,6 +30,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.script.ScriptParser;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
@@ -52,6 +53,7 @@ import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import java.math.BigInteger;
@@ -179,6 +181,8 @@ class FederationChangeIT {
             ECKey.fromPublicOnly(Hex.decode("02a935a8d59b92f9df82265cb983a76cca0308f82e9dc9dd92ff8887e2667d2a38"))
         ));
     private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
+    private static final Transaction FIRST_AUTHORIZED_TX = TransactionUtils.getTransactionFromCaller(null, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
+    private static final Transaction SECOND_AUTHORIZED_TX = TransactionUtils.getTransactionFromCaller(null, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
 
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
@@ -208,8 +212,9 @@ class FederationChangeIT {
         // Act & Assert
    
         // Create pending federation using the new federation keys
-        var newFederation = createPendingFederation(NEW_FEDERATION_KEYS, activations); 
-        commitPendingFederation();
+        voteToCreateEmptyPendingFederation();
+        voteToAddFederatorPublicKeysToPendingFederation(NEW_FEDERATION_KEYS);
+        var newFederation = voteToCommitPendingFederation(activations);
         // Since Lovell is activated we will commit the proposed federation
         commitProposedFederation(activations);
         // Next federation creation block height should be as expected
@@ -340,39 +345,72 @@ class FederationChangeIT {
          return originalFederation;
     }  
 
-    private Federation createPendingFederation(
-          List<Triple<BtcECKey, ECKey, ECKey>> federationKeys,
-          ActivationConfig.ForBlock activations) {
-        // Create pending federation (doing this to avoid voting the pending Federation)
-        var newFederationMembers = federationKeys.stream()
-            .map(newFederatorKey ->
-                new FederationMember(
-                    newFederatorKey.getLeft(),
-                    newFederatorKey.getMiddle(),
-                    newFederatorKey.getRight()))
-            .toList();
-        var pendingFederation = new PendingFederation(newFederationMembers);
-
-        // Set pending federation
-        federationStorageProvider.setPendingFederation(pendingFederation);
-        federationStorageProvider.save(BRIDGE_CONSTANTS.getBtcParams(), activations);
-
-        // Return what will be the new federation
-        return pendingFederation.buildFederation(
-            Instant.EPOCH, 0L, BRIDGE_CONSTANTS.getFederationConstants(), activations);
+    private int voteToCreatePendingFederation(Transaction tx) {
+        var createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
+        return federationSupport.voteFederationChange(tx, createFederationAbiCallSpec, null, bridgeEventLogger);
     }
 
-    private void commitPendingFederation() {
+    private int voteToAddFederatorPublicKeysToPendingFederation(Transaction tx, BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
+        ABICallSpec addFederatorAbiCallSpec = new ABICallSpec(FederationChangeFunction.ADD_MULTI.getKey(),
+            new byte[][]{ btcPublicKey.getPubKey(), rskPublicKey.getPubKey(), mstPublicKey.getPubKey() }
+        );
+
+        return federationSupport.voteFederationChange(tx, addFederatorAbiCallSpec, null, bridgeEventLogger);
+    }
+
+    private int voteCommitPendingFederation(Transaction tx) {
+        var pendingFederationHash = federationSupport.getPendingFederationHash();
+        var commitFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.COMMIT.getKey(), new byte[][]{ pendingFederationHash.getBytes() });
+
+        return federationSupport.voteFederationChange(tx, commitFederationAbiCallSpec, null, bridgeEventLogger);
+    }
+  
+    private void voteToCreateEmptyPendingFederation() {
+        // Voting with enough authorizers to create the pending federation
+        var resultFromFirstAuthorizer = voteToCreatePendingFederation(FIRST_AUTHORIZED_TX);
+        var resultFromSecondAuthorizer = voteToCreatePendingFederation(SECOND_AUTHORIZED_TX);
+
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromFirstAuthorizer);
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromSecondAuthorizer);
+
+        assertEquals(0, federationSupport.getPendingFederationSize());
+        assertNotNull(federationSupport.getPendingFederationHash());
+    }
+
+    private void voteToAddFederatorPublicKeysToPendingFederation(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
+        int resultFromFirstAuthorizer = voteToAddFederatorPublicKeysToPendingFederation(FIRST_AUTHORIZED_TX, btcPublicKey, rskPublicKey, mstPublicKey);
+        int resultFromSecondAuthorizer = voteToAddFederatorPublicKeysToPendingFederation(SECOND_AUTHORIZED_TX, btcPublicKey, rskPublicKey, mstPublicKey);
+
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromFirstAuthorizer);
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), resultFromSecondAuthorizer);
+    }
+
+    private void voteToAddFederatorPublicKeysToPendingFederation(List<Triple<BtcECKey, ECKey, ECKey>> newFederationKeys) {
+        for (Triple<BtcECKey, ECKey, ECKey> keys : newFederationKeys) {
+            BtcECKey memberBtcKey = keys.getLeft();
+            ECKey memberRskKey = keys.getMiddle();
+            ECKey memberMstKey = keys.getRight();
+
+            voteToAddFederatorPublicKeysToPendingFederation(memberBtcKey, memberRskKey, memberMstKey);
+        }
+    }
+
+    private Federation voteToCommitPendingFederation(ActivationConfig.ForBlock activations) {
         // Pending Federation should exist
         var pendingFederation = federationStorageProvider.getPendingFederation();
         assertNotNull(pendingFederation);
-    
-        // Proceed with the powpeg change
-        federationSupport.commitFederation(false, pendingFederation.getHash(), bridgeEventLogger);
+
+        int firstVoteResult = voteCommitPendingFederation(FIRST_AUTHORIZED_TX);
+        int secondVoteResult = voteCommitPendingFederation(SECOND_AUTHORIZED_TX);
+
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteResult);
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteResult);
 
         // Since the proposed federation is committed, it should be null in storage
-        pendingFederation = federationStorageProvider.getPendingFederation();
-        assertNull(pendingFederation);
+        assertNull(federationStorageProvider.getPendingFederation());
+      
+        return pendingFederation.buildFederation(
+            Instant.EPOCH, 0L, BRIDGE_CONSTANTS.getFederationConstants(), activations);
     }
 
     private void commitProposedFederation(ActivationConfig.ForBlock activations) {
@@ -386,8 +424,7 @@ class FederationChangeIT {
         federationSupport.commitProposedFederation();
     
         // Since the proposed federation is committed, it should be null in storage
-        proposedFederation = 
-            federationStorageProvider.getProposedFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations);
+        proposedFederation = federationStorageProvider.getProposedFederation(BRIDGE_CONSTANTS.getFederationConstants(), activations);
         assertTrue(proposedFederation.isEmpty());
     }
     
