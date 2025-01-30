@@ -15,6 +15,7 @@ import java.util.List;
 
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static co.rsk.peg.federation.FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION;
 
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
@@ -86,13 +87,29 @@ public class ErpFederation extends Federation {
         return RedeemScriptParserFactory.get(chunks);
     }
 
+    @Override
+    public Script getP2SHScript() {
+        if (p2shScript == null) {
+            p2shScript = getOutputScript(getRedeemScript());
+        }
+
+        return p2shScript;
+    }
+
     public Script getDefaultP2SHScript() {
         if (defaultP2SHScript == null) {
-            defaultP2SHScript = ScriptBuilder
-                .createP2SHOutputScript(getDefaultRedeemScript());
+            defaultP2SHScript = getOutputScript(getDefaultRedeemScript());
         }
 
         return defaultP2SHScript;
+    }
+
+    private Script getOutputScript(Script redeemScript) {
+        if (formatVersion != P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()){
+            return ScriptBuilder.createP2SHOutputScript(redeemScript);
+        }
+
+        return ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
     }
 
     private void validateEmergencyKeys(List<BtcECKey> erpPubKeys) {
