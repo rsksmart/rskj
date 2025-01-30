@@ -56,4 +56,20 @@ public class FederationFactory {
             P2SH_ERP_FEDERATION.getFormatVersion()
         );
     }
+
+    public static ErpFederation buildP2shP2wshErpFederation(
+        FederationArgs federationArgs,
+        List<BtcECKey> erpPubKeys,
+        long activationDelay
+    ) {
+        ErpRedeemScriptBuilder erpRedeemScriptBuilder = P2shErpRedeemScriptBuilder.builder();
+
+        return new ErpFederation(
+            federationArgs,
+            erpPubKeys,
+            activationDelay,
+            erpRedeemScriptBuilder,
+            P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()
+        );
+    }
 }
