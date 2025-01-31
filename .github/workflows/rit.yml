@@ -136,7 +136,7 @@ jobs:
       - name: Send Slack Notification on Success
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN2 }}
           GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
         if: ${{ success() && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_BOT_TOKEN != '' }}
         with:
