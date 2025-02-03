@@ -10,6 +10,8 @@ import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -21,6 +23,7 @@ import static co.rsk.peg.federation.FederationFormatVersion.*;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 public class FederationStorageProviderImpl implements FederationStorageProvider {
+    private static final Logger logger = LoggerFactory.getLogger(FederationStorageProviderImpl.class);
     private final StorageAccessor bridgeStorageAccessor;
     private final HashMap<DataWord, Optional<Integer>> storageVersionEntries;
 
@@ -32,6 +35,9 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     private PendingFederation pendingFederation;
     private boolean shouldSavePendingFederation = false;
+
+    private Federation proposedFederation;
+    private boolean isProposedFederationSet = false;
 
     private ABICallElection federationElection;
 
@@ -207,6 +213,47 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
     }
 
     @Override
+    public void setProposedFederation(Federation proposedFederation) {
+        this.proposedFederation = proposedFederation;
+        isProposedFederationSet = true;
+    }
+
+    @Override
+    public Optional<Federation> getProposedFederation(FederationConstants federationConstants, ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (proposedFederation != null) {
+            return Optional.of(proposedFederation);
+        }
+
+        // reaching this point means the proposed federation was set to null
+        if (isProposedFederationSet) {
+            return Optional.empty();
+        }
+
+        proposedFederation = bridgeStorageAccessor.getFromRepository(
+            PROPOSED_FEDERATION.getKey(),
+            data -> {
+                if (data == null) {
+                    return null;
+                }
+
+                Optional<Integer> storageVersion = getStorageVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey());
+                if (!storageVersion.isPresent()) {
+                    String message = "Storage version should be present for non-null proposed federation";
+                    logger.warn("[getProposedFederation] {}", message);
+                    throw new IllegalStateException(message);
+                }
+                return BridgeSerializationUtils.deserializeFederationAccordingToVersion(data, storageVersion.get(), federationConstants, activations);
+            }
+        );
+
+        return Optional.ofNullable(proposedFederation);
+    }
+
+    @Override
     public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
         if (federationElection != null) {
             return federationElection;
@@ -287,6 +334,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         saveOldFederation(activations);
 
         savePendingFederation(activations);
+        saveProposedFederation(activations);
 
         saveFederationElection();
 
@@ -367,6 +415,20 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
         bridgeStorageAccessor.saveToRepository(PENDING_FEDERATION_KEY.getKey(), serializedPendingFederation);
     }
 
+    private void saveProposedFederation(ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(RSKIP419) || !isProposedFederationSet) {
+            return;
+        }
+
+        // format version is always non-null in a non-null federation
+        Integer formatVersion = Optional.ofNullable(proposedFederation)
+            .map(Federation::getFormatVersion)
+            .orElse(null);
+
+        saveFederationFormatVersion(PROPOSED_FEDERATION_FORMAT_VERSION.getKey(), formatVersion);
+        bridgeStorageAccessor.saveToRepository(PROPOSED_FEDERATION.getKey(), proposedFederation, BridgeSerializationUtils::serializeFederation);
+    }
+
     @Nullable
     private byte[] serializePendingFederation(ActivationConfig.ForBlock activations) {
         if (pendingFederation == null) {
@@ -378,7 +440,7 @@ public class FederationStorageProviderImpl implements FederationStorageProvider 
 
     private void saveFederationFormatVersion(DataWord versionKey, Integer version) {
         bridgeStorageAccessor.saveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
-        storageVersionEntries.put(versionKey, Optional.of(version));
+        storageVersionEntries.put(versionKey, Optional.ofNullable(version));
     }
 
     private void saveFederationElection() {

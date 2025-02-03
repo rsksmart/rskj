@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.*;
 import co.rsk.peg.feeperkb.constants.*;
 import co.rsk.peg.lockingcap.constants.*;
@@ -45,6 +46,54 @@ class BridgeConstantsTest {
         } else {
             assertEquals(bridgeConstants.legacyMinimumPeginTxValue, minimumPeginTxValue);
         }
+    }
+
+    private static Stream<Arguments> minimumPegoutTxValueArgProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(), Coin.valueOf(400_000)),
+            Arguments.of(BridgeTestNetConstants.getInstance(), Coin.valueOf(250_000)),
+            Arguments.of(new BridgeRegTestConstants(), Coin.valueOf(250_000))
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("minimumPegoutTxValueArgProvider")
+    void getMinimumPegoutTxValue(BridgeConstants bridgeConstants, Coin expectedMinimumPegoutTxValue) {
+        Coin minimumPegoutTxValue = bridgeConstants.getMinimumPegoutTxValue();
+        assertEquals(expectedMinimumPegoutTxValue, minimumPegoutTxValue);
+    }
+
+    private static Stream<Arguments> svpFundTxOutputsValueArgProvider() {
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
+        return Stream.of(
+            Arguments.of(bridgeMainnetConstants, bridgeMainnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeTestnetConstants, bridgeTestnetConstants.getMinimumPegoutTxValue().multiply(2)),
+            Arguments.of(bridgeRegtestConstants, bridgeRegtestConstants.getMinimumPegoutTxValue().multiply(2))
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("svpFundTxOutputsValueArgProvider")
+    void getSvpFundTxOutputsValue(BridgeConstants bridgeConstants, Coin expectedSvpFundTxOutputsValue) {
+        assertEquals(expectedSvpFundTxOutputsValue, bridgeConstants.getSvpFundTxOutputsValue());
+    }
+
+    private static Stream<BridgeConstants> bridgeConstantsArgProvider() {
+        BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants bridgeRegtestConstants = new BridgeRegTestConstants();
+
+        return Stream.of(bridgeMainnetConstants, bridgeTestnetConstants, bridgeRegtestConstants);
+    }
+
+    @ParameterizedTest()
+    @MethodSource("bridgeConstantsArgProvider")
+    void getProposedFederationFlyoverPrefix(BridgeConstants bridgeConstants) {
+        Keccak256 expectedProposedFederationFlyoverPrefix = new Keccak256("0000000000000000000000000000000000000000000000000000000000000001");
+
+        assertEquals(expectedProposedFederationFlyoverPrefix, bridgeConstants.getProposedFederationFlyoverPrefix());
     }
 
     private static Stream<Arguments> getBtcHeightWhenPegoutTxIndexActivatesArgProvider() {
@@ -135,7 +184,7 @@ class BridgeConstantsTest {
         return Stream.of(
             Arguments.of(BridgeMainNetConstants.getInstance(), FederationMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), FederationTestNetConstants.getInstance()),
-            Arguments.of(bridgeRegTestConstants, new FederationRegTestConstants(federationRegTestConstants.getGenesisFederationPublicKeys()))
+            Arguments.of(bridgeRegTestConstants, FederationRegTestConstants.getInstance(federationRegTestConstants.getGenesisFederationPublicKeys()))
         );
     }
 
