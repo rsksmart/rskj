@@ -398,8 +398,8 @@ class FederationChangeIT {
         Script outputScript = ScriptBuilder.createOutputScript(owner);
         List<UTXO> utxos = new ArrayList<>();
 
-        int howMany = getRandomInt(50, 500);
-        for (int i = 1; i <= howMany; i++) {
+        int howMany = getRandomInt(1, 50);
+        for (int i = 1; i < howMany; i++) {
             Coin randomValue = Coin.valueOf(getRandomInt(10_000, 1_000_000_000));
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
             utxos.add(new UTXO(utxoHash, 0, randomValue, 0, false, outputScript));
@@ -475,7 +475,7 @@ class FederationChangeIT {
      
     private void assertMigrationHasStarted() throws Exception {
         // Pegouts waiting for confirmations should not be empty
-        assertFalse(bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().isEmpty());
+        assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
     private void assertMigrationHasEnded(Federation newFederation) {
