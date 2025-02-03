@@ -36,7 +36,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -111,6 +110,7 @@ class FederationChangeIT {
             newFederation.getAddress(), originalFederation.getAddress());
         assertMigrationHasStarted();
         verifySigHashes();
+        verifyReleaseBtcRequestedEventEventWasEmitted();
         verifyPegoutTransactionCreatedEventWasEmitted();
         verifyPegouts();
         
@@ -343,13 +343,8 @@ class FederationChangeIT {
     }
 
     private void migrateUTXOs() throws Exception {
-        // Migrate while there are still utxos to migrate
-        var remainingUTXOs = federationStorageProvider.getOldFederationBtcUTXOs();
-        var updateCollectionsTx = UPDATE_COLLECTIONS_TX;
-        while (!remainingUTXOs.isEmpty()) {
-            bridgeSupport.updateCollections(updateCollectionsTx);
-            bridgeSupport.save();
-        }
+        bridgeSupport.updateCollections(UPDATE_COLLECTIONS_TX);
+        bridgeSupport.save();
     }
 
     private BridgeSupport getBridgeSupportFromExecutionBlock(Block executionBlock) {
@@ -517,7 +512,24 @@ class FederationChangeIT {
             .map(Entry::getBtcTransaction)
             .toList();
 
-        pegoutsTxs.forEach(this::verifyPegoutTransactionCreatedEvent);
+        assertEquals(1, pegoutsTxs.size());
+
+        var pegoutTxHash = pegoutsTxs.get(0).getHash();
+        var outpointValues = UtxoUtils.extractOutpointValues(pegoutsTxs.get(0));
+        verify(bridgeEventLogger).logPegoutTransactionCreated(pegoutTxHash, outpointValues);
+    }
+
+    private void verifyReleaseBtcRequestedEventEventWasEmitted() throws Exception {
+        var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+            .getEntries().stream()
+            .toList();
+        
+        assertEquals(1, pegoutsTxs.size());
+
+        var releaseCreationTxHash = pegoutsTxs.get(0).getPegoutCreationRskTxHash();
+        var btcTx = pegoutsTxs.get(0).getBtcTransaction();
+        var amount = btcTx.getFee().add(btcTx.getOutputSum());
+        verify(bridgeEventLogger).logReleaseBtcRequested(releaseCreationTxHash.getBytes(), btcTx, amount);
     }
     
     private void verifyPegouts() throws Exception {
@@ -571,11 +583,5 @@ class FederationChangeIT {
         var lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
         assertTrue(lastPegoutSigHash.isPresent());
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
-    }
-
-    private void verifyPegoutTransactionCreatedEvent(BtcTransaction pegoutTx) {
-        var pegoutTxHash = pegoutTx.getHash();
-        var outpointValues = UtxoUtils.extractOutpointValues(pegoutTx);
-        verify(bridgeEventLogger).logPegoutTransactionCreated(pegoutTxHash, outpointValues);
     }
 }
