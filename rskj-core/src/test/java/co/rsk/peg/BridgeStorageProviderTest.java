@@ -20,7 +20,11 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static co.rsk.peg.federation.FederationFormatVersion.P2SH_ERP_FEDERATION;
+import static co.rsk.peg.federation.FederationStorageIndexKey.LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_KEY;
 import static org.ethereum.TestUtils.assertThrows;
 import static org.ethereum.TestUtils.mockAddress;
@@ -38,7 +42,10 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.*;
+import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.federation.FederationStorageIndexKey;
 import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.trie.Trie;
@@ -50,6 +57,7 @@ import java.time.Instant;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
@@ -2850,13 +2858,115 @@ class BridgeStorageProviderTest {
         System.out.println(key);
 
         String rawNewFed = "f9014984679bd77e8210f1f9013eb868f866a1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3eb868f866a1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fb868f866a103c23d6fb619f7fb0d00f3aa62e7ff7b781db1211a29e23952c023b6ec62d8055ea103e3344c90bf4dea503792e982a0d7b0e4a9ec6109285a7dd35afef1a2e48450d2a102dd4e13166a7f9c439b34b506694f003bf11aa30c1773e1398da196d5d781598d";
-        byte[] newFedInBytes = Hex.decode(rawNewFed);
-        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
-        Federation federation = BridgeSerializationUtils.deserializeFederationAccordingToVersion(
-            newFedInBytes, P2SH_ERP_FEDERATION.getFormatVersion(), federationTestNetConstants,
-            activations);
+        Federation federation = deserializeFederation(rawNewFed, activations);
 
         Instant blockTimestamp = Instant.ofEpochMilli(1738266494);
         Assertions.assertEquals(blockTimestamp, federation.getCreationTime());
+    }
+
+    private static Federation deserializeFederation(String rawNewFed, ForBlock activations) {
+        byte[] fedInBytes = Hex.decode(rawNewFed);
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
+        return BridgeSerializationUtils.deserializeFederationAccordingToVersion(
+            fedInBytes, P2SH_ERP_FEDERATION.getFormatVersion(), federationTestNetConstants,
+            activations);
+    }
+
+    @Test
+    void preLovell_whenCommitFederationIsEmitted_shouldNotCreateProposedFederation() {
+        DataWord key = FederationStorageIndexKey.PROPOSED_FEDERATION.getKey();
+        System.out.println(key);
+    }
+
+    @Test
+    void preLovell_whenFirstUpdateCollectionAfterCommitFederationIsEmitted_shouldNotExistAnySvpValue() {
+        DataWord pegoutWaitingForConfirmations = PEGOUTS_WAITING_FOR_CONFIRMATIONS.getKey();
+        System.out.println("PEGOUTS_WAITING_FOR_CONFIRMATIONS: " + pegoutWaitingForConfirmations);
+
+        DataWord pegoutsWaitingForSignaturesKey = BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES.getKey();
+        System.out.println("PEGOUTS_WAITING_FOR_SIGNATURES: " + pegoutsWaitingForSignaturesKey);
+
+        DataWord svpFundTxHashUnsignedKey = BridgeStorageIndexKey.SVP_FUND_TX_HASH_UNSIGNED.getKey();
+        System.out.println("SVP_FUND_TX_HASH_UNSIGNED: " + svpFundTxHashUnsignedKey);
+
+        DataWord svpFundTxSignedKey = SVP_FUND_TX_SIGNED.getKey();
+        System.out.println("SVP_FUND_TX_SIGNED: " + svpFundTxSignedKey);
+
+        DataWord svpSpendTxHashUnsignedKey = SVP_SPEND_TX_HASH_UNSIGNED.getKey();
+        System.out.println("SVP_SPEND_TX_HASH_UNSIGNED: " + svpSpendTxHashUnsignedKey);
+
+        DataWord svpSpendTxSignedKey = SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey();
+        System.out.println("SVP_SPEND_TX_WAITING_FOR_SIGNATURES: " + svpSpendTxSignedKey);
+    }
+
+    @Test
+    void preLovell_whenNewFederationGetsActivated() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead631().forBlock(0);
+
+        DataWord pendingFederationKeyKey = FederationStorageIndexKey.PENDING_FEDERATION_KEY.getKey();
+        System.out.println("PENDING_FEDERATION_KEY: " + pendingFederationKeyKey);
+
+        DataWord newActiveFederation = FederationStorageIndexKey.NEW_FEDERATION_KEY.getKey();
+        System.out.println("NEW_FEDERATION_KEY: " + newActiveFederation);
+
+        String rawActiveFederation = "f9014984679bd77e8210f1f9013eb868f866a1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3eb868f866a1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fb868f866a103c23d6fb619f7fb0d00f3aa62e7ff7b781db1211a29e23952c023b6ec62d8055ea103e3344c90bf4dea503792e982a0d7b0e4a9ec6109285a7dd35afef1a2e48450d2a102dd4e13166a7f9c439b34b506694f003bf11aa30c1773e1398da196d5d781598d";
+        Federation federation = deserializeFederation(rawActiveFederation, activations);
+        List<String> expectedBtcPublicKeys = Arrays.asList(
+            "026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e",
+            "031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f",
+            "03c23d6fb619f7fb0d00f3aa62e7ff7b781db1211a29e23952c023b6ec62d8055e"
+        );
+
+        List<BtcECKey> btcPublicKeys = federation.getBtcPublicKeys();
+        for (int i = 0; i < btcPublicKeys.size(); i++) {
+            byte[] fedKey = btcPublicKeys.get(i).getPubKey();
+            byte[] expectedKey = Hex.decode(expectedBtcPublicKeys.get(i));
+            Assertions.assertArrayEquals(expectedKey, fedKey);
+        }
+
+        DataWord oldFederationKey = FederationStorageIndexKey.OLD_FEDERATION_KEY.getKey();
+        System.out.println("OLD_FEDERATION_KEY: " + oldFederationKey);
+        String rawOldFederation = "f9014986019469d5b20001f9013eb868f866a1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3eb868f866a102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404a102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404a102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404b868f866a1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f";
+        Federation oldFederation = deserializeFederation(rawOldFederation, activations);
+        List<String> expectedOldFedBtcPublicKeys = Arrays.asList(
+            "026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e",
+            "02b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404",
+            "031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f"
+        );
+
+        List<BtcECKey> oldFedBtcPublicKeys = oldFederation.getBtcPublicKeys();
+        for (int i = 0; i < oldFedBtcPublicKeys.size(); i++) {
+            byte[] fedKey = oldFedBtcPublicKeys.get(i).getPubKey();
+            byte[] expectedKey = Hex.decode(expectedOldFedBtcPublicKeys.get(i));
+            Assertions.assertArrayEquals(expectedKey, fedKey);
+        }
+
+        DataWord lastRetiredFederationP2shScriptKey = LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey();
+        System.out.println("LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY: " + lastRetiredFederationP2shScriptKey);
+
+        byte[] lastRetiredFedP2shScriptInBytes = BridgeSerializationUtils.deserializeScript(Hex.decode("d897a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a87")).getProgram();
+        byte[] oldFedP2shScriptInBytes = ((ErpFederation) oldFederation).getDefaultP2SHScript().getProgram();
+        Assertions.assertArrayEquals(lastRetiredFedP2shScriptInBytes, oldFedP2shScriptInBytes);
+
+        DataWord nextFederationCreationBlockHeightKeyKey = NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey();
+        System.out.println("NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY: " + nextFederationCreationBlockHeightKeyKey);
+
+        Optional<Long> nextFedCreationBlockHeight = BridgeSerializationUtils.deserializeOptionalLong(Hex.decode("8210f1"));
+        Assertions.assertTrue(nextFedCreationBlockHeight.isPresent());
+        Assertions.assertEquals(4337, nextFedCreationBlockHeight.get());
+
+        DataWord newFederationBtcUtxosKeyKey = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
+        System.out.println("NEW_FEDERATION_BTC_UTXOS_KEY: " + newFederationBtcUtxosKeyKey);
+
+        // Result: 0x0 as expected
+
+        DataWord oldFederationBtcUtxosKeyKey = OLD_FEDERATION_BTC_UTXOS_KEY.getKey();
+        System.out.println("OLD_FEDERATION_BTC_UTXOS_KEY: " + oldFederationBtcUtxosKeyKey);
+
+        String utxosInHex = "f902beb84c30c807000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a871aa43e17e1632538bc38ad7f60ca1217aeee95ea22ae5914d85426f192cb4b80010000000000000000b84c30c807000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a8730473794fe84c684a1f9a0c3c7da52a1df8af65860b71913537167d96360e3e5010000000000000000b84c30c807000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a87e976a915009625c1159ab6a10dbfbdbf64ed380d6ebd0ae99e83323821eec9fd000000000000000000b84c90b208000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a871edcd5b4d2df9b00520a887ae3bcb914919187175e1653e19d70655cd73803dd010000000000000000b84c20a107000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a8749cfee109f99ce5dcaa9bc7b30ad9f0471a36248ccb9b10ea82f4d03b877c728010000000000000000b84c94c807000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a875ba35a23a21bd52c16c4b6cd50f08b701802d86d270600fc8af717b247253c15020000000000000000b84c7ccc07000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a873aeffe72d1ab8e49bc778f3d1ecfe0c77d7f8c346f55054d9ebcb4b768dc8792010000000000000000b84c20a107000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a87339204f31fa3bbec1b92ad5c9fd4c0e2fe332987dc35c04c2d41e2167877633a010000000000000000b84c18f803000000000017000000a91427cb843b29a8b6dddab3b807c581ce6ebcf0ae6a87b63b7ba4c6626ee571054288bf1452fa43a53b532395c86cc0319625a7033c3c010000000000000000";
+        List<UTXO> utxos = BridgeSerializationUtils.deserializeUTXOList(Hex.decode(utxosInHex));
+
+        // migration tx with the 9 utxos https://blockstream.info/testnet/tx/8af7e342389946c5665cc4cd6ddd39867570133df013110708bd778d2c8474df
+        Assertions.assertEquals(utxos.size(), 9);
     }
 }
