@@ -66,7 +66,6 @@ class FederationChangeIT {
     private LockingCapSupport lockingCapSupport;
     private BridgeSupport bridgeSupport;
 
-
     @Test
     void whenAllActivationsArePresentAndFederationChanges_shouldSuccesfullyChangeFederation() throws Exception {
         // Arrange
@@ -75,6 +74,7 @@ class FederationChangeIT {
         // Create a default original federation using the list of UTXOs
         var originalFederation = createOriginalFederation(ORIGINAL_FEDERATION_MEMBERS);
         var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(BRIDGE_CONSTANTS.getBtcParams(), ACTIVATIONS);
+        var expectedFederation = createExpectedFederation(NEW_FEDERATION_MEMBERS);
        
         // Act & Assert
    
@@ -85,16 +85,15 @@ class FederationChangeIT {
         var pendingFederation = federationStorageProvider.getPendingFederation();
         assertPendingFederationIsBuiltAsExpected(pendingFederation);
 
-        // We extract here because we will need for util methods
-        var newFederation = pendingFederation.buildFederation(
-            Instant.EPOCH, 0L, BRIDGE_CONSTANTS.getFederationConstants(), ACTIVATIONS);
-
         voteToCommitPendingFederation();
+        var newFederation = federationSupport.getActiveFederation();
+        assertEquals(expectedFederation, newFederation);
+        
         // Since Lovell is activated we will commit the proposed federation
         commitProposedFederation();
-        // Next federation creation block height should be as expected
         assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
             originalFederation);
+
         // Move blockchain until the activation phase
         activateNewFederation();
    
@@ -197,6 +196,21 @@ class FederationChangeIT {
 
          return originalFederation;
     }  
+
+    private Federation createExpectedFederation(List<FederationMember> federationMembers) {
+        var expectedFederationArgs = new FederationArgs(
+            federationMembers,
+            Instant.EPOCH,
+            0,
+            BRIDGE_CONSTANTS.getBtcParams());
+        var erpPubKeys =
+            BRIDGE_CONSTANTS.getFederationConstants().getErpFedPubKeysList();
+        var activationDelay =
+            BRIDGE_CONSTANTS.getFederationConstants().getErpFedActivationDelay();
+
+        return FederationFactory.buildP2shErpFederation(
+            expectedFederationArgs, erpPubKeys, activationDelay);
+    }
 
     private int voteToCreatePendingFederation(Transaction tx) {
         var createFederationAbiCallSpec = new ABICallSpec(FederationChangeFunction.CREATE.getKey(), new byte[][]{});
@@ -477,13 +491,8 @@ class FederationChangeIT {
         assertTrue(lastRetiredFederationP2SHScriptOptional.isPresent());
         Script lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScriptOptional.get();
 
-        if (ACTIVATIONS.isActive(ConsensusRule.RSKIP377)){
-            assertNotEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
-            assertEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
-        } else {
-            assertEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
-            assertNotEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
-        }
+        assertNotEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
+        assertEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
     }
 
     private void assertPendingFederationIsBuiltAsExpected(PendingFederation pendingFederation) {
@@ -508,11 +517,7 @@ class FederationChangeIT {
             .map(Entry::getBtcTransaction)
             .toList();
 
-        if (ACTIVATIONS.isActive(ConsensusRule.RSKIP428)) {
-            pegoutsTxs.forEach(this::verifyPegoutTransactionCreatedEvent);
-        } else {
-            verify(bridgeEventLogger, never()).logPegoutTransactionCreated(any(), any());
-        }
+        pegoutsTxs.forEach(this::verifyPegoutTransactionCreatedEvent);
     }
     
     private void verifyPegouts() throws Exception {
@@ -567,13 +572,6 @@ class FederationChangeIT {
         assertTrue(lastPegoutSigHash.isPresent());
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
     }
-    
-    // comment for now
-    // private void assertPegoutTxSigHashesAreNotSaved(BtcTransaction pegoutTx, ActivationConfig.ForBlock activations) {
-    //     var lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
-    //     assertTrue(lastPegoutSigHash.isPresent());
-    //     assertFalse(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
-    // }
 
     private void verifyPegoutTransactionCreatedEvent(BtcTransaction pegoutTx) {
         var pegoutTxHash = pegoutTx.getHash();
