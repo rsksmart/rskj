@@ -24,6 +24,7 @@ import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.rpc.modules.trace.TraceType;
 import co.rsk.util.HexUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
@@ -53,6 +54,9 @@ public class CallTraceTransformer {
         if (trace.getReverted()) {
             programResult.setRevert();
         }
+        if (!StringUtils.isEmpty(trace.getError())) {
+            programResult.setException(new Exception(trace.getError()));
+        }
 
         if (withLog) {
             programResult.addLogInfos(txInfo.getReceipt().getLogInfoList());
@@ -80,7 +84,7 @@ public class CallTraceTransformer {
             }
         }
 
-        return new TransactionTrace(txInfo.getReceipt().getTransaction().getHash().toHexString(), traceOutput);
+        return new TransactionTrace(txInfo.getReceipt().getTransaction().getHash().toJsonString(), traceOutput);
     }
 
     private static TxTraceResult toTrace(ProgramSubtrace programSubtrace, boolean withLog) {
@@ -93,88 +97,27 @@ public class CallTraceTransformer {
     }
 
     private static TxTraceResult toTrace(TraceType traceType, CallType callType, InvokeData invoke, DataWord codeAddress, ProgramResult programResult, CreationData creationData, boolean withLog) {
-        String type = traceType == TraceType.CREATE ? "CREATE" : callType.name();
-        String from;
-        String to = null;
-        String gas = null;
-        String input = null;
-        String value = null;
-        String output = null;
-        String gasUsed = null;
-        String revertReason = null;
-        String error = null;
+        TxTraceResult.Builder builder = TxTraceResult.builder();
 
-
-        from = getFrom(callType, invoke);
-
-        List<LogInfoResult> logInfoResultList = null;
-
-        DataWord callValue = invoke.getCallValue();
-
+        builder.type(traceType == TraceType.CREATE ? "CREATE" : callType.name());
+        builder.from(getFrom(callType, invoke));
 
         if (traceType == TraceType.CREATE) {
-            if (creationData != null) {
-                input = HexUtils.toUnformattedJsonHex(creationData.getCreationInput());
-                output = creationData.getCreatedAddress().toJsonString();
-            }
-            value = HexUtils.toQuantityJsonHex(callValue.getData());
-            gas = HexUtils.toQuantityJsonHex(invoke.getGas());
+            buildForCreate(builder, invoke, creationData);
+        } else if (traceType == TraceType.CALL) {
+            buildForCall(builder, invoke, callType, codeAddress);
         }
-
-        if (traceType == TraceType.CALL) {
-            input = HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));
-            value = HexUtils.toQuantityJsonHex(callValue.getData());
-
-            if (callType == CallType.DELEGATECALL) {
-                // The code address should not be null in a DELEGATECALL case
-                // but handling the case here
-                if (codeAddress != null) {
-                    to = new RskAddress(codeAddress.getLast20Bytes()).toJsonString();
-                }
-            } else {
-                to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
-            }
-
-            gas = HexUtils.toQuantityJsonHex(invoke.getGas());
-        }
-
 
         if (programResult != null) {
-            gasUsed = HexUtils.toQuantityJsonHex(programResult.getGasUsed());
-
-            if (programResult.isRevert()) {
-                Pair<String, byte[]> programRevert = EthModule.decodeProgramRevert(programResult);
-                revertReason = programRevert.getLeft();
-                output = HexUtils.toQuantityJsonHex(programRevert.getRight());
-                error = "execution reverted";
-            } else if (traceType != TraceType.CREATE) {
-                output = HexUtils.toQuantityJsonHex(programResult.getHReturn());
-            }
-
-            if (programResult.getException() != null) {
-                error = programResult.getException().toString();
-            }
+            buildForProgramResult(builder, traceType, programResult);
         }
 
         if (withLog) {
-            logInfoResultList = getLogs(programResult);
+            List<LogInfoResult> logInfoResultList = getLogs(programResult);
+            builder.logs(logInfoResultList);
         }
 
-
-        return TxTraceResult.builder()
-                .type(type)
-                .from(from)
-                .to(to)
-                .value(value)
-                .gas(gas)
-                .input(input)
-                .gasUsed(gasUsed)
-                .output(output)
-                .revertReason(revertReason)
-                .error(error)
-                .logs(logInfoResultList)
-                .build();
-
+        return builder.build();
     }
 
     private static String getFrom(CallType callType, InvokeData invoke) {
@@ -182,6 +125,53 @@ public class CallTraceTransformer {
             return new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
         } else {
             return new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
+        }
+    }
+
+    private static void buildForCreate(TxTraceResult.Builder builder, InvokeData invoke, CreationData creationData) {
+        DataWord callValue = invoke.getCallValue();
+
+        if (creationData != null) {
+            builder.input(HexUtils.toUnformattedJsonHex(creationData.getCreationInput()));
+            builder.output(creationData.getCreatedAddress().toJsonString());
+        }
+        builder.value(HexUtils.toQuantityJsonHex(callValue.getData()));
+        builder.gas(HexUtils.toQuantityJsonHex(invoke.getGas()));
+    }
+
+    private static void buildForCall(TxTraceResult.Builder builder, InvokeData invoke, CallType callType, DataWord codeAddress) {
+        DataWord callValue = invoke.getCallValue();
+
+        builder.input(HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize())));
+        builder.value(HexUtils.toQuantityJsonHex(callValue.getData()));
+
+        if (callType == CallType.DELEGATECALL) {
+            // The code address should not be null in a DELEGATECALL case
+            // but handling the case here
+            if (codeAddress != null) {
+                builder.to(new RskAddress(codeAddress.getLast20Bytes()).toJsonString());
+            }
+        } else {
+            builder.to(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString());
+        }
+
+        builder.gas(HexUtils.toQuantityJsonHex(invoke.getGas()));
+    }
+
+    private static void buildForProgramResult(TxTraceResult.Builder builder, TraceType traceType, ProgramResult programResult) {
+        builder.gasUsed(HexUtils.toQuantityJsonHex(programResult.getGasUsed()));
+
+        if (programResult.isRevert()) {
+            Pair<String, byte[]> programRevert = EthModule.decodeProgramRevert(programResult);
+            builder.revertReason(programRevert.getLeft());
+            builder.output(HexUtils.toQuantityJsonHex(programRevert.getRight()));
+            builder.error("execution reverted");
+        } else if (traceType != TraceType.CREATE) {
+            builder.output(HexUtils.toQuantityJsonHex(programResult.getHReturn()));
+        }
+
+        if (programResult.getException() != null) {
+            builder.error(programResult.getException().getMessage());
         }
     }
 
