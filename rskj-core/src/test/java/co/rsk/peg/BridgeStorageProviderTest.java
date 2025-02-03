@@ -19,6 +19,9 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeStorageIndexKey.*;
+import static co.rsk.peg.federation.FederationFormatVersion.P2SH_ERP_FEDERATION;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_KEY;
 import static org.ethereum.TestUtils.assertThrows;
 import static org.ethereum.TestUtils.mockAddress;
 import static org.hamcrest.CoreMatchers.is;
@@ -35,12 +38,15 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.*;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -2820,5 +2826,37 @@ class BridgeStorageProviderTest {
 
     private BridgeStorageProvider createBridgeStorageProvider(Repository repository, NetworkParameters networkParameters, ActivationConfig.ForBlock activations) {
         return new BridgeStorageProvider(repository, bridgeAddress, networkParameters, activations);
+    }
+
+    @Test
+    void preLovell_whenCommitFederationEventIsEmitted_retiringFedCreationShouldBeInMilli() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead631().forBlock(0);
+        DataWord key = OLD_FEDERATION_KEY.getKey();
+        System.out.println(key);
+
+        String rawOldFed = "f9014986019469d5b20001f9013eb868f866a1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3eb868f866a102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404a102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404a102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404b868f866a1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f";
+        byte[] oldFedInBytes = Hex.decode(rawOldFed);
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
+        Federation federation = BridgeSerializationUtils.deserializeFederationAccordingToVersion(
+            oldFedInBytes, P2SH_ERP_FEDERATION.getFormatVersion(), federationTestNetConstants,
+            activations);
+        Assertions.assertEquals(federationTestNetConstants.getGenesisFederationCreationTime(), federation.getCreationTime());
+    }
+
+    @Test
+    void preLovell_whenCommitFederationEventIsEmitted_activeFedCreationShouldBeInMilli() {
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead631().forBlock(0);
+        DataWord key = NEW_FEDERATION_KEY.getKey();
+        System.out.println(key);
+
+        String rawNewFed = "f9014984679bd77e8210f1f9013eb868f866a1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3ea1026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3eb868f866a1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fa1031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078fb868f866a103c23d6fb619f7fb0d00f3aa62e7ff7b781db1211a29e23952c023b6ec62d8055ea103e3344c90bf4dea503792e982a0d7b0e4a9ec6109285a7dd35afef1a2e48450d2a102dd4e13166a7f9c439b34b506694f003bf11aa30c1773e1398da196d5d781598d";
+        byte[] newFedInBytes = Hex.decode(rawNewFed);
+        FederationTestNetConstants federationTestNetConstants = FederationTestNetConstants.getInstance();
+        Federation federation = BridgeSerializationUtils.deserializeFederationAccordingToVersion(
+            newFedInBytes, P2SH_ERP_FEDERATION.getFormatVersion(), federationTestNetConstants,
+            activations);
+
+        Instant blockTimestamp = Instant.ofEpochMilli(1738266494);
+        Assertions.assertEquals(blockTimestamp, federation.getCreationTime());
     }
 }
