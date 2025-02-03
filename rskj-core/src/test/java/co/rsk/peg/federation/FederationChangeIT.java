@@ -66,6 +66,7 @@ class FederationChangeIT {
     private LockingCapSupport lockingCapSupport;
     private BridgeSupport bridgeSupport;
 
+
     @Test
     void whenAllActivationsArePresentAndFederationChanges_shouldSuccesfullyChangeFederation() throws Exception {
         // Arrange
@@ -82,7 +83,8 @@ class FederationChangeIT {
         voteToAddFederatorPublicKeysToPendingFederation(NEW_FEDERATION_MEMBERS);
 
         var pendingFederation = federationStorageProvider.getPendingFederation();
-        assertNotNull(pendingFederation);
+        assertPendingFederationIsBuiltAsExpected(pendingFederation);
+
         // We extract here because we will need for util methods
         var newFederation = pendingFederation.buildFederation(
             Instant.EPOCH, 0L, BRIDGE_CONSTANTS.getFederationConstants(), ACTIVATIONS);
@@ -237,12 +239,17 @@ class FederationChangeIT {
     }
 
     private void voteToAddFederatorPublicKeysToPendingFederation(List<FederationMember> newFederationMembers) {
+        var expectedPendingFederationSize = 0;
+
         for (FederationMember member : newFederationMembers) {
             var memberBtcKey = member.getBtcPublicKey();
             var memberRskKey = member.getRskPublicKey();
             var memberMstKey = member.getMstPublicKey();
 
             voteToAddFederatorPublicKeysToPendingFederation(memberBtcKey, memberRskKey, memberMstKey);
+
+            assertEquals(++expectedPendingFederationSize, federationSupport.getPendingFederationSize());
+            assertTrue(federationStorageProvider.getPendingFederation().getMembers().contains(member));
         }
     }
 
@@ -477,6 +484,12 @@ class FederationChangeIT {
             assertEquals(lastRetiredFederationP2SHScript, originalFederation.getP2SHScript());
             assertNotEquals(lastRetiredFederationP2SHScript, getFederationDefaultP2SHScript(originalFederation));
         }
+    }
+
+    private void assertPendingFederationIsBuiltAsExpected(PendingFederation pendingFederation) {
+        assertNotNull(pendingFederation);
+        assertEquals(9, pendingFederation.getSize());
+        assertTrue(pendingFederation.getMembers().containsAll(NEW_FEDERATION_MEMBERS));
     }
    
     private void verifySigHashes() throws Exception {
