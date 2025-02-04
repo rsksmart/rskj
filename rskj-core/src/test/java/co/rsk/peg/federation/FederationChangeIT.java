@@ -118,6 +118,7 @@ class FederationChangeIT {
         endMigration();
 
         assertMigrationHasEnded(newFederation);
+        verifyPegoutConfirmedEventEventWasEmitted();
     }
   
     /* Change federation related methods */
@@ -531,6 +532,17 @@ class FederationChangeIT {
         var amount = btcTx.getFee().add(btcTx.getOutputSum());
         verify(bridgeEventLogger).logReleaseBtcRequested(releaseCreationTxHash.getBytes(), btcTx, amount);
     }
+
+    private void verifyPegoutConfirmedEventEventWasEmitted() throws Exception {
+        var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForSignatures()
+            .entrySet().stream()
+            .toList();
+        
+        assertEquals(1, pegoutsTxs.size());
+
+        var btcTx = pegoutsTxs.get(0).getValue();
+        verify(bridgeEventLogger).logPegoutConfirmed(eq(btcTx.getHash()), anyLong());
+    }
     
     private void verifyPegouts() throws Exception {
         var activeFederation = federationStorageProvider.getNewFederation(
@@ -540,6 +552,7 @@ class FederationChangeIT {
 
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
+
             for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
                 // Each input should contain the right scriptSig
                 var inputScriptChunks = input.getScriptSig().getChunks();
