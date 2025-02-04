@@ -30,8 +30,10 @@ public interface TrieStore {
      * @return an optional containing the {@link Trie} with <code>rootHash</code> if found
      */
     Optional<Trie> retrieve(byte[] hash);
-
     byte[] retrieveValue(byte[] hash);
 
     void dispose();
+
+    Optional<TrieDTO> retrieveDTO(byte[] hash);
+    void saveDTO(TrieDTO trieDTO);
 }

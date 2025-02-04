@@ -68,7 +68,7 @@ class CheckingBestHeaderSyncStateTest {
         when(header.getHash().getBytes()).thenReturn(HASH_1);
         when(blockHeaderValidationRule.isValid(header)).thenReturn(true);
 
-        state.newBlockHeaders(Collections.singletonList(header));
+        state.newBlockHeaders(null, Collections.singletonList(header));
 
         verify(syncEventsHandler, times(1)).startFindingConnectionPoint(peer);
     }
@@ -79,7 +79,7 @@ class CheckingBestHeaderSyncStateTest {
         when(header.getHash().getBytes()).thenReturn(HASH_1);
         when(blockHeaderValidationRule.isValid(header)).thenReturn(false);
 
-        state.newBlockHeaders(Collections.singletonList(header));
+        state.newBlockHeaders(null, Collections.singletonList(header));
 
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.INVALID_HEADER,
@@ -92,7 +92,7 @@ class CheckingBestHeaderSyncStateTest {
         when(header.getHash().getBytes()).thenReturn(HashUtil.sha256(new byte[]{5}));
         when(blockHeaderValidationRule.isValid(header)).thenReturn(true);
 
-        state.newBlockHeaders(Collections.singletonList(header));
+        state.newBlockHeaders(null, Collections.singletonList(header));
 
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.INVALID_HEADER,
