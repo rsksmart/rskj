@@ -41,7 +41,7 @@ public class HttpGetMinGasPriceProvider extends StableMinGasPriceProvider {
     }
 
     public HttpGetMinGasPriceProvider(StableMinGasPriceSystemConfig config, MinGasPriceProvider fallBackProvider, SimpleHttpClient httpClient) {
-        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate());
+        super(fallBackProvider, config.getMinStableGasPrice(), config.getRefreshRate(), config.getMinValidPrice(), config.getMaxValidPrice());
         HttpGetStableMinGasSystemConfig httpGetConfig = config.getHttpGetConfig();
         this.url = httpGetConfig.getUrl();
         this.jsonPath = JsonPointer.valueOf(httpGetConfig.getJsonPath());

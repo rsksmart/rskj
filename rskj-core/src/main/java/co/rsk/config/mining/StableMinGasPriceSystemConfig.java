@@ -31,6 +31,9 @@ public class StableMinGasPriceSystemConfig {
     private static final String METHOD_PROPERTY = "source.method";
     private static final String PARAMS_PROPERTY = "source.params";
 
+    private static final String PARAM_MIN_VALID_PRICE = "minValidPrice";
+    private static final String PARAM_MAX_VALID_PRICE = "maxValidPrice";
+
     private final Duration refreshRate;
     private final Long minStableGasPrice;
     private final boolean enabled;
@@ -68,4 +71,13 @@ public class StableMinGasPriceSystemConfig {
     public MinGasPriceProviderType getMethod() {
         return method;
     }
+
+    public Long getMinValidPrice() {
+        return config.hasPath(PARAM_MIN_VALID_PRICE) ? config.getLong(PARAM_MIN_VALID_PRICE) : 0;
+    }
+
+    public Long getMaxValidPrice() {
+        return config.hasPath(PARAM_MAX_VALID_PRICE) ? config.getLong(PARAM_MAX_VALID_PRICE) : Long.MAX_VALUE;
+    }
+
 }
