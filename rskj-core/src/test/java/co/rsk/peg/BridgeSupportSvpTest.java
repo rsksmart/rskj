@@ -1021,7 +1021,7 @@ public class BridgeSupportSvpTest {
     @Tag("Spend transaction registration tests")
     class SpendTxRegistrationTests {
         @Test
-        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1056,7 +1056,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forLegacyPeginFromP2pkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
+        void registerBtcTransaction_forLegacyPeginFromP2pkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1112,7 +1112,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forLegacyPeginFromP2shP2wpkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forLegacyPeginFromP2shP2wpkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1178,7 +1178,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forLegacyPeginFromP2shMultisig_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forLegacyPeginFromP2shMultisig_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1238,9 +1238,8 @@ public class BridgeSupportSvpTest {
             assertProposedFederationExists();
         }
 
-
         @Test
-        void registerBtcTransaction_forLegacyPeginFromP2shP2wsh_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forLegacyPeginFromP2shP2wsh_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1311,7 +1310,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forPeginV1_whenWaitingForSvpSpendTx_shouldProcessPeginButNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
+        void registerBtcTransaction_forPeginV1_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1357,12 +1356,12 @@ public class BridgeSupportSvpTest {
             Optional<PeginInstructions> peginInstructions = peginInstructionsProvider.buildPeginInstructions(pegin);
             assertTrue(peginInstructions.isPresent());
             assertEquals(1, peginInstructions.get().getProtocolVersion());
-            // pegin was registered
+            // pegin was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(pegin.getHash());
-            // but spend tx was not
-            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
 
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
             assertNoHandoverToNewFederation();
