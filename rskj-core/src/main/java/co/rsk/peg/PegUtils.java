@@ -156,8 +156,11 @@ public class PegUtils {
                     Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
                     return svpFundTxHashUnsigned.equals(txHashWithoutSignatures);
                 } catch (IllegalArgumentException e) {
-                    // if an IllegalArgumentException is thrown, the tx is not from a p2sh-multisig. So it's not the fund tx
-                    logger.trace("[isTheSvpFundTransaction] Btc tx {} is not the svp fund transaction", transaction.getHash(), e);
+                    logger.trace(
+                        "[isTheSvpFundTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the fund tx",
+                        transaction.getHash(),
+                        e
+                    );
                     return false;
                 }
             })
@@ -175,8 +178,11 @@ public class PegUtils {
                     Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
                     return svpSpendTxHashUnsigned.equals(txHashWithoutSignatures);
                 } catch (IllegalArgumentException e) {
-                    // if an IllegalArgumentException is thrown, the tx is not from a p2sh-multisig. So it's not the spend tx
-                    logger.trace("[isTheSvpSpendTransaction] Btc tx {} is not the svp spend transaction", transaction.getHash(), e);
+                    logger.trace(
+                        "[isTheSvpSpendTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the spend tx",
+                        transaction.getHash(),
+                        e
+                    );
                     return false;
                 }
             })
