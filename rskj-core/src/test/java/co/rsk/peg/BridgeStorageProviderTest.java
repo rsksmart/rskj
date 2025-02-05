@@ -44,7 +44,6 @@ import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.ErpFederation;
 import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.FederationStorageIndexKey;
 import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
@@ -55,6 +54,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.Map.Entry;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
@@ -2862,6 +2862,7 @@ class BridgeStorageProviderTest {
 
         Instant blockTimestamp = Instant.ofEpochMilli(1738266494);
         Assertions.assertEquals(blockTimestamp, federation.getCreationTime());
+        Assertions.assertEquals(1738266, federation.getCreationTime().getEpochSecond());
     }
 
     private static Federation deserializeFederation(String rawNewFed, ForBlock activations) {
@@ -2968,5 +2969,18 @@ class BridgeStorageProviderTest {
 
         // migration tx with the 9 utxos https://blockstream.info/testnet/tx/8af7e342389946c5665cc4cd6ddd39867570133df013110708bd778d2c8474df
         Assertions.assertEquals(utxos.size(), 9);
+    }
+
+    @Test
+    void svpSpendTxWaitingForSignature_shouldMissOneSignature() {
+        String rawSvpSpendTx = "f903eda0377ca43aa70608956ac29cd89a6080ed2d0f201625437d37121a113e4c7ac14cb903c90200000002ac408fd12e29bdc686b1c72015d69a9de2615c1ab7bdcaf1435695e5d0c713bf00000000fd930100473044022044653e7f1ecf2111640eb867c147074603494a3e2eafb96ebc02f871c001409d022069ebf45df34a4cfcdd1a19e2f2206aa64a0a0eb60b3baf89ffeff57dc8bfe65a0148304502210096aac849457e86335b0757593303ea055407bc527eb26aa2093caae89a301a0f02204e89c7011816ec286d56cd4843f6ea2b5495292feb9441d15461c842fb3c591d0100004cfd645321026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e2102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e40421031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f2103c23d6fb619f7fb0d00f3aa62e7ff7b781db1211a29e23952c023b6ec62d8055e54ae670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f53ae68ffffffffac408fd12e29bdc686b1c72015d69a9de2615c1ab7bdcaf1435695e5d0c713bf01000000fdb6010047304402200aa27363312aa7a02f6de07d6683119b34b7434ca5959d33768f58456b9315f602200567327f0958ca3a4a1b03b6168e0066603c0b863d54b98bef1162d8d498647201483045022100a7f9e0a9a53525a9d11f7dd92d1bdac0f48c04ca6ab7dd11f9c92d509103c28702203c5380041e37e6609a41a9934868ea21f2d9f8885d898201b85af8d2fd5458340100004d1f0120000000000000000000000000000000000000000000000000000000000000000175645321026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e2102b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e40421031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f2103c23d6fb619f7fb0d00f3aa62e7ff7b781db1211a29e23952c023b6ec62d8055e54ae670350cd00b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f1421034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f53ae68ffffffff0145290f000000000017a91423a097674c7cefd207155270d0de40e14ea26c7a8700000000";
+        byte[] svpSpendTxInBytes = Hex.decode(rawSvpSpendTx);
+
+        Entry<Keccak256, BtcTransaction> entries = BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(
+            svpSpendTxInBytes, testnetBtcParams);
+
+        int i = BridgeUtils.countMissingSignatures(new Context(testnetBtcParams),
+            entries.getValue());
+        Assertions.assertEquals(1, i);
     }
 }
