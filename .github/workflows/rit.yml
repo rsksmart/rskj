@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout Repository # Step needed to access the PR description using github CLI
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 #v4.2.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
 
       - name: Set Branch Variables
         id: set-branch-variables
@@ -134,11 +134,11 @@ jobs:
           repo-owner: ${{ env.REPO_OWNER }}
 
       - name: Send Slack Notification on Success
-        if: success() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
           GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
+        if: ${{ success() && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_BOT_TOKEN != '' }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |
@@ -152,11 +152,11 @@ jobs:
             }
 
       - name: Send Slack Notification on Failure
-        if: failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart'
         uses: slackapi/slack-github-action@37ebaef184d7626c5f204ab8d3baff4262dd30f0 # v1.27.0
         env:
           SLACK_BOT_TOKEN: ${{ secrets.GHA_SLACK_NOTIFICATION_TOKEN }}
           GITHUB_EVENT_PULL_REQUEST_HTML_URL: ${{ github.event.pull_request.html_url }}
+        if: ${{ failure() && github.event.pull_request.head.repo.owner.login == 'rsksmart' && env.SLACK_BOT_TOKEN != '' }}
         with:
           channel-id: ${{ vars.GHA_SLACK_NOTIFICATION_CHANNEL }}
           payload: |

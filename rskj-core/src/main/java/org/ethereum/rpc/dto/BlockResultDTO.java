@@ -17,31 +17,28 @@
  */
 package org.ethereum.rpc.dto;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.util.HexUtils;
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.stream.IntStream;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockResultDTO {
     private final String number; // QUANTITY - the block number. null when its pending block.
     private final String hash; // DATA, 32 Bytes - hash of the block. null when its pending block.
     private final String parentHash; // DATA, 32 Bytes - hash of the parent block.
+    private final String mixHash; // DATA, 32 Bytes - mix hash field used for compatibility reasons.
     private final String sha3Uncles; // DATA, 32 Bytes - SHA3 of the uncles data in the block.
     private final String logsBloom; // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending block.
     private final String transactionsRoot; // DATA, 32 Bytes - the root of the transaction trie of the block.
@@ -70,6 +67,7 @@ public class BlockResultDTO {
             Long number,
             Keccak256 hash,
             Keccak256 parentHash,
+            Keccak256 mixHash,
             byte[] sha3Uncles,
             byte[] logsBloom,
             byte[] transactionsRoot,
@@ -96,6 +94,7 @@ public class BlockResultDTO {
         this.number = number != null ? HexUtils.toQuantityJsonHex(number) : null;
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
+        this.mixHash = mixHash != null ? mixHash.toJsonString() : null;
         this.sha3Uncles = HexUtils.toUnformattedJsonHex(sha3Uncles);
         this.logsBloom = logsBloom != null ? HexUtils.toUnformattedJsonHex(logsBloom) : null;
         this.transactionsRoot = HexUtils.toUnformattedJsonHex(transactionsRoot);
@@ -123,7 +122,7 @@ public class BlockResultDTO {
         this.hashForMergedMining = HexUtils.toUnformattedJsonHex(hashForMergedMining);
         this.paidFees = paidFees != null ? HexUtils.toQuantityJsonHex(paidFees.getBytes()) : null;
 
-        this.rskPteEdges = rskPteEdges;
+        this.rskPteEdges = copyOfArrayOrNull(rskPteEdges);
     }
 
     public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
@@ -141,7 +140,7 @@ public class BlockResultDTO {
         List<Object> transactions = IntStream.range(0, blockTransactions.size())
                 .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc, zeroSignatureIfRemasc, signatureCache))
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> uncles = new ArrayList<>();
 
@@ -160,6 +159,7 @@ public class BlockResultDTO {
                 isPending ? null : b.getNumber(),
                 isPending ? null : b.getHash(),
                 b.getParentHash(),
+                Keccak256.ZERO_HASH,
                 b.getUnclesHash(),
                 isPending ? null : b.getLogBloom(),
                 transactionsRoot,
@@ -210,6 +210,10 @@ public class BlockResultDTO {
 
     public String getParentHash() {
         return parentHash;
+    }
+
+    public String getMixHash() {
+        return mixHash;
     }
 
     public String getSha3Uncles() {
@@ -297,6 +301,11 @@ public class BlockResultDTO {
     }
 
     public short[] getRskPteEdges() {
-        return rskPteEdges;
+        return copyOfArrayOrNull(rskPteEdges);
+    }
+
+    @Nullable
+    private static short[] copyOfArrayOrNull(short[] array) {
+        return array != null ? Arrays.copyOf(array, array.length) : null;
     }
 }
