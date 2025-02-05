@@ -22,12 +22,15 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.*;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.btcLockSender.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
+import co.rsk.peg.pegininstructions.PeginInstructions;
+import co.rsk.peg.pegininstructions.PeginInstructionsException;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -38,6 +41,8 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
+
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
@@ -1016,7 +1021,7 @@ public class BridgeSupportSvpTest {
     @Tag("Spend transaction registration tests")
     class SpendTxRegistrationTests {
         @Test
-        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessPegoutButNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forPegout_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1038,12 +1043,12 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
-            // pegout was registered
+            // pegout was registered and processed
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(pegout.getHash());
-            // but spend tx was not
-            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
 
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
             // svp success was not processed
             assertSvpSpendTxHashUnsignedIsInStorage();
             assertNoHandoverToNewFederation();
@@ -1051,7 +1056,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forLegacyPegin_whenWaitingForSvpSpendTx_shouldProcessPeginButNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        void registerBtcTransaction_forLegacyPeginFromP2pkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1064,7 +1069,7 @@ public class BridgeSupportSvpTest {
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             setUpForTransactionRegistration(pegin);
 
-            // recreate bridge support with a real btcLockSenderProvider instead of a mock to be able to parse pegin
+            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
             BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
             bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeMainNetConstants)
@@ -1089,6 +1094,269 @@ public class BridgeSupportSvpTest {
             bridgeStorageProvider.save();
 
             // assert
+            // pegin is legacy
+            Optional<BtcLockSender> btcLockSender = btcLockSenderProvider.tryGetBtcLockSender(pegin);
+            assertTrue(btcLockSender.isPresent());
+            // and sender is p2pkh
+            assertEquals(P2pkhBtcLockSender.class, btcLockSender.get().getClass());
+            // pegin was registered and processed
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertTransactionWasProcessed(pegin.getHash());
+
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            // svp success was not processed
+            assertSvpSpendTxHashUnsignedIsInStorage();
+            assertNoHandoverToNewFederation();
+            assertProposedFederationExists();
+        }
+
+        @Test
+        void registerBtcTransaction_forLegacyPeginFromP2shP2wpkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
+            BtcECKey senderPubKey = getBtcEcKeyFromSeed("legacy_pegin_p2shp2wpkh_sender");
+            // we need to only have one chunk in the scriptSig for p2sh-p2wpkh
+            byte[] redeemScript = ByteUtil.merge(new byte[]{ 0x00, 0x14}, senderPubKey.getPubKeyHash());
+            Script witnessScript = new ScriptBuilder()
+                .data(redeemScript)
+                .build();
+            pegin.addInput(BitcoinTestUtils.createHash(1), 0, witnessScript);
+
+            TransactionWitness txWit = new TransactionWitness(2);
+            txWit.setPush(0, new byte[72]); // push for signatures
+            txWit.setPush(1, senderPubKey.getPubKey());
+            pegin.setWitness(0, txWit);
+
+            Coin amountToSend = Coin.COIN;
+            pegin.addOutput(amountToSend, activeFederation.getAddress());
+            setUpForTransactionRegistration(pegin);
+
+            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
+            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .build();
+
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegin.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            // pegin is legacy
+            Optional<BtcLockSender> btcLockSender = btcLockSenderProvider.tryGetBtcLockSender(pegin);
+            assertTrue(btcLockSender.isPresent());
+            // and sender is p2sh-p2wpkh
+            assertEquals(P2shP2wpkhBtcLockSender.class, btcLockSender.get().getClass());
+            // pegin was registered and processed
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
+            assertTransactionWasProcessed(pegin.getHash());
+
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            // svp success was not processed
+            assertSvpSpendTxHashUnsignedIsInStorage();
+            assertNoHandoverToNewFederation();
+            assertProposedFederationExists();
+        }
+
+        @Test
+        void registerBtcTransaction_forLegacyPeginFromP2shMultisig_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
+            List<BtcECKey> pubKeys = Arrays.asList(
+                getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_1"),
+                getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_2")
+            );
+            Script redeemScript = ScriptBuilder.createRedeemScript(2, pubKeys);
+            Script scriptSig = BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+            pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
+            Coin amountToSend = Coin.COIN;
+            pegin.addOutput(amountToSend, activeFederation.getAddress());
+            setUpForTransactionRegistration(pegin);
+
+            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
+            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .build();
+
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegin.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            // pegin is legacy
+            Optional<BtcLockSender> btcLockSender = btcLockSenderProvider.tryGetBtcLockSender(pegin);
+            assertTrue(btcLockSender.isPresent());
+            // and sender is p2sh-multisig
+            assertEquals(P2shMultisigBtcLockSender.class, btcLockSender.get().getClass());
+            // pegin was not registered
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            // but was marked as processed
+            assertTransactionWasProcessed(pegin.getHash());
+
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            // svp success was not processed
+            assertSvpSpendTxHashUnsignedIsInStorage();
+            assertNoHandoverToNewFederation();
+            assertProposedFederationExists();
+        }
+
+
+        @Test
+        void registerBtcTransaction_forLegacyPeginFromP2shP2wsh_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
+            List<BtcECKey> pubKeys = Arrays.asList(
+                getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_1"),
+                getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_2")
+            );
+            Script redeemScript = ScriptBuilder.createRedeemScript(2, pubKeys);
+            // we need to only have one chunk in the scriptSig for p2sh-p2wsh
+            Script witnessScript = new ScriptBuilder()
+                .data(redeemScript.getProgram())
+                .build();
+            pegin.addInput(BitcoinTestUtils.createHash(1), 0, witnessScript);
+
+            TransactionWitness txWit = new TransactionWitness(2);
+            txWit.setPush(0, new byte[] { 0 });
+            txWit.setPush(1, new byte[72]); // push for signatures
+            txWit.setPush(2, redeemScript.getProgram());
+            pegin.setWitness(0, txWit);
+
+            Coin amountToSend = Coin.COIN;
+            pegin.addOutput(amountToSend, activeFederation.getAddress());
+            setUpForTransactionRegistration(pegin);
+
+            // recreate bridge support with real btcLockSenderProvider instead of a mock to be able to parse pegin
+            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .build();
+
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegin.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            // pegin is legacy
+            Optional<BtcLockSender> btcLockSender = btcLockSenderProvider.tryGetBtcLockSender(pegin);
+            assertTrue(btcLockSender.isPresent());
+            // and sender is p2sh-p2wsh
+            assertEquals(P2shP2wshBtcLockSender.class, btcLockSender.get().getClass());
+            // pegin was not registered
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx);
+            // but was marked as processed
+            assertTransactionWasProcessed(pegin.getHash());
+
+            // spend tx was not registered nor processed
+            assertTransactionWasNotProcessed(svpSpendTransaction.getHash());
+            // svp success was not processed
+            assertSvpSpendTxHashUnsignedIsInStorage();
+            assertNoHandoverToNewFederation();
+            assertProposedFederationExists();
+        }
+
+        @Test
+        void registerBtcTransaction_forPeginV1_whenWaitingForSvpSpendTx_shouldProcessPeginButNotProcessSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
+            // arrange
+            arrangeSvpSpendTransaction();
+            setUpForTransactionRegistration(svpSpendTransaction);
+
+            BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
+            BtcECKey senderPubKey = getBtcEcKeyFromSeed("legacy_pegin_sender");
+            Script scriptSig = ScriptBuilder.createInputScript(null, senderPubKey);
+            pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
+            Coin amountToSend = Coin.COIN;
+            pegin.addOutput(amountToSend, activeFederation.getAddress());
+            Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, bridgeContractAddress, Optional.empty());
+            pegin.addOutput(Coin.ZERO, opReturnScript);
+            setUpForTransactionRegistration(pegin);
+
+            // recreate bridge support with real btcLockSenderProvider and peginInstructionsProvider instead of a mock to be able to parse pegin v1
+            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+            PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
+            bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withProvider(bridgeStorageProvider)
+                .withEventLogger(bridgeEventLogger)
+                .withActivations(allActivations)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(rskExecutionBlock)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .withPeginInstructionsProvider(peginInstructionsProvider)
+                .build();
+
+            int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                rskTx,
+                pegin.bitcoinSerialize(),
+                btcBlockWithPmtHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeStorageProvider.save();
+
+            // assert
+            // pegin is v1
+            Optional<PeginInstructions> peginInstructions = peginInstructionsProvider.buildPeginInstructions(pegin);
+            assertTrue(peginInstructions.isPresent());
+            assertEquals(1, peginInstructions.get().getProtocolVersion());
             // pegin was registered
             assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeRegisteringTx + 1);
             assertTransactionWasProcessed(pegin.getHash());
@@ -1448,11 +1716,20 @@ public class BridgeSupportSvpTest {
     }
 
     private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
+        if (!transaction.hasWitness()) {
+            setUpForTransactionRegistration(transaction.getHash());
+            return;
+        }
+
+        setUpForTransactionRegistration(transaction.getHash(true));
+    }
+
+    private void setUpForTransactionRegistration(Sha256Hash transactionHash) throws BlockStoreException {
         // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
 
-        pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transaction.getHash()), btcMainnetParams);
+        pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transactionHash), btcMainnetParams);
         btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
 
         int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
