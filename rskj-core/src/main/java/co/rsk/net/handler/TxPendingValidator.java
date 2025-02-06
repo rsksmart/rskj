@@ -45,7 +45,7 @@ import java.util.List;
 public class TxPendingValidator {
     private static final Logger logger = LoggerFactory.getLogger("txpendingvalidator");
 
-    private static final long TX_MAX_SIZE = 128L * 1024; // 128KB
+    public static final long TX_MAX_SIZE = 128L * 1024; // 128KB
 
     private final List<TxValidatorStep> validatorSteps = new LinkedList<>();
 
