@@ -151,10 +151,20 @@ public class PegUtils {
         BtcTransaction transaction
     ) {
         return provider.getSvpFundTxHashUnsigned()
-            .filter(svpFundTransactionHashUnsigned ->
-                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpFundTransactionHashUnsigned)
-            )
-            .isPresent();
+            .map(svpFundTxHashUnsigned -> {
+                try {
+                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
+                    return svpFundTxHashUnsigned.equals(txHashWithoutSignatures);
+                } catch (IllegalArgumentException e) {
+                    logger.trace(
+                        "[isTheSvpFundTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the fund tx",
+                        transaction.getHash(),
+                        e
+                    );
+                    return false;
+                }
+            })
+            .orElse(false);
     }
 
     private static boolean isTheSvpSpendTransaction(
@@ -163,10 +173,20 @@ public class PegUtils {
         BtcTransaction transaction
     ) {
         return provider.getSvpSpendTxHashUnsigned()
-            .filter(svpSpendTransactionHashUnsigned ->
-                getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction).equals(svpSpendTransactionHashUnsigned)
-            )
-            .isPresent();
+            .map(svpSpendTxHashUnsigned -> {
+                try {
+                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
+                    return svpSpendTxHashUnsigned.equals(txHashWithoutSignatures);
+                } catch (IllegalArgumentException e) {
+                    logger.trace(
+                        "[isTheSvpSpendTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the spend tx",
+                        transaction.getHash(),
+                        e
+                    );
+                    return false;
+                }
+            })
+            .orElse(false);
     }
 
     static PeginEvaluationResult evaluatePegin(
@@ -176,11 +196,11 @@ public class PegUtils {
         Wallet fedWallet,
         ActivationConfig.ForBlock activations
     ) {
-        if(!activations.isActive(ConsensusRule.RSKIP379)) {
+        if (!activations.isActive(ConsensusRule.RSKIP379)) {
             throw new IllegalStateException("Can't call this method before RSKIP379 activation");
         }
 
-        if(!allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPeginTxValue, activations)) {
+        if (!allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPeginTxValue, activations)) {
             logger.debug("[evaluatePegin] Peg-in contains at least one utxo below the minimum value");
             return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, INVALID_AMOUNT);
         }
