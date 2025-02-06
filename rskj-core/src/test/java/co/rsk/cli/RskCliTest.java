@@ -2,7 +2,6 @@ package co.rsk.cli;
 
 import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,6 +57,14 @@ public class RskCliTest {
         rskCli = new RskCli();
         String[] regtestArgs = {"--regtest", "--skip-java-check", "--print-system-info", "--verify-config", "--reset", "--import", "-rpccors=*", "-base-path=./test-db", "-Xdatabase.dir="};
         rskCli.load(regtestArgs);
+        parsedArgs = rskCli.getCliArgs();
+        assertEquals(6, parsedArgs.getFlags().size());
+        assertEquals(2, parsedArgs.getOptions().size());
+        assertEquals(1, parsedArgs.getParamValueMap().size());
+
+        rskCli = new RskCli();
+        String[] testnet2Args = {"--testnet2", "--skip-java-check", "--print-system-info", "--verify-config", "--reset", "--import", "-rpccors=*", "-base-path=./test-db2", "-Xdatabase.dir="};
+        rskCli.load(testnet2Args);
         parsedArgs = rskCli.getCliArgs();
         assertEquals(6, parsedArgs.getFlags().size());
         assertEquals(2, parsedArgs.getOptions().size());

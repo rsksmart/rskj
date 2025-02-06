@@ -94,6 +94,15 @@ class ConfigLoaderTest {
     }
 
     @Test
+    void testnet2CliFlagOverridesNetworkBaseConfig() {
+        when(cliArgs.getFlags())
+                .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_TESTNET2));
+        Config config = loader.getConfig();
+
+        assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("testnet2"));
+    }
+
+    @Test
     void dbResetCliFlagEnablesReset() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.DB_RESET));

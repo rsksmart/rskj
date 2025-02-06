@@ -61,5 +61,18 @@
       "lateUncleInclusionPunishmentDivisor": 20,
       "paidFeesMultiplier": 2,
       "paidFeesDivisor": 1
+   },
+   "testnet2": {
+      "maturity" : 50,
+      "syntheticSpan" : 10,
+      "rskLabsDivisor" : 5,
+      "punishmentDivisor" : 10,
+      "publishersDivisor" : 10,
+      "federationDivisor" : 100,
+      "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0004",
+      "rskLabsAddressRskip218" : "dabadabadabadabadabadabadabadabadaba0004",
+      "lateUncleInclusionPunishmentDivisor": 20,
+      "paidFeesMultiplier": 2,
+      "paidFeesDivisor": 1
    }
 }

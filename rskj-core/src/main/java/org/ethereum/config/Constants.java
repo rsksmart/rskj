@@ -39,6 +39,7 @@ public class Constants {
     public static final byte TESTNET_CHAIN_ID = (byte) 31;
     public static final byte DEVNET_CHAIN_ID = (byte) 32;
     public static final byte REGTEST_CHAIN_ID = (byte) 33;
+    public static final byte TESTNET2_CHAIN_ID = (byte) 34;
 
     private static final byte[] FALLBACKMINING_PUBKEY_0 = Hex.decode("041e2b148c024770e19c4f31db2233cac791583df95b4d14a5e9fd4b38dc8254b3048f937f169446b19d2eca40db1dd93fab34c0cd8a310afd6e6211f9a89e4bca");
     private static final byte[] FALLBACKMINING_PUBKEY_1 = Hex.decode("04b55031870df5de88bdb84f65bd1c6f8331c633e759caa5ac7cad3fa4f8a36791e995804bba1558ddcf330a67ff5bfa253fa1d8789735f97a97e849686527976e");
@@ -124,7 +125,9 @@ public class Constants {
     }
 
     public BlockDifficulty getMinimumDifficulty(Long blockNumber) {
-        boolean isRskip290Enabled = chainId == TESTNET_CHAIN_ID && blockNumber != null && activationConfig != null
+        boolean isRskip290Enabled = (chainId == TESTNET_CHAIN_ID || chainId == TESTNET2_CHAIN_ID)
+                && blockNumber != null
+                && activationConfig != null
                 && activationConfig.isActive(ConsensusRule.RSKIP290, blockNumber);
         return isRskip290Enabled ? minimumDifficultyForRskip290 : minimumDifficulty;
     }
@@ -155,7 +158,7 @@ public class Constants {
     }
 
     public long getMaxTimestampsDiffInSecs(ActivationConfig.ForBlock activationConfig) {
-        if (chainId == TESTNET_CHAIN_ID && activationConfig.isActive(ConsensusRule.RSKIP297)) {
+        if ((chainId == TESTNET_CHAIN_ID || chainId == TESTNET2_CHAIN_ID) && activationConfig.isActive(ConsensusRule.RSKIP297)) {
             return TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS;
         }
         return DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS;
@@ -276,6 +279,22 @@ public class Constants {
     public static Constants testnet(ActivationConfig activationConfig) {
         return new Constants(
                 TESTNET_CHAIN_ID,
+                false,
+                14,
+                new BlockDifficulty(BigInteger.valueOf(131072)),
+                new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
+                BigInteger.valueOf(50),
+                540,
+                BridgeTestNetConstants.getInstance(),
+                activationConfig,
+                new BlockDifficulty(new BigInteger("550000000")),
+                6_800_000L
+        );
+    }
+
+    public static Constants testnet2(ActivationConfig activationConfig) {
+        return new Constants(
+                TESTNET2_CHAIN_ID,
                 false,
                 14,
                 new BlockDifficulty(BigInteger.valueOf(131072)),
