@@ -2,6 +2,7 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -469,7 +470,6 @@ class BitcoinUtilsTest {
         // assert
         assertEquals(transactionBeforeSigning, transaction);
 
-        byte[] emptyByte = new byte[] {};
         for (TransactionInput input : transaction.getInputs()) {
             List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
 
@@ -480,8 +480,8 @@ class BitcoinUtilsTest {
 
             // assert script sig does not have signatures
             for (int i = 0; i < redeemScriptChunkIndex - 1; i++) {
-                byte[] scriptSigChunkData = scriptSigChunks.get(i).data;
-                assertArrayEquals(emptyByte, scriptSigChunkData);
+                int scriptSigChunkOpCode = scriptSigChunks.get(i).opcode;
+                assertEquals(ScriptOpCodes.OP_0, scriptSigChunkOpCode);
             }
         }
     }
@@ -496,7 +496,7 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
 
         // having an empty script sig means we cannot get the redeem script from it
-        Script emptyScriptSig = new Script(new byte[] {});
+        Script emptyScriptSig = new Script(EMPTY_BYTE_ARRAY);
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, emptyScriptSig);
 
         transaction.addOutput(Coin.COIN, destinationAddress);
@@ -550,7 +550,7 @@ class BitcoinUtilsTest {
         assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
 
         for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
-            assertEquals(0, chunk.opcode);
+            assertEquals(ScriptOpCodes.OP_0, chunk.opcode);
         }
     }
 
