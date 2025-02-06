@@ -715,7 +715,7 @@ class NonStandardErpFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
 
-        assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
+        assertEquals(TestConstants.NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, nonStandardErpFederation.getRedeemScript());
     }
 
     @Test
@@ -723,7 +723,7 @@ class NonStandardErpFederationsTest {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
 
-        assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
+        assertNotEquals(TestConstants.NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, nonStandardErpFederation.getRedeemScript());
         validateErpRedeemScript(
             nonStandardErpFederation.getRedeemScript(),
             activationDelayValue
@@ -739,7 +739,7 @@ class NonStandardErpFederationsTest {
 
         ErpRedeemScriptBuilder builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
         assertInstanceOf(NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE.class, builder);
-        assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
+        assertNotEquals(TestConstants.NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, nonStandardErpFederation.getRedeemScript());
 
         validateErpRedeemScript(
             nonStandardErpFederation.getRedeemScript(),
@@ -754,7 +754,7 @@ class NonStandardErpFederationsTest {
         // check the hardcoded fed didnt exist on mainnet after rskip201
         nonStandardErpFederation = createDefaultNonStandardErpFederation();
         builder = nonStandardErpFederation.getErpRedeemScriptBuilder();
-        assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, nonStandardErpFederation.getRedeemScript());
+        assertNotEquals(TestConstants.NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, nonStandardErpFederation.getRedeemScript());
         assertFalse(builder instanceof NonStandardErpRedeemScriptBuilderHardcoded);
 
         // check the hardcoded fed didnt exist on mainnet after rskip284
