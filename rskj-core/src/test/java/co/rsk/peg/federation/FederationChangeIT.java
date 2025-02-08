@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -44,7 +45,12 @@ import org.junit.jupiter.api.Test;
 class FederationChangeIT {
 
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
-    private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembers(9);
+    private static final List<BtcECKey> ORIGINAL_FEDERATION_MEMBERS_KEYS =
+        BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{
+                "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
+    private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
+    // private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembers(9);
     private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembers(9);
     private static final SignatureCache SIGNATURE_CACHE = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
@@ -55,7 +61,7 @@ class FederationChangeIT {
     private Repository repository;
     private BridgeStorageProvider bridgeStorageProvider;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
-    private BtcBlockStore btcBlockStore;
+    private BtcBlockStoreWithCache btcBlockStore;
     private BridgeEventLogger bridgeEventLogger;
     private FeePerKbSupport feePerKbSupport;
     private Block currentBlock;
@@ -85,10 +91,14 @@ class FederationChangeIT {
         assertPendingFederationIsBuiltAsExpected(pendingFederation);
 
         voteToCommitPendingFederation();
-        var newFederation = federationSupport.getActiveFederation();
+        var newFederationOpt = federationSupport.getProposedFederation();
+        assertTrue(newFederationOpt.isPresent());
+        var newFederation = newFederationOpt.get();
         assertEquals(expectedFederation, newFederation);
         
         // Since Lovell is activated we will commit the proposed federation
+        createSvpFundTx();
+        registerSignedSvpFundTx();
         commitProposedFederation();
         assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
             originalFederation);
@@ -172,6 +182,8 @@ class FederationChangeIT {
 
         feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
+
+        bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock);
     }
 
     private Federation createOriginalFederation(List<FederationMember> federationMembers) throws Exception {
@@ -283,6 +295,52 @@ class FederationChangeIT {
         assertNull(federationStorageProvider.getPendingFederation());
     }
 
+    private void createSvpFundTx() throws Exception {
+        // Get UTXO size before creating fund tx
+        var activeFederationUtxosSizeBeforeCreatingFundTx =
+            federationSupport.getActiveFederationBtcUTXOs().size();
+
+        // Next call to update collections will create svp fund tx
+        bridgeSupport.updateCollections(UPDATE_COLLECTIONS_TX);
+        bridgeSupport.save();
+
+        var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+        assertTrue(svpFundTxHashUnsigned.isPresent());
+        assertEquals(activeFederationUtxosSizeBeforeCreatingFundTx - 1, federationSupport.getActiveFederationBtcUTXOs().size());
+    }
+   
+    private void registerSignedSvpFundTx() throws Exception {
+        var pegoutsTxs = bridgeStorageProvider.getPegoutsWaitingForConfirmations()
+            .getEntries().stream().toList();
+        assertEquals(1, pegoutsTxs.size());
+        var svpFundTx = new BtcTransaction(
+            BRIDGE_CONSTANTS.getBtcParams(), pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
+       
+        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, 4));
+
+        var pmtWithTransactions = BridgeSupportTestUtil.createValidPmtForTransactions(List.of(svpFundTx.getHash()), BRIDGE_CONSTANTS.getBtcParams());
+        var btcBlockWithPmtHeight = BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+        var chainHeight = btcBlockWithPmtHeight + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        BridgeSupportTestUtil.recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, BRIDGE_CONSTANTS.getBtcParams());
+        bridgeStorageProvider.save();
+
+        int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+        bridgeSupport.registerBtcTransaction(
+            UPDATE_COLLECTIONS_TX,
+            svpFundTx.bitcoinSerialize(),
+            btcBlockWithPmtHeight,
+            pmtWithTransactions.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        var svpFundTransactionSigned = bridgeStorageProvider.getSvpFundTxSigned();
+        assertTrue(svpFundTransactionSigned.isPresent());
+        
+        // simulate removal to leave state clean
+        assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().removeEntry(pegoutsTxs.get(0)));
+    }
+
     private void commitProposedFederation() {
         // Verify that the proposed federation exists in storage
         var proposedFederation = 
@@ -353,6 +411,7 @@ class FederationChangeIT {
             .withFederationConstants(BRIDGE_CONSTANTS.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
             .withRskExecutionBlock(executionBlock)
+            .withActivations(ACTIVATIONS)
             .build();
 
         return BridgeSupportBuilder.builder()
@@ -432,7 +491,13 @@ class FederationChangeIT {
         rskTx.sign(randomKey.getPrivKeyBytes());
         return rskTx;
     }
-    
+
+    private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
+        List<TransactionInput> inputs = transaction.getInputs();
+        IntStream.range(0, inputs.size()).forEach(i ->
+            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
+        );
+    }
     
     /* Assert and verify federation change related methods */
 
