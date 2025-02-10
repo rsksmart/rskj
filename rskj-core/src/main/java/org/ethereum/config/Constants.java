@@ -291,7 +291,7 @@ public class Constants {
                 6_800_000L
         );
     }
-
+//using testnet
     public static Constants testnet2(ActivationConfig activationConfig) {
         return new Constants(
                 TESTNET2_CHAIN_ID,
