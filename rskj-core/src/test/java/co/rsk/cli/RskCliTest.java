@@ -55,16 +55,16 @@ public class RskCliTest {
         assertEquals(1, parsedArgs.getParamValueMap().size());
 
         rskCli = new RskCli();
-        String[] regtestArgs = {"--regtest", "--skip-java-check", "--print-system-info", "--verify-config", "--reset", "--import", "-rpccors=*", "-base-path=./test-db", "-Xdatabase.dir="};
-        rskCli.load(regtestArgs);
+        String[] testnet2Args = {"--testnet2", "--skip-java-check", "--print-system-info", "--verify-config", "--reset", "--import", "-rpccors=*", "-base-path=./test-db2", "-Xdatabase.dir="};
+        rskCli.load(testnet2Args);
         parsedArgs = rskCli.getCliArgs();
         assertEquals(6, parsedArgs.getFlags().size());
         assertEquals(2, parsedArgs.getOptions().size());
         assertEquals(1, parsedArgs.getParamValueMap().size());
 
         rskCli = new RskCli();
-        String[] testnet2Args = {"--testnet2", "--skip-java-check", "--print-system-info", "--verify-config", "--reset", "--import", "-rpccors=*", "-base-path=./test-db2", "-Xdatabase.dir="};
-        rskCli.load(testnet2Args);
+        String[] regtestArgs = {"--regtest", "--skip-java-check", "--print-system-info", "--verify-config", "--reset", "--import", "-rpccors=*", "-base-path=./test-db", "-Xdatabase.dir="};
+        rskCli.load(regtestArgs);
         parsedArgs = rskCli.getCliArgs();
         assertEquals(6, parsedArgs.getFlags().size());
         assertEquals(2, parsedArgs.getOptions().size());
