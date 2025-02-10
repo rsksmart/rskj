@@ -332,7 +332,7 @@ class MessageTest {
     }
 
     @Test
-    void encodeDecodeTransactionsMessageWithHigherSize() throws IOException {
+    void encodeDecodeTransactionMessage_withSizeBiggerThanMaximum_returnsEmptyTransactions() throws IOException {
         String filePath = "src/test/resources/rlp/tx-rlp-msg-test-big-size-tx.txt";
         String hexData = new String(Files.readAllBytes(Paths.get(filePath)));
         byte[] txData = Hex.decode(hexData);
