@@ -183,6 +183,7 @@ public abstract class SystemProperties {
                     break;
                 case "testnet2":
                     constants = Constants.testnet2(getActivationConfig());
+                    break;
                 case "devnet":
                     constants = Constants.devnetWithFederation();
                     break;
