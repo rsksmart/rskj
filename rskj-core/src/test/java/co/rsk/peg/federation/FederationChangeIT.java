@@ -117,6 +117,7 @@ class FederationChangeIT {
         assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
         assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
         assertNewAndOldFederationsReferences(newFederation, originalFederation);
+        assertNextFederationCreationBlockHeight(newFederation.getCreationBlockNumber());
 
         // Move blockchain until the activation phase
         activateNewFederation();
@@ -624,6 +625,12 @@ class FederationChangeIT {
     private void assertActiveAndRetiringFederationsHaveExpectedAddress(Address expectedNewFederationAddress, Address expectedOldFederationAddress) {
         assertEquals(expectedNewFederationAddress, bridgeSupport.getActiveFederationAddress());
         assertEquals(expectedOldFederationAddress, bridgeSupport.getRetiringFederationAddress());
+    }
+
+    private void assertNextFederationCreationBlockHeight(long newFederationCreationBlockNumber) {
+        Optional<Long> nextFederationCreationBlockHeight = federationStorageProvider.getNextFederationCreationBlockHeight(ACTIVATIONS);
+        assertTrue(nextFederationCreationBlockHeight.isPresent());
+        assertEquals(newFederationCreationBlockNumber, nextFederationCreationBlockHeight.get());
     }
     
     private void assertMigrationHasNotStarted() throws Exception {
