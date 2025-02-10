@@ -50,10 +50,13 @@ class FederationChangeIT {
             new String[]{
                 "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
     private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
-    // private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembers(9);
-    private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembers(9);
+    private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS =
+        BitcoinTestUtils.getBtcEcKeysFromSeeds(
+            new String[]{
+                "newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09"}, true);
+    private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(NEW_FEDERATION_MEMBERS_KEYS);
     private static final SignatureCache SIGNATURE_CACHE = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
-    private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
+    private static final Transaction UPDATE_COLLECTIONS_TX = buildRskTx();
     private static final Transaction FIRST_AUTHORIZED_TX = TransactionUtils.getTransactionFromCaller(SIGNATURE_CACHE, FederationChangeCaller.FIRST_AUTHORIZED.getRskAddress());
     private static final Transaction SECOND_AUTHORIZED_TX = TransactionUtils.getTransactionFromCaller(SIGNATURE_CACHE, FederationChangeCaller.SECOND_AUTHORIZED.getRskAddress());
     private static final ActivationConfig.ForBlock ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
@@ -99,7 +102,8 @@ class FederationChangeIT {
         // Since Lovell is activated we will commit the proposed federation
         createSvpFundTx();
         registerSignedSvpFundTx();
-        commitProposedFederation();
+        createSvpSpendTx();
+        registerSvpSpendTx();
         assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(
             originalFederation);
 
@@ -181,7 +185,7 @@ class FederationChangeIT {
             SIGNATURE_CACHE);
 
         feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.COIN);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.SATOSHI);
 
         bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock);
     }
@@ -203,7 +207,7 @@ class FederationChangeIT {
         federationStorageProvider.setNewFederation(originalFederation);
 
         // Set new UTXOs
-        var originalUTXOs = createRandomUTXOs(originalFederation.getAddress());
+        var originalUTXOs = createUTXOs(originalFederation.getAddress());
         bridgeStorageAccessor.saveToRepository(
             NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), originalUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
@@ -316,17 +320,21 @@ class FederationChangeIT {
         var svpFundTx = new BtcTransaction(
             BRIDGE_CONSTANTS.getBtcParams(), pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
        
-        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, 4));
+        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, 5));
 
-        var pmtWithTransactions = BridgeSupportTestUtil.createValidPmtForTransactions(List.of(svpFundTx.getHash()), BRIDGE_CONSTANTS.getBtcParams());
-        var btcBlockWithPmtHeight = BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+        var pmtWithTransactions = 
+            BridgeSupportTestUtil.createValidPmtForTransactions(
+                List.of(svpFundTx.getHash()), BRIDGE_CONSTANTS.getBtcParams());
+        var btcBlockWithPmtHeight =
+            BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks();
         var chainHeight = btcBlockWithPmtHeight + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
-        BridgeSupportTestUtil.recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, BRIDGE_CONSTANTS.getBtcParams());
+        BridgeSupportTestUtil.recreateChainFromPmt(
+            btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, BRIDGE_CONSTANTS.getBtcParams());
         bridgeStorageProvider.save();
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         bridgeSupport.registerBtcTransaction(
-            UPDATE_COLLECTIONS_TX,
+            buildRskTx(),
             svpFundTx.bitcoinSerialize(),
             btcBlockWithPmtHeight,
             pmtWithTransactions.bitcoinSerialize()
@@ -341,19 +349,64 @@ class FederationChangeIT {
         assertTrue(bridgeStorageProvider.getPegoutsWaitingForConfirmations().removeEntry(pegoutsTxs.get(0)));
     }
 
-    private void commitProposedFederation() {
-        // Verify that the proposed federation exists in storage
-        var proposedFederation = 
-            federationStorageProvider.getProposedFederation(BRIDGE_CONSTANTS.getFederationConstants(), ACTIVATIONS);
-        assertTrue(proposedFederation.isPresent());
+    private void createSvpSpendTx() throws Exception {
+        // Next call to update collections will create svp spend tx
+        bridgeSupport.updateCollections(UPDATE_COLLECTIONS_TX);
+        bridgeSupport.save();
 
-        // As in commitPendingFederation util method, to avoid the SVP process
-        // we will commit directly
-        federationSupport.commitProposedFederation();
-    
-        // Since the proposed federation is committed, it should be null in storage
-        proposedFederation = federationStorageProvider.getProposedFederation(BRIDGE_CONSTANTS.getFederationConstants(), ACTIVATIONS);
-        assertTrue(proposedFederation.isEmpty());
+        var svpFundTxHashUnsigned = bridgeStorageProvider.getSvpFundTxHashUnsigned();
+        assertFalse(svpFundTxHashUnsigned.isPresent());
+        var svpSpendTransactionHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+        assertTrue(svpSpendTransactionHashUnsigned.isPresent());
+        var svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+        assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
+    }
+
+    private void registerSvpSpendTx() throws Exception {
+        var svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+        assertTrue(svpSpendTxWaitingForSignaturesOpt.isPresent());
+
+        // Add the signatures for the svp spend tx
+        var svpSpendTxCreationHash = svpSpendTxWaitingForSignaturesOpt.get().getKey();
+        var svpSpendTx = svpSpendTxWaitingForSignaturesOpt.get().getValue();
+        var svpSpendTxSigHashes = IntStream.range(0, svpSpendTx.getInputs().size())
+            .mapToObj(i -> BitcoinUtils.generateSigHashForP2SHTransactionInput(svpSpendTx, i))
+            .toList();
+        for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, 5)) {
+            List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
+            bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
+        }
+
+        // Verify that the svp spend tx was released
+        verify(bridgeEventLogger).logReleaseBtc(svpSpendTx, svpSpendTxCreationHash.getBytes());
+        svpSpendTxWaitingForSignaturesOpt = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
+        assertFalse(svpSpendTxWaitingForSignaturesOpt.isPresent());
+
+        // Register the svp spend tx
+        var pmtWithTransactions = 
+            BridgeSupportTestUtil.createValidPmtForTransactions(
+                List.of(svpSpendTx.getHash()), BRIDGE_CONSTANTS.getBtcParams());
+        var btcBlockWithPmtHeight =
+            BRIDGE_CONSTANTS.getBtcHeightWhenPegoutTxIndexActivates() + BRIDGE_CONSTANTS.getPegoutTxIndexGracePeriodInBtcBlocks();
+        var chainHeight = btcBlockWithPmtHeight + BRIDGE_CONSTANTS.getBtc2RskMinimumAcceptableConfirmations();
+        BridgeSupportTestUtil.recreateChainFromPmt(
+            btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, BRIDGE_CONSTANTS.getBtcParams());
+        bridgeStorageProvider.save();
+
+        var activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
+        bridgeSupport.registerBtcTransaction(
+            buildRskTx(),
+            svpSpendTx.bitcoinSerialize(),
+            btcBlockWithPmtHeight,
+            pmtWithTransactions.bitcoinSerialize()
+        );
+        bridgeSupport.save();
+
+        assertEquals(activeFederationUtxosSizeBeforeRegisteringTx + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+        var svpSpendTxHashUnsigned = bridgeStorageProvider.getSvpSpendTxHashUnsigned();
+        assertFalse(svpSpendTxHashUnsigned.isPresent());
+        var newFederationOpt = federationSupport.getProposedFederation();
+        assertFalse(newFederationOpt.isPresent());
     }
     
     private void activateNewFederation() {
@@ -449,22 +502,18 @@ class FederationChangeIT {
         blockStore.setChainHead(storedBlock);
     }
 
-    private List<UTXO> createRandomUTXOs(Address owner) {
+    private List<UTXO> createUTXOs(Address owner) {
         Script outputScript = ScriptBuilder.createOutputScript(owner);
         List<UTXO> utxos = new ArrayList<>();
 
-        int howMany = getRandomInt(1, 50);
+        int howMany = 50;
         for (int i = 1; i < howMany; i++) {
-            Coin randomValue = Coin.valueOf(getRandomInt(10_000, 1_000_000_000));
+            Coin value = Coin.COIN;
             Sha256Hash utxoHash = BitcoinTestUtils.createHash(i);
-            utxos.add(new UTXO(utxoHash, 0, randomValue, 0, false, outputScript));
+            utxos.add(new UTXO(utxoHash, 0, value, 0, false, outputScript));
         }
 
         return utxos;
-    }
-    
-    private int getRandomInt(int min, int max) {
-        return TestUtils.generateInt(FederationChangeIT.class.toString() + min, max - min + 1) + min;
     }
 
     private Script getFederationDefaultRedeemScript(Federation federation) {
@@ -479,7 +528,7 @@ class FederationChangeIT {
             federation.getP2SHScript();
     }
 
-    private static Transaction buildUpdateCollectionsTx() {
+    private static Transaction buildRskTx() {
         var nonce = 3;
         var value = 0;
         var gasPrice = BigInteger.valueOf(0);
