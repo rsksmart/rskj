@@ -12,16 +12,12 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.peg.*;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.BitcoinUtils;
-import co.rsk.peg.bitcoin.UtxoUtils;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
-import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
-import co.rsk.peg.lockingcap.LockingCapSupport;
-import co.rsk.peg.lockingcap.LockingCapSupportImpl;
+import co.rsk.peg.lockingcap.*;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -33,10 +29,7 @@ import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.IntStream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -50,7 +43,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
 
 class FederationChangeIT {
-
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
     private static final NetworkParameters NETWORK_PARAMS = BRIDGE_CONSTANTS.getBtcParams();
@@ -90,7 +82,7 @@ class FederationChangeIT {
         setUp();
 
         // Create a default original federation using the list of UTXOs
-        var originalFederation = createOriginalFederation(ORIGINAL_FEDERATION_MEMBERS);
+        var originalFederation = createOriginalFederation();
         var originalUTXOs = federationStorageProvider.getNewFederationBtcUTXOs(NETWORK_PARAMS, ACTIVATIONS);
         var expectedFederation = createExpectedFederation(NEW_FEDERATION_MEMBERS);
        
@@ -109,11 +101,13 @@ class FederationChangeIT {
         var newFederation = newFederationOpt.get();
         assertEquals(expectedFederation, newFederation);
         
-        // Since Lovell is activated we will commit the proposed federation
+        // Proceed with SVP process
         callUpdateCollectionsAndAssertSvpFundTxIsCreated();
         registerSignedSvpFundTx();
         callUpdateCollectionsAndAssertSvpSpendTxIsCreated();
         addSignaturesToAndRegisterSvpSpendTx();
+
+        // Validations post commit
         assertLastRetiredFederationP2SHScriptMatchesWithOriginalFederation(originalFederation);
         assertUTXOsReferenceMovedFromNewToOldFederation(originalUTXOs);
         assertNewAndOldFederationsReferences(newFederation, originalFederation);
@@ -121,12 +115,12 @@ class FederationChangeIT {
 
         // Move blockchain until the activation phase
         activateNewFederation();
-
         assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
         assertMigrationHasNotStarted();
 
         // Move blockchain until the migration phase
         activateMigration();
+
         // Calling update collections should start migration
         callUpdateCollections();
         assertMigrationHasStarted();
@@ -134,12 +128,13 @@ class FederationChangeIT {
         assertReleaseBtcRequestedEventEventWasEmitted();
         assertPegoutTransactionCreatedEventWasEmitted();
         verifyPegouts();
+
         // Check again live federations references are as expected
         assertNewAndOldFederationsReferences(newFederation, originalFederation);
         assertActiveAndRetiringFederationsHaveExpectedAddress(newFederation.getAddress(), originalFederation.getAddress());
 
-        long migrationCreationRskBlockNumber = currentBlock.getNumber();
         // Move blockchain until the end of the migration phase
+        long migrationCreationRskBlockNumber = currentBlock.getNumber();
         endMigration();
         assertPegoutConfirmedEventEventWasEmitted(migrationCreationRskBlockNumber);
 
@@ -205,9 +200,9 @@ class FederationChangeIT {
         bridgeSupport = getBridgeSupportFromExecutionBlock(currentBlock);
     }
 
-    private Federation createOriginalFederation(List<FederationMember> federationMembers) {
+    private Federation createOriginalFederation() {
         var originalFederationArgs = new FederationArgs(
-            federationMembers,
+            ORIGINAL_FEDERATION_MEMBERS,
             Instant.EPOCH,
             0,
             NETWORK_PARAMS);
@@ -337,7 +332,7 @@ class FederationChangeIT {
        
         signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, 5));
 
-        var pmtWithTransactions = 
+        var pmtWithTransactions =
             BridgeSupportTestUtil.createValidPmtForTransactions(
                 List.of(svpFundTx.getHash()), NETWORK_PARAMS);
         var btcBlockWithPmtHeight =
@@ -645,6 +640,7 @@ class FederationChangeIT {
      
     private void assertMigrationHasStarted() throws Exception {
         // Pegouts waiting for confirmations should not be empty
+        // Expecting only one element since the retiring federation had less than 50 UTXOs
         assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
     }
 
@@ -756,8 +752,7 @@ class FederationChangeIT {
 
             for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
                 // Each input should contain the right scriptSig
-                var inputScriptChunks = input.getScriptSig().getChunks();
-                var inputRedeemScript = new Script(inputScriptChunks.get(inputScriptChunks.size() - 1).data);
+                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(input).orElseThrow();
 
                 // Get the standard redeem script to compare against, since it could be a flyover redeem script
                 var redeemScriptChunks = ScriptParser.parseScriptProgram(
@@ -779,6 +774,7 @@ class FederationChangeIT {
 
                 // Check the script sig composition
                 Federation spendingFederation = spendingFederationOptional.get();
+                var inputScriptChunks = input.getScriptSig().getChunks();
                 assertEquals(ScriptOpCodes.OP_0, inputScriptChunks.get(0).opcode);
                 for (int i = 1; i <= spendingFederation.getNumberOfSignaturesRequired(); i++) {
                     assertEquals(ScriptOpCodes.OP_0, inputScriptChunks.get(i).opcode);
