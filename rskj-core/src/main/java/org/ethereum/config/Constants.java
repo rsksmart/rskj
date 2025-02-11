@@ -53,6 +53,15 @@ public class Constants {
     private static final long MAX_INITCODE_SIZE = 2 * MAX_CONTRACT_SIZE;
     public static final int TX_EXECUTION_THREADS = 2;
 
+    private static final String MINIMUN_DIFFICULTY_FOR_RSKIP290 = "550000000";
+    private static final long FALLBACK_MINING_DIFFICULTY = (long) 14E15;
+    private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
+    private static final int NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE = 540;
+    private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 6_800_000L;
+    private static final int MINIMUM_DIFFICULTY = 131072;
+    private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
+    private static final int REGTEST_DURATION_LIMIT = 10;
+
     private final byte chainId;
     private final boolean seedCowAccounts;
     private final int durationLimit;
@@ -250,29 +259,29 @@ public class Constants {
         return new Constants(
                 MAINNET_CHAIN_ID,
                 false,
-                14,
-                new BlockDifficulty(BigInteger.valueOf((long) 14E15 / 2)),
-                new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
-                BigInteger.valueOf(50),
+                TESTNET_AND_DEVNET_DURATION_LIMIT,
+                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY / 2)),
+                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+                DIFFICULTY_BOUND_DIVISOR,
                 60,
                 BridgeMainNetConstants.getInstance(),
-                new BlockDifficulty(new BigInteger("550000000")),
-                6_800_000L
+                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
 
     public static Constants devnetWithFederation() {
         return new Constants(
-            DEVNET_CHAIN_ID,
-            false,
-            14,
-            new BlockDifficulty(BigInteger.valueOf(131072)),
-            new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
-            BigInteger.valueOf(50),
-            540,
-            new BridgeDevNetConstants(),
-            new BlockDifficulty(new BigInteger("550000000")),
-                6_800_000L
+                DEVNET_CHAIN_ID,
+                false,
+                TESTNET_AND_DEVNET_DURATION_LIMIT,
+                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
+                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+                DIFFICULTY_BOUND_DIVISOR,
+                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
+                new BridgeDevNetConstants(),
+                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
 
@@ -280,31 +289,31 @@ public class Constants {
         return new Constants(
                 TESTNET_CHAIN_ID,
                 false,
-                14,
-                new BlockDifficulty(BigInteger.valueOf(131072)),
-                new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
-                BigInteger.valueOf(50),
-                540,
+                TESTNET_AND_DEVNET_DURATION_LIMIT,
+                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
+                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+                DIFFICULTY_BOUND_DIVISOR,
+                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
-                new BlockDifficulty(new BigInteger("550000000")),
-                6_800_000L
+                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
-//using testnet
+
     public static Constants testnet2(ActivationConfig activationConfig) {
         return new Constants(
                 TESTNET2_CHAIN_ID,
                 false,
-                14,
-                new BlockDifficulty(BigInteger.valueOf(131072)),
-                new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
-                BigInteger.valueOf(50),
-                540,
+                TESTNET_AND_DEVNET_DURATION_LIMIT,
+                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
+                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+                DIFFICULTY_BOUND_DIVISOR,
+                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
-                new BlockDifficulty(new BigInteger("550000000")),
-                6_800_000L
+                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
 
@@ -312,13 +321,13 @@ public class Constants {
         return new Constants(
                 REGTEST_CHAIN_ID,
                 true,
-                10,
+                REGTEST_DURATION_LIMIT,
                 new BlockDifficulty(BigInteger.ONE),
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
                 new BridgeRegTestConstants(),
-                new BlockDifficulty(new BigInteger("550000000")),
+                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
                 1_000_000L
         );
     }
@@ -327,13 +336,13 @@ public class Constants {
         return new Constants(
                 REGTEST_CHAIN_ID,
                 true,
-                10,
+                REGTEST_DURATION_LIMIT,
                 new BlockDifficulty(BigInteger.ONE),
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
                 new BridgeRegTestConstants(genesisFederationPublicKeys),
-                new BlockDifficulty(new BigInteger("550000000")),
+                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
                 1_000_000L
         );
     }
