@@ -408,15 +408,19 @@ public abstract class SystemProperties {
                 file.getParentFile().mkdirs();
                 try (FileWriter writer = new FileWriter(file)) {
                     props.store(writer, "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                    if(logger.isInfoEnabled()) {
-                        logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
-                        logger.info("Generated nodeID and its private key stored in {}", file);
-                    }
+                    logNodeInfo(props, file);
                 }
             }
             return props.getProperty("nodeIdPrivateKey");
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void logNodeInfo(Properties props, File file) {
+        if (logger.isInfoEnabled()) {
+            logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+            logger.info("Generated nodeID and its private key stored in {}", file);
         }
     }
 

@@ -53,7 +53,7 @@ public class Constants {
     private static final long MAX_INITCODE_SIZE = 2 * MAX_CONTRACT_SIZE;
     public static final int TX_EXECUTION_THREADS = 2;
 
-    private static final String MINIMUN_DIFFICULTY_FOR_RSKIP290 = "550000000";
+    private static final BigInteger MINIMUN_DIFFICULTY_FOR_RSKIP290 = BigInteger.valueOf(550000000L);
     private static final long FALLBACK_MINING_DIFFICULTY = (long) 14E15;
     private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
     private static final int NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE = 540;
@@ -134,10 +134,12 @@ public class Constants {
     }
 
     public BlockDifficulty getMinimumDifficulty(Long blockNumber) {
-        boolean isRskip290Enabled = (chainId == TESTNET_CHAIN_ID || chainId == TESTNET2_CHAIN_ID)
-                && blockNumber != null
-                && activationConfig != null
+        boolean isTestnetOrTestnet2 = (chainId == TESTNET_CHAIN_ID || chainId == TESTNET2_CHAIN_ID);
+        boolean isRskip290Active = blockNumber != null && activationConfig != null
                 && activationConfig.isActive(ConsensusRule.RSKIP290, blockNumber);
+
+        boolean isRskip290Enabled = isTestnetOrTestnet2 && isRskip290Active;
+
         return isRskip290Enabled ? minimumDifficultyForRskip290 : minimumDifficulty;
     }
 
@@ -265,7 +267,7 @@ public class Constants {
                 DIFFICULTY_BOUND_DIVISOR,
                 60,
                 BridgeMainNetConstants.getInstance(),
-                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
@@ -280,7 +282,7 @@ public class Constants {
                 DIFFICULTY_BOUND_DIVISOR,
                 NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 new BridgeDevNetConstants(),
-                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
@@ -296,7 +298,7 @@ public class Constants {
                 NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
-                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
@@ -312,7 +314,7 @@ public class Constants {
                 NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
-                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 MIN_SEQUENTIAL_SET_GAS_LIMIT
         );
     }
@@ -327,7 +329,7 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 new BridgeRegTestConstants(),
-                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 1_000_000L
         );
     }
@@ -342,7 +344,7 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 new BridgeRegTestConstants(genesisFederationPublicKeys),
-                new BlockDifficulty(new BigInteger(MINIMUN_DIFFICULTY_FOR_RSKIP290)),
+                new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 1_000_000L
         );
     }
