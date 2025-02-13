@@ -99,7 +99,7 @@ import co.rsk.util.HexUtils;
 @ExtendWith(MockitoExtension.class)
 // to avoid Junit5 unnecessary stub error due to some setup generalizations
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class BridgeTestIntegration {
+class BridgeIT {
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final String BRIDGE_ADDRESS_TO_STRING = PrecompiledContracts.BRIDGE_ADDR_STR;
     private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
@@ -1610,7 +1610,7 @@ public class BridgeTestIntegration {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
+        rskTx.sign(ACTIVE_FEDERATION_KEYS.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -3363,7 +3363,7 @@ public class BridgeTestIntegration {
     void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
-        byte[] privKeyBytes = fedKeys.get(0).getPrivKeyBytes();
+        byte[] privKeyBytes = ACTIVE_FEDERATION_KEYS.get(0).getPrivKeyBytes();
         RskAddress sender = new RskAddress(ECKey.fromPrivate(privKeyBytes).getAddress());
 
         Transaction txMock = mock(Transaction.class);
@@ -3546,7 +3546,7 @@ public class BridgeTestIntegration {
             );
         }
 
-        rskTx.sign(fedKeys.get(0).getPrivKeyBytes());
+        rskTx.sign(ACTIVE_FEDERATION_KEYS.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
