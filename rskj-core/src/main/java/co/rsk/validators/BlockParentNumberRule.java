@@ -35,13 +35,13 @@ public class BlockParentNumberRule implements BlockParentDependantValidationRule
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         if (header == null || parent == null) {
             logger.warn("BlockParentNumberRule - block or parent are null");
             return false;
         }
-        BlockHeader parentHeader = parent.getHeader();
-        if (header.getNumber() != (parentHeader.getNumber() + 1)) {
+
+        if (header.getNumber() != (parent.getNumber() + 1)) {
             logger.warn("#{}: block number is not parentBlock number + 1", header.getNumber());
             return false;
         }

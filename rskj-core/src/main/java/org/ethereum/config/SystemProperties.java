@@ -298,6 +298,14 @@ public abstract class SystemProperties {
         return ret;
     }
 
+    public List<Node> getSnapBootNodes() {
+        if (!configFromFiles.hasPath("sync.snapshot.client.snapBootNodes")) {
+            return Collections.emptyList();
+        }
+        List<? extends ConfigObject> list = configFromFiles.getObjectList("sync.snapshot.client.snapBootNodes");
+        return list.stream().map(this::parsePeer).collect(Collectors.toList());
+    }
+
     public Integer peerChannelReadTimeout() {
         return configFromFiles.getInt("peer.channel.read.timeout");
     }
