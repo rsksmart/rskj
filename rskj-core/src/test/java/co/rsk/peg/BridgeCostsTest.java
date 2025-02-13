@@ -55,9 +55,11 @@ class BridgeCostsTest {
         when(config.getActivationConfig()).thenReturn(activationConfig);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig, signatureCache);
+            new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
+            constants.getBridgeConstants(),
+            activationConfig,
+            signatureCache
+        );
     }
 
     @Test
