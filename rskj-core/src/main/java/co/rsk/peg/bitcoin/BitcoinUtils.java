@@ -72,7 +72,7 @@ public class BitcoinUtils {
         return transaction.getHash();
     }
 
-    private static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
+    public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             String message = "Removing signatures from SegWit transactions is not allowed.";
             logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
