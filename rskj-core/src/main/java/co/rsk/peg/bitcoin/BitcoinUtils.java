@@ -8,13 +8,15 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BitcoinUtils {
     protected static final byte[]  WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
-    private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra by for OP_RETURN and another one for data length
+    private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra byte for OP_RETURN and another one for data length
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
     private static final int FIRST_INPUT_INDEX = 0;
 
@@ -60,6 +62,16 @@ public class BitcoinUtils {
         }
     }
 
+    public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+        if (!transaction.hasWitness()) {
+            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
+            return transactionCopyWithoutSignatures.getHash();
+        }
+
+        return transaction.getHash();
+    }
+
     public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
         if (transaction.hasWitness()) {
             String message = "Removing signatures from SegWit transactions is not allowed.";
@@ -82,15 +94,34 @@ public class BitcoinUtils {
         }
     }
 
-    public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx) {
+    public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        return outputScript.createEmptyInputScript(null, redeemScript);
+    }
+
+    public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
+        return transactionOutputs.stream()
+            .filter(output -> output.getScriptPubKey().equals(outputScriptPubKey))
+            .findFirst();
+    }
+
+    public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
+        return Optional.ofNullable(btcTx.getInput(inputIndex))
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
+    }
+
+    public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx, ActivationConfig.ForBlock activations) {
         Preconditions.checkState(tx.isCoinBase());
         // If more than one witness commitment, take the last one as the valid one
         List<TransactionOutput> outputsReversed = Lists.reverse(tx.getOutputs());
 
         for (TransactionOutput output : outputsReversed) {
-            Script scriptPubKey = output.getScriptPubKey();
-            if (isWitnessCommitment(scriptPubKey)) {
-                Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKey);
+            byte[] scriptPubKeyBytes = getOutputScriptPubKeyBytes(activations, output);
+
+            if (isWitnessCommitment(scriptPubKeyBytes)) {
+                Sha256Hash witnessCommitment = extractWitnessCommitmentHash(scriptPubKeyBytes);
                 return Optional.of(witnessCommitment);
             }
         }
@@ -98,9 +129,18 @@ public class BitcoinUtils {
         return Optional.empty();
     }
 
-    private static boolean isWitnessCommitment(Script scriptPubKey) {
-        byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
+    private static byte[] getOutputScriptPubKeyBytes(ActivationConfig.ForBlock activations, TransactionOutput output) {
+        if (!activations.isActive(ConsensusRule.RSKIP460)) {
+            /*
+                Calling `getScriptPubKey` pre RSKIP460 keeps consensus by throwing a ScripException
+                when the output has a non-standard format that bitcoinj-thin is not able to parse
+            */
+            return output.getScriptPubKey().getProgram();
+        }
+        return output.getScriptBytes();
+    }
 
+    private static boolean isWitnessCommitment(byte[] scriptPubKeyProgram) {
         return scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE
             && hasCommitmentStructure(scriptPubKeyProgram);
     }
@@ -118,8 +158,7 @@ public class BitcoinUtils {
     /**
      * Retrieves the hash from a segwit commitment (in an output of the coinbase transaction).
      */
-    private static Sha256Hash extractWitnessCommitmentHash(Script scriptPubKey) {
-        byte[] scriptPubKeyProgram = scriptPubKey.getProgram();
+    private static Sha256Hash extractWitnessCommitmentHash(byte[] scriptPubKeyProgram) {
         Preconditions.checkState(scriptPubKeyProgram.length >= MINIMUM_WITNESS_COMMITMENT_SIZE);
 
         final int WITNESS_COMMITMENT_HASH_START = 6; // 4 bytes for header + OP_RETURN + data length

@@ -30,6 +30,7 @@ import org.ethereum.util.RLPList;
 import java.util.ArrayList;
 import java.util.List;
 
+import static co.rsk.net.handler.TxPendingValidator.TX_MAX_SIZE;
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
 /**
@@ -317,6 +318,6 @@ public enum MessageType {
     }
 
     private static boolean validTransactionLength(byte[] data) {
-        return data.length <= 1 << 19;  /* 512KB */
+        return data.length <= TX_MAX_SIZE;  /* 128KB */
     }
 }

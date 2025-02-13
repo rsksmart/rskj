@@ -34,12 +34,12 @@ class StableMinGasPriceSystemConfigTest {
 
     @BeforeEach
     void setUp() {
-        Config testConfig = ConfigFactory.parseString(
-                "enabled=true\n" +
-                        "refreshRate=10 hours\n" +
-                        "minStableGasPrice=100\n" +
-                        "source={ method=FIXED }"
-        );
+        Config testConfig = ConfigFactory.parseString(""" 
+                enabled=true
+                refreshRate=10 hours
+                minStableGasPrice=100
+                source={ method=FIXED }
+                """);
         config = new StableMinGasPriceSystemConfig(testConfig);
     }
 
@@ -65,31 +65,36 @@ class StableMinGasPriceSystemConfigTest {
 
     @Test
     void wrongMethodShouldThrowException() {
-        Config testConfig = ConfigFactory.parseString(
-                "enabled=true\n" +
-                        "refreshRate=10\n" +
-                        "minStableGasPrice=100\n" +
-                        "source={ method=INVALID }"
-        );
-        assertThrows(
-                ConfigException.BadValue.class,
-                () -> new StableMinGasPriceSystemConfig(testConfig),
-                "Expected to throw Config exception, but it didn't"
-        );
+        Config testConfig = ConfigFactory.parseString("""
+                enabled=true
+                refreshRate=10
+                minStableGasPrice=100
+                source={ method=INVALID }
+                """);
+        assertThrows(ConfigException.BadValue.class, () -> new StableMinGasPriceSystemConfig(testConfig), "Expected to throw Config exception, but it didn't");
     }
 
     @Test
     void missingPropertyShouldThrowException() {
-        Config testConfig = ConfigFactory.parseString(
-                "enabled=true\n" +
-                        "minStableGasPrice=100\n" +
-                        "method=FIXED"
-        );
-        assertThrows(
-                ConfigException.Missing.class,
-                () -> new StableMinGasPriceSystemConfig(testConfig),
-                "Expected to throw Config exception, but it didn't"
-        );
+        Config testConfig = ConfigFactory.parseString("""
+                enabled=true
+                minStableGasPrice=100
+                method=FIXED
+                """);
+        assertThrows(ConfigException.Missing.class, () -> new StableMinGasPriceSystemConfig(testConfig), "Expected to throw Config exception, but it didn't");
+    }
+
+    @Test
+    void testRanges() {
+        Config testConfig = ConfigFactory.parseString("""
+                enabled=true
+                minValidPrice=10
+                maxValidPrice=1000
+                source={ method=FIXED }
+                """);
+        config = new StableMinGasPriceSystemConfig(testConfig);
+        assertEquals(10, config.getMinValidPrice());
+        assertEquals(1000, config.getMaxValidPrice());
     }
 
 

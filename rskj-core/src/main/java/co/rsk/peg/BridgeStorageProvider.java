@@ -18,21 +18,22 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeStorageIndexKey.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
+import java.io.IOException;
+import java.util.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.util.*;
-import static co.rsk.peg.BridgeStorageIndexKey.*;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -41,6 +42,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
+    private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
 
     // Dummy value to use when saving key only indexes
     private static final byte TRUE_VALUE = (byte) 1;
@@ -76,6 +78,15 @@ public class BridgeStorageProvider {
     private Long nextPegoutHeight;
 
     private Set<Sha256Hash> pegoutTxSigHashes;
+
+    private Sha256Hash svpFundTxHashUnsigned;
+    private boolean isSvpFundTxHashUnsignedSet = false;
+    private BtcTransaction svpFundTxSigned;
+    private boolean isSvpFundTxSignedSet = false;
+    private Sha256Hash svpSpendTxHashUnsigned;
+    private boolean isSvpSpendTxHashUnsignedSet = false;
+    private Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures;
+    private boolean isSvpSpendTxWaitingForSignaturesSet = false;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -209,7 +220,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
             PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY,
-                data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
+            data -> BridgeSerializationUtils.deserializePegoutsWaitingForConfirmations(data, networkParameters, true).getEntries()));
 
         pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(entries);
 
@@ -235,7 +246,7 @@ public class BridgeStorageProvider {
 
         pegoutsWaitingForSignatures = getFromRepository(
             PEGOUTS_WAITING_FOR_SIGNATURES,
-                data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, false)
+            data -> BridgeSerializationUtils.deserializeRskTxsWaitingForSignatures(data, networkParameters)
         );
         return pegoutsWaitingForSignatures;
     }
@@ -245,7 +256,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
+        safeSaveToRepository(PEGOUTS_WAITING_FOR_SIGNATURES, pegoutsWaitingForSignatures, BridgeSerializationUtils::serializeRskTxsWaitingForSignatures);
     }
 
     public CoinbaseInformation getCoinbaseInformation(Sha256Hash blockHash) {
@@ -373,7 +384,7 @@ public class BridgeStorageProvider {
             return Optional.empty();
         }
 
-        FlyoverFederationInformation flyoverFederationInformationInStorage = this.safeGetFromRepository(
+        FlyoverFederationInformation flyoverFederationInformationInStorage = safeGetFromRepository(
             getStorageKeyForFlyoverFederationInformation(flyoverFederationRedeemScriptHash),
             data -> BridgeSerializationUtils.deserializeFlyoverFederationInformation(data, flyoverFederationRedeemScriptHash)
         );
@@ -462,12 +473,12 @@ public class BridgeStorageProvider {
     public void setNextPegoutHeight(long nextPegoutHeight) {
         this.nextPegoutHeight = nextPegoutHeight;
     }
-    
+
     protected void saveNextPegoutHeight() {
         if (nextPegoutHeight == null || !activations.isActive(RSKIP271)) {
             return;
         }
-        
+
         safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
     }
 
@@ -520,6 +531,187 @@ public class BridgeStorageProvider {
         ));
     }
 
+    public Optional<Sha256Hash> getSvpFundTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpFundTxHashUnsigned != null) {
+            return Optional.of(svpFundTxHashUnsigned);
+        }
+
+        // Return empty if the svp fund tx hash unsigned was explicitly set to null
+        if (isSvpFundTxHashUnsignedSet) {
+            return Optional.empty();
+        }
+
+        svpFundTxHashUnsigned = safeGetFromRepository(
+            SVP_FUND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        return Optional.ofNullable(svpFundTxHashUnsigned);
+    }
+
+    public Optional<BtcTransaction> getSvpFundTxSigned() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpFundTxSigned != null) {
+            return Optional.of(svpFundTxSigned);
+        }
+
+        // Return empty if the svp fund tx signed was explicitly set to null
+        if (isSvpFundTxSignedSet) {
+            return Optional.empty();
+        }
+
+        svpFundTxSigned = safeGetFromRepository(SVP_FUND_TX_SIGNED,
+            data -> BridgeSerializationUtils.deserializeBtcTransactionWithInputs(data, networkParameters));
+        return Optional.ofNullable(svpFundTxSigned);
+    }
+
+    public Optional<Sha256Hash> getSvpSpendTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpSpendTxHashUnsigned != null) {
+            return Optional.of(svpSpendTxHashUnsigned);
+        }
+
+        // Return empty if the svp spend tx hash unsigned was explicitly set to null
+        if (isSvpSpendTxHashUnsignedSet) {
+            return Optional.empty();
+        }
+
+        svpSpendTxHashUnsigned = safeGetFromRepository(
+            SVP_SPEND_TX_HASH_UNSIGNED.getKey(), BridgeSerializationUtils::deserializeSha256Hash);
+        return Optional.ofNullable(svpSpendTxHashUnsigned);
+    }
+
+    public Optional<Map.Entry<Keccak256, BtcTransaction>> getSvpSpendTxWaitingForSignatures() {
+        if (!activations.isActive(RSKIP419)) {
+            return Optional.empty();
+        }
+
+        if (svpSpendTxWaitingForSignatures != null) {
+            return Optional.of(svpSpendTxWaitingForSignatures);
+        }
+    
+        // Return empty if the svp spend tx waiting for signatures was explicitly set to null
+        if (isSvpSpendTxWaitingForSignaturesSet) {
+            return Optional.empty();
+        }
+
+        svpSpendTxWaitingForSignatures = safeGetFromRepository(
+            SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
+            data -> BridgeSerializationUtils.deserializeRskTxWaitingForSignatures(data, networkParameters));
+
+        return Optional.ofNullable(svpSpendTxWaitingForSignatures);
+    }
+
+    public void setSvpFundTxHashUnsigned(Sha256Hash hash) {
+        this.svpFundTxHashUnsigned = hash;
+        this.isSvpFundTxHashUnsignedSet = true;
+    }
+
+    public void clearSvpFundTxHashUnsigned() {
+        logger.info("[clearSvpFundTxHashUnsigned] Clearing fund tx hash unsigned.");
+        setSvpFundTxHashUnsigned(null);
+    }
+
+    private void saveSvpFundTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419) || !isSvpFundTxHashUnsignedSet) {
+            return;
+        }
+
+        safeSaveToRepository(
+            SVP_FUND_TX_HASH_UNSIGNED,
+            svpFundTxHashUnsigned,
+            BridgeSerializationUtils::serializeSha256Hash
+        );
+    }
+
+    public void setSvpFundTxSigned(BtcTransaction svpFundTxSigned) {
+        this.svpFundTxSigned = svpFundTxSigned;
+        this.isSvpFundTxSignedSet = true;
+    }
+
+    public void clearSvpFundTxSigned() {
+        logger.info("[clearSvpFundTxSigned] Clearing fund tx signed.");
+        setSvpFundTxSigned(null);
+    }
+
+    private void saveSvpFundTxSigned() {
+        if (!activations.isActive(RSKIP419) || !isSvpFundTxSignedSet) {
+            return;
+        }
+
+        safeSaveToRepository(
+            SVP_FUND_TX_SIGNED,
+            svpFundTxSigned,
+            BridgeSerializationUtils::serializeBtcTransaction);
+    }
+
+    public void setSvpSpendTxHashUnsigned(Sha256Hash hash) {
+        this.svpSpendTxHashUnsigned = hash;
+        this.isSvpSpendTxHashUnsignedSet = true;
+    }
+
+    public void clearSvpSpendTxHashUnsigned() {
+        logger.info("[clearSvpSpendTxHashUnsigned] Clearing spend tx hash unsigned.");
+        setSvpSpendTxHashUnsigned(null);
+    }
+
+    private void saveSvpSpendTxHashUnsigned() {
+        if (!activations.isActive(RSKIP419) || !isSvpSpendTxHashUnsignedSet) {
+            return;
+        }
+
+        safeSaveToRepository(
+            SVP_SPEND_TX_HASH_UNSIGNED,
+            svpSpendTxHashUnsigned,
+            BridgeSerializationUtils::serializeSha256Hash);
+    }
+
+    public void setSvpSpendTxWaitingForSignatures(Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures) {
+        boolean hasNullKeyOrValue = svpSpendTxWaitingForSignatures != null &&
+            (svpSpendTxWaitingForSignatures.getKey() == null || svpSpendTxWaitingForSignatures.getValue() == null);
+        if (hasNullKeyOrValue) {
+            throw new IllegalArgumentException(
+                String.format("Invalid svpSpendTxWaitingForSignatures, has null key or value: %s", svpSpendTxWaitingForSignatures)
+            );
+        }
+
+        this.svpSpendTxWaitingForSignatures = svpSpendTxWaitingForSignatures;
+        this.isSvpSpendTxWaitingForSignaturesSet = true;
+    }
+
+    public void clearSvpSpendTxWaitingForSignatures() {
+        logger.info("[clearSvpSpendTxWaitingForSignatures] Clearing spend tx waiting for signatures.");
+        setSvpSpendTxWaitingForSignatures(null);
+    }
+
+    private void saveSvpSpendTxWaitingForSignatures() {
+        if (!activations.isActive(RSKIP419) || !isSvpSpendTxWaitingForSignaturesSet) {
+            return;
+        }
+
+        safeSaveToRepository(
+            SVP_SPEND_TX_WAITING_FOR_SIGNATURES,
+            svpSpendTxWaitingForSignatures,
+            BridgeSerializationUtils::serializeRskTxWaitingForSignatures
+        );
+    }
+
+    public void clearSvpValues() {
+        logger.info("[clearSvpValues] Clearing all SVP values.");
+
+        clearSvpFundTxHashUnsigned();
+        clearSvpFundTxSigned();
+        clearSvpSpendTxWaitingForSignatures();
+        clearSvpSpendTxHashUnsigned();
+    }
+
     public void save() {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -542,6 +734,11 @@ public class BridgeStorageProvider {
         saveNextPegoutHeight();
 
         savePegoutTxSigHashes();
+
+        saveSvpFundTxHashUnsigned();
+        saveSvpFundTxSigned();
+        saveSvpSpendTxHashUnsigned();
+        saveSvpSpendTxWaitingForSignatures();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {

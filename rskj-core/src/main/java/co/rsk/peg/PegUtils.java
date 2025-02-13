@@ -1,27 +1,26 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.getMultiSigTransactionHashWithoutSignatures;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationContext;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -91,34 +90,16 @@ public class PegUtils {
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         BridgeConstants bridgeConstants,
-        Federation activeFederation,
-        Federation retiringFederation,
-        Script retiredFederationP2SHScript,
+        FederationContext federationContext,
         BtcTransaction btcTransaction,
         long btcTransactionHeight
     ) {
-        List<Federation> liveFeds = new ArrayList<>();
-        liveFeds.add(activeFederation);
-        if (retiringFederation != null){
-            liveFeds.add(retiringFederation);
-        }
+        List<Federation> liveFeds = federationContext.getLiveFederations();
         Context context = Context.getOrCreate(bridgeConstants.getBtcParams());
         Wallet liveFederationsWallet = new BridgeBtcWallet(context, liveFeds);
 
-        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
-        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
-        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
-        boolean shouldUsePegoutTxIndex = activations.isActive(ConsensusRule.RSKIP379) &&
-            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
-
-        if (shouldUsePegoutTxIndex){
-            return getTransactionTypeUsingPegoutIndex(
-                activations,
-                provider,
-                liveFederationsWallet,
-                btcTransaction
-            );
-        } else {
+        if (!isPegoutTxIndexEnabled(bridgeConstants, activations, btcTransactionHeight)) {
+            // Use legacy logic
             Coin minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValue(activations);
             FederationConstants federationConstants = bridgeConstants.getFederationConstants();
             Address oldFederationAddress = Address.fromBase58(
@@ -128,15 +109,84 @@ public class PegUtils {
 
             return PegUtilsLegacy.getTransactionType(
                 btcTransaction,
-                activeFederation,
-                retiringFederation,
-                retiredFederationP2SHScript,
+                federationContext,
                 oldFederationAddress,
                 activations,
                 minimumPeginTxValue,
                 liveFederationsWallet
             );
         }
+
+        // Check first if the transaction is part of an SVP process
+        if (isTheSvpFundTransaction(bridgeConstants.getBtcParams(), provider, btcTransaction)) {
+            return PegTxType.SVP_FUND_TX;
+        }
+        if (isTheSvpSpendTransaction(bridgeConstants.getBtcParams(), provider, btcTransaction)) {
+            return PegTxType.SVP_SPEND_TX;
+        }
+
+        return getTransactionTypeUsingPegoutIndex(
+            activations,
+            provider,
+            liveFederationsWallet,
+            btcTransaction
+        );
+    }
+
+    private static boolean isPegoutTxIndexEnabled(
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        long btcTransactionHeight
+    ) {
+        int btcHeightWhenPegoutTxIndexActivates = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates();
+        int pegoutTxIndexGracePeriodInBtcBlocks = bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+        int heightAtWhichToStartUsingPegoutIndex = btcHeightWhenPegoutTxIndexActivates + pegoutTxIndexGracePeriodInBtcBlocks;
+        return activations.isActive(ConsensusRule.RSKIP379) &&
+            btcTransactionHeight >= heightAtWhichToStartUsingPegoutIndex;
+    }
+
+    private static boolean isTheSvpFundTransaction(
+        NetworkParameters networkParameters,
+        BridgeStorageProvider provider,
+        BtcTransaction transaction
+    ) {
+        return provider.getSvpFundTxHashUnsigned()
+            .map(svpFundTxHashUnsigned -> {
+                try {
+                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
+                    return svpFundTxHashUnsigned.equals(txHashWithoutSignatures);
+                } catch (IllegalArgumentException e) {
+                    logger.trace(
+                        "[isTheSvpFundTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the fund tx",
+                        transaction.getHash(),
+                        e
+                    );
+                    return false;
+                }
+            })
+            .orElse(false);
+    }
+
+    private static boolean isTheSvpSpendTransaction(
+        NetworkParameters networkParameters,
+        BridgeStorageProvider provider,
+        BtcTransaction transaction
+    ) {
+        return provider.getSvpSpendTxHashUnsigned()
+            .map(svpSpendTxHashUnsigned -> {
+                try {
+                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
+                    return svpSpendTxHashUnsigned.equals(txHashWithoutSignatures);
+                } catch (IllegalArgumentException e) {
+                    logger.trace(
+                        "[isTheSvpSpendTransaction] Btc tx {} either has witness or non p2sh-legacy-multisig inputs, so we'll assume is not the spend tx",
+                        transaction.getHash(),
+                        e
+                    );
+                    return false;
+                }
+            })
+            .orElse(false);
     }
 
     static PeginEvaluationResult evaluatePegin(
@@ -146,13 +196,13 @@ public class PegUtils {
         Wallet fedWallet,
         ActivationConfig.ForBlock activations
     ) {
-        if(!activations.isActive(ConsensusRule.RSKIP379)) {
+        if (!activations.isActive(ConsensusRule.RSKIP379)) {
             throw new IllegalStateException("Can't call this method before RSKIP379 activation");
         }
 
-        if(!allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPeginTxValue, activations)) {
+        if (!allUTXOsToFedAreAboveMinimumPeginValue(btcTx, fedWallet, minimumPeginTxValue, activations)) {
             logger.debug("[evaluatePegin] Peg-in contains at least one utxo below the minimum value");
-            return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, INVALID_AMOUNT);
+            return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, INVALID_AMOUNT);
         }
 
         try {
@@ -166,8 +216,8 @@ public class PegUtils {
             boolean hasRefundAddress = peginInformation.getBtcRefundAddress() != null;
 
             PeginProcessAction peginProcessAction = hasRefundAddress ?
-                                                        PeginProcessAction.CAN_BE_REFUNDED :
-                                                        PeginProcessAction.CANNOT_BE_PROCESSED;
+                                                        PeginProcessAction.REFUND :
+                                                        PeginProcessAction.NO_REFUND;
 
             return new PeginEvaluationResult(peginProcessAction, PEGIN_V1_INVALID_PAYLOAD);
         }
@@ -177,7 +227,7 @@ public class PegUtils {
             case 0:
                 return evaluateLegacyPeginSender(peginInformation.getSenderBtcAddressType());
             case 1:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+                return new PeginEvaluationResult(PeginProcessAction.REGISTER);
             default:
                 // This flow should never be reached.
                 String message = String.format("Invalid state. Unexpected pegin protocol %d", protocolVersion);
@@ -190,12 +240,27 @@ public class PegUtils {
         switch (senderAddressType) {
             case P2PKH:
             case P2SHP2WPKH:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REGISTERED);
+                return new PeginEvaluationResult(PeginProcessAction.REGISTER);
             case P2SHMULTISIG:
             case P2SHP2WSH:
-                return new PeginEvaluationResult(PeginProcessAction.CAN_BE_REFUNDED, LEGACY_PEGIN_MULTISIG_SENDER);
+                return new PeginEvaluationResult(PeginProcessAction.REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
             default:
-                return new PeginEvaluationResult(PeginProcessAction.CANNOT_BE_PROCESSED, LEGACY_PEGIN_UNDETERMINED_SENDER);
+                return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_UNDETERMINED_SENDER);
         }
+    }
+
+    public static Address getFlyoverAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Script redeemScript) {
+        Script flyoverScriptPubKey = getFlyoverScriptPubKey(flyoverDerivationHash, redeemScript);
+        return Address.fromP2SHScript(networkParameters, flyoverScriptPubKey);
+    }
+
+    public static Script getFlyoverScriptPubKey(Keccak256 flyoverDerivationHash, Script redeemScript) {
+        Script flyoverRedeemScript = getFlyoverRedeemScript(flyoverDerivationHash, redeemScript);
+        return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+    }
+
+    public static Script getFlyoverRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
+        return FlyoverRedeemScriptBuilderImpl.builder()
+            .of(flyoverDerivationHash, redeemScript);
     }
 }

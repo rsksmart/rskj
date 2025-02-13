@@ -24,8 +24,11 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,17 +36,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by ajlopez on 17/01/2018.
  */
 public class FilterManager {
-    private static final long filterTimeout = 5 * 60 * 1000L; // 5 minutes in milliseconds
-    private static final long filterCleanupPeriod = 1 * 60 * 1000L; // 1 minute in milliseconds
 
-    private long latestFilterCleanup = System.currentTimeMillis();
+    private static final Logger logger = LoggerFactory.getLogger(FilterManager.class);
+
+    private static final long FILTER_TIMEOUT = Duration.ofMinutes(5).toMillis(); // 5 minutes in milliseconds
+    private static final long FILTER_CLEANUP_PERIOD = Duration.ofMinutes(1).toMillis(); // 1 minute in milliseconds
 
     private final Object filterLock = new Object();
-
-    private AtomicInteger filterCounter = new AtomicInteger(1);
+    private final AtomicInteger filterCounter = new AtomicInteger(1);
 
     @GuardedBy("filterLock")
-    private Map<Integer, Filter> installedFilters = new HashMap<>();
+    private final Map<Integer, Filter> installedFilters = new HashMap<>();
+
+    private long latestFilterCleanup = System.currentTimeMillis();
 
     public FilterManager(Ethereum eth) {
         eth.addListener(new EthereumListenerAdapter() {
@@ -66,17 +71,27 @@ public class FilterManager {
             int id = filterCounter.getAndIncrement();
             installedFilters.put(id, filter);
 
+            logger.debug("[{}] installed with id: [{}]", filter.getClass().getSimpleName(), id);
+
             return id;
         }
     }
 
     public boolean removeFilter(int id) {
         synchronized (filterLock) {
-            return installedFilters.remove(id) != null;
+            Filter filter = installedFilters.remove(id);
+            boolean removed = filter != null;
+            if (removed) {
+                logger.debug("[{}] with id: [{}] uninstalled", filter.getClass().getSimpleName(), id);
+            } else {
+                logger.debug("Cannot uninstalled filter with id: [{}] - not found", id);
+            }
+
+            return removed;
         }
     }
 
-    public Object[] getFilterEvents(int id, boolean newevents) {
+    public Object[] getFilterEvents(int id, boolean newEvents) {
         synchronized (filterLock) {
             filtersCleanup();
 
@@ -86,7 +101,7 @@ public class FilterManager {
                 throw filterNotFound("filter not found");
             }
 
-            if (newevents) {
+            if (newEvents) {
                 return filter.getNewEvents();
             }
             else {
@@ -120,7 +135,7 @@ public class FilterManager {
     private void filtersCleanup() {
         long now = System.currentTimeMillis();
 
-        if (latestFilterCleanup + filterCleanupPeriod > now) {
+        if (latestFilterCleanup + FILTER_CLEANUP_PERIOD > now) {
             return;
         }
 
@@ -129,8 +144,9 @@ public class FilterManager {
         for (Map.Entry<Integer, Filter> entry : installedFilters.entrySet()) {
             Filter f = entry.getValue();
 
-            if (f.hasExpired(filterTimeout)) {
+            if (f.hasExpired(FILTER_TIMEOUT)) {
                 toremove.add(entry.getKey());
+                logger.debug("[{}] with id: [{}] expired", f.getClass().getSimpleName(), entry.getKey());
             }
         }
 
