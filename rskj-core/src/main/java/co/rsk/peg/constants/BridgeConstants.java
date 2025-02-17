@@ -37,7 +37,6 @@ public abstract class BridgeConstants {
     protected LockingCapConstants lockingCapConstants;
 
     protected int btc2RskMinimumAcceptableConfirmations;
-    protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
 
     protected int updateBridgeExecutionPeriod;
@@ -83,10 +82,6 @@ public abstract class BridgeConstants {
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
-    }
-
-    public int getBtc2RskMinimumAcceptableConfirmationsOnRsk() {
-        return btc2RskMinimumAcceptableConfirmationsOnRsk;
     }
 
     public int getRsk2BtcMinimumAcceptableConfirmations() {
