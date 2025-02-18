@@ -1310,7 +1310,7 @@ public class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forPeginV1_whenWaitingForSvpSpendTx_shouldProcessButNotRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
+        void registerBtcTransaction_forPeginV1_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
