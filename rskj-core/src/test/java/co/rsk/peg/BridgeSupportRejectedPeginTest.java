@@ -1,7 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupportTestUtil.createValidPmtForTransactions;
-import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD;
 import static co.rsk.peg.utils.NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -206,8 +205,7 @@ class BridgeSupportRejectedPeginTest {
     private PartialMerkleTree createPmtAndMockBlockStore(BtcTransaction btcTransaction)
         throws BlockStoreException {
 
-        PartialMerkleTree pmt = createValidPmtForTransactions(
-            Collections.singletonList(btcTransaction.getHash()), btcMainnetParams);
+        PartialMerkleTree pmt = createValidPmtForTransactions(List.of(btcTransaction), btcMainnetParams);
 
         Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
         registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
