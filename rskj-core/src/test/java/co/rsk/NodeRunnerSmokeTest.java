@@ -48,6 +48,13 @@ class NodeRunnerSmokeTest {
     }
 
     @Test
+    void testnet2SmokeTest() {
+        RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "testnet2"), "--testnet2");
+        assertThat(rskContext.getNodeRunner(), notNullValue());
+        rskContext.close();
+    }
+
+    @Test
     void regtestSmokeTest() {
         RskTestContext rskContext = new RskTestContext(makeDbArg(tempDir, "regtest"), "--regtest");
         assertThat(rskContext.getNodeRunner(), notNullValue());
