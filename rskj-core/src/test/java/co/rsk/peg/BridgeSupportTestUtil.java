@@ -4,6 +4,8 @@ import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -11,7 +13,9 @@ import co.rsk.trie.Trie;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
 
 public final class BridgeSupportTestUtil {
@@ -97,5 +101,63 @@ public final class BridgeSupportTestUtil {
         when(currentStored.getHeader()).thenReturn(currentBlock);
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
+    }
+
+    public static Keccak256 getFlyoverDerivationHash(
+        ActivationConfig.ForBlock activations,
+        Keccak256 derivationArgumentsHash,
+        Address userRefundAddress,
+        Address lpBtcAddress,
+        RskAddress lbcAddress
+    ) {
+        byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
+        byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
+        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
+        byte[] lbcAddressBytes = lbcAddress.getBytes();
+        byte[] result = new byte[
+            flyoverDerivationHashData.length +
+                userRefundAddressBytes.length +
+                lpBtcAddressBytes.length +
+                lbcAddressBytes.length
+            ];
+
+        int dstPosition = 0;
+
+        System.arraycopy(
+            flyoverDerivationHashData,
+            0,
+            result,
+            dstPosition,
+            flyoverDerivationHashData.length
+        );
+        dstPosition += flyoverDerivationHashData.length;
+
+        System.arraycopy(
+            userRefundAddressBytes,
+            0,
+            result,
+            dstPosition,
+            userRefundAddressBytes.length
+        );
+        dstPosition += userRefundAddressBytes.length;
+
+        System.arraycopy(
+            lbcAddressBytes,
+            0,
+            result,
+            dstPosition,
+            lbcAddressBytes.length
+        );
+        dstPosition += lbcAddressBytes.length;
+
+        System.arraycopy(
+            lpBtcAddressBytes,
+            0,
+            result,
+            dstPosition,
+            lpBtcAddressBytes.length
+        );
+
+        return new Keccak256(HashUtil.keccak256(result));
     }
 }
