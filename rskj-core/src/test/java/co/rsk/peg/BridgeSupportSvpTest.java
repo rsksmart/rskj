@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
@@ -1715,20 +1714,11 @@ public class BridgeSupportSvpTest {
     }
 
     private void setUpForTransactionRegistration(BtcTransaction transaction) throws BlockStoreException {
-        if (!transaction.hasWitness()) {
-            setUpForTransactionRegistration(transaction.getHash());
-            return;
-        }
-
-        setUpForTransactionRegistration(transaction.getHash(true));
-    }
-
-    private void setUpForTransactionRegistration(Sha256Hash transactionHash) throws BlockStoreException {
         // recreate a valid chain that has the tx, so it passes the previous checks in registerBtcTransaction
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
         BtcBlockStoreWithCache btcBlockStoreWithCache = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
 
-        pmtWithTransactions = createValidPmtForTransactions(Collections.singletonList(transactionHash), btcMainnetParams);
+        pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), btcMainnetParams);
         btcBlockWithPmtHeight = bridgeMainNetConstants.getBtcHeightWhenPegoutTxIndexActivates() + bridgeMainNetConstants.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
 
         int chainHeight = btcBlockWithPmtHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();

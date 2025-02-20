@@ -19,7 +19,24 @@ public final class BridgeSupportTestUtil {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
-    public static PartialMerkleTree createValidPmtForTransactions(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
+    public static PartialMerkleTree createValidPmtForTransactions(List<BtcTransaction> btcTransactions, NetworkParameters networkParameters) {
+        List<Sha256Hash> hashesToAdd = new ArrayList<>();
+        for (BtcTransaction transaction : btcTransactions) {
+            hashesToAdd.add(getHashConsideringWitness(transaction));
+        }
+
+        return createValidPmtForTransactionsHashes(hashesToAdd, networkParameters);
+    }
+
+    private static Sha256Hash getHashConsideringWitness(BtcTransaction btcTransaction) {
+        if (!btcTransaction.hasWitness()) {
+            return btcTransaction.getHash();
+        }
+
+        return btcTransaction.getHash(true);
+    }
+
+    private static PartialMerkleTree createValidPmtForTransactionsHashes(List<Sha256Hash> hashesToAdd, NetworkParameters networkParameters) {
         byte[] relevantNodesBits = new byte[(int)Math.ceil(hashesToAdd.size() / 8.0)];
         for (int i = 0; i < hashesToAdd.size(); i++) {
             Utils.setBitLE(relevantNodesBits, i);
@@ -45,7 +62,7 @@ public final class BridgeSupportTestUtil {
 
         // create and store a new chainHead at wanted chain height
         Sha256Hash otherTransactionHash = Sha256Hash.of(Hex.decode("aa"));
-        PartialMerkleTree pmt = createValidPmtForTransactions(Collections.singletonList(otherTransactionHash), networkParameters);
+        PartialMerkleTree pmt = createValidPmtForTransactionsHashes(List.of(otherTransactionHash), networkParameters);
         BtcBlock chainHeadBlock = createBtcBlockWithPmt(pmt, networkParameters);
         StoredBlock storedChainHeadBlock = new StoredBlock(chainHeadBlock, BigInteger.TEN, chainHeight);
         btcBlockStoreWithCache.put(storedChainHeadBlock);
