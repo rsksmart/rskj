@@ -1031,6 +1031,7 @@ class RemascProcessMinerFeesTest {
                 config.getActivationConfig(), signatureCache);
 
         return new BlockExecutor(
+                blockStore,
                 repositoryLocator,
                 new TransactionExecutorFactory(
                         config,
