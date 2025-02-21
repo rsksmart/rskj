@@ -49,6 +49,7 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -456,6 +457,7 @@ class RemascStorageProviderTest {
         testRunner.setFixedCoinbase(coinbase);
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
+        BlockStore blockStore = builder.getBlockStore();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         List<Block> blocks = new ArrayList<>();
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blockchain.getBestBlock(), PegTestUtils.createHash3(),
@@ -477,10 +479,11 @@ class RemascStorageProviderTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
+                blockStore,
                 repositoryLocator,
                 new TransactionExecutorFactory(
                         config,
-                        builder.getBlockStore(),
+                        blockStore,
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
