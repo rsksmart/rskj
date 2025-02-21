@@ -41,6 +41,7 @@ class BlockHeaderV1Test {
                 false,
                 false,
                 null,
+                null,
                 new short[0],
                 false
         );

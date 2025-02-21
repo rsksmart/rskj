@@ -41,6 +41,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
@@ -80,12 +81,13 @@ public class BlockExecutorTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final ActivationConfig activationConfig = spy(config.getActivationConfig());
-    private final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
+    private final BlockFactory blockFactory = new BlockFactory(activationConfig);
 
     @TempDir
     public Path tempDir;
 
     private Blockchain blockchain;
+    private BlockStore blockStore;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
 
@@ -93,6 +95,7 @@ public class BlockExecutorTest {
     public void setUp() {
         RskTestFactory objects = new RskTestFactory(tempDir, config);
         blockchain = objects.getBlockchain();
+        blockStore = objects.getBlockStore();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
     }
@@ -1469,12 +1472,13 @@ public class BlockExecutorTest {
         BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         return new BlockExecutor(
+                blockStore,
                 new RepositoryLocator(store, stateRootHandler),
                 new TransactionExecutorFactory(
                         cfg,
                         null,
                         null,
-                        BLOCK_FACTORY,
+                        blockFactory,
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
                         signatureCache

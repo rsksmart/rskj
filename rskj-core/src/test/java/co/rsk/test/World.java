@@ -179,6 +179,7 @@ public class World {
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
+                    getBlockStore(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,

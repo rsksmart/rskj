@@ -17,12 +17,17 @@
  */
 package org.ethereum.rpc.dto;
 
+import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.DifficultyUtils;
 import co.rsk.util.HexUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
@@ -31,6 +36,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -40,13 +46,15 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class BlockResultDTOTest {
 
     private Block block;
+    private Constants constants;
+    private ActivationConfig activationConfig;
     private BlockStore blockStore;
 
     @TempDir
@@ -62,12 +70,14 @@ class BlockResultDTOTest {
     void setup() {
         block = buildBlockWithTransactions(Arrays.asList(TRANSACTION, REMASC_TRANSACTION));
         blockStore = mock(BlockStore.class);
+        constants = mock(Constants.class, Mockito.RETURNS_DEEP_STUBS);
+        activationConfig = mock(ActivationConfig.class);
         when(blockStore.getTotalDifficultyForHash(any())).thenReturn(BlockDifficulty.ONE);
     }
 
     @Test
     void getBlockResultDTOWithRemascAndTransactionHashes() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         List<String> transactionHashes = transactionHashesByBlock(blockResultDTO);
 
         Assertions.assertNotNull(blockResultDTO);
@@ -78,7 +88,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithoutRemascAndTransactionHashes() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         List<String> transactionHashes = transactionHashesByBlock(blockResultDTO);
 
         Assertions.assertNotNull(blockResultDTO);
@@ -90,7 +100,7 @@ class BlockResultDTOTest {
     @Test
     void getBlockResultDTOWithoutRemasc_emptyTransactions() {
         Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertEquals(HexUtils.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
 
@@ -98,10 +108,9 @@ class BlockResultDTOTest {
         Assertions.assertTrue(blockResultDTO.getTransactions().isEmpty());
     }
 
-
     @Test
     void getBlockResultDTOWithNullSignatureRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, constants, activationConfig, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNotNull(blockResultDTO);
         Assertions.assertEquals(2, blockResultDTO.getTransactions().size());
 
@@ -118,7 +127,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithWithZeroSignatureRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, true, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, constants, activationConfig, false, true, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNotNull(blockResultDTO);
         Assertions.assertEquals(2, blockResultDTO.getTransactions().size());
 
@@ -134,7 +143,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithoutRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, constants, activationConfig, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         List<String> transactionResultsHashes = transactionResultsByBlock(blockResultDTO).stream().map(e -> e.getHash()).collect(Collectors.toList());
 
@@ -143,6 +152,44 @@ class BlockResultDTOTest {
         Assertions.assertTrue(transactionResultsHashes.contains(TRANSACTION.getHash().toJsonString()));
         Assertions.assertFalse(transactionResultsHashes.contains(REMASC_TRANSACTION.getHash().toJsonString()));
         Assertions.assertNotNull(blockResultDTO.getRskPteEdges());
+    }
+
+    @Test
+    void getSuperBlockResultDTOWhenNotActivated() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP481), anyLong())).thenReturn(false);
+        Block block = buildBlockWithTransactions(List.of(REMASC_TRANSACTION));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNotNull(blockResultDTO);
+        Assertions.assertNull(blockResultDTO.isSuper());
+    }
+
+    @Test
+    void getSuperBlockResultDTOWhenActivated() {
+        BtcBlock btcBlock = mock(BtcBlock.class, Mockito.RETURNS_DEEP_STUBS);
+        when(btcBlock.getHash().toBigInteger()).thenReturn(BigInteger.valueOf(1));
+        when(constants.getBridgeConstants().getBtcParams().getDefaultSerializer().makeBlock(any())).thenReturn(btcBlock);
+        when(constants.getMinSuperBlockPoWFactor()).thenReturn(BigInteger.ONE);
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP481), anyLong())).thenReturn(true);
+        Block block = buildBlockWithTransactions(List.of(REMASC_TRANSACTION));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNotNull(blockResultDTO);
+        Assertions.assertTrue(blockResultDTO.isSuper());
+    }
+
+    @Test
+    void getNonSuperBlockResultDTOWhenActivated() {
+        BtcBlock btcBlock = mock(BtcBlock.class, Mockito.RETURNS_DEEP_STUBS);
+        when(btcBlock.getHash().toBigInteger()).thenReturn(DifficultyUtils.MAX);
+        when(constants.getBridgeConstants().getBtcParams().getDefaultSerializer().makeBlock(any())).thenReturn(btcBlock);
+        when(constants.getMinSuperBlockPoWFactor()).thenReturn(BigInteger.ONE);
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP481), anyLong())).thenReturn(true);
+        Block block = buildBlockWithTransactions(List.of(REMASC_TRANSACTION));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertNotNull(blockResultDTO);
+        Assertions.assertFalse(blockResultDTO.isSuper());
     }
 
     private List<TransactionResultDTO> transactionResultsByBlock(BlockResultDTO blockResultDTO) {

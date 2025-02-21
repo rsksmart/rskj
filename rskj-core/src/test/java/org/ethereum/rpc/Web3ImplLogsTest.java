@@ -847,7 +847,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithEventInContractCreationReturnsAsExpectedWithBlockHashFilter() throws Exception {
         addEventInContractCreation();
-        final String blockHash = "0xed4afd31173a73c4c5135aae72b940507b97605a5129790de00510894f58f5ce";
+        final String blockHash = "0x0dd6d5add5dcf48170759839e55697f366f20e911ff56097e0a8a1b769dd3475";
         FilterRequestParam fr = new FilterRequestParam(null, null, null, null, new BlockHashParam(blockHash));
 
         Object[] logs = web3.eth_getLogs(fr);
@@ -1186,7 +1186,7 @@ class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null, blockStore, new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)))
+        Block block1 = new BlockBuilder(blockChain, null, blockStore, new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP481)))
                 .trieStore(trieStore).parent(genesis).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
     }
