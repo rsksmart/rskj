@@ -63,6 +63,7 @@ public class Constants {
     public final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
     private final long minSequentialSetGasLimit;
+    private final BigInteger minSuperBlockPoWFactor = BigInteger.valueOf(20);
 
     public Constants(
             byte chainId,
@@ -241,6 +242,10 @@ public class Constants {
 
     public long getMinSequentialSetGasLimit() {
         return minSequentialSetGasLimit;
+    }
+
+    public BigInteger getMinSuperBlockPoWFactor() {
+        return minSuperBlockPoWFactor;
     }
 
     public static Constants mainnet() {

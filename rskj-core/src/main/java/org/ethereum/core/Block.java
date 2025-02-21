@@ -380,6 +380,10 @@ public class Block {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
     }
 
+    public byte[] getSuperChainDataHash() {
+        return header.getSuperChainDataHash();
+    }
+
     public void flushRLP() {
         this.rlpEncoded = null;
     }

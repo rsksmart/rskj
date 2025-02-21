@@ -22,6 +22,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
+import co.rsk.util.SuperChainUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.SignatureCache;
@@ -62,6 +65,7 @@ public class BlockResultDTO {
     private final String paidFees;
     private final String cumulativeDifficulty;
     private final short[] rskPteEdges;
+    private final Boolean superBlock;
 
     private BlockResultDTO(
             Long number,
@@ -90,7 +94,8 @@ public class BlockResultDTO {
             byte[] bitcoinMergedMiningMerkleProof,
             byte[] hashForMergedMining,
             Coin paidFees,
-            short[] rskPteEdges) {
+            short[] rskPteEdges,
+            Boolean superBlock) {
         this.number = number != null ? HexUtils.toQuantityJsonHex(number) : null;
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
@@ -123,9 +128,11 @@ public class BlockResultDTO {
         this.paidFees = paidFees != null ? HexUtils.toQuantityJsonHex(paidFees.getBytes()) : null;
 
         this.rskPteEdges = copyOfArrayOrNull(rskPteEdges);
+
+        this.superBlock = superBlock;
     }
 
-    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
+    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, Constants constants, ActivationConfig activationConfig, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         if (b == null) {
             return null;
         }
@@ -155,6 +162,8 @@ public class BlockResultDTO {
                     EMPTY_TRIE_HASH :
                     b.getTxTrieRoot();
 
+        Boolean superBlock = SuperChainUtils.isSuperBlock(constants, activationConfig, b.getHeader()).orElse(null);
+
         return new BlockResultDTO(
                 isPending ? null : b.getNumber(),
                 isPending ? null : b.getHash(),
@@ -182,7 +191,8 @@ public class BlockResultDTO {
                 b.getBitcoinMergedMiningMerkleProof(),
                 b.getHashForMergedMining(),
                 b.getFeesPaidToMiner(),
-                b.getHeader().getTxExecutionSublistsEdges()
+                b.getHeader().getTxExecutionSublistsEdges(),
+                superBlock
         );
     }
 
@@ -302,6 +312,10 @@ public class BlockResultDTO {
 
     public short[] getRskPteEdges() {
         return copyOfArrayOrNull(rskPteEdges);
+    }
+
+    public Boolean isSuper() {
+        return superBlock;
     }
 
     @Nullable
