@@ -114,6 +114,8 @@ public abstract class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
+    private byte[] superChainDataHash;
+
     private final byte[] ummRoot;
 
     protected byte[] extensionData;
@@ -142,7 +144,7 @@ public abstract class BlockHeader {
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -168,6 +170,7 @@ public abstract class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+        this.superChainDataHash = superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
     }
 
     public abstract void setExtension(BlockHeaderExtension extension);
@@ -377,6 +380,10 @@ public abstract class BlockHeader {
 
         if (this.ummRoot != null) {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
+        }
+
+        if (this.superChainDataHash != null) {
+            fieldToEncodeList.add(RLP.encodeElement(this.superChainDataHash));
         }
 
         this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
@@ -628,5 +635,19 @@ public abstract class BlockHeader {
 
     public byte[] getUmmRoot() {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+    }
+
+    public byte[] getSuperChainDataHash() {
+        return superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
+    }
+
+    public void setSuperChainDataHash(byte[] superChainDataHash) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter super chain data hash");
+        }
+        this.hash = null;
+
+        this.superChainDataHash = superChainDataHash;
     }
 }

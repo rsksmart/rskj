@@ -19,11 +19,15 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.SuperChainUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -105,7 +109,7 @@ public class FamilyUtils {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(@Nonnull BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
         Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
@@ -169,5 +173,27 @@ public class FamilyUtils {
         }
 
         return family;
+    }
+
+    @Nullable
+    public static BlockHeader getSuperParent(BlockStore store,
+                                             Constants constants, ActivationConfig activationConfig,
+                                             BlockHeader header) {
+        // TODO: validate performance of this method
+
+        Block parent = store.getBlockByHash(header.getParentHash().getBytes());
+        while (parent != null) {
+            BlockHeader parentHeader = parent.getHeader();
+            if (SuperChainUtils.isSuperBlock(constants, activationConfig, parentHeader).orElse(false)) {
+                return parentHeader;
+            }
+            if (parent.getSuperChainDataHash() == null) {
+                return null;
+            }
+
+            parent = store.getBlockByHash(parent.getParentHash().getBytes());
+        }
+
+        return null;
     }
 }
