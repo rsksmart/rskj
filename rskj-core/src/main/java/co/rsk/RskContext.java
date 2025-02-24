@@ -85,6 +85,8 @@ import co.rsk.rpc.modules.trace.TraceModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.rpc.netty.*;
+import co.rsk.rest.RestServer;
+import co.rsk.rest.dto.RestModuleConfigDTO;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PeerScoringReporterService;
@@ -166,6 +168,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private static final String CACHE_FILE_NAME = "rskcache";
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
+
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
     private MiningMainchainView miningMainchainView;
@@ -262,10 +265,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private BlockChainFlusher blockChainFlusher;
     private MinGasPriceProvider minGasPriceProvider;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
+    private RestServer restServer;
 
     private volatile boolean closed;
 
     /***** Constructors ***********************************************************************************************/
+
     public RskContext(String[] args) {
         RskCli rskCli = new RskCli();
         rskCli.load(args);
@@ -1050,6 +1055,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             internalServices.add(getPeerScoringReporterService());
         }
 
+        if (getRskSystemProperties().isRestServerEnabled()) {
+            internalServices.add(getRestServer());
+        }
 
         internalServices.add(getBlockChainFlusher());
 
@@ -1183,6 +1191,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return peerScoringReporterService;
+    }
+
+    public synchronized RestServer getRestServer() {
+        checkIfNotClosed();
+
+        if (restServer == null) {
+            this.restServer = buildRestServer();
+        }
+
+        return restServer;
     }
 
     public synchronized boolean isVersionOrHelpRequested() {
@@ -1502,6 +1520,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(walletDbPath, currentDbKind);
 
         return new Wallet(ds);
+    }
+
+    @Nullable
+    protected synchronized RestServer buildRestServer() {
+        RskSystemProperties config = getRskSystemProperties();
+        RestModuleConfigDTO restModuleConfigDTO = new RestModuleConfigDTO(
+                config.isHealthCheckModuleEnabled());
+        return new RestServer(config.getRestServerBindAddress(),
+                config.getRestServerPort(),
+                restModuleConfigDTO);
     }
 
     /***** Private Methods ********************************************************************************************/
