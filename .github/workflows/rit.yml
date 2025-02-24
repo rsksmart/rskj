@@ -126,7 +126,7 @@ jobs:
           echo "SAFE_PULL_REQUEST_TITLE=$SAFE_PULL_REQUEST_TITLE" >> $GITHUB_ENV
 
       - name: Run Rootstock Integration Tests
-        uses: rsksmart/rootstock-integration-tests@2952dad4efa15aafcb6f66ffb2314b1728fee67b
+        uses: rsksmart/rootstock-integration-tests@8f98dae546a3da7f1b59f3b6381202208aef40e3 #v2
         with:
           rskj-branch: ${{ env.RSKJ_BRANCH }}
           powpeg-node-branch: ${{ env.POWPEG_BRANCH }}
