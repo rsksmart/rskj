@@ -84,6 +84,21 @@ public final class TransactionUtils {
         return tx;
     }
 
+    public static Transaction createTransactionWithData(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] data) {
+        Transaction tx = Transaction
+                .builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .destination(toAddress != null ? Hex.decode(toAddress) : null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(value)
+                .data(data)
+                .build();
+        tx.sign(privateKey);
+        return tx;
+    }
+
     public static Transaction createTransaction() {
         return getTransactions(1).get(0);
     }
