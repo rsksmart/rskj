@@ -129,48 +129,96 @@ class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    void blockTimeLowerThanParentTime() {
+    void blockTimeLowerThanParentBlockTime() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
         Block parent = mock(Block.class);
+        BlockHeader parentHeader = mock(BlockHeader.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
+        when(parent.getHeader()).thenReturn(parentHeader);
+        when(parentHeader.getTimestamp()).thenReturn(10_000L + 1000);
 
+        assertFalse(validationRule.isValid(header, parent));
+    }
+
+    @Test
+    void blockTimeLowerThanParentBlockHeaderTime() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
+
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        BlockHeader parent = mock(BlockHeader.class);
+
+        when(header.getTimestamp()).thenReturn(10_000L);
         when(parent.getTimestamp()).thenReturn(10_000L + 1000);
 
         assertFalse(validationRule.isValid(header, parent));
     }
 
     @Test
-    void blockTimeGreaterThanParentTime() {
+    void blockTimeGreaterThanParentBlockTime() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
         Block parent = mock(Block.class);
+        BlockHeader parentHeader = mock(BlockHeader.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
+        when(parent.getHeader()).thenReturn(parentHeader);
+        when(parentHeader.getTimestamp()).thenReturn(10_000L - 1000);
 
+        assertTrue(validationRule.isValid(header, parent));
+    }
+
+    @Test
+    void blockTimeGreaterThanParentBlockHeaderTime() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
+
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        BlockHeader parent = mock(BlockHeader.class);
+
+        when(header.getTimestamp()).thenReturn(10_000L);
         when(parent.getTimestamp()).thenReturn(10_000L - 1000);
 
         assertTrue(validationRule.isValid(header, parent));
     }
 
     @Test
-    void blockTimeEqualsParentTime() {
+    void blockTimeEqualsParentBlockTime() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
         Block parent = mock(Block.class);
+        BlockHeader parentHeader = mock(BlockHeader.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
+        when(parent.getHeader()).thenReturn(parentHeader);
+        when(parentHeader.getTimestamp()).thenReturn(10_000L);
 
+        assertFalse(validationRule.isValid(header, parent));
+    }
+
+    @Test
+    void blockTimeEqualsParentBlockHeaderTime() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
+
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        BlockHeader parent = mock(BlockHeader.class);
+
+        when(header.getTimestamp()).thenReturn(10_000L);
         when(parent.getTimestamp()).thenReturn(10_000L);
 
         assertFalse(validationRule.isValid(header, parent));
