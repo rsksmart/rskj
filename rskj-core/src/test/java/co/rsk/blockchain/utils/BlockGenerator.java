@@ -270,6 +270,7 @@ public class BlockGenerator {
         long blockNumber = parent.getNumber() + 1;
 
         byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+        byte[] superChainDataHash = activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? new byte[0] : null;
 
         Coin coinMinGasPrice = (minGasPrice != null) ? new Coin(minGasPrice) : null;
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
@@ -286,6 +287,7 @@ public class BlockGenerator {
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
+                .setSuperChainDataHash(superChainDataHash)
                 .setTxExecutionSublistsEdges(edges)
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
