@@ -36,6 +36,9 @@ public class RskCli implements Runnable {
         @CommandLine.Option(names = {"--testnet"}, description = "Use testnet configuration")
         private boolean networkTestnet;
 
+        @CommandLine.Option(names = {"--testnet2"}, description = "Use testnet2 configuration")
+        private boolean networkTestnet2;
+
         @CommandLine.Option(names = {"--regtest"}, description = "Use regtest configuration")
         private boolean networkRegtest;
 
@@ -144,6 +147,8 @@ public class RskCli implements Runnable {
         if (networkFlags != null) {
             if (networkFlags.networkTestnet) {
                 activatedFlags.add(NodeCliFlags.NETWORK_TESTNET);
+            } else if (networkFlags.networkTestnet2) {
+                activatedFlags.add(NodeCliFlags.NETWORK_TESTNET2);
             } else if (networkFlags.networkRegtest) {
                 activatedFlags.add(NodeCliFlags.NETWORK_REGTEST);
             } else if (networkFlags.networkDevnet) {
