@@ -1610,7 +1610,7 @@ class BridgeIT {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(ACTIVE_FEDERATION_KEYS.get(0).getPrivKeyBytes());
+        rskTx.sign(REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -3363,7 +3363,7 @@ class BridgeIT {
     void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
-        byte[] privKeyBytes = ACTIVE_FEDERATION_KEYS.get(0).getPrivKeyBytes();
+        byte[] privKeyBytes = REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes();
         RskAddress sender = new RskAddress(ECKey.fromPrivate(privKeyBytes).getAddress());
 
         Transaction txMock = mock(Transaction.class);
