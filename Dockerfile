@@ -22,7 +22,7 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
 FROM eclipse-temurin:17-jre@sha256:38e0afc86a10bf4cadbf1586fb617b3a9a4d09c9a0be882e29ada4ed0895fc84
 LABEL org.opencontainers.image.authors="ops@rootstocklabs.com"
 
-RUN useradd -ms /sbin/nologin -d /var/lib/rsk -o -u 1000 rsk
+RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
 USER rsk
 
 WORKDIR /var/lib/rsk
@@ -35,3 +35,4 @@ ENV RSKJ_CLASS=co.rsk.Start
 ENV RSKJ_OPTS=""
 
 ENTRYPOINT ["/bin/sh", "-c", "exec java $DEFAULT_JVM_OPTS $RSKJ_SYS_PROPS $RSKJ_LOG_PROPS -cp rsk.jar $RSKJ_CLASS $RSKJ_OPTS \"${@}\"", "--"]
+
