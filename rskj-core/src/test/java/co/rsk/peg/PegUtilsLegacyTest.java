@@ -39,7 +39,7 @@ class PegUtilsLegacyTest {
     @BeforeEach
     void setupConfig() {
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstantsRegtest = new BridgeRegTestConstants();
+        bridgeConstantsRegtest = new BridgeRegTestConstants(fedBtcECKeys);
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
