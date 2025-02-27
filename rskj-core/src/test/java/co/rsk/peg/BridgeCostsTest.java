@@ -50,7 +50,6 @@ class BridgeCostsTest {
     void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
         constants = Constants.regtestWithFederation(fedBtcECKeys);
-        when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
@@ -69,7 +68,7 @@ class BridgeCostsTest {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(txMock, getGenesisBlock(constants, activationConfig), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
             byte[][] headers = new byte[numberOfHeaders][];
@@ -88,7 +87,7 @@ class BridgeCostsTest {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(txMock, getGenesisBlock(constants, activationConfig), null, null, null, null);
 
         final long BASE_COST = 66_000L;
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -113,7 +112,7 @@ class BridgeCostsTest {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(txMock, getGenesisBlock(constants, activationConfig), null, null, null, null);
 
         final long BASE_COST = 25_000L;
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -151,7 +150,7 @@ class BridgeCostsTest {
                 Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedBtcECKeys.get(0).getPrivKeyBytes());
 
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
+        Block rskExecutionBlock = new BlockGenerator(constants, activationConfig).createChildBlock(getGenesisInstance(config, constants));
 
         Repository mockRepository = mock(Repository.class);
         when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
@@ -254,8 +253,8 @@ class BridgeCostsTest {
 
         rskTx.sign(fedBtcECKeys.get(0).getPrivKeyBytes());
 
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
+        BlockGenerator blockGenerator = new BlockGenerator(constants, activationConfig);
+        Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config, constants));
         for (int i = 0; i < 20; i++) {
             rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
         }
@@ -267,12 +266,12 @@ class BridgeCostsTest {
         Assertions.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
     }
 
-    private Block getGenesisBlock() {
-        return new BlockGenerator().getGenesisBlock();
+    private Block getGenesisBlock(Constants constants, ActivationConfig activationConfig) {
+        return new BlockGenerator(constants, activationConfig).getGenesisBlock();
     }
 
-    public static Genesis getGenesisInstance(RskSystemProperties config) {
+    public static Genesis getGenesisInstance(RskSystemProperties config, Constants networkConstants) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
+        return new TestGenesisLoader(trieStore, config.genesisInfo(), networkConstants.getInitialNonce(), false, false, false).load();
     }
 }
