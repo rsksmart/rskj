@@ -18,7 +18,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
@@ -57,11 +56,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportAddSignatureTest {
     private static final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
-    private static final List<BtcECKey> federationECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-        new String[]{"fa91", "fa92", "fa93"}, true
+    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
+        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
+        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
     );
+    private static final List<BtcECKey> REGTEST_FEDERATION_PUBLIC_KEYS = REGTEST_FEDERATION_PRIVATE_KEYS.stream().map(BtcECKey::getPubKey).map(BtcECKey::fromPublicOnly).toList();
 
-    private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants(federationECKeys);
+    private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
     private final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
     private final Instant creationTime = Instant.ofEpochMilli(1000L);
     private final long creationBlockNumber = 0L;
@@ -365,19 +367,19 @@ class BridgeSupportAddSignatureTest {
 
     @Test
     void addSignatureWithLessSignaturesThanExpected() throws Exception {
-        List<BtcECKey> keys = Collections.singletonList(federationECKeys.get(0));
+        List<BtcECKey> keys = Collections.singletonList(REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 0, true, false, "InvalidParameters");
     }
 
     @Test
     void addSignatureWithMoreSignaturesThanExpected() throws Exception {
-        List<BtcECKey> keys = Collections.singletonList(federationECKeys.get(0));
+        List<BtcECKey> keys = Collections.singletonList(REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 2, true, false, "InvalidParameters");
     }
 
     @Test
     void addSignatureNonCanonicalSignature() throws Exception {
-        List<BtcECKey> keys = Collections.singletonList(federationECKeys.get(0));
+        List<BtcECKey> keys = Collections.singletonList(REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, false, false, "InvalidParameters");
     }
 
@@ -426,7 +428,7 @@ class BridgeSupportAddSignatureTest {
 
         int indexOfKeyToSignWith = 0;
 
-        BtcECKey privateKeyToSignWith = federationECKeys.get(indexOfKeyToSignWith);
+        BtcECKey privateKeyToSignWith = REGTEST_FEDERATION_PRIVATE_KEYS.get(indexOfKeyToSignWith);
 
         List<byte[]> derEncodedSigs;
 
@@ -446,7 +448,7 @@ class BridgeSupportAddSignatureTest {
             derEncodedSigs = Collections.singletonList(malformedSignature);
         }
 
-        BtcECKey federatorPubKey = federationECKeys.get(indexOfKeyToSignWith);
+        BtcECKey federatorPubKey = REGTEST_FEDERATION_PUBLIC_KEYS.get(indexOfKeyToSignWith);
         FederationMember federationMember = FederationTestUtils.getFederationMemberWithKey(federatorPubKey);
         bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash);
         if (shouldSignTwice) {
@@ -488,19 +490,19 @@ class BridgeSupportAddSignatureTest {
 
     @Test
     void addSignatureTwice() throws Exception {
-        List<BtcECKey> keys = Collections.singletonList(federationECKeys.get(0));
+        List<BtcECKey> keys = Collections.singletonList(REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, true, "PartiallySigned");
     }
 
     @Test
     void addSignatureOneSignature() throws Exception {
-        List<BtcECKey> keys = Collections.singletonList(federationECKeys.get(0));
+        List<BtcECKey> keys = Collections.singletonList(REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, false, "PartiallySigned");
     }
 
     @Test
     void addSignatureTwoSignatures() throws Exception {
-        List<BtcECKey> federatorPrivateKeys = federationECKeys;
+        List<BtcECKey> federatorPrivateKeys = REGTEST_FEDERATION_PRIVATE_KEYS;
         List<BtcECKey> keys = Arrays.asList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
         addSignatureFromValidFederator(keys, 1, true, false, "FullySigned");
     }
@@ -552,8 +554,8 @@ class BridgeSupportAddSignatureTest {
         // Generate valid signatures for inputs
         List<byte[]> derEncodedSigsFirstFed = new ArrayList<>();
         List<byte[]> derEncodedSigsSecondFed = new ArrayList<>();
-        BtcECKey privateKeyOfFirstFed = federationECKeys.get(0);
-        BtcECKey privateKeyOfSecondFed = federationECKeys.get(1);
+        BtcECKey privateKeyOfFirstFed = REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
+        BtcECKey privateKeyOfSecondFed = REGTEST_FEDERATION_PRIVATE_KEYS.get(1);
 
         BtcECKey.ECDSASignature lastSig = null;
         for (int i = 0; i < 3; i++) {
