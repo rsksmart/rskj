@@ -117,6 +117,12 @@ public class BridgeSupportIT {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
 
+    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
+        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
+        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    );
+
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
 
@@ -1648,8 +1654,7 @@ public class BridgeSupportIT {
 
     @Test
     void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
-        List<BtcECKey> fedBtcECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02"}, true);
-        Federation federation = getFederationWithPrivateKeys(fedBtcECKeys);
+        Federation federation = FederationTestUtils.getGenesisFederation(federationConstants);
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Repository track = repository.startTracking();
@@ -1674,12 +1679,12 @@ public class BridgeSupportIT {
         Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         // Sign by federator 0
-        BtcECKey.ECDSASignature sig0 = fedBtcECKeys.get(0).sign(sighash);
+        BtcECKey.ECDSASignature sig0 = REGTEST_FEDERATION_PRIVATE_KEYS.get(0).sign(sighash);
         TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
         int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(0));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
         // Sign by federator 1
-        BtcECKey.ECDSASignature sig1 = fedBtcECKeys.get(1).sign(sighash);
+        BtcECKey.ECDSASignature sig1 = REGTEST_FEDERATION_PRIVATE_KEYS.get(1).sign(sighash);
         TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
         int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(1));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);
