@@ -18,9 +18,13 @@
 
 package co.rsk.util;
 
+import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.core.BlockDifficulty;
+import org.ethereum.config.Constants;
+import org.ethereum.core.BlockHeader;
 
 import java.math.BigInteger;
+import java.util.Optional;
 
 /**
  * Created by martin.medina on 4/8/16.
@@ -40,5 +44,40 @@ public class DifficultyUtils {
         }
 
         return MAX.divide(resultDifficulty);
+    }
+
+    /**
+     * PoW factor, which is defined as the ratio between the Rootstock block difficulty target
+     * and the associated bitcoin merged mining block hash
+     *
+     * @param constants network specific constants
+     * @param header block header
+     * @return PoW factor for a Rootstock block header, or {@code Optional.empty()} if the Rootstock header does not
+     * contain the bitcoin merged mining header, or it cannot be parsed
+     */
+    public static Optional<BigInteger> difficultyToPoWFactor(Constants constants, BlockHeader header) {
+        byte[] bitcoinMergedMiningHeaderBytes = header.getBitcoinMergedMiningHeader();
+        if (bitcoinMergedMiningHeaderBytes == null) {
+            return Optional.empty();
+        }
+
+        BtcBlock bitcoinMergedMiningBlock;
+        try {
+            bitcoinMergedMiningBlock = constants
+                    .getBridgeConstants()
+                    .getBtcParams()
+                    .getDefaultSerializer()
+                    .makeBlock(bitcoinMergedMiningHeaderBytes);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+        BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
+
+        BlockDifficulty difficulty = header.getDifficulty();
+        BigInteger difficultyTargetBI = DifficultyUtils.difficultyToTarget(difficulty);
+
+        BigInteger factor = difficultyTargetBI.divide(bitcoinMergedMiningBlockHashBI);
+
+        return Optional.of(factor);
     }
 }

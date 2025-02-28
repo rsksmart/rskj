@@ -115,6 +115,7 @@ public class BlockBuilder {
         if (blockChain != null) {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
+                    blockStore,
                     new RepositoryLocator(trieStore, stateRootHandler),
                     new TransactionExecutorFactory(
                             config,

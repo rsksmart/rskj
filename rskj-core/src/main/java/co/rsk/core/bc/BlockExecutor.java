@@ -28,11 +28,13 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.util.SuperChainUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -47,8 +49,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -62,15 +63,19 @@ public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
+    private final Constants constants;
+    private final ActivationConfig activationConfig;
+
+    private final BlockStore blockStore;
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private final ActivationConfig activationConfig;
     private final boolean remascEnabled;
     private final Set<RskAddress> concurrentContractsDisallowed;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
+    private final long minSequentialSetGasLimit;
+
     private boolean registerProgramResults;
-    private long minSequentialSetGasLimit;
 
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
@@ -80,13 +85,16 @@ public class BlockExecutor {
      */
     private final ExecutorService[] execServices;
 
-    public BlockExecutor(
-            RepositoryLocator repositoryLocator,
-            TransactionExecutorFactory transactionExecutorFactory,
-            RskSystemProperties systemProperties) {
+    public BlockExecutor(BlockStore blockStore,
+                         RepositoryLocator repositoryLocator,
+                         TransactionExecutorFactory transactionExecutorFactory,
+                         RskSystemProperties systemProperties) {
+        this.constants = systemProperties.getNetworkConstants();
+        this.activationConfig = systemProperties.getActivationConfig();
+
+        this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
-        this.activationConfig = systemProperties.getActivationConfig();
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
         this.minSequentialSetGasLimit = systemProperties.getNetworkConstants().getMinSequentialSetGasLimit();
@@ -172,6 +180,16 @@ public class BlockExecutor {
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
         header.setTxExecutionSublistsEdges(result.getTxEdges());
+
+        if (activationConfig.isActive(RSKIP481, block.getNumber())) {
+            BlockHeader superParent = FamilyUtils.getSuperParent(blockStore, constants, activationConfig, header);
+            header.setSuperChainDataHash(SuperChainUtils.makeSuperChainDataHash(
+                    superParent != null ? superParent.getHash() : null,
+                    header.getNumber(),
+                    Collections.emptyList(), 0, // TODO: use super uncle list / count instead
+                    null // TODO: use super bridge event, if any
+            ).getBytes());
+        }
 
         block.flushRLP();
         profiler.stop(metric);

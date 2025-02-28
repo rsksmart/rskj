@@ -163,6 +163,7 @@ public class TestRunner {
                 null,
                 new DummyBlockValidator(),
                 new BlockExecutor(
+                        blockStore,
                         new RepositoryLocator(trieStore, stateRootHandler),
                         transactionExecutorFactory,
                         config),

@@ -158,6 +158,7 @@ public class StateTestRunner {
             null,
             null,
             new BlockExecutor(
+                blockStore,
                 new RepositoryLocator(trieStore, stateRootHandler),
                 new TransactionExecutorFactory(
                     config,
