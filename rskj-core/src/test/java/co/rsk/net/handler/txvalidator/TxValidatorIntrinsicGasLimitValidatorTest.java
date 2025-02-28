@@ -17,13 +17,9 @@
  */
 package co.rsk.net.handler.txvalidator;
 
-import  static org.junit.jupiter.api.Assertions.assertFalse;
+import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import co.rsk.bitcoinj.core.BtcECKey;
-
-import java.util.Arrays;
-import java.util.List;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -42,12 +38,6 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 class TxValidatorIntrinsicGasLimitValidatorTest {
-    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
-        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
-        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
-        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
-    );
-
     private Constants constants;
     private ActivationConfig activationConfig;
 
