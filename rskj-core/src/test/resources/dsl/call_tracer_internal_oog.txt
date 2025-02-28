@@ -1,0 +1,55 @@
+comment
+
+pragma solidity ^0.8.25;
+
+contract NestedCallOoG {
+
+    function checkOoG() public view {
+        this.callNested();
+    }
+
+    function callNested() external view {
+        this.consumeAllGas();
+    }
+
+    function consumeAllGas() external pure {
+        while (true) {
+            // This loop will run indefinitely until all gas is consumed
+        }
+    }
+}
+
+end
+
+account_new acc1 10000000
+
+# deploy NestedCallOoG contract
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b506101588061001c5f395ff3fe608060405234801561000f575f80fd5b506004361061003f575f3560e01c80631c65505a14610043578063b8a5ffe51461004d578063e543085114610057575b5f80fd5b61004b610061565b005b6100556100bd565b005b61005f610119565b005b3073ffffffffffffffffffffffffffffffffffffffff1663b8a5ffe56040518163ffffffff1660e01b81526004015f6040518083038186803b1580156100a5575f80fd5b505afa1580156100b7573d5f803e3d5ffd5b50505050565b3073ffffffffffffffffffffffffffffffffffffffff1663e54308516040518163ffffffff1660e01b81526004015f6040518083038186803b158015610101575f80fd5b505afa158015610113573d5f803e3d5ffd5b50505050565b5b600161011a5756fea264697066735822122049d6d5dcd90a95239b39979726f88d35071e45c414f56da3d326b25da49349d564736f6c63430008190033
+    gas 1000000
+    build
+
+# make checkOoG() call
+transaction_build tx02
+    sender acc1
+    receiverAddress 6252703f5ba322ec64d3ac45e56241b7d9e481ad
+    value 0
+    data 1c65505a
+    gas 100000
+    nonce 1
+    build
+
+block_build b01
+    parent g00
+    gasLimit 7500000
+    transactions tx01 tx02
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01
+
