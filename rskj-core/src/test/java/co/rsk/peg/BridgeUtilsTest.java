@@ -26,7 +26,6 @@ import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -75,7 +74,11 @@ class BridgeUtilsTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final byte[] MISSING_SIGNATURE = new byte[0];
-    private static final List<BtcECKey> fedBtcECKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03"}, true);
+    private static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
+        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
+        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    );
 
     private Constants constants;
     private ActivationConfig activationConfig;
@@ -86,10 +89,10 @@ class BridgeUtilsTest {
 
     @BeforeEach
     void setupConfig() {
-        constants = Constants.regtestWithFederation(fedBtcECKeys);
+        constants = Constants.regtest();
         activationConfig = spy(ActivationConfigsForTest.all());
         activations = mock(ActivationConfig.ForBlock.class);
-        bridgeConstantsRegtest = new BridgeRegTestConstants(fedBtcECKeys);
+        bridgeConstantsRegtest = new BridgeRegTestConstants();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
     }
@@ -318,19 +321,19 @@ class BridgeUtilsTest {
     @Test
     void isFreeBridgeTxTrue() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, fedBtcECKeys.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     void isFreeBridgeTxOtherContract() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, fedBtcECKeys.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     void isFreeBridgeTxFreeTxDisabled() {
         activationConfig = ActivationConfigsForTest.only(ConsensusRule.ARE_BRIDGE_TXS_PAID);
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, fedBtcECKeys.get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
