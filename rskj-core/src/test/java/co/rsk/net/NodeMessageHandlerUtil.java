@@ -41,7 +41,7 @@ public class NodeMessageHandlerUtil {
                 mock(EthereumListener.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
+        return new NodeMessageHandler(config, processor, syncProcessor, null, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
@@ -73,6 +73,6 @@ public class NodeMessageHandlerUtil {
                 mock(EthereumListener.class)
         );
 
-        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, mock(StatusResolver.class));
+        return new NodeMessageHandler(config, processor, syncProcessor, null, channelManager, null, null, mock(StatusResolver.class));
     }
 }
