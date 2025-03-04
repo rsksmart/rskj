@@ -19,6 +19,7 @@ package co.rsk.rpc.modules.debug.trace.call;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.TraceOptions;
 import co.rsk.rpc.modules.debug.trace.DebugTracer;
@@ -30,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -144,15 +144,18 @@ public class CallTracer implements DebugTracer {
 
             ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
             Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
-            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+            BlockResult blockResult = this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
 
-            for (Transaction tx : txList) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
-                if (txInfo == null) { // for a pending block we have no receipt, so empty one is being provided
-                    txInfo = new TransactionInfo(new TransactionReceipt(), block.getHash().getBytes(), block.getTransactionsList().indexOf(tx));
-                }
-                txInfo.setTransaction(tx);
+            int i=0;
+            for (Transaction tx : blockResult.getExecutedTransactions()) {
+                //TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
+//                if (txInfo == null) { // for a pending block we have no receipt, so empty one is being provided
+//                    txInfo = new TransactionInfo(new TransactionReceipt(), block.getHash().getBytes(), block.getTransactionsList().indexOf(tx));
+//                }
+//                txInfo.setTransaction(tx);
+
+                TransactionInfo txInfo = new TransactionInfo(blockResult.getTransactionReceipts().get(i), block.getHash().getBytes(),i);
 
                 SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
@@ -164,6 +167,7 @@ public class CallTracer implements DebugTracer {
                 TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, onlyTopCall, withLog);
 
                 blockTraces.add(trace);
+                i++;
             }
         }
 
