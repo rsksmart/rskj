@@ -19,6 +19,7 @@ package co.rsk.rpc.modules.debug.trace.call;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.TraceOptions;
 import co.rsk.rpc.modules.debug.trace.DebugTracer;
@@ -86,17 +87,31 @@ public class CallTracer implements DebugTracer {
         txInfo.setTransaction(tx);
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-        this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
-
+        BlockResult blockResult = this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+        if(blockResult == null || blockResult.getExecutedTransactions() != null && blockResult.getExecutedTransactions().isEmpty()) {
+            logger.error("Unsuccessful block execution for transaction: {}", transactionHash);
+            return null;
+        }
         SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
-
-        if (programTrace == null) {
-            //TODO define and return proper exception
+        if (programTrace == null ) {
             logger.error("No program trace could be obtained for transaction: {}", transactionHash);
             return null;
         }
 
-        TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, traceOptions.isOnlyTopCall(), traceOptions.isWithLog());
+        TransactionInfo executedTxInfo = null;
+        List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
+        for(int i = 0; i < transactionReceipts.size(); i++) {
+            if (transactionReceipts.get(i).getTransaction().getHash().equals(tx.getHash())) {
+                executedTxInfo = new TransactionInfo(transactionReceipts.get(i), block.getHash().getBytes(), i);
+                break;
+            }
+        }
+        if(executedTxInfo == null){
+            logger.error("No transaction info could be obtained for transaction: {}", transactionHash);
+            return null;
+        }
+
+        TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, executedTxInfo, null, traceOptions.isOnlyTopCall(), traceOptions.isWithLog());
         return OBJECT_MAPPER.valueToTree(trace.getResult());
     }
 
@@ -140,19 +155,14 @@ public class CallTracer implements DebugTracer {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block != null && block.getNumber() != 0) {
-            List<Transaction> txList = block.getTransactionsList();
-
             ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
             Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
-            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+            BlockResult blockResult = this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
 
-            for (Transaction tx : txList) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
-                if (txInfo == null) { // for a pending block we have no receipt, so empty one is being provided
-                    txInfo = new TransactionInfo(new TransactionReceipt(), block.getHash().getBytes(), block.getTransactionsList().indexOf(tx));
-                }
-                txInfo.setTransaction(tx);
+            int i=0;
+            for (Transaction tx : blockResult.getExecutedTransactions()) {
+                TransactionInfo txInfo = new TransactionInfo(blockResult.getTransactionReceipts().get(i), block.getHash().getBytes(),i);
 
                 SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
@@ -164,6 +174,7 @@ public class CallTracer implements DebugTracer {
                 TransactionTrace trace = CallTraceTransformer.toTrace(programTrace, txInfo, null, onlyTopCall, withLog);
 
                 blockTraces.add(trace);
+                i++;
             }
         }
 
