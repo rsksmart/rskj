@@ -42,6 +42,8 @@ public class LogInfo {
     /* Log info in encoded form */
     private byte[] rlpEncoded;
 
+    private int logIndex = -1;
+
     public LogInfo(byte[] rlp) {
 
         ArrayList<RLPElement> params = RLP.decode2(rlp);
@@ -122,6 +124,13 @@ public class LogInfo {
         return Arrays.stream(data).map(DataWord::valueOf).collect(Collectors.toList());
     }
 
+    public int getLogIndex() {
+        return logIndex;
+    }
+
+    public int setLogIndex(int logIndex) {
+        return this.logIndex = logIndex;
+    }
     @Override
     public String toString() {
 
