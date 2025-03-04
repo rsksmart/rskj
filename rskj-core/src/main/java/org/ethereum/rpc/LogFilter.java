@@ -75,7 +75,39 @@ public class LogFilter extends Filter {
             }
         }
     }
+    void onTransaction(TransactionInfo txInfo, Block block, int txIndex, boolean reverseLogIdxOrder) {
+        TransactionReceipt receipt = txInfo.getReceipt();
 
+        LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
+
+        for (int i = 0; i < logs.length; i++) {
+            int logIdx = reverseLogIdxOrder ? logs.length - i - 1 : i;
+
+            LogInfo logInfo = receipt.getLogInfoList().get(logIdx);
+
+            if (addressesTopicsFilter.matchesExactly(logInfo)) {
+                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), logIdx);
+            }
+        }
+    }
+
+    void onTransactionV2(TransactionInfo txInfo, Block block, int txIndex, int acc) {
+        TransactionReceipt receipt = txInfo.getReceipt();
+
+        LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
+
+        for (int i = 0; i < logs.length; i++) {
+            int logIdx = acc + i;
+
+            LogInfo logInfo = receipt.getLogInfoList().get(i);
+
+            if (addressesTopicsFilter.matchesExactly(logInfo)) {
+                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), logIdx);
+            }
+        }
+    }
+
+    //TODO for this test ignoring reverse order
     void onBlock(Block block, boolean reverseTxOrder) {
         if (!addressesTopicsFilter.matchBloom(new Bloom(block.getLogBloom()))) {
             return;
@@ -83,9 +115,12 @@ public class LogFilter extends Filter {
 
         List<Transaction> txs = block.getTransactionsList();
 
+        int acc = 0;
         for (int i = 0; i < txs.size(); i++) {
-            int txIdx = reverseTxOrder ? txs.size() - i - 1 : i;
-            onTransaction(txs.get(txIdx), block, txIdx, reverseTxOrder);
+            Transaction tx = txs.get(i);
+            TransactionInfo txInfo = blockchain.getTransactionInfoByBlock(tx, block.getHash().getBytes());
+            onTransactionV2(txInfo, block, i, acc);
+            acc+=txInfo.getReceipt().getLogInfoList().size();
         }
     }
 
