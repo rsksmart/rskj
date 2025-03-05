@@ -1936,7 +1936,7 @@ public class BridgeSupport {
                 break;
             }
 
-            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(input);
+            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(btcTx, i);
             if (redeemScriptOpt.isEmpty()) {
                 break;
             }

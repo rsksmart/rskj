@@ -27,29 +27,26 @@ public class BitcoinUtils {
             return Optional.empty();
         }
 
-        TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
-
-        if (btcTx.getWitness(FIRST_INPUT_INDEX).equals(TransactionWitness.getEmpty())) {
-            Optional<Script> redeemScript = extractRedeemScriptFromInput(txInput);
-            return redeemScript.map(script -> btcTx.hashForSignature(
-                FIRST_INPUT_INDEX,
-                script,
-                BtcTransaction.SigHash.ALL,
-                false
-            ));
-        }
-
-        Optional<Script> redeemScript = extractRedeemScriptFromWitness(btcTx.getWitness(FIRST_INPUT_INDEX));
-        return redeemScript.map(script -> btcTx.hashForWitnessSignature(
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
+        return redeemScript.map(script -> btcTx.hashForSignature(
             FIRST_INPUT_INDEX,
             script,
-            txInput.getValue(),
             BtcTransaction.SigHash.ALL,
             false
         ));
     }
 
-    public static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
+    public static Optional<Script> extractRedeemScriptFromInput(BtcTransaction transaction, int inputIndex) {
+        TransactionWitness inputWitness = transaction.getWitness(inputIndex);
+
+        if (inputWitness == TransactionWitness.getEmpty()) {
+            return extractRedeemScriptFromInputScriptSig(transaction.getInput(inputIndex));
+        }
+
+        return extractRedeemScriptFromInputWitness(transaction.getWitness(inputIndex));
+    }
+
+    private static Optional<Script> extractRedeemScriptFromInputScriptSig(TransactionInput txInput) {
         Script inputScript = txInput.getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
         if (chunks == null || chunks.isEmpty()) {
@@ -66,7 +63,7 @@ public class BitcoinUtils {
             return Optional.of(redeemScript);
         } catch (ScriptException e) {
             logger.debug(
-                "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
+                "[extractRedeemScriptFromInputScriptSig] Failed to extract redeem script from tx input {}. {}",
                 txInput,
                 e.getMessage()
             );
@@ -74,13 +71,21 @@ public class BitcoinUtils {
         }
     }
 
-    private static Optional<Script> extractRedeemScriptFromWitness(TransactionWitness txInputWitness) {
+    private static Optional<Script> extractRedeemScriptFromInputWitness(TransactionWitness txInputWitness) {
         int size = txInputWitness.getPushCount();
         int redeemScriptIndex = size - 1;
-        byte[] redeemScriptData = txInputWitness.getPush(redeemScriptIndex);
-        Script redeemScript = new Script(redeemScriptData);
-
-        return Optional.of(redeemScript);
+        try {
+            byte[] redeemScriptData = txInputWitness.getPush(redeemScriptIndex);
+            Script redeemScript = new Script(redeemScriptData);
+            return Optional.of(redeemScript);
+        } catch (Exception e) {
+            logger.debug(
+                "[extractRedeemScriptFromInputWitness] Failed to extract redeem script from tx input {}. {}",
+                txInputWitness,
+                e.getMessage()
+            );
+            return Optional.empty();
+        }
     }
 
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
@@ -100,8 +105,10 @@ public class BitcoinUtils {
             throw new IllegalArgumentException(message);
         }
 
-        for (TransactionInput input : transaction.getInputs()) {
-            Script inputRedeemScript = extractRedeemScriptFromInput(input)
+        List<TransactionInput> inputs = transaction.getInputs();
+        for (TransactionInput input : inputs) {
+            int inputIndex = inputs.indexOf(input);
+            Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .orElseThrow(
                     () -> {
                         String message = "Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.";
@@ -128,7 +135,7 @@ public class BitcoinUtils {
 
     public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
         return Optional.ofNullable(btcTx.getInput(inputIndex))
-            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInputScriptSig)
             .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
             .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
     }
