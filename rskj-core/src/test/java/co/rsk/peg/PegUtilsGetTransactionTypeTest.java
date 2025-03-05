@@ -1873,7 +1873,8 @@ class PegUtilsGetTransactionTypeTest {
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{ 0x1 });
+        txWitness.setPush(0, new byte[72]); // push for signatures
+        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
         migrationTx.setWitness(0, txWitness);
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
@@ -1957,7 +1958,8 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{ 0x1 });
+        txWitness.setPush(0, new byte[72]); // push for signatures
+        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
         migrationTx.setWitness(0, txWitness);
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
 
@@ -2041,7 +2043,8 @@ class PegUtilsGetTransactionTypeTest {
         }
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{ 0x1 });
+        txWitness.setPush(0, new byte[72]); // push for signatures
+        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
         btcTransaction.setWitness(0, txWitness);
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
