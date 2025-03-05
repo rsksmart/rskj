@@ -2402,7 +2402,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{0x1});
+        txWitness.setPush(0, new byte[72]); // push for signatures
+        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
         btcTransaction.setWitness(0, txWitness);
 
         createPmtAndMockBlockStore(btcTransaction, height);
@@ -2487,7 +2488,8 @@ class BridgeSupportRegisterBtcTransactionTest {
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
         TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{0x1});
+        txWitness.setPush(0, new byte[72]); // push for signatures
+        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
         btcTransaction.setWitness(0, txWitness);
 
         createPmtAndMockBlockStore(btcTransaction, height);
