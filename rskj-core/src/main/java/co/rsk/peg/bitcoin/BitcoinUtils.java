@@ -26,12 +26,24 @@ public class BitcoinUtils {
         if (btcTx.getInputs().isEmpty()){
             return Optional.empty();
         }
-        TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
-        Optional<Script> redeemScript = extractRedeemScriptFromInput(txInput);
 
-        return redeemScript.map(script -> btcTx.hashForSignature(
+        TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
+
+        if (btcTx.getWitness(FIRST_INPUT_INDEX).equals(TransactionWitness.getEmpty())) {
+            Optional<Script> redeemScript = extractRedeemScriptFromInput(txInput);
+            return redeemScript.map(script -> btcTx.hashForSignature(
+                FIRST_INPUT_INDEX,
+                script,
+                BtcTransaction.SigHash.ALL,
+                false
+            ));
+        }
+
+        Optional<Script> redeemScript = extractRedeemScriptFromWitness(btcTx.getWitness(FIRST_INPUT_INDEX));
+        return redeemScript.map(script -> btcTx.hashForWitnessSignature(
             FIRST_INPUT_INDEX,
             script,
+            txInput.getValue(),
             BtcTransaction.SigHash.ALL,
             false
         ));
@@ -60,6 +72,15 @@ public class BitcoinUtils {
             );
             return Optional.empty();
         }
+    }
+
+    private static Optional<Script> extractRedeemScriptFromWitness(TransactionWitness txInputWitness) {
+        int size = txInputWitness.getPushCount();
+        int redeemScriptIndex = size - 1;
+        byte[] redeemScriptData = txInputWitness.getPush(redeemScriptIndex);
+        Script redeemScript = new Script(redeemScriptData);
+
+        return Optional.of(redeemScript);
     }
 
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
