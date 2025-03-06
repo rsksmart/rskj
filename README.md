@@ -1,4 +1,4 @@
-testing
+testing..
 # Welcome to RskJ
 [![Build and Test](https://github.com/rsksmart/rskj/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/rsksmart/rskj/actions/workflows/build_and_test.yml)
 [![Rootstock Integration Tests](https://github.com/rsksmart/rskj/actions/workflows/rit.yml/badge.svg)](https://github.com/rsksmart/rskj/actions/workflows/rit.yml)
