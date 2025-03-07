@@ -1256,7 +1256,7 @@ public class BridgeSupportSvpTest {
                 .build();
             pegin.addInput(BitcoinTestUtils.createHash(1), 0, witnessScript);
 
-            TransactionWitness txWit = new TransactionWitness(2);
+            TransactionWitness txWit = new TransactionWitness(3);
             txWit.setPush(0, new byte[] { 0 });
             txWit.setPush(1, new byte[72]); // push for signatures
             txWit.setPush(2, redeemScript.getProgram());

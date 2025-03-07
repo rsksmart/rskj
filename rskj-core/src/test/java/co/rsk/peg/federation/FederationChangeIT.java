@@ -750,9 +750,12 @@ class FederationChangeIT {
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
 
-            for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
+            List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
+            for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+                TransactionInput input = inputs.get(inputIndex);
+
                 // Each input should contain the right scriptSig
-                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(input).orElseThrow();
+                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(pegoutBtcTransaction, inputIndex).orElseThrow();
 
                 // Get the standard redeem script to compare against, since it could be a flyover redeem script
                 var redeemScriptChunks = ScriptParser.parseScriptProgram(
