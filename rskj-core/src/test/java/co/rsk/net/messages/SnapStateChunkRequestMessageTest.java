@@ -124,7 +124,7 @@ public class SnapStateChunkRequestMessageTest {
         RLPList encodedRLPList = (RLPList) RLP.decode2(message.getEncodedMessage()).get(0);
 
         //when
-        Message decodedMessage = SnapStateChunkRequestMessage.decodeMessage(blockFactory, encodedRLPList);
+        Message decodedMessage = SnapStateChunkRequestMessage.decodeMessage(encodedRLPList);
 
         //then
         assertInstanceOf(SnapStateChunkRequestMessage.class, decodedMessage);

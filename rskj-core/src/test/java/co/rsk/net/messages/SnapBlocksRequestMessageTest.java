@@ -72,7 +72,7 @@ class SnapBlocksRequestMessageTest {
         RLPList encodedRLPList = (RLPList) RLP.decode2(underTest.getEncodedMessage()).get(0);
 
         //when
-        Message decodedMessage = SnapBlocksRequestMessage.decodeMessage(blockFactory, encodedRLPList);
+        Message decodedMessage = SnapBlocksRequestMessage.decodeMessage(encodedRLPList);
 
         //then
         assertInstanceOf(SnapBlocksRequestMessage.class, decodedMessage);

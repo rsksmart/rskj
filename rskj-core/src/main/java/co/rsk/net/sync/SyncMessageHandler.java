@@ -63,44 +63,19 @@ public abstract class SyncMessageHandler implements Runnable {
         }
 
         Job job = null;
-        Instant jobStart = Instant.MIN;
         while (isRunning()) {
             try {
                 job = jobQueue.take();
 
                 MDC.put(QUEUE_NAME, name);
+                processJob(job);
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Processing msg: [{}] from: [{}] for: [{}]. Pending count: [{}]", job.getMsgType(), job.getSender(), name, jobQueue.size());
-                    jobStart = Instant.now();
-                }
-
-                job.run();
-
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Finished processing of msg: [{}] from: [{}] for: [{}] after [{}] seconds.",
-                            job.getMsgType(), job.getSender(), name,
-                            FormatUtils.formatNanosecondsToSeconds(Duration.between(jobStart, Instant.now()).toNanos()));
-                }
-
-                if (listener != null) {
-                    listener.onJobRun(job);
-                    if (jobQueue.isEmpty()) {
-                        listener.onQueueEmpty();
-                    }
-                }
             } catch (InterruptedException e) {
-                logger.warn("Queue processing was interrupted for: [{}]", name, e);
-                if (listener != null) {
-                    listener.onInterrupted();
-                }
+                handleInterruptedException(e);
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                logger.error("Unexpected error processing msg: '[{}]' for: [{}]", job, name, e);
-                if (listener != null) {
-                    listener.onException(e);
-                }
+                handleException(job, e);
             } finally {
                 MDC.remove(QUEUE_NAME);
             }
@@ -113,16 +88,63 @@ public abstract class SyncMessageHandler implements Runnable {
         logger.debug("Finished processing queue of messages for: [{}]", name);
     }
 
+    public void processJob(Job job) {
+        Instant jobStart = Instant.MIN;
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Processing msg: [{}] from: [{}] for: [{}]. Pending count: [{}]", job.getMsgType(), job.getSender(), name, jobQueue.size());
+            jobStart = Instant.now();
+        }
+
+        job.run();
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Finished processing of msg: [{}] from: [{}] for: [{}] after [{}] seconds.",
+                    job.getMsgType(), job.getSender(), name,
+                    FormatUtils.formatNanosecondsToSeconds(Duration.between(jobStart, Instant.now()).toNanos()));
+        }
+        //TODO ask about this listener as it seems it is always null
+        handleListenerOnProcessJob(job);
+    }
+
+    private void handleException(Job job, Exception e) {
+        logger.error("Unexpected error processing msg: '[{}]' for: [{}]", job, name, e);
+        if (listener != null) {
+            listener.onException(e);
+        }
+    }
+
+    private void handleInterruptedException(InterruptedException e) {
+        logger.warn("Queue processing was interrupted for: [{}]", name, e);
+        if (listener != null) {
+            listener.onInterrupted();
+        }
+    }
+
+    private void handleListenerOnProcessJob(Job job) {
+        if (listener != null) {
+            listener.onJobRun(job);
+            if (jobQueue.isEmpty()) {
+                listener.onQueueEmpty();
+            }
+        }
+    }
+
     public interface Listener {
         void onStart();
+
         void onJobRun(Job job);
+
         void onQueueEmpty();
+
         void onInterrupted();
+
         void onException(Exception e);
+
         void onComplete();
     }
 
-    public static abstract class Job implements Runnable {
+    public abstract static class Job implements Runnable {
         private final Peer sender;
         private final MessageType msgType;
 
