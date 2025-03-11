@@ -72,8 +72,8 @@ public class BitcoinUtils {
     }
 
     private static Optional<Script> extractRedeemScriptFromInputWitness(TransactionWitness txInputWitness) {
-        int size = txInputWitness.getPushCount();
-        int redeemScriptIndex = size - 1;
+        int witnessSize = txInputWitness.getPushCount();
+        int redeemScriptIndex = witnessSize - 1;
         try {
             byte[] redeemScriptData = txInputWitness.getPush(redeemScriptIndex);
             Script redeemScript = new Script(redeemScriptData);
