@@ -6,7 +6,6 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -35,8 +34,7 @@ class BitcoinUtilsTest {
 
     private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-
-    private Address destinationAddress;
+    private static final Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
     // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
     private static final BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
@@ -46,11 +44,6 @@ class BitcoinUtilsTest {
 
     // witness commitment output script in non-standard format
     private static final BtcTransaction coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a24aa21a9ed4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
-
-    @BeforeEach
-    void init() {
-        destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-    }
 
     private boolean isSigHashValid(Sha256Hash sigHash, List<BtcECKey> pubKeys, List<BtcECKey.ECDSASignature> signatures) {
         LinkedList<BtcECKey> keys = new LinkedList<>(pubKeys);
@@ -247,8 +240,6 @@ class BitcoinUtilsTest {
     @Test
     void test_getFirstInputSigHash_invalid_input_no_redeem_script() {
         // Arrange
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
