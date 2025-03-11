@@ -174,7 +174,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void extractRedeemScriptFromInput_forP2shP2wshPeginV1_withInvalidRedeemScript_shouldFail() {
+    void extractRedeemScriptFromInput_forP2shP2wshPeginV1_withInvalidRedeemScript_shouldReturnEmpty() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -188,6 +188,23 @@ class BitcoinUtilsTest {
 
         // Assert
         assertFalse(redeemScript.isPresent());
+    }
+
+    @Test
+    void getFirstInputSigHash_forP2shP2wshPeginV1_withNoRedeemScript_shouldReturnEmpty() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness witness = new TransactionWitness(1);
+        byte[] invalidRedeemScript = new byte[]{0x1};
+        witness.setPush(0, invalidRedeemScript);
+        btcTx.setWitness(0, witness);
+
+        // Act
+        Optional<Sha256Hash> sigHash = getFirstInputSigHash(btcTx);
+
+        // Assert
+        assertFalse(sigHash.isPresent());
     }
 
     @Test
