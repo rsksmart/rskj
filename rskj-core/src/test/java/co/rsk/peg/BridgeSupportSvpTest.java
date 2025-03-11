@@ -53,7 +53,7 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.*;
 
-public class BridgeSupportSvpTest {
+class BridgeSupportSvpTest {
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
