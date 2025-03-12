@@ -106,8 +106,8 @@ public class BitcoinUtils {
         }
 
         List<TransactionInput> inputs = transaction.getInputs();
-        for (TransactionInput input : inputs) {
-            int inputIndex = inputs.indexOf(input);
+        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+            TransactionInput input = inputs.get(inputIndex);
             Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .orElseThrow(
                     () -> {
