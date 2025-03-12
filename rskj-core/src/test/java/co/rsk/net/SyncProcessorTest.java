@@ -804,6 +804,7 @@ class SyncProcessorTest {
                 config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
+                blockChainBuilder.getBlockStore(),
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 new TransactionExecutorFactory(
                         config,
