@@ -2412,11 +2412,11 @@ public class BridgeSupport {
         return whitelistSupport.getLockWhitelistSize();
     }
 
-    public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
+    public Optional<LockWhitelistEntry> getLockWhitelistEntryByIndex(int index) {
         return whitelistSupport.getLockWhitelistEntryByIndex(index);
     }
 
-    public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
+    public Optional<LockWhitelistEntry> getLockWhitelistEntryByAddress(String addressBase58) {
         return whitelistSupport.getLockWhitelistEntryByAddress(addressBase58);
     }
 

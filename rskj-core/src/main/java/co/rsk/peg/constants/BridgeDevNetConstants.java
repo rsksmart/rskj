@@ -26,7 +26,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
         btcParamsString = NetworkParameters.ID_TESTNET;
 
         btc2RskMinimumAcceptableConfirmations = 1;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
         updateBridgeExecutionPeriod = 30000; // 30secs
