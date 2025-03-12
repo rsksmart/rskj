@@ -35,6 +35,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -292,13 +293,13 @@ public class BlockExecutor {
     /**
      * Execute a block while saving the execution trace in the trace processor
      */
-    public void traceBlock(ProgramTraceProcessor programTraceProcessor,
+    public BlockResult traceBlock(ProgramTraceProcessor programTraceProcessor,
                            int vmTraceOptions,
                            Block block,
                            BlockHeader parent,
                            boolean discardInvalidTxs,
                            boolean ignoreReadyToExecute) {
-        execute(Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs,
+        return execute(Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs,
                 ignoreReadyToExecute, false);
     }
 
@@ -358,6 +359,8 @@ public class BlockExecutor {
 
         int txindex = 0;
 
+        int logIndexOffset = 0;
+
         for (Transaction tx : block.getTransactionsList()) {
             loggingApplyBlockToTx(block, i);
 
@@ -390,11 +393,14 @@ public class BlockExecutor {
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
-            TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed, totalGasUsed);
+            TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed, totalGasUsed,logIndexOffset);
+
+
 
             loggingExecuteTxAndReceipt(block, i, tx);
 
             i++;
+            logIndexOffset += receipt.getLogInfoList().size();
 
             receipts.add(receipt);
 
@@ -573,11 +579,12 @@ public class BlockExecutor {
         totalGasUsed += txListExecutor.getTotalGas();
 
         saveOrCommitTrackState(saveState, track);
+        List<TransactionReceipt> receiptList = updateReceipts(new LinkedList<>(receipts.values()));
 
         BlockResult result = new BlockResult(
                 block,
                 new LinkedList<>(executedTransactions.values()),
-                new LinkedList<>(receipts.values()),
+                receiptList,
                 txExecutionEdges,
                 totalGasUsed,
                 totalBlockPaidFees,
@@ -586,6 +593,17 @@ public class BlockExecutor {
         profiler.stop(metric);
         logger.trace("End executeParallel.");
         return result;
+    }
+
+    private List<TransactionReceipt> updateReceipts(List<TransactionReceipt> receipts) {
+        int logIndexAcc = 0;
+        for (TransactionReceipt receipt : receipts) {
+            List<LogInfo> logs = receipt.getLogInfoList();
+            for (LogInfo log : logs) {
+                log.setLogIndex(logIndexAcc++);
+            }
+        }
+        return receipts;
     }
 
     private BlockResult executeForMiningAfterRSKIP144(
@@ -628,6 +646,7 @@ public class BlockExecutor {
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, block, minSequentialSetGasLimit);
 
+        int logIndexOffset = 0;
         for (Transaction tx : transactionsList) {
             loggingApplyBlockToTx(block, i);
 
@@ -685,12 +704,13 @@ public class BlockExecutor {
             //orElseGet is used for testing only when acceptInvalidTransactions is set.
             long cumulativeGas = sublistGasAccumulated
                     .orElseGet(() -> parallelizeTransactionHandler.getGasUsedIn((short) Constants.getTransactionExecutionThreads()));
-            TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed, cumulativeGas);
+            TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed, cumulativeGas, logIndexOffset);
 
             loggingExecuteTxAndReceipt(block, i, tx);
 
             i++;
             txindex++;
+            logIndexOffset += receipt.getLogInfoList().size();
 
             receiptsByTx.put(tx, receipt);
 
@@ -792,12 +812,17 @@ public class BlockExecutor {
         }
     }
 
-    private TransactionReceipt buildTransactionReceipt(Transaction tx, TransactionExecutor txExecutor, long gasUsed, long cumulativeGas) {
+    private TransactionReceipt buildTransactionReceipt(Transaction tx, TransactionExecutor txExecutor, long gasUsed, long cumulativeGas, int logIndexOffset) {
         TransactionReceipt receipt = new TransactionReceipt();
         receipt.setGasUsed(gasUsed);
         receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
         receipt.setTransaction(tx);
-        receipt.setLogInfoList(txExecutor.getVMLogs());
+        List<LogInfo> logs = txExecutor.getVMLogs();
+        for (int i = 0; i < logs.size(); i++) {
+            LogInfo log = logs.get(i);
+            log.setLogIndex(i + logIndexOffset);
+        }
+        receipt.setLogInfoList(logs);
         receipt.setStatus(txExecutor.getReceipt().getStatus());
         receipt.setCumulativeGas(cumulativeGas);
         return receipt;
