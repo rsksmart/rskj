@@ -14,9 +14,12 @@ import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
@@ -159,5 +162,26 @@ public final class BridgeSupportTestUtil {
         );
 
         return new Keccak256(HashUtil.keccak256(result));
+    }
+
+    public static List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
+        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
+        return LogInfo.byteArrayToList(encodedTopicsInBytes);
+    }
+
+    public static byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
+        return bridgeEvent.encodeEventData(args);
+    }
+
+    public static Optional<LogInfo> getLogsTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
+        return logs.stream()
+            .filter(log -> log.getTopics().equals(expectedTopics))
+            .findFirst();
+    }
+
+    public static Optional<LogInfo> getLogsData(List<LogInfo> logs, byte[] expectedData) {
+        return logs.stream()
+            .filter(log -> Arrays.equals(log.getData(), expectedData))
+            .findFirst();
     }
 }
