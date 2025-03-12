@@ -79,21 +79,21 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Download build artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 #v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
         with:
           name: build-files
           path: |
             rskj-core/build
 
       - name: Download test results
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 #v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
         with:
           name: test-results
           path: |
             rskj-core/build/test-results/
 
       - name: Download test reports
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 #v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
         with:
           name: test-reports
           path: |
@@ -192,7 +192,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Download build artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 #v4.1.8
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 #v4.1.9
         with:
           name: build-files
           path: |
