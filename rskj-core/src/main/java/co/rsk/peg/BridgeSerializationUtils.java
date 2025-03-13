@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -72,6 +73,25 @@ public class BridgeSerializationUtils {
             throw new IllegalArgumentException("Serialized hash cannot be null.");
         }
         return new Keccak256(rskTxHashSerialized);
+    }
+
+    private static byte[] serializeBtcTxHash(Sha256Hash btcTxHash) {
+        return RLP.encodeElement(btcTxHash.getBytes());
+    }
+
+    private static Sha256Hash deserializeBtcTxHash(byte[] btcTxHashSerialized) {
+        if (isNull(btcTxHashSerialized)) {
+            throw new IllegalArgumentException("Serialized hash cannot be null.");
+        }
+        return Sha256Hash.wrap(btcTxHashSerialized);
+    }
+
+    private static byte[] serializeOutpointsValues(List<Coin> outpointsValues) {
+        return RLP.encodeElement(UtxoUtils.encodeOutpointValues(outpointsValues));
+    }
+
+    private static List<Coin> deserializeOutpointsValues(byte[] serializedOutpointsValues) {
+        return UtxoUtils.decodeOutpointValues(serializedOutpointsValues);
     }
 
     public static byte[] serializeBtcTransaction(BtcTransaction btcTransaction) {
@@ -157,6 +177,14 @@ public class BridgeSerializationUtils {
         return new byte[][] { serializedRskTxWaitingForSignaturesEntryKey, serializedRskTxWaitingForSignaturesEntryValue };
     }
 
+    public static byte[] serializePegoutOutpointsValues(Map.Entry<Sha256Hash, List<Coin>> pegoutOutpointsValues) {
+        byte[] serializedBtcTxHash = serializeBtcTxHash(pegoutOutpointsValues.getKey());
+        byte[] serializedOutpointsValues = serializeOutpointsValues(pegoutOutpointsValues.getValue());
+
+        byte[][] serializedPegoutOutpointsValues = new byte[][] { serializedBtcTxHash, serializedOutpointsValues };
+        return RLP.encodeList(serializedPegoutOutpointsValues);
+    }
+
     public static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignatures(
             byte[] data, NetworkParameters networkParameters) {
         if (data == null || data.length == 0) {
@@ -205,6 +233,21 @@ public class BridgeSerializationUtils {
         BtcTransaction btcTx = deserializeBtcTransactionWithInputsFromRawTx(btcRawTx, networkParameters);
 
         return new AbstractMap.SimpleEntry<>(rskTxHash, btcTx);
+    }
+
+    public static Map.Entry<Sha256Hash, List<Coin>> deserializePegoutOutpointsValues(byte[] data) {
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        checkArgument(rlpList.size() > 0, "RLPList cannot be empty when deserializing a pegout outpoints values.");
+
+        RLPElement btcTxHashRLPElement = rlpList.get(0);
+        byte[] btcTxHashData = btcTxHashRLPElement.getRLPData();
+        Sha256Hash btcTxHash = deserializeBtcTxHash(btcTxHashData);
+
+        RLPElement outpointsValuesRLPElement = rlpList.get(1);
+        byte[] serializedOutpointsValues = outpointsValuesRLPElement.getRLPData();
+        List<Coin> outpointsValues = deserializeOutpointsValues(serializedOutpointsValues);
+
+        return new AbstractMap.SimpleEntry<>(btcTxHash, outpointsValues);
     }
 
     public static byte[] serializeUTXOList(List<UTXO> list) {
