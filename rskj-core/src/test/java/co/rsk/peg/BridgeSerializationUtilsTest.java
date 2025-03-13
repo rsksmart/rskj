@@ -40,6 +40,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -314,6 +315,19 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxHash_withNullValue_throwsIllegalArgumentException() {
         // act & assert
         assertThrows(IllegalArgumentException.class, () -> deserializeRskTxHash(null));
+    }
+
+    @Test
+    void serializeAndDeserializePegoutOutpointsValues_() {
+        Sha256Hash pegoutTxHash = Sha256Hash.wrap("2deec182f1af488e422ffc45695faaa3bd75981c1693d2e2ae3802b1a38cac26");
+        List<Coin> outpointsValues = Arrays.asList(Coin.valueOf(1000), Coin.valueOf(1), Coin.COIN);
+        Map.Entry<Sha256Hash, List<Coin>> pegoutOutpointsValues = new AbstractMap.SimpleEntry<>(pegoutTxHash, outpointsValues);
+
+        byte[] serialized = BridgeSerializationUtils.serializePegoutOutpointsValues(pegoutOutpointsValues);
+        Map.Entry<Sha256Hash, List<Coin>> deserialized = BridgeSerializationUtils.deserializePegoutOutpointsValues(serialized);
+
+        assertEquals(deserialized.getKey(), pegoutTxHash);
+        assertEquals(deserialized.getValue(), outpointsValues);
     }
 
     @Test
