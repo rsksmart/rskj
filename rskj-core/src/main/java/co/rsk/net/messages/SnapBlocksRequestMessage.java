@@ -19,7 +19,6 @@
 package co.rsk.net.messages;
 
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -56,11 +55,11 @@ public class SnapBlocksRequestMessage extends MessageWithId {
         return RLP.encodeList(encodedBlockNumber);
     }
 
-    public static Message decodeMessage(BlockFactory blockFactory, RLPList list) {
+    public static Message decodeMessage(RLPList list) {
         byte[] rlpId = list.get(0).getRLPData();
         long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
-        RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+        RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
         byte[] rlpBlockNumber = message.get(0).getRLPData();
         long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
 

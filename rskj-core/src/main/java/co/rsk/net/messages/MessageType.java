@@ -261,13 +261,13 @@ public enum MessageType {
     SNAP_STATE_CHUNK_REQUEST_MESSAGE(20) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return SnapStateChunkRequestMessage.decodeMessage(blockFactory, list);
+            return SnapStateChunkRequestMessage.decodeMessage(list);
         }
     },
     SNAP_STATE_CHUNK_RESPONSE_MESSAGE(21) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return SnapStateChunkResponseMessage.decodeMessage(blockFactory, list);
+            return SnapStateChunkResponseMessage.decodeMessage(list);
         }
     },
     SNAP_STATUS_REQUEST_MESSAGE(22) {
@@ -285,7 +285,7 @@ public enum MessageType {
     SNAP_BLOCKS_REQUEST_MESSAGE(24) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return SnapBlocksRequestMessage.decodeMessage(blockFactory, list);
+            return SnapBlocksRequestMessage.decodeMessage(list);
         }
     },
     SNAP_BLOCKS_RESPONSE_MESSAGE(25) {
