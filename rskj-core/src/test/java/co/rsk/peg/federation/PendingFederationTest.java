@@ -143,6 +143,7 @@ class PendingFederationTest {
             false,
             false,
             false,
+            false,
             NetworkParameters.ID_TESTNET,
             6
         );
@@ -151,6 +152,7 @@ class PendingFederationTest {
     @Test
     void buildFederation_ok_9_members_before_RSKIP_201_activation() {
         testBuildFederation(
+            false,
             false,
             false,
             false,
@@ -165,6 +167,7 @@ class PendingFederationTest {
             true,
             false,
             false,
+            false,
             NetworkParameters.ID_TESTNET,
             6
         );
@@ -174,6 +177,7 @@ class PendingFederationTest {
     void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_mainnet() {
         testBuildFederation(
             true,
+            false,
             false,
             false,
             NetworkParameters.ID_MAINNET,
@@ -187,6 +191,7 @@ class PendingFederationTest {
             true,
             true,
             false,
+            false,
             NetworkParameters.ID_TESTNET,
             6
         );
@@ -197,6 +202,7 @@ class PendingFederationTest {
         testBuildFederation(
             true,
             true,
+            false,
             false,
             NetworkParameters.ID_MAINNET,
             6
@@ -209,6 +215,7 @@ class PendingFederationTest {
             true,
             true,
             true,
+            false,
             NetworkParameters.ID_TESTNET,
             6
         );
@@ -217,6 +224,31 @@ class PendingFederationTest {
     @Test
     void buildFederation_after_RSKIP_353_activation_mainnet() {
         testBuildFederation(
+            true,
+            true,
+            true,
+            false,
+            NetworkParameters.ID_MAINNET,
+            6
+        );
+    }
+
+    @Test
+    void buildFederation_after_RSKIP_305_activation_testnet() {
+        testBuildFederation(
+            true,
+            true,
+            true,
+            true,
+            NetworkParameters.ID_TESTNET,
+            6
+        );
+    }
+
+    @Test
+    void buildFederation_after_RSKIP_305_activation_mainnet() {
+        testBuildFederation(
+            true,
             true,
             true,
             true,
@@ -386,6 +418,7 @@ class PendingFederationTest {
         boolean isRskip201Active,
         boolean isRskip284Active,
         boolean isRskip353Active,
+        boolean isRskip305Active,
         String networkId,
         int federationMembersCount) {
 
@@ -393,6 +426,7 @@ class PendingFederationTest {
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(isRskip201Active);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(isRskip305Active);
 
         BridgeConstants bridgeConstants;
         if (networkId.equals(NetworkParameters.ID_MAINNET)) {
@@ -432,8 +466,11 @@ class PendingFederationTest {
         else if (expectedFederationShouldBeNonStandardErp(isRskip353Active)) {
             expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
         }
-        else {
+        else if (expectedFederationShouldBeP2shErp(isRskip305Active)) {
             expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+        }
+        else {
+            expectedFederation = FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
         }
 
         assertEquals(expectedFederation, builtFederation);
@@ -448,6 +485,10 @@ class PendingFederationTest {
 
     private boolean expectedFederationShouldBeNonStandardErp(boolean isRskip353Active) {
         return !isRskip353Active;
+    }
+
+    private boolean expectedFederationShouldBeP2shErp(boolean isRskip305Active) {
+        return !isRskip305Active;
     }
 
     private int randomInRange(int min, int max) {
