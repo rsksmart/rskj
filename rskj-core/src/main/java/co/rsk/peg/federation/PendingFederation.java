@@ -127,8 +127,17 @@ public final class PendingFederation {
             return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
         }
 
-        logger.info("[buildFederation] Going to create a P2SH ERP Federation");
-        return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+        if (shouldBuildP2shFederation(activations)) {
+            logger.info("[buildFederation] Going to create a P2SH ERP Federation");
+            return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+        }
+
+        logger.info("[buildFederation] Going to create a P2SH P2WSH ERP Federation");
+        return FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
+    }
+
+    private static boolean shouldBuildP2shFederation(ActivationConfig.ForBlock activations) {
+        return !activations.isActive(ConsensusRule.RSKIP305);
     }
 
     private boolean shouldBuildStandardMultisigFederation(ActivationConfig.ForBlock activations) {
