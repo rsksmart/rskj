@@ -18,10 +18,13 @@
 package co.rsk;
 
 import co.rsk.util.PreflightChecksUtils;
+import io.prometheus.metrics.exporter.httpserver.HTTPServer;
+import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 
 /**
  * The entrypoint for the RSK full node
@@ -29,6 +32,7 @@ import javax.annotation.Nonnull;
 public class Start {
     private static final Logger logger = LoggerFactory.getLogger("start");
     public static void main(String[] args) {
+        startPrometheusServer();
         setUpThread(Thread.currentThread());
         RskContext ctx = null;
         try {
@@ -59,5 +63,15 @@ public class Start {
 
     static void setUpThread(@Nonnull Thread thread) {
         thread.setName("main");
+    }
+
+    static void startPrometheusServer () {
+
+        try {
+            JvmMetrics.builder().register();
+            HTTPServer.builder().port(9100).buildAndStart();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
