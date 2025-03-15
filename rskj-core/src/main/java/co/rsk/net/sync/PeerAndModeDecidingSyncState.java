@@ -87,22 +87,22 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private boolean tryStartSnapshotSync() {
-//        if (!syncConfiguration.isClientSnapSyncEnabled()) {
+        if (!syncConfiguration.isClientSnapSyncEnabled()) {
 //            logger.debug("Snap syncing disabled");
-//            return false;
-//        }
+            return false;
+        }
 
         Optional<Peer> bestPeerOpt = peersInformation.getBestSnapPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 
         if (bestPeerOpt.isEmpty() || peerBestBlockNumOpt.isEmpty()) {
-            logger.info("Snap syncing not possible, no snap-capable peer available");
+//            logger.info("Snap syncing not possible, no snap-capable peer available");
             return false;
         }
 
         // we consider Snap as part of the Long Sync
         if (!isValidSnapDistance(peerBestBlockNumOpt.get())) {
-            logger.info("Snap syncing not required");
+//            logger.info("Snap syncing not required");
             return false;
         }
 
