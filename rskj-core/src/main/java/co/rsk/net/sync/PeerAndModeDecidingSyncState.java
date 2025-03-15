@@ -87,10 +87,10 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private boolean tryStartSnapshotSync() {
-        if (!syncConfiguration.isClientSnapSyncEnabled()) {
-            logger.debug("Snap syncing disabled");
-            return false;
-        }
+//        if (!syncConfiguration.isClientSnapSyncEnabled()) {
+//            logger.debug("Snap syncing disabled");
+//            return false;
+//        }
 
         Optional<Peer> bestPeerOpt = peersInformation.getBestSnapPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
