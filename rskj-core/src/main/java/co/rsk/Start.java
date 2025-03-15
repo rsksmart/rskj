@@ -32,7 +32,7 @@ import java.io.IOException;
 public class Start {
     private static final Logger logger = LoggerFactory.getLogger("start");
     public static void main(String[] args) {
-//        startPrometheusServer();
+        startPrometheusServer();
         setUpThread(Thread.currentThread());
         RskContext ctx = null;
         try {
@@ -68,7 +68,7 @@ public class Start {
     static void startPrometheusServer () {
         try {
             JvmMetrics.builder().register();
-            HTTPServer.builder().port(9100).buildAndStart();
+            HTTPServer.builder().port(9200).buildAndStart();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
