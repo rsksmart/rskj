@@ -19,6 +19,9 @@ package co.rsk.util;
 
 import co.rsk.altbn128.cloudflare.Utils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
+import org.ethereum.core.Blockchain;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -68,5 +71,20 @@ public class SystemUtils {
                 Pair.of("memory.max", Long.toString(runtime.maxMemory())),
                 Pair.of("memory.total", Long.toString(runtime.totalMemory()))
         );
+    }
+
+    private static List<NetworkUpgrade> getDisabledNetworkUpgrades(Blockchain blockchain, ActivationConfig activationConfig) {
+        final var latestBlock = blockchain.getBestBlock();
+
+        return Arrays.stream(NetworkUpgrade.values())
+                .filter(networkUpgrade -> !activationConfig.containsNetworkUpgrade(networkUpgrade) || !activationConfig.isActive(networkUpgrade, latestBlock.getNumber()))
+                .toList();
+    }
+
+    public static void printDisabledNetworkUpgrades(Logger logger,  Blockchain blockchain, ActivationConfig activationConfig) {
+        final var disabledNetworkUpgrades = getDisabledNetworkUpgrades(blockchain, activationConfig);
+        final var latestBlock = blockchain.getBestBlock();
+
+        disabledNetworkUpgrades.forEach(disabledNetworkUpgrade -> logger.warn("WARNING: Network upgrade {} is DISABLED. Best block number is: {}.", disabledNetworkUpgrade.name(), latestBlock.getNumber()));
     }
 }
