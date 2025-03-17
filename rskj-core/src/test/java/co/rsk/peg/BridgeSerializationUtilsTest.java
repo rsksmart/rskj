@@ -317,17 +317,38 @@ class BridgeSerializationUtilsTest {
         assertThrows(IllegalArgumentException.class, () -> deserializeRskTxHash(null));
     }
 
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeReleasesOutpointsValues_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
+        // Act
+        SortedMap<Sha256Hash, List<Coin>> result =
+            BridgeSerializationUtils.deserializeReleasesOutpointsValues(data);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
     @Test
-    void serializeAndDeserializePegoutOutpointsValues_() {
-        Sha256Hash pegoutTxHash = Sha256Hash.wrap("2deec182f1af488e422ffc45695faaa3bd75981c1693d2e2ae3802b1a38cac26");
-        List<Coin> outpointsValues = Arrays.asList(Coin.valueOf(1000), Coin.valueOf(1), Coin.COIN);
-        Map.Entry<Sha256Hash, List<Coin>> pegoutOutpointsValues = new AbstractMap.SimpleEntry<>(pegoutTxHash, outpointsValues);
+    void serializeAndDeserializeReleasesOutpointsValues_forValidEntries_shouldReturnOriginalMap() {
+        // Arrange
+        SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValues = new TreeMap<>();
 
-        byte[] serialized = BridgeSerializationUtils.serializePegoutOutpointsValues(pegoutOutpointsValues);
-        Map.Entry<Sha256Hash, List<Coin>> deserialized = BridgeSerializationUtils.deserializePegoutOutpointsValues(serialized);
+        Sha256Hash pegoutTxHash1 = BitcoinTestUtils.createHash(1);
+        List<Coin> pegoutOutpointsValues1 = Arrays.asList(Coin.valueOf(1000), Coin.valueOf(1), Coin.COIN);
+        releasesOutpointsValues.put(pegoutTxHash1, pegoutOutpointsValues1);
 
-        assertEquals(deserialized.getKey(), pegoutTxHash);
-        assertEquals(deserialized.getValue(), outpointsValues);
+        Sha256Hash pegoutTxHash2 = BitcoinTestUtils.createHash(2);
+        List<Coin> pegoutOutpointsValues2 = Arrays.asList(Coin.valueOf(12345), Coin.valueOf(1), Coin.COIN);
+        releasesOutpointsValues.put(pegoutTxHash2, pegoutOutpointsValues2);
+
+        // Act
+        byte[] serializedReleasesOutpointsValues = BridgeSerializationUtils.serializeReleasesOutpointsValues(releasesOutpointsValues);
+        SortedMap<Sha256Hash, List<Coin>> deserializedReleasesOutpointsValues = BridgeSerializationUtils.deserializeReleasesOutpointsValues(serializedReleasesOutpointsValues);
+
+        // Assert
+        assertEquals(deserializedReleasesOutpointsValues, releasesOutpointsValues);
     }
 
     @Test
