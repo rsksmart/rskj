@@ -63,6 +63,7 @@ public class BridgeStorageProvider {
     private ReleaseRequestQueue releaseRequestQueue;
     private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
+    private SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValues;
 
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
@@ -239,6 +240,54 @@ public class BridgeStorageProvider {
         }
     }
 
+    public Optional<SortedMap<Sha256Hash, List<Coin>>> getReleasesOutpointsValues() {
+        if (!activations.isActive(RSKIP305)) {
+            return Optional.empty();
+        }
+
+        if (releasesOutpointsValues != null) {
+            return Optional.of(releasesOutpointsValues);
+        }
+
+        releasesOutpointsValues = safeGetFromRepository(
+            RELEASES_OUTPOINTS_VALUES,
+            BridgeSerializationUtils::deserializeReleasesOutpointsValues
+        );
+
+        return Optional.ofNullable(releasesOutpointsValues)
+            .filter(map -> !map.isEmpty())
+            .map(Collections::unmodifiableSortedMap);
+    }
+
+    public void setReleaseOutpointsValues(Sha256Hash releaseTxHash, List<Coin> outpointsValues) {
+        if (releaseTxHash == null || outpointsValues == null) {
+            throw new IllegalArgumentException(
+                String.format("Invalid release outpoints values entry, has hash %s and coins list %s", releaseTxHash, outpointsValues)
+            );
+        }
+
+        if (releasesOutpointsValues == null) {
+            releasesOutpointsValues = new TreeMap<>();
+        }
+        releasesOutpointsValues.put(releaseTxHash, outpointsValues);
+    }
+
+    private void saveReleasesOutpointsValues() {
+        if (!activations.isActive(RSKIP305)) {
+            return;
+        }
+
+        if (releasesOutpointsValues == null) {
+            return;
+        }
+
+        safeSaveToRepository(
+            RELEASES_OUTPOINTS_VALUES,
+            releasesOutpointsValues,
+            BridgeSerializationUtils::serializeReleasesOutpointsValues
+        );
+    }
+
     public SortedMap<Keccak256, BtcTransaction> getPegoutsWaitingForSignatures() throws IOException {
         if (pegoutsWaitingForSignatures != null) {
             return pegoutsWaitingForSignatures;
@@ -251,7 +300,7 @@ public class BridgeStorageProvider {
         return pegoutsWaitingForSignatures;
     }
 
-    public void savePegoutsWaitingForSignatures() {
+    private void savePegoutsWaitingForSignatures() {
         if (pegoutsWaitingForSignatures == null) {
             return;
         }
@@ -734,6 +783,8 @@ public class BridgeStorageProvider {
         saveNextPegoutHeight();
 
         savePegoutTxSigHashes();
+
+        saveReleasesOutpointsValues();
 
         saveSvpFundTxHashUnsigned();
         saveSvpFundTxSigned();
