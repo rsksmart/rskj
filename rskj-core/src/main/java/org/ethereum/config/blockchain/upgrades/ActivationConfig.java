@@ -18,6 +18,7 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException.WrongType;
 import com.typesafe.config.ConfigValue;
@@ -30,8 +31,14 @@ public class ActivationConfig {
     private static final String PROPERTY_CONSENSUS_RULES = "consensusRules";
 
     private final Map<ConsensusRule, Long> activationHeights;
+    private final Map<NetworkUpgrade, Long> networkUpgrades;
 
-    public ActivationConfig(Map<ConsensusRule, Long> activationHeights) {
+    @VisibleForTesting
+    ActivationConfig(Map<ConsensusRule, Long> activationHeights) {
+        this(activationHeights, null);
+    }
+
+    public ActivationConfig(Map<ConsensusRule, Long> activationHeights, Map<NetworkUpgrade, Long> networkUpgrades) {
         if (activationHeights.size() != ConsensusRule.values().length) {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
             missing.removeAll(activationHeights.keySet());
@@ -42,6 +49,7 @@ public class ActivationConfig {
         }
 
         this.activationHeights = activationHeights;
+        this.networkUpgrades = networkUpgrades;
     }
 
     public byte getHeaderVersion(long blockNumber) {
@@ -54,6 +62,15 @@ public class ActivationConfig {
 
     public boolean isActive(ConsensusRule consensusRule, long blockNumber) {
         long activationHeight = activationHeights.get(consensusRule);
+        return 0 <= activationHeight && activationHeight <= blockNumber;
+    }
+
+    public boolean containsNetworkUpgrade(NetworkUpgrade networkUpgrade) {
+        return networkUpgrades.containsKey(networkUpgrade);
+    }
+
+    public boolean isActive(NetworkUpgrade networkUpgrade, long blockNumber) {
+        long activationHeight = networkUpgrades.get(networkUpgrade);
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
@@ -83,7 +100,7 @@ public class ActivationConfig {
             activationHeights.put(consensusRule, activationHeight);
         }
 
-        return new ActivationConfig(activationHeights);
+        return new ActivationConfig(activationHeights, networkUpgrades);
     }
 
     private static long parseActivationHeight(

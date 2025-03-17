@@ -18,11 +18,18 @@
 
 package co.rsk.util;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
@@ -31,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,5 +82,55 @@ class SystemUtilsTest {
         Assertions.assertTrue(params.containsKey("memory.free"));
         Assertions.assertTrue(params.containsKey("memory.max"));
         Assertions.assertTrue(params.containsKey("memory.total"));
+    }
+
+    @Test
+    void testPrintDisabledNetworkUpgrades() {
+        final var logger = mock(Logger.class);
+        final var blockchain = mock(Blockchain.class);
+        final var bestBlock = mock(Block.class);
+        final var bestBlockNumber = -1L;
+
+        Mockito.when(blockchain.getBestBlock()).thenReturn(bestBlock);
+        Mockito.when(bestBlock.getNumber()).thenReturn(bestBlockNumber);
+
+        final var activationConfig = ActivationConfigsForTest.regtest();
+
+        SystemUtils.printDisabledNetworkUpgrades(logger, blockchain, activationConfig);
+
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.GENESIS.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.BAHAMAS.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.AFTER_BRIDGE_SYNC.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.ORCHID.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.ORCHID_060.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.WASABI_100.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.PAPYRUS_200.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.TWOTOTHREE.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.IRIS300.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.HOP400.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.HOP401.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.FINGERROOT500.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.ARROWHEAD600.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.ARROWHEAD631.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.LOVELL700.name()),Mockito.eq(bestBlockNumber));
+    }
+
+    @Test
+    void testPrintDisabledNetworkUpgradesWithNoDisabledNetworkUpgrade() {
+        final var logger = mock(Logger.class);
+        final var blockchain = mock(Blockchain.class);
+        final var bestBlock = mock(Block.class);
+        final var bestBlockNumber = 10L;
+
+        Mockito.when(blockchain.getBestBlock()).thenReturn(bestBlock);
+        Mockito.when(bestBlock.getNumber()).thenReturn(bestBlockNumber);
+
+        final var activationConfig = ActivationConfigsForTest.regtest();
+
+        SystemUtils.printDisabledNetworkUpgrades(logger, blockchain, activationConfig);
+
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.GENESIS.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.AFTER_BRIDGE_SYNC.name()),Mockito.eq(bestBlockNumber));
+        verify(logger, times(1)).warn(Mockito.eq("WARNING: Network upgrade {} is DISABLED. Best block number is: {}."), Mockito.eq(NetworkUpgrade.ARROWHEAD631.name()),Mockito.eq(bestBlockNumber));
     }
 }
