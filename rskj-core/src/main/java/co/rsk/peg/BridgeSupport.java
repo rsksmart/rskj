@@ -102,7 +102,7 @@ public class BridgeSupport {
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
-    private static final Logger logger = LoggerFactory.getLogger(BridgeSupport.class);
+    private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final BridgeConstants bridgeConstants;
