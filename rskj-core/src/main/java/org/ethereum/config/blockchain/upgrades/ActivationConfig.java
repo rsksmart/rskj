@@ -35,7 +35,7 @@ public class ActivationConfig {
 
     @VisibleForTesting
     ActivationConfig(Map<ConsensusRule, Long> activationHeights) {
-        this(activationHeights, null);
+        this(activationHeights, new HashMap<>());
     }
 
     public ActivationConfig(Map<ConsensusRule, Long> activationHeights, Map<NetworkUpgrade, Long> networkUpgrades) {
