@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -452,26 +453,13 @@ class FederationChangeIT {
         assertEventWasEmittedWithExpectedData(encodedData);
     }
 
-    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-        return bridgeEvent.encodeEventData(args);
-    }
-
     private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = logs.stream()
-            .filter(log -> log.getTopics().equals(expectedTopics))
-            .findFirst();
+        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
         assertTrue(topicOpt.isPresent());
     }
 
     private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-        Optional<LogInfo> data = logs.stream()
-            .filter(log -> Arrays.equals(log.getData(), expectedData))
-            .findFirst();
+        Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
     }
     

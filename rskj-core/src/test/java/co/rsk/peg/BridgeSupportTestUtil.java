@@ -14,9 +14,12 @@ import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
