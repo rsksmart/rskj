@@ -18,11 +18,13 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeEventsTestUtils.*;
+import static co.rsk.peg.BridgeStorageIndexKey.RELEASE_REQUEST_QUEUE_WITH_TXHASH;
 import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
-import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
-import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createUTXO;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.getBtcEcKeyFromSeed;
+import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -101,9 +103,12 @@ class BridgeSupportTest {
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
 
+    private Repository repository;
     private WhitelistStorageProvider whitelistStorageProvider;
     private WhitelistSupport whitelistSupport;
     private LockingCapSupport lockingCapSupport;
+    private StorageAccessor bridgeStorageAccessor;
+    private FederationStorageProvider federationStorageProvider;
     private FederationSupport federationSupport;
     private FeePerKbSupport feePerKbSupport;
 
@@ -113,22 +118,32 @@ class BridgeSupportTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
+    private static final Transaction tx = Transaction
+        .builder()
+        .nonce(NONCE)
+        .gasPrice(GAS_PRICE)
+        .gasLimit(GAS_LIMIT)
+        .destination(Hex.decode(TO_ADDRESS))
+        .data(Hex.decode(DATA))
+        .chainId(Constants.MAINNET_CHAIN_ID)
+        .value(DUST_AMOUNT)
+        .build();
+    private static final ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-    private ActivationConfig.ForBlock activationsBeforeForks;
-    private ActivationConfig.ForBlock activationsAfterForks;
+    private static final ActivationConfig.ForBlock activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
+    private static final ActivationConfig.ForBlock activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
 
     private SignatureCache signatureCache;
 
     @BeforeEach
     void setUpOnEachTest() {
-        activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
-        activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        tx.sign(senderKey.getPrivKeyBytes());
 
-        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        bridgeStorageAccessor = new InMemoryStorage();
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         whitelistStorageProvider = new WhitelistStorageProviderImpl(bridgeStorageAccessor);
         LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
 
@@ -150,6 +165,8 @@ class BridgeSupportTest {
             LockingCapMainNetConstants.getInstance(),
             signatureCache
         );
+
+        repository = createRepository();
     }
 
     @Test
@@ -179,6 +196,101 @@ class BridgeSupportTest {
         int result = bridgeSupport.voteFeePerKbChange(tx, feePerKbVote);
 
         assertEquals(FeePerKbResponseCode.SUCCESSFUL_VOTE.getCode(), result);
+    }
+
+    @Test
+    void updateCollections_whenReleasesInQueue_processReleaseTransactionsInfo() throws IOException {
+        // Arrange
+        // save utxos in active federation wallet
+        Federation activeFederation = FederationTestUtils.getErpFederation(btcMainnetParams);
+        federationStorageProvider.setNewFederation(activeFederation);
+        Coin outpointValue1 = Coin.valueOf(300_000);
+        Coin outpointValue2 = Coin.valueOf(150_000);
+        Coin outpointValue3 = Coin.valueOf(50_000);
+        List<UTXO> activeFederationUTXOs = List.of(
+            BitcoinTestUtils.createUTXO(1, 0, outpointValue1, activeFederation.getAddress()),
+            BitcoinTestUtils.createUTXO(2, 0, outpointValue2, activeFederation.getAddress()),
+            BitcoinTestUtils.createUTXO(3, 0, outpointValue3, activeFederation.getAddress())
+        );
+        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+        // save releases in queue
+        Address destinationAddress1 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "firstAddress");
+        Coin requestedValue1 = Coin.valueOf(100_000);
+        Keccak256 rskTxHash1 = RskTestUtils.createHash(1);
+        ReleaseRequestQueue.Entry releaseEntry1 = new ReleaseRequestQueue.Entry(destinationAddress1, requestedValue1, rskTxHash1);
+
+        Address destinationAddress2 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "secondAddress");
+        Coin requestedValue2 = Coin.valueOf(400_000);
+        Keccak256 rskTxHash2 = RskTestUtils.createHash(2);
+        ReleaseRequestQueue.Entry releaseEntry2 = new ReleaseRequestQueue.Entry(destinationAddress2, requestedValue2, rskTxHash2);
+
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(List.of(releaseEntry1, releaseEntry2));
+        repository.addStorageBytes(contractAddress, RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey(), BridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(releaseRequestQueue));
+
+        // recreate bridge support
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+            bridgeMainNetConstants,
+            activationsAfterForks,
+            logs
+        );
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, activationsAfterForks);
+
+        Coin feePerKb = Coin.valueOf(10_000L);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeMainNetConstants)
+            .withProvider(provider)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withActivations(activationsAfterForks)
+            .withEventLogger(bridgeEventLogger)
+            .build();
+
+        // Act
+        bridgeSupport.updateCollections(tx);
+
+        // Assert
+        List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
+        // pegout transaction created event was emitted
+        // first assert we only have one pegout wfc, so we know is the batch pegout tx
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWFC = provider.getPegoutsWaitingForConfirmations().getEntries();
+        assertEquals(1, pegoutsWFC.size());
+        Optional<PegoutsWaitingForConfirmations.Entry> pegoutTransactionEntry = pegoutsWFC.stream().findFirst();
+        assertTrue(pegoutTransactionEntry.isPresent());
+        BtcTransaction pegoutTransaction = pegoutTransactionEntry.get().getBtcTransaction();
+
+        CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+        Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
+
+        byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(expectedOutpointsValues);
+        byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+
+        // release outpoints values were saved
+        Optional<SortedMap<Sha256Hash, List<Coin>>> releasesOutpointsValuesOpt = provider.getReleasesOutpointsValues();
+        assertTrue(releasesOutpointsValuesOpt.isPresent());
+
+        SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValues = releasesOutpointsValuesOpt.get();
+        assertEquals(1, releasesOutpointsValues.size());
+        Sha256Hash releaseOutpointsValuesKey = releasesOutpointsValues.firstKey();
+        assertEquals(expectedOutpointsValues, releasesOutpointsValues.get(releaseOutpointsValuesKey));
+    }
+
+    private void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
+        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
+        assertTrue(topicOpt.isPresent());
+    }
+
+    private void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
+        Optional<LogInfo> data = getLogsData(logs, expectedData);
+        assertTrue(data.isPresent());
     }
 
     @Nested
@@ -1498,7 +1610,7 @@ class BridgeSupportTest {
         Federation retiringFederation = FederationFactory.buildStandardMultiSigFederation(retiringFederationArgs);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
@@ -1596,7 +1708,7 @@ class BridgeSupportTest {
         assertEquals(0, repository.getBalance(srcKey1RskAddress).asBigInteger().intValue());
         assertEquals(0, repository.getBalance(srcKey2RskAddress).asBigInteger().intValue());
         assertEquals(0, repository.getBalance(srcKey3RskAddress).asBigInteger().intValue());
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
 
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcParams, activations).size());
         assertEquals(0, federationStorageProvider.getOldFederationBtcUTXOs().size());
@@ -1685,7 +1797,7 @@ class BridgeSupportTest {
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(federation2Args);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -1783,7 +1895,7 @@ class BridgeSupportTest {
         assertEquals(0, repository.getBalance(srcKey1RskAddress).asBigInteger().intValue());
         assertEquals(0, repository.getBalance(srcKey2RskAddress).asBigInteger().intValue());
         assertEquals(0, repository.getBalance(srcKey3RskAddress).asBigInteger().intValue());
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
 
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, federationStorageProvider.getOldFederationBtcUTXOs().size());
@@ -2011,19 +2123,6 @@ class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 18500 since we are using mainnet constants
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2084,17 +2183,6 @@ class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 18500 since we are using mainnet constants
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        tx.sign(new ECKey().getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2161,18 +2249,6 @@ class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 18500 since we are using mainnet constants
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2233,19 +2309,6 @@ class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 18500 since we are using mainnet constants
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2316,19 +2379,6 @@ class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 18500 since we are using mainnet constants
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2389,16 +2439,6 @@ class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 18500 since we are using mainnet constants
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(18510, 1);
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
 
         federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -2416,9 +2456,6 @@ class BridgeSupportTest {
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
-
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
         sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
@@ -2474,19 +2511,6 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2529,19 +2553,6 @@ class BridgeSupportTest {
             .withEventLogger(eventLogger)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         verify(eventLogger, times(1)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
@@ -2584,19 +2595,6 @@ class BridgeSupportTest {
             .withEventLogger(eventLogger)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
@@ -2636,19 +2634,6 @@ class BridgeSupportTest {
             .withEventLogger(eventLogger)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), 1L);
@@ -2686,19 +2671,6 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2738,19 +2710,6 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(rskTxHash));
@@ -2791,19 +2750,6 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertEquals(btcTx, provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -2877,19 +2823,6 @@ class BridgeSupportTest {
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         // Assert two transactions are added to pegoutsWaitingForConfirmations, one pegout batch and one migration tx
@@ -2931,18 +2864,6 @@ class BridgeSupportTest {
             .withActivations(fingerrootActivations)
             .withFeePerKbSupport(feePerKbSupport)
             .build();
-
-        tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         // Get the transaction that was confirmed and the one that stayed unconfirmed
@@ -3001,18 +2922,6 @@ class BridgeSupportTest {
             .withFeePerKbSupport(feePerKbSupport)
             .build();
 
-        tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        tx.sign(senderKey.getPrivKeyBytes());
-
         bridgeSupport.updateCollections(tx);
 
         assertEquals(0, pegoutsWaitingForConfirmations.getEntries().size());
@@ -3053,19 +2962,6 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
         bridgeSupport.updateCollections(tx);
 
         assertNull(provider.getPegoutsWaitingForSignatures().get(tx.getHash()));
@@ -3105,20 +3001,6 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .build();
-
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
 
         TreeMap<Keccak256, BtcTransaction> txsWaitingForSignatures = new TreeMap<>();
         BtcTransaction existingBtcTxEntryValue = mock(BtcTransaction.class);
@@ -3176,19 +3058,6 @@ class BridgeSupportTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Transaction tx = Transaction
-            .builder()
-            .nonce(NONCE)
-            .gasPrice(GAS_PRICE)
-            .gasLimit(GAS_LIMIT)
-            .destination(Hex.decode(TO_ADDRESS))
-            .data(Hex.decode(DATA))
-            .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(DUST_AMOUNT)
-            .build();
-        ECKey senderKey = RskTestUtils.getEcKeyFromSeed("sender");
-        tx.sign(senderKey.getPrivKeyBytes());
-
         assertThrows(IllegalStateException.class, () -> bridgeSupport.updateCollections(tx));
     }
 
@@ -3200,7 +3069,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3277,7 +3146,7 @@ class BridgeSupportTest {
         );
 
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -3294,7 +3163,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3375,7 +3244,7 @@ class BridgeSupportTest {
 
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
         assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskDestinationAddress));
-        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(contractAddress));
         assertEquals(1, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(amountToLock, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).get(0).getValue());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -3392,7 +3261,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3473,7 +3342,7 @@ class BridgeSupportTest {
 
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(contractAddress));
         assertEquals(1, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(amountToLock, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).get(0).getValue());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -3490,7 +3359,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3570,7 +3439,7 @@ class BridgeSupportTest {
 
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
@@ -3600,7 +3469,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3679,7 +3548,7 @@ class BridgeSupportTest {
 
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(contractAddress));
         assertEquals(1, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(Coin.COIN.multiply(5), federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).get(0).getValue());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -3696,7 +3565,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3767,7 +3636,7 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -3783,7 +3652,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3868,7 +3737,7 @@ class BridgeSupportTest {
 
         assertThat(whitelist.isWhitelisted(btcAddress), is(false));
         assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(contractAddress));
         assertEquals(1, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(amountToLock, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).get(0).getValue());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
@@ -3885,7 +3754,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3970,7 +3839,7 @@ class BridgeSupportTest {
         );
 
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
 
@@ -4000,7 +3869,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -4072,7 +3941,7 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -4088,7 +3957,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -4161,7 +4030,7 @@ class BridgeSupportTest {
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -4191,7 +4060,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -4263,7 +4132,7 @@ class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
         assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskAddress));
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(0, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -4279,7 +4148,7 @@ class BridgeSupportTest {
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         Block executionBlock = mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -4361,7 +4230,7 @@ class BridgeSupportTest {
             pmt.bitcoinSerialize()
         );
 
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -4958,7 +4827,7 @@ class BridgeSupportTest {
 
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
@@ -5195,7 +5064,7 @@ class BridgeSupportTest {
 
         Federation federation1 = PegTestUtils.createSimpleActiveFederation(bridgeConstantsRegtest);
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        repository.addBalance(contractAddress, LIMIT_MONETARY_BASE);
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
@@ -5305,7 +5174,7 @@ class BridgeSupportTest {
         );
 
         // Assert
-        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(contractAddress));
         assertEquals(0, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, provider.getPegoutsWaitingForConfirmations().getEntries().size());
@@ -5576,7 +5445,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations
         ));
@@ -5655,7 +5524,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -5735,7 +5604,7 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(),
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(),
             activations));
 
         BridgeSupport bridgeSupport = getBridgeSupport(
@@ -5795,7 +5664,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -5866,7 +5735,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activations)
         );
@@ -6367,7 +6236,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
         Repository repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstantsRegtest,
@@ -6392,7 +6261,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
         Repository repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activations);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstantsRegtest,
@@ -6438,7 +6307,7 @@ class BridgeSupportTest {
     void isAlreadyBtcTxHashProcessedHeight_true() throws IOException {
         Repository repository = createRepository();
         BtcTransaction btcTransaction = new BtcTransaction(btcRegTestParams);
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activationsBeforeForks);
 
         provider.setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(), 1L);
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -6461,7 +6330,7 @@ class BridgeSupportTest {
     void validationsForRegisterBtcTransaction_negative_height() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
         Repository repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstantsRegtest.getBtcParams(), activationsBeforeForks);
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
@@ -6479,7 +6348,7 @@ class BridgeSupportTest {
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            contractAddress,
             bridgeConstantsRegtest.getBtcParams(),
             activationsBeforeForks
         );
@@ -7296,7 +7165,7 @@ class BridgeSupportTest {
             Repository repository = createRepository();
             BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
-                PrecompiledContracts.BRIDGE_ADDR,
+                contractAddress,
                 bridgeTestnetConstants.getBtcParams(),
                 activationsAfterForks
             );
@@ -7397,7 +7266,7 @@ class BridgeSupportTest {
             // recreate context pre rskip 434 for mainnet
             BridgeStorageProvider bridgeStorageProviderPreRSKIP434 = new BridgeStorageProvider(
                 repository,
-                PrecompiledContracts.BRIDGE_ADDR,
+                contractAddress,
                 bridgeMainnetConstants.getBtcParams(),
                 activationsPreRSKIP434
             );
@@ -7414,7 +7283,7 @@ class BridgeSupportTest {
             // recreate context post rskip 434 for mainnet
             BridgeStorageProvider bridgeStorageProviderPostRSKIP434 = new BridgeStorageProvider(
                 repository,
-                PrecompiledContracts.BRIDGE_ADDR,
+                contractAddress,
                 bridgeMainnetConstants.getBtcParams(),
                 activationsPostRSKIP434
             );
@@ -7537,7 +7406,7 @@ class BridgeSupportTest {
         void receiveHeader_networkNotMainnet_returnsSuccessfulAndSavesTheBlock(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) throws BlockStoreException, IOException {
             BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
-                PrecompiledContracts.BRIDGE_ADDR,
+                contractAddress,
                 bridgeConstants.getBtcParams(),
                 activations
             );
@@ -7572,7 +7441,7 @@ class BridgeSupportTest {
         void receiveHeaders_networkNotMainnet_savesAllBlocks(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) throws BlockStoreException, IOException {
             BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
-                PrecompiledContracts.BRIDGE_ADDR,
+                contractAddress,
                 bridgeConstants.getBtcParams(),
                 activations
             );
@@ -8277,7 +8146,7 @@ class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            contractAddress,
             bridgeConstants.getBtcParams(),
             activations
         );
@@ -8323,7 +8192,7 @@ class BridgeSupportTest {
         }
         // Fund bridge in RBTC, substracting the funds that we are indicating were locked in the federations (which means a user locked)
         co.rsk.core.Coin bridgeBalance = LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(currentFunds));
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, bridgeBalance);
+        repository.addBalance(contractAddress, bridgeBalance);
 
         // The locking cap shouldn't be surpassed by the initial configuration
         assertFalse(isLockingCapEnabled && currentFunds.isGreaterThan(lockingCap));
@@ -8441,7 +8310,7 @@ class BridgeSupportTest {
 
         // Verify amount was locked
         assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKeyRskAddress));
-        assertEquals(bridgeBalance.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        assertEquals(bridgeBalance.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(contractAddress));
 
         if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack
