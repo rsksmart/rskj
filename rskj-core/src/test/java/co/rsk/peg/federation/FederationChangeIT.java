@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;

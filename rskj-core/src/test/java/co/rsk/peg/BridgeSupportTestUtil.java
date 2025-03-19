@@ -163,25 +163,4 @@ public final class BridgeSupportTestUtil {
 
         return new Keccak256(HashUtil.keccak256(result));
     }
-
-    public static List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    public static byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-        return bridgeEvent.encodeEventData(args);
-    }
-
-    public static Optional<LogInfo> getLogsTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
-        return logs.stream()
-            .filter(log -> log.getTopics().equals(expectedTopics))
-            .findFirst();
-    }
-
-    public static Optional<LogInfo> getLogsData(List<LogInfo> logs, byte[] expectedData) {
-        return logs.stream()
-            .filter(log -> Arrays.equals(log.getData(), expectedData))
-            .findFirst();
-    }
 }
