@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode({Mode.SingleShotTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 5)
-@Measurement(iterations = 100)
-@Timeout(time = 10)
+@Warmup(iterations = 10)
+@Measurement(iterations = 1000)
+@Timeout(time = 30)
 public class LogIndexBenchmark {
 
     @Benchmark
