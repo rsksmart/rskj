@@ -440,8 +440,8 @@ class VoteFederationChangeTest {
             .withRskExecutionBlock(rskExecutionBlock)
             .withActivations(activations)
             .build();
-        Federation activeFederation = federationSupport.getActiveFederation();
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+        Federation otherActiveFederation = federationSupport.getActiveFederation();
+        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, otherActiveFederation.getAddress());
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         voteAndAssertCreateEmptyPendingFederation();
@@ -461,7 +461,7 @@ class VoteFederationChangeTest {
 
         assertPendingFederationVotingWasCleaned();
 
-        assertLogCommitFederation(activeFederation, proposedFederation);
+        assertLogCommitFederation(otherActiveFederation, proposedFederation);
 
         assertNoHandoverToNewFederation();
     }
