@@ -22,9 +22,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
-import co.rsk.util.SuperChainUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.SignatureCache;
@@ -162,7 +162,9 @@ public class BlockResultDTO {
                     EMPTY_TRIE_HASH :
                     b.getTxTrieRoot();
 
-        Boolean superBlock = SuperChainUtils.isSuperBlock(constants, activationConfig, b.getHeader()).orElse(null);
+        Boolean superBlock = activationConfig.isActive(ConsensusRule.RSKIP481, b.getHeader().getNumber())
+                ? b.getHeader().isSuper().orElse(false)
+                : null;
 
         return new BlockResultDTO(
                 isPending ? null : b.getNumber(),

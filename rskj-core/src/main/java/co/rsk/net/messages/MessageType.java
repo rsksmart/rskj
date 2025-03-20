@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;
@@ -233,11 +234,18 @@ public enum MessageType {
                 uncles.add(blockFactory.decodeHeader(element.getRLPData(), false));
             }
 
-            BlockHeaderExtension blockHeaderExtension = message.size() == 3
+            BlockHeaderExtension blockHeaderExtension = message.size() == 3 || message.size() == 4
                     ? BlockHeaderExtension.fromEncoded(message.get(2).getRLPData())
                     : null;
 
-            return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension);
+            SuperBlockFields superBlockFields = null;
+            if (blockHeaderExtension != null) {
+                superBlockFields = message.size() == 4
+                        ? blockFactory.decodeSuperBlockFields(message.get(3).getRLPData(), true)
+                        : null;
+            }
+
+            return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension, superBlockFields);
         }
     },
     SKELETON_REQUEST_MESSAGE(16) {

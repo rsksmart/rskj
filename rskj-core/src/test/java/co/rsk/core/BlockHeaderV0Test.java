@@ -40,6 +40,7 @@ class BlockHeaderV0Test {
                 false,
                 null,
                 null,
+                false,
                 edges
         );
     }

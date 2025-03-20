@@ -24,6 +24,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class SuperBridgeEvent {
@@ -50,7 +51,12 @@ public class SuperBridgeEvent {
         );
     }
 
-    public static SuperBridgeEvent decode(byte[] data) {
+    @Nullable
+    public static SuperBridgeEvent decode(@Nullable byte[] data) {
+        if (data == null) {
+            return null;
+        }
+
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
         checkRLPSize(rlpList);
 

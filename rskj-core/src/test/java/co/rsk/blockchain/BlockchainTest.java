@@ -20,6 +20,7 @@ package co.rsk.blockchain;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
@@ -188,7 +189,8 @@ class BlockchainTest {
         BlockHeader header = block2.getHeader();
         List<Transaction> transactionsList = block2b.getTransactionsList();
         List<BlockHeader> uncleList = block2b.getUncleList();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Block(header, transactionsList, uncleList, true, true));
+        SuperBlockFields superBlockFields = block2b.getSuperBlockFields();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Block(header, transactionsList, uncleList, superBlockFields, true, true));
     }
 
 

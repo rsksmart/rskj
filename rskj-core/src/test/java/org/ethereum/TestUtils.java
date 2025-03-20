@@ -129,7 +129,8 @@ public final class TestUtils {
             Block block = blockFactory.newBlock(
                     newHeader,
                     Collections.emptyList(),
-                    Collections.emptyList()
+                    Collections.emptyList(),
+                    null
             );
 
             ++lastIndex;

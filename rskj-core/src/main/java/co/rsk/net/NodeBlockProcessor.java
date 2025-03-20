@@ -227,7 +227,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        Message responseMessage = new BodyResponseMessage(requestId, block.getTransactionsList(), block.getUncleList(), block.getHeader().getExtension());
+        Message responseMessage = new BodyResponseMessage(requestId, block.getTransactionsList(), block.getUncleList(), block.getHeader().getExtension(), block.getSuperBlockFields());
         sender.sendMessage(responseMessage);
     }
 
