@@ -229,9 +229,10 @@ class MessageTest {
         for (int k = 1; k <= 4; k++) {
             BlockHeader header = anotherBlockFactory.getBlockHeaderBuilder()
                     .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION + k)
+                    .setDifficulty(BlockDifficulty.ONE)
                     .setIncludeForkDetectionData(true)
                     .build();
-            Block block = anotherBlockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), null, false);
             Block minedBlock = blockMiner.mineBlock(block);
             headers.add(minedBlock.getHeader());
         }
@@ -255,9 +256,10 @@ class MessageTest {
         for (int k = 1; k <= 4; k++) {
             BlockHeader header = blockFactory.getBlockHeaderBuilder()
                     .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION + k)
+                    .setDifficulty(BlockDifficulty.ONE)
                     .setIncludeForkDetectionData(true)
                     .build();
-            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), null, false);
             Block minedBlock = blockMiner.mineBlock(block);
             headers.add(minedBlock.getHeader());
         }
@@ -567,7 +569,7 @@ class MessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null, null);
 
         byte[] encoded = message.getEncoded();
 
@@ -616,7 +618,7 @@ class MessageTest {
         short[] edges = new short[]{ 1, 2, 3, 4 };
         BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom, edges);
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, extension);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, extension, null);
 
         byte[] encoded = message.getEncoded();
 

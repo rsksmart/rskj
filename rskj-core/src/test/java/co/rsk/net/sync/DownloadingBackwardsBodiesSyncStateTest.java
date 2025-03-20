@@ -181,14 +181,14 @@ class DownloadingBackwardsBodiesSyncStateTest {
             toRequest.addFirst(headerToRequest);
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), null);
+            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), null, null);
             responses.addFirst(response);
 
             Block block = mock(Block.class);
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles(), response.getSuperBlockFields()))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
@@ -250,14 +250,14 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), blockHeaderExtension);
+            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), blockHeaderExtension, null);
             responses.addFirst(response);
 
             Block block = mock(Block.class);
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles(), response.getSuperBlockFields()))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
@@ -317,14 +317,14 @@ class DownloadingBackwardsBodiesSyncStateTest {
             toRequest.addFirst(headerToRequest);
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), null);
+            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), null, null);
             responses.addFirst(response);
 
             Block block = mock(Block.class);
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles(), response.getSuperBlockFields()))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
@@ -412,7 +412,7 @@ class DownloadingBackwardsBodiesSyncStateTest {
         when(block.getNumber()).thenReturn(bodyId);
         byte[] randomByteArray = TestUtils.generateBytes(DownloadingBackwardsBodiesSyncStateTest.class, "blockHash", 32);
         when(block.getHash()).thenReturn(new Keccak256(randomByteArray)); // make it differ
-        when(blockFactory.newBlock(header, body.getTransactions(), body.getUncles()))
+        when(blockFactory.newBlock(header, body.getTransactions(), body.getUncles(), body.getSuperBlockFields()))
                 .thenReturn(block);
 
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(

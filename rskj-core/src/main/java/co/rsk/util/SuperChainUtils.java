@@ -18,19 +18,15 @@
 
 package co.rsk.util;
 
-import co.rsk.core.bc.SuperBridgeEvent;
-import co.rsk.crypto.Keccak256;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Optional;
 
 public class SuperChainUtils {
@@ -39,36 +35,29 @@ public class SuperChainUtils {
 
     public static Optional<Boolean> isSuperBlock(Constants constants, ActivationConfig activationConfig, BlockHeader header) {
         if (!activationConfig.isActive(ConsensusRule.RSKIP481, header.getNumber())) {
+            return Optional.of(false);
+        }
+
+        BtcBlock btcBlock = BlockUtils.makeBtcBlock(constants.getBridgeConstants().getBtcParams(), header.getBitcoinMergedMiningHeader());
+        if (btcBlock == null) {
             return Optional.empty();
         }
 
-        BigInteger minSuperBlockPoWFactor = constants.getMinSuperBlockPoWFactor();
-        Optional<BigInteger> powFactorBIOpt = DifficultyUtils.difficultyToPoWFactor(constants, header);
-
-        return powFactorBIOpt.map(factor -> factor.compareTo(minSuperBlockPoWFactor) >= 0);
+        return Optional.of(isSuperBlock(constants, activationConfig, header.getNumber(), header.getDifficulty(), btcBlock));
     }
 
-    @Nonnull
-    public static Keccak256 makeSuperChainDataHash(@Nullable Keccak256 superParentHash, long superBlockNumber,
-                                                   @Nonnull List<BlockHeader> superUncles, int superUncleCount,
-                                                   @Nullable SuperBridgeEvent event) {
-        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(superUncles));
-        return makeSuperChainDataHash(superParentHash, superBlockNumber,
-                new Keccak256(unclesListHash), superUncleCount, event);
-    }
+    public static boolean isSuperBlock(Constants constants, ActivationConfig activationConfig,
+                                       long blockNumber, BlockDifficulty difficulty, BtcBlock bitcoinMergedMiningBlock) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber)) {
+            return false;
+        }
 
-    @Nonnull
-    public static Keccak256 makeSuperChainDataHash(@Nullable Keccak256 superParentHash, long superBlockNumber,
-                                                   @Nonnull Keccak256 superUnclesHash, int superUncleCount,
-                                                   @Nullable SuperBridgeEvent event) {
-        byte[] encoded = RLP.encodeList(
-                RLP.encodeElement(Optional.ofNullable(superParentHash).map(Keccak256::getBytes).orElse(new byte[0])),
-                RLP.encodeBigInteger(BigInteger.valueOf(superBlockNumber)),
-                RLP.encodeElement(superUnclesHash.getBytes()),
-                RLP.encodeBigInteger(BigInteger.valueOf(superUncleCount)),
-                RLP.encodeElement(Optional.ofNullable(event).map(SuperBridgeEvent::getEncoded).orElse(new byte[0]))
-        );
+        BigInteger minSuperBlockPoWFactorBI = constants.getMinSuperBlockPoWFactor();
 
-        return new Keccak256(HashUtil.keccak256(encoded));
+        BigInteger superTargetBI = DifficultyUtils.difficultyToTarget(difficulty.multiply(minSuperBlockPoWFactorBI));
+
+        BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
+
+        return bitcoinMergedMiningBlockHashBI.compareTo(superTargetBI) <= 0;
     }
 }

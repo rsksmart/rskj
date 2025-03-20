@@ -92,7 +92,8 @@ class BlockTest {
         Block block = blockFactory.newBlock(
                 newHeader,
                 txs,
-                Collections.emptyList()
+                Collections.emptyList(),
+                null
         );
 
         Block parsedBlock = blockFactory.decodeBlock(block.getEncoded());
