@@ -256,4 +256,26 @@ public class BitcoinTestUtils {
         searchForOutput(outputs, expectedOutputScript)
             .ifPresent(transaction::addInput);
     }
+
+    public static void addWitnessToBtcTxInputWithEmptySignatures(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int witnessSize = pushForOpNotif + pushForRedeemScript + redeemScript.getNumberOfSignaturesRequiredToSpend();
+        TransactionWitness txWitness = new TransactionWitness(witnessSize);
+
+        for (int i = 0; i < witnessSize - 1; i++) {
+            txWitness.setPush(i, new byte[72]);
+        }
+
+        txWitness.setPush(witnessSize - 1, redeemScript.getProgram());
+        btcTx.setWitness(inputIndex, txWitness);
+    }
+
+    public static void addWitnessToBtcTx(BtcTransaction btcTx, int inputIndex, List<byte[]> witness) {
+        TransactionWitness txWitness = new TransactionWitness(witness.size());
+        for (int i = 0; i < witness.size(); i++) {
+            txWitness.setPush(i, witness.get(i));
+        }
+        btcTx.setWitness(inputIndex, txWitness);
+    }
 }
