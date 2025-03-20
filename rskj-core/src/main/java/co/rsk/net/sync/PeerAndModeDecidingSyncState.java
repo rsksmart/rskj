@@ -110,7 +110,6 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
 
         // start snap syncing
-//        syncEventsHandler.startFindingSnapConnectionPoint(bestPeerOpt.get());
         syncEventsHandler.startSnapSync(bestPeerOpt.get());
         return true;
     }

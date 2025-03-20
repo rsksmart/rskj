@@ -47,6 +47,9 @@ import static co.rsk.net.sync.SnapSyncRequestManager.SendRequestException;
 public class SnapSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("SnapSyncState");
+    public static final String INVALID_STATE_IS_RUNNING_MSG = "Invalid state, isRunning: [{}]";
+    public static final String UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG = "Unexpected response: [{}] received with id: [{}]. Ignoring";
+    public static final String PROCESSING_WAS_INTERRUPTED_MSG = "{} processing was interrupted";
 
     private final SnapshotProcessor snapshotProcessor;
     private final SnapSyncRequestManager snapRequestManager;
@@ -106,7 +109,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onEnter() {
         if (isRunning != null) {
-            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            logger.warn(INVALID_STATE_IS_RUNNING_MSG, isRunning);
             return;
         }
         isRunning = Boolean.TRUE;
@@ -117,7 +120,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage) {
         if (!snapRequestManager.processResponse(responseMessage)) {
-            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            logger.warn(UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG, responseMessage.getMessageType(), responseMessage.getId());
             return;
         }
 
@@ -129,7 +132,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("{} processing was interrupted", MessageType.SNAP_STATUS_RESPONSE_MESSAGE, e);
+            logger.warn(PROCESSING_WAS_INTERRUPTED_MSG, MessageType.SNAP_STATUS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -137,7 +140,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage) {
         if (!snapRequestManager.processResponse(responseMessage)) {
-            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            logger.warn(UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG, responseMessage.getMessageType(), responseMessage.getId());
             return;
         }
 
@@ -149,7 +152,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("{} processing was interrupted", MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE, e);
+            logger.warn(PROCESSING_WAS_INTERRUPTED_MSG, MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -157,7 +160,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void onSnapStateChunk(Peer sender, SnapStateChunkResponseMessage responseMessage) {
         if (!snapRequestManager.processResponse(responseMessage)) {
-            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            logger.warn(UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG, responseMessage.getMessageType(), responseMessage.getId());
             return;
         }
 
@@ -169,7 +172,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("{} processing was interrupted", MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE, e);
+            logger.warn(PROCESSING_WAS_INTERRUPTED_MSG, MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -177,7 +180,7 @@ public class SnapSyncState extends BaseSyncState {
     @Override
     public void newBlockHeaders(Peer sender, BlockHeadersResponseMessage responseMessage) {
         if (!snapRequestManager.processResponse(responseMessage)) {
-            logger.warn("Unexpected response: [{}] received with id: [{}]. Ignoring", responseMessage.getMessageType(), responseMessage.getId());
+            logger.warn(UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG, responseMessage.getMessageType(), responseMessage.getId());
             return;
         }
 
@@ -189,7 +192,7 @@ public class SnapSyncState extends BaseSyncState {
                 }
             });
         } catch (InterruptedException e) {
-            logger.warn("{} processing was interrupted", MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, e);
+            logger.warn(PROCESSING_WAS_INTERRUPTED_MSG, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, e);
             Thread.currentThread().interrupt();
         }
     }
@@ -325,7 +328,7 @@ public class SnapSyncState extends BaseSyncState {
 
     public void finish() {
         if (isRunning != Boolean.TRUE) {
-            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            logger.warn(INVALID_STATE_IS_RUNNING_MSG, isRunning);
             return;
         }
 
@@ -339,7 +342,7 @@ public class SnapSyncState extends BaseSyncState {
 
     public void fail(Peer peer, EventType eventType, String message, Object... arguments) {
         if (isRunning != Boolean.TRUE) {
-            logger.warn("Invalid state, isRunning: [{}]", isRunning);
+            logger.warn(INVALID_STATE_IS_RUNNING_MSG, isRunning);
             return;
         }
 
