@@ -1475,7 +1475,8 @@ public class Program {
                         .setTimestamp(getTimestamp().longValue())
                         .build(),
                     Collections.emptyList(),
-                    Collections.emptyList()
+                    Collections.emptyList(),
+                    null
             );
 
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()

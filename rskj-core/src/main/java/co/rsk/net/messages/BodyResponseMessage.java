@@ -1,5 +1,6 @@
 package co.rsk.net.messages;
 
+import co.rsk.core.bc.SuperBlockFields;
 import com.google.common.collect.Lists;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderExtension;
@@ -16,12 +17,14 @@ public class BodyResponseMessage extends MessageWithId {
     private final List<Transaction> transactions;
     private final List<BlockHeader> uncles;
     private final BlockHeaderExtension blockHeaderExtension;
+    private final SuperBlockFields superBlockFields;
 
-    public BodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles, BlockHeaderExtension blockHeaderExtension) {
+    public BodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles, BlockHeaderExtension blockHeaderExtension, SuperBlockFields superBlockFields) {
         this.id = id;
         this.transactions = transactions;
         this.uncles = uncles;
         this.blockHeaderExtension = blockHeaderExtension;
+        this.superBlockFields = superBlockFields;
     }
 
     @Override
@@ -30,6 +33,9 @@ public class BodyResponseMessage extends MessageWithId {
     public List<Transaction> getTransactions() { return this.transactions; }
 
     public List<BlockHeader> getUncles() { return this.uncles; }
+
+    public SuperBlockFields getSuperBlockFields() { return superBlockFields; }
+
     public BlockHeaderExtension getBlockHeaderExtension() { return this.blockHeaderExtension; }
 
     @Override
@@ -49,6 +55,10 @@ public class BodyResponseMessage extends MessageWithId {
 
         if (this.blockHeaderExtension != null) {
             elements.add(BlockHeaderExtension.toEncoded(blockHeaderExtension));
+
+            if (superBlockFields != null) {
+                elements.add(superBlockFields.getEncoded());
+            }
         }
 
         return RLP.encodeList(elements.toArray(new byte[][]{}));

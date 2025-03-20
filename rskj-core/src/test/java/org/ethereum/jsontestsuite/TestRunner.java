@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.*;
 import co.rsk.net.handler.quota.TxQuotaChecker;
@@ -689,7 +690,7 @@ public class TestRunner {
             transactions.add(TransactionBuilder.build(tx));
 
         BlockHeader blockHeader = buildHeader(blockFactory, header);
-        return blockFactory.newBlock(blockHeader, transactions, uncles);
+        return blockFactory.newBlock(blockHeader, transactions, uncles, null);
     }
 
 

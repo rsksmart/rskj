@@ -153,7 +153,7 @@ public abstract class ProofOfWorkRuleTest {
                 .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION)
                 .setIncludeForkDetectionData(true)
                 .build();
-        Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+        Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), null, false);
         Block minedBlock = new BlockMiner(activationConfig).mineBlock(block);
         BlockHeader minedBlockHeader = minedBlock.getHeader();
 

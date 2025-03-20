@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionListExecutor;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
@@ -184,12 +185,15 @@ public class BlockExecutor {
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
             BlockHeader superParent = FamilyUtils.getSuperParent(blockStore, constants, activationConfig, header);
-            header.setSuperChainDataHash(SuperChainUtils.makeSuperChainDataHash(
-                    superParent != null ? superParent.getHash() : null,
+
+            SuperBlockFields superBlockFields = new SuperBlockFields(
+                    superParent != null ? Bytes.of(superParent.getHash().getBytes()) : null,
                     header.getNumber(),
-                    Collections.emptyList(), 0, // TODO: use super uncle list / count instead
+                    Collections.emptyList(), // TODO: use super uncle list / count instead
                     null // TODO: use super bridge event, if any
-            ).getBytes());
+            );
+
+            block.setSuperChainFields(superBlockFields);
         }
 
         block.flushRLP();

@@ -366,7 +366,7 @@ class BlockHeaderTest {
     @Test
     void verifyRecalculatedHashForAmendedBlocks() {
         BlockHeader header = createBlockHeader(new byte[80], new byte[32], new byte[128], new byte[0],
-                false, new byte[0], new byte[0], new short[0], false, false);
+                false, new byte[0], new byte[0], false, new short[0], false, false);
 
         assertArrayEquals(HashUtil.keccak256(header.getEncodedForHash()), header.getHash().getBytes());
 
@@ -452,7 +452,7 @@ class BlockHeaderTest {
                 headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
                 headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
-                false, false, headerV0.getUmmRoot(), headerV0.getSuperChainDataHash(), headerV0.getTxExecutionSublistsEdges(), false
+                false, false, headerV0.getUmmRoot(), headerV0.getSuperChainDataHash(), headerV0.isSuper().orElse(false), headerV0.getTxExecutionSublistsEdges(), false
         );
     }
 
@@ -572,51 +572,51 @@ class BlockHeaderTest {
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot, short[] edges){
         return createBlockHeader(new byte[80], new byte[32], new byte[128],
-                forkDetectionData, includeForkDetectionData, ummRoot, null, edges, false);
+                forkDetectionData, includeForkDetectionData, ummRoot, null, false, edges, false);
     }
 
     private BlockHeader createBlockHeaderWithNoMergedMiningFields(
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot, short[] edges) {
         return createBlockHeader(null, null, null,
-                forkDetectionData, includeForkDetectionData, ummRoot, null, edges, true);
+                forkDetectionData, includeForkDetectionData, ummRoot, null, false, edges, true);
     }
 
     private BlockHeader createBlockHeaderWithUmmRoot(byte[] ummRoot) {
         return createBlockHeader(null, null, null,
-                new byte[0], false, ummRoot, null, new short[0], true);
+                new byte[0], false, ummRoot, null, false, new short[0], true);
     }
 
     private BlockHeader createBlockHeaderWithUmmRoot(byte[] ummRoot, byte[] forkDetectionData) {
         return createBlockHeader(null, null, null,
-                                 forkDetectionData, true, ummRoot, null, new short[0], true);
+                                 forkDetectionData, true, ummRoot, null, false, new short[0], true);
     }
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
-                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, short[] edges, boolean sealed) {
+                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, boolean isSuper, short[] edges, boolean sealed) {
         return createBlockHeader(bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                forkDetectionData, includeForkDetectionData, ummRoot, superChainDataHash, edges, true, sealed);
+                forkDetectionData, includeForkDetectionData, ummRoot, superChainDataHash, isSuper, edges, true, sealed);
     }
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
-                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, short[] edges,
+                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, boolean isSuper, short[] edges,
                                           boolean useRskip92Encoding,
                                           boolean sealed) {
         return createBlockHeader((byte) 0x0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                forkDetectionData, includeForkDetectionData, ummRoot, superChainDataHash, edges, useRskip92Encoding, sealed);
+                forkDetectionData, includeForkDetectionData, ummRoot, superChainDataHash, isSuper, edges, useRskip92Encoding, sealed);
     }
 
     private BlockHeader createBlockHeaderWithVersion(byte version) {
         return createBlockHeader(version, new byte[80], new byte[32], new byte[128],
-                new byte[0], false, null, null, new short[0], false, false);
+                new byte[0], false, null, null, false, new short[0], false, false);
     }
 
     private BlockHeader createBlockHeader(byte version,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
-                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, short[] edges, boolean useRskip92Encoding,
+                                          boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, boolean isSuper, short[] edges, boolean useRskip92Encoding,
                                           boolean sealed) {
         BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
         long number = 1;
@@ -649,6 +649,7 @@ class BlockHeaderTest {
                 includeForkDetectionData,
                 ummRoot,
                 superChainDataHash,
+                isSuper,
                 edges,
                 false);
 
@@ -678,6 +679,7 @@ class BlockHeaderTest {
                 includeForkDetectionData,
                 ummRoot,
                 superChainDataHash,
+                isSuper,
                 edges);
     }
 

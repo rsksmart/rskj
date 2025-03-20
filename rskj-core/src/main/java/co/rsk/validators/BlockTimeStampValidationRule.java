@@ -21,6 +21,7 @@ package co.rsk.validators;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.core.bc.BlockUtils;
 import co.rsk.util.TimeProvider;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -30,8 +31,6 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -122,7 +121,7 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
             return false;
         }
 
-        BtcBlock btcBlock = makeBlock(bitcoinMergedMiningHeader);
+        BtcBlock btcBlock = BlockUtils.makeBtcBlock(bitcoinNetworkParameters, bitcoinMergedMiningHeader);
         if (btcBlock == null) {
             return false;
         }
@@ -140,15 +139,5 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
         }
 
         return valid;
-    }
-
-    @Nullable
-    private BtcBlock makeBlock(@Nonnull byte[] bitcoinMergedMiningHeader) {
-        try {
-            return bitcoinNetworkParameters.getDefaultSerializer().makeBlock(bitcoinMergedMiningHeader);
-        } catch (RuntimeException e) {
-            logger.error("Cannot make a BTC block from `{}`", bitcoinMergedMiningHeader, e);
-            return null;
-        }
     }
 }
