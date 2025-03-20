@@ -24,6 +24,7 @@ import org.ethereum.config.blockchain.upgrades.NetworkUpgrade;
 import org.ethereum.core.Blockchain;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,10 +82,15 @@ public class SystemUtils {
                 .toList();
     }
 
-    public static void printDisabledNetworkUpgrades(Logger logger,  Blockchain blockchain, ActivationConfig activationConfig) {
+    public static void printDisabledNetworkUpgrades(@Nonnull Logger logger, @Nonnull Blockchain blockchain, @Nonnull ActivationConfig activationConfig) {
         final var disabledNetworkUpgrades = getDisabledNetworkUpgrades(blockchain, activationConfig);
         final var latestBlock = blockchain.getBestBlock();
 
-        disabledNetworkUpgrades.forEach(disabledNetworkUpgrade -> logger.warn("WARNING: Network upgrade {} is DISABLED. Best block number is: {}.", disabledNetworkUpgrade.name(), latestBlock.getNumber()));
+        if (disabledNetworkUpgrades.isEmpty()) {
+            logger.info("All network upgrades are active.");
+        } else {
+            logger.warn("Total number of disabled network upgrades: {}", disabledNetworkUpgrades.size());
+            disabledNetworkUpgrades.forEach(disabledNetworkUpgrade -> logger.warn("WARNING: Network upgrade {} is DISABLED. Best block number is: {}.", disabledNetworkUpgrade.name(), latestBlock.getNumber()));
+        }
     }
 }
