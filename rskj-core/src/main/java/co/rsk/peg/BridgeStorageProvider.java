@@ -260,6 +260,10 @@ public class BridgeStorageProvider {
     }
 
     public void setReleaseOutpointsValues(Sha256Hash releaseTxHash, List<Coin> outpointsValues) {
+        if (!activations.isActive(RSKIP305)) {
+            return;
+        }
+
         if (releaseTxHash == null || outpointsValues == null) {
             throw new IllegalArgumentException(
                 String.format("Invalid release outpoints values entry, has hash %s and coins list %s", releaseTxHash, outpointsValues)
