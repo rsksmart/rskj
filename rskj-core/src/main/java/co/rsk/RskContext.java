@@ -93,7 +93,6 @@ import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
-import co.rsk.util.SystemUtils;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -337,7 +336,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (blockchain == null) {
             blockchain = getBlockChainLoader().loadBlockchain();
-            SystemUtils.printDisabledNetworkUpgrades(logger, blockchain, getRskSystemProperties().getActivationConfig());
         }
 
         return blockchain;
