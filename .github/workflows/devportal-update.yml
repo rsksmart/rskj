@@ -1,0 +1,104 @@
+name: Update Devportal Documentation
+
+on:
+  push:
+    paths:
+      - "README.md"
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+
+      # Step 1: Clone the Devportal Repository
+      - name: Clone Devportal Repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
+        run: |
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          BRANCH_NAME="update-from-rif-relay-${TIMESTAMP}"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+
+          git clone https://github.com/rsksmart/devportal.git
+          cd devportal
+          git checkout -b ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
+          cd ..
+
+      # Step 2: Transform Each File and Copy to Devportal Repository
+      - name: Transform Files for Devportal
+        run: |
+          mkdir -p transformed
+
+          # Remove the unwanted first lines from README.md
+          TEMP_FILE="temp_README.md"
+          tail -n +1 README.md > ${TEMP_FILE}
+          # Remove the unwanted lines between START and END comments
+          sed '/<!--START-->/,/<!--END-->/d' README.md > ${TEMP_FILE}
+          # Process main README.md
+          TRANSFORMED_FILE="transformed/README.md"
+          echo "---" > ${TRANSFORMED_FILE}
+          echo "sidebar_label: Overview" >> ${TRANSFORMED_FILE}
+          echo "sidebar_position: 100" >> ${TRANSFORMED_FILE}
+          echo "title: RIF Relay - Overview" >> ${TRANSFORMED_FILE}
+          echo "description: RIF Relay Overview." >> ${TRANSFORMED_FILE}
+          echo "tags: [rif, envelope, relay, integrate, integration guide]" >> ${TRANSFORMED_FILE}
+          echo "---" >> ${TRANSFORMED_FILE}
+          echo "" >> ${TRANSFORMED_FILE}
+          echo ":::info[Note]" >> ${TRANSFORMED_FILE}
+          echo "If you wish to suggest changes on this document, please open a PR on the [Rif Relay Repository](https://github.com/rsksmart/rif-relay.git)" >> ${TRANSFORMED_FILE}
+          echo ":::" >> ${TRANSFORMED_FILE}
+          echo "" >> ${TRANSFORMED_FILE}
+          cat ${TEMP_FILE} >> ${TRANSFORMED_FILE}
+          # Clean up temporary file
+          rm ${TEMP_FILE}
+          cp ${TRANSFORMED_FILE} devportal/docs/02-developers/06-integrate/01-rif-relay/overview.md
+
+          # Process integrations section
+          TEMP_FILE="temp_integrate.md"
+          TRANSFORMED_FILE="transformed/integrate.md"
+          # Remove the unwanted first lines from section (title)
+          tail -n +2 docs/integrate.md > ${TEMP_FILE}
+          echo "---" > ${TRANSFORMED_FILE}
+          echo "sidebar_label: Integrations" >> ${TRANSFORMED_FILE}
+          echo "sidebar_position: 200" >> ${TRANSFORMED_FILE}
+          echo "title: RIF Relay Integration" >> ${TRANSFORMED_FILE}
+          echo "description: Integrating RIF Relay in a dApp." >> ${TRANSFORMED_FILE}
+          echo "tags: [rif, envelope, relay, integration guide]" >> ${TRANSFORMED_FILE}
+          echo "---" >> ${TRANSFORMED_FILE}
+          echo "" >> ${TRANSFORMED_FILE}
+          cat ${TEMP_FILE} >> ${TRANSFORMED_FILE}
+          # Clean up temporary file
+          rm ${TEMP_FILE}
+          cp ${TRANSFORMED_FILE} devportal/docs/02-developers/06-integrate/01-rif-relay/integrate.md
+
+      # Step 3: Commit and Push Changes to Devportal Repository
+      - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
+        run: |
+          cd devportal
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/02-developers/06-integrate/01-rif-relay/overview.md docs/02-developers/06-integrate/01-rif-relay/integrate.md docs/02-developers/06-integrate/01-rif-relay/installation-requirements.md docs/02-developers/06-integrate/01-rif-relay/sample-dapp.md docs/02-developers/06-integrate/01-rif-relay/deployment.md docs/02-developers/06-integrate/01-rif-relay/develop.md docs/02-developers/06-integrate/01-rif-relay/contracts.md docs/02-developers/06-integrate/01-rif-relay/smart-wallets.md docs/02-developers/06-integrate/01-rif-relay/versions.md docs/02-developers/06-integrate/01-rif-relay/gas-costs.md docs/02-developers/06-integrate/01-rif-relay/architecture.md
+          git commit -m "Automated update from repository"
+          # Configure the remote URL with the token for authentication
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/rsksmart/devportal.git
+          git push -f origin ${BRANCH_NAME}
+
+      # Step 4: Create a Pull Request in the Devportal Repository
+      - name: Create Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
+        run: |
+          cd devportal
+          curl -L -X POST -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/rsksmart/devportal/pulls \
+          -d "{\"title\":\"Rif-relay automated update of documentation ${BRANCH_NAME}\",\"body\":\"This PR updates the Devportal documentation with the latest changes from the original repository.\",\"head\":\"${BRANCH_NAME}\",\"base\":\"main\"}"
