@@ -132,7 +132,7 @@ public final class PendingFederation {
             return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
         }
 
-        logger.info("[buildFederation] Going to create a P2SH P2WSH ERP Federation");
+        logger.info("[buildFederation] Going to create a P2SH-P2WSH ERP Federation");
         return FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
