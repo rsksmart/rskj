@@ -7,6 +7,10 @@ on:
       - "docs/**"
     branches:
       - main
+  pull_request:
+    paths:
+      - "README.md"
+      - "docs/**"
 
 permissions: read-all
 
@@ -39,7 +43,7 @@ jobs:
       - name: Transform Files for Devportal
         run: |
           # Process other documentation files
-          python scripts/process_docs.py scripts/doc_config.yaml
+          python scripts/devportal-update/process_docs.py scripts/doc_config.yaml
 
           # Copy processed files to devportal directory
           cp -R transformed/* devportal/docs/
