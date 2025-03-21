@@ -35,6 +35,11 @@ jobs:
           pip install PyYAML
           chmod -R +x ${{ env.DEV_PORTAL_SCRIPT_PATH }}/process_docs.py
 
+      - name: Extract version from gradle.properties
+        run: |
+          VERSION=$(tr -d "'\"" < rskj-core/src/main/resources/version.properties | cut -d = -f 2- | paste -sd - -)
+          echo "RSK_VERSION=${VERSION}" >> $GITHUB_ENV
+
       # Step 1: Clone the Devportal Repository
       - name: Clone Devportal Repository
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
@@ -49,10 +54,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
         run: |
           cd devportal
-          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
-          BRANCH_NAME="update-from-rskj-${TIMESTAMP}"
+          BRANCH_NAME="update-from-rskj-${{ env.RSK_VERSION }}"
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
-          git checkout -b ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
+          git checkout  -b ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
           cd ..
 
       # Step 3: Transform Each File and Copy to Devportal Repository
@@ -78,7 +82,7 @@ jobs:
           git commit -m "Automated update from rskj repository"
           git remote set-url origin https://x-access-token:${{ env.GITHUB_TOKEN }}@github.com/rsksmart/devportal.git
           echo "Pushing branch: ${{ env.BRANCH_NAME }}"
-          git push -u origin ${{ env.BRANCH_NAME }}
+          git push -u  -f origin ${{ env.BRANCH_NAME }}
 
       # Step 5: Create a Pull Request in the Devportal Repository
       - name: Create Pull Request
