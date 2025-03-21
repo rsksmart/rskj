@@ -373,7 +373,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (blockFactory == null) {
-            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig());
+            RskSystemProperties systemProperties = getRskSystemProperties();
+            blockFactory = new BlockFactory(systemProperties.getNetworkConstants(), systemProperties.getActivationConfig());
         }
 
         return blockFactory;
@@ -485,6 +486,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
+                    getBlockStore(),
                     getRepositoryLocator(),
                     getTransactionExecutorFactory(),
                     getRskSystemProperties()

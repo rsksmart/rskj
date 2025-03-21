@@ -57,6 +57,8 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
+    private byte[] superChainDataHash;
+    private boolean isSuper;
     private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
@@ -264,6 +266,16 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setSuperChainDataHash(byte[] superChainDataHash) {
+        this.superChainDataHash = copy(superChainDataHash, null);
+        return this;
+    }
+
+    public BlockHeaderBuilder setSuper(boolean isSuper) {
+        this.isSuper = isSuper;
+        return this;
+    }
+
     public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
             this.txExecutionSublistsEdges = new short[edges.length];
@@ -333,6 +345,12 @@ public class BlockHeaderBuilder {
             }
         }
 
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, number)) {
+            if (superChainDataHash == null) {
+                superChainDataHash = new byte[0];
+            }
+        }
+
         if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
@@ -349,7 +367,7 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
+                    includeForkDetectionData, ummRoot, superChainDataHash, isSuper, txExecutionSublistsEdges, false
             );
         }
 
@@ -364,7 +382,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
+                includeForkDetectionData, ummRoot, superChainDataHash, isSuper, txExecutionSublistsEdges
         );
     }
 }
