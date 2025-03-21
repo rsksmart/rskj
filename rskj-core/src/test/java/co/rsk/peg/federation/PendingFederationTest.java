@@ -27,7 +27,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -35,31 +35,31 @@ import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static co.rsk.peg.resources.TestConstants.NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT) //TODO Work on removing this setting by using only the needed stubs
 class PendingFederationTest {
+    private static final long FEDERATION_CREATION_BLOCK_NUMBER = 0L;
+    private final Instant creationTime = Instant.ofEpochMilli(1234L);
+    private final List<FederationMember> federationMembers = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600);
     private PendingFederation pendingFederation;
 
     @BeforeEach
     void createPendingFederation() {
         pendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600)
+            federationMembers
         );
     }
 
@@ -137,96 +137,153 @@ class PendingFederationTest {
         assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
-    @Test
-    void buildFederation_ok_6_members_before_RSKIP_201_activation() {
-        testBuildFederation(
-            false,
-            false,
-            false,
-            NetworkParameters.ID_TESTNET,
-            6
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with6Members_beforeRSKIP201Activation_shouldBuildMultiSigFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+
+        // Act
+        PendingFederation otherPendingFederation = new PendingFederation(
+            federationMembers
         );
+        Federation builtFederation = otherPendingFederation.buildFederation(
+            creationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(expectedFederation, builtFederation);
     }
 
     @Test
-    void buildFederation_ok_9_members_before_RSKIP_201_activation() {
-        testBuildFederation(
-            false,
-            false,
-            false,
-            NetworkParameters.ID_TESTNET,
-            9
+    void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_inTestnet_shouldHaveANonStandardERPRedeemScript() {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
+        FederationConstants federationTestnetConstants = bridgeTestnetConstants.getFederationConstants();
+
+        // Act
+        PendingFederation otherPendingFederation = new PendingFederation(
+            federationMembers
         );
+        Federation builtFederation = otherPendingFederation.buildFederation(
+            creationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationTestnetConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, builtFederation.getRedeemScript());
+    }
+
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+        Federation expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
+
+        // Act
+        PendingFederation otherPendingFederation = new PendingFederation(
+            federationMembers
+        );
+        Federation builtFederation = otherPendingFederation.buildFederation(
+            creationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(expectedFederation, builtFederation);
+    }
+
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with6Members_afterRSKIP284Activations_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+        Federation expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
+
+        // Act
+        PendingFederation otherPendingFederation = new PendingFederation(
+            federationMembers
+        );
+        Federation builtFederation = otherPendingFederation.buildFederation(
+            creationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(expectedFederation, builtFederation);
+    }
+
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with6Members_afterRSKIP353Activation_BeforeRSKIP305Activations_shouldBuildP2SHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+        Federation expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+
+        // Act
+        PendingFederation otherPendingFederation = new PendingFederation(
+            federationMembers
+        );
+        Federation builtFederation = otherPendingFederation.buildFederation(
+            creationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(expectedFederation, builtFederation);
+    }
+
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with6Members_afterRSKIP305Activation_shouldBuildP2SHP2WSHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+        // Arrange
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd800().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+        Federation expectedFederation = FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
+
+        // Act
+        PendingFederation otherPendingFederation = new PendingFederation(
+            federationMembers
+        );
+        Federation builtFederation = otherPendingFederation.buildFederation(
+            creationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(expectedFederation, builtFederation);
     }
 
     @Test
-    void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_testnet() {
-        testBuildFederation(
-            true,
-            false,
-            false,
-            NetworkParameters.ID_TESTNET,
-            6
-        );
-    }
-
-    @Test
-    void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_mainnet() {
-        testBuildFederation(
-            true,
-            false,
-            false,
-            NetworkParameters.ID_MAINNET,
-            6
-        );
-    }
-
-    @Test
-    void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_testnet() {
-        testBuildFederation(
-            true,
-            true,
-            false,
-            NetworkParameters.ID_TESTNET,
-            6
-        );
-    }
-
-    @Test
-    void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_mainnet() {
-        testBuildFederation(
-            true,
-            true,
-            false,
-            NetworkParameters.ID_MAINNET,
-            6
-        );
-    }
-
-    @Test
-    void buildFederation_after_RSKIP_353_activation_testnet() {
-        testBuildFederation(
-            true,
-            true,
-            true,
-            NetworkParameters.ID_TESTNET,
-            6
-        );
-    }
-
-    @Test
-    void buildFederation_after_RSKIP_353_activation_mainnet() {
-        testBuildFederation(
-            true,
-            true,
-            true,
-            NetworkParameters.ID_MAINNET,
-            6
-        );
-    }
-
-    @Test
-    void buildFederation_incomplete() {
+    void buildFederation_withLessMembersThanRequired_shouldFailWithIncompleteFederationLog() {
         PendingFederation otherPendingFederation = new PendingFederation(
             FederationTestUtils.getFederationMembersFromPks(100)
         );
@@ -253,9 +310,8 @@ class PendingFederationTest {
 
     @Test
     void serializeAndDeserializePendingFederation() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         // we want serialization from members
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.wasabi100().forBlock(0);
 
         final int NUM_CASES = 20;
 
@@ -276,9 +332,8 @@ class PendingFederationTest {
 
     @Test
     void serializePendingFederation_serializedKeysAreCompressedAndThree() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         // we want serialization from members
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.wasabi100().forBlock(0);
 
         final int NUM_MEMBERS = 10;
         final int EXPECTED_NUM_KEYS = 3;
@@ -320,10 +375,9 @@ class PendingFederationTest {
     }
 
     @Test
-    void serializePendingFederationOnlyBtcKeys() throws Exception {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+    void serializePendingFederationOnlyBtcKeys() {
         // we want serialization from pub keys
-        when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(false);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.orchid().forBlock(0);
 
         byte[][] publicKeyBytes = new byte[][]{
             BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
@@ -359,11 +413,11 @@ class PendingFederationTest {
     }
 
     @Test
-    void deserializePendingFederationOnlyBtcKeys() throws Exception {
+    void deserializePendingFederationOnlyBtcKeys() {
         byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
             .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
             .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .map(k -> k.getPubKey())
+            .map(BtcECKey::getPubKey)
             .toArray(byte[][]::new);
 
         byte[][] rlpBytes = new byte[publicKeyBytes.length][];
@@ -378,76 +432,25 @@ class PendingFederationTest {
 
         Assertions.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {
-            Assertions.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey()));
+            Assertions.assertArrayEquals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey());
         }
     }
 
-    private void testBuildFederation(
-        boolean isRskip201Active,
-        boolean isRskip284Active,
-        boolean isRskip353Active,
-        String networkId,
-        int federationMembersCount) {
+    private static Stream<Arguments> networkParameters() {
+        BridgeConstants testnetConstants = BridgeTestNetConstants.getInstance();
+        BridgeConstants mainnetConstants = BridgeMainNetConstants.getInstance();
 
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(isRskip201Active);
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
-        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
+        Arguments testnetArguments = Arguments.of(
+            testnetConstants.getBtcParams(),
+            testnetConstants.getFederationConstants());
 
-        BridgeConstants bridgeConstants;
-        if (networkId.equals(NetworkParameters.ID_MAINNET)) {
-            bridgeConstants = BridgeMainNetConstants.getInstance();
-        } else {
-            bridgeConstants = BridgeTestNetConstants.getInstance();
-        }
-
-        Integer[] privateKeys = new Integer[federationMembersCount];
-        for (int i = 0; i < federationMembersCount; i++) {
-            privateKeys[i] = new Integer((i+1) * 100);
-        }
-        Instant creationTime = Instant.ofEpochMilli(1234L);
-
-        PendingFederation otherPendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersFromPks(privateKeys)
+        Arguments mainnetArguments = Arguments.of(
+            mainnetConstants.getBtcParams(),
+            mainnetConstants.getFederationConstants());
+        return Stream.of(
+            testnetArguments,
+            mainnetArguments
         );
-        Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
-            0L,
-            bridgeConstants.getFederationConstants(),
-            activations
-        );
-
-        Federation expectedFederation;
-        List<FederationMember> fedMembers = FederationTestUtils.getFederationMembersFromPks(privateKeys);
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
-
-        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
-        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
-        long activationDelay = federationConstants.getErpFedActivationDelay();
-
-        if (expectedFederationShouldBeStandardMultisig(isRskip201Active)) {
-            expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
-        }
-        else if (expectedFederationShouldBeNonStandardErp(isRskip353Active)) {
-            expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
-        }
-        else {
-            expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
-        }
-
-        assertEquals(expectedFederation, builtFederation);
-        if (isRskip201Active && !isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
-            assertEquals(NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, builtFederation.getRedeemScript());
-        }
-    }
-
-    private boolean expectedFederationShouldBeStandardMultisig(boolean isRskip201Active) {
-        return !isRskip201Active;
-    }
-
-    private boolean expectedFederationShouldBeNonStandardErp(boolean isRskip353Active) {
-        return !isRskip353Active;
     }
 
     private int randomInRange(int min, int max) {

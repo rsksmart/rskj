@@ -459,6 +459,49 @@ class VoteFederationChangeTest {
         assertNoHandoverToNewFederation();
     }
 
+
+    @Test
+    void commitProposedFederation_shouldPerformCommitProposedFederationActions() {
+        // arrange
+        storageProvider.setNewFederation(activeFederation);
+
+        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        storageProvider.setProposedFederation(proposedFederation);
+
+        // act
+        federationSupport.commitProposedFederation();
+
+        // assert
+        assertFalse(federationSupport.getProposedFederation().isPresent());
+        assertHandoverToNewFederation(activeFederationUTXOs, proposedFederation);
+    }
+
+    // vote rollback federation tests
+    @Test
+    void rollbackFederation_returnsSuccessfulResponseCodeAndRollsbackThePendingFederation() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+
+        // Voting to have at least one federation member before rollback
+        voteAndAssertAddFederatorPublicKeysToPendingFederation(federatorBtcKey, federatorRskKey, federatorMstKey);
+        int pendingFederationSizeBeforeRollback = federationSupport.getPendingFederationSize();
+        assertEquals(1, pendingFederationSizeBeforeRollback);
+
+        // Act
+        int firstVoteRollbackResult = voteToRollbackPendingFederation(firstAuthorizedTx);
+        int secondVoteRollbackResult = voteToRollbackPendingFederation(secondAuthorizedTx);
+
+        // Assert
+        int pendingFederationSizeAfterRollback = federationSupport.getPendingFederationSize();
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteRollbackResult);
+        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteRollbackResult);
+        assertEquals(-1, pendingFederationSizeAfterRollback);
+        assertNull(federationSupport.getPendingFederationHash());
+    }
+
     private void assertIsTheExpectedFederation(Federation federation, long expectedCreationTimeValue, Instant expectedCreationTime) {
         assertEquals(RSK_EXECUTION_BLOCK_TIMESTAMP, expectedCreationTimeValue);
         assertEquals(RSK_EXECUTION_BLOCK_NUMBER, federation.getCreationBlockNumber());
@@ -470,25 +513,6 @@ class VoteFederationChangeTest {
             activations
         );
         assertEquals(federationBuiltFromPendingFederation, federation);
-    }
-
-    @Test
-    void commitProposedFederation_shouldPerformCommitProposedFederationActions() {
-        // arrange
-        storageProvider.setNewFederation(activeFederation);
-
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
-        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
-        storageProvider.setProposedFederation(proposedFederation);
-
-        // act
-        federationSupport.commitProposedFederation();
-
-        // assert
-        assertFalse(federationSupport.getProposedFederation().isPresent());
-        assertHandoverToNewFederation(activeFederationUTXOs, proposedFederation);
     }
 
     private void voteAndAssertAddFederationMembersPublicKeysToPendingFederation(List<FederationMember> federationMembers) {
@@ -619,31 +643,6 @@ class VoteFederationChangeTest {
             newFedActivationBlockNumber
         );
     }
-
-
-    // vote rollback federation tests
-    @Test
-    void rollbackFederation_returnsSuccessfulResponseCodeAndRollsbackThePendingFederation() {
-        // Arrange
-        voteAndAssertCreateEmptyPendingFederation();
-
-        // Voting to have at least one federation member before rollback
-        voteAndAssertAddFederatorPublicKeysToPendingFederation(federatorBtcKey, federatorRskKey, federatorMstKey);
-        int pendingFederationSizeBeforeRollback = federationSupport.getPendingFederationSize();
-        assertEquals(1, pendingFederationSizeBeforeRollback);
-
-        // Act
-        int firstVoteRollbackResult = voteToRollbackPendingFederation(firstAuthorizedTx);
-        int secondVoteRollbackResult = voteToRollbackPendingFederation(secondAuthorizedTx);
-
-        // Assert
-        int pendingFederationSizeAfterRollback = federationSupport.getPendingFederationSize();
-        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), firstVoteRollbackResult);
-        assertEquals(FederationChangeResponseCode.SUCCESSFUL.getCode(), secondVoteRollbackResult);
-        assertEquals(-1, pendingFederationSizeAfterRollback);
-        assertNull(federationSupport.getPendingFederationHash());
-    }
-
 
     // utility methods
     private int voteToCreatePendingFederation(Transaction tx) {
