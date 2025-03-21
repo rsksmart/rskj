@@ -1,6 +1,6 @@
 # Gradle building
 
-TESTING SYNCHRONIZATION
+TESTING SYNCHRONIZATION - Checking if it will update the PR
 
 ## Setup instructions for gradle build in docker container
 
