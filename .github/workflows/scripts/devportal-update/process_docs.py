@@ -22,8 +22,8 @@ def process_doc_file(input_file, output_file, sidebar_label, sidebar_position, t
             outfile.write(f"sidebar_label: {sidebar_label}\n")
             outfile.write(f"sidebar_position: {sidebar_position}\n")
             outfile.write(f"title: {title}\n")
-            outfile.write(f"tags: {tags}\n")
-            outfile.write(f"description: {description}\n")
+            outfile.write(f"tags: {yaml.dump(tags, default_flow_style=True).strip()}\n")
+            outfile.write(f"description: \"{description}\"\n")
             outfile.write("---\n\n")
             outfile.writelines(content)
 
@@ -47,7 +47,7 @@ def main(config_file):
         sidebar_position = entry['sidebar_position']
         title = entry['title']
         description = entry['description']
-        tags = ', '.join(entry['tags'])
+        tags = entry['tags']
 
         log(f"Processing: {input_file} -> {output_file}")
         if process_doc_file(input_file, output_file, sidebar_label, sidebar_position, title, description, tags):
