@@ -40,6 +40,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.PegoutsWaitingForConfirmations.Entry;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -314,6 +315,47 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxHash_withNullValue_throwsIllegalArgumentException() {
         // act & assert
         assertThrows(IllegalArgumentException.class, () -> deserializeRskTxHash(null));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    void deserializeReleasesOutpointsValues_whenInvalidData_shouldReturnEmptyResult(byte[] data) {
+        // Act
+        SortedMap<Sha256Hash, List<Coin>> result =
+            BridgeSerializationUtils.deserializeReleasesOutpointsValues(data);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void serializeAndDeserializeReleasesOutpointsValues_forValidEntries_shouldReturnOriginalMap() {
+        // Arrange
+        SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValues = new TreeMap<>();
+
+        Sha256Hash pegoutTxHash1 = BitcoinTestUtils.createHash(1);
+        List<Coin> pegoutOutpointsValues1 = Arrays.asList(Coin.valueOf(1000), Coin.valueOf(1), Coin.COIN);
+        releasesOutpointsValues.put(pegoutTxHash1, pegoutOutpointsValues1);
+
+        Sha256Hash pegoutTxHash2 = BitcoinTestUtils.createHash(2);
+        List<Coin> pegoutOutpointsValues2 = Arrays.asList(Coin.valueOf(12345), Coin.valueOf(1), Coin.COIN);
+        releasesOutpointsValues.put(pegoutTxHash2, pegoutOutpointsValues2);
+
+        // Act
+        byte[] serializedReleasesOutpointsValues = BridgeSerializationUtils.serializeReleasesOutpointsValues(releasesOutpointsValues);
+        SortedMap<Sha256Hash, List<Coin>> deserializedReleasesOutpointsValues = BridgeSerializationUtils.deserializeReleasesOutpointsValues(serializedReleasesOutpointsValues);
+
+        // Assert
+        assertEquals(releasesOutpointsValues, deserializedReleasesOutpointsValues);
+        assertEquals(2, releasesOutpointsValues.size());
+
+        assertTrue(releasesOutpointsValues.containsKey(pegoutTxHash1));
+        assertEquals(pegoutOutpointsValues1, releasesOutpointsValues.get(pegoutTxHash1));
+
+        assertTrue(releasesOutpointsValues.containsKey(pegoutTxHash2));
+        assertEquals(pegoutOutpointsValues2, releasesOutpointsValues.get(pegoutTxHash2));
     }
 
     @Test
