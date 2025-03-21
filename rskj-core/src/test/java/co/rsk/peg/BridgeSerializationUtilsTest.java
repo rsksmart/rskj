@@ -348,7 +348,14 @@ class BridgeSerializationUtilsTest {
         SortedMap<Sha256Hash, List<Coin>> deserializedReleasesOutpointsValues = BridgeSerializationUtils.deserializeReleasesOutpointsValues(serializedReleasesOutpointsValues);
 
         // Assert
-        assertEquals(deserializedReleasesOutpointsValues, releasesOutpointsValues);
+        assertEquals(releasesOutpointsValues, deserializedReleasesOutpointsValues);
+        assertEquals(2, releasesOutpointsValues.size());
+
+        assertTrue(releasesOutpointsValues.containsKey(pegoutTxHash1));
+        assertEquals(pegoutOutpointsValues1, releasesOutpointsValues.get(pegoutTxHash1));
+
+        assertTrue(releasesOutpointsValues.containsKey(pegoutTxHash2));
+        assertEquals(pegoutOutpointsValues2, releasesOutpointsValues.get(pegoutTxHash2));
     }
 
     @Test
