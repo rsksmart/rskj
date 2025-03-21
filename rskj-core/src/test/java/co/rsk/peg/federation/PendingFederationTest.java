@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class PendingFederationTest {
-    public static final long FEDERATION_CREATION_BLOCK_NUMBER = 0L;
+    private static final long FEDERATION_CREATION_BLOCK_NUMBER = 0L;
     private final Instant creationTime = Instant.ofEpochMilli(1234L);
     private final List<FederationMember> federationMembers = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600);
     private PendingFederation pendingFederation;
