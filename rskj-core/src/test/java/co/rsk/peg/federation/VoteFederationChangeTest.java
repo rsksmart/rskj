@@ -431,42 +431,6 @@ class VoteFederationChangeTest {
     }
 
     @Test
-    void voteCommitFederation_postRSKIP419_preRSKIP305_whenPendingFederationIsSet_shouldPerformCommitFederationActions() {
-        // arrange
-        activations = ActivationConfigsForTest.lovell700().forBlock(0L);
-        federationSupport = federationSupportBuilder
-            .withFederationConstants(federationMainnetConstants)
-            .withFederationStorageProvider(storageProvider)
-            .withRskExecutionBlock(rskExecutionBlock)
-            .withActivations(activations)
-            .build();
-        Federation otherActiveFederation = federationSupport.getActiveFederation();
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, otherActiveFederation.getAddress());
-        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-        voteAndAssertCreateEmptyPendingFederation();
-        voteAndAssertAddFederationMembersPublicKeysToPendingFederation(pendingFederationToBe.getMembers());
-
-        // act
-        voteAndAssertCommitPendingFederation();
-
-        // assertions
-        // assert proposed federation was set correctly
-        Optional<Federation> proposedFederationOpt = storageProvider.getProposedFederation(federationMainnetConstants, activations);
-        assertTrue(proposedFederationOpt.isPresent());
-        Federation proposedFederation = proposedFederationOpt.get();
-        long expectedProposedFederationCreationTimeValue = proposedFederation.getCreationTime().getEpochSecond();
-        Instant expectedProposedFederationCreationTime = Instant.ofEpochSecond(RSK_EXECUTION_BLOCK_TIMESTAMP);
-        assertIsTheExpectedFederation(proposedFederation, expectedProposedFederationCreationTimeValue, expectedProposedFederationCreationTime);
-
-        assertPendingFederationVotingWasCleaned();
-
-        assertLogCommitFederation(otherActiveFederation, proposedFederation);
-
-        assertNoHandoverToNewFederation();
-    }
-
-    @Test
     void voteCommitFederation_postRSKIP419_whenPendingFederationIsSet_shouldPerformCommitFederationActions() {
         // arrange
         Federation activeFederation = federationSupport.getActiveFederation();
@@ -497,26 +461,7 @@ class VoteFederationChangeTest {
 
 
     @Test
-    void commitProposedP2shErpFederation_shouldPerformCommitProposedFederationActions() {
-        // arrange
-        storageProvider.setNewFederation(activeFederation);
-
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
-        bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
-
-        Federation proposedFederation = P2shErpFederationBuilder.builder().build();
-        storageProvider.setProposedFederation(proposedFederation);
-
-        // act
-        federationSupport.commitProposedFederation();
-
-        // assert
-        assertFalse(federationSupport.getProposedFederation().isPresent());
-        assertHandoverToNewFederation(activeFederationUTXOs, proposedFederation);
-    }
-
-    @Test
-    void commitProposedP2shP2wshErpFederation_shouldPerformCommitProposedFederationActions() {
+    void commitProposedFederation_shouldPerformCommitProposedFederationActions() {
         // arrange
         storageProvider.setNewFederation(activeFederation);
 
