@@ -1,0 +1,24 @@
+files:
+  - input: docs/03-node-operators/04-setup/reproducible-build.md
+    output: transformed/03-node-operators/04-setup/reproducible-build.md
+    sidebar_label: Reproducible Build
+    sidebar_position: 7
+    title: Gradle building
+    tags: [rsk, node, compile, reproducible, checksum, rootstock]
+    description: "A deterministic build process used to build Rootstock node JAR file. Provides a way to be reasonable sure that the JAR is built from GitHub RSKj repository. Makes sure that the same tested dependencies are used and statically built into the executable."
+  - input: docs/03-node-operators/04-setup/requirements.md
+    output: transformed/03-node-operators/04-setup/requirements.md
+    sidebar_label: Hardware Requirements
+    sidebar_position: 3
+    title: Minimum Hardware Requirements to Run a Rootstock Node
+    tags: [hardware, specs, requirements]
+    description: "Minimum hardware requirements for Rootstock."
+  - input: docs/03-node-operators/04-setup/security-chain.md
+    output: transformed/03-node-operators/04-setup/security-chain.md
+    sidebar_label: Security Chain
+    sidebar_position: 8
+    title: Verify security chain of RSKj source code
+    tags: [rsk, rskj, node, security, node operators, reproducible builds, verification]
+    description: "All the different ways that you can verify RSKj: Release signing key, fingerprint of the public key, SHA256SUMS.asc, binary dependencies, secure environment script"
+
+  # Add more files as needed
