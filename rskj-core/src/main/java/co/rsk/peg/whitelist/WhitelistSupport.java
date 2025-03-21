@@ -3,6 +3,8 @@ package co.rsk.peg.whitelist;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import java.math.BigInteger;
+import java.util.Optional;
+
 import org.ethereum.core.Transaction;
 
 /**
@@ -19,22 +21,22 @@ public interface WhitelistSupport {
     int getLockWhitelistSize();
 
     /**
-     * Returns the lock whitelist entry stored at the given index, or null if the index is out of
+     * Returns the lock whitelist entry stored at the given index, or an empty Optional if the index is out of
      * bounds
      *
      * @param index the index at which to get the entry
-     * @return the whitelist entry stored at the given index, or null if index is out of
+     * @return the whitelist entry stored at the given index, or an empty Optional if index is out of
      * bounds
      */
-    LockWhitelistEntry getLockWhitelistEntryByIndex(int index);
+    Optional<LockWhitelistEntry> getLockWhitelistEntryByIndex(int index);
 
     /**
-     * Returns the lock whitelist entry for a given address, or null if the address is not whitelisted
+     * Returns the lock whitelist entry for a given address, or an empty Optional if the address is not whitelisted
      *
      * @param addressBase58 the address in base58 format to search for
-     * @return the whitelist entry for the given address, or null if the addrres is not whitelisted
+     * @return the whitelist entry for the given address, or an empty Optional if the addrres is not whitelisted
      */
-    LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58);
+    Optional<LockWhitelistEntry> getLockWhitelistEntryByAddress(String addressBase58);
 
     /**
      * Adds the given address to the lock whitelist, allowing peg-ins up to certain max value

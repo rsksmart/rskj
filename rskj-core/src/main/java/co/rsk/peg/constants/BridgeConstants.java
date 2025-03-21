@@ -81,12 +81,13 @@ public abstract class BridgeConstants {
         return btcParamsString;
     }
 
-    public int getBtc2RskMinimumAcceptableConfirmations() {
-        return btc2RskMinimumAcceptableConfirmations;
-    }
-
+    // Used by powpeg-node
     public int getBtc2RskMinimumAcceptableConfirmationsOnRsk() {
         return btc2RskMinimumAcceptableConfirmationsOnRsk;
+    }
+
+    public int getBtc2RskMinimumAcceptableConfirmations() {
+        return btc2RskMinimumAcceptableConfirmations;
     }
 
     public int getRsk2BtcMinimumAcceptableConfirmations() {
