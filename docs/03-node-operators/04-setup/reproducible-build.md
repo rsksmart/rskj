@@ -1,7 +1,4 @@
 # Gradle building
-
-TESTING SYNCHRONIZATION - Checking if it will update the PR
-
 ## Setup instructions for gradle build in docker container
 
 This is a deterministic build process used to build Rootstock node JAR file. It provides a way to be reasonably sure that the JAR is built from the [GitHub RSKj repository](https://github.com/rsksmart/rskj/releases). It also makes sure that the same tested dependencies are used and statically built into the executable.

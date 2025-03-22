@@ -6,7 +6,7 @@ from datetime import datetime
 def log(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}")
 
-def process_doc_file(input_file, output_file, sidebar_label, sidebar_position, title, description, tags):
+def process_doc_file(input_file, output_file, sidebar_label, sidebar_position, title, description, tags, render_features):
     if not os.path.isfile(input_file):
         log(f"Error: Input file not found: {input_file}")
         return False
@@ -24,6 +24,8 @@ def process_doc_file(input_file, output_file, sidebar_label, sidebar_position, t
             outfile.write(f"title: {title}\n")
             outfile.write(f"tags: {yaml.dump(tags, default_flow_style=True).strip()}\n")
             outfile.write(f"description: \"{description}\"\n")
+            if render_features:
+                outfile.write(f"render_features: '{render_features}'\n")
             outfile.write("---\n\n")
             outfile.writelines(content)
 
@@ -40,17 +42,30 @@ def main(config_file):
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
 
-    for entry in config['files']:
-        input_file = entry['input']
-        output_file = entry['output']
-        sidebar_label = entry['sidebar_label']
-        sidebar_position = entry['sidebar_position']
-        title = entry['title']
-        description = entry['description']
-        tags = entry['tags']
+    if 'files' not in config or not isinstance(config['files'], list):
+        log("Error: 'files' key not found in config or is not a list")
+        sys.exit(1)
+
+    for index, entry in enumerate(config['files']):
+        if entry is None:
+            log(f"Error: Empty entry found at index {index} in config file")
+            continue
+
+        try:
+            input_file = entry['input']
+            output_file = entry['output']
+            sidebar_label = entry['sidebar_label']
+            sidebar_position = entry['sidebar_position']
+            title = entry['title']
+            description = entry['description']
+            tags = entry['tags']
+            render_features = entry.get('render_features', None)
+        except KeyError as e:
+            log(f"Error: Missing required key {e} in entry at index {index}")
+            continue
 
         log(f"Processing: {input_file} -> {output_file}")
-        if process_doc_file(input_file, output_file, sidebar_label, sidebar_position, title, description, tags):
+        if process_doc_file(input_file, output_file, sidebar_label, sidebar_position, title, description, tags, render_features):
             log(f"Successfully processed: {input_file} -> {output_file}")
         else:
             log(f"Failed to process: {input_file}")
