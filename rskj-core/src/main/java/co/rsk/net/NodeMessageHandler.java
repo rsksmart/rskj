@@ -23,10 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
-import co.rsk.net.messages.MessageVisitor;
+import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
@@ -55,7 +52,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
-
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
     private static final int QUEUED_TIME_TO_WARN_PERIOD = 10; // seconds
@@ -64,6 +60,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
+    private final SnapshotProcessor snapshotProcessor;
     private final ChannelManager channelManager;
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
@@ -77,7 +74,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final PriorityBlockingQueue<MessageTask> queue;
 
-    private final MessageCounter messageCounter = new MessageCounter();
+    private final MessageCounter messageCounter;
     private final int messageQueueMaxSize;
 
     private volatile boolean recentIdleTime = false;
@@ -92,16 +89,43 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * Creates a new node message handler.
      */
     public NodeMessageHandler(RskSystemProperties config,
+            BlockProcessor blockProcessor,
+            SyncProcessor syncProcessor,
+            SnapshotProcessor snapshotProcessor,
+            @Nullable ChannelManager channelManager,
+            @Nullable TransactionGateway transactionGateway,
+            @Nullable PeerScoringManager peerScoringManager,
+            StatusResolver statusResolver) {
+        this(
+                config,
+                blockProcessor,
+                syncProcessor,
+                snapshotProcessor,
+                channelManager,
+                transactionGateway,
+                peerScoringManager,
+                statusResolver,
+                null,
+                null
+        );
+    }
+
+    @VisibleForTesting
+    NodeMessageHandler(RskSystemProperties config,
                               BlockProcessor blockProcessor,
                               SyncProcessor syncProcessor,
+                              SnapshotProcessor snapshotProcessor,
                               @Nullable ChannelManager channelManager,
                               @Nullable TransactionGateway transactionGateway,
                               @Nullable PeerScoringManager peerScoringManager,
-                              StatusResolver statusResolver) {
+                              StatusResolver statusResolver,
+                              Thread thread,
+                       MessageCounter messageCounter) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
+        this.snapshotProcessor = snapshotProcessor;
         this.transactionGateway = transactionGateway;
         this.statusResolver = statusResolver;
         this.peerScoringManager = peerScoringManager;
@@ -111,13 +135,15 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
-        this.thread = new Thread(this, "message handler");
+        this.thread = thread == null ? new Thread(this, "message handler") : thread;
+        this.messageCounter = messageCounter == null ? new MessageCounter() : messageCounter;
     }
 
     @VisibleForTesting
     NodeMessageHandler(RskSystemProperties config,
                        BlockProcessor blockProcessor,
                        SyncProcessor syncProcessor,
+                       SnapshotProcessor snapshotProcessor,
                        @Nullable ChannelManager channelManager,
                        @Nullable TransactionGateway transactionGateway,
                        @Nullable PeerScoringManager peerScoringManager,
@@ -127,6 +153,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
+        this.snapshotProcessor = snapshotProcessor;
         this.transactionGateway = transactionGateway;
         this.statusResolver = statusResolver;
         this.peerScoringManager = peerScoringManager;
@@ -137,6 +164,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
         this.thread = new Thread(this, "message handler");
+        this.messageCounter = new MessageCounter();
     }
 
     /**
@@ -151,7 +179,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
-        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender);
+        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor,
+                                               snapshotProcessor, transactionGateway, peerScoringManager, channelManager, sender);
         message.accept(mv);
     }
 
@@ -182,7 +211,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      */
     private boolean controlMessageIngress(Peer sender, Message message, double score) {
         return
-                allowByScore(score) &&
+                allowByScore(sender, message, score) &&
                         allowByMessageCount(sender) &&
                         allowByMinerNotBanned(sender, message) &&
                         allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last
@@ -192,8 +221,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     /**
      * assert score is acceptable
      */
-    private boolean allowByScore(double score) {
-        return score >= 0;
+    private boolean allowByScore(Peer sender, Message message, double score) {
+        boolean allow = score >= 0;
+        if (!allow) {
+            logger.debug("Message: [{}] from: [{}] with score: [{}] was not allowed", message.getMessageType(), sender, score);
+        }
+
+        return allow;
     }
 
     /**
@@ -258,6 +292,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         // also, while queue implementation stays unbounded, offer() will never return false
         messageCounter.increment(sender);
         MessageTask messageTask = new MessageTask(sender, message, score, nodeMsgTraceInfo);
+
         boolean messageAdded = this.queue.offer(messageTask);
         if (!messageAdded) {
             messageCounter.decrement(sender);
@@ -325,7 +360,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                logger.error("Got unexpected error while processing task: {}", task, e);
+                logger.error("Got unexpected error while processing task:", e);
             } catch (IllegalAccessError e) { // Usually this is been thrown by DB instances when closed
                 logger.warn("Message handler got `{}`. Exiting", e.getClass().getSimpleName(), e);
                 return;

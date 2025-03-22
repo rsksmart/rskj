@@ -399,6 +399,25 @@ class MessageTest {
     }
 
     @Test
+    void encodeDecodeStateChunkRequestMessage() {
+        long someId = 42;
+
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 100L);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE, result.getMessageType());
+
+        SnapStateChunkRequestMessage newMessage = (SnapStateChunkRequestMessage) result;
+
+        Assertions.assertEquals(someId, newMessage.getId());
+    }
+
+    @Test
     void encodeDecodeBlockHashResponseMessage() {
         long id = 42;
         byte[] hash = TestUtils.generateBytes("msg",32);
