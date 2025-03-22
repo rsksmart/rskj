@@ -1,7 +1,4 @@
 #  Minimum hardware requirements for Rootstock.
-
-TESTING SYNCHRONIZATION - Checking if it will update the PR
-
 These are the minimum requirements that must be met to run an Rootstock node (Mainnet and Testnet):
 
 * 2 cores
