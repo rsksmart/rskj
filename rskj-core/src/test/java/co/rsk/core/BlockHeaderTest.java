@@ -452,7 +452,7 @@ class BlockHeaderTest {
                 headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
                 headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
-                false, false, headerV0.getUmmRoot(), headerV0.getSuperChainDataHash(), headerV0.isSuper().orElse(false), headerV0.getTxExecutionSublistsEdges(), false
+                false, false, headerV0.getUmmRoot(), headerV0.getSuperChainDataHash(), SuperBlockResolver.of(headerV0.isSuper().orElse(false)), headerV0.getTxExecutionSublistsEdges(), false
         );
     }
 
@@ -649,7 +649,7 @@ class BlockHeaderTest {
                 includeForkDetectionData,
                 ummRoot,
                 superChainDataHash,
-                isSuper,
+                SuperBlockResolver.of(isSuper),
                 edges,
                 false);
 
@@ -679,7 +679,7 @@ class BlockHeaderTest {
                 includeForkDetectionData,
                 ummRoot,
                 superChainDataHash,
-                isSuper,
+                SuperBlockResolver.of(isSuper),
                 edges);
     }
 

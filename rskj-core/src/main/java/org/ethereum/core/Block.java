@@ -27,7 +27,6 @@ import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.util.SuperChainUtils;
 import com.google.common.collect.ImmutableList;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -405,16 +404,25 @@ public class Block {
         rlpEncoded = null;
     }
 
+    public void clearSuperChainFields() {
+        if (this.sealed) {
+            throw new SealedBlockException("trying to alter superchain fields");
+        }
+
+        this.superBlockFields = null;
+        rlpEncoded = null;
+    }
+
     public Optional<Boolean> isSuper() {
         return this.header.isSuper();
     }
 
-    public void setSuper(boolean isSuper) {
+    public void setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
         if (this.sealed) {
             throw new SealedBlockException("trying to alter isSuper flag");
         }
 
-        this.header.setSuper(isSuper);
+        this.header.setSuperBlockResolver(isSuperResolver);
         rlpEncoded = null;
     }
 
