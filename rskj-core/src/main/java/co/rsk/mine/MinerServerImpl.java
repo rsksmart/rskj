@@ -40,12 +40,8 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BuildInfo;
@@ -340,7 +336,13 @@ public class MinerServerImpl implements MinerServer {
         newBlock.setBitcoinMergedMiningHeader(btcBlock.bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
         newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
-        newBlock.setSuper(SuperChainUtils.isSuperBlock(constants, activationConfig, newBlock.getNumber(), newBlock.getDifficulty(), btcBlock));
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, newBlock.getNumber())) {
+            boolean isSuperBlock = SuperChainUtils.isSuperBlock(constants, activationConfig, newBlock.getNumber(), newBlock.getDifficulty(), btcBlock);
+            newBlock.setSuperBlockResolver(SuperBlockResolver.of(isSuperBlock));
+            if (!isSuperBlock) {
+                newBlock.clearSuperChainFields();
+            }
+        }
         newBlock.seal();
 
         if (!isValid(newBlock)) {

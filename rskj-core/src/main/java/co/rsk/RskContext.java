@@ -1101,6 +1101,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getActivationConfig(),
                     rskSystemProperties.getNetworkConstants()
             );
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore());
             blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
@@ -1112,7 +1113,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                                     getProofOfWorkRule(),
                                     getForkDetectionDataRule(),
                                     blockTimeStampValidationRule,
-                                    new ValidGasUsedRule()
+                                    new ValidGasUsedRule(),
+                                    superBlockRule
                             ),
                             new BlockHeaderParentCompositeRule(
                                     new PrevMinGasPriceRule(),
@@ -1129,7 +1131,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
                     getForkDetectionDataRule(),
-                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig())
+                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig()),
+                    superBlockRule
             );
         }
 
@@ -1735,10 +1738,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getActivationConfig(),
                     rskSystemProperties.getNetworkConstants()
             );
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore());
 
             final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
                     getProofOfWorkRule(),
-                    blockTimeStampValidationRule
+                    blockTimeStampValidationRule,
+                    superBlockRule
             );
 
             blockHeaderValidator = new BlockHeaderValidatorImpl(blockHeaderValidationRule);

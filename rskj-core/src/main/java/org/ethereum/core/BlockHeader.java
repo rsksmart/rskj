@@ -117,7 +117,7 @@ public abstract class BlockHeader {
 
     private byte[] superChainDataHash;
 
-    private Boolean isSuper;
+    private SuperBlockResolver isSuperResolver;
 
     private final byte[] ummRoot;
 
@@ -148,7 +148,7 @@ public abstract class BlockHeader {
                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                           Coin minimumGasPrice, int uncleCount, boolean sealed,
                           boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
-                          byte[] superChainDataHash, boolean isSuper) {
+                          byte[] superChainDataHash, SuperBlockResolver isSuperResolver) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -175,7 +175,7 @@ public abstract class BlockHeader {
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
         this.superChainDataHash = superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
-        this.isSuper = isSuper;
+        this.isSuperResolver = isSuperResolver;
     }
 
     public abstract void setExtension(BlockHeaderExtension extension);
@@ -658,16 +658,16 @@ public abstract class BlockHeader {
     }
 
     public Optional<Boolean> isSuper() {
-        return Optional.ofNullable(this.isSuper);
+        return Optional.ofNullable(this.isSuperResolver).map(SuperBlockResolver::resolve);
     }
 
-    public void setSuper(boolean isSuper) {
+    public void setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter isSuper flag");
         }
         this.hash = null;
 
-        this.isSuper = isSuper;
+        this.isSuperResolver = isSuperResolver;
     }
 }

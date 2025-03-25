@@ -58,7 +58,7 @@ public class BlockHeaderBuilder {
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
     private byte[] superChainDataHash;
-    private boolean isSuper;
+    private SuperBlockResolver isSuperResolver;
     private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
@@ -271,8 +271,8 @@ public class BlockHeaderBuilder {
         return this;
     }
 
-    public BlockHeaderBuilder setSuper(boolean isSuper) {
-        this.isSuper = isSuper;
+    public BlockHeaderBuilder setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
+        this.isSuperResolver = isSuperResolver;
         return this;
     }
 
@@ -367,7 +367,7 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, superChainDataHash, isSuper, txExecutionSublistsEdges, false
+                    includeForkDetectionData, ummRoot, superChainDataHash, isSuperResolver, txExecutionSublistsEdges, false
             );
         }
 
@@ -382,7 +382,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, superChainDataHash, isSuper, txExecutionSublistsEdges
+                includeForkDetectionData, ummRoot, superChainDataHash, isSuperResolver, txExecutionSublistsEdges
         );
     }
 }

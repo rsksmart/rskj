@@ -63,10 +63,10 @@ public class SuperBlockFields {
 
     public byte[] getEncoded() {
         return RLP.encodeList(
-                RLP.encodeElement(parentHash != null ? parentHash.copyArray() : new byte[0]),
+                RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
                 RLP.encodeList(uncleList.stream().map(BlockHeader::getFullEncoded).toArray(byte[][]::new)),
-                bridgeEvent != null ? bridgeEvent.getEncoded() : new byte[0]
+                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
         );
     }
 
@@ -75,11 +75,11 @@ public class SuperBlockFields {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncleList));
 
         byte[] encoded = RLP.encodeList(
-                RLP.encodeElement(parentHash != null ? parentHash.copyArray() : new byte[0]),
+                RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
                 RLP.encodeElement(unclesListHash),
                 RLP.encodeBigInteger(BigInteger.valueOf(uncleList.size())),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : new byte[0])
+                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
         );
 
         return new Keccak256(HashUtil.keccak256(encoded));
