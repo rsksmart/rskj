@@ -185,12 +185,17 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            BlockHeader superParent = FamilyUtils.getSuperParent(blockStore, constants, activationConfig, header);
+            Block superParent = FamilyUtils.getSuperParent(blockStore, constants, activationConfig, header);
+            Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
+            long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
+            List<BlockHeader> uncleList = superParent == null
+                    ? Collections.emptyList()
+                    : FamilyUtils.getSuperUnclesHeaders(blockStore, superParentBlockNumber, block.getHeader());
 
             SuperBlockFields superBlockFields = new SuperBlockFields(
-                    superParent != null ? Bytes.of(superParent.getHash().getBytes()) : null,
-                    header.getNumber(),
-                    Collections.emptyList(), // TODO: use super uncle list / count instead
+                    superParentHash,
+                    superParentBlockNumber,
+                    uncleList,
                     null // TODO: use super bridge event, if any
             );
 

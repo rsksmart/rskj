@@ -182,7 +182,7 @@ class BlockResultDTOTest {
         when(constants.getMinSuperBlockPoWFactor()).thenReturn(BigInteger.ONE);
         when(activationConfig.isActive(eq(ConsensusRule.RSKIP481), anyLong())).thenReturn(true);
         Block block = buildBlockWithTransactions(List.of(REMASC_TRANSACTION));
-        block.getHeader().setSuper(true);
+        block.getHeader().setSuperBlockResolver(SuperBlockResolver.TRUE);
         BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertNotNull(blockResultDTO);

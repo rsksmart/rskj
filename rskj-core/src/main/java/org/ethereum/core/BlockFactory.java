@@ -79,12 +79,26 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3) {
-            throw new IllegalArgumentException("A block must have 3 exactly items");
-        }
 
         RLPList rlpHeader = (RLPList) block.get(0);
         BlockHeader header = decodeHeader(rlpHeader, false, sealed);
+
+        boolean isRSKIP481Active = activationConfig.isActive(ConsensusRule.RSKIP481, header.getNumber());
+        if (isRSKIP481Active) {
+            if (header.isSuper().orElse(false)) {
+                if (block.size() != 4) {
+                    throw new IllegalArgumentException("A block must have 4 exactly items");
+                }
+            } else {
+                if (block.size() < 3 || block.size() > 4) {
+                    throw new IllegalArgumentException("Invalid block RLP list size: " + block.size());
+                }
+            }
+        } else {
+            if (block.size() != 3) {
+                throw new IllegalArgumentException("A block must have 3 exactly items");
+            }
+        }
 
         List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
 
@@ -99,7 +113,7 @@ public class BlockFactory {
         }
 
         SuperBlockFields superBlockFields = null;
-        if (activationConfig.isActive(ConsensusRule.RSKIP481, header.getNumber()) && header.isSuper().orElse(true)) {
+        if (isRSKIP481Active && block.size() == 4) {
             RLPList superBlockFieldsRlp = (RLPList) block.get(3);
 
             superBlockFields = decodeSuperBlockFields(superBlockFieldsRlp, sealed);
@@ -201,7 +215,7 @@ public class BlockFactory {
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
-        boolean isSuper = false;
+        SuperBlockResolver isSuper = SuperBlockResolver.FALSE;
         if (rlpHeader.size() > r) {
             bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
@@ -209,10 +223,11 @@ public class BlockFactory {
 
             if (activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber)) {
                 if (bitcoinMergedMiningHeader != null) {
-                    BtcBlock btcBlock = BlockUtils.makeBtcBlock(constants.getBridgeConstants().getBtcParams(), bitcoinMergedMiningHeader);
-                    if (btcBlock != null) {
-                        isSuper = SuperChainUtils.isSuperBlock(constants, activationConfig, blockNumber, difficulty, btcBlock);
-                    }
+                    final byte[] bitcoinMergedMiningHeaderFinal = bitcoinMergedMiningHeader;
+                    isSuper = new SuperBlockResolver(() -> {
+                        BtcBlock btcBlock = BlockUtils.makeBtcBlock(constants.getBridgeConstants().getBtcParams(), bitcoinMergedMiningHeaderFinal);
+                        return btcBlock != null && SuperChainUtils.isSuperBlock(constants, activationConfig, blockNumber, difficulty, btcBlock);
+                    });
                 }
             }
         }
@@ -232,7 +247,7 @@ public class BlockFactory {
     private BlockHeader createBlockHeader(boolean compressed, boolean sealed, byte[] parentHash, byte[] unclesHash,
                                           byte[] coinBaseBytes, RskAddress coinbase, byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData,
                                           byte[] difficultyBytes, BlockDifficulty difficulty, byte[] glBytes, long blockNumber, long gasUsed, long timestamp, byte[] extraData,
-                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte[] superChainDataHash, boolean isSuper, byte version, short[] txExecutionSublistsEdges,
+                                          Coin paidFees, byte[] minimumGasPriceBytes, Coin minimumGasPrice, int uncleCount, byte[] ummRoot, byte[] superChainDataHash, SuperBlockResolver isSuper, byte version, short[] txExecutionSublistsEdges,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof, byte[] bitcoinMergedMiningCoinbaseTransaction,
                                           boolean useRskip92Encoding, boolean includeForkDetectionData) {
         if (blockNumber == Genesis.NUMBER) {
@@ -340,7 +355,7 @@ public class BlockFactory {
             superUncleList.add(superUncleHeader);
         }
 
-        byte[] superBridgeEventRlp = superBlockFieldsRlp.get(3).getRLPRawData();
+        byte[] superBridgeEventRlp = superBlockFieldsRlp.get(3).getRLPData();
         SuperBridgeEvent bridgeEvent = SuperBridgeEvent.decode(superBridgeEventRlp);
 
         return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, superUncleList, bridgeEvent);

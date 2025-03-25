@@ -230,6 +230,8 @@ public class BlockToMineBuilder {
         // ummRoot can not be set to a value yet since the UMM contracts are not yet implemented
         byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
 
+        SuperBlockResolver isSuperResolver = !activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? SuperBlockResolver.FALSE : null;
+
         final BlockHeader newHeader = blockFactory
                 .getBlockHeaderBuilder()
                 .setParentHash(newBlockParentHeader.getHash().getBytes())
@@ -250,6 +252,7 @@ public class BlockToMineBuilder {
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setSuperBlockResolver(isSuperResolver)
                 .build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));

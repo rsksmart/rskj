@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.util.SuperChainUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -28,10 +27,7 @@ import org.ethereum.db.BlockStore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
@@ -176,16 +172,15 @@ public class FamilyUtils {
     }
 
     @Nullable
-    public static BlockHeader getSuperParent(BlockStore store,
-                                             Constants constants, ActivationConfig activationConfig,
-                                             BlockHeader header) {
+    public static Block getSuperParent(BlockStore store,
+                                       Constants constants, ActivationConfig activationConfig,
+                                       BlockHeader header) {
         // TODO: validate performance of this method
 
         Block parent = store.getBlockByHash(header.getParentHash().getBytes());
         while (parent != null) {
-            BlockHeader parentHeader = parent.getHeader();
-            if (SuperChainUtils.isSuperBlock(constants, activationConfig, parentHeader).orElse(false)) {
-                return parentHeader;
+            if (parent.getHeader().isSuper().orElse(false)) {
+                return parent;
             }
             if (parent.getSuperChainDataHash() == null) {
                 return null;
@@ -195,5 +190,35 @@ public class FamilyUtils {
         }
 
         return null;
+    }
+
+    @Nonnull
+    public static List<BlockHeader> getSuperUnclesHeaders(BlockStore store, long superParentBlockNumber, BlockHeader superBlockHeader) {
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        List<BlockHeader> ancestors = new ArrayList<>();
+        Block parentBlock = store.getBlockByHash(superBlockHeader.getParentHash().getBytes());
+        if (parentBlock == null || parentBlock.getNumber() <= superParentBlockNumber) {
+            return Collections.emptyList();
+        }
+        while (parentBlock.getNumber() > superParentBlockNumber) {
+            ancestors.add(parentBlock.getHeader());
+            parentBlock = store.getBlockByHash(parentBlock.getParentHash().getBytes());
+            if (parentBlock == null) {
+                return Collections.emptyList();
+            }
+        }
+
+        for (int i = 0; i < ancestors.size(); i++) {
+            BlockHeader ancestor = ancestors.get(i);
+            List<Block> blockList = store.getChainBlocksByNumber(i);
+            for (Block block : blockList) {
+                if (!ancestor.getHash().equals(block.getHash()) && ancestor.getParentHash().equals(block.getParentHash())) {
+                    uncles.add(block.getHeader());
+                }
+            }
+        }
+
+        return uncles;
     }
 }

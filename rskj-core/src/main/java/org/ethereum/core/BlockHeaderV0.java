@@ -39,12 +39,12 @@ public class BlockHeaderV0 extends BlockHeader {
     private short[] txExecutionSublistsEdges;
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
-        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
-        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-        Coin minimumGasPrice, int uncleCount, boolean sealed,
-        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, boolean isSuper, short[] txExecutionSublistsEdges) {
+                         byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+                         long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                         Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                         byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                         Coin minimumGasPrice, int uncleCount, boolean sealed,
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, SuperBlockResolver isSuper, short[] txExecutionSublistsEdges) {
         super(parentHash,unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,

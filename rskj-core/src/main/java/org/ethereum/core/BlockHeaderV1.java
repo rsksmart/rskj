@@ -18,7 +18,7 @@ public class BlockHeaderV1 extends BlockHeader {
                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, boolean isSuper, short[] txExecutionSublistsEdges, boolean compressed) {
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, byte[] superChainDataHash, SuperBlockResolver isSuper, short[] txExecutionSublistsEdges, boolean compressed) {
         super(parentHash,unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,

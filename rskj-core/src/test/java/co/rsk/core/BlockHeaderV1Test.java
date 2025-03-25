@@ -4,6 +4,7 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.BlockHeaderV1;
+import org.ethereum.core.SuperBlockResolver;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -42,7 +43,7 @@ class BlockHeaderV1Test {
                 false,
                 null,
                 null,
-                false,
+                SuperBlockResolver.FALSE,
                 new short[0],
                 false
         );
