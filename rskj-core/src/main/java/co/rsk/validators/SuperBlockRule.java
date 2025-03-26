@@ -19,6 +19,8 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.FamilyUtils;
+import co.rsk.core.bc.BlockBundle;
 import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
@@ -28,7 +30,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidationRule {
 
@@ -90,29 +94,10 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
     }
 
     private boolean areSuperBlockFieldsValid(BlockHeader header, SuperBlockFields superBlockFields) {
-        Map<Keccak256, BlockHeader> ancestors = new HashMap<>();
-        Block superParent = null;
-        Block parent = blockStore.getBlockByHash(header.getParentHash().getBytes());
-        if (parent == null) {
-            return false;
-        }
-        while (true) {
-            if (parent.getHeader().isSuper().orElse(false)) {
-                Objects.requireNonNull(parent.getSuperChainDataHash());
-                superParent = parent;
-                break;
-            }
-            if (parent.getSuperChainDataHash() == null) {
-                ancestors = Collections.emptyMap();
-                break;
-            }
+        BlockBundle<Map<Keccak256, BlockHeader>> superParentAndAncestors = FamilyUtils.findSuperParentAndAncestors(blockStore, header);
 
-            ancestors.put(parent.getHash(), parent.getHeader());
-            parent = blockStore.getBlockByHash(parent.getParentHash().getBytes());
-            if (parent == null) {
-                return false;
-            }
-        }
+        Block superParent = superParentAndAncestors.getBlock();
+        Map<Keccak256, BlockHeader> ancestors = superParentAndAncestors.getBundle();
 
         List<BlockHeader> uncleList = superBlockFields.getUncleList();
         if (superParent == null) {

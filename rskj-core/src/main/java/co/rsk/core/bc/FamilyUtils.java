@@ -19,15 +19,13 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
@@ -171,44 +169,15 @@ public class FamilyUtils {
         return family;
     }
 
-    @Nullable
-    public static Block getSuperParent(BlockStore store,
-                                       Constants constants, ActivationConfig activationConfig,
-                                       BlockHeader header) {
-        // TODO: validate performance of this method
-
-        Block parent = store.getBlockByHash(header.getParentHash().getBytes());
-        while (parent != null) {
-            if (parent.getHeader().isSuper().orElse(false)) {
-                return parent;
-            }
-            if (parent.getSuperChainDataHash() == null) {
-                return null;
-            }
-
-            parent = store.getBlockByHash(parent.getParentHash().getBytes());
-        }
-
-        return null;
-    }
-
-    @Nonnull
-    public static List<BlockHeader> getSuperUnclesHeaders(BlockStore store, long superParentBlockNumber, BlockHeader superBlockHeader) {
-        List<BlockHeader> uncles = new ArrayList<>();
-
+    public static BlockBundle<List<BlockHeader>> findSuperParentAndUncles(BlockStore store, BlockHeader header) {
         List<BlockHeader> ancestors = new ArrayList<>();
-        Block parentBlock = store.getBlockByHash(superBlockHeader.getParentHash().getBytes());
-        if (parentBlock == null || parentBlock.getNumber() <= superParentBlockNumber) {
-            return Collections.emptyList();
-        }
-        while (parentBlock.getNumber() > superParentBlockNumber) {
-            ancestors.add(parentBlock.getHeader());
-            parentBlock = store.getBlockByHash(parentBlock.getParentHash().getBytes());
-            if (parentBlock == null) {
-                return Collections.emptyList();
-            }
+        Block superParent = findSuperParent(store, header, ancestor -> ancestors.add(ancestor.getHeader()));
+
+        if (superParent == null) {
+            return BlockBundle.of(null, Collections.emptyList());
         }
 
+        List<BlockHeader> uncles = new ArrayList<>();
         for (int i = 0; i < ancestors.size(); i++) {
             BlockHeader ancestor = ancestors.get(i);
             List<Block> blockList = store.getChainBlocksByNumber(i);
@@ -219,6 +188,39 @@ public class FamilyUtils {
             }
         }
 
-        return uncles;
+        return BlockBundle.of(superParent, uncles);
+    }
+
+    public static BlockBundle<Map<Keccak256, BlockHeader>> findSuperParentAndAncestors(BlockStore store, BlockHeader header) {
+        Map<Keccak256, BlockHeader> ancestors = new HashMap<>();
+        Block superParent = findSuperParent(store, header, ancestor -> ancestors.put(ancestor.getHash(), ancestor.getHeader()));
+
+        if (superParent == null) {
+            return BlockBundle.of(null, Collections.emptyMap());
+        }
+
+        return BlockBundle.of(superParent, ancestors);
+    }
+
+    private static Block findSuperParent(BlockStore store, BlockHeader header, Consumer<Block> ancestorConsumer) {
+        Block parent = store.getBlockByHash(header.getParentHash().getBytes());
+        if (parent == null) {
+            return null;
+        }
+        while (true) {
+            if (parent.getHeader().isSuper().orElse(false)) {
+                Objects.requireNonNull(parent.getSuperChainDataHash());
+                return parent;
+            }
+            if (parent.getSuperChainDataHash() == null) {
+                return null;
+            }
+
+            ancestorConsumer.accept(parent);
+            parent = store.getBlockByHash(parent.getParentHash().getBytes());
+            if (parent == null) {
+                return null;
+            }
+        }
     }
 }
