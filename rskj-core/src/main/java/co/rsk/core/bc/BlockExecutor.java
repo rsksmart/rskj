@@ -30,7 +30,6 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.util.SuperChainUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -184,25 +183,27 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            Block superParent = FamilyUtils.getSuperParent(blockStore, constants, activationConfig, header);
-            Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
-            long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
-            List<BlockHeader> uncleList = superParent == null
-                    ? Collections.emptyList()
-                    : FamilyUtils.getSuperUnclesHeaders(blockStore, superParentBlockNumber, block.getHeader());
+            BlockBundle<List<BlockHeader>> superParentAndUncles = FamilyUtils.findSuperParentAndUncles(blockStore, header);
 
-            SuperBlockFields superBlockFields = new SuperBlockFields(
-                    superParentHash,
-                    superParentBlockNumber,
-                    uncleList,
-                    null // TODO: use super bridge event, if any
-            );
-
+            SuperBlockFields superBlockFields = getSuperBlockFields(superParentAndUncles.getBlock(), superParentAndUncles.getBundle());
             block.setSuperChainFields(superBlockFields);
         }
 
         block.flushRLP();
         profiler.stop(metric);
+    }
+
+    private static SuperBlockFields getSuperBlockFields(Block superParent, List<BlockHeader> uncles) {
+        Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
+        long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
+        List<BlockHeader> uncleList = superParent == null ? Collections.emptyList() : uncles;
+
+        return new SuperBlockFields(
+                superParentHash,
+                superParentBlockNumber,
+                uncleList,
+                null // TODO: use super bridge event, if any
+        );
     }
 
     /**
