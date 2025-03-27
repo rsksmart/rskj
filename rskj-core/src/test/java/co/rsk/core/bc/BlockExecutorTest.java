@@ -47,6 +47,7 @@ import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -92,6 +93,7 @@ public class BlockExecutorTest {
 
     private Blockchain blockchain;
     private BlockStore blockStore;
+    private ReceiptStore receiptStore;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
 
@@ -100,6 +102,7 @@ public class BlockExecutorTest {
         RskTestFactory objects = new RskTestFactory(tempDir, config);
         blockchain = objects.getBlockchain();
         blockStore = objects.getBlockStore();
+        receiptStore = objects.getReceiptStore();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
     }
@@ -1480,6 +1483,7 @@ public class BlockExecutorTest {
 
         return new BlockExecutor(
                 blockStore,
+                receiptStore,
                 new RepositoryLocator(store, stateRootHandler),
                 new TransactionExecutorFactory(
                         cfg,

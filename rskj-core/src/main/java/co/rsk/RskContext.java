@@ -491,6 +491,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
                     getBlockStore(),
+                    getReceiptStore(),
                     getRepositoryLocator(),
                     getTransactionExecutorFactory(),
                     getRskSystemProperties()
@@ -1124,7 +1125,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getNetworkConstants(),
                     rskSystemProperties.getBitcoinjNetworkConstants()
             );
-            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore());
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore());
             blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
@@ -1812,7 +1813,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getNetworkConstants(),
                     rskSystemProperties.getBitcoinjNetworkConstants()
             );
-            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore());
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore());
 
             final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
                     getProofOfWorkRule(),

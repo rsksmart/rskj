@@ -180,6 +180,7 @@ public class World {
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     getBlockStore(),
+                    getReceiptStore(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -293,6 +294,10 @@ public class World {
 
     public BlockStore getBlockStore() {
         return blockStore;
+    }
+
+    public ReceiptStore getReceiptStore() {
+        return receiptStore;
     }
 
     public BlockTxSignatureCache getBlockTxSignatureCache() { return blockTxSignatureCache; }

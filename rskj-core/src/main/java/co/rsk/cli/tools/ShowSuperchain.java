@@ -184,7 +184,7 @@ public class ShowSuperchain extends PicoCliToolRskContextAware {
             }
 
             if (processedBlockCount % 10000 == 0) {
-                avgEpochLength = 1.0 * epochLengths / superBlockCount;
+                avgEpochLength = superBlockCount == 0 ? 0 : 1.0 * epochLengths / superBlockCount;
                 avgPowFactor = powFactors.divide(BigInteger.valueOf(processedBlockCount));
 
                 long processedPercents = 100 * (toBlockNumber - blockNum) / (toBlockNumber - fromBlockNumber);
@@ -201,7 +201,7 @@ public class ShowSuperchain extends PicoCliToolRskContextAware {
             }
         }
 
-        avgEpochLength = 1.0 * epochLengths / superBlockCount;
+        avgEpochLength = superBlockCount == 0 ? 0 : 1.0 * epochLengths / superBlockCount;
         avgPowFactor = powFactors.divide(BigInteger.valueOf(processedBlockCount));
 
         printInfo("Processed blocks {}; super blocks: {}; avg epoch length: {}; max epoch length: {}; avg PoW factor: {}; max PoW factor: {}; unknown PoW factor: {}; max uncle count: {}",

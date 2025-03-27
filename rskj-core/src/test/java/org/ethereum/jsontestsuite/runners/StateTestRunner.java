@@ -34,9 +34,7 @@ import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.BlockStoreDummy;
-import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.*;
 import org.ethereum.jsontestsuite.Env;
 import org.ethereum.jsontestsuite.StateTestingCase;
 import org.ethereum.jsontestsuite.TestProgramInvokeFactory;
@@ -150,6 +148,7 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction);
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchain = new BlockChainImpl(
             blockStore,
@@ -159,6 +158,7 @@ public class StateTestRunner {
             null,
             new BlockExecutor(
                 blockStore,
+                receiptStore,
                 new RepositoryLocator(trieStore, stateRootHandler),
                 new TransactionExecutorFactory(
                     config,

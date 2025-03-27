@@ -165,6 +165,7 @@ public class TestRunner {
                 new DummyBlockValidator(),
                 new BlockExecutor(
                         blockStore,
+                        receiptStore,
                         new RepositoryLocator(trieStore, stateRootHandler),
                         transactionExecutorFactory,
                         config),

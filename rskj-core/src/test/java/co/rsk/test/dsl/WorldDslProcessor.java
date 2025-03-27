@@ -317,6 +317,7 @@ public class WorldDslProcessor {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     world.getBlockStore(),
+                    world.getReceiptStore(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
                             config,

@@ -86,6 +86,7 @@ class ImportLightTest {
                 new DummyBlockValidator(),
                 new BlockExecutor(
                         blockStore,
+                        receiptStore,
                         repositoryLocator,
                         transactionExecutorFactory,
                         config),
