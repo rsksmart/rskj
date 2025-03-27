@@ -30,12 +30,14 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.util.Trio;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -64,10 +66,10 @@ public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
-    private final Constants constants;
     private final ActivationConfig activationConfig;
 
     private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final boolean remascEnabled;
@@ -87,13 +89,14 @@ public class BlockExecutor {
     private final ExecutorService[] execServices;
 
     public BlockExecutor(BlockStore blockStore,
+                         ReceiptStore receiptStore,
                          RepositoryLocator repositoryLocator,
                          TransactionExecutorFactory transactionExecutorFactory,
                          RskSystemProperties systemProperties) {
-        this.constants = systemProperties.getNetworkConstants();
         this.activationConfig = systemProperties.getActivationConfig();
 
         this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.remascEnabled = systemProperties.isRemascEnabled();
@@ -183,9 +186,14 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            BlockBundle<List<BlockHeader>> superParentAndUncles = FamilyUtils.findSuperParentAndUncles(blockStore, header);
+            Trio<Block, List<BlockHeader>, SuperBridgeEvent> superParentAndUnclesAndBridgeEvent =
+                    FamilyUtils.findSuperParentAndUnclesAndBridgeEvent(blockStore, receiptStore, block, result.getTransactionReceipts());
 
-            SuperBlockFields superBlockFields = getSuperBlockFields(superParentAndUncles.getBlock(), superParentAndUncles.getBundle());
+            SuperBlockFields superBlockFields = makeSuperBlockFields(
+                    superParentAndUnclesAndBridgeEvent.getFirst(),
+                    superParentAndUnclesAndBridgeEvent.getMiddle(),
+                    superParentAndUnclesAndBridgeEvent.getLast()
+            );
             block.setSuperChainFields(superBlockFields);
         }
 
@@ -193,7 +201,7 @@ public class BlockExecutor {
         profiler.stop(metric);
     }
 
-    private static SuperBlockFields getSuperBlockFields(Block superParent, List<BlockHeader> uncles) {
+    private static SuperBlockFields makeSuperBlockFields(Block superParent, List<BlockHeader> uncles, SuperBridgeEvent event) {
         Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
         long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
         List<BlockHeader> uncleList = superParent == null ? Collections.emptyList() : uncles;
@@ -202,7 +210,7 @@ public class BlockExecutor {
                 superParentHash,
                 superParentBlockNumber,
                 uncleList,
-                null // TODO: use super bridge event, if any
+                event
         );
     }
 

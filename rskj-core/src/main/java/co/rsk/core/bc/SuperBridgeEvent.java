@@ -18,16 +18,48 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.RskAddress;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.core.types.bytes.BytesSlice;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.rpc.AddressesTopicsFilter;
+import org.ethereum.rpc.Topic;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class SuperBridgeEvent {
+
+    public static final String NAME = "super_bridge_event";
+
+    public static final CallTransaction.Function SIGNATURE = CallTransaction.Function.fromEventSignature(NAME, new CallTransaction.Param[]{
+            new CallTransaction.Param(true, "operatorId", SolidityType.getType("bytes32")),
+            new CallTransaction.Param(true, "utxoId", SolidityType.getType("bytes32"))
+    });
+
+    public static final AddressesTopicsFilter FILTER = new AddressesTopicsFilter(
+            new RskAddress[] { PrecompiledContracts.BRIDGE_ADDR },
+            new Topic[][] {{ new Topic(SIGNATURE.encodeSignatureLong()) }}
+    );
+
+    private static final Function<TransactionReceipt, SuperBridgeEvent> FIND_EVENT_FN = (TransactionReceipt txReceipt) -> {
+        for (LogInfo logInfo : txReceipt.getLogInfoList()) {
+            if (SuperBridgeEvent.FILTER.matchesExactly(logInfo)) {
+                return makeSuperBridgeEvent(logInfo);
+            }
+        }
+        return null;
+    };
+
     private final BytesSlice operatorId;
     private final BytesSlice utxoId;
 
@@ -88,5 +120,28 @@ public class SuperBridgeEvent {
         public DecodeException(String message) {
             super(message);
         }
+    }
+
+    public static boolean equal(@Nullable SuperBridgeEvent event1, @Nullable SuperBridgeEvent event2) {
+        if (event1 == null) {
+            return event2 == null;
+        }
+        if (event2 == null) {
+            return false;
+        }
+        return Bytes.equalByteSlices(event1.operatorId, event2.operatorId) && Bytes.equalByteSlices(event1.utxoId, event2.utxoId);
+    }
+
+    public static SuperBridgeEvent findEvent(Stream<TransactionReceipt> receiptsStream) {
+        return receiptsStream
+                .map(FIND_EVENT_FN)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static SuperBridgeEvent makeSuperBridgeEvent(LogInfo logInfo) {
+        Object[] args = SuperBridgeEvent.SIGNATURE.decodeEventData(logInfo.getData());
+        return new SuperBridgeEvent(Bytes.of((byte[]) (args[0])), Bytes.of((byte[]) (args[1])));
     }
 }

@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2025 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,29 +16,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.core.bc;
+package co.rsk.util;
 
-import org.ethereum.core.Block;
+public class Trio<R, M, L> {
+    private final R first;
+    private final M middle;
+    private final L last;
 
-public class BlockBundle<T> {
-
-    private final Block block;
-    private final T bundle;
-
-    public static <T> BlockBundle<T> of(Block block, T bundle) {
-        return new BlockBundle<>(block, bundle);
+    public static <R, M, L> Trio<R, M, L> of(R first, M middle, L last) {
+        return new Trio<>(first, middle, last);
     }
 
-    public BlockBundle(Block block, T bundle) {
-        this.block = block;
-        this.bundle = bundle;
+    private Trio(R first, M middle, L last) {
+        this.first = first;
+        this.middle = middle;
+        this.last = last;
     }
 
-    public Block getBlock() {
-        return block;
+    public R getFirst() {
+        return first;
     }
 
-    public T getBundle() {
-        return bundle;
+    public M getMiddle() {
+        return middle;
+    }
+
+    public L getLast() {
+        return last;
     }
 }

@@ -809,6 +809,7 @@ class SyncProcessorTest {
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockChainBuilder.getBlockStore(),
+                blockChainBuilder.getReceiptStore(),
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 new TransactionExecutorFactory(
                         config,
