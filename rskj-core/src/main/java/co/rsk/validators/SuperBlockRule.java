@@ -19,29 +19,38 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockUtils;
 import co.rsk.core.bc.FamilyUtils;
-import co.rsk.core.bc.BlockBundle;
 import co.rsk.core.bc.SuperBlockFields;
+import co.rsk.core.bc.SuperBridgeEvent;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private final ActivationConfig activationConfig;
     private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
 
-    public SuperBlockRule(ActivationConfig activationConfig, BlockStore blockStore) {
+    public SuperBlockRule(ActivationConfig activationConfig, BlockStore blockStore, ReceiptStore receiptStore) {
         this.activationConfig = activationConfig;
         this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
     }
 
     @Override
@@ -65,15 +74,15 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
         if (!isRSKIP481Active(block.getNumber())) {
             return superBlockFields == null && isSuperOpt.isPresent() && !isSuperOpt.get();
         } else if (isSuperOpt.isEmpty()) {
-            return superBlockFields == null || areSuperBlockFieldsValid(header, superBlockFields);
+            return superBlockFields == null || areSuperBlockFieldsValid(block, superBlockFields);
         } else if (isSuperOpt.get()) {
-            return superBlockFields != null && areSuperBlockFieldsValid(header, superBlockFields);
+            return superBlockFields != null && areSuperBlockFieldsValid(block, superBlockFields);
         } else {
             return superBlockFields == null;
         }
     }
 
-    private boolean isSuperUncle(Keccak256 superParentHash, Map<Keccak256, BlockHeader> ancestors, BlockHeader uncleHeader) {
+    private boolean isSuperUncle(Keccak256 superParentHash, Map<Keccak256, Block> ancestorMap, BlockHeader uncleHeader) {
         if (!uncleHeader.isSuper().orElse(false)) {
             return false;
         }
@@ -83,7 +92,7 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
             if (parentHash.equals(superParentHash)) {
                 return true;
             }
-            BlockHeader parent = ancestors.get(parentHash);
+            Block parent = ancestorMap.get(parentHash);
             if (parent == null) {
                 return false;
             }
@@ -93,11 +102,11 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
         return false;
     }
 
-    private boolean areSuperBlockFieldsValid(BlockHeader header, SuperBlockFields superBlockFields) {
-        BlockBundle<Map<Keccak256, BlockHeader>> superParentAndAncestors = FamilyUtils.findSuperParentAndAncestors(blockStore, header);
+    private boolean areSuperBlockFieldsValid(Block block, SuperBlockFields superBlockFields) {
+        Pair<Block, List<Block>> superParentAndAncestors = FamilyUtils.findSuperParentAndAncestors(blockStore, block.getHeader());
 
-        Block superParent = superParentAndAncestors.getBlock();
-        Map<Keccak256, BlockHeader> ancestors = superParentAndAncestors.getBundle();
+        Block superParent = superParentAndAncestors.getLeft();
+        List<Block> ancestors = superParentAndAncestors.getRight();
 
         List<BlockHeader> uncleList = superBlockFields.getUncleList();
         if (superParent == null) {
@@ -114,16 +123,21 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
             if (superBlockFields.getBlockNumber() != superParent.getSuperBlockFields().getBlockNumber() + 1) {
                 return false;
             }
+            Map<Keccak256, Block> ancestorMap = ancestors.stream().collect(Collectors.toMap(Block::getHash, Function.identity()));
             for (BlockHeader blockHeader : uncleList) {
-                if (!isSuperUncle(superParent.getHash(), ancestors, blockHeader)) {
+                if (!isSuperUncle(superParent.getHash(), ancestorMap, blockHeader)) {
                     return false;
                 }
             }
         }
 
-        // TODO: validate super bridge event
-
-        return true;
+        SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
+                Stream.concat(
+                        BlockUtils.makeReceiptsStream(receiptStore, Collections.singletonList(block), SuperBridgeEvent.FILTER),
+                        BlockUtils.makeReceiptsStream(receiptStore, ancestors, SuperBridgeEvent.FILTER)
+                )
+        );
+        return SuperBridgeEvent.equal(superBlockFields.getBridgeEvent(), bridgeEvent);
     }
 
     private boolean isRSKIP481Active(long blockNumber) {

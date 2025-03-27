@@ -248,6 +248,7 @@ public class BlockChainBuilder {
                 transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockStore,
+                receiptStore,
                 repositoryLocator,
                 transactionExecutorFactory,
                 config);

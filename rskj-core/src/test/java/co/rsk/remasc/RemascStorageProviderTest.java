@@ -51,6 +51,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -458,6 +459,7 @@ class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         BlockStore blockStore = builder.getBlockStore();
+        ReceiptStore receiptStore = builder.getReceiptStore();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         List<Block> blocks = new ArrayList<>();
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blockchain.getBestBlock(), PegTestUtils.createHash3(),
@@ -480,6 +482,7 @@ class RemascStorageProviderTest {
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockStore,
+                receiptStore,
                 repositoryLocator,
                 new TransactionExecutorFactory(
                         config,
