@@ -1,5 +1,6 @@
 package co.rsk.util;
 
+import org.apache.commons.codec.binary.Base64;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -1066,5 +1067,27 @@ class RLPTest {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(238, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
+    }
+
+    @Test
+    void testGetNextElementIndexThrowsError() {
+        byte[] payload = Base64.decodeBase64("/g==");
+
+        Assertions.assertThrows(RLPException.class, () -> RLP.getNextElementIndex(payload, 0));
+    }
+
+    @Test
+    public void testGetNextElementIndexSmallerThrowsError() {
+        byte[] maliciousPayload = new byte[]{
+                0, 0, 0, 0, // empty pad
+                (byte) 0xb8,
+                (byte) 0xff, // lengthOfLength = 8
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xF4, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+                (byte) 0x01
+        };
+
+        int pos = 5;
+
+        Assertions.assertThrows(RLPException.class, () -> RLP.getNextElementIndex(maliciousPayload, pos));
     }
 }
