@@ -137,7 +137,7 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
                         BlockUtils.makeReceiptsStream(receiptStore, ancestors, SuperBridgeEvent.FILTER)
                 )
         );
-        return SuperBridgeEvent.equal(superBlockFields.getBridgeEvent(), bridgeEvent);
+        return SuperBridgeEvent.equalEvents(superBlockFields.getBridgeEvent(), bridgeEvent);
     }
 
     private boolean isRSKIP481Active(long blockNumber) {
