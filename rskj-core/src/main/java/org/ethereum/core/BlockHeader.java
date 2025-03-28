@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.System.arraycopy;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -114,6 +115,10 @@ public abstract class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
+    private byte[] superChainDataHash;
+
+    private SuperBlockResolver isSuperResolver;
+
     private final byte[] ummRoot;
 
     protected byte[] extensionData;
@@ -137,12 +142,13 @@ public abstract class BlockHeader {
     private final boolean includeForkDetectionData;
 
     protected BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
-                       long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
-                       Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
+                          long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                          Coin minimumGasPrice, int uncleCount, boolean sealed,
+                          boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
+                          byte[] superChainDataHash, SuperBlockResolver isSuperResolver) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -168,6 +174,8 @@ public abstract class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+        this.superChainDataHash = superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
+        this.isSuperResolver = isSuperResolver;
     }
 
     public abstract void setExtension(BlockHeaderExtension extension);
@@ -379,6 +387,10 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
+        if (this.superChainDataHash != null) {
+            fieldToEncodeList.add(RLP.encodeElement(this.superChainDataHash));
+        }
+
         this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {
@@ -465,6 +477,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
         toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
+        toStringBuff.append("  superChainDataHash=").append(toHexStringOrEmpty(superChainDataHash)).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -628,5 +641,33 @@ public abstract class BlockHeader {
 
     public byte[] getUmmRoot() {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+    }
+
+    public byte[] getSuperChainDataHash() {
+        return superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
+    }
+
+    public void setSuperChainDataHash(byte[] superChainDataHash) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter super chain data hash");
+        }
+        this.hash = null;
+
+        this.superChainDataHash = superChainDataHash;
+    }
+
+    public Optional<Boolean> isSuper() {
+        return Optional.ofNullable(this.isSuperResolver).map(SuperBlockResolver::resolve);
+    }
+
+    public void setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter isSuper flag");
+        }
+        this.hash = null;
+
+        this.isSuperResolver = isSuperResolver;
     }
 }
