@@ -122,7 +122,7 @@ public class SuperBridgeEvent {
         }
     }
 
-    public static boolean equal(@Nullable SuperBridgeEvent event1, @Nullable SuperBridgeEvent event2) {
+    public static boolean equalEvents(@Nullable SuperBridgeEvent event1, @Nullable SuperBridgeEvent event2) {
         if (event1 == null) {
             return event2 == null;
         }

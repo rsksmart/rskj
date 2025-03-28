@@ -18,13 +18,15 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValueFactory;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import com.typesafe.config.*;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Test;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -210,7 +212,13 @@ class ActivationConfigTest {
 
     @Test
     void headerVersion1() {
-        ActivationConfig config = ActivationConfigsForTest.all();
+        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481);
         assertEquals((byte) 0x1, config.getHeaderVersion(10));
+    }
+
+    @Test
+    void headerVersion2() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        assertEquals((byte) 0x2, config.getHeaderVersion(10));
     }
 }

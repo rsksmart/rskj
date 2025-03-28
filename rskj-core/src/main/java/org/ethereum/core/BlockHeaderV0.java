@@ -37,6 +37,7 @@ public class BlockHeaderV0 extends BlockHeader {
     }
 
     private short[] txExecutionSublistsEdges;
+    private byte[] superChainDataHash;
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
@@ -51,8 +52,9 @@ public class BlockHeaderV0 extends BlockHeader {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
-                useRskip92Encoding, includeForkDetectionData, ummRoot, superChainDataHash, isSuper);
+                useRskip92Encoding, includeForkDetectionData, ummRoot, isSuper);
         this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
+        this.superChainDataHash = superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
     }
 
     // logs bloom is stored in the extension data
@@ -77,6 +79,22 @@ public class BlockHeaderV0 extends BlockHeader {
     }
 
     @Override
+    public byte[] getSuperChainDataHash() {
+        return superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
+    }
+
+    @Override
+    public void setSuperChainDataHash(byte[] superChainDataHash) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter super chain data hash");
+        }
+        this.hash = null;
+
+        this.superChainDataHash = superChainDataHash;
+    }
+
+    @Override
     public void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode) {
         // adding edges to
         // 1. keep RSKIP 351 and RSKIP 144 independent
@@ -84,5 +102,6 @@ public class BlockHeaderV0 extends BlockHeader {
         // 2. keep compressed encoding the same as uncompressed
         //    since this difference should not exist on v0
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
+        this.addSuperChainDataHash(fieldsToEncode);
     }
 }
