@@ -234,18 +234,15 @@ public enum MessageType {
                 uncles.add(blockFactory.decodeHeader(element.getRLPData(), false));
             }
 
-            BlockHeaderExtension blockHeaderExtension = null;
-            SuperBlockFields superBlockFields = null;
+            BlockHeaderExtension blockHeaderExtension = message.size() == 3 || message.size() == 4
+                    ? BlockHeaderExtension.fromEncoded(message.get(2).getRLPData())
+                    : null;
 
-            if (message.size() == 3) {
-                try {
-                    blockHeaderExtension = BlockHeaderExtension.fromEncoded(message.get(2).getRLPData());
-                } catch (RuntimeException e) {
-                    superBlockFields = blockFactory.decodeSuperBlockFields(message.get(2).getRLPData(), true);
-                }
-            } else if (message.size() == 4) {
-                blockHeaderExtension = BlockHeaderExtension.fromEncoded(message.get(2).getRLPData());
-                superBlockFields = blockFactory.decodeSuperBlockFields(message.get(3).getRLPData(), true);
+            SuperBlockFields superBlockFields = null;
+            if (blockHeaderExtension != null) {
+                superBlockFields = message.size() == 4
+                        ? blockFactory.decodeSuperBlockFields(message.get(3).getRLPData(), true)
+                        : null;
             }
 
             return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension, superBlockFields);

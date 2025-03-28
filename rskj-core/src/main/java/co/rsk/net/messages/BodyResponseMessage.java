@@ -55,9 +55,10 @@ public class BodyResponseMessage extends MessageWithId {
 
         if (this.blockHeaderExtension != null) {
             elements.add(BlockHeaderExtension.toEncoded(blockHeaderExtension));
-        }
-        if (superBlockFields != null) {
-            elements.add(superBlockFields.getEncoded());
+
+            if (superBlockFields != null) {
+                elements.add(superBlockFields.getEncoded());
+            }
         }
 
         return RLP.encodeList(elements.toArray(new byte[][]{}));

@@ -84,6 +84,5 @@ public class BlockHeaderV0 extends BlockHeader {
         // 2. keep compressed encoding the same as uncompressed
         //    since this difference should not exist on v0
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
-        this.addSuperChainDataHash(fieldsToEncode);
     }
 }

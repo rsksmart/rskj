@@ -106,7 +106,7 @@ public enum ConsensusRule {
     RSKIP454("rskip454"),
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
-    RSKIP481("rskip481"), // Superchain
+    RSKIP481("rskip481"), // Superchain (requires rskip351 to be activated)
     ;
 
     private final String configKey;

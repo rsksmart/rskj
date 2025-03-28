@@ -1,22 +1,3 @@
-/*
- * This file is part of RskJ
- * Copyright (C) 2024 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
@@ -45,12 +26,14 @@ public class BlockHeaderV1 extends BlockHeader {
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot, superChainDataHash, isSuper);
-        this.extension = createExtension(compressed, extensionData, txExecutionSublistsEdges, superChainDataHash);
-        if (!compressed) {
+        this.extension = compressed
+                ? new BlockHeaderExtensionV1(null, null)
+                : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
+        if(!compressed) {
             this.updateExtensionData(); // update after calculating
         }
-    }
 
+    }
     @Override
     public byte getVersion() { return 0x1; }
 
@@ -67,15 +50,7 @@ public class BlockHeaderV1 extends BlockHeader {
         );
     }
 
-    protected BlockHeaderExtensionV1 createExtension(boolean compressed,
-                                                     byte[] extensionData, short[] txExecutionSublistsEdges,
-                                                     byte[] superChainDataHash) {
-        return compressed
-                ? new BlockHeaderExtensionV1(null, null)
-                : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
-    }
-
-    protected void updateExtensionData() {
+    private void updateExtensionData() {
         this.extensionData = BlockHeaderV1.createExtensionData(this.extension.getHash());
     }
 

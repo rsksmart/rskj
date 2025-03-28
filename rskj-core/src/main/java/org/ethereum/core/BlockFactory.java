@@ -192,6 +192,11 @@ public class BlockFactory {
             ummRoot = rlpHeader.get(r++).getRLPRawData();
         }
 
+        byte[] superChainDataHash = null;
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber)) {
+            superChainDataHash = rlpHeader.get(r++).getRLPRawData();
+        }
+
         byte version = 0x0;
 
         if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
@@ -201,15 +206,10 @@ public class BlockFactory {
         }
 
         short[] txExecutionSublistsEdges = null;
+
         if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
                 (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))) {
             txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
-        }
-
-        byte[] superChainDataHash = null;
-        if ((!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) &&
-                (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber))) {
-            superChainDataHash = rlpHeader.get(r++).getRLPRawData();
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -270,18 +270,6 @@ public class BlockFactory {
                     stateRoot);
         }
 
-        if (version == 2) {
-            return new BlockHeaderV2(
-                    parentHash, unclesHash, coinbase, stateRoot,
-                    txTrieRoot, receiptTrieRoot, extensionData, difficulty,
-                    blockNumber, glBytes, gasUsed, timestamp, extraData,
-                    paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                    bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                    minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                    ummRoot, superChainDataHash, isSuper, txExecutionSublistsEdges, compressed
-            );
-        }
-
         if (version == 1) {
             return new BlockHeaderV1(
                     parentHash, unclesHash, coinbase, stateRoot,
@@ -309,7 +297,7 @@ public class BlockFactory {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preRSKIP481SizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment, preRSKIP481SizeAdjustment);
+        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment);
 
         int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preRSKIP481SizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
         int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preRSKIP481SizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
@@ -317,13 +305,13 @@ public class BlockFactory {
         return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
     }
 
-    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment, int preRSKIP481SizeAdjustment) {
+    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment) {
         if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
             return 1; // remove version
         }
 
         if (compressed) {
-            return 3 - preParallelSizeAdjustment - preRSKIP481SizeAdjustment; // remove version and edges and super fields hash if existent
+            return 2 - preParallelSizeAdjustment; // remove version and edges if existent
         }
 
         return 0;
