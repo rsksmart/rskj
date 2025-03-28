@@ -387,10 +387,6 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
-        if (this.superChainDataHash != null) {
-            fieldToEncodeList.add(RLP.encodeElement(this.superChainDataHash));
-        }
-
         this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {
@@ -406,10 +402,17 @@ public abstract class BlockHeader {
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
-    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+    protected void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
         short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
         if (txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
+    }
+
+    protected void addSuperChainDataHash(List<byte[]> fieldsToEncode) {
+        byte[] superChainDataHash = this.getSuperChainDataHash();
+        if (superChainDataHash != null) {
+            fieldsToEncode.add(RLP.encodeElement(superChainDataHash));
         }
     }
 
@@ -477,7 +480,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
         toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
-        toStringBuff.append("  superChainDataHash=").append(toHexStringOrEmpty(superChainDataHash)).append(suffix);
+        toStringBuff.append("  superChainDataHash=").append(toHexStringOrEmpty(getSuperChainDataHash())).append(suffix);
 
         return toStringBuff.toString();
     }

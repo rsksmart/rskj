@@ -540,7 +540,14 @@ class BlockHeaderBuilderTest {
     @Test
     void createHeaderWithVersion1AfterRskip351() {
         // RSKIP351 = 0
-        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481)).build();
         assertEquals((byte) 0x1, header.getVersion());
+    }
+
+    @Test
+    void createHeaderWithVersion2AfterRskip351() {
+        // RSKIP351 = 0
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
+        assertEquals((byte) 0x2, header.getVersion());
     }
 }
