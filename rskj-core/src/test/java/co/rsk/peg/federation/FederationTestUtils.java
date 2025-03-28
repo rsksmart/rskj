@@ -34,9 +34,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
 public final class FederationTestUtils {
+
+    public static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("45c5b07fc1a6f58892615b7c31dca6c96db58c4bbc538a6b8a22999aaa860c32")),
+        BtcECKey.fromPrivate(Hex.decode("505334c7745df2fc61486dffb900784505776a898377172ffa77384892749179")),
+        BtcECKey.fromPrivate(Hex.decode("bed0af2ce8aa8cb2bc3f9416c9d518fdee15d1ff15b8ded28376fcb23db6db69"))
+    );
 
     private FederationTestUtils() {
     }
@@ -45,6 +52,11 @@ public final class FederationTestUtils {
         final List<BtcECKey> fedSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
         );
+
+        return getErpFederationWithPrivKeys(networkParameters, fedSigners);
+    }
+
+    public static ErpFederation getErpFederationWithPrivKeys(NetworkParameters networkParameters, List<BtcECKey> fedSigners) {
         final List<BtcECKey> erpSigners = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fb01", "fb02", "fb03", "fb04"}, true
         );
@@ -72,6 +84,18 @@ public final class FederationTestUtils {
     public static Federation getFederation(Integer... federationMemberPks) {
         FederationArgs federationArgs = new FederationArgs(
             getFederationMembersFromPks(federationMemberPks),
+            Instant.ofEpochMilli(0),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        return FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
+        );
+    }
+
+    public static Federation getFederationWithPrivateKeys(List<BtcECKey> federationMemberKeys) {
+        FederationArgs federationArgs = new FederationArgs(
+            getFederationMembersWithBtcKeys(federationMemberKeys),
             Instant.ofEpochMilli(0),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
