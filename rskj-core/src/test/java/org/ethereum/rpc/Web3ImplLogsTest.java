@@ -845,7 +845,7 @@ class Web3ImplLogsTest {
     @Test
     void getLogsFromBlockchainWithEventInContractCreationReturnsAsExpectedWithBlockHashFilter() throws Exception {
         addEventInContractCreation();
-        final String blockHash = "0x5a3a928fec2cc27e4f8c525f725335764230f66a39feecec85caa32dd86c9251";
+        final String blockHash = "0xdd4b7155e16fa7d78305159ece846dcfc2cceaf249bd033715bf0c45af98d429";
         FilterRequestParam fr = new FilterRequestParam(null, null, null, null, new BlockHashParam(blockHash));
 
         Object[] logs = web3.eth_getLogs(fr);

@@ -55,6 +55,8 @@ public abstract class BlockHeader {
     public abstract void setLogsBloom(byte[] logsBloom);
     public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
     public abstract void setTxExecutionSublistsEdges(short[] edges);
+    public abstract byte[] getSuperChainDataHash();
+    public abstract void setSuperChainDataHash(byte[] superChainDataHash);
 
     // called after encoding the header, used to add elements at the end
     public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
@@ -115,8 +117,6 @@ public abstract class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
-    private byte[] superChainDataHash;
-
     private SuperBlockResolver isSuperResolver;
 
     private final byte[] ummRoot;
@@ -148,7 +148,7 @@ public abstract class BlockHeader {
                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                           Coin minimumGasPrice, int uncleCount, boolean sealed,
                           boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
-                          byte[] superChainDataHash, SuperBlockResolver isSuperResolver) {
+                          SuperBlockResolver isSuperResolver) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -174,7 +174,6 @@ public abstract class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
-        this.superChainDataHash = superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
         this.isSuperResolver = isSuperResolver;
     }
 
@@ -387,10 +386,6 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
-        if (this.superChainDataHash != null) {
-            fieldToEncodeList.add(RLP.encodeElement(this.superChainDataHash));
-        }
-
         this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {
@@ -406,10 +401,17 @@ public abstract class BlockHeader {
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
-    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+    protected void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
         short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
         if (txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
+    }
+
+    protected void addSuperChainDataHash(List<byte[]> fieldsToEncode) {
+        byte[] superChainDataHash = this.getSuperChainDataHash();
+        if (superChainDataHash != null) {
+            fieldsToEncode.add(RLP.encodeElement(superChainDataHash));
         }
     }
 
@@ -477,7 +479,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
         toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
-        toStringBuff.append("  superChainDataHash=").append(toHexStringOrEmpty(superChainDataHash)).append(suffix);
+        toStringBuff.append("  superChainDataHash=").append(toHexStringOrEmpty(getSuperChainDataHash())).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -641,20 +643,6 @@ public abstract class BlockHeader {
 
     public byte[] getUmmRoot() {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
-    }
-
-    public byte[] getSuperChainDataHash() {
-        return superChainDataHash != null ? Arrays.copyOf(superChainDataHash, superChainDataHash.length) : null;
-    }
-
-    public void setSuperChainDataHash(byte[] superChainDataHash) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter super chain data hash");
-        }
-        this.hash = null;
-
-        this.superChainDataHash = superChainDataHash;
     }
 
     public Optional<Boolean> isSuper() {
