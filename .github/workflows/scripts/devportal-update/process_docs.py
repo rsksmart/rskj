@@ -7,6 +7,25 @@ def log(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}")
 
 def process_doc_file(input_file, output_file, sidebar_label, sidebar_position, title, description, tags, render_features):
+    """
+    Process a documentation file by adding metadata and formatting.
+
+    This function reads an input file, adds metadata (such as sidebar information, title, tags, and description),
+    and writes the processed content to an output file.
+
+    Args:
+        input_file (str): Path to the input documentation file.
+        output_file (str): Path where the processed file will be saved.
+        sidebar_label (str): Label to be used in the sidebar for this document.
+        sidebar_position (int): Position of this document in the sidebar.
+        title (str): Title of the document.
+        description (str): Brief description of the document.
+        tags (list): List of tags associated with the document.
+        render_features (str, optional): Rendering features to be applied to the document.
+
+    Returns:
+        bool: True if the file was processed successfully, False otherwise.
+    """
     if not os.path.isfile(input_file):
         log(f"Error: Input file not found: {input_file}")
         return False
@@ -35,6 +54,18 @@ def process_doc_file(input_file, output_file, sidebar_label, sidebar_position, t
         return False
 
 def main(config_file):
+    """
+    Main function to process documentation files based on a configuration file.
+
+    This function reads a YAML configuration file, processes each file specified in the configuration,
+    and applies the necessary formatting and metadata.
+
+    Args:
+        config_file (str): Path to the YAML configuration file.
+
+    Returns:
+        None
+    """
     if not os.path.isfile(config_file):
         log(f"Error: Config file not found: {config_file}")
         sys.exit(1)
