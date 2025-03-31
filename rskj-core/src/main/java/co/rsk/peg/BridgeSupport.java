@@ -509,10 +509,8 @@ public class BridgeSupport {
                 logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
                 executePegIn(btcTx, peginInformation, totalAmount);
             }
-            case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult,
-                peginInformation.getBtcRefundAddress());
-            case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(),
-                peginEvaluationResult);
+            case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult, peginInformation.getBtcRefundAddress());
+            case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(), peginEvaluationResult);
         }
     }
 
@@ -532,8 +530,7 @@ public class BridgeSupport {
 
         logger.debug("[{handleRefundablePegin}] Refunding to address {} ", btcRefundAddress);
         Coin totalAmount = computeTotalAmountSent(btcTx);
-        generateRejectionRelease(btcTx, btcRefundAddress, rskTxHash,
-            totalAmount);
+        generateRejectionRelease(btcTx, btcRefundAddress, rskTxHash, totalAmount);
         markTxAsProcessed(btcTx);
     }
 
@@ -3094,10 +3091,10 @@ public class BridgeSupport {
         settleReleaseRejection(pegoutsWaitingForConfirmations, refundPegoutTransaction, rskTxHash, totalAmount);
     }
 
-    private void settleReleaseRejection(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
-        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
-        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
-        processReleaseTransactionInfo(pegoutTransaction);
+    private void settleReleaseRejection(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseRejectedTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseRejectedTransaction, releaseCreationTxHash);
+        logReleaseRequested(releaseCreationTxHash, releaseRejectedTransaction, requestedAmount);
+        processReleaseTransactionInfo(releaseRejectedTransaction);
     }
 
     private void generateRejectionRelease(
@@ -3122,7 +3119,8 @@ public class BridgeSupport {
                         btcTx.isCoinBase(),
                         output.getScriptPubKey()
                     )
-                ).collect(Collectors.toList());
+                )
+                .toList();
             // Use the list of UTXOs to build a transaction builder
             // for the return btc transaction generation
             return getUTXOBasedWalletForLiveFederations(utxosToUs, false);
