@@ -100,6 +100,7 @@ public final class UtxoUtils {
             return Collections.emptyList();
         }
 
-        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).toList();
+        return generatedTransaction.getInputs().stream().map(TransactionInput::getValue).collect(
+            Collectors.toList());
     }
 }
