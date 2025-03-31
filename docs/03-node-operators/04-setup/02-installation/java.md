@@ -130,7 +130,7 @@ After starting the node, if there's no output, this means it's running correctly
 Output:
 
 ```shell
-{"jsonrpc":"2.0","id":67,"result":"RskJ/6.6.0/Mac OS X/Java17/SNAPSHOT-95a8f1ab84"}
+{"jsonrpc":"2.0","id":67,"result":"RSKj/6.6.0/Mac OS X/Java17/SNAPSHOT-95a8f1ab84"}
 ```
 
 2. To check the block number:
