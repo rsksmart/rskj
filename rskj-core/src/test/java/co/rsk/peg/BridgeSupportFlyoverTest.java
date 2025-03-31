@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
@@ -36,54 +37,72 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.lockingcap.LockingCapStorageProvider;
+import co.rsk.peg.lockingcap.LockingCapStorageProviderImpl;
 import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.LockingCapSupportImpl;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static co.rsk.peg.BridgeEventsTestUtils.*;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 
 class BridgeSupportFlyoverTest {
+    private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
+    private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
     private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
-    protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
-    protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
+
+    private final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
+    private final FederationConstants federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
+    private final LockingCapConstants lockingCapMainnetConstants = bridgeConstantsMainnet.getLockingCapConstants();
+
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+
     private BridgeSupportBuilder bridgeSupportBuilder;
     private LockingCapSupport lockingCapSupport;
     private WhitelistSupport whitelistSupport;
-    private FederationSupportBuilder federationSupportBuilder;
+    private FeePerKbSupport feePerKbSupport;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
 
@@ -96,7 +115,7 @@ class BridgeSupportFlyoverTest {
         bridgeSupportBuilder = BridgeSupportBuilder.builder();
         lockingCapSupport = mock(LockingCapSupport.class);
         whitelistSupport = mock(WhitelistSupport.class);
-        federationSupportBuilder = FederationSupportBuilder.builder();
+        feePerKbSupport = mock(FeePerKbSupport.class);
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
@@ -749,7 +768,7 @@ class BridgeSupportFlyoverTest {
         Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(
             this.bridgeConstantsRegtest.getMaxRbtc()));
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -865,7 +884,7 @@ class BridgeSupportFlyoverTest {
             List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries()
                 .stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-                .collect(Collectors.toList());
+                .toList();
 
             assertEquals(1, pegoutsWaitingForConfirmationsEntries.size());
             BtcTransaction releaseTx = pegoutsWaitingForConfirmationsEntries.get(0);
@@ -898,6 +917,236 @@ class BridgeSupportFlyoverTest {
         }
 
         return result;
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("test release transaction info processing")
+    class ReleaseTransactionInfo {
+        private final Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        private final Coin feePerKb = Coin.valueOf(1000L);
+
+        private final RskAddress lbcAddress = new RskAddress(new byte[20]);
+        private final Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        private final Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "sender");
+        private final Address liquidityProviderBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "liqProvider");
+        private final Transaction flyoverRegistrationTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+            lbcAddress.getBytes(), null, null, null, null, null
+        );
+        private final int btcBlockToRegisterHeight = bridgeConstantsMainnet.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstantsMainnet.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+
+        private final Coin amountRequestedThatSurpassesLockingCap = lockingCapMainnetConstants.getInitialValue().add(Coin.SATOSHI);
+
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private BridgeSupport bridgeSupport;
+        private List<LogInfo> logs;
+
+        private BtcBlockStoreWithCache btcBlockStore;
+
+        private BtcTransaction flyoverBtcTx;
+        private PartialMerkleTree pmtWithTransactions;
+
+        private void setUpWithActivations(ActivationConfig.ForBlock activations) {
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeConstantsMainnet,
+                allActivations,
+                logs
+            );
+
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+            FederationSupport federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstantsMainnet)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withActivations(activations)
+                .build();
+
+            LockingCapStorageProvider lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+            lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, lockingCapMainnetConstants, signatureCache);
+
+            federationStorageProvider.setNewFederation(activeFederation);
+            when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
+
+            repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, activations);
+
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+            btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, activations);
+
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withBridgeConstants(bridgeConstantsMainnet)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withLockingCapSupport(lockingCapSupport)
+                .build();
+        }
+
+        private static Stream<Arguments> flyoverExpectedResponseCodeArgs() {
+            return Stream.of(
+                Arguments.of(true, FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()),
+                Arguments.of(false, FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value())
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("flyoverExpectedResponseCodeArgs")
+        void registerFlyoverBtcTransaction_whenAmountRequestedSurpassesLockingCap_beforeRSKIP305_justEmitsPegoutTransactionCreatedEvent(boolean shouldTransferToContract, long expectedResponseCodeResult) throws Exception {
+            // arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            setUpWithActivations(lovellActivations);
+            arrangeFlyoverBtcTransaction(lovellActivations);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                flyoverRegistrationTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                liquidityProviderBtcAddress,
+                shouldTransferToContract
+            );
+            bridgeSupport.save();
+
+            // assert
+            assertEquals(BigInteger.valueOf(expectedResponseCodeResult), result);
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+            assertLogPegoutTransactionCreated(logs, releaseTransaction, List.of(amountRequestedThatSurpassesLockingCap));
+            assertReleaseOutpointsValuesWereNotSavedInStorage(releaseTransaction);
+        }
+
+        private void assertReleaseOutpointsValuesWereNotSavedInStorage(BtcTransaction releaseTransaction) {
+            byte[] actualReleaseOutpointsValues = repository.getStorageBytes(
+                bridgeContractAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTransaction.getHash())
+            );
+            assertNull(actualReleaseOutpointsValues);
+        }
+
+        @ParameterizedTest
+        @MethodSource("flyoverExpectedResponseCodeArgs")
+        void registerFlyoverBtcTransaction_whenAmountRequestedSurpassesLockingCap_afterRSKIP305_processReleaseRejectionTransactionInfo(
+            boolean shouldTransferToContract,
+            long expectedResponseCodeResult
+        ) throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            arrangeFlyoverBtcTransaction(allActivations);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                flyoverRegistrationTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                liquidityProviderBtcAddress,
+                shouldTransferToContract
+            );
+            bridgeSupport.save();
+
+            // assert
+            assertEquals(BigInteger.valueOf(expectedResponseCodeResult), result);
+            BtcTransaction releaseRejectionTransaction = getReleaseFromPegoutsWFC();
+            assertReleaseTransactionInfoWasProcessed(logs, releaseRejectionTransaction, List.of(amountRequestedThatSurpassesLockingCap));
+        }
+
+        private BtcTransaction getReleaseFromPegoutsWFC() throws IOException {
+            PegoutsWaitingForConfirmations pegoutsWFC = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+            Set<PegoutsWaitingForConfirmations.Entry> pegoutsWFCEntries = pegoutsWFC.getEntries();
+            assertEquals(1, pegoutsWFCEntries.size());
+            // we now know that the only present release is the expected one
+            Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutsWFCEntries.iterator();
+            PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
+
+            return pegoutEntry.getBtcTransaction();
+        }
+
+        private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
+            flyoverBtcTx = new BtcTransaction(btcMainnetParams);
+            flyoverBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
+
+            var flyoverDerivationHash = BridgeSupportTestUtil.getFlyoverDerivationHash(
+                activations,
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                liquidityProviderBtcAddress,
+                lbcAddress
+            );
+
+            var flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, activeFederation.getRedeemScript());
+            var recipient = Address.fromP2SHScript(btcMainnetParams, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
+            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, recipient);
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+        }
+
+        private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcBlockWithPmtHeight) throws Exception {
+            pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), btcMainnetParams);
+            var chainHeight = btcBlockWithPmtHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+
+            recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
+            bridgeStorageProvider.save();
+        }
+
+        private void assertReleaseTransactionInfoWasProcessed(
+            List<LogInfo> logs,
+            BtcTransaction releaseTransaction,
+            List<Coin> expectedOutpointsValues
+        ) {
+            assertLogPegoutTransactionCreated(logs, releaseTransaction, expectedOutpointsValues);
+            assertReleaseOutpointsValuesWereSaved(releaseTransaction, expectedOutpointsValues);
+        }
+
+        private void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
+            CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+            Sha256Hash pegoutTransactionHash = releaseTransaction.getHash();
+            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
+
+            byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(expectedOutpointsValues);
+            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
+
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
+        }
+
+        private void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
+            Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
+            assertTrue(topicOpt.isPresent());
+        }
+
+        private void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
+            Optional<LogInfo> data = getLogsData(logs, expectedData);
+            assertTrue(data.isPresent());
+        }
+
+        private void assertReleaseOutpointsValuesWereSaved(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
+            Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+            // assert entry was saved in storage
+            byte[] savedReleaseOutpointsValues = repository.getStorageBytes(
+                bridgeContractAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTransaction.getHash())
+            );
+            assertNotNull(savedReleaseOutpointsValues);
+
+            // assert saved values are the expected ones
+            Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
+            assertTrue(releaseOutpointsValues.isPresent());
+            assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
+        }
     }
 
     @Test
@@ -1673,7 +1922,7 @@ class BridgeSupportFlyoverTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -1865,13 +2114,13 @@ class BridgeSupportFlyoverTest {
         Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2074,13 +2323,13 @@ class BridgeSupportFlyoverTest {
         Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
@@ -2290,14 +2539,14 @@ class BridgeSupportFlyoverTest {
         Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
@@ -2480,14 +2729,14 @@ class BridgeSupportFlyoverTest {
         Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
         StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
@@ -2689,7 +2938,7 @@ class BridgeSupportFlyoverTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -3224,11 +3473,11 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
         Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.valueOf(1));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.valueOf(1));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
@@ -3348,7 +3597,7 @@ class BridgeSupportFlyoverTest {
         Repository repository = spy(createRepository());
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
@@ -3611,12 +3860,12 @@ class BridgeSupportFlyoverTest {
     }
 
     @Test
-    void saveFlyoverDataInStorage_OK() throws IOException {
+    void saveFlyoverDataInStorage_OK() {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeContractAddress,
             btcRegTestParams,
             activations
         );

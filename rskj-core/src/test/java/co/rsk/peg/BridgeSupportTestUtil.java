@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -162,5 +163,9 @@ public final class BridgeSupportTestUtil {
         );
 
         return new Keccak256(HashUtil.keccak256(result));
+    }
+
+    public static DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
+        return RELEASES_OUTPOINTS_VALUES.getCompoundKey("-", releaseTxHash.toString());
     }
 }
