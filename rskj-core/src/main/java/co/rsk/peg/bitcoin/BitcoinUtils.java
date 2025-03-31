@@ -39,7 +39,7 @@ public class BitcoinUtils {
     public static Optional<Script> extractRedeemScriptFromInput(BtcTransaction transaction, int inputIndex) {
         TransactionWitness inputWitness = transaction.getWitness(inputIndex);
 
-        if (inputWitness == TransactionWitness.getEmpty()) {
+        if (inputWitness.equals(TransactionWitness.getEmpty())) {
             return extractRedeemScriptFromInputScriptSig(transaction.getInput(inputIndex));
         }
 
