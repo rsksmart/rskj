@@ -1,4 +1,4 @@
-name: Update Devportal Documentation
+name: Update DevPortal Documentation
 
 env:
   DEV_PORTAL_SCRIPT_PATH: ".github/workflows/scripts/devportal-update"
@@ -40,8 +40,8 @@ jobs:
           VERSION=$(tr -d "'\"" < rskj-core/src/main/resources/version.properties | cut -d = -f 2- | paste -sd - -)
           echo "RSK_VERSION=${VERSION}" >> $GITHUB_ENV
 
-      # Step 1: Clone the Devportal Repository
-      - name: Clone Devportal Repository
+      # Step 1: Clone the DevPortal Repository
+      - name: Clone DevPortal Repository
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
         with:
           repository: rsksmart/devportal
@@ -49,7 +49,7 @@ jobs:
           token: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
 
       # Step 2: Create the local branch
-      - name: Create branch for PR to update Devportal
+      - name: Create branch for PR to update DevPortal
         env:
           GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
         run: |
@@ -59,8 +59,8 @@ jobs:
           git checkout  -b ${BRANCH_NAME} || git checkout ${BRANCH_NAME}
           cd ..
 
-      # Step 3: Transform Each File and Copy to Devportal Repository
-      - name: Transform Files for Devportal
+      # Step 3: Transform Each File and Copy to DevPortal Repository
+      - name: Transform Files for DevPortal
         run: |
           mkdir -p transformed
           
@@ -70,7 +70,7 @@ jobs:
           # Copy processed files to devportal directory
           cp -R transformed/* devportal/docs/
 
-      # Step 4: Commit and Push Changes to Devportal Repository
+      # Step 4: Commit and Push Changes to DevPortal Repository
       - name: Commit and Push Changes
         env:
           GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
@@ -84,7 +84,7 @@ jobs:
           echo "Pushing branch: ${{ env.BRANCH_NAME }}"
           git push -u  -f origin ${{ env.BRANCH_NAME }}
 
-      # Step 5: Create a Pull Request in the Devportal Repository
+      # Step 5: Create a Pull Request in the DevPortal Repository
       - name: Create Pull Request
         env:
           GITHUB_TOKEN: ${{ secrets.DEVPORTAL_DOCS_UPDATE_TOKEN }}
@@ -96,7 +96,7 @@ jobs:
           https://api.github.com/repos/rsksmart/devportal/pulls \
           -d '{
             "title": "Automated update of documentation for RSKj node - '"${{ env.BRANCH_NAME }}"'",
-            "body": "This PR updates the Devportal documentation with the latest changes from the original repository.",
+            "body": "This PR updates the DevPortal documentation with the latest changes from the original repository.",
             "head": "'"${{ env.BRANCH_NAME }}"'",
             "base": "main"
           }'
