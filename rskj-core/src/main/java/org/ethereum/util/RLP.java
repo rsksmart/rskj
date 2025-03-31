@@ -250,11 +250,11 @@ public class RLP {
             nextElementIndex = pos + 1;
         }
 
-        if (pos + 1 <= nextElementIndex && nextElementIndex < payload.length) {
-            return nextElementIndex;
+        if (pos + 1 > nextElementIndex || nextElementIndex >= payload.length) {
+            throw new RLPException("Next element index out of next pos and payload length range");
         }
 
-        throw new RLPException("Next element index out of next pos and payload length range");
+        return nextElementIndex;
     }
 
     static int calcLength(int lengthOfLength, byte[] msgData, int pos) {
