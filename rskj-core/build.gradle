@@ -4,6 +4,7 @@ plugins {
     id "com.diffplug.spotless" version "6.13.0"
 }
 
+apply from: 'fuzzing.gradle'
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
@@ -156,8 +157,6 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
 
 configurations {
     jmh
-    fuzzTestImplementation.extendsFrom testImplementation
-    fuzzTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 sourceSets {
@@ -168,17 +167,6 @@ sourceSets {
         resources {
             srcDirs = ['src/jmh/resources']
         }
-    }
-
-    fuzzTest {
-        java {
-            srcDirs = ['src/fuzzTest/java']
-        }
-        resources {
-            srcDirs = ['src/fuzzTest/resources']
-        }
-        compileClasspath += sourceSets.main.output + sourceSets.test.output
-        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
     }
 }
 
@@ -220,6 +208,7 @@ jacocoTestReport {
     reports {
         xml.required = true
     }
+    sourceSets sourceSets.main, sourceSets.fuzzTest
 }
 
 task parallelTest(type: Test) {
@@ -235,31 +224,6 @@ task parallelTest(type: Test) {
     //save some time avoiding reports
     reports.html.required = false
     reports.junitXml.required = false
-}
-
-task fuzzTest(type: Test) {
-    useJUnitPlatform()
-    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
-    classpath = sourceSets.fuzzTest.runtimeClasspath
-
-    beforeTest { descriptor ->
-        logger.lifecycle("Running fuzz test: ${descriptor}")
-    }
-
-    jvmArgs '-Xss32m', '-Xmx3G'
-
-    testLogging {
-        events "failed"
-        exceptionFormat "short"
-    }
-
-    outputs.upToDateWhen { false }
-
-    doLast {
-        println "\n<################# FUZZING REPORT ####################>"
-        println "Fuzzing report generated at: ${reports.html.destination}/index.html"
-        println "<##############################################>\n"
-    }
 }
 
 tasks.withType(Javadoc) {

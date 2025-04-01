@@ -1,0 +1,583 @@
+sourceSets {
+    fuzzTest {
+        java {
+            srcDirs = ['src/fuzzTest/java']
+        }
+        resources {
+            srcDirs = ['src/fuzzTest/resources']
+        }
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
+}
+
+configurations {
+    fuzzTestImplementation.extendsFrom testImplementation
+    fuzzTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+task fuzzTest(type: Test) {
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+
+    beforeTest { descriptor ->
+        logger.lifecycle("Running fuzz test: ${descriptor}")
+    }
+
+    jvmArgs '-Xss32m', '-Xmx3G'
+
+    testLogging {
+        events "failed"
+        exceptionFormat "short"
+    }
+
+    outputs.upToDateWhen { false }
+
+    doLast {
+        println "\n<################# FUZZING REPORT ####################>"
+        println "Fuzzing report generated at: ${reports.html.destination}/index.html"
+        println "<##############################################>\n"
+    }
+}
+
+task fuzzCoverageTestReport(type: JacocoReport) {
+    dependsOn fuzzTest
+    executionData(fileTree(buildDir).include("**/jacoco/*.exec"))
+
+    sourceSets sourceSets.main, sourceSets.fuzzTest
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    doLast {
+        println "\n<################# COVERAGE REPORT ###################>"
+        println "Coverage report generated at: ${reports.html.destination}/index.html"
+        println "<##############################################>\n"
+    }
+}
+
+fuzzTest.finalizedBy fuzzCoverageTestReport
+
+// VM Runtime
+task orgEthereumVMFuzzOpcodes(type: Test) {
+    useJUnitPlatform {
+        includeTags 'orgEthereumVMFuzzOpcodes'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task coRSKVMFuzzTestNativeContractInputSize(type: Test) {
+    useJUnitPlatform {
+        includeTags 'coRSKVMFuzzTestNativeContractInputSize'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task WorldFuzzWorldFuzz(type: Test) {
+    useJUnitPlatform {
+        includeTags 'WorldFuzzWorldFuzz'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task PrecompiledContractFuzzIdentityRandom(type: Test) {
+    useJUnitPlatform {
+        includeTags 'PrecompiledContractFuzzIdentityRandom'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task PrecompiledContractFuzzSha256Random(type: Test) {
+    useJUnitPlatform {
+        includeTags 'PrecompiledContractFuzzSha256Random'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task PrecompiledContractFuzzRimpempdRandom(type: Test) {
+    useJUnitPlatform {
+        includeTags 'PrecompiledContractFuzzRimpempdRandom'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task PrecompiledContractFuzzEcrecoverRandom(type: Test) {
+    useJUnitPlatform {
+        includeTags 'PrecompiledContractFuzzEcrecoverRandom'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task PrecompiledContractFuzzModexpRandom(type: Test) {
+    useJUnitPlatform {
+        includeTags 'PrecompiledContractFuzzModexpRandom'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom(type: Test) {
+    useJUnitPlatform {
+        includeTags 'ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task GetMultisigScriptHashRandomFuzzExecuteMixed(type: Test) {
+    useJUnitPlatform {
+        includeTags 'GetMultisigScriptHashRandomFuzzExecuteMixed'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task DeriveExtendedPublicKeyRandomFuzzExecuteRandom(type: Test) {
+    useJUnitPlatform {
+        includeTags 'DeriveExtendedPublicKeyRandomFuzzExecuteRandom'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId(type: Test) {
+    useJUnitPlatform {
+        includeTags 'Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly(type: Test) {
+    useJUnitPlatform {
+        includeTags 'Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task AltBN128FuzzAdd(type: Test) {
+    useJUnitPlatform {
+        includeTags 'AltBN128FuzzAdd'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task AltBN128FuzzMul(type: Test) {
+    useJUnitPlatform {
+        includeTags 'AltBN128FuzzMul'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task AltBN128FuzzPairing(type: Test) {
+    useJUnitPlatform {
+        includeTags 'AltBN128FuzzPairing'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+// Discovery classes
+task DiscoveryPacketDecoderFuzzDecode(type: Test) {
+    useJUnitPlatform {
+        includeTags 'DiscoveryPacketDecoderFuzzDecode'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task DiscoveryPacketDecoderFuzzDecode2(type: Test) {
+    useJUnitPlatform {
+        includeTags 'DiscoveryPacketDecoderFuzzDecode2'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task DiscoveryPacketDecoderFuzzInput(type: Test) {
+    useJUnitPlatform {
+        includeTags 'DiscoveryPacketDecoderFuzzInput'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task MessageCodecFuzzMessageCodec(type: Test) {
+    useJUnitPlatform {
+        includeTags 'MessageCodecFuzzMessageCodec'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+// Misc
+task ByteUtilFuzzBUFuzz(type: Test) {
+    useJUnitPlatform {
+        includeTags 'ByteUtilFuzzBUFuzz'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+// Core
+task BlockDecodingFuzzBlockDecoding(type: Test) {
+    useJUnitPlatform {
+        includeTags 'BlockDecodingFuzzBlockDecoding'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task CallContractFuzzContractReturningOne(type: Test) {
+    useJUnitPlatform {
+        includeTags 'CallContractFuzzContractReturningOne'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+// RLP
+task RLPFuzzDecodeInt(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzDecodeInt'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzDecodeEncode(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzDecodeEncode'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzDecodeBigInteger(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzDecodeBigInteger'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzGetNextElementIndex(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzGetNextElementIndex'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzFullTraverse(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzFullTraverse'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzDecode2(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzDecode2'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzFirstElement(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzFirstElement'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzDecodeList(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzDecodeList'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzDecode2OneItem(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzDecode2OneItem'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeLength(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeLength'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeByte(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeByte'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeShort(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeShort'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeInt(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeInt'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeString(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeString'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeElement(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeElement'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeListHeader(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeListHeader'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeSet(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeSet'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeList(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeList'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeDecodeByte(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeDecodeByte'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeDecodeShort(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeDecodeShort'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeDecodeInt(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeDecodeInt'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeDecodeString(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeDecodeString'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RLPFuzzEncodeDecodeElement(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RLPFuzzEncodeDecodeElement'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+// DB
+task MutableTrieCacheFuzzPuts(type: Test) {
+    useJUnitPlatform {
+        includeTags 'MutableTrieCacheFuzzPuts'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+task RepositoryFuzzStorageRoot(type: Test) {
+    useJUnitPlatform {
+        includeTags 'RepositoryFuzzStorageRoot'
+    }
+    testClassesDirs = sourceSets.fuzzTest.output.classesDirs
+    classpath = sourceSets.fuzzTest.runtimeClasspath
+    jvmArgs '-Xss32m', '-Xmx3G'
+}
+
+/** [FUZZ TARGETS]
+ * Runtime:
+ *          orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz, PrecompiledContractFuzzIdentityRandom,
+ *          PrecompiledContractFuzzSha256Random, PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
+ *          PrecompiledContractFuzzModexpRandom, ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom, GetMultisigScriptHashRandomFuzzExecuteMixed,
+ *          DeriveExtendedPublicKeyRandomFuzzExecuteRandom, Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
+ *          AltBN128FuzzAdd, AltBN128FuzzMul, AltBN128FuzzPairing,
+ * Discovery:
+ *          DiscoveryPacketDecoderFuzzDecode, DiscoveryPacketDecoderFuzzDecode2, DiscoveryPacketDecoderFuzzInput, MessageCodecFuzzMessageCodec,
+ * Misc:
+ *          ByteUtilFuzzBUFuzz,
+ * Core:
+ *          BlockDecodingFuzzBlockDecoding, CallContractFuzzContractReturningOne,
+ * RLP:
+ *          RLPFuzzDecodeInt, RLPFuzzDecodeEncode, RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
+ *          RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength, RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt,
+ *          RLPFuzzEncodeString, RLPFuzzEncodeElement, RLPFuzzEncodeListHeader, RLPFuzzEncodeSet, RLPFuzzEncodeList, RLPFuzzEncodeDecodeByte,
+ *          RLPFuzzEncodeDecodeShort, RLPFuzzEncodeDecodeInt, RLPFuzzEncodeDecodeString, RLPFuzzEncodeDecodeElement,
+ * DB:
+ *          MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
+ **/
+task runAllFuzzTests {
+    /*
+    dependsOn orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz, PrecompiledContractFuzzIdentityRandom,
+              PrecompiledContractFuzzSha256Random, PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
+              PrecompiledContractFuzzModexpRandom, ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom, GetMultisigScriptHashRandomFuzzExecuteMixed,
+              DeriveExtendedPublicKeyRandomFuzzExecuteRandom, Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
+              AltBN128FuzzAdd, AltBN128FuzzMul, AltBN128FuzzPairing,
+              DiscoveryPacketDecoderFuzzDecode, DiscoveryPacketDecoderFuzzDecode2, DiscoveryPacketDecoderFuzzInput, MessageCodecFuzzMessageCodec,
+              ByteUtilFuzzBUFuzz,
+              BlockDecodingFuzzBlockDecoding, CallContractFuzzContractReturningOne,
+              RLPFuzzDecodeInt, RLPFuzzDecodeEncode, RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
+              RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength, RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt,
+              RLPFuzzEncodeString, RLPFuzzEncodeElement, RLPFuzzEncodeListHeader, RLPFuzzEncodeSet, RLPFuzzEncodeList, RLPFuzzEncodeDecodeByte,
+              RLPFuzzEncodeDecodeShort, RLPFuzzEncodeDecodeInt, RLPFuzzEncodeDecodeString, RLPFuzzEncodeDecodeElement,
+              MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
+     */
+    dependsOn Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
+            MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
+
+    outputs.upToDateWhen { false }
+
+    doLast {
+        println "\n<################# FUZZING REPORTS ####################>"
+        println "Merged fuzzing report generated at: ${buildDir}/reports/tests/"
+        println "<##############################################>\n"
+    }
+}
+
+// Ensure that MergedFuzzCoverageTestReport runs after runAllFuzzTests, regardless of outcome
+runAllFuzzTests.finalizedBy('MergedFuzzCoverageTestReport')
+// Ensure a clean state before running
+runAllFuzzTests.dependsOn('cleanTest')
+
+task MergedFuzzCoverageTestReport(type: JacocoReport) {
+    executionData fileTree(buildDir).include(
+            '**/jacoco/*.exec'
+    )
+
+    sourceSets sourceSets.main
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    doLast {
+        println "\n<################# MERGED COVERAGE REPORT ###################>"
+        println "Merged coverage report generated at: ${reports.html.destination}/index.html\n"
+        executionData.each {
+            println "    [+] Included execution trace: ${it}"
+        }
+        println "<##############################################>\n"
+    }
+}
+
+MergedFuzzCoverageTestReport.dependsOn 'runAllFuzzTests'
+
+tasks.withType(Test) {
+    outputs.upToDateWhen { false }
+    ignoreFailures = true
+}
