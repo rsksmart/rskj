@@ -7,6 +7,7 @@ public enum BridgeStorageIndexKey {
     BTC_TX_HASHES_ALREADY_PROCESSED_KEY("btcTxHashesAP"),
     RELEASE_REQUEST_QUEUE("releaseRequestQueue"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS("releaseTransactionSet"),
+    RELEASES_OUTPOINTS_VALUES("releasesOutpointsValues"),
     PEGOUTS_WAITING_FOR_SIGNATURES("rskTxsWaitingFS"),
     RELEASE_REQUEST_QUEUE_WITH_TXHASH("releaseRequestQueueWithTxHash"),
     PEGOUTS_WAITING_FOR_CONFIRMATIONS_WITH_TXHASH_KEY("releaseTransactionSetWithTxHash"),
