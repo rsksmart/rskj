@@ -75,22 +75,14 @@ public class BridgeSerializationUtils {
         return new Keccak256(rskTxHashSerialized);
     }
 
-    private static byte[] serializeBtcTxHash(Sha256Hash btcTxHash) {
-        return RLP.encodeElement(btcTxHash.getBytes());
+    public static byte[] serializeOutpointsValues(List<Coin> outpointsValues) {
+        return UtxoUtils.encodeOutpointValues(outpointsValues);
     }
 
-    private static Sha256Hash deserializeBtcTxHash(byte[] btcTxHashSerialized) {
-        if (isNull(btcTxHashSerialized)) {
-            throw new IllegalArgumentException("Serialized hash cannot be null.");
+    public static List<Coin> deserializeOutpointsValues(byte[] serializedOutpointsValues) {
+        if (isNull(serializedOutpointsValues)) {
+            throw new IllegalArgumentException("Serialized outpoints values cannot be null.");
         }
-        return Sha256Hash.wrap(btcTxHashSerialized);
-    }
-
-    private static byte[] serializeOutpointsValues(List<Coin> outpointsValues) {
-        return RLP.encodeElement(UtxoUtils.encodeOutpointValues(outpointsValues));
-    }
-
-    private static List<Coin> deserializeOutpointsValues(byte[] serializedOutpointsValues) {
         return UtxoUtils.decodeOutpointValues(serializedOutpointsValues);
     }
 
@@ -109,7 +101,8 @@ public class BridgeSerializationUtils {
     private static BtcTransaction deserializeBtcTransaction(
         byte[] serializedTx,
         NetworkParameters networkParameters,
-        boolean txHasInputs) {
+        boolean txHasInputs
+    ) {
 
         if (serializedTx == null || serializedTx.length == 0) {
             return null;
@@ -128,7 +121,8 @@ public class BridgeSerializationUtils {
     private static BtcTransaction deserializeBtcTransactionFromRawTx(
         byte[] rawTx,
         NetworkParameters networkParameters,
-        boolean txHasInputs) {
+        boolean txHasInputs
+    ) {
 
         if (!txHasInputs) {
             BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -175,27 +169,6 @@ public class BridgeSerializationUtils {
             serializeBtcTransaction(rskTxWaitingForSignaturesEntry.getValue());
 
         return new byte[][] { serializedRskTxWaitingForSignaturesEntryKey, serializedRskTxWaitingForSignaturesEntryValue };
-    }
-
-    public static byte[] serializeReleasesOutpointsValues(SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValues) {
-        int numberOfReleasesOutpointsValues = releasesOutpointsValues.size();
-        byte[][] serializedReleasesOutpointsValuesMap = new byte[numberOfReleasesOutpointsValues * 2][];
-
-        int n = 0;
-        for (Map.Entry<Sha256Hash, List<Coin>> releaseOutpointsValuesEntry : releasesOutpointsValues.entrySet()) {
-            byte[][] serializedReleaseOutpointsValuesEntry = serializeReleaseOutpointsValues(releaseOutpointsValuesEntry);
-            serializedReleasesOutpointsValuesMap[n++] = serializedReleaseOutpointsValuesEntry[0];
-            serializedReleasesOutpointsValuesMap[n++] = serializedReleaseOutpointsValuesEntry[1];
-        }
-
-        return RLP.encodeList(serializedReleasesOutpointsValuesMap);
-    }
-
-    private static byte[][] serializeReleaseOutpointsValues(Map.Entry<Sha256Hash, List<Coin>> releaseOutpointsValues) {
-        byte[] serializedBtcTxHash = serializeBtcTxHash(releaseOutpointsValues.getKey());
-        byte[] serializedOutpointsValues = serializeOutpointsValues(releaseOutpointsValues.getValue());
-
-        return new byte[][] { serializedBtcTxHash, serializedOutpointsValues };
     }
 
     public static Map.Entry<Keccak256, BtcTransaction> deserializeRskTxWaitingForSignatures(
@@ -246,38 +219,6 @@ public class BridgeSerializationUtils {
         BtcTransaction btcTx = deserializeBtcTransactionWithInputsFromRawTx(btcRawTx, networkParameters);
 
         return new AbstractMap.SimpleEntry<>(rskTxHash, btcTx);
-    }
-
-    public static SortedMap<Sha256Hash, List<Coin>> deserializeReleasesOutpointsValues(byte[] data) {
-        SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValuesMap = new TreeMap<>();
-
-        if (data == null || data.length == 0) {
-            return releasesOutpointsValuesMap;
-        }
-
-        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
-        int numberOfReleasesOutpointsValues = rlpList.size() / 2;
-
-        for (int k = 0; k < numberOfReleasesOutpointsValues; k++) {
-            Map.Entry<Sha256Hash, List<Coin>> releaseOutpointsValuesEntry = deserializeReleaseOutpointsValues(rlpList, k);
-            releasesOutpointsValuesMap.put(releaseOutpointsValuesEntry.getKey(), releaseOutpointsValuesEntry.getValue());
-        }
-
-        return releasesOutpointsValuesMap;
-    }
-
-    private static Map.Entry<Sha256Hash, List<Coin>> deserializeReleaseOutpointsValues(RLPList rlpList, int index) {
-        checkArgument(rlpList.size() > 0, "RLPList cannot be empty when deserializing a release outpoints values.");
-
-        RLPElement btcTxHashRLPElement = rlpList.get(index * 2);
-        byte[] btcTxHashData = btcTxHashRLPElement.getRLPData();
-        Sha256Hash btcTxHash = deserializeBtcTxHash(btcTxHashData);
-
-        RLPElement outpointsValuesRLPElement = rlpList.get(index * 2 + 1);
-        byte[] serializedOutpointsValues = outpointsValuesRLPElement.getRLPData();
-        List<Coin> outpointsValues = deserializeOutpointsValues(serializedOutpointsValues);
-
-        return new AbstractMap.SimpleEntry<>(btcTxHash, outpointsValues);
     }
 
     public static byte[] serializeUTXOList(List<UTXO> list) {
