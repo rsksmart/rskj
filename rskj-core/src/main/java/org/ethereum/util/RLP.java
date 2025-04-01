@@ -29,8 +29,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.db.ByteArrayWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -77,8 +75,6 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 01.04.2014
  */
 public class RLP {
-    private static final Logger logger = LoggerFactory.getLogger(RLP.class);
-
     private static final int EMPTY_MARK = 128;
     private static final int TINY_SIZE = 55;
 
@@ -208,25 +204,24 @@ public class RLP {
     public static int getNextElementIndex(byte[] payload, int pos) {
 
         if (pos >= payload.length) {
-            return -1;
+            throw new RLPException("pos out of payload length range");
         }
 
-        int nextElementIndex = -1;
+        int nextElementIndex;
+        final var firstByte = (payload[pos] & 0xFF);
 
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_LIST) {
+        if (firstByte >= OFFSET_LONG_LIST) {
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
 
             assertLengthOfLength(payload, lengthOfLength);
 
             int length = calcLength(lengthOfLength, payload, pos);
             nextElementIndex = pos + lengthOfLength + length + 1;
-        } else if ((payload[pos] & 0xFF) >= OFFSET_SHORT_LIST
-                && (payload[pos] & 0xFF) < OFFSET_LONG_LIST) {
+        } else if (firstByte >= OFFSET_SHORT_LIST) {
 
-            byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_LIST);
+            byte length = (byte) (firstByte - OFFSET_SHORT_LIST);
             nextElementIndex = pos + 1 + length;
-        } else if ((payload[pos] & 0xFF) >= OFFSET_LONG_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_SHORT_LIST) {
+        } else if (firstByte >= OFFSET_LONG_ITEM) {
 
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_ITEM);
 
@@ -234,14 +229,13 @@ public class RLP {
 
             int length = calcLength(lengthOfLength, payload, pos);
             nextElementIndex = pos + lengthOfLength + length + 1;
-        } else if ((payload[pos] & 0xFF) > OFFSET_SHORT_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_LONG_ITEM) {
+        } else if (firstByte > OFFSET_SHORT_ITEM) {
 
-            byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_ITEM);
+            byte length = (byte) (firstByte - OFFSET_SHORT_ITEM);
             nextElementIndex = pos + 1 + length;
-        } else if ((payload[pos] & 0xFF) == OFFSET_SHORT_ITEM) {
+        } else if (firstByte == OFFSET_SHORT_ITEM) {
             nextElementIndex = pos + 1;
-        } else if ((payload[pos] & 0xFF) < OFFSET_SHORT_ITEM) {
+        } else {
             nextElementIndex = pos + 1;
         }
 
@@ -368,8 +362,7 @@ public class RLP {
         try{
           return Math.addExact(a, b);
         }catch (ArithmeticException ex){
-            logger.error("Error on safeAdd", ex);
-          throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+          throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have. " + ex.getMessage() );
         }
     }
 

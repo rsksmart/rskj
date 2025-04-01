@@ -983,7 +983,7 @@ class RLPTest {
             Assertions.fail();
         }
         catch (RLPException ex) {
-            Assertions.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
+            Assertions.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have. integer overflow", ex.getMessage());
         }
     }
 
