@@ -220,14 +220,12 @@ public class RLP {
 
             int length = calcLength(lengthOfLength, payload, pos);
             nextElementIndex = pos + lengthOfLength + length + 1;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_SHORT_LIST
+        } else if ((payload[pos] & 0xFF) >= OFFSET_SHORT_LIST
                 && (payload[pos] & 0xFF) < OFFSET_LONG_LIST) {
 
             byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_LIST);
             nextElementIndex = pos + 1 + length;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_ITEM
+        } else if ((payload[pos] & 0xFF) >= OFFSET_LONG_ITEM
                 && (payload[pos] & 0xFF) < OFFSET_SHORT_LIST) {
 
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_ITEM);
@@ -236,17 +234,14 @@ public class RLP {
 
             int length = calcLength(lengthOfLength, payload, pos);
             nextElementIndex = pos + lengthOfLength + length + 1;
-        }
-        if ((payload[pos] & 0xFF) > OFFSET_SHORT_ITEM
+        } else if ((payload[pos] & 0xFF) > OFFSET_SHORT_ITEM
                 && (payload[pos] & 0xFF) < OFFSET_LONG_ITEM) {
 
             byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_ITEM);
             nextElementIndex = pos + 1 + length;
-        }
-        if ((payload[pos] & 0xFF) == OFFSET_SHORT_ITEM) {
+        } else if ((payload[pos] & 0xFF) == OFFSET_SHORT_ITEM) {
             nextElementIndex = pos + 1;
-        }
-        if ((payload[pos] & 0xFF) < OFFSET_SHORT_ITEM) {
+        } else if ((payload[pos] & 0xFF) < OFFSET_SHORT_ITEM) {
             nextElementIndex = pos + 1;
         }
 
