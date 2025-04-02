@@ -96,7 +96,7 @@ jobs:
           https://api.github.com/repos/rsksmart/devportal/pulls \
           -d '{
             "title": "Automated update of documentation for RSKj node - '"${{ env.BRANCH_NAME }}"'",
-            "body": "This PR updates the DevPortal documentation with the latest changes from the original repository.",
+            "body": "This PR updates the DevPortal documentation with the latest changes from the original repository. If you want to suggest to change something, go to the https://github.com/rsksmart/rskj and comment in the PR there.",
             "head": "'"${{ env.BRANCH_NAME }}"'",
             "base": "main"
           }'
