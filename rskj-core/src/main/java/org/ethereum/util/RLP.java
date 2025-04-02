@@ -195,15 +195,15 @@ public class RLP {
         return BigIntegers.fromUnsignedByteArray(bytes);
     }
 
-    private static void assertLengthOfLength(byte[] payload,byte lengthOfLength) {
-        if (lengthOfLength >= payload.length) {
-            throw new RLPException("lengthOfLength cannot be higher than payload length");
+    private static void assertLengthOfLength(byte[] payload, byte lengthOfLength, int pos) {
+        if (lengthOfLength < 0 || lengthOfLength + pos >= payload.length) {
+            throw new RLPException("lengthOfLength cannot be out of the payload length");
         }
     }
 
     public static int getNextElementIndex(byte[] payload, int pos) {
 
-        if (pos >= payload.length) {
+        if (pos < 0 || pos >= payload.length) {
             throw new RLPException("pos out of payload length range");
         }
 
@@ -213,7 +213,7 @@ public class RLP {
         if (firstByte >= OFFSET_LONG_LIST) {
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
 
-            assertLengthOfLength(payload, lengthOfLength);
+            assertLengthOfLength(payload, lengthOfLength, pos);
 
             int length = calcLength(lengthOfLength, payload, pos);
             nextElementIndex = pos + lengthOfLength + length + 1;
@@ -225,7 +225,7 @@ public class RLP {
 
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_ITEM);
 
-            assertLengthOfLength(payload, lengthOfLength);
+            assertLengthOfLength(payload, lengthOfLength, pos);
 
             int length = calcLength(lengthOfLength, payload, pos);
             nextElementIndex = pos + lengthOfLength + length + 1;
