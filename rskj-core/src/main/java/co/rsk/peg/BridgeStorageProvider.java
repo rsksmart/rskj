@@ -261,7 +261,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        if (releaseTxHash == null || outpointsValues == null) {
+        if (releaseTxHash == null || outpointsValues == null || outpointsValues.isEmpty()) {
             throw new IllegalArgumentException(
                 String.format("Invalid release outpoints values entry, has hash %s and coins list %s", releaseTxHash, outpointsValues)
             );
