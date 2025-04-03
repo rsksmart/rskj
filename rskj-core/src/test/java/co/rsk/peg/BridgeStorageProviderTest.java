@@ -1425,6 +1425,7 @@ class BridgeStorageProviderTest {
             return Stream.of(
                 Arguments.of(null, null),
                 Arguments.of(releaseTxHash1, null),
+                Arguments.of(releaseTxHash1, new ArrayList<>()),
                 Arguments.of(null, outpointsValues1)
             );
         }
@@ -1488,6 +1489,36 @@ class BridgeStorageProviderTest {
             );
             assertNotNull(actualReleaseOutpointsValues2);
             assertEquals(outpointsValues2, deserializeOutpointsValues(actualReleaseOutpointsValues2));
+        }
+
+        @Test
+        void setAndSaveReleaseOutpointsValues_forNewEntry_whenAnotherEntryIsInStorage_shouldHaveBothInStorage() {
+            // Arrange
+            // save entry in storage
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues1)
+            );
+
+            // Act
+            // add new entry
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash2, outpointsValues2);
+            bridgeStorageProvider.save();
+
+            // Assert
+            // both entries are saved
+            byte[] actualReleaseOutpointsValues1 = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1)
+            );
+            assertNotNull(actualReleaseOutpointsValues1);
+
+            byte[] actualReleaseOutpointsValues2 = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash2)
+            );
+            assertNotNull(actualReleaseOutpointsValues2);
         }
 
         private DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
