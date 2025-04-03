@@ -251,7 +251,7 @@ public class BridgeStorageProvider {
             .map(cachedValues -> cachedValues.get(releaseTxHash))
             // search in storage
             .or(() -> Optional.ofNullable(
-                    repository.getStorageBytes(contractAddress, getStorageKeyForReleaseOutpointsValues(releaseTxHash)))
+                repository.getStorageBytes(contractAddress, getStorageKeyForReleaseOutpointsValues(releaseTxHash)))
                 .map(BridgeSerializationUtils::deserializeOutpointsValues)
             );
     }
@@ -274,7 +274,7 @@ public class BridgeStorageProvider {
         if (releasesOutpointsValues == null) {
             releasesOutpointsValues = new TreeMap<>();
         }
-        releasesOutpointsValues.put(releaseTxHash, outpointsValues);
+        releasesOutpointsValues.put(releaseTxHash, List.copyOf(outpointsValues));
     }
 
     private boolean releaseTxHashStorageKeyAlreadyExists(Sha256Hash releaseTxHash) {
