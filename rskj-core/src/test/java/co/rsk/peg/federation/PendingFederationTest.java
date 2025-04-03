@@ -141,7 +141,7 @@ class PendingFederationTest {
     @MethodSource("networkParameters")
     void buildFederation_with6Members_beforeRSKIP201Activation_shouldBuildMultiSigFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
         FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
