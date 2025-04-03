@@ -1421,6 +1421,26 @@ class BridgeStorageProviderTest {
             assertNull(actualReleaseOutpointsValues);
         }
 
+        @Test
+        void outpointsValues_immutable() {
+            // arrange
+            List<Coin> outpointsValues = new ArrayList<>(
+                Arrays.asList(Coin.MILLICOIN, Coin.SATOSHI, Coin.COIN)
+            );
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues);
+            Optional<List<Coin>> actualReleaseOutpointsValuesBeforeModifyingOpt = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            assertTrue(actualReleaseOutpointsValuesBeforeModifyingOpt.isPresent());
+            List<Coin> actualReleaseOutpointsValuesBeforeModifying = List.copyOf(actualReleaseOutpointsValuesBeforeModifyingOpt.get());
+
+            // Act
+            outpointsValues.add(Coin.FIFTY_COINS);
+
+            // assert
+            Optional<List<Coin>> actualReleaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            assertTrue(actualReleaseOutpointsValues.isPresent());
+            assertEquals(actualReleaseOutpointsValuesBeforeModifying, actualReleaseOutpointsValues.get());
+        }
+
         private static Stream<Arguments> invalidReleaseOutpointsEntryArgs() {
             return Stream.of(
                 Arguments.of(null, null),
