@@ -237,7 +237,7 @@ class PendingFederationTest {
 
     @ParameterizedTest
     @MethodSource("networkParameters")
-    void buildFederation_with6Members_afterRSKIP353Activation_BeforeRSKIP305Activations_shouldBuildP2SHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+    void buildFederation_with6Members_afterRSKIP353Activation_beforeRSKIP305Activations_shouldBuildP2SHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
