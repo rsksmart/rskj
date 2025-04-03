@@ -247,8 +247,8 @@ public class BridgeStorageProvider {
         }
 
         return Optional.ofNullable(releasesOutpointsValues)
-            // first search in cache
-            .map(map -> map.get(releaseTxHash))
+            // search in cache
+            .map(cachedValues -> cachedValues.get(releaseTxHash))
             // search in storage
             .or(() -> Optional.ofNullable(
                     repository.getStorageBytes(contractAddress, getStorageKeyForReleaseOutpointsValues(releaseTxHash)))

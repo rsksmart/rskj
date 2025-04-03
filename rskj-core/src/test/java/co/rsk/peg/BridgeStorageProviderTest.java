@@ -1431,7 +1431,7 @@ class BridgeStorageProviderTest {
 
         @ParameterizedTest
         @MethodSource("invalidReleaseOutpointsEntryArgs")
-        void setAndSaveReleaseOutpointsValues_postTbd800AndInvalidEntry_shouldThrowIllegalArgumentExceptionAndNotSaveInStorage(
+        void setAndSaveReleaseOutpointsValues_invalidEntry_shouldThrowIllegalArgumentExceptionAndNotSaveInStorage(
             Sha256Hash releaseTxHash,
             List<Coin> outpointsValues
         ) {
@@ -1450,7 +1450,23 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void setAndSaveReleaseOutpointsValues_forTwoDifferentEntries_postTbd800_shouldSaveBothInStorage() {
+        void setReleaseOutpointsValues_whenEntryAlreadySaved_shouldThrowIllegalArgumentException() {
+            // arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues1)
+            );
+
+            // Act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1)
+            );
+        }
+
+        @Test
+        void setAndSaveReleaseOutpointsValues_forTwoDifferentEntries_shouldSaveBothInStorage() {
             // Arrange
             bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1);
             bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash2, outpointsValues2);
@@ -1533,7 +1549,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void getReleaseOutpointsValues_whenEntriesSavedInStorage_shouldReturnExpectedOutpointsValues() {
+        void getReleaseOutpointsValues_whenEntriesSavedInStorage_shouldReturnValues() {
             // Arrange
             repository.addStorageBytes(
                 bridgeAddress,
