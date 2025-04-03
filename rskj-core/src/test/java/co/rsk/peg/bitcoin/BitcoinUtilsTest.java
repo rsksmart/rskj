@@ -225,6 +225,40 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void extractRedeemScriptFromInput_forP2shP2wshTx_withDifferentRedeemScriptInputs_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script p2shMultiSigScriptSig = federation.getP2SHScript().createEmptyInputScript(null, redeemScript);
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, p2shMultiSigScriptSig);
+
+        nHash++;
+        Script emptyScript = new Script(new byte[]{});
+        BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
+        Script anotherRedeemScript = ScriptBuilder.createRedeemScript(1, List.of(pubKey));
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+
+        TransactionWitness witness = new TransactionWitness(1);
+        witness.setPush(0, anotherRedeemScript.getProgram());
+        btcTx.setWitness(1, witness);
+
+        // Act
+        Optional<Script> scriptFirstInput = extractRedeemScriptFromInput(btcTx, 0);
+        Optional<Script> scriptSecondInput = extractRedeemScriptFromInput(btcTx, 1);
+
+        // Assert
+        assertTrue(scriptFirstInput.isPresent());
+        assertEquals(redeemScript, scriptFirstInput.get());
+
+        assertTrue(scriptSecondInput.isPresent());
+        assertEquals(anotherRedeemScript, scriptSecondInput.get());
+    }
+
+    @Test
     void test_getFirstInputSigHash_no_input() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
