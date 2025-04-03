@@ -18,8 +18,7 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSerializationUtils.deserializeOutpointsValues;
-import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
+import static co.rsk.peg.BridgeSerializationUtils.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -318,20 +317,20 @@ class BridgeSerializationUtilsTest {
     }
 
     @Test
-    void serializeAndDeserializeReleaseOutpointsValues_shouldReturnExpectedValues() {
+    void serializeAndDeserializeOutpointsValues_shouldReturnExpectedValues() {
         // arrange
         List<Coin> outpointsValues = Arrays.asList(Coin.valueOf(12345), Coin.SATOSHI, Coin.COIN);
 
         // Act
-        byte[] serialized = BridgeSerializationUtils.serializeOutpointsValues(outpointsValues);
-        List<Coin> deserialized = deserializeOutpointsValues(serialized);
+        byte[] serializedOutpointsValues = serializeOutpointsValues(outpointsValues);
+        List<Coin> deserializedOutpointsValues = deserializeOutpointsValues(serializedOutpointsValues);
 
         // Assert
-        assertEquals(outpointsValues, deserialized);
+        assertEquals(outpointsValues, deserializedOutpointsValues);
     }
 
     @Test
-    void deserializeReleaseOutpointsValues_withNullValue_throwsIllegalArgumentException() {
+    void deserializeOutpointsValues_withNullValue_throwsIllegalArgumentException() {
         // Assert
         assertThrows(IllegalArgumentException.class, () -> deserializeOutpointsValues(null));
     }
