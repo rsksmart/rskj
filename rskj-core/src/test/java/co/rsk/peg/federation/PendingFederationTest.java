@@ -52,7 +52,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class PendingFederationTest {
     private static final long FEDERATION_CREATION_BLOCK_NUMBER = 0L;
-    private final Instant creationTime = Instant.ofEpochMilli(1234L);
     private final List<FederationMember> federationMembers = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600);
     private PendingFederation pendingFederation;
 
@@ -142,7 +141,8 @@ class PendingFederationTest {
     void buildFederation_with6Members_beforeRSKIP201Activation_shouldBuildMultiSigFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.papyrus200().forBlock(0L);
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         // Act
@@ -150,7 +150,7 @@ class PendingFederationTest {
             federationMembers
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
+            federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
             activations
@@ -166,13 +166,14 @@ class PendingFederationTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
         FederationConstants federationTestnetConstants = bridgeTestnetConstants.getFederationConstants();
+        Instant testnetCreationTime = federationTestnetConstants.getGenesisFederationCreationTime();
 
         // Act
         PendingFederation otherPendingFederation = new PendingFederation(
             federationMembers
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
+            testnetCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationTestnetConstants,
             activations
@@ -187,7 +188,8 @@ class PendingFederationTest {
     void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
         Federation expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
@@ -197,7 +199,7 @@ class PendingFederationTest {
             federationMembers
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
+            federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
             activations
@@ -212,7 +214,8 @@ class PendingFederationTest {
     void buildFederation_with6Members_afterRSKIP284Activations_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
         Federation expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
@@ -222,7 +225,7 @@ class PendingFederationTest {
             federationMembers
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
+            federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
             activations
@@ -237,7 +240,8 @@ class PendingFederationTest {
     void buildFederation_with6Members_afterRSKIP353Activation_BeforeRSKIP305Activations_shouldBuildP2SHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
         Federation expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
@@ -247,7 +251,7 @@ class PendingFederationTest {
             federationMembers
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
+            federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
             activations
@@ -262,7 +266,8 @@ class PendingFederationTest {
     void buildFederation_with6Members_afterRSKIP305Activation_shouldBuildP2SHP2WSHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd800().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
-        FederationArgs federationArgs = new FederationArgs(federationMembers, creationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
         long activationDelay = federationConstants.getErpFedActivationDelay();
         Federation expectedFederation = FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
@@ -272,7 +277,7 @@ class PendingFederationTest {
             federationMembers
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
-            creationTime,
+            federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
             activations
