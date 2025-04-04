@@ -35,8 +35,10 @@ task fuzzTest(type: Test) {
     outputs.upToDateWhen { false }
 
     doLast {
+        def htmlReportProvider = reports.html.outputLocation
+        def htmlReportDir = htmlReportProvider.get().asFile
         println "\n<################# FUZZING REPORT ####################>"
-        println "Fuzzing report generated at: ${reports.html.destination}/index.html"
+        println "Fuzzing report generated at: ${htmlReportDir}/index.html"
         println "<##############################################>\n"
     }
 }
@@ -53,8 +55,10 @@ task fuzzCoverageTestReport(type: JacocoReport) {
     }
 
     doLast {
+        def htmlReportProvider = reports.html.outputLocation
+        def htmlReportDir = htmlReportProvider.get().asFile
         println "\n<################# COVERAGE REPORT ###################>"
-        println "Coverage report generated at: ${reports.html.destination}/index.html"
+        println "Coverage report generated at: ${htmlReportDir}/index.html"
         println "<##############################################>\n"
     }
 }
@@ -563,11 +567,15 @@ task MergedFuzzCoverageTestReport(type: JacocoReport) {
     reports {
         xml.required = true
         html.required = true
+        html.outputLocation.set(layout.buildDirectory.dir("reports/fuzz-html"))
     }
 
     doLast {
+
+        def htmlDir = layout.buildDirectory.dir("reports/fuzz-html").get().asFile
         println "\n<################# MERGED COVERAGE REPORT ###################>"
-        println "Merged coverage report generated at: ${reports.html.destination}/index.html\n"
+        println "Merged Coverage report generated at: ${htmlDir}/index.html"
+        println "<##############################################>\n"
         executionData.each {
             println "    [+] Included execution trace: ${it}"
         }

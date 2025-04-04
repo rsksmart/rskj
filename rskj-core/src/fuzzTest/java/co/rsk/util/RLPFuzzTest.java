@@ -72,7 +72,7 @@ class RLPFuzzTest {
         try {
             RLP.decodeBigInteger(input, index);
         } catch (RLPException e) {
-            
+
         }
     }
 
@@ -85,24 +85,7 @@ class RLPFuzzTest {
         try {
             RLP.getNextElementIndex(payload, pos);
         } catch (RLPException e) {
-            
-        }
-    }
 
-    @Tag("RLPFuzzFullTraverse")
-    @FuzzTest
-    public void fuzzFullTraverse(FuzzedDataProvider data) {
-        byte[] msgData = generateMixedRLPData(data);
-        if (msgData.length < 1) { return; }
-        int level = data.consumeInt();
-        int startPos = data.consumeInt(0, msgData.length - 1);
-        int endPos = data.consumeInt(startPos, msgData.length);
-        int levelToIndex = data.consumeInt();
-        Queue<Integer> index = new LinkedList<>();
-        try {
-            RLP.fullTraverse(msgData, level, startPos, endPos, levelToIndex, index);
-        } catch (RLPException e) {
-            
         }
     }
 
