@@ -6,14 +6,10 @@ env:
 on:
   push:
     paths:
-      - "README.md"
       - "docs/**"
     branches:
-      - main
-  pull_request:
-    paths:
-      - "README.md"
-      - "docs/**"
+      - master
+  workflow_dispatch:
 
 permissions: read-all
 
