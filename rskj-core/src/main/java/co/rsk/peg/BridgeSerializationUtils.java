@@ -63,6 +63,17 @@ public class BridgeSerializationUtils {
         throw new IllegalAccessError("Utility class, do not instantiate it");
     }
 
+    public static byte[] serializeRskAddress(RskAddress rskAddress) {
+        return RLP.encodeElement(rskAddress.getBytes());
+    }
+
+    public static RskAddress deserializeRskAddress(byte[] rskAddressInBytes) {
+        if (isNull(rskAddressInBytes)) {
+            throw new IllegalArgumentException("Serialized address cannot be null.");
+        }
+        return new RskAddress(rskAddressInBytes);
+    }
+
     private static byte[] serializeRskTxHash(Keccak256 rskTxHash) {
         return RLP.encodeElement(rskTxHash.getBytes());
     }
