@@ -301,11 +301,16 @@ public class IndexedBlockStore implements BlockStore {
             return ZERO;
         }
 
+        return getTotalDifficultyForBlock(block);
+    }
+
+    @Override
+    public synchronized BlockDifficulty getTotalDifficultyForBlock(Block block) {
         long level = block.getNumber();
         List<BlockInfo> blockInfos = index.getBlocksByNumber(level);
 
         for (BlockInfo blockInfo : blockInfos) {
-            if (Arrays.equals(blockInfo.getHash().getBytes(), hash)) {
+            if (Arrays.equals(blockInfo.getHash().getBytes(), block.getHash().getBytes())) {
                 return blockInfo.getCummDifficulty();
             }
         }

@@ -47,8 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
 import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SnapshotProcessorTest {
@@ -173,11 +172,22 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
+
+        ArgumentCaptor<SnapStatusResponseMessage> captor = ArgumentCaptor.forClass(SnapStatusResponseMessage.class);
+
+
         //when
         underTest.processSnapStatusRequestInternal(peer, mock(SnapStatusRequestMessage.class));
 
         //then
-        verify(peer, atLeast(1)).sendMessage(any(SnapStatusResponseMessage.class));
+        verify(peer, atLeast(1)).sendMessage(captor.capture());
+
+        SnapStatusResponseMessage capturedMessage = captor.getValue();
+        assertNotNull(capturedMessage);
+        int blockSize = capturedMessage.getBlocks().size();
+        assertEquals(401, blockSize);
+        assertEquals(4600L,capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(5000L,capturedMessage.getBlocks().get(blockSize-1).getNumber());
     }
 
     @Test
@@ -199,12 +209,20 @@ public class SnapshotProcessorTest {
                 true,
                 false);
 
+        ArgumentCaptor<SnapBlocksResponseMessage> captor = ArgumentCaptor.forClass(SnapBlocksResponseMessage.class);
+
         SnapBlocksRequestMessage snapBlocksRequestMessage = new SnapBlocksRequestMessage(1, 460);
         //when
         underTest.processSnapBlocksRequestInternal(peer, snapBlocksRequestMessage);
 
         //then
-        verify(peer, atLeast(1)).sendMessage(any(SnapBlocksResponseMessage.class));
+        verify(peer, atLeast(1)).sendMessage(captor.capture());
+        SnapBlocksResponseMessage capturedMessage = captor.getValue();
+        assertNotNull(capturedMessage);
+        int blockSize = capturedMessage.getBlocks().size();
+        assertEquals(400, blockSize);
+        assertEquals(60L,capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(459,capturedMessage.getBlocks().get(blockSize-1).getNumber());
     }
 
     @Test
