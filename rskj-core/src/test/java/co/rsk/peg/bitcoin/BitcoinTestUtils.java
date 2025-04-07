@@ -271,6 +271,5 @@ public class BitcoinTestUtils {
         int redeemScriptIndex = witnessSize - 1;
         txWitness.setPush(redeemScriptIndex, redeemScript.getProgram());
         return txWitness;
-
     }
 }
