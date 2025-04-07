@@ -154,8 +154,7 @@ class PendingFederationTest {
         Federation expectedFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
 
         // Act
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-        Federation builtFederation = otherPendingFederation.buildFederation(
+        Federation builtFederation = pendingFederation.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
@@ -175,8 +174,7 @@ class PendingFederationTest {
         Instant testnetCreationTime = federationTestnetConstants.getGenesisFederationCreationTime();
 
         // Act
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-        Federation builtFederation = otherPendingFederation.buildFederation(
+        Federation builtFederation = pendingFederation.buildFederation(
             testnetCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationTestnetConstants,
@@ -199,8 +197,7 @@ class PendingFederationTest {
         Federation expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
 
         // Act
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-        Federation builtFederation = otherPendingFederation.buildFederation(
+        Federation builtFederation = pendingFederation.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
@@ -223,8 +220,7 @@ class PendingFederationTest {
         Federation expectedFederation = FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
 
         // Act
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-        Federation builtFederation = otherPendingFederation.buildFederation(
+        Federation builtFederation = pendingFederation.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
@@ -247,8 +243,7 @@ class PendingFederationTest {
         Federation expectedFederation = FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
 
         // Act
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-        Federation builtFederation = otherPendingFederation.buildFederation(
+        Federation builtFederation = pendingFederation.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
@@ -271,8 +266,7 @@ class PendingFederationTest {
         Federation expectedFederation = FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
 
         // Act
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-        Federation builtFederation = otherPendingFederation.buildFederation(
+        Federation builtFederation = pendingFederation.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
