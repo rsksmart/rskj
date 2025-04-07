@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -244,8 +245,7 @@ class BitcoinUtilsTest {
         Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = new TransactionWitness(1);
-        witness.setPush(0, anotherRedeemScript.getProgram());
+        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(anotherRedeemScript);
         btcTx.setWitness(1, witness);
 
         // Act
