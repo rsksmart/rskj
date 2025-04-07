@@ -203,6 +203,18 @@ class BitcoinUtilsTest {
         assertFalse(sigHash.isPresent());
     }
 
+    // This test checks that the equals methods of TransactionWitness is the implemented in bitcoinj-thin.
+    // When using the default equals method, the test will fail.
+    @Test
+    void equals_withTwoTransactionWitness_withDifferentPushCounts_shouldBeTrue() {
+        // Arrange
+        TransactionWitness txWitness1 = new TransactionWitness(1);
+        TransactionWitness txWitness2 = new TransactionWitness(2);
+
+        // Assert
+        assertEquals(txWitness1, txWitness2);
+    }
+
     @Test
     void getFirstInputSigHash_forP2shP2wshTx_shouldReturnExpectedLegacyTxSigHash() {
         // https://mempool.space/tx/a4d76b6211b078cbc1d2079002437fcf018cc85cd40dd6195bb0f6b42930b96b
