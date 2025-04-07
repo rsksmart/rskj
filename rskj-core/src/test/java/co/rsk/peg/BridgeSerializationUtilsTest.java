@@ -74,6 +74,40 @@ class BridgeSerializationUtilsTest {
     private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "first");
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
 
+
+    private static Stream<Arguments> provideRskAddresses() {
+        return Stream.of(
+            Arguments.of(TestUtils.generateAddress("address1")),
+            Arguments.of(TestUtils.generateAddress("address2")),
+            Arguments.of(TestUtils.generateAddress("address3"))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideRskAddresses")
+    void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
+        // Act
+        byte[] actualSerializedAddress = BridgeSerializationUtils.serializeRskAddress(address);
+        RskAddress actualDeserializedAddress = BridgeSerializationUtils.deserializeRskAddress(actualSerializedAddress);
+
+        // Assert
+        assertNotNull(actualSerializedAddress);
+        assertEquals(address, actualDeserializedAddress);
+    }
+
+    @Test
+    void serializeRskAddress_whenNull_shouldFail() {
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskAddress(null));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void deserializeRskAddress_whenInvalidValues_shouldFail(byte[] nullOrEmptyData) {
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.deserializeRskAddress(nullOrEmptyData));
+    }
+
     @Test
     void serializeAndDeserializeBtcTransaction_withValidDataAndInputs_shouldReturnEqualResults() {
         // Arrange
