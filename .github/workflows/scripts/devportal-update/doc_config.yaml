@@ -23,6 +23,14 @@ files:
     tags: [rsk, rskj, node, security, node operators, reproducible builds, verification]
     description: "All the different ways that you can verify RSKj: Release signing key, fingerprint of the public key, SHA256SUMS.asc, binary dependencies, secure environment script"
 
+  - input: docs/03-node-operators/04-setup/experimental-features.md
+    output: transformed/03-node-operators/04-setup/experimental-features.md
+    sidebar_label: Experimental features
+    sidebar_position: 9
+    title: Experimental features from RSKj
+    tags: [rsk, rskj, node, node operators, experimental features]
+    description: "All the experimental features released in RSKj  are explained in this section, how to enable and what's the purpose of the feature"
+
   # Docs from 03-node-operators/04-setup/02-installation
   - input: docs/03-node-operators/04-setup/02-installation/docker.md
     output: transformed/03-node-operators/04-setup/02-installation/docker.md
@@ -148,5 +156,14 @@ files:
     sidebar_position: 600
     tags: [rsk, rskj, node, contribute, node operators, windows]
     description: "How to compile and run an RSKj node on Windows. Installing pre-requisites. Get source code. Ensure security chain. Get external dependencies. Compile and run. Configuring your IDE."
+
+  # Docs from 03-node-operators/09-troubleshooting/
+  - input: docs/03-node-operators/09-troubleshooting/index.md
+    output: transformed/03-node-operators/09-troubleshooting/index.md
+    title: Troubleshooting
+    sidebar_label: Troubleshooting
+    sidebar_position: 11
+    tags:  [rsk, rskj, rootstock, node, faq, troubleshoot]
+    description: "How to solve some known or frequently encountered issues when working with RSKj"
 
   # Add more files as needed
