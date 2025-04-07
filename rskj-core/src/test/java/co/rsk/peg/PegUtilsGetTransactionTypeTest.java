@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromRedeemScript;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1872,10 +1873,9 @@ class PegUtilsGetTransactionTypeTest {
         migrationTx.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[72]); // push for signatures
-        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
-        migrationTx.setWitness(0, txWitness);
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        migrationTx.setWitness(FIRST_INPUT_INDEX, txWitness);
+
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
 
@@ -1957,10 +1957,8 @@ class PegUtilsGetTransactionTypeTest {
             migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         }
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[72]); // push for signatures
-        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
-        migrationTx.setWitness(0, txWitness);
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        migrationTx.setWitness(FIRST_INPUT_INDEX, txWitness);
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
 
         Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
@@ -2042,10 +2040,9 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[72]); // push for signatures
-        txWitness.setPush(1, retiringFederation.getRedeemScript().getProgram());
-        btcTransaction.setWitness(0, txWitness);
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
+
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
