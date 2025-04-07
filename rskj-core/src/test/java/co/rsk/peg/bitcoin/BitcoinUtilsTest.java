@@ -13,6 +13,8 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -225,7 +227,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void extractRedeemScriptFromInput_forP2shP2wshTx_withDifferentRedeemScriptInputs_shouldExtractThemProperly() {
+    void extractRedeemScriptFromInput_forTxWithP2shAndP2shP2wshInputs_shouldExtractThemProperly() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
@@ -233,13 +235,13 @@ class BitcoinUtilsTest {
         int nHash = 0;
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
-        Script p2shMultiSigScriptSig = federation.getP2SHScript().createEmptyInputScript(null, redeemScript);
+        Script p2shMultiSigScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, redeemScript);
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, p2shMultiSigScriptSig);
 
         nHash++;
         Script emptyScript = new Script(new byte[]{});
-        BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
-        Script anotherRedeemScript = ScriptBuilder.createRedeemScript(1, List.of(pubKey));
+        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
         TransactionWitness witness = new TransactionWitness(1);
