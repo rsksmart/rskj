@@ -189,7 +189,7 @@ class PendingFederationTest {
 
     @ParameterizedTest
     @MethodSource("networkParameters")
-    void buildFederation_with6Members_afterRSKIP284Activations_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+    void buildFederation_with6Members_afterRSKIP284Activations_beforeRSKIP353_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
