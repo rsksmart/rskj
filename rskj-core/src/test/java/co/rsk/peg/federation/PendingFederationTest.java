@@ -56,7 +56,7 @@ class PendingFederationTest {
     private final List<FederationMember> federationMembers = pendingFederation.getMembers();
 
     @Test
-    void membersImmutable() {
+    void addANewMember_toPendingFederationMembers_shouldThrowAnException() {
         boolean exception = false;
         try {
             pendingFederation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
@@ -75,34 +75,45 @@ class PendingFederationTest {
     }
 
     @Test
-    void isComplete() {
+    void isComplete_withAPendingFederationWithMoreMembersThanRequired_shouldBeTrue() {
         Assertions.assertTrue(pendingFederation.isComplete());
     }
 
     @Test
-    void isComplete_not() {
+    void isComplete_withAPendingFederationWithLessMembersThanRequired_shouldBeFalse() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(200));
         Assertions.assertFalse(otherPendingFederation.isComplete());
     }
 
     @Test
-    void testEquals_basic() {
+    void equals_withTheSamePendingFederation_shouldBeTrue() {
         assertEquals(pendingFederation, pendingFederation);
+    }
 
+    @Test
+    void equals_withNull_shouldBeFalse() {
         Assertions.assertNotEquals(null, pendingFederation);
+    }
+
+    @Test
+    void equals_withADifferentObject_shouldBeFalse() {
         Assertions.assertNotEquals(pendingFederation, new Object());
+    }
+
+    @Test
+    void equals_withADifferentType_shouldBeFalse() {
         Assertions.assertNotEquals("something else", pendingFederation);
     }
 
     @Test
-    void testEquals_differentNumberOfMembers() {
+    void equals_withAPendingFederation_withDifferentNumberOfMembers_shouldBeFalse() {
         List<BtcECKey> otherFederationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700);
         PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(otherFederationMembersKeys).build();
         Assertions.assertNotEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
-    void testEquals_differentMembers() {
+    void equals_withThreePendingFederations_withDifferentMembers_shouldBeFalse() {
         List<BtcECKey> newMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 610);
         PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(newMembersKeys).build();
 
@@ -115,13 +126,13 @@ class PendingFederationTest {
     }
 
     @Test
-    void testEquals_same() {
+    void equals_withTwoPendingFederations_withTheSameMembers_shouldBeTrue() {
         PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
         assertEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
-    void testToString() {
+    void toString_withACompleteFederation_shouldPrintTheCorrectMessage() {
         assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
 
         BtcECKey newMembersKeys = BtcECKey.fromPrivate(BigInteger.valueOf(100));
@@ -295,7 +306,7 @@ class PendingFederationTest {
     }
 
     @Test
-    void serializeAndDeserializePendingFederation() {
+    void serializeAndDeserialize_withPendingFederation_shouldGiveTheSameFederation() {
         // we want serialization from members
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.wasabi100().forBlock(0);
 
@@ -348,7 +359,7 @@ class PendingFederationTest {
     }
 
     @Test
-    void deserializePendingFederation_invalidFederationMember() {
+    void deserializePendingFederation_withInvalidFederationMember_shouldThrowARunTimeException() {
         byte[] serialized = RLP.encodeList(
             RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]))
         );
