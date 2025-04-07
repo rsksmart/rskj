@@ -134,7 +134,10 @@ class PendingFederationTest {
     @Test
     void toString_withACompleteFederation_shouldPrintTheCorrectMessage() {
         assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
+    }
 
+    @Test
+    void toString_withAnIncompleteFederation_shouldPrintTheCorrectMessage() {
         BtcECKey newMemberKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
         PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(List.of(newMemberKey)).build();
 
