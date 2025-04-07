@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +14,8 @@ import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shErpFederationBuilder;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -222,6 +225,39 @@ class BitcoinUtilsTest {
             false
         );
         assertEquals(expectedSigHash, sigHash.get());
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_forTxWithP2shAndP2shP2wshInputs_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script p2shMultiSigScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, redeemScript);
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, p2shMultiSigScriptSig);
+
+        nHash++;
+        Script emptyScript = new Script(new byte[]{});
+        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+
+        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(anotherRedeemScript);
+        btcTx.setWitness(1, witness);
+
+        // Act
+        Optional<Script> scriptFirstInput = extractRedeemScriptFromInput(btcTx, 0);
+        Optional<Script> scriptSecondInput = extractRedeemScriptFromInput(btcTx, 1);
+
+        // Assert
+        assertTrue(scriptFirstInput.isPresent());
+        assertEquals(redeemScript, scriptFirstInput.get());
+
+        assertTrue(scriptSecondInput.isPresent());
+        assertEquals(anotherRedeemScript, scriptSecondInput.get());
     }
 
     @Test
