@@ -64,14 +64,21 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializeRskAddress(RskAddress rskAddress) {
+        if (rskAddress == null) {
+            throw new IllegalArgumentException("Rsk address cannot be null.");
+        }
         return RLP.encodeElement(rskAddress.getBytes());
     }
 
     public static RskAddress deserializeRskAddress(byte[] rskAddressInBytes) {
-        if (isNull(rskAddressInBytes)) {
-            throw new IllegalArgumentException("Serialized address cannot be null.");
+        if (isNull(rskAddressInBytes) || rskAddressInBytes.length == 0) {
+            throw new IllegalArgumentException("Serialized address cannot be null or empty.");
         }
-        return new RskAddress(rskAddressInBytes);
+        RLPElement rlpElement = RLP.decode2(rskAddressInBytes).get(0);
+        if (rlpElement == null || rlpElement.getRLPData() == null) {
+            throw new IllegalArgumentException("Invalid serialized address.");
+        }
+        return new RskAddress(rlpElement.getRLPData());
     }
 
     private static byte[] serializeRskTxHash(Keccak256 rskTxHash) {
