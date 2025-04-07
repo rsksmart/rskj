@@ -257,7 +257,7 @@ public class BitcoinTestUtils {
             .ifPresent(transaction::addInput);
     }
 
-    public static TransactionWitness addBaseWitnessToBtcTxInputThatSpendsFromRedeemScript(Script redeemScript) {
+    public static TransactionWitness createBaseWitnessThatSpendsFromRedeemScript(Script redeemScript) {
         int pushForOpNotif = 1;
         int pushForRedeemScript = 1;
         int witnessSize = pushForOpNotif + pushForRedeemScript + redeemScript.getNumberOfSignaturesRequiredToSpend();

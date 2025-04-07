@@ -1,7 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.*;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.addBaseWitnessToBtcTxInputThatSpendsFromRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromRedeemScript;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1873,7 +1873,7 @@ class PegUtilsGetTransactionTypeTest {
         migrationTx.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        TransactionWitness txWitness = addBaseWitnessToBtcTxInputThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
         migrationTx.setWitness(FIRST_INPUT_INDEX, txWitness);
 
 
@@ -1957,7 +1957,7 @@ class PegUtilsGetTransactionTypeTest {
             migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         }
 
-        TransactionWitness txWitness = addBaseWitnessToBtcTxInputThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
         migrationTx.setWitness(FIRST_INPUT_INDEX, txWitness);
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
 
@@ -2040,7 +2040,7 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 
-        TransactionWitness txWitness = addBaseWitnessToBtcTxInputThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
         btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
