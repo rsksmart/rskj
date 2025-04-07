@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.resources.TestConstants.NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
