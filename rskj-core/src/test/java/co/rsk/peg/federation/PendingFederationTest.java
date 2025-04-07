@@ -135,8 +135,8 @@ class PendingFederationTest {
     void toString_withACompleteFederation_shouldPrintTheCorrectMessage() {
         assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
 
-        BtcECKey newMembersKeys = BtcECKey.fromPrivate(BigInteger.valueOf(100));
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(List.of(newMembersKeys)).build();
+        BtcECKey newMemberKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(List.of(newMemberKey)).build();
 
         assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
@@ -282,8 +282,8 @@ class PendingFederationTest {
 
     @Test
     void buildFederation_withLessMembersThanRequired_shouldFailWithIncompleteFederationLog() {
-        BtcECKey otherFederationMembersKeys = BtcECKey.fromPrivate(BigInteger.valueOf(100));
-        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(List.of(otherFederationMembersKeys)).build();
+        BtcECKey otherFederationMemberKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
+        PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(List.of(otherFederationMemberKey)).build();
 
         try {
             otherPendingFederation.buildFederation(
