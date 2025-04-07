@@ -165,26 +165,6 @@ class PendingFederationTest {
         assertEquals(expectedFederation, builtFederation);
     }
 
-    @Test
-    void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_inTestnet_shouldHaveANonStandardERPRedeemScript() {
-        // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
-        BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
-        FederationConstants federationTestnetConstants = bridgeTestnetConstants.getFederationConstants();
-        Instant testnetCreationTime = federationTestnetConstants.getGenesisFederationCreationTime();
-
-        // Act
-        Federation builtFederation = pendingFederation.buildFederation(
-            testnetCreationTime,
-            FEDERATION_CREATION_BLOCK_NUMBER,
-            federationTestnetConstants,
-            activations
-        );
-
-        // Assert
-        assertEquals(NON_STANDARD_ERP_REDEEM_SCRIPT_HARDCODED, builtFederation.getRedeemScript());
-    }
-
     @ParameterizedTest
     @MethodSource("networkParameters")
     void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
