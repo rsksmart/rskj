@@ -166,7 +166,7 @@ class PendingFederationTest {
     @Test
     void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_inTestnet_shouldHaveANonStandardERPRedeemScript() {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
         BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
         FederationConstants federationTestnetConstants = bridgeTestnetConstants.getFederationConstants();
         Instant testnetCreationTime = federationTestnetConstants.getGenesisFederationCreationTime();
@@ -188,7 +188,7 @@ class PendingFederationTest {
     @MethodSource("networkParameters")
     void buildFederation_with6Members_afterRSKIP201Activation_beforeRSKIP284Activation_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
         FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
@@ -212,7 +212,7 @@ class PendingFederationTest {
     @MethodSource("networkParameters")
     void buildFederation_with6Members_afterRSKIP284Activations_shouldBuildNonStandardERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
         FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
@@ -236,7 +236,7 @@ class PendingFederationTest {
     @MethodSource("networkParameters")
     void buildFederation_with6Members_afterRSKIP353Activation_beforeRSKIP305Activations_shouldBuildP2SHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
         FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
@@ -260,7 +260,7 @@ class PendingFederationTest {
     @MethodSource("networkParameters")
     void buildFederation_with6Members_afterRSKIP305Activation_shouldBuildP2SHP2WSHERPFed(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd800().forBlock(FEDERATION_CREATION_BLOCK_NUMBER);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.tbd800().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
         FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
         List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
