@@ -71,14 +71,16 @@ public class BridgeSerializationUtils {
     }
 
     public static RskAddress deserializeRskAddress(byte[] rskAddressInBytes) {
-        if (isNull(rskAddressInBytes) || rskAddressInBytes.length == 0) {
-            throw new IllegalArgumentException("Serialized address cannot be null or empty.");
+        if (rskAddressInBytes == null || rskAddressInBytes.length == 0) {
+            return null;
         }
-        RLPElement rlpElement = RLP.decode2(rskAddressInBytes).get(0);
-        if (rlpElement == null || rlpElement.getRLPData() == null) {
-            throw new IllegalArgumentException("Invalid serialized address.");
-        }
-        return new RskAddress(rlpElement.getRLPData());
+
+        return Optional.of(rskAddressInBytes)
+            .map(RLP::decode2)
+            .flatMap(rlpList -> rlpList.stream().findFirst())
+            .map(RLPElement::getRLPData)
+            .map(RskAddress::new)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid serialized address"));
     }
 
     private static byte[] serializeRskTxHash(Keccak256 rskTxHash) {
