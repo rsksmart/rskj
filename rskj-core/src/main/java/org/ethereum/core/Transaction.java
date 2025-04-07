@@ -384,7 +384,7 @@ public class Transaction {
      */
 
     public ECKey getKey() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
+        Metric metric = profiler.start(Profiler.MetricKind.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
         ECKey key = Secp256k1.getInstance().recoverFromSignature((signature.getV() - 27) & ~4, signature, raw, true);
@@ -405,7 +405,7 @@ public class Transaction {
             return sender;
         }
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
+        Metric metric = profiler.start(Profiler.MetricKind.KEY_RECOV_FROM_SIG);
         try {
             ECKey key = Secp256k1.getInstance().signatureToKey(getRawHash().getBytes(), getSignature());
             sender = new RskAddress(key.getAddress());

@@ -19,6 +19,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.messages.*;
@@ -97,7 +98,7 @@ public class SnapSyncState extends BaseSyncState {
         this.snapRequestManager = snapRequestManager;
         this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
-        this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
+        this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, null, listener) {
 
             @Override
             public boolean isRunning() {
@@ -125,7 +126,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, Profiler.MetricKind.SNAP_STATUS_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processSnapStatusResponse(SnapSyncState.this, sender, responseMessage);
@@ -145,7 +146,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, Profiler.MetricKind.SNAP_BLOCKS_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processSnapBlocksResponse(SnapSyncState.this, sender, responseMessage);
@@ -165,7 +166,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, Profiler.MetricKind.SNAP_STATE_CHUNK_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processStateChunkResponse(SnapSyncState.this, sender, responseMessage);
@@ -185,7 +186,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, Profiler.MetricKind.BLOCK_HEADERS_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processBlockHeaderChunk(SnapSyncState.this, sender, responseMessage.getBlockHeaders());

@@ -22,6 +22,7 @@ import co.rsk.config.InternalService;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
@@ -106,11 +107,12 @@ public class SnapshotProcessor implements InternalService {
                              BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                              BlockHeaderValidationRule blockHeaderValidator,
                              int chunkSize,
+                             int maxSenderRequests,
                              boolean checkHistoricalHeaders,
                              boolean isParallelEnabled) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
     }
 
     @VisibleForTesting
@@ -124,6 +126,7 @@ public class SnapshotProcessor implements InternalService {
                       BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                       BlockHeaderValidationRule blockHeaderValidator,
                       int chunkSize,
+                      int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
                       @Nullable SyncMessageHandler.Listener listener) {
@@ -142,7 +145,7 @@ public class SnapshotProcessor implements InternalService {
 
         this.checkHistoricalHeaders = checkHistoricalHeaders;
         this.parallel = isParallelEnabled;
-        this.thread = new Thread(new SyncMessageHandler("SNAP/server", requestQueue, listener) {
+        this.thread = new Thread(new SyncMessageHandler("SNAP/server", requestQueue, maxSenderRequests, listener) {
 
             @Override
             public boolean isRunning() {
@@ -205,7 +208,7 @@ public class SnapshotProcessor implements InternalService {
         }
 
         try {
-            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage) {
+            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATUS_REQUEST) {
                 @Override
                 public void run() {
                     processSnapStatusRequestInternal(sender, requestMessage);
@@ -436,7 +439,7 @@ public class SnapshotProcessor implements InternalService {
         }
 
         try {
-            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage) {
+            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_BLOCKS_REQUEST) {
                 @Override
                 public void run() {
                     processSnapBlocksRequestInternal(sender, requestMessage);
@@ -528,7 +531,7 @@ public class SnapshotProcessor implements InternalService {
         }
 
         try {
-            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage) {
+            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATE_CHUNK_REQUEST) {
                 @Override
                 public void run() {
                     processStateChunkRequestInternal(sender, requestMessage);

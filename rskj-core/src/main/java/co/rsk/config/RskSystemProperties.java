@@ -436,6 +436,8 @@ public class RskSystemProperties extends SystemProperties {
 
     public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.client.chunkSize");}
 
+    public int getSnapshotMaxSenderRequests() { return configFromFiles.getInt("sync.snapshot.server.maxSenderRequests");}
+
     public int getSnapshotSyncLimit() { return configFromFiles.getInt("sync.snapshot.client.limit");}
 
     // its fixed, cannot be set by config file

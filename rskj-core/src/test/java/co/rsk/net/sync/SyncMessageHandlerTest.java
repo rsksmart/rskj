@@ -18,6 +18,7 @@
  */
 package co.rsk.net.sync;
 
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.Message;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class SyncMessageHandlerTest {
     @BeforeEach
     void setUp() {
         jobQueue = new LinkedBlockingQueue<>();
-        thread = new Thread(new SyncMessageHandler("SNAP requests", jobQueue, listener) {
+        thread = new Thread(new SyncMessageHandler("SNAP requests", jobQueue, null, listener) {
 
             @Override
             public boolean isRunning() {
@@ -132,7 +133,7 @@ class SyncMessageHandlerTest {
     }
 
     private void putJob(Runnable action) throws InterruptedException {
-        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class)) {
+        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class), mock(Profiler.MetricKind.class)) {
             @Override
             public void run() {
                 action.run();

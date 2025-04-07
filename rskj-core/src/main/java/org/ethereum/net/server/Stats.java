@@ -57,15 +57,15 @@ public class Stats {
     }
 
     public Stats(long perMinuteThreshold) {
-        avg = 500;
-        alpha_m = 0.3;
-        alpha_a = 0.03;
+        this.avg = 500;
+        this.alpha_m = 0.3;
+        this.alpha_a = 0.03;
 
         this.perMinuteThreshold = perMinuteThreshold;
 
-        maxBlock = 200;
-        maxOther = 100;
-        mpm = 1;
+        this.maxBlock = 200;
+        this.maxOther = 100;
+        this.mpm = 1;
     }
 
     public synchronized double update(long timestamp, MessageType type) {
