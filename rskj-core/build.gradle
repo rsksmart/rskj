@@ -4,7 +4,7 @@ plugins {
     id "com.diffplug.spotless" version "6.13.0"
 }
 
-apply from: 'fuzzing.gradle'
+apply from: 'src/fuzzTest/fuzzing.gradle'
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
@@ -133,7 +133,8 @@ tasks.withType(Checkstyle).configureEach { Checkstyle task ->
             'checkstyleMain'           : 'src/main/java',
             'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
-            'checkstyleJmh'            : 'src/jmh/java'
+            'checkstyleJmh'            : 'src/jmh/java',
+            'checkstyleFuzz'           : 'src/fuzzTest/java'
     ]
 
     sourceDirMapping.each { taskName, sourceDir ->
@@ -588,7 +589,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
 }
 
 task spotlessAll {
