@@ -164,6 +164,7 @@ class BitcoinUtilsTest {
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+
         // Assert
         assertTrue(firstInputSigHash.isPresent());
         assertTrue(isSigHashValid(firstInputSigHash.get(), pubKeys, signatures));
