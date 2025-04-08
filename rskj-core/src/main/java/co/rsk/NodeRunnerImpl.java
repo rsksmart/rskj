@@ -99,6 +99,10 @@ public class NodeRunnerImpl implements NodeRunner {
             SystemUtils.printSystemInfo(logger);
         }
 
+        if (nodeContext instanceof RskContext rskContext) {
+            SystemUtils.printDisabledNetworkUpgrades(logger, rskContext.getBlockchain(), rskSystemProperties.getActivationConfig());
+        }
+
         ArrayList<InternalService> startedServices = new ArrayList<>(internalServices.size());
         InternalService curService = null;
         try {
