@@ -587,5 +587,5 @@ MergedFuzzCoverageTestReport.dependsOn 'runAllFuzzTests'
 
 tasks.withType(Test) {
     outputs.upToDateWhen { false }
-    ignoreFailures = true
+    ignoreFailures = false
 }
