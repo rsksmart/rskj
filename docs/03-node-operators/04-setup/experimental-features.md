@@ -1,11 +1,27 @@
-Below you can find all the experimental features released with RSKj, which
-version and height is the feature enabled, how can you enable it and the benefit
-of the feature.
+# Experimental Features
 
-## Snapshot Synchronisation Feature
-The Snapshot Synchronization feature is an experimental feature that allows RSK nodes to synchronize 
-using a snapshot of the state of the blockchain, rather than downloading all blocks from the genesis block. 
-This can significantly reduce the time it takes to synchronize a node, especially for large blockchains.
+Below you can find all the experimental features released with RSKj, alongside the version and
+height in which they were introduced, there are instructions on how you can configure, customize
+and start using them.
+
+## Snapshot Sync
+
+**TL;DR** Snapshot Sync is an experimental feature that allows RSKj nodes to synchronize using a
+snapshot of the state of the blockchain, rather than downloading the whole blocks starting from
+genesis. This can significantly reduce the time it takes to synchronize a node, especially for large
+blockchains.
+
+Full Long Sync is the standard method for getting a new RSKj node to match up with the existing
+blockchain network. The goal is to make sure the new node downloads and checks every transaction,
+contract, and block, starting from the very first one. This approach uses up quite a bit of time and
+computer resources.
+
+Snapshot Sync is designed to make the sync process faster but still safe: Instead of getting the
+whole blockchain history, state data is downloaded up to a certain point where there's enough
+information to rebuild the whole state quickly.
+
+Snapshot Sync main goal is to have a new RSKj node ready to use in a shorter time in comparison to
+using the default Full Long Sync method.
 
 ### How to Configure Snap-Capable Nodes
 Nodes can be configured as Snap servers and/or clients by adding a new `snapshot` config block to the `sync` configurations.
