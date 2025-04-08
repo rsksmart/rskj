@@ -60,7 +60,11 @@ class BridgeSupportSvpTest {
     private static final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainNetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainNetConstants.getFederationConstants();
-
+    private static final List<Coin> svpFundTxOutpointsValues = Arrays.asList(
+        Coin.valueOf(1_000_000),
+        Coin.valueOf(500_000),
+        Coin.valueOf(300_000)
+    );
     private static final Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
     private static final Coin totalValueSentToProposedFederation = svpFundTxOutputsValue.multiply(2);
     private static final Coin feePerKb = Coin.valueOf(1000L);
@@ -124,7 +128,11 @@ class BridgeSupportSvpTest {
         activeFederation = FederationTestUtils.getErpFederation(federationMainNetConstants.getBtcParams());
         federationStorageProvider.setNewFederation(activeFederation);
 
-        List<UTXO> activeFederationUTXOs = BitcoinTestUtils.createUTXOs(10, activeFederation.getAddress());
+        List<UTXO> activeFederationUTXOs = Arrays.asList(
+            BitcoinTestUtils.createUTXO(1, 0, svpFundTxOutpointsValues.get(0), activeFederation.getAddress()),
+            BitcoinTestUtils.createUTXO(2, 0, svpFundTxOutpointsValues.get(1), activeFederation.getAddress()),
+            BitcoinTestUtils.createUTXO(3, 0, svpFundTxOutpointsValues.get(2), activeFederation.getAddress())
+        );
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
         proposedFederation = P2shErpFederationBuilder.builder().build();
@@ -389,7 +397,7 @@ class BridgeSupportSvpTest {
             assertTrue(svpFundTxHashUnsigned.isPresent());
             assertSvpFundTxReleaseWasSettled(svpFundTxHashUnsigned.get());
 
-            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - 1);
+            assertActiveFederationUtxosSize(activeFederationUtxosSizeBeforeCreatingFundTx - svpFundTxOutpointsValues.size()); // using all outpoints
 
             assertSvpFundTransactionHasExpectedInputsAndOutputs();
         }
@@ -510,7 +518,7 @@ class BridgeSupportSvpTest {
 
         assertPegoutTxSigHashWasSaved(svpFundTransaction);
         assertLogReleaseRequested(rskTx.getHash(), svpFundTransactionHashUnsigned, totalValueSentToProposedFederation);
-        assertLogPegoutTransactionCreated(svpFundTransaction);
+        assertReleaseTransactionInfoWasProcessed(svpFundTransaction, svpFundTxOutpointsValues);
     }
 
     private void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash) {
@@ -722,7 +730,9 @@ class BridgeSupportSvpTest {
 
             assertSvpFundTxSignedWasRemovedFromStorage();
 
-            assertLogPegoutTransactionCreated(svpSpendTransaction);
+            List<Coin> expectedOutpointsValues =
+                List.of(bridgeMainNetConstants.getSvpFundTxOutputsValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
+            assertReleaseTransactionInfoWasProcessed(svpSpendTransaction, expectedOutpointsValues);
 
             TransactionOutput outputToActiveFed = svpSpendTransaction.getOutput(0);
             assertLogReleaseRequested(rskTx.getHash(), svpSpendTransactionHashUnsigned.get(), outputToActiveFed.getValue());
@@ -1056,7 +1066,7 @@ class BridgeSupportSvpTest {
         }
 
         @Test
-        void registerBtcTransaction_forLegacyPeginFromP2pkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException, PeginInstructionsException {
+        void registerBtcTransaction_forLegacyPeginFromP2pkh_whenWaitingForSvpSpendTx_shouldProcessAndRegisterPegin_shouldNotProcessNorRegisterSpendTx() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
             // arrange
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
@@ -1817,6 +1827,11 @@ class BridgeSupportSvpTest {
         assertEventWasEmittedWithExpectedData(encodedData);
     }
 
+    private void assertReleaseTransactionInfoWasProcessed(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
+        assertLogPegoutTransactionCreated(releaseTransaction);
+        assertReleasesOutpointsValuesWereSaved(releaseTransaction, expectedOutpointsValues);
+    }
+
     private void assertLogPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
         Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
         byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
@@ -1828,6 +1843,21 @@ class BridgeSupportSvpTest {
 
         assertEventWasEmittedWithExpectedTopics(encodedTopics);
         assertEventWasEmittedWithExpectedData(encodedData);
+    }
+
+    private void assertReleasesOutpointsValuesWereSaved(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+        // assert entry was saved in storage
+        byte[] savedReleaseOutpointsValues = repository.getStorageBytes(
+            bridgeContractAddress,
+            getStorageKeyForReleaseOutpointsValues(releaseTransaction.getHash())
+        );
+        assertNotNull(savedReleaseOutpointsValues);
+
+        // assert saved values are the expected ones
+        Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
+        assertTrue(releaseOutpointsValues.isPresent());
+        assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
     }
 
     private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
