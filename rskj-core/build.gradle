@@ -169,6 +169,16 @@ sourceSets {
             srcDirs = ['src/jmh/resources']
         }
     }
+    fuzzTest {
+        java {
+            srcDirs = ['src/fuzzTest/java']
+        }
+        resources {
+            srcDirs = ['src/fuzzTest/resources']
+        }
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
 }
 
 testing {
