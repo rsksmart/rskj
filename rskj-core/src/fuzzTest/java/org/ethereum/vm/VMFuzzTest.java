@@ -16,15 +16,13 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import org.junit.jupiter.api.Tag;
 
 public class VMFuzzTest {
 
