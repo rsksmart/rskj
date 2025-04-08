@@ -525,23 +525,23 @@ task RepositoryFuzzStorageRoot(type: Test) {
  *          MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
  **/
 task runAllFuzzTests {
-    /*
-    dependsOn orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz, PrecompiledContractFuzzIdentityRandom,
-              PrecompiledContractFuzzSha256Random, PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
-              PrecompiledContractFuzzModexpRandom, ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom, GetMultisigScriptHashRandomFuzzExecuteMixed,
-              DeriveExtendedPublicKeyRandomFuzzExecuteRandom, Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
-              AltBN128FuzzAdd, AltBN128FuzzMul, AltBN128FuzzPairing,
-              DiscoveryPacketDecoderFuzzDecode, DiscoveryPacketDecoderFuzzDecode2, DiscoveryPacketDecoderFuzzInput, MessageCodecFuzzMessageCodec,
-              ByteUtilFuzzBUFuzz,
-              BlockDecodingFuzzBlockDecoding, CallContractFuzzContractReturningOne,
-              RLPFuzzDecodeInt, RLPFuzzDecodeEncode, RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
-              RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength, RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt,
-              RLPFuzzEncodeString, RLPFuzzEncodeElement, RLPFuzzEncodeListHeader, RLPFuzzEncodeSet, RLPFuzzEncodeList, RLPFuzzEncodeDecodeByte,
-              RLPFuzzEncodeDecodeShort, RLPFuzzEncodeDecodeInt, RLPFuzzEncodeDecodeString, RLPFuzzEncodeDecodeElement,
-              MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
-     */
-    dependsOn Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
-            MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
+    dependsOn orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz,
+            PrecompiledContractFuzzIdentityRandom, PrecompiledContractFuzzSha256Random,
+            PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
+            PrecompiledContractFuzzModexpRandom, ExtractPublicKeyFromExtendedPublicKeyFuzzExecuteRandom,
+            GetMultisigScriptHashRandomFuzzExecuteMixed, DeriveExtendedPublicKeyRandomFuzzExecuteRandom,
+            Secp256k1ServiceNativeFuzzRecoverFromSignatureRecId, Secp256k1ServiceNativeFuzzRecoverFromSignatureDirectly,
+            AltBN128FuzzAdd, AltBN128FuzzMul, AltBN128FuzzPairing,
+            DiscoveryPacketDecoderFuzzDecode, DiscoveryPacketDecoderFuzzDecode2, DiscoveryPacketDecoderFuzzInput,
+            MessageCodecFuzzMessageCodec, ByteUtilFuzzBUFuzz, BlockDecodingFuzzBlockDecoding,
+            CallContractFuzzContractReturningOne, RLPFuzzDecodeInt, RLPFuzzDecodeEncode,
+            RLPFuzzDecodeBigInteger, RLPFuzzGetNextElementIndex, RLPFuzzFullTraverse, RLPFuzzDecode2,
+            RLPFuzzFirstElement, RLPFuzzDecodeList, RLPFuzzDecode2OneItem, RLPFuzzEncodeLength,
+            RLPFuzzEncodeByte, RLPFuzzEncodeShort, RLPFuzzEncodeInt, RLPFuzzEncodeString,
+            RLPFuzzEncodeElement, RLPFuzzEncodeListHeader, RLPFuzzEncodeSet, RLPFuzzEncodeList,
+            RLPFuzzEncodeDecodeByte, RLPFuzzEncodeDecodeShort, RLPFuzzEncodeDecodeInt,
+            RLPFuzzEncodeDecodeString, RLPFuzzEncodeDecodeElement, MutableTrieCacheFuzzPuts,
+            RepositoryFuzzStorageRoot
 
     outputs.upToDateWhen { false }
 
