@@ -2,13 +2,12 @@ package co.rsk.peg.union;
 
 import org.ethereum.vm.DataWord;
 
-public enum UnionStorageIndexKey {
-    UNION_BRIDGE_CONTRACT_ADDRESS("unionBridgeContractAddress")
-    ;
+public enum UnionBridgeStorageIndexKey {
+    UNION_BRIDGE_CONTRACT_ADDRESS("unionBridgeContractAddress");
 
     private final String key;
 
-    UnionStorageIndexKey(String key) {
+    UnionBridgeStorageIndexKey(String key) {
         this.key = key;
     }
 
