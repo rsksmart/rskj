@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
-import co.rsk.peg.PegUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
@@ -271,6 +270,33 @@ class BitcoinUtilsTest {
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
+
+        // Act
+        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
+
+        // Assert
+        assertTrue(redeemScriptFromInput.isPresent());
+        assertEquals(redeemScript, redeemScriptFromInput.get());
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTxWithChange_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Script emptyScript = new Script(new byte[]{});
+        Script redeemScript = segwitCompatibleFederation.getRedeemScript();
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+
+        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(redeemScript);
+        btcTx.setWitness(FIRST_INPUT_INDEX, witness);
+
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+        btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
+        btcTx.addOutput(minimumPegoutTxValue, segwitCompatibleFederation.getAddress());
 
         // Act
         Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
