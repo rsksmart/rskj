@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -10,17 +11,17 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.trie.Trie;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
@@ -167,5 +168,30 @@ public final class BridgeSupportTestUtil {
 
     public static DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
         return RELEASES_OUTPOINTS_VALUES.getCompoundKey("-", releaseTxHash.toString());
+    }
+
+    public static PartialMerkleTree createValidPmtToRegisterTransaction(
+        BridgeConstants bridgeConstants,
+        BtcTransaction btcTx,
+        int btcBlockToRegisterHeight,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws Exception {
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), networkParameters);
+        var chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
+        return pmtWithTransactions;
+    }
+
+    public static BtcTransaction getReleaseFromPegoutsWFC(BridgeStorageProvider bridgeStorageProvider) throws IOException {
+        // we assume that the only present release is the expected one
+        PegoutsWaitingForConfirmations pegoutsWFC = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWFCEntries = pegoutsWFC.getEntries();
+        assertEquals(1, pegoutsWFCEntries.size());
+        Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutsWFCEntries.iterator();
+        PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
+
+        return pegoutEntry.getBtcTransaction();
     }
 }
