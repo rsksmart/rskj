@@ -99,6 +99,14 @@ jobs:
           path: |
             rskj-core/build/reports/
 
+      - name: Upload HTML Test Report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
+        with:
+          name: smell-test-html-test-report
+          path: |
+            rskj-core/build/reports/
+
       - name: Run SonarQube analysis
         env:
           GH_EVENT: ${{ github.event_name }}
@@ -259,6 +267,14 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: test-reports
+          path: |
+            rskj-core/build/reports/
+
+      - name: Upload HTML Test Report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
+        with:
+          name: unit-tests-java17-html-test-report
           path: |
             rskj-core/build/reports/
 
