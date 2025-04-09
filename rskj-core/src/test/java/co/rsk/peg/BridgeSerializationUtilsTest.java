@@ -97,7 +97,7 @@ class BridgeSerializationUtilsTest {
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
 
 
-    private static Stream<Arguments> provideRskAddresses() {
+    private static Stream<Arguments> validRskAddressesProvider() {
         return Stream.of(
             Arguments.of(TestUtils.generateAddress("address1")),
             Arguments.of(TestUtils.generateAddress("address2")),
@@ -106,7 +106,7 @@ class BridgeSerializationUtilsTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideRskAddresses")
+    @MethodSource("validRskAddressesProvider")
     void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
         // Act
         byte[] actualSerializedAddress = BridgeSerializationUtils.serializeRskAddress(address);
@@ -114,6 +114,7 @@ class BridgeSerializationUtilsTest {
 
         // Assert
         assertNotNull(actualSerializedAddress);
+        assertNotNull(actualDeserializedAddress);
         assertEquals(address, actualDeserializedAddress);
     }
 
