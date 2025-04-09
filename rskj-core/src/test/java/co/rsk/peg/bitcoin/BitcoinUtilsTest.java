@@ -366,6 +366,32 @@ class BitcoinUtilsTest {
         assertEquals(anotherRedeemScript, scriptSecondInput.get());
     }
 
+    @Test
+    void extractRedeemScriptFromInput_forAMigrationTxWithP2shAndP2shP2wshInput_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Script p2shP2wshRedeemScript = retiringFederation.getRedeemScript();
+        Script emptyScript = new Script(new byte[]{});
+        migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(p2shP2wshRedeemScript);
+        migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
+
+        Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        Address activeFederationAddress = activeFederation.getAddress();
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+
+        // Act
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(migrationTx, 0);
+
+        // Assert
+        assertTrue(redeemScript.isPresent());
+        assertEquals(p2shP2wshRedeemScript, redeemScript.get());
+    }
+
     @ParameterizedTest
     @MethodSource("p2pkhArgProvider")
     void extractRedeemScriptFromInput_no_redeemScripts(String btcTxHex) {
