@@ -16,29 +16,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.metrics.profilers;
+package co.rsk.metrics.profilers.impl;
 
-import co.rsk.metrics.profilers.impl.DisabledProfiler;
-
-import javax.annotation.Nonnull;
-import java.util.Objects;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
+import co.rsk.metrics.profilers.Profiler;
 
 /**
- * ProfilerFactory is used to get the configured Profiler instance.
- * Only one profiler can be defined, once a profiler is set, it cannot be changed.
- * If a profiler isn't configured, the DummyProfiler will be set upon the first request for the instance.
+ * A DisabledProfiler has no logic, it does not perform any profiling. It can be used as the default Profiler implementation
  */
-public final class ProfilerFactory {
+public final class DisabledProfiler implements Profiler {
 
-    private static Profiler INSTANCE = DisabledProfiler.INSTANCE;
+    public static final DisabledProfiler INSTANCE = new DisabledProfiler();
 
-    private ProfilerFactory() { /* hidden */ }
+    private DisabledProfiler() { /* hidden */ }
 
-    public static void configure(@Nonnull Profiler profiler) {
-        INSTANCE = Objects.requireNonNull(profiler);
+    @Override
+    public Metric start(MetricKind kind) {
+        return null;
     }
 
-    public static Profiler getInstance() {
-        return INSTANCE;
+    @Override
+    public void stop(Metric metric) {
+        // ignore
     }
 }
