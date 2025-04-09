@@ -281,6 +281,33 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTx_withMultiplePegInsAndPegOuts_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Script emptyScript = new Script(new byte[]{});
+        Script redeemScript = segwitCompatibleFederation.getRedeemScript();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+
+        int numberOfInputAndOutputs = 3;
+        for (int i = 0; i < numberOfInputAndOutputs; i++) {
+            btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex++, emptyScript);
+            TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(redeemScript);
+            btcTx.setWitness(i, witness);
+            btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
+        }
+
+        // Act & Assert
+        for (int i = 0; i < numberOfInputAndOutputs; i++) {
+            Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, i);
+            assertTrue(redeemScriptFromInput.isPresent());
+            assertEquals(redeemScript, redeemScriptFromInput.get());
+        }
+    }
+
+    @Test
     void extractRedeemScriptFromInput_forTxWithP2shAndP2shP2wshInputs_shouldExtractThemProperly() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
