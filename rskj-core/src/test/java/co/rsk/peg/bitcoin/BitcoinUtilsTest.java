@@ -350,7 +350,7 @@ class BitcoinUtilsTest {
 
         int numberOfInputAndOutputs = 3;
         for (int i = 0; i < numberOfInputAndOutputs; i++) {
-            btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex++, emptyScript);
+            btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
             TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(redeemScript);
             btcTx.setWitness(i, witness);
             btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
