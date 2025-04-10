@@ -237,7 +237,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void extractRedeemScriptFromInput_forP2shP2wshTx_withInvalidRedeemScript_shouldReturnEmpty() {
+    void extractRedeemScriptFromInput_forP2shP2wshInput_withInvalidRedeemScript_shouldReturnEmpty() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
