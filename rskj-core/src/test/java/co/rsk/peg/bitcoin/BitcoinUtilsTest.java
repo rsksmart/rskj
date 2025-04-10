@@ -405,10 +405,10 @@ class BitcoinUtilsTest {
         int outputIndex = 0;
         int nHash = 0;
         Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Script p2shP2wshRedeemScript = retiringFederation.getRedeemScript();
+        Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
         migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(p2shP2wshRedeemScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(retiringFedRedeemScript);
         migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Federation activeFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -420,7 +420,7 @@ class BitcoinUtilsTest {
 
         // Assert
         assertTrue(redeemScript.isPresent());
-        assertEquals(p2shP2wshRedeemScript, redeemScript.get());
+        assertEquals(retiringFedRedeemScript, redeemScript.get());
     }
 
     @ParameterizedTest
