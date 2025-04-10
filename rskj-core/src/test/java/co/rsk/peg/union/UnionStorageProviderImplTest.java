@@ -17,8 +17,7 @@ import org.junit.jupiter.api.Test;
 
 class UnionStorageProviderImplTest {
 
-    private StorageAccessor mockStorageAccessor;
-    private UnionBridgeStorageProviderImpl unionBridgeStorageProviderUsingMockStorage;
+
 
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
@@ -27,9 +26,6 @@ class UnionStorageProviderImplTest {
     void setUp() {
         storageAccessor = new InMemoryStorage();
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
-
-        mockStorageAccessor = mock(StorageAccessor.class);
-        unionBridgeStorageProviderUsingMockStorage = new UnionBridgeStorageProviderImpl(mockStorageAccessor);
     }
 
     @Test
@@ -100,8 +96,11 @@ class UnionStorageProviderImplTest {
         unionBridgeStorageProvider.save();
 
         // Assert
-        verify(mockStorageAccessor, never())
-            .saveToRepository(any(), any(), any());
+        RskAddress retrievedAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        assertNull(retrievedAddress);
     }
 
     @Test
@@ -111,25 +110,32 @@ class UnionStorageProviderImplTest {
         unionBridgeStorageProvider.save();
 
         // Assert
-        verify(mockStorageAccessor, never())
-            .saveToRepository(any(), any(), any());
+        RskAddress retrievedAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        assertNull(retrievedAddress);
     }
 
     @Test
     void setAddress_whenAddressSet_shouldNotStore() {
-        // Arrange
-        RskAddress rskAddress = TestUtils.generateAddress("address");
-
         // Act
-        unionBridgeStorageProvider.setAddress(rskAddress);
+        unionBridgeStorageProvider.setAddress(TestUtils.generateAddress("address"));
 
         // Assert
-        verify(mockStorageAccessor, never())
-            .saveToRepository(any(), any(), any());
+        RskAddress retrievedAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        assertNull(retrievedAddress);
     }
 
     @Test
     void save_whenNoAddressSet_shouldNotStoreAnything() {
+        // Arrange
+        StorageAccessor mockStorageAccessor = mock(StorageAccessor.class);
+        UnionBridgeStorageProviderImpl unionBridgeStorageProviderUsingMockStorage = new UnionBridgeStorageProviderImpl(mockStorageAccessor);
+
         // Act
         unionBridgeStorageProviderUsingMockStorage.save();
 
