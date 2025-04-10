@@ -1938,6 +1938,7 @@ public class BridgeSupport {
 
             Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(btcTx, i);
             if (redeemScriptOpt.isEmpty()) {
+                logger.debug("[sign] Input {} of tx {} does not have a redeem script.", i, releaseCreationRskTxHash);
                 break;
             }
             Script redeemScript = redeemScriptOpt.get();
