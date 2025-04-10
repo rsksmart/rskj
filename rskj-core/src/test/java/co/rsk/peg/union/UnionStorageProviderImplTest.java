@@ -1,6 +1,10 @@
 package co.rsk.peg.union;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
@@ -123,6 +127,10 @@ class UnionStorageProviderImplTest {
 
     @Test
     void save_whenNoAddressSet_shouldNotStoreAnything() {
+        // Arrange
+        StorageAccessor mockStorageAccessor = mock(StorageAccessor.class);
+        UnionBridgeStorageProviderImpl unionBridgeStorageProviderUsingMockStorage = new UnionBridgeStorageProviderImpl(mockStorageAccessor);
+
         // Act
         unionBridgeStorageProvider.save();
 
