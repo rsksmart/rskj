@@ -308,7 +308,7 @@ class BitcoinUtilsTest {
 
 
     @Test
-    void extractRedeemScriptFromInput_withAMigrationTxWithMultipleP2shAndP2shP2wshInputs_shouldExtractThemProperly() {
+    void extractRedeemScriptFromInput_withAMigrationTxWithMultipleP2shP2wshInputs_shouldExtractThemProperly() {
         // Arrange
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
