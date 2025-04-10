@@ -398,7 +398,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void extractRedeemScriptFromInput_forAMigrationTxWithP2shAndP2shP2wshInput_shouldExtractThemProperly() {
+    void extractRedeemScriptFromInput_forAMigrationTxWithP2shP2wshInput_shouldExtractItProperly() {
         // Arrange
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
@@ -411,7 +411,7 @@ class BitcoinUtilsTest {
         TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(p2shP2wshRedeemScript);
         migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
 
-        Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().build();
         Address activeFederationAddress = activeFederation.getAddress();
         migrationTx.addOutput(Coin.COIN, activeFederationAddress);
 
