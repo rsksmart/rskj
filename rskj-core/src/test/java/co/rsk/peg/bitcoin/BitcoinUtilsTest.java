@@ -405,7 +405,8 @@ class BitcoinUtilsTest {
 
         int outputIndex = 0;
         int nHash = 0;
-        Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
+        List<BtcECKey> newFederationMemberKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01"}, true);
+        Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(newFederationMemberKey).build();
         Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
         migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
