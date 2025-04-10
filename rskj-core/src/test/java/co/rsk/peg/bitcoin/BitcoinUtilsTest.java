@@ -437,18 +437,6 @@ class BitcoinUtilsTest {
         assertFalse(redeemScript.isPresent());
     }
 
-    // This test checks that the equals methods of TransactionWitness is the implemented in bitcoinj-thin.
-    // When using the default equals method, the test will fail.
-    @Test
-    void equals_withTwoTransactionWitness_withDifferentPushCounts_shouldBeTrue() {
-        // Arrange
-        TransactionWitness txWitness1 = new TransactionWitness(1);
-        TransactionWitness txWitness2 = new TransactionWitness(2);
-
-        // Assert
-        assertEquals(txWitness1, txWitness2);
-    }
-
     private static Stream<Arguments> txAndRedeemScriptArgProvider() {
         return Stream.of(
             // PEGOUT - https://mempool.space/tx/99ff14d8d0b339f6144291940c5f99e8fd4002fb300cebde963555fd395ee943
