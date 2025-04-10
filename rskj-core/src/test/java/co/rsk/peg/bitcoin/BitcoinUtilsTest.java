@@ -314,25 +314,26 @@ class BitcoinUtilsTest {
 
         int outputIndex = 0;
         Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Script p2shP2wshRedeemScript = retiringFederation.getRedeemScript();
+        Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
 
-        Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().build();
         Address activeFederationAddress = activeFederation.getAddress();
 
         int numberOfInputAndOutputs = 3;
         for (int i = 0; i < numberOfInputAndOutputs; i++) {
-            migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex++, emptyScript);
-            TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(p2shP2wshRedeemScript);
+            migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
+            TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(retiringFedRedeemScript);
             migrationTx.setWitness(i, witness);
-            migrationTx.addOutput(Coin.COIN, activeFederationAddress);
         }
+
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
 
         // Act & Assert
         for (int i = 0; i < numberOfInputAndOutputs; i++) {
             Optional<Script> redeemScript = extractRedeemScriptFromInput(migrationTx, i);
             assertTrue(redeemScript.isPresent());
-            assertEquals(p2shP2wshRedeemScript, redeemScript.get());
+            assertEquals(retiringFedRedeemScript, redeemScript.get());
         }
     }
 
