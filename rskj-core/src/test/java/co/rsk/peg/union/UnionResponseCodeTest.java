@@ -24,12 +24,6 @@ class UnionResponseCodeTest {
     }
 
     @Test
-    void getCode_whenEnvironmentDisabled_ok() {
-        // Arrange
-        Assertions.assertEquals(-2, UnionResponseCode.ENVIRONMENT_DISABLED.getCode());
-    }
-
-    @Test
     void getCode_whenInvalidValue_ok() {
         // Arrange
         Assertions.assertEquals(-2, UnionResponseCode.INVALID_VALUE.getCode());
@@ -38,12 +32,18 @@ class UnionResponseCodeTest {
     @Test
     void getCode_whenAlreadyPaused_ok() {
         // Arrange
-        Assertions.assertEquals(-2, UnionResponseCode.ALREADY_PAUSED.getCode());
+        Assertions.assertEquals(-3, UnionResponseCode.ALREADY_PAUSED.getCode());
     }
 
     @Test
     void getCode_whenAlreadyUnpaused_ok() {
         // Arrange
-        Assertions.assertEquals(-2, UnionResponseCode.ALREADY_UNPAUSED.getCode());
+        Assertions.assertEquals(-4, UnionResponseCode.ALREADY_UNPAUSED.getCode());
+    }
+
+    @Test
+    void getCode_whenEnvironmentDisabled_ok() {
+        // Arrange
+        Assertions.assertEquals(-5, UnionResponseCode.ENVIRONMENT_DISABLED.getCode());
     }
 }
