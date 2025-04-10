@@ -21,7 +21,6 @@ package co.rsk.net.sync;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
