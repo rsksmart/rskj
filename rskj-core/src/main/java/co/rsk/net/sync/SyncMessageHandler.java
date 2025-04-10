@@ -44,16 +44,13 @@ public abstract class SyncMessageHandler implements Runnable {
 
     private final String name;
 
-    private final Integer maxSenderJobs;
-
     private final BlockingQueue<Job> jobQueue;
 
     private final Listener listener;
 
-    protected SyncMessageHandler(String name, BlockingQueue<Job> jobQueue, Integer maxSenderJobs, Listener listener) {
+    protected SyncMessageHandler(String name, BlockingQueue<Job> jobQueue, Listener listener) {
         this.name = name;
         this.jobQueue = jobQueue;
-        this.maxSenderJobs = maxSenderJobs;
         this.listener = listener;
     }
 
@@ -74,16 +71,6 @@ public abstract class SyncMessageHandler implements Runnable {
                 job = jobQueue.take();
 
                 metric = profiler.start(job.getMetricKind());
-
-                if (maxSenderJobs != null) {
-                    Peer sender = job.getSender();
-                    NodeID senderId = sender.getPeerNodeID();
-                    long jobCount = 1 + jobQueue.stream().filter(j -> j.getSender().getPeerNodeID().equals(senderId)).count();
-                    if (jobCount > maxSenderJobs) {
-                        logger.warn("Too many jobs: [{}] from sender: [{}]. Skipping job of type: [{}]", jobCount, sender, job.getMsgType());
-                        continue;
-                    }
-                }
 
                 MDC.put(QUEUE_NAME, name);
                 processJob(job);

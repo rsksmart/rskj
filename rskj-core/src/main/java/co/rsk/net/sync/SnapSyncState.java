@@ -41,9 +41,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
-import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
-import static co.rsk.net.sync.SnapSyncRequestManager.SendRequestException;
+import static co.rsk.net.sync.SnapSyncRequestManager.*;
 
 public class SnapSyncState extends BaseSyncState {
 
@@ -98,7 +96,7 @@ public class SnapSyncState extends BaseSyncState {
         this.snapRequestManager = snapRequestManager;
         this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
-        this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, null, listener) {
+        this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
 
             @Override
             public boolean isRunning() {

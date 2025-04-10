@@ -44,7 +44,7 @@ class SyncMessageHandlerTest {
     @BeforeEach
     void setUp() {
         jobQueue = new LinkedBlockingQueue<>();
-        thread = new Thread(new SyncMessageHandler("SNAP requests", jobQueue, null, listener) {
+        thread = new Thread(new SyncMessageHandler("SNAP requests", jobQueue, listener) {
 
             @Override
             public boolean isRunning() {

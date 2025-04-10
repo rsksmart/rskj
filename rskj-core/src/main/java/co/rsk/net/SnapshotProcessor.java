@@ -49,6 +49,7 @@ import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.*;
@@ -92,7 +93,7 @@ public class SnapshotProcessor implements InternalService {
     // flag for parallel requests
     private final boolean parallel;
 
-    private final BlockingQueue<SyncMessageHandler.Job> requestQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<SyncMessageHandler.Job> requestQueue;
 
     private volatile Boolean isRunning;
     private final Thread thread;
@@ -145,7 +146,20 @@ public class SnapshotProcessor implements InternalService {
 
         this.checkHistoricalHeaders = checkHistoricalHeaders;
         this.parallel = isParallelEnabled;
-        this.thread = new Thread(new SyncMessageHandler("SNAP/server", requestQueue, maxSenderRequests, listener) {
+        this.requestQueue = new LinkedBlockingQueue<>() {
+            @Override
+            public boolean offer(@Nonnull SyncMessageHandler.Job job) {
+                Peer sender = job.getSender();
+                NodeID senderId = sender.getPeerNodeID();
+                long jobCount = this.stream().filter(j -> j.getSender().getPeerNodeID().equals(senderId)).count();
+                if (jobCount > maxSenderRequests) {
+                    logger.warn("Too many jobs: [{}] from sender: [{}]. Skipping job of type: [{}]", jobCount, sender, job.getMsgType());
+                    return false;
+                }
+                return super.offer(job);
+            }
+        };
+        this.thread = new Thread(new SyncMessageHandler("SNAP/server", this.requestQueue, listener) {
 
             @Override
             public boolean isRunning() {
@@ -207,17 +221,12 @@ public class SnapshotProcessor implements InternalService {
             return;
         }
 
-        try {
-            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATUS_REQUEST) {
-                @Override
-                public void run() {
-                    processSnapStatusRequestInternal(sender, requestMessage);
-                }
-            });
-        } catch (InterruptedException e) {
-            logger.warn("SnapStatusRequestMessage processing was interrupted", e);
-            Thread.currentThread().interrupt();
-        }
+        offerJob(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATUS_REQUEST) {
+            @Override
+            public void run() {
+                processSnapStatusRequestInternal(sender, requestMessage);
+            }
+        });
     }
 
     void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
@@ -438,17 +447,12 @@ public class SnapshotProcessor implements InternalService {
             return;
         }
 
-        try {
-            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_BLOCKS_REQUEST) {
-                @Override
-                public void run() {
-                    processSnapBlocksRequestInternal(sender, requestMessage);
-                }
-            });
-        } catch (InterruptedException e) {
-            logger.warn("SnapBlocksRequestMessage processing was interrupted", e);
-            Thread.currentThread().interrupt();
-        }
+        offerJob(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_BLOCKS_REQUEST) {
+            @Override
+            public void run() {
+                processSnapBlocksRequestInternal(sender, requestMessage);
+            }
+        });
     }
 
     void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
@@ -530,17 +534,12 @@ public class SnapshotProcessor implements InternalService {
             return;
         }
 
-        try {
-            requestQueue.put(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATE_CHUNK_REQUEST) {
-                @Override
-                public void run() {
-                    processStateChunkRequestInternal(sender, requestMessage);
-                }
-            });
-        } catch (InterruptedException e) {
-            logger.warn("SnapStateChunkRequestMessage processing was interrupted", e);
-            Thread.currentThread().interrupt();
-        }
+        offerJob(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATE_CHUNK_REQUEST) {
+            @Override
+            public void run() {
+                processStateChunkRequestInternal(sender, requestMessage);
+            }
+        });
     }
 
     void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
@@ -746,6 +745,13 @@ public class SnapshotProcessor implements InternalService {
             requestStateChunk(state, peer, task.getFrom(), task.getBlockNumber(), chunkSize);
         } else {
             logger.warn("No more chunk request tasks.");
+        }
+    }
+
+    private void offerJob(SyncMessageHandler.Job job) {
+        boolean offered = requestQueue.offer(job);
+        if (!offered) {
+            logger.warn("Processing of {} message was rejected", job.getMsgType());
         }
     }
 
