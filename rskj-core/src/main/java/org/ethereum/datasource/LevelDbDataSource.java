@@ -69,7 +69,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_INIT);
         try {
             logger.debug("~> LevelDbDataSource.init(): {}", name);
 
@@ -137,7 +137,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -177,7 +177,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -198,7 +198,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void delete(byte[] key) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -223,7 +223,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public Set<ByteArrayWrapper> keys() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -253,7 +253,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
             profiler.stop(metric);
             throw new IllegalArgumentException("Cannot update null values");
@@ -313,7 +313,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void close() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_CLOSE);
+        Metric metric = profiler.start(Profiler.MetricKind.DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
             if (!isAlive()) {

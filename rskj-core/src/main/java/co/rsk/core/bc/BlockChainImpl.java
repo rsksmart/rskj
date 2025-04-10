@@ -185,7 +185,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
+        Metric metric = profiler.start(Profiler.MetricKind.BEFORE_BLOCK_EXEC);
 
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
@@ -253,7 +253,7 @@ public class BlockChainImpl implements Blockchain {
 
             logger.trace("execute done");
 
-            metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
+            metric = profiler.start(Profiler.MetricKind.AFTER_BLOCK_EXEC);
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
 
             logger.trace("validate done");
@@ -280,7 +280,7 @@ public class BlockChainImpl implements Blockchain {
             profiler.stop(metric);
         }
 
-        metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
+        metric = profiler.start(Profiler.MetricKind.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
         BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
         logger.trace("TD: updated to {}", totalDifficulty);
@@ -515,7 +515,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
+        Metric metric = profiler.start(Profiler.MetricKind.BLOCK_VALIDATION);
         boolean validation =  blockValidator.isValid(block);
         profiler.stop(metric);
         return validation;

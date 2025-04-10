@@ -161,7 +161,7 @@ public class BlockExecutor {
     }
 
     private void fill(Block block, BlockResult result) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
+        Metric metric = profiler.start(Profiler.MetricKind.FILLING_EXECUTED_BLOCK);
         BlockHeader header = block.getHeader();
         block.setTransactionsList(result.getExecutedTransactions());
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
@@ -199,7 +199,7 @@ public class BlockExecutor {
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     public boolean validate(Block block, BlockResult result) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
+        Metric metric = profiler.start(Profiler.MetricKind.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
@@ -343,7 +343,7 @@ public class BlockExecutor {
         // to connect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+        Metric metric = profiler.start(Profiler.MetricKind.BLOCK_EXECUTE);
 
         Repository track = repositoryLocator.startTrackingAt(parent);
 
@@ -442,7 +442,7 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+        Metric metric = profiler.start(Profiler.MetricKind.BLOCK_EXECUTE);
 
         ReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
@@ -609,7 +609,7 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+        Metric metric = profiler.start(Profiler.MetricKind.BLOCK_EXECUTE);
 
         IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
