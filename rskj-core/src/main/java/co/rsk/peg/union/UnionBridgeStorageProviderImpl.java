@@ -9,9 +9,10 @@ import java.util.Optional;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
 
+    private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
+
     private final StorageAccessor bridgeStorageAccessor;
 
-    private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
     private RskAddress unionBridgeAddress;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
