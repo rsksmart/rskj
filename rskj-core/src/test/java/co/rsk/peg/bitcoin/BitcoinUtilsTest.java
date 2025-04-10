@@ -338,7 +338,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTx_withMultiplePegInsAndPegOuts_shouldExtractThemProperly() {
+    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTx_withMultipleInputsAndOutputs_shouldExtractThemProperly() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
