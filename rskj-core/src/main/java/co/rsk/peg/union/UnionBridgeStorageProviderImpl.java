@@ -9,9 +9,10 @@ import java.util.Optional;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
 
+    private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
+
     private final StorageAccessor bridgeStorageAccessor;
 
-    private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
     private RskAddress unionBridgeAddress;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
@@ -20,7 +21,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public void save() {
-        if (isNull(unionBridgeAddress) || unionBridgeAddress.equals(EMPTY_ADDRESS)) {
+        if (isNull(unionBridgeAddress)) {
             return;
         }
 
@@ -33,6 +34,10 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public void setAddress(RskAddress address) {
+        if (address != null && address.equals(EMPTY_ADDRESS)) {
+            throw new IllegalArgumentException("Union Bridge address cannot be empty");
+        }
+
         this.unionBridgeAddress = address;
     }
 
