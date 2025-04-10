@@ -312,16 +312,17 @@ class BitcoinUtilsTest {
         // Arrange
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
-        int outputIndex = 0;
         Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
         Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
 
-        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+        List<BtcECKey> newFederationMemberKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01"}, true);
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(newFederationMemberKey).build();
         Address activeFederationAddress = activeFederation.getAddress();
 
-        int numberOfInputAndOutputs = 3;
-        for (int i = 0; i < numberOfInputAndOutputs; i++) {
+        int numberOfInputs = 3;
+        int outputIndex = 0;
+        for (int i = 0; i < numberOfInputs; i++) {
             migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
             TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(retiringFedRedeemScript);
             migrationTx.setWitness(i, witness);
@@ -330,7 +331,7 @@ class BitcoinUtilsTest {
         migrationTx.addOutput(Coin.COIN, activeFederationAddress);
 
         // Act & Assert
-        for (int i = 0; i < numberOfInputAndOutputs; i++) {
+        for (int i = 0; i < numberOfInputs; i++) {
             Optional<Script> redeemScript = extractRedeemScriptFromInput(migrationTx, i);
             assertTrue(redeemScript.isPresent());
             assertEquals(retiringFedRedeemScript, redeemScript.get());
