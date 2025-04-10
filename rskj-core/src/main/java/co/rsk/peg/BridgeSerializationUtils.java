@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -74,6 +75,17 @@ public class BridgeSerializationUtils {
         return new Keccak256(rskTxHashSerialized);
     }
 
+    public static byte[] serializeOutpointsValues(List<Coin> outpointsValues) {
+        return UtxoUtils.encodeOutpointValues(outpointsValues);
+    }
+
+    public static List<Coin> deserializeOutpointsValues(byte[] serializedOutpointsValues) {
+        if (isNull(serializedOutpointsValues)) {
+            throw new IllegalArgumentException("Serialized outpoints values cannot be null.");
+        }
+        return UtxoUtils.decodeOutpointValues(serializedOutpointsValues);
+    }
+
     public static byte[] serializeBtcTransaction(BtcTransaction btcTransaction) {
         return RLP.encodeElement(btcTransaction.bitcoinSerialize());
     }
@@ -89,7 +101,8 @@ public class BridgeSerializationUtils {
     private static BtcTransaction deserializeBtcTransaction(
         byte[] serializedTx,
         NetworkParameters networkParameters,
-        boolean txHasInputs) {
+        boolean txHasInputs
+    ) {
 
         if (serializedTx == null || serializedTx.length == 0) {
             return null;
@@ -108,7 +121,8 @@ public class BridgeSerializationUtils {
     private static BtcTransaction deserializeBtcTransactionFromRawTx(
         byte[] rawTx,
         NetworkParameters networkParameters,
-        boolean txHasInputs) {
+        boolean txHasInputs
+    ) {
 
         if (!txHasInputs) {
             BtcTransaction tx = new BtcTransaction(networkParameters);

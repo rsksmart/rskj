@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSerializationUtils.deserializeRskTxHash;
+import static co.rsk.peg.BridgeSerializationUtils.*;
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -314,6 +314,25 @@ class BridgeSerializationUtilsTest {
     void deserializeRskTxHash_withNullValue_throwsIllegalArgumentException() {
         // act & assert
         assertThrows(IllegalArgumentException.class, () -> deserializeRskTxHash(null));
+    }
+
+    @Test
+    void serializeAndDeserializeOutpointsValues_shouldReturnExpectedValues() {
+        // arrange
+        List<Coin> outpointsValues = Arrays.asList(Coin.valueOf(12345), Coin.SATOSHI, Coin.COIN);
+
+        // Act
+        byte[] serializedOutpointsValues = serializeOutpointsValues(outpointsValues);
+        List<Coin> deserializedOutpointsValues = deserializeOutpointsValues(serializedOutpointsValues);
+
+        // Assert
+        assertEquals(outpointsValues, deserializedOutpointsValues);
+    }
+
+    @Test
+    void deserializeOutpointsValues_withNullValue_throwsIllegalArgumentException() {
+        // Assert
+        assertThrows(IllegalArgumentException.class, () -> deserializeOutpointsValues(null));
     }
 
     @Test
