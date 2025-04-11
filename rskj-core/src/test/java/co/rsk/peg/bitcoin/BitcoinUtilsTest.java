@@ -1,7 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -267,7 +267,7 @@ class BitcoinUtilsTest {
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(redeemScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
@@ -292,7 +292,7 @@ class BitcoinUtilsTest {
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(redeemScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
@@ -323,7 +323,7 @@ class BitcoinUtilsTest {
         int outputIndex = 0;
         for (int i = 0; i < numberOfInputs; i++) {
             migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
-            TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(retiringFedRedeemScript);
+            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
             migrationTx.setWitness(i, witness);
         }
 
@@ -350,7 +350,7 @@ class BitcoinUtilsTest {
         int numberOfInputAndOutputs = 3;
         for (int i = 0; i < numberOfInputAndOutputs; i++) {
             btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
-            TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(redeemScript);
+            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
             btcTx.setWitness(i, witness);
             btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
         }
@@ -380,7 +380,7 @@ class BitcoinUtilsTest {
         Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(anotherRedeemScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(anotherRedeemScript);
         btcTx.setWitness(1, witness);
 
         // Act
@@ -406,7 +406,7 @@ class BitcoinUtilsTest {
         Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
         migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-        TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(retiringFedRedeemScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
         migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();

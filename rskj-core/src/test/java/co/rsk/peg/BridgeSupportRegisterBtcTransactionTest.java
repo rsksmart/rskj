@@ -2,7 +2,7 @@ package co.rsk.peg;
 
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.*;
 import static co.rsk.peg.utils.NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -2402,7 +2402,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
-        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
         btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
 
         createPmtAndMockBlockStore(btcTransaction, height);
@@ -2486,7 +2486,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
-        TransactionWitness txWitness = createBaseWitnessThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
         btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
 
         createPmtAndMockBlockStore(btcTransaction, height);
