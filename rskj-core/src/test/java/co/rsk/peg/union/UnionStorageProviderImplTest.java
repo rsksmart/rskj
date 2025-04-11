@@ -96,7 +96,7 @@ class UnionStorageProviderImplTest {
     void setAddress_whenNull_shouldNotStoreNullValue() {
         // Act
         unionBridgeStorageProvider.setAddress(null);
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.save(allActivations);
 
         // Assert
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
@@ -112,7 +112,7 @@ class UnionStorageProviderImplTest {
     @Test
     void setAddress_withoutSaving_shouldNotStore() {
         // Act
-        unionBridgeStorageProvider.setAddress(TestUtils.generateAddress("address"));
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
 
         // Assert
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
@@ -123,6 +123,22 @@ class UnionStorageProviderImplTest {
             BridgeSerializationUtils::deserializeRskAddress
         );
         assertNull(retrievedAddress);
+    }
+
+    @Test
+    void save_whenAddressSetAndBeforeRSKIP502_shouldNotStoreAnything() {
+        // Arrange
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
+
+        // Act
+        unionBridgeStorageProvider.save(lovell700);
+
+        // Assert
+        RskAddress retrievedRskAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        assertNull(retrievedRskAddress);
     }
 
     @Test
@@ -172,7 +188,7 @@ class UnionStorageProviderImplTest {
         assertEquals(newUnionBridgeContractAddress, cachedAddress.get());
 
         // Save the value
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.save(allActivations);
 
         // Create a new instance of the storage provider to retrieve the address from the storage
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
