@@ -47,6 +47,7 @@ class BitcoinUtilsTest {
     private static final BtcTransaction coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a24aa21a9ed4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
 
     private static final  List<BtcECKey> activeFederationMembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true);
+    private static final Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
 
     private boolean isSigHashValid(Sha256Hash sigHash, List<BtcECKey> pubKeys, List<BtcECKey.ECDSASignature> signatures) {
         LinkedList<BtcECKey> keys = new LinkedList<>(pubKeys);
@@ -262,7 +263,6 @@ class BitcoinUtilsTest {
 
         int outputIndex = 0;
         int nHash = 0;
-        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
         Script emptyScript = new Script(new byte[]{});
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
@@ -288,7 +288,6 @@ class BitcoinUtilsTest {
 
         int outputIndex = 0;
         int nHash = 0;
-        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
         Script emptyScript = new Script(new byte[]{});
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
@@ -314,8 +313,7 @@ class BitcoinUtilsTest {
         // Arrange
         BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
 
-        Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
+        Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
 
         Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();
@@ -345,7 +343,6 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
 
         int outputIndex = 0;
-        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
         Script emptyScript = new Script(new byte[]{});
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
@@ -380,7 +377,6 @@ class BitcoinUtilsTest {
 
         nHash++;
         Script emptyScript = new Script(new byte[]{});
-        Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
         Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
@@ -407,8 +403,7 @@ class BitcoinUtilsTest {
         int outputIndex = 0;
         int nHash = 0;
 
-        Federation retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
+        Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
         migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
         TransactionWitness witness = createBaseWitnessThatSpendsFromRedeemScript(retiringFedRedeemScript);
