@@ -65,7 +65,7 @@ public class TrieDTOInOrderRecoverer {
             return false;
         }
         TrieDTO[] nodeArray = allNodes.toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, (t) -> {
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, t -> {
         });
         if (!result.isPresent() || !Arrays.equals(remoteRootHash, result.get().calculateHash())) {
             logger.warn("Root hash does not match! Calculated is present: {}", result.isPresent());
@@ -88,7 +88,7 @@ public class TrieDTOInOrderRecoverer {
     private static TrieDTO fromTrieDTO(TrieDTO result,
                                        Optional<TrieDTO> left,
                                        Optional<TrieDTO> right) {
-        left.ifPresent((leftNode) -> {
+        left.ifPresent(leftNode -> {
             try {
                 Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(leftNode.toMessage()));
                 result.setLeftHash(hash.getBytes());
@@ -96,7 +96,7 @@ public class TrieDTOInOrderRecoverer {
                 logger.error("Error recovering left node", e);
             }
         });
-        right.ifPresent((rightNode) -> {
+        right.ifPresent(rightNode -> {
             Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(rightNode.toMessage()));
             result.setRightHash(hash.getBytes());
         });

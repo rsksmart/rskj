@@ -28,7 +28,6 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class SnapStatusResponseMessage extends MessageWithId {
     private final long id;
@@ -67,8 +66,8 @@ public class SnapStatusResponseMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        List<byte[]> rlpBlocks = this.blocks.stream().map(Block::getEncoded).map(RLP::encode).collect(Collectors.toList());
-        List<byte[]> rlpDifficulties = this.difficulties.stream().map(BlockDifficulty::getBytes).map(RLP::encode).collect(Collectors.toList());
+        List<byte[]> rlpBlocks = this.blocks.stream().map(Block::getEncoded).map(RLP::encode).toList();
+        List<byte[]> rlpDifficulties = this.difficulties.stream().map(BlockDifficulty::getBytes).map(RLP::encode).toList();
         byte[] rlpTrieSize = RLP.encodeBigInteger(BigInteger.valueOf(this.trieSize));
 
         return RLP.encodeList(RLP.encodeList(rlpBlocks.toArray(new byte[][]{})), RLP.encodeList(rlpDifficulties.toArray(new byte[][]{})), rlpTrieSize);

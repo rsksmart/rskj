@@ -216,7 +216,6 @@ public class TrieDTO {
             byte[] value = new byte[remaining];
             srcWrap.get(value);
             result.value = value;
-            //result.source = ArrayUtils.clone(src);
         } catch (IOException e) {
             logger.trace("Error while decoding: {}", e.getMessage());
         }
@@ -417,14 +416,6 @@ public class TrieDTO {
      * Based on {@link Trie:toMessage()}
      */
     public byte[] toMessage() {
-//        ByteBuffer buffer = ByteBuffer.allocate(
-//                1 + // flags
-//                        (this.sharedPrefixPresent ? SharedPathSerializer.calculateVarIntSize(this.pathLength) + this.path.length : 0) +
-//                        serializedLength(leftNodePresent, leftNodeEmbedded, left) +
-//                        serializedLength(rightNodePresent, rightNodeEmbedded, right) +
-//                        ((leftNodePresent || rightNodePresent) ? childrenSize.getSizeInBytes() : 0) +
-//                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : value.length)
-//        );
 
         int sharedPrefixSize = this.sharedPrefixPresent ? SharedPathSerializer.calculateVarIntSize(this.pathLength) + this.path.length : 0;
         int leftNodeSize = serializedLength(leftNodePresent, leftNodeEmbedded, left);

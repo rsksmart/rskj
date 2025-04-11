@@ -50,7 +50,6 @@ public class TrieDTOInOrderIterator implements Iterator<TrieDTO> {
     }
 
     private TrieDTO findByChildrenSize(long offset, TrieDTO nodeDTO, Deque<TrieDTO> visiting) {
-        // TODO poner los nodos padres intermedios en el stack, tenemos que serializarlos para poder validar el chunk completo.
         if (!nodeDTO.isTerminal()) {
 
             if (isLeftNotEmbedded(nodeDTO)){

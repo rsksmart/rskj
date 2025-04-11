@@ -295,7 +295,7 @@ public class SnapshotProcessorTest {
     @Test
     void givenProcessSnapStatusRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
         //given
-        Peer peer = mock(Peer.class);
+        Peer mPeer = mock(Peer.class);
         SnapStatusRequestMessage msg = mock(SnapStatusRequestMessage.class);
         CountDownLatch latch = new CountDownLatch(2);
         doCountDownOnQueueEmpty(listener, latch);
@@ -321,7 +321,7 @@ public class SnapshotProcessorTest {
         underTest.start();
 
         //when
-        underTest.processSnapStatusRequest(peer, msg);
+        underTest.processSnapStatusRequest(mPeer, msg);
 
         //then
         assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -329,14 +329,14 @@ public class SnapshotProcessorTest {
         ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
-        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(mPeer, jobArg.getValue().getSender());
         assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
     void givenProcessSnapBlocksRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
         //given
-        Peer peer = mock(Peer.class);
+        Peer mPeer = mock(Peer.class);
         SnapBlocksRequestMessage msg = mock(SnapBlocksRequestMessage.class);
         CountDownLatch latch = new CountDownLatch(2);
         doCountDownOnQueueEmpty(listener, latch);
@@ -362,7 +362,7 @@ public class SnapshotProcessorTest {
         underTest.start();
 
         //when
-        underTest.processSnapBlocksRequest(peer, msg);
+        underTest.processSnapBlocksRequest(mPeer, msg);
 
         //then
         assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -370,14 +370,14 @@ public class SnapshotProcessorTest {
         ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
-        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(mPeer, jobArg.getValue().getSender());
         assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
     @Test
     void givenProcessStateChunkRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
         //given
-        Peer peer = mock(Peer.class);
+        Peer mPeer = mock(Peer.class);
         SnapStateChunkRequestMessage msg = mock(SnapStateChunkRequestMessage.class);
         CountDownLatch latch = new CountDownLatch(2);
         doCountDownOnQueueEmpty(listener, latch);
@@ -403,7 +403,7 @@ public class SnapshotProcessorTest {
         underTest.start();
 
         //when
-        underTest.processStateChunkRequest(peer, msg);
+        underTest.processStateChunkRequest(mPeer, msg);
 
         //then
         assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -411,7 +411,7 @@ public class SnapshotProcessorTest {
         ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
         verify(listener, times(1)).onJobRun(jobArg.capture());
 
-        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(mPeer, jobArg.getValue().getSender());
         assertEquals(msg.getMessageType(), jobArg.getValue().getMsgType());
     }
 
