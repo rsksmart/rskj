@@ -61,6 +61,8 @@ public interface BlockStore extends RemascCache {
 
     Block getBestBlock();
 
+    BlockDifficulty getTotalDifficultyForBlock(Block block);
+
     /**
      * @return The highest block number stored.
      * @throws IllegalStateException if the blockstore is empty.
