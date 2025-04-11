@@ -29,6 +29,22 @@ jobs:
       - name: Check Docker container built
         run: |
           if [ $(docker inspect -f '{{.State.Running}}' rskj-container) = "true" ]; then
+            max_opportunities=10
+            opportunities=1
+            count=0
+  
+            while [ $count -le 0 ] && [ $opportunities -le $max_opportunities ];
+            do
+              opportunities=$(($opportunities + 1))
+              count=$(docker logs fervent_archimedes 2>&1 | grep -c "IMPORTED_BEST")
+              sleep 5
+            done
+
+            if [ count -le 0 ]; then
+              echo "Container is not importing blocks"
+              exit 1
+            fi
+          
             echo "Container is running properly"
           else
             echo "Container failed to start"
