@@ -9,10 +9,6 @@ on:
       - "docs/**"
     branches:
       - master
-  workflow_dispatch:
-  pull_request:
-    paths:
-      - "docs/**"
 
 permissions: read-all
 
