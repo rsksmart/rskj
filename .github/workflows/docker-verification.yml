@@ -28,9 +28,4 @@ jobs:
 
       - name: Check Docker container built
         run: |
-          if [ $(docker inspect -f '{{.State.Running}}' rskj-container) = "true" ]; then
-            echo "Container is running properly"
-          else
-            echo "Container failed to start"
-            exit 1
-          fi
+          ./validate-docker-container.sh

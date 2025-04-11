@@ -1,11 +1,9 @@
-name: Docker image release
+name: Docker image release for edge from master
 
 on:
   push:
     branches:
       - master
-    tags:
-      - '*'
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -24,17 +22,13 @@ jobs:
         with:
           images: rsksmart/rskj
           tags: |
-            type=ref,event=branch
-            type=ref,event=tag
             type=edge
-            # This is used for generating IRIS-3 out of IRIS-3.x.y.
-            type=match,pattern=(\w+-\d+)\.\d+\.\d+.*,group=1
 
       - name: DockerHub login
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: rmoreliovlabs
+          password: testing123456
 
       - name: Build and push to registry
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 #v6.15.0
