@@ -140,7 +140,7 @@ public class BitcoinTestUtils {
     private static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
-        Script inputRedeemScript = extractRedeemScriptFromInput(input)
+        Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
             .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
 
         Script outputScript = createP2SHOutputScript(inputRedeemScript);
@@ -255,5 +255,21 @@ public class BitcoinTestUtils {
         List<TransactionOutput> outputs = sourceTransaction.getOutputs();
         searchForOutput(outputs, expectedOutputScript)
             .ifPresent(transaction::addInput);
+    }
+
+    public static TransactionWitness createBaseWitnessThatSpendsFromRedeemScript(Script redeemScript) {
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int witnessSize = pushForOpNotif + pushForRedeemScript + redeemScript.getNumberOfSignaturesRequiredToSpend();
+
+        TransactionWitness txWitness = new TransactionWitness(witnessSize);
+
+        for (int i = 0; i < witnessSize - 1; i++) {
+            txWitness.setPush(i, new byte[72]);
+        }
+
+        int redeemScriptIndex = witnessSize - 1;
+        txWitness.setPush(redeemScriptIndex, redeemScript.getProgram());
+        return txWitness;
     }
 }

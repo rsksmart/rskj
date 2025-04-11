@@ -1936,8 +1936,9 @@ public class BridgeSupport {
                 break;
             }
 
-            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(input);
+            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(btcTx, i);
             if (redeemScriptOpt.isEmpty()) {
+                logger.debug("[sign] Couldn't extract redeem script from input {} of tx {}.", i, btcTx.getHash());
                 break;
             }
             Script redeemScript = redeemScriptOpt.get();

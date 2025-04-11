@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -287,7 +288,7 @@ class FederationChangeIT {
         var erpPubKeys = FEDERATION_CONSTANTS.getErpFedPubKeysList();
         var activationDelay = FEDERATION_CONSTANTS.getErpFedActivationDelay();
 
-        return FederationFactory.buildP2shErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shP2wshErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
     }
 
     private int voteToCreatePendingFederation(Transaction tx) {
@@ -452,26 +453,13 @@ class FederationChangeIT {
         assertEventWasEmittedWithExpectedData(encodedData);
     }
 
-    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-        return bridgeEvent.encodeEventData(args);
-    }
-
     private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = logs.stream()
-            .filter(log -> log.getTopics().equals(expectedTopics))
-            .findFirst();
+        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
         assertTrue(topicOpt.isPresent());
     }
 
     private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-        Optional<LogInfo> data = logs.stream()
-            .filter(log -> Arrays.equals(log.getData(), expectedData))
-            .findFirst();
+        Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
     }
     
@@ -1016,9 +1004,12 @@ class FederationChangeIT {
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
 
-            for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
+            List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
+            for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+                TransactionInput input = inputs.get(inputIndex);
+
                 // Each input should contain the right scriptSig
-                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(input).orElseThrow();
+                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(pegoutBtcTransaction, inputIndex).orElseThrow();
 
                 // Get the standard redeem script to compare against, since it could be a flyover redeem script
                 var redeemScriptChunks = ScriptParser.parseScriptProgram(

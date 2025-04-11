@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
@@ -1255,7 +1256,7 @@ class BridgeSupportSvpTest {
                 .build();
             pegin.addInput(BitcoinTestUtils.createHash(1), 0, witnessScript);
 
-            TransactionWitness txWit = new TransactionWitness(2);
+            TransactionWitness txWit = new TransactionWitness(3);
             txWit.setPush(0, new byte[] { 0 });
             txWit.setPush(1, new byte[72]); // push for signatures
             txWit.setPush(2, redeemScript.getProgram());
@@ -1829,26 +1830,13 @@ class BridgeSupportSvpTest {
         assertEventWasEmittedWithExpectedData(encodedData);
     }
 
-    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-        return bridgeEvent.encodeEventData(args);
-    }
-
     private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = logs.stream()
-            .filter(log -> log.getTopics().equals(expectedTopics))
-            .findFirst();
+        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
         assertTrue(topicOpt.isPresent());
     }
 
     private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-        Optional<LogInfo> data = logs.stream()
-            .filter(log -> Arrays.equals(log.getData(), expectedData))
-            .findFirst();
+        Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
     }
 }
