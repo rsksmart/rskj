@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,11 +10,11 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.federation.Federation;
-import co.rsk.peg.federation.P2shErpFederationBuilder;
+import co.rsk.peg.federation.*;
+
 import java.util.*;
 import java.util.stream.Stream;
-import co.rsk.peg.federation.StandardMultiSigFederationBuilder;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -34,8 +35,7 @@ class BitcoinUtilsTest {
 
     private static final ActivationConfig.ForBlock arrowHeadActivations = ActivationConfigsForTest.arrowhead600().forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-
-    private Address destinationAddress;
+    private static final Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
 
     // malformed coinbase tx from testnet: https://mempool.space/testnet/tx/ae0a6c774908d3ddd334d40cc385ef1c2ad7e6381a69058114899f5ce567f26c
     private static final BtcTransaction malFormedTestnetCoinbaseTx = new BtcTransaction(btcTestnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a52534b424c4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
@@ -46,10 +46,8 @@ class BitcoinUtilsTest {
     // witness commitment output script in non-standard format
     private static final BtcTransaction coinbaseTxWithWitnessCommitmentOutputInNonStandardFormat = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff32030a0e250004fee5346404196a763b0cc3dd196400000000000000000a636b706f6f6c0e2f6d696e65642062792072736b2fffffffff039cce2a00000000001976a914ec2f9ffaba0d68ea6bd7c25cedfe2ae710938e6088ac0000000000000000266a24aa21a9ede46b6d3bc71412e8905cedfad91532bdccb693d93a1335fee0b6223a7ed1ee5b00000000000000002a6a24aa21a9ed4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b00392fb10120000000000000000000000000000000000000000000000000000000000000000000000000"));
 
-    @BeforeEach
-    void init() {
-        destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-    }
+    private static final  List<BtcECKey> activeFederationMembersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true);
+    private static final Federation segwitCompatibleFederation = P2shP2wshErpFederationBuilder.builder().build();
 
     private boolean isSigHashValid(Sha256Hash sigHash, List<BtcECKey> pubKeys, List<BtcECKey.ECDSASignature> signatures) {
         LinkedList<BtcECKey> keys = new LinkedList<>(pubKeys);
@@ -94,7 +92,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
         TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
 
-        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(txInput);
+        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
         assertTrue(redeemScriptFromInput.isPresent());
         RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptFromInput.get().getChunks());
         List<BtcECKey> pubKeys = redeemScriptParser.getPubKeys();
@@ -125,7 +123,7 @@ class BitcoinUtilsTest {
 
     @ParameterizedTest
     @MethodSource("p2pkhArgProvider")
-    void getfirstInputSighHash_fail_for_p2pkh_due_to_no_redeem_script(String btcTxHex) {
+    void getFirstInputSighHash_fail_for_p2pkh_due_to_no_redeem_script(String btcTxHex) {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
 
@@ -137,7 +135,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getfirstInputSighHash_fail_for_bech32() {
+    void getFirstInputSighHash_fail_for_bech32() {
         // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"));
         // Act
@@ -151,12 +149,12 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getfirstInputSighHash_p2sh_pegin_v1() {
+    void getFirstInputSighHash_p2sh_pegin_v1() {
         // https://mempool.space/testnet/tx/2d3d0ac33fbcacab56cab594a68f9bd95c4786204e575bfb2297154d68cc115b
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("02000000017a04759c9582155575ca7e9b0549765d324b975501f48c5c3a8416a1226d62bf00000000d900473044022021fbc3bec74c2c65cb8edcebc03c4b7ec56185086fdf9a0f1578ce6e24a2cd570220626c8fcfa71a26365674b226e5cd3c33029b55a7bfe748923e3b773a36d7223401473044022055f9728a0fdc3533af8f4021f25ce78caaf6d76942969c31a860ebc64c2cee80022041c805e53ad25f8f41fe41def5ced4dacc0028d98df655c3b1b08d8e99f2549a01475221027451384fe9d38e1da80f2d50030bcc4264d3cb657165341cf2fdf901236033212102cf8cc726acd796084e77091f448af9bd872ce4736abb05c2ea90635106574e4552aefdffffff0300000000000000001b6a1952534b540162db6c4b118d7259c23692b162829e6bd5e4d5b099de0a000000000017a9141dee6852dffce78d819a6215f33f6876babef5e0871d4238000000000017a9145d6469cc1a459cc9fbb5ac5e2909865f8d3b442d8772c92500"));
         TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
 
-        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(txInput);
+        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
         assertTrue(redeemScriptFromInput.isPresent());
         RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(redeemScriptFromInput.get().getChunks());
         List<BtcECKey> pubKeys = redeemScriptParser.getPubKeys();
@@ -167,13 +165,55 @@ class BitcoinUtilsTest {
 
         // Act
         Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+
         // Assert
         assertTrue(firstInputSigHash.isPresent());
         assertTrue(isSigHashValid(firstInputSigHash.get(), pubKeys, signatures));
     }
 
     @Test
-    void test_getFirstInputSigHash_no_input() {
+    void getFirstInputSigHash_forP2shP2wshTx_withNoRedeemScript_shouldReturnEmpty() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness witness = new TransactionWitness(1);
+        byte[] invalidRedeemScript = new byte[]{0x1};
+        witness.setPush(0, invalidRedeemScript);
+        btcTx.setWitness(0, witness);
+
+        // Act
+        Optional<Sha256Hash> sigHash = getFirstInputSigHash(btcTx);
+
+        // Assert
+        assertFalse(sigHash.isPresent());
+    }
+
+    @Test
+    void getFirstInputSigHash_forP2shP2wshTx_shouldReturnExpectedLegacyTxSigHash() {
+        // https://mempool.space/tx/a4d76b6211b078cbc1d2079002437fcf018cc85cd40dd6195bb0f6b42930b96b
+        // Arrange
+        final byte[] btcTxHex = Hex.decode("02000000000101f547ebc11f4cca193a8fbfdf9eaf5728d1c6770da371f5ada0655d68f23f9cca0000000023220020431ef0e7fb92b803aa735278649879a4ffe79f79eca7733a046d1d97698cac4fffffffff01905f0100000000001976a9140eda35d81e2a8537beebbbcdf63e3483be01269288ac0e004730440220375d5ddad1d329105d5bb2453fd4a57f93e8b864b11519cea4c6932d414236d3022056e9567d5e8fea093cab9d85432007add04eed9019790159f3b644c3b3e690930148304502210095201c22ed71453c89288bbb87e98425e59f90523ffbf8669cf6739cb4d98868022017ba3a6903c6aa4d770643717ed74edcddfda54f60f8825f5cd4ed12d265db64014830450221009d8e509f6f9b22e74401f3aa06df9e212af0708e798d9b8ae9badc725a7f3d890220592d4ac99a951408f5d49a76015f9c5c8e54e34ff32bba2bfeb73ea3b4ebd75d01483045022100a960302593ecae2aba3f41bcc4cda98e2fcf54de4c479440abf002c444b98bb0022055440ae8f2b425e7b2f47847794789c769645af002e8a1084dd59e693a5e04c20147304402200d11ffb6808f6b426aff02e603abfc8eac5b3e74e3b2fb4318d47640692c7b0d0220274929b2f6e583c43358adbde3465ea1254de0abd3787db88039d00dd3d3015e014830450221009681ba08b0c826fff6499c86fd0f38216d0ea36b24d440e4aa3f5598c385370602203e9e0dae5141c1fd8598d0cb42bc44a40dda55a0577e458a22d6843e536857b401483045022100da95b59e4aac7451b5fd9efb1fa0df16ef44d8e82070daf28c90a16de50491920220637241a243cf6b7d84b3be0dfe4f08c485dfe193bd97b1290632d190f584311b01483045022100916a09eef76b47165b99e77c9a55592bcdaecd22d4932df2366a92c9304cf80502207cd0b6d85a757952c0fd56d0ee7426a7a14ecddf068707ffab3ec06af87b4a1801483045022100b4b990d471ce70de4be19aa241466b214a27b428333dcccbe885092eec4d71d302200c4e3e50aa4c2b1417ee3f174e7332fc045c304114445e05616e032aa812e9aa01483045022100af9a30d639fc333387ebf77945b4397b85f93ff6a9d8f8aeee8cca22e3383c9e02207460a2adb4264a2ecffa2eb43e59ae78e33b6f9cee44989dbec56281e5e2c1c001483045022100afc850cec037c459bbf2e8b559c863f3fa43f5ae01984d7516051a1995133917022063f04ab8d398825ad9e22a37628cf69af19dda26e6e793a3f2e797350eca6d4b0100fd810520010000000000000000000000000000000000000000000000000000000000000075645b210211310637a4062844098b46278059298cc948e1ff314ca9ec75c82e0d0b8ad22c210238de69e208565fd82e4b76c4eff5d817a51679b8a90c41709e49660ba23501c521024b120731b26ec7165cddd214fc8e3f0c844a03dc0e533fb0cf9f89ad2f68a881210274564db76110474ac0d7e09080c182855b22a864cc201ed55217b23301f52f222102867f0e693a2553bf2bc13a5efa0b516b28e66317fbe8e484dd3f375bcb48ec592102881af2910c909f224557353dd28e3729363cf5c24232f26d25c92dac72a3dcdb21029c75b3257e0842c4be48e57e39bf2735c74a76c4b1c0b08d1cc66bf5b8748cc12102a46cbe93287cb51a398a157de2b428f21a94f46affdd916ce921bd10db6520332102d335ef4eeb74330c3a53f529f9741fa096412c7982ed681fcf69763894f34f892102d3f5fd6e107cf68b1be8dce0e16a0a8afb8dcef9a76c851d7eaf6d51c46a35752103163b86a62b4eeeb52f67cb16ce13a8622a066f2a063280749b956a97705dfc3d21033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e210343e106d90183e2eef7d5cb7538a634439bf1301d731787c6736922ff19e750ed21034461d4263b907cfc5ebb468f19d6a133b567f3cc4855e8725faaf60c6e388bca21036e92e6555d2e70af4f5a4f888145356e60bb1a5bc00786a8e9f50152090b2f692103ab54da6b69407dcaaa85f6904687052c93f1f9dd0633f1321b3e624fcd30144b2103bd5b51b1c5d799da190285c8078a2712b8e5dc6f73c799751e6256bb89a4bd042103be060191c9632184f2a0ab2638eeed04399372f37fc7a3cff5291cfd6426cf352103e6def9ef0597336eb58d24f955b6b63756cf7b3885322f9d0cf5a2a12f7e459b2103ef03253b7b4f33d68c39141eb016df15fafbb1d0fa4a2e7f208c94ea154ab8c30114ae67011eb2755b21021a560245f78312588f600315d75d493420bed65873b63d0d4bb8ca1b9163a35b2102218e9dc07ac4190a1d7df94fc75953b36671129f12668a94f1f504fe47399ead210272ed6e14e70f6b4757d412729730837bc63b6313276be8308a5a96afd63af9942102872f69892a74d60f6185c2908414dcddb24951c035a1a8466c6c56f55043e7602102886d7d8e865f75dfda3ddf94619af87ad8aa71e8ef393e1e57593576b7d7af1621028e59462fb53ba31186a353b7ea77ebefda9097392e45b7ca7a216168230d05af21028f5a88b08d75765b36951254e68060759de5be7e559972c37c67fc8cedafeb262102c9ced4bbc468af9ace1645df2fd50182d5822cb4c68aae0e50ae1d45da260d2a2102deba35a96add157b6de58f48bb6e23bcb0a17037bed1beb8ba98de6b0a0d71d62102f2e00fefa5868e2c56405e188ec1d97557a7c77fb6a448352cc091c2ae9d50492102fb8c06c723d4e59792e36e6226087fcfac65c1d8a0d5c5726a64102a551528442103077c62a45ea1a679e54c9f7ad800d8e40eaf6012657c8dccd3b61d5e070d9a432103616959a72dd302043e9db2dbd7827944ecb2d555a8f72a48bb8f916ec5aac6ec210362f9c79cd0586704d6a9ea863573f3b123d90a31faaa5a1d9a69bf9631c78ae321036899d94ad9d3f24152dd4fa79b9cb8dddbd26d18297be4facb295f57c9de60bd210376e4cb35baa8c46b0dcffaf303785c5f7aadf457df30ac956234cc8114e2f47d2103a587256beec4e167aebc478e1d6502bb277a596ae9574ccb646da11fffbf36502103bb9da162c3f581ced93167f86d7e0e5962762a1188f5bd1f8b5d08fed46ef73d2103c34fcd05cef2733ea7337c37f50ae26245646aba124948c6ff8dcdf8212849982103f8ac768e683a07ac4063f72a6d856aedeae109f844abcfa34ac9519d715177460114ae6800000000");
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, btcTxHex);
+
+        final byte[] redeemScriptHex = Hex.decode("20010000000000000000000000000000000000000000000000000000000000000075645b210211310637a4062844098b46278059298cc948e1ff314ca9ec75c82e0d0b8ad22c210238de69e208565fd82e4b76c4eff5d817a51679b8a90c41709e49660ba23501c521024b120731b26ec7165cddd214fc8e3f0c844a03dc0e533fb0cf9f89ad2f68a881210274564db76110474ac0d7e09080c182855b22a864cc201ed55217b23301f52f222102867f0e693a2553bf2bc13a5efa0b516b28e66317fbe8e484dd3f375bcb48ec592102881af2910c909f224557353dd28e3729363cf5c24232f26d25c92dac72a3dcdb21029c75b3257e0842c4be48e57e39bf2735c74a76c4b1c0b08d1cc66bf5b8748cc12102a46cbe93287cb51a398a157de2b428f21a94f46affdd916ce921bd10db6520332102d335ef4eeb74330c3a53f529f9741fa096412c7982ed681fcf69763894f34f892102d3f5fd6e107cf68b1be8dce0e16a0a8afb8dcef9a76c851d7eaf6d51c46a35752103163b86a62b4eeeb52f67cb16ce13a8622a066f2a063280749b956a97705dfc3d21033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e210343e106d90183e2eef7d5cb7538a634439bf1301d731787c6736922ff19e750ed21034461d4263b907cfc5ebb468f19d6a133b567f3cc4855e8725faaf60c6e388bca21036e92e6555d2e70af4f5a4f888145356e60bb1a5bc00786a8e9f50152090b2f692103ab54da6b69407dcaaa85f6904687052c93f1f9dd0633f1321b3e624fcd30144b2103bd5b51b1c5d799da190285c8078a2712b8e5dc6f73c799751e6256bb89a4bd042103be060191c9632184f2a0ab2638eeed04399372f37fc7a3cff5291cfd6426cf352103e6def9ef0597336eb58d24f955b6b63756cf7b3885322f9d0cf5a2a12f7e459b2103ef03253b7b4f33d68c39141eb016df15fafbb1d0fa4a2e7f208c94ea154ab8c30114ae67011eb2755b21021a560245f78312588f600315d75d493420bed65873b63d0d4bb8ca1b9163a35b2102218e9dc07ac4190a1d7df94fc75953b36671129f12668a94f1f504fe47399ead210272ed6e14e70f6b4757d412729730837bc63b6313276be8308a5a96afd63af9942102872f69892a74d60f6185c2908414dcddb24951c035a1a8466c6c56f55043e7602102886d7d8e865f75dfda3ddf94619af87ad8aa71e8ef393e1e57593576b7d7af1621028e59462fb53ba31186a353b7ea77ebefda9097392e45b7ca7a216168230d05af21028f5a88b08d75765b36951254e68060759de5be7e559972c37c67fc8cedafeb262102c9ced4bbc468af9ace1645df2fd50182d5822cb4c68aae0e50ae1d45da260d2a2102deba35a96add157b6de58f48bb6e23bcb0a17037bed1beb8ba98de6b0a0d71d62102f2e00fefa5868e2c56405e188ec1d97557a7c77fb6a448352cc091c2ae9d50492102fb8c06c723d4e59792e36e6226087fcfac65c1d8a0d5c5726a64102a551528442103077c62a45ea1a679e54c9f7ad800d8e40eaf6012657c8dccd3b61d5e070d9a432103616959a72dd302043e9db2dbd7827944ecb2d555a8f72a48bb8f916ec5aac6ec210362f9c79cd0586704d6a9ea863573f3b123d90a31faaa5a1d9a69bf9631c78ae321036899d94ad9d3f24152dd4fa79b9cb8dddbd26d18297be4facb295f57c9de60bd210376e4cb35baa8c46b0dcffaf303785c5f7aadf457df30ac956234cc8114e2f47d2103a587256beec4e167aebc478e1d6502bb277a596ae9574ccb646da11fffbf36502103bb9da162c3f581ced93167f86d7e0e5962762a1188f5bd1f8b5d08fed46ef73d2103c34fcd05cef2733ea7337c37f50ae26245646aba124948c6ff8dcdf8212849982103f8ac768e683a07ac4063f72a6d856aedeae109f844abcfa34ac9519d715177460114ae68");
+        Script redeemScript = new Script(redeemScriptHex);
+
+        // Act
+        Optional<Sha256Hash> sigHash = getFirstInputSigHash(btcTx);
+
+        // Assert
+        assertTrue(sigHash.isPresent());
+        Sha256Hash expectedSigHash = btcTx.hashForSignature(
+            0,
+            redeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+        assertEquals(expectedSigHash, sigHash.get());
+    }
+
+    @Test
+    void getFirstInputSigHash_no_input() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addOutput(Coin.COIN, destinationAddress);
@@ -186,10 +226,8 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void test_getFirstInputSigHash_invalid_input_no_redeem_script() {
+    void getFirstInputSigHash_invalid_input_no_redeem_script() {
         // Arrange
-        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
-
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
@@ -198,18 +236,200 @@ class BitcoinUtilsTest {
         Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        assertFalse(sigHash.isPresent());
+        assertTrue(sigHash.isEmpty());
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_forP2shP2wshInput_withInvalidRedeemScript_shouldReturnEmpty() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+        btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness witness = new TransactionWitness(1);
+        byte[] invalidRedeemScript = new byte[]{0x1};
+        witness.setPush(0, invalidRedeemScript);
+        btcTx.setWitness(0, witness);
+
+        // Act
+        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
+
+        // Assert
+        assertFalse(redeemScript.isPresent());
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTx_shouldExtractItProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Script emptyScript = new Script(new byte[]{});
+        Script redeemScript = segwitCompatibleFederation.getRedeemScript();
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        btcTx.setWitness(FIRST_INPUT_INDEX, witness);
+
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+        btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
+
+        // Act
+        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
+
+        // Assert
+        assertTrue(redeemScriptFromInput.isPresent());
+        assertEquals(redeemScript, redeemScriptFromInput.get());
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTxWithChange_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Script emptyScript = new Script(new byte[]{});
+        Script redeemScript = segwitCompatibleFederation.getRedeemScript();
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        btcTx.setWitness(FIRST_INPUT_INDEX, witness);
+
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+        btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
+        btcTx.addOutput(minimumPegoutTxValue, segwitCompatibleFederation.getAddress());
+
+        // Act
+        Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
+
+        // Assert
+        assertTrue(redeemScriptFromInput.isPresent());
+        assertEquals(redeemScript, redeemScriptFromInput.get());
+    }
+
+
+    @Test
+    void extractRedeemScriptFromInput_withAMigrationTxWithMultipleP2shP2wshInputs_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
+
+        Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
+        Script emptyScript = new Script(new byte[]{});
+
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        int numberOfInputs = 3;
+        int outputIndex = 0;
+        for (int i = 0; i < numberOfInputs; i++) {
+            migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
+            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
+            migrationTx.setWitness(i, witness);
+        }
+
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+
+        // Act & Assert
+        for (int i = 0; i < numberOfInputs; i++) {
+            Optional<Script> redeemScript = extractRedeemScriptFromInput(migrationTx, i);
+            assertTrue(redeemScript.isPresent());
+            assertEquals(retiringFedRedeemScript, redeemScript.get());
+        }
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_withASegWitCompatiblePegoutTx_withMultipleInputsAndOutputs_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        Script emptyScript = new Script(new byte[]{});
+        Script redeemScript = segwitCompatibleFederation.getRedeemScript();
+        Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
+
+        int numberOfInputAndOutputs = 3;
+        for (int i = 0; i < numberOfInputAndOutputs; i++) {
+            btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
+            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+            btcTx.setWitness(i, witness);
+            btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
+        }
+
+        // Act & Assert
+        for (int i = 0; i < numberOfInputAndOutputs; i++) {
+            Optional<Script> redeemScriptFromInput = BitcoinUtils.extractRedeemScriptFromInput(btcTx, i);
+            assertTrue(redeemScriptFromInput.isPresent());
+            assertEquals(redeemScript, redeemScriptFromInput.get());
+        }
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_forTxWithP2shAndP2shP2wshInputs_shouldExtractThemProperly() {
+        // Arrange
+        BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+        Federation federation = P2shErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+        Script p2shMultiSigScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, redeemScript);
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, p2shMultiSigScriptSig);
+
+        nHash++;
+        Script emptyScript = new Script(new byte[]{});
+        Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
+        btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(anotherRedeemScript);
+        btcTx.setWitness(1, witness);
+
+        // Act
+        Optional<Script> scriptFirstInput = extractRedeemScriptFromInput(btcTx, 0);
+        Optional<Script> scriptSecondInput = extractRedeemScriptFromInput(btcTx, 1);
+
+        // Assert
+        assertTrue(scriptFirstInput.isPresent());
+        assertEquals(redeemScript, scriptFirstInput.get());
+
+        assertTrue(scriptSecondInput.isPresent());
+        assertEquals(anotherRedeemScript, scriptSecondInput.get());
+    }
+
+    @Test
+    void extractRedeemScriptFromInput_forAMigrationTxWithP2shP2wshInput_shouldExtractItProperly() {
+        // Arrange
+        BtcTransaction migrationTx = new BtcTransaction(btcMainnetParams);
+
+        int outputIndex = 0;
+        int nHash = 0;
+
+        Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
+        Script emptyScript = new Script(new byte[]{});
+        migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
+        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
+        migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
+
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();
+        Address activeFederationAddress = activeFederation.getAddress();
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+
+        // Act
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(migrationTx, 0);
+
+        // Assert
+        assertTrue(redeemScript.isPresent());
+        assertEquals(retiringFedRedeemScript, redeemScript.get());
     }
 
     @ParameterizedTest
     @MethodSource("p2pkhArgProvider")
-    void test_extractRedeemScriptFromInput_no_redeemScripts(String btcTxHex) {
+    void extractRedeemScriptFromInput_no_redeemScripts(String btcTxHex) {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
 
         assertFalse(btcTx.getInputs().isEmpty());
         // Act
-        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInputs().get(FIRST_INPUT_INDEX));
+        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
 
         // Assert
         assertFalse(redeemScript.isPresent());
@@ -264,7 +484,7 @@ class BitcoinUtilsTest {
 
         assertFalse(btcTx.getInputs().isEmpty());
         // Act
-        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInputs().get(FIRST_INPUT_INDEX));
+        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
 
         // Assert
         assertTrue(redeemScript.isPresent());
@@ -277,7 +497,7 @@ class BitcoinUtilsTest {
         // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"));
         // Act
-        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInputs().get(FIRST_INPUT_INDEX));
+        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
 
         // Assert
         // For bech32 tx ScriptSig is empty. No chunks. Since there are no scriptSig no redeemScript is extracted,
@@ -297,7 +517,7 @@ class BitcoinUtilsTest {
         Script expectedRedeemScript = new Script(scriptSigChunks.get(scriptSigChunks.size()- 1).data);
 
         // Act
-        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx.getInputs().get(FIRST_INPUT_INDEX));
+        Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
 
         // Assert
         assertTrue(redeemScript.isPresent());
@@ -314,8 +534,7 @@ class BitcoinUtilsTest {
 
         // Act
         for (int i = 0; i < inputs.size(); i++) {
-            TransactionInput transactionInput = inputs.get(i);
-            Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(transactionInput);
+            Optional<Script> redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
 
             // Assert
             assertTrue(redeemScript.isPresent());
