@@ -22,6 +22,7 @@ import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT
 import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static co.rsk.peg.BridgeSupportTestUtil.mockChainOfStoredBlocks;
 import static co.rsk.peg.PegTestUtils.createUTXO;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.getBtcEcKeyFromSeed;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -78,6 +79,7 @@ import org.ethereum.config.blockchain.upgrades.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.*;
@@ -1858,14 +1860,18 @@ class BridgeSupportTest {
 
         BtcTransaction txWithWitness = new BtcTransaction(btcRegTestParams);
 
-        // first input spends P2PKH
-        BtcECKey srcKey1 = new BtcECKey();
-        txWithWitness.addInput(BitcoinTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey1));
+        // P2SH-P2WPKH tx
+        BtcECKey srcKey1 = getBtcEcKeyFromSeed("p2shp2wpkh_sender");
+        byte[] redeemScript = ByteUtil.merge(new byte[]{ 0x00, 0x14}, srcKey1.getPubKeyHash());
 
-        // second input spends P2SH-P2PWKH (actually, just has a witness doesn't matter if it truly spends a witness for the test's sake)
-        txWithWitness.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        TransactionWitness txWit = new TransactionWitness(1);
-        txWit.setPush(0, new byte[]{});
+        Script witnessScript = new ScriptBuilder()
+            .data(redeemScript)
+            .build();
+        txWithWitness.addInput(BitcoinTestUtils.createHash(1), 0, witnessScript);
+
+        TransactionWitness txWit = new TransactionWitness(2);
+        txWit.setPush(0, new byte[72]); // push for signatures
+        txWit.setPush(1, srcKey1.getPubKey());
         txWithWitness.setWitness(0, txWit);
 
         List<BtcECKey> fedKeys = Arrays.asList(

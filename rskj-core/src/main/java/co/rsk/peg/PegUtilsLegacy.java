@@ -57,9 +57,8 @@ public class PegUtilsLegacy {
     protected static boolean isPegOutTx(BtcTransaction btcTx, ActivationConfig.ForBlock activations, Script ... fedStandardP2shScripts) {
         int inputsSize = btcTx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
-            TransactionInput txInput = btcTx.getInput(i);
-            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(txInput);
-            if (!redeemScriptOptional.isPresent()) {
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(btcTx, i);
+            if (redeemScriptOptional.isEmpty()) {
                 continue;
             }
 
@@ -190,8 +189,7 @@ public class PegUtilsLegacy {
                 return false;
             }
 
-            TransactionInput txInput = tx.getInput(i);
-            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(txInput);
+            Optional<Script> redeemScriptOptional = BitcoinUtils.extractRedeemScriptFromInput(tx, i);
             // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
             // erp federation, or even a retired fast bridge or erp federation
             if (activations.isActive(ConsensusRule.RSKIP201) && redeemScriptOptional.isPresent()) {
