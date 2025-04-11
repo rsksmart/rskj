@@ -140,7 +140,7 @@ public class BitcoinTestUtils {
     private static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
-        Script inputRedeemScript = extractRedeemScriptFromInput(input)
+        Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
             .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
 
         Script outputScript = createP2SHOutputScript(inputRedeemScript);
@@ -255,5 +255,26 @@ public class BitcoinTestUtils {
         List<TransactionOutput> outputs = sourceTransaction.getOutputs();
         searchForOutput(outputs, expectedOutputScript)
             .ifPresent(transaction::addInput);
+    }
+
+    public static TransactionWitness createBaseWitnessThatSpendsFromErpRedeemScript(Script redeemScript) {
+        //
+        int pushForEmptyByte = 1;
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int witnessSize = pushForRedeemScript + pushForOpNotif + numberOfSignaturesRequiredToSpend + pushForEmptyByte;
+
+        List<byte[]> pushes = new ArrayList<>(witnessSize);
+        byte[] emptyByte = {};
+        pushes.add(emptyByte); // OP_0
+
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
+            pushes.add(new byte[72]);
+        }
+
+        pushes.add(emptyByte); // OP_NOTIF
+        pushes.add(redeemScript.getProgram());
+        return TransactionWitness.of(pushes);
     }
 }
