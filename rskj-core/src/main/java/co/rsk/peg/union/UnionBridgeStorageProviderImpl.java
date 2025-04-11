@@ -6,6 +6,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.Optional;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
 
@@ -20,8 +22,8 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public void save() {
-        if (isNull(unionBridgeAddress) || unionBridgeAddress.equals(EMPTY_ADDRESS)) {
+    public void save(ActivationConfig.ForBlock activations) {
+        if(!activations.isActive(ConsensusRule.RSKIP502) || isNull(unionBridgeAddress) || unionBridgeAddress.equals(EMPTY_ADDRESS)){
             return;
         }
 
