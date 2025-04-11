@@ -236,7 +236,7 @@ class BitcoinUtilsTest {
         Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
 
         // Assert
-        assertFalse(sigHash.isPresent());
+        assertTrue(sigHash.isEmpty());
     }
 
     @Test
