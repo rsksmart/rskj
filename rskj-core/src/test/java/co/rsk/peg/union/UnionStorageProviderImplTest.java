@@ -12,13 +12,17 @@ import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.Optional;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UnionStorageProviderImplTest {
 
+    private static final ActivationConfig.ForBlock lovell700 = ActivationConfigsForTest.lovell700().forBlock(0);
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
-
+    private static final RskAddress newUnionBridgeAddress = TestUtils.generateAddress("newUnionBridgeAddress");
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
 
@@ -40,12 +44,9 @@ class UnionStorageProviderImplTest {
     @Test
     void getAddress_whenAddressStored_shouldReturnStoredAddress() {
         // Arrange
-        RskAddress rskAddress = TestUtils.generateAddress("address");
-
-        // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            rskAddress,
+            newUnionBridgeAddress,
             BridgeSerializationUtils::serializeRskAddress
         );
 
@@ -54,36 +55,34 @@ class UnionStorageProviderImplTest {
 
         // Assert
         assertTrue(unionBridgeAddress.isPresent());
-        assertEquals(rskAddress, unionBridgeAddress.get());
+        assertEquals(newUnionBridgeAddress, unionBridgeAddress.get());
     }
 
     @Test
     void getAddress_whenAddressSet_shouldReturnCacheAddress() {
         // Arrange
-        RskAddress rskAddress = TestUtils.generateAddress("address");
-        unionBridgeStorageProvider.setAddress(rskAddress);
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
 
         // Act
         Optional<RskAddress> unionBridgeAddress = unionBridgeStorageProvider.getAddress();
 
         // Assert
         assertTrue(unionBridgeAddress.isPresent());
-        assertEquals(rskAddress, unionBridgeAddress.get());
+        assertEquals(newUnionBridgeAddress, unionBridgeAddress.get());
     }
 
     @Test
     void getAddress_whenAddressSetAndStored_shouldReturnSetAddress() {
         // Arrange
-        RskAddress rskAddress = TestUtils.generateAddress("address");
-        unionBridgeStorageProvider.setAddress(rskAddress);
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
+        unionBridgeStorageProvider.save(allActivations);
 
         // Act
         Optional<RskAddress> unionBridgeAddress = unionBridgeStorageProvider.getAddress();
 
         // Assert
         assertTrue(unionBridgeAddress.isPresent());
-        assertEquals(rskAddress, unionBridgeAddress.get());
+        assertEquals(newUnionBridgeAddress, unionBridgeAddress.get());
     }
 
     @Test
@@ -93,7 +92,7 @@ class UnionStorageProviderImplTest {
 
         // Act
         unionBridgeStorageProvider.setAddress(rskAddress);
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.save(allActivations);
 
         // Assert
         RskAddress retrievedAddress = storageAccessor.getFromRepository(
@@ -107,7 +106,7 @@ class UnionStorageProviderImplTest {
     void setAddress_whenNull_shouldNotStore() {
         // Act
         unionBridgeStorageProvider.setAddress(null);
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.save(allActivations);
 
         // Assert
         RskAddress retrievedAddress = storageAccessor.getFromRepository(
@@ -120,7 +119,7 @@ class UnionStorageProviderImplTest {
     @Test
     void setAddress_whenAddressSet_shouldNotStore() {
         // Act
-        unionBridgeStorageProvider.setAddress(TestUtils.generateAddress("address"));
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
 
         // Assert
         RskAddress retrievedAddress = storageAccessor.getFromRepository(
@@ -131,13 +130,29 @@ class UnionStorageProviderImplTest {
     }
 
     @Test
+    void save_whenAddressSetAndBeforeRSKIP502_shouldNotStoreAnything() {
+        // Arrange
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
+
+        // Act
+        unionBridgeStorageProvider.save(lovell700);
+
+        // Assert
+        RskAddress retrievedRskAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        assertNull(retrievedRskAddress);
+    }
+
+    @Test
     void save_whenNoAddressSet_shouldNotStoreAnything() {
         // Arrange
         StorageAccessor mockStorageAccessor = mock(StorageAccessor.class);
         UnionBridgeStorageProviderImpl unionBridgeStorageProviderUsingMockStorage = new UnionBridgeStorageProviderImpl(mockStorageAccessor);
 
         // Act
-        unionBridgeStorageProviderUsingMockStorage.save();
+        unionBridgeStorageProviderUsingMockStorage.save(allActivations);
 
         // Assert
         verify(mockStorageAccessor, never())
@@ -146,9 +161,6 @@ class UnionStorageProviderImplTest {
 
     @Test
     void getAndSetAddress_whenFirstTime_shouldSaveNewAddress() {
-        // Arrange
-        RskAddress rskAddress = TestUtils.generateAddress("address");
-
         // Act & Assert
 
         // Check that the address is not present in the storage nor in cache initially
@@ -156,30 +168,29 @@ class UnionStorageProviderImplTest {
         assertTrue(unionBridgeAddress.isEmpty());
 
         // Set address
-        unionBridgeStorageProvider.setAddress(rskAddress);
+        unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
 
         // Check that the address is now present in the cache
         Optional<RskAddress> cachedAddress = unionBridgeStorageProvider.getAddress();
         assertTrue(cachedAddress.isPresent());
-        assertEquals(rskAddress, cachedAddress.get());
+        assertEquals(newUnionBridgeAddress, cachedAddress.get());
 
         // Save the value
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.save(allActivations);
 
         // New instance of the storage provider to check the storage
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
         Optional<RskAddress> storedAddress = unionBridgeStorageProvider.getAddress();
         assertTrue(storedAddress.isPresent());
-        assertEquals(rskAddress, storedAddress.get());
+        assertEquals(newUnionBridgeAddress, storedAddress.get());
     }
 
     @Test
     void getAndSetAddress_whenAddressAlreadyExistsInTheStorage_shouldOverrideWithTheNewOne() {
         // Arrange
-        RskAddress rskAddress = TestUtils.generateAddress("address");
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            rskAddress,
+            newUnionBridgeAddress,
             BridgeSerializationUtils::serializeRskAddress
         );
 
@@ -187,10 +198,10 @@ class UnionStorageProviderImplTest {
         // Check that the address is not present in cache initially
         Optional<RskAddress> unionBridgeAddress = unionBridgeStorageProvider.getAddress();
         assertTrue(unionBridgeAddress.isPresent());
-        assertEquals(rskAddress, unionBridgeAddress.get());
+        assertEquals(newUnionBridgeAddress, unionBridgeAddress.get());
 
         // This should override the address in the storage
-        RskAddress newUnionBridgeAddress = TestUtils.generateAddress("newUnionBridgeAddress");
+
         unionBridgeStorageProvider.setAddress(newUnionBridgeAddress);
 
         // Check that the address is now present in the cache
@@ -199,7 +210,7 @@ class UnionStorageProviderImplTest {
         assertEquals(newUnionBridgeAddress, cachedAddress.get());
 
         // Overwrite the address in the storage
-        unionBridgeStorageProvider.save();
+        unionBridgeStorageProvider.save(allActivations);
 
         // New instance of the storage provider to check the storage
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
