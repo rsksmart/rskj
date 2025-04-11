@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HelloMessageTest {
 
@@ -105,6 +106,32 @@ class HelloMessageTest {
         assertEquals(version, helloMessage.getP2PVersion());
         assertEquals(clientStr, helloMessage.getClientId());
         assertEquals(4, helloMessage.getCapabilities().size());
+        assertEquals(listenPort, helloMessage.getListenPort());
+        assertEquals(peerId, helloMessage.getPeerId());
+    }
+
+    @Test
+    void test5() {
+
+        //Init
+        byte version = 2;
+        String clientStr = "Ethereum(++)/v0.7.9/Release/Linux/g++";
+        List<Capability> capabilities = Arrays.asList(
+                new Capability(Capability.RSK, EthVersion.UPPER),
+                new Capability(Capability.SNAP, EthVersion.UPPER),
+                new Capability(Capability.P2P, P2pHandler.VERSION));
+        int listenPort = 992;
+        String peerId = "1fbf1e41f08078918c9f7b6734594ee56d7f538614f602c71194db0a1af5a";
+
+        HelloMessage helloMessage = new HelloMessage(version, clientStr, capabilities, listenPort, peerId);
+        logger.info(helloMessage.toString());
+
+        assertEquals(P2pMessageCodes.HELLO, helloMessage.getCommand());
+        assertEquals(version, helloMessage.getP2PVersion());
+        assertEquals(clientStr, helloMessage.getClientId());
+        assertEquals(3, helloMessage.getCapabilities().size());
+        assertTrue(helloMessage.getCapabilities().stream()
+                .anyMatch(cap -> Capability.SNAP.equals(cap.getName())));
         assertEquals(listenPort, helloMessage.getListenPort());
         assertEquals(peerId, helloMessage.getPeerId());
     }

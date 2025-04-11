@@ -21,19 +21,37 @@ package co.rsk.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.*;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Objects;
 
 public class OkHttpClientTestFixture {
 
-    public static final String GET_BEST_BLOCK_CONTENT = "[{\n" +
+    // Pre-funded Test Accounts on Regtest
+    public static final List<String> PRE_FUNDED_ACCOUNTS = List.of(
+            "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826",
+            "0x7986b3df570230288501eea3d890bd66948c9b79",
+            "0x0a3aa774752ec2042c46548456c094a76c7f3a79",
+            "0xcf7cdbbb5f7ba79d3ffe74a0bba13fc0295f6036",
+            "0x39b12c05e8503356e3a7df0b7b33efa4c054c409",
+            "0xc354d97642faa06781b76ffb6786f72cd7746c97",
+            "0xdebe71e1de41fc77c44df4b6db940026e31b0e71",
+            "0x7857288e171c6159c5576d1bd9ac40c0c48a771c",
+            "0xa4dea4d5c954f5fd9e87f0e9752911e83a3d18b3",
+            "0x09a1eda29f664ac8f68106f6567276df0c65d859",
+            "0xec4ddeb4380ad69b3e509baad9f158cdf4e4681d"
+    );
+
+    public static final String GET_BLOCK_CONTENT = "[{\n" +
             "    \"method\": \"eth_getBlockByNumber\",\n" +
             "    \"params\": [\n" +
-            "        \"latest\",\n" +
+            "        \"<BLOCK_NUM_OR_TAG>\",\n" +
             "        true\n" +
             "    ],\n" +
             "    \"id\": 1,\n" +
@@ -119,11 +137,15 @@ public class OkHttpClientTestFixture {
     }
 
     public static Response sendJsonRpcGetBestBlockMessage(int port) throws IOException {
-        return sendJsonRpcMessage(GET_BEST_BLOCK_CONTENT, port);
+        return sendJsonRpcGetBlockMessage(port, "latest");
     }
 
-    public static JsonNode getJsonResponseForGetBestBlockMessage(int port) throws IOException {
-        Response response = sendJsonRpcGetBestBlockMessage(port);
+    public static Response sendJsonRpcGetBlockMessage(int port, String blockNumOrTag) throws IOException {
+        return sendJsonRpcMessage(GET_BLOCK_CONTENT.replace("<BLOCK_NUM_OR_TAG>", blockNumOrTag), port);
+    }
+
+    public static JsonNode getJsonResponseForGetBestBlockMessage(int port, String blockNumOrTag) throws IOException {
+        Response response = sendJsonRpcGetBlockMessage(port, blockNumOrTag);
         return new ObjectMapper().readTree(response.body().string());
     }
 
@@ -131,4 +153,40 @@ public class OkHttpClientTestFixture {
         return "[\n" + String.join(",\n", methodCall) + "]";
     }
 
+    public static Response sendBulkTransactions(int rpcPort, FromToAddressPair... fromToAddresses) throws IOException {
+        Objects.requireNonNull(fromToAddresses);
+
+        String gas = "0x9C40";
+        String gasPrice = "0x10";
+        String value = "0x500";
+
+        String[] placeholders = new String[]{
+                "<ADDRESS_FROM>", "<ADDRESS_TO>", "<GAS>",
+                "<GAS_PRICE>", "<VALUE>"
+        };
+
+        String[] methodCalls = new String[fromToAddresses.length];
+        for (int i = 0; i < fromToAddresses.length; i++) {
+            FromToAddressPair fromToPair = fromToAddresses[i];
+            methodCalls[i] = StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
+                    new String[]{fromToPair.from, fromToPair.to, gas, gasPrice, value});
+        }
+        String content = getEnvelopedMethodCalls(methodCalls);
+
+        return OkHttpClientTestFixture.sendJsonRpcMessage(content, rpcPort);
+    }
+
+    public static class FromToAddressPair {
+        private final String from;
+        private final String to;
+
+        private FromToAddressPair(String from, String to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        public static FromToAddressPair of(String from, String to) {
+            return new FromToAddressPair(from, to);
+        }
+    }
 }

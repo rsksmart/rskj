@@ -47,7 +47,7 @@ class BlockRelayValidatorTest {
 
         verify(block).isGenesis();
         verify(blockValidator, never()).isValid(any());
-        verify(blockParentValidator, never()).isValid(any(), any());
+        verify(blockParentValidator, never()).isValid(any(), any(Block.class));
     }
 
     @Test
@@ -62,7 +62,7 @@ class BlockRelayValidatorTest {
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
-        verify(blockParentValidator, never()).isValid(any(), any());
+        verify(blockParentValidator, never()).isValid(any(), any(Block.class));
     }
 
     @Test
@@ -74,7 +74,7 @@ class BlockRelayValidatorTest {
         when(block.getParentHash()).thenReturn(parentHash);
         when(blockStore.getBlockByHash(any())).thenReturn(parentBlock);
         when(blockValidator.isValid(any())).thenReturn(true);
-        when(blockParentValidator.isValid(any(), any())).thenReturn(false);
+        when(blockParentValidator.isValid(any(), any(Block.class))).thenReturn(false);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
@@ -82,7 +82,7 @@ class BlockRelayValidatorTest {
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
-        verify(blockParentValidator).isValid(any(), any());
+        verify(blockParentValidator).isValid(any(), any(Block.class));
     }
 
     @Test
@@ -94,7 +94,7 @@ class BlockRelayValidatorTest {
         when(block.getParentHash()).thenReturn(parentHash);
         when(blockStore.getBlockByHash(any())).thenReturn(parentBlock);
         when(blockValidator.isValid(any())).thenReturn(true);
-        when(blockParentValidator.isValid(any(), any())).thenReturn(true);
+        when(blockParentValidator.isValid(any(), any(Block.class))).thenReturn(true);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
@@ -102,6 +102,6 @@ class BlockRelayValidatorTest {
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
-        verify(blockParentValidator).isValid(any(), any());
+        verify(blockParentValidator).isValid(any(), any(Block.class));
     }
 }

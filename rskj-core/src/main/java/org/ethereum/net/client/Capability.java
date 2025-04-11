@@ -28,6 +28,8 @@ public class Capability implements Comparable<Capability> {
 
     public static final String P2P = "p2p";
     public static final String RSK = "rsk";
+    public static final String SNAP = "snap";
+    public static final byte SNAP_VERSION = (byte) 1;
 
     private final String name;
     private final byte version;
@@ -47,6 +49,10 @@ public class Capability implements Comparable<Capability> {
 
     public boolean isRSK() {
         return RSK.equals(name);
+    }
+
+    public boolean isSNAP() {
+        return SNAP.equals(name);
     }
 
     @Override

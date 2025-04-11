@@ -43,12 +43,16 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -288,7 +292,7 @@ class BlockValidatorTest {
         store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
 
         BlockHeaderParentDependantValidationRule parentValidationRule = mock(BlockHeaderParentDependantValidationRule.class);
-        when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
+        when(parentValidationRule.isValid(any(), any(Block.class))).thenReturn(true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), parentValidationRule)
@@ -497,7 +501,7 @@ class BlockValidatorTest {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
-        when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
+        when(repository.getNonce(any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ZERO)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
@@ -533,7 +537,7 @@ class BlockValidatorTest {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
-        when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
+        when(repository.getNonce(any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ZERO)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
@@ -556,7 +560,7 @@ class BlockValidatorTest {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
-        when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
+        when(repository.getNonce(any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
