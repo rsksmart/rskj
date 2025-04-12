@@ -222,19 +222,20 @@ public class SnapshotProcessor implements InternalService {
     void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
         long checkpointBlockNumber = Math.max(0, bestBlockNumber - checkpointDistance);
-        long from = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
+        long lowerBlockNumberToRetrieve = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
         logger.debug("Processing snapshot status request, checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
 
         LinkedList<Block> blocks = new LinkedList<>();
         LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
 
-        retrieveBlocksAndDifficultiesBackwards(from,checkpointBlockNumber, blocks, difficulties);
+        retrieveBlocksAndDifficultiesBackwards(lowerBlockNumberToRetrieve,checkpointBlockNumber, blocks, difficulties);
 
         Block currentBlock = blocks.getLast();
         byte[] rootHash = currentBlock.getStateRoot();
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
         if (opt.isEmpty()) {
             logger.warn("Trie is not present for rootHash: {}", Bytes.of(rootHash));
+            // Handle the error appropriately, e.g., send an error response or throw an exception
             return;
         }
         long trieSize = opt.get().getTotalSize();
