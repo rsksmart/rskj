@@ -224,9 +224,9 @@ public class SnapshotProcessor implements InternalService {
         LinkedList<Block> blocks = new LinkedList<>();
         LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
 
-        long objective = checkpointBlockNumber - BLOCK_CHUNK_SIZE;
+        long startingBlockFromChunk = checkpointBlockNumber - BLOCK_CHUNK_SIZE;
 
-        retrieveBlocksAndDifficultiesBackwards(objective,checkpointBlockNumber, blocks, difficulties);
+        retrieveBlocksAndDifficultiesBackwards(startingBlockFromChunk,checkpointBlockNumber, blocks, difficulties);
 
         Block currentBlock = blocks.getLast();
         byte[] rootHash = currentBlock.getStateRoot();
@@ -451,7 +451,7 @@ public class SnapshotProcessor implements InternalService {
         LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
 
         long requestBlockNumber = requestMessage.getBlockNumber();
-        if (requestBlockNumber < 2) {
+        if (requestBlockNumber < 2 || requestBlockNumber > blockchain.getBestBlock().getNumber()) {
             logger.debug("Snap blocks request from {} failed because of invalid block number {}", sender.getPeerNodeID(), requestBlockNumber);
             return;
         }
@@ -465,10 +465,14 @@ public class SnapshotProcessor implements InternalService {
 
     private void retrieveBlocksAndDifficultiesBackwards(long fromBlock, long toBlock, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties) {
         Block currentBlock = blockchain.getBlockByNumber(toBlock);
+        if (currentBlock == null) {
+            logger.warn("No block found for block number {}", toBlock);
+            return;
+        }
         blocks.add(currentBlock);
         difficulties.add(blockStore.getTotalDifficultyForBlock(currentBlock));
 
-        while (currentBlock.getNumber() > fromBlock) {
+        while (currentBlock != null && currentBlock.getNumber() > fromBlock) {
             currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
             blocks.addFirst(currentBlock);
             difficulties.addFirst(blockStore.getTotalDifficultyForBlock(currentBlock));
