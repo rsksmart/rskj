@@ -93,7 +93,8 @@ public class SnapshotProcessor implements InternalService {
     // flag for parallel requests
     private final boolean parallel;
 
-    private final BlockingQueue<SyncMessageHandler.Job> requestQueue;
+    private final int maxSenderRequests;
+    private final BlockingQueue<SyncMessageHandler.Job> requestQueue = new LinkedBlockingQueue<>();
 
     private volatile Boolean isRunning;
     private final Thread thread;
@@ -135,6 +136,7 @@ public class SnapshotProcessor implements InternalService {
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
+        this.maxSenderRequests = maxSenderRequests;
         this.blockStore = blockStore;
         this.transactionPool = transactionPool;
 
@@ -146,19 +148,6 @@ public class SnapshotProcessor implements InternalService {
 
         this.checkHistoricalHeaders = checkHistoricalHeaders;
         this.parallel = isParallelEnabled;
-        this.requestQueue = new LinkedBlockingQueue<>() {
-            @Override
-            public boolean offer(@Nonnull SyncMessageHandler.Job job) {
-                Peer sender = job.getSender();
-                NodeID senderId = sender.getPeerNodeID();
-                long jobCount = this.stream().filter(j -> j.getSender().getPeerNodeID().equals(senderId)).count();
-                if (jobCount > maxSenderRequests) {
-                    logger.warn("Too many jobs: [{}] from sender: [{}]. Skipping job of type: [{}]", jobCount, sender, job.getMsgType());
-                    return false;
-                }
-                return super.offer(job);
-            }
-        };
         this.thread = new Thread(new SyncMessageHandler("SNAP/server", this.requestQueue, listener) {
 
             @Override
@@ -749,6 +738,14 @@ public class SnapshotProcessor implements InternalService {
     }
 
     private void offerJob(SyncMessageHandler.Job job) {
+        Peer sender = job.getSender();
+        NodeID senderId = sender.getPeerNodeID();
+        long jobCount = this.requestQueue.stream().filter(j -> j.getSender().getPeerNodeID().equals(senderId)).count();
+        if (jobCount > this.maxSenderRequests) {
+            logger.warn("Too many jobs: [{}] from sender: [{}]. Skipping job of type: [{}]", jobCount, sender, job.getMsgType());
+            return;
+        }
+
         boolean offered = requestQueue.offer(job);
         if (!offered) {
             logger.warn("Processing of {} message was rejected", job.getMsgType());
