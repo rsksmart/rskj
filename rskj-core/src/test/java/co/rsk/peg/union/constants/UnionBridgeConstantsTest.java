@@ -19,7 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionBridgeConstantsTest {
 
-    public static Stream<Arguments> unionBridgeChangeAuthorizerProvider() {
+    private static Stream<Arguments> unionBridgeChangeAuthorizerProvider() {
         AddressBasedAuthorizer expectedUnionBridgeChangeAuthorizer = new AddressBasedAuthorizer(
             Collections.singletonList(ECKey.fromPublicOnly(Hex.decode(
                 "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
@@ -36,10 +36,10 @@ class UnionBridgeConstantsTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeChangeAuthorizerProvider")
-    void getUnionBridgeChangeAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
+    void getChangeAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
                                             AddressBasedAuthorizer expectedUnionBridgeChangeAuthorizer) {
         // Act
-        AddressBasedAuthorizer actualUnionBridgeChangeAuthorizer = unionBridgeConstants.getUnionBridgeChangeAuthorizer();
+        AddressBasedAuthorizer actualUnionBridgeChangeAuthorizer = unionBridgeConstants.getChangeAuthorizer();
 
         // Assert
         assertThat(actualUnionBridgeChangeAuthorizer, samePropertyValuesAs(expectedUnionBridgeChangeAuthorizer));
@@ -47,19 +47,16 @@ class UnionBridgeConstantsTest {
 
     public static Stream<Arguments> btcParamsProvider() {
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), NetworkParameters.ID_MAINNET),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), NetworkParameters.ID_TESTNET),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), NetworkParameters.ID_REGTEST)
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), NetworkParameters.fromID(NetworkParameters.ID_MAINNET)),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), NetworkParameters.fromID(NetworkParameters.ID_TESTNET)),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), NetworkParameters.fromID(NetworkParameters.ID_REGTEST))
         );
     }
 
     @ParameterizedTest
     @MethodSource("btcParamsProvider")
     void getBtcParams_ok(UnionBridgeConstants unionBridgeConstants,
-        String expectedNetworkParametersInString) {
-        // Arrange
-        NetworkParameters expectedNetworkParameters = NetworkParameters.fromID(expectedNetworkParametersInString);
-
+        NetworkParameters expectedNetworkParameters) {
         // Act
         NetworkParameters actualNetworkParameters = unionBridgeConstants.getBtcParams();
 
@@ -77,10 +74,10 @@ class UnionBridgeConstantsTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeAddressProvider")
-    void getUnionBridgeAddress_ok(UnionBridgeConstants unionBridgeConstants,
+    void getAddress_ok(UnionBridgeConstants unionBridgeConstants,
         RskAddress expectedUnionBridgeAddress) {
         // Act
-        RskAddress actualUnionBridgeAddress = unionBridgeConstants.getUnionBridgeAddress();
+        RskAddress actualUnionBridgeAddress = unionBridgeConstants.getAddress();
 
         // Assert
         Assertions.assertEquals(expectedUnionBridgeAddress, actualUnionBridgeAddress);
@@ -105,7 +102,7 @@ class UnionBridgeConstantsTest {
         Assertions.assertEquals(expectedInitialLockingCap, actualInitialLockingCap);
     }
 
-    public static Stream<Arguments> unionLockingCapIncrementsMultiplierProvider() {
+    private static Stream<Arguments> unionLockingCapIncrementsMultiplierProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), 2),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), 3),

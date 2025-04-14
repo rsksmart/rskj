@@ -10,13 +10,13 @@ public class UnionBridgeConstants {
     protected RskAddress unionBridgeAddress;
     protected Coin initialLockingCap;
     protected int lockingCapIncrementsMultiplier;
-    protected AddressBasedAuthorizer unionBridgeChangeAuthorizer;
+    protected AddressBasedAuthorizer changeAuthorizer;
 
     public NetworkParameters getBtcParams() {
         return btcParams;
     }
 
-    public RskAddress getUnionBridgeAddress() {
+    public RskAddress getAddress() {
         return unionBridgeAddress;
     }
 
@@ -28,7 +28,7 @@ public class UnionBridgeConstants {
         return lockingCapIncrementsMultiplier;
     }
 
-    public AddressBasedAuthorizer getUnionBridgeChangeAuthorizer() {
-        return unionBridgeChangeAuthorizer;
+    public AddressBasedAuthorizer getChangeAuthorizer() {
+        return changeAuthorizer;
     }
 }
