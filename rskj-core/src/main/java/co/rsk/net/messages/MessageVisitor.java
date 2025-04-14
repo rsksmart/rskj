@@ -46,6 +46,7 @@ public class MessageVisitor {
 
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
+    private final SnapshotProcessor snapshotProcessor;
     private final TransactionGateway transactionGateway;
     private final Peer sender;
     private final PeerScoringManager peerScoringManager;
@@ -55,6 +56,7 @@ public class MessageVisitor {
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
                           SyncProcessor syncProcessor,
+                          SnapshotProcessor snapshotProcessor,
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
@@ -62,6 +64,7 @@ public class MessageVisitor {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
+        this.snapshotProcessor = snapshotProcessor;
         this.transactionGateway = transactionGateway;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
@@ -182,6 +185,36 @@ public class MessageVisitor {
             return;
         }
         blockProcessor.processNewBlockHashesMessage(sender, message);
+    }
+
+    public void apply(SnapStatusRequestMessage message) {
+        logger.debug("snapshot status request message apply");
+        this.snapshotProcessor.processSnapStatusRequest(sender, message);
+    }
+
+    public void apply(SnapStatusResponseMessage message)  {
+        logger.debug("snapshot status response message apply blocks[{}] - trieSize[{}]", message.getBlocks().size(), message.getTrieSize());
+        this.syncProcessor.processSnapStatusResponse(sender, message);
+    }
+
+    public void apply(SnapBlocksRequestMessage message) {
+        logger.debug("snapshot blocks request message apply : {}", message);
+        this.snapshotProcessor.processSnapBlocksRequest(sender, message);
+    }
+
+    public void apply(SnapBlocksResponseMessage message) {
+        logger.debug("snapshot blocks response message apply : {}", message);
+        this.syncProcessor.processSnapBlocksResponse(sender, message);
+    }
+
+    public void apply(SnapStateChunkRequestMessage message) {
+        logger.debug("snapshot chunk request : {}", message.getId());
+        this.snapshotProcessor.processStateChunkRequest(sender, message);
+    }
+
+    public void apply(SnapStateChunkResponseMessage message) {
+        logger.debug("snapshot chunk response : {}", message.getId());
+        this.syncProcessor.processStateChunkResponse(sender, message);
     }
 
     public void apply(TransactionsMessage message) {
