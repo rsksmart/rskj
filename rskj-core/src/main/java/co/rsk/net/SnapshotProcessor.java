@@ -465,17 +465,13 @@ public class SnapshotProcessor implements InternalService {
 
     private void retrieveBlocksAndDifficultiesBackwards(long fromBlock, long toBlock, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties) {
         Block currentBlock = blockchain.getBlockByNumber(toBlock);
-        if (currentBlock == null) {
-            logger.warn("No block found for block number {}", toBlock);
-            return;
-        }
-        blocks.add(currentBlock);
-        difficulties.add(blockStore.getTotalDifficultyForBlock(currentBlock));
-
-        while (currentBlock != null && currentBlock.getNumber() > fromBlock) {
-            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+        while (currentBlock != null && currentBlock.getNumber() >= fromBlock) {
             blocks.addFirst(currentBlock);
             difficulties.addFirst(blockStore.getTotalDifficultyForBlock(currentBlock));
+            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+        }
+        if (currentBlock == null) {
+            logger.warn("No block found for block number {}", toBlock);
         }
     }
 
