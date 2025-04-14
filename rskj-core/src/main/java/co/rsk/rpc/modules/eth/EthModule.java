@@ -29,6 +29,7 @@ import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.modules.eth.subscribe.AccountOverride;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
@@ -133,6 +134,14 @@ public class EthModule
         return state.stateToMap();
     }
 
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
+        if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        } else {
+            return call(argsParam, bnOrId);
+        }
+    }
+
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
         String hReturn = null;
         CallArguments args = argsParam.toCallArguments();
@@ -150,8 +159,7 @@ public class EthModule
             hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
 
             return hReturn;
-        }
-        finally {
+        } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
     }
