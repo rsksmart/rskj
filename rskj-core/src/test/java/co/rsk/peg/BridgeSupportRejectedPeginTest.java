@@ -549,11 +549,12 @@ class BridgeSupportRejectedPeginTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(

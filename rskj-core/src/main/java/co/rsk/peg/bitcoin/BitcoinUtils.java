@@ -4,6 +4,7 @@ import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.*;
+import co.rsk.peg.federation.FederationFormatVersion;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.*;
@@ -125,6 +126,38 @@ public class BitcoinUtils {
     public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         return outputScript.createEmptyInputScript(null, redeemScript);
+    }
+
+    public static TransactionWitness createBaseWitnessThatSpendsFromErpRedeemScript(Script redeemScript) {
+        int pushForEmptyByte = 1;
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int witnessSize = pushForRedeemScript + pushForOpNotif + numberOfSignaturesRequiredToSpend + pushForEmptyByte;
+
+        List<byte[]> pushes = new ArrayList<>(witnessSize);
+        byte[] emptyByte = {};
+        pushes.add(emptyByte); // OP_0
+
+        byte[] bytesForSignature = new byte[72];
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
+            pushes.add(bytesForSignature);
+        }
+
+        pushes.add(emptyByte); // OP_NOTIF
+        pushes.add(redeemScript.getProgram());
+        return TransactionWitness.of(pushes);
+    }
+
+    public static void addBaseScriptThatSpendsFromFederationRedeemScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
+        if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            Script inputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+            btcTx.getInput(inputIndex).setScriptSig(inputScript);
+            return;
+        }
+
+        TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        btcTx.setWitness(inputIndex, witnessScript);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
