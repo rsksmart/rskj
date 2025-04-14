@@ -39,7 +39,11 @@ import java.util.*;
 
 import static org.bouncycastle.util.Arrays.concatenate;
 import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
-import static org.ethereum.util.ByteUtil.*;
+import static org.ethereum.util.ByteUtil.isAllZeroes;
+import static org.ethereum.util.ByteUtil.intToBytesNoLeadZeroes;
+import static org.ethereum.util.ByteUtil.isSingleZero;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 
 /**
  * Recursive Length Prefix (RLP) encoding.
@@ -191,43 +195,55 @@ public class RLP {
         return BigIntegers.fromUnsignedByteArray(bytes);
     }
 
+    private static void assertLengthOfLength(byte[] payload, byte lengthOfLength, int pos) {
+        if (lengthOfLength < 0 || lengthOfLength + pos >= payload.length) {
+            throw new RLPException("lengthOfLength cannot be out of the payload length");
+        }
+    }
+
     public static int getNextElementIndex(byte[] payload, int pos) {
 
-        if (pos >= payload.length) {
-            return -1;
+        if (pos < 0 || pos >= payload.length) {
+            throw new RLPException("pos out of payload length range");
         }
 
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_LIST) {
+        int nextElementIndex;
+        final var firstByte = (payload[pos] & 0xFF);
+
+        if (firstByte >= OFFSET_LONG_LIST) {
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
-            int length = calcLength(lengthOfLength, payload, pos);
-            return pos + lengthOfLength + length + 1;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_SHORT_LIST
-                && (payload[pos] & 0xFF) < OFFSET_LONG_LIST) {
 
-            byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_LIST);
-            return pos + 1 + length;
-        }
-        if ((payload[pos] & 0xFF) >= OFFSET_LONG_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_SHORT_LIST) {
+            assertLengthOfLength(payload, lengthOfLength, pos);
+
+            int length = calcLength(lengthOfLength, payload, pos);
+            nextElementIndex = pos + lengthOfLength + length + 1;
+        } else if (firstByte >= OFFSET_SHORT_LIST) {
+
+            byte length = (byte) (firstByte - OFFSET_SHORT_LIST);
+            nextElementIndex = pos + 1 + length;
+        } else if (firstByte >= OFFSET_LONG_ITEM) {
 
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_ITEM);
-            int length = calcLength(lengthOfLength, payload, pos);
-            return pos + lengthOfLength + length + 1;
-        }
-        if ((payload[pos] & 0xFF) > OFFSET_SHORT_ITEM
-                && (payload[pos] & 0xFF) < OFFSET_LONG_ITEM) {
 
-            byte length = (byte) ((payload[pos] & 0xFF) - OFFSET_SHORT_ITEM);
-            return pos + 1 + length;
+            assertLengthOfLength(payload, lengthOfLength, pos);
+
+            int length = calcLength(lengthOfLength, payload, pos);
+            nextElementIndex = pos + lengthOfLength + length + 1;
+        } else if (firstByte > OFFSET_SHORT_ITEM) {
+
+            byte length = (byte) (firstByte - OFFSET_SHORT_ITEM);
+            nextElementIndex = pos + 1 + length;
+        } else if (firstByte == OFFSET_SHORT_ITEM) {
+            nextElementIndex = pos + 1;
+        } else {
+            nextElementIndex = pos + 1;
         }
-        if ((payload[pos] & 0xFF) == OFFSET_SHORT_ITEM) {
-            return pos + 1;
+
+        if (pos + 1 > nextElementIndex || nextElementIndex >= payload.length) {
+            throw new RLPException("Next element index out of next pos and payload length range");
         }
-        if ((payload[pos] & 0xFF) < OFFSET_SHORT_ITEM) {
-            return pos + 1;
-        }
-        return -1;
+
+        return nextElementIndex;
     }
 
     static int calcLength(int lengthOfLength, byte[] msgData, int pos) {
@@ -308,7 +324,7 @@ public class RLP {
         }
 
         if (b0 == EMPTY_MARK) {
-            return Pair.of(new RLPItem(Bytes.of(ByteUtil.EMPTY_BYTE_ARRAY)), position + 1);
+            return Pair.of(new RLPItem(Bytes.of(EMPTY_BYTE_ARRAY)), position + 1);
         }
 
         if (b0 < EMPTY_MARK) {
@@ -346,7 +362,7 @@ public class RLP {
         try{
           return Math.addExact(a, b);
         }catch (ArithmeticException ex){
-          throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+          throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have. " + ex.getMessage() );
         }
     }
 
@@ -469,7 +485,7 @@ public class RLP {
             if (inputArray.isEmpty()) {
                 return encodeLength(inputArray.size(), OFFSET_SHORT_LIST);
             }
-            byte[] output = ByteUtil.EMPTY_BYTE_ARRAY;
+            byte[] output = EMPTY_BYTE_ARRAY;
             for (Object object : inputArray) {
                 output = concatenate(output, encode(object));
             }
@@ -773,13 +789,13 @@ public class RLP {
             return inputString.getBytes(StandardCharsets.UTF_8);
         } else if (input instanceof Long) {
             Long inputLong = (Long) input;
-            return (inputLong == 0) ? ByteUtil.EMPTY_BYTE_ARRAY : asUnsignedByteArray(BigInteger.valueOf(inputLong));
+            return (inputLong == 0) ? EMPTY_BYTE_ARRAY : asUnsignedByteArray(BigInteger.valueOf(inputLong));
         } else if (input instanceof Integer) {
             Integer inputInt = (Integer) input;
-            return (inputInt == 0) ? ByteUtil.EMPTY_BYTE_ARRAY : asUnsignedByteArray(BigInteger.valueOf(inputInt));
+            return (inputInt == 0) ? EMPTY_BYTE_ARRAY : asUnsignedByteArray(BigInteger.valueOf(inputInt));
         } else if (input instanceof BigInteger) {
             BigInteger inputBigInt = (BigInteger) input;
-            return (inputBigInt.equals(BigInteger.ZERO)) ? ByteUtil.EMPTY_BYTE_ARRAY : asUnsignedByteArray(inputBigInt);
+            return (inputBigInt.equals(BigInteger.ZERO)) ? EMPTY_BYTE_ARRAY : asUnsignedByteArray(inputBigInt);
         } else if (input instanceof Value) {
             Value val = (Value) input;
             return toBytes(val.asObj());
