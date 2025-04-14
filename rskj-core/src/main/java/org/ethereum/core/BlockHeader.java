@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.System.arraycopy;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -54,6 +55,8 @@ public abstract class BlockHeader {
     public abstract void setLogsBloom(byte[] logsBloom);
     public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
     public abstract void setTxExecutionSublistsEdges(short[] edges);
+    public abstract byte[] getSuperChainDataHash();
+    public abstract void setSuperChainDataHash(byte[] superChainDataHash);
 
     // called after encoding the header, used to add elements at the end
     public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
@@ -114,6 +117,8 @@ public abstract class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
+    private SuperBlockResolver isSuperResolver;
+
     private final byte[] ummRoot;
 
     protected byte[] extensionData;
@@ -137,12 +142,13 @@ public abstract class BlockHeader {
     private final boolean includeForkDetectionData;
 
     protected BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
-                       long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
-                       Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+                          byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
+                          long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                          Coin minimumGasPrice, int uncleCount, boolean sealed,
+                          boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
+                          SuperBlockResolver isSuperResolver) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -168,6 +174,7 @@ public abstract class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+        this.isSuperResolver = isSuperResolver;
     }
 
     public abstract void setExtension(BlockHeaderExtension extension);
@@ -394,10 +401,17 @@ public abstract class BlockHeader {
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
-    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+    protected void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
         short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
         if (txExecutionSublistsEdges != null) {
             fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
+    }
+
+    protected void addSuperChainDataHash(List<byte[]> fieldsToEncode) {
+        byte[] superChainDataHash = this.getSuperChainDataHash();
+        if (superChainDataHash != null) {
+            fieldsToEncode.add(RLP.encodeElement(superChainDataHash));
         }
     }
 
@@ -465,6 +479,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
         toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
+        toStringBuff.append("  superChainDataHash=").append(toHexStringOrEmpty(getSuperChainDataHash())).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -628,5 +643,19 @@ public abstract class BlockHeader {
 
     public byte[] getUmmRoot() {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+    }
+
+    public Optional<Boolean> isSuper() {
+        return Optional.ofNullable(this.isSuperResolver).map(SuperBlockResolver::resolve);
+    }
+
+    public void setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter isSuper flag");
+        }
+        this.hash = null;
+
+        this.isSuperResolver = isSuperResolver;
     }
 }
