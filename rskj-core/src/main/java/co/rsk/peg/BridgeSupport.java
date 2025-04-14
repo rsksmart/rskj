@@ -509,10 +509,8 @@ public class BridgeSupport {
                 logger.debug("[{}] Peg-in is valid, going to register", METHOD_NAME);
                 executePegIn(btcTx, peginInformation, totalAmount);
             }
-            case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult,
-                peginInformation.getBtcRefundAddress());
-            case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(),
-                peginEvaluationResult);
+            case REFUND -> handleRefundablePegin(btcTx, rskTxHash, peginEvaluationResult, peginInformation.getBtcRefundAddress());
+            case NO_REFUND -> handleNonRefundablePegin(btcTx, peginInformation.getProtocolVersion(), peginEvaluationResult);
         }
     }
 
@@ -532,8 +530,7 @@ public class BridgeSupport {
 
         logger.debug("[{handleRefundablePegin}] Refunding to address {} ", btcRefundAddress);
         Coin totalAmount = computeTotalAmountSent(btcTx);
-        generateRejectionRelease(btcTx, btcRefundAddress, rskTxHash,
-            totalAmount);
+        generateRejectionRelease(btcTx, btcRefundAddress, rskTxHash, totalAmount);
         markTxAsProcessed(btcTx);
     }
 
@@ -1179,7 +1176,7 @@ public class BridgeSupport {
 
         Coin amountSentToActiveFed = svpSpendTransactionUnsigned.getOutput(0).getValue();
         logReleaseRequested(rskTxHash, svpSpendTransactionUnsigned, amountSentToActiveFed);
-        logPegoutTransactionCreated(svpSpendTransactionUnsigned);
+        processReleaseTransactionInfo(svpSpendTransactionUnsigned);
     }
 
     private BtcTransaction createSvpSpendTransaction(BtcTransaction svpFundTxSigned, Federation proposedFederation) throws IllegalStateException {
@@ -1389,11 +1386,11 @@ public class BridgeSupport {
                 activations
         );
 
-        if (activations.isActive(RSKIP271)) {
-            processPegoutsInBatch(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet, rskTx);
-        } else {
+        if (!activations.isActive(RSKIP271)) {
             processPegoutsIndividually(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet);
+            return;
         }
+        processPegoutsInBatch(pegoutRequests, txBuilder, availableUTXOs, pegoutsWaitingForConfirmations, activeFederationWallet, rskTx);
     }
 
     private void settleReleaseRequest(List<UTXO> utxosToUse, PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
@@ -1401,7 +1398,7 @@ public class BridgeSupport {
         addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction, releaseCreationTxHash);
         savePegoutTxSigHash(releaseTransaction);
         logReleaseRequested(releaseCreationTxHash, releaseTransaction, requestedAmount);
-        logPegoutTransactionCreated(releaseTransaction);
+        processReleaseTransactionInfo(releaseTransaction);
     }
 
     private void removeSpentUtxos(List<UTXO> utxosToUse, BtcTransaction releaseTx) {
@@ -1457,14 +1454,19 @@ public class BridgeSupport {
         eventLogger.logReleaseBtcRequested(rskTxHashSerialized, pegoutTransaction, requestedAmount);
     }
 
-    private void logPegoutTransactionCreated(BtcTransaction pegoutTransaction) {
+    private void processReleaseTransactionInfo(BtcTransaction pegoutTransaction) {
+        Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
+        List<Coin> outpointsValues = extractOutpointValues(pegoutTransaction);
+
         if (!activations.isActive(RSKIP428)) {
             return;
         }
+        eventLogger.logPegoutTransactionCreated(pegoutTransactionHash, outpointsValues);
 
-        List<Coin> outpointValues = extractOutpointValues(pegoutTransaction);
-        Sha256Hash pegoutTransactionHash = pegoutTransaction.getHash();
-        eventLogger.logPegoutTransactionCreated(pegoutTransactionHash, outpointValues);
+        if (!activations.isActive(RSKIP305)) {
+            return;
+        }
+        provider.setReleaseOutpointsValues(pegoutTransactionHash, outpointsValues);
     }
 
     private void processPegoutsIndividually(
@@ -3090,10 +3092,10 @@ public class BridgeSupport {
         settleReleaseRejection(pegoutsWaitingForConfirmations, refundPegoutTransaction, rskTxHash, totalAmount);
     }
 
-    private void settleReleaseRejection(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction pegoutTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
-        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, pegoutTransaction, releaseCreationTxHash);
-        logReleaseRequested(releaseCreationTxHash, pegoutTransaction, requestedAmount);
-        logPegoutTransactionCreated(pegoutTransaction);
+    private void settleReleaseRejection(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, BtcTransaction releaseRejectedTransaction, Keccak256 releaseCreationTxHash, Coin requestedAmount) {
+        addPegoutToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseRejectedTransaction, releaseCreationTxHash);
+        logReleaseRequested(releaseCreationTxHash, releaseRejectedTransaction, requestedAmount);
+        processReleaseTransactionInfo(releaseRejectedTransaction);
     }
 
     private void generateRejectionRelease(
@@ -3118,7 +3120,8 @@ public class BridgeSupport {
                         btcTx.isCoinBase(),
                         output.getScriptPubKey()
                     )
-                ).collect(Collectors.toList());
+                )
+                .toList();
             // Use the list of UTXOs to build a transaction builder
             // for the return btc transaction generation
             return getUTXOBasedWalletForLiveFederations(utxosToUs, false);
