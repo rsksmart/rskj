@@ -10,6 +10,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
@@ -17,6 +18,7 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationContext;
+import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.PeginEvaluationResult;
 import co.rsk.peg.pegin.PeginProcessAction;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -216,8 +219,8 @@ public class PegUtils {
             boolean hasRefundAddress = peginInformation.getBtcRefundAddress() != null;
 
             PeginProcessAction peginProcessAction = hasRefundAddress ?
-                                                        PeginProcessAction.REFUND :
-                                                        PeginProcessAction.NO_REFUND;
+                PeginProcessAction.REFUND :
+                PeginProcessAction.NO_REFUND;
 
             return new PeginEvaluationResult(peginProcessAction, PEGIN_V1_INVALID_PAYLOAD);
         }
@@ -249,18 +252,84 @@ public class PegUtils {
         }
     }
 
-    public static Address getFlyoverAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Script redeemScript) {
-        Script flyoverScriptPubKey = getFlyoverScriptPubKey(flyoverDerivationHash, redeemScript);
+    public static Keccak256 getFlyoverDerivationHash(
+        Keccak256 derivationArgumentsHash,
+        Address userRefundAddress,
+        Address lpBtcAddress,
+        RskAddress lbcAddress,
+        ActivationConfig.ForBlock activations
+    ) {
+        byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
+        byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
+        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
+        byte[] lbcAddressBytes = lbcAddress.getBytes();
+        byte[] result = new byte[
+            flyoverDerivationHashData.length +
+                userRefundAddressBytes.length +
+                lpBtcAddressBytes.length +
+                lbcAddressBytes.length
+            ];
+
+        int dstPosition = 0;
+
+        System.arraycopy(
+            flyoverDerivationHashData,
+            0,
+            result,
+            dstPosition,
+            flyoverDerivationHashData.length
+        );
+        dstPosition += flyoverDerivationHashData.length;
+
+        System.arraycopy(
+            userRefundAddressBytes,
+            0,
+            result,
+            dstPosition,
+            userRefundAddressBytes.length
+        );
+        dstPosition += userRefundAddressBytes.length;
+
+        System.arraycopy(
+            lbcAddressBytes,
+            0,
+            result,
+            dstPosition,
+            lbcAddressBytes.length
+        );
+        dstPosition += lbcAddressBytes.length;
+
+        System.arraycopy(
+            lpBtcAddressBytes,
+            0,
+            result,
+            dstPosition,
+            lpBtcAddressBytes.length
+        );
+
+        return new Keccak256(HashUtil.keccak256(result));
+    }
+
+    public static Address getFlyoverFederationAddress(NetworkParameters networkParameters, Keccak256 flyoverDerivationHash, Federation federation) {
+        Script flyoverScriptPubKey = getFlyoverFederationScriptPubKey(flyoverDerivationHash, federation);
         return Address.fromP2SHScript(networkParameters, flyoverScriptPubKey);
     }
 
-    public static Script getFlyoverScriptPubKey(Keccak256 flyoverDerivationHash, Script redeemScript) {
-        Script flyoverRedeemScript = getFlyoverRedeemScript(flyoverDerivationHash, redeemScript);
-        return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+    public static Script getFlyoverFederationScriptPubKey(Keccak256 flyoverDerivationHash, Federation federation) {
+        Script flyoverRedeemScript = getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript());
+        return getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
     }
 
-    public static Script getFlyoverRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
+    public static Script getFlyoverFederationRedeemScript(Keccak256 flyoverDerivationHash, Script federationRedeemScript) {
         return FlyoverRedeemScriptBuilderImpl.builder()
-            .of(flyoverDerivationHash, redeemScript);
+            .of(flyoverDerivationHash, federationRedeemScript);
+    }
+
+    public static Script getFlyoverFederationOutputScript(int formatVersion, Script flyoverRedeemScript) {
+        if (formatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        }
+
+        return ScriptBuilder.createP2SHP2WSHOutputScript(flyoverRedeemScript);
     }
 }

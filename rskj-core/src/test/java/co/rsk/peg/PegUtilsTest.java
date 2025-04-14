@@ -12,7 +12,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -67,16 +66,16 @@ class PegUtilsTest {
 
     @ParameterizedTest
     @MethodSource("derivationHashAndRedeemScriptArgs")
-    void getFlyoverRedeemScript_fromRealValues_shouldReturnSameRealRedeemScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
+    void getFlyoverRedeemScript_fromRealValues_shouldReturnSameRealRedeemScript(Keccak256 flyoverDerivationHash, Federation federation) {
         Script flyoverRedeemScript = new Script(Hex.decode("20fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d50043975645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68"));
 
-        assertEquals(flyoverRedeemScript, getFlyoverRedeemScript(flyoverDerivationHash, redeemScript));
+        assertEquals(flyoverRedeemScript, getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript()));
     }
 
     @ParameterizedTest
     @MethodSource("derivationHashAndRedeemScriptArgs")
-    void getFlyoverScriptPubKey_fromRealValues_shouldReturnSameRealOutputScript(Keccak256 flyoverDerivationHash, Script redeemScript) {
-        Script scriptPubKey = getFlyoverScriptPubKey(flyoverDerivationHash, redeemScript); // OP_HASH160 outputScript OP_EQUAL
+    void getFlyoverScriptPubKey_fromRealValues_shouldReturnSameRealOutputScript(Keccak256 flyoverDerivationHash, Federation federation) {
+        Script scriptPubKey = getFlyoverFederationScriptPubKey(flyoverDerivationHash, federation); // OP_HASH160 outputScript OP_EQUAL
         byte[] outputScript = Hex.decode("18fc3b52a5b7d5277f41b9765719b45bfa427730");
 
         assertArrayEquals(outputScript, scriptPubKey.getPubKeyHash());
@@ -84,20 +83,32 @@ class PegUtilsTest {
 
     @ParameterizedTest
     @MethodSource("derivationHashAndRedeemScriptArgs")
-    void getFlyoverAddress_fromRealValues_shouldReturnSameRealAddress(Keccak256 flyoverDerivationHash, Script redeemScript) {
+    void getFlyoverAddress_fromRealValues_shouldReturnSameRealAddress(Keccak256 flyoverDerivationHash, Federation federation) {
         Address flyoverAddress = Address.fromBase58(btcMainnetParams, "33y8JWrSe4byp3DKmy2Mkyykz2dzP8Lmvn");
 
-        assertEquals(flyoverAddress, getFlyoverAddress(btcMainnetParams, flyoverDerivationHash, redeemScript));
+        assertEquals(flyoverAddress, getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, federation));
     }
 
     private static Stream<Arguments> derivationHashAndRedeemScriptArgs() {
         // reference from https://mempool.space/tx/ffaebdabce5b1cc1b2ab95657cf087a67ade6a29ecc9ca7d4e2089e346a3e1b3
 
         Keccak256 flyoverDerivationHash = new Keccak256("fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d500439");
-        Script redeemScript = new Script(Hex.decode("645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68"));
+
+        List<BtcECKey> membersKeys = Arrays.asList(
+            BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            BtcECKey.fromPublicOnly(Hex.decode("0275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c949")),
+            BtcECKey.fromPublicOnly(Hex.decode("02a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb")),
+            BtcECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+            BtcECKey.fromPublicOnly(Hex.decode("034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25")),
+            BtcECKey.fromPublicOnly(Hex.decode("0350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f9")),
+            BtcECKey.fromPublicOnly(Hex.decode("03b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf903")),
+            BtcECKey.fromPublicOnly(Hex.decode("03b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b35888771906"))
+        );
+        Federation federation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(membersKeys).build();
 
         return Stream.of(
-            Arguments.of(flyoverDerivationHash, redeemScript)
+            Arguments.of(flyoverDerivationHash, federation)
         );
     }
 
@@ -592,12 +603,12 @@ class PegUtilsTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder().build();
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(

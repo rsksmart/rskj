@@ -53,7 +53,7 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Test;
 
 class FederationChangeIT {
-    private static final ActivationConfig.ForBlock ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
+    private static final ActivationConfig.ForBlock ACTIVATIONS = ActivationConfigsForTest.lovell700().forBlock(0);
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
@@ -288,7 +288,7 @@ class FederationChangeIT {
         var erpPubKeys = FEDERATION_CONSTANTS.getErpFedPubKeysList();
         var activationDelay = FEDERATION_CONSTANTS.getErpFedActivationDelay();
 
-        return FederationFactory.buildP2shP2wshErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
     }
 
     private int voteToCreatePendingFederation(Transaction tx) {
@@ -700,10 +700,8 @@ class FederationChangeIT {
             LBC_ADDRESS
         );
 
-        var flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
-            .of(flyoverDerivationHash, federation.getRedeemScript());
-        var recipient = Address.fromP2SHScript(NETWORK_PARAMS, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
-        flyoverPeginBtcTx.addOutput(Coin.COIN, recipient);
+        var flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(NETWORK_PARAMS, flyoverDerivationHash, federation);
+        flyoverPeginBtcTx.addOutput(Coin.COIN, flyoverFederationAddress);
 
         return Pair.of(flyoverPeginBtcTx, flyoverDerivationHash);
     }
