@@ -71,14 +71,14 @@ public class BridgeSerializationUtils {
         return RLP.encodeElement(rskAddress.getBytes());
     }
 
-    public static RskAddress deserializeRskAddress(byte[] rskAddressInBytes) {
-        if (rskAddressInBytes == null || rskAddressInBytes.length == 0) {
+    public static RskAddress deserializeRskAddress(byte[] rskAddressSerialized) {
+        if (rskAddressSerialized == null || rskAddressSerialized.length == 0) {
             return null;
         }
 
-        return Optional.of(rskAddressInBytes)
+        return Optional.of(rskAddressSerialized)
             .map(RLP::decode2)
-            .flatMap(rlpList -> rlpList.stream().findFirst())
+            .map(rlpList -> rlpList.get(0))
             .map(RLPElement::getRLPData)
             .map(RskAddress::new)
             .orElseThrow(() -> new IllegalArgumentException("Invalid serialized address"));
