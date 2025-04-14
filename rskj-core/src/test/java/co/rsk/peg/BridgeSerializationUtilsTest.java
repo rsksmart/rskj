@@ -103,9 +103,9 @@ class BridgeSerializationUtilsTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    void deserializeRskAddress_whenInvalidValues_shouldReturnNull(byte[] nullOrEmptyData) {
+    void deserializeRskAddress_whenNullOrEmptyData_shouldReturnNull(byte[] data) {
         // Act & Assert
-        RskAddress actualAddress = BridgeSerializationUtils.deserializeRskAddress(nullOrEmptyData);
+        RskAddress actualAddress = BridgeSerializationUtils.deserializeRskAddress(data);
         assertNull(actualAddress);
     }
 
