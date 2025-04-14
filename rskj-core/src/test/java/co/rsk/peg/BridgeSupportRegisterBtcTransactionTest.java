@@ -2237,11 +2237,12 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2305,11 +2306,12 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2374,11 +2376,12 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2450,11 +2453,12 @@ class BridgeSupportRegisterBtcTransactionTest {
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = buildBridgeSupport(activations);
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2529,6 +2533,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         int height = shouldUsePegoutTxIndex ? heightAtWhichToStartUsingPegoutIndex : 1;
 
         BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
+        FederationConstants federationRegTestConstants = bridgeRegTestConstants.getFederationConstants();
         NetworkParameters btcRegTestsParams = bridgeRegTestConstants.getBtcParams();
         Context.propagate(new Context(btcRegTestsParams));
 
@@ -2541,7 +2546,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
         LockWhitelist lockWhitelist = mock(LockWhitelist.class);
         when(lockWhitelist.isWhitelistedFor(any(Address.class), any(Coin.class), any(int.class))).thenReturn(true);
-        when(whitelistStorageProvider.getLockWhitelist(lovell700Activations, btcMainnetParams)).thenReturn(lockWhitelist);
+        when(whitelistStorageProvider.getLockWhitelist(lovell700Activations, btcRegTestsParams)).thenReturn(lockWhitelist);
 
         when(federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestsParams, activations)).thenReturn(activeFederationUtxos);
 
@@ -2549,6 +2554,17 @@ class BridgeSupportRegisterBtcTransactionTest {
         when(provider.getPegoutsWaitingForConfirmations()).thenReturn(pegoutsWaitingForConfirmations);
 
         Federation oldFederation = createFederation(bridgeRegTestConstants, regtestOldFederationPrivateKeys);
+
+        // we need to recreate the active fed since we are in regtest
+        List<FederationMember> activeFedMembers = FederationTestUtils.getFederationMembersWithBtcKeys(activeFedSigners);
+        long activeFedCreationBlockNumber = 2L;
+        Instant creationTime = Instant.ofEpochMilli(1000L);
+        List<BtcECKey> erpPubKeys = federationRegTestConstants.getErpFedPubKeysList();
+        long activationDelay = federationRegTestConstants.getErpFedActivationDelay();
+        FederationArgs activeFedArgs =
+            new FederationArgs(activeFedMembers, creationTime, activeFedCreationBlockNumber, btcRegTestsParams);
+        activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
+        when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
 
         BtcTransaction migrationTx = new BtcTransaction(btcRegTestsParams);
         Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, oldFederation.getRedeemScript());
@@ -2595,7 +2611,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         StoredBlock chainHead = new StoredBlock(
             headBlock,
             new BigInteger("0"),
-            height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations()
+            height + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations()
         );
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
@@ -2616,7 +2632,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         mockChainOfStoredBlocks(
             btcBlockStore,
             btcBlock,
-            height + BridgeSupportRegisterBtcTransactionTest.bridgeMainnetConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height + bridgeRegTestConstants.getBtc2RskMinimumAcceptableConfirmations(),
             height
         );
 

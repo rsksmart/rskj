@@ -4,7 +4,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.PegUtils.getFlyoverRedeemScript;
+import static co.rsk.peg.PegUtils.getFlyoverFederationRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -415,7 +415,7 @@ class BridgeSupportSvpTest {
 
             TransactionOutput outputToFlyoverProposedFed = svpFundTransaction.getOutput(1);
             Script proposedFederationWithFlyoverPrefixScriptPubKey =
-                PegUtils.getFlyoverScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+                PegUtils.getFlyoverFederationScriptPubKey(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederation);
             assertEquals(outputToFlyoverProposedFed.getScriptPubKey(), proposedFederationWithFlyoverPrefixScriptPubKey);
             assertEquals(outputToFlyoverProposedFed.getValue(), bridgeMainNetConstants.getSvpFundTxOutputsValue());
 
@@ -769,7 +769,7 @@ class BridgeSupportSvpTest {
 
             TransactionInput inputToFlyoverProposedFederation = inputs.get(1);
             Script flyoverRedeemScript =
-                getFlyoverRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+                getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
             assertInputHasExpectedScriptSig(inputToFlyoverProposedFederation, flyoverRedeemScript);
         }
 
@@ -1638,10 +1638,10 @@ class BridgeSupportSvpTest {
         addInput(svpFundTransaction, parentTxHash, proposedFederation.getRedeemScript());
 
         svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
-        Address flyoverProposedFederationAddress = PegUtils.getFlyoverAddress(
+        Address flyoverProposedFederationAddress = PegUtils.getFlyoverFederationAddress(
             btcMainnetParams,
             bridgeMainNetConstants.getProposedFederationFlyoverPrefix(),
-            proposedFederation.getRedeemScript()
+            proposedFederation
         );
         svpFundTransaction.addOutput(svpFundTxOutputsValue, flyoverProposedFederationAddress);
     }
@@ -1705,7 +1705,7 @@ class BridgeSupportSvpTest {
         svpSpendTransaction.getInput(0)
             .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
 
-        Script flyoverRedeemScript = getFlyoverRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+        Script flyoverRedeemScript = getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
         svpSpendTransaction.getInput(1)
             .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
