@@ -114,7 +114,7 @@ class BridgeSupportTest {
 
     private static final ActivationConfig.ForBlock genesisActivations = ActivationConfigsForTest.genesis().forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-    private static final Federation activeFederation = P2shErpFederationBuilder.builder().build();
+    private static Federation activeFederation = P2shErpFederationBuilder.builder().build();
 
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
@@ -918,7 +918,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -934,10 +934,10 @@ class BridgeSupportTest {
 
         // Create transaction
         Coin lockValue = Coin.COIN;
-        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
-        tx.addOutput(lockValue, federationStorageProviderMock.getNewFederation(any(), any()).getAddress());
+        BtcTransaction btcTx = new BtcTransaction(bridgeMainNetConstants.getBtcParams());
+        btcTx.addOutput(lockValue, genesisFederation.getAddress());
         BtcECKey srcKey = new BtcECKey();
-        tx.addInput(
+        btcTx.addInput(
             BitcoinTestUtils.createHash(1),
             0,
             ScriptBuilder.createInputScript(null, srcKey)
@@ -947,7 +947,7 @@ class BridgeSupportTest {
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
         List<Sha256Hash> hashes = new ArrayList<>();
-        hashes.add(tx.getHash());
+        hashes.add(btcTx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(bridgeMainNetConstants.getBtcParams(), bits, hashes, 1);
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
         co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
@@ -977,7 +977,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(executionBlock)
             .withActivations(activations)
@@ -998,7 +998,7 @@ class BridgeSupportTest {
 
         bridgeSupport.registerBtcTransaction(
             mock(Transaction.class),
-            tx.bitcoinSerialize(),
+            btcTx.bitcoinSerialize(),
             height,
             pmt.bitcoinSerialize()
         );
@@ -7497,6 +7497,10 @@ class BridgeSupportTest {
     class ReleaseTransactionInfo {
         private List<LogInfo> logs;
 
+        private final Coin outpointValue1 = Coin.valueOf(300_000);
+        private final Coin outpointValue2 = Coin.valueOf(150_000);
+        private final Coin outpointValue3 = Coin.valueOf(50_000);
+
         @BeforeEach
         void setUp() {
             repository = createRepository();
@@ -7533,7 +7537,7 @@ class BridgeSupportTest {
                 .build();
         }
 
-        private void setUpReleaseRequests(Coin outpointValue1, Coin outpointValue2, Coin outpointValue3) {
+        private void setUpReleaseRequests() {
             // save utxos in active federation wallet
             List<UTXO> activeFederationUTXOs = List.of(
                 BitcoinTestUtils.createUTXO(1, 0, outpointValue1, activeFederation.getAddress()),
@@ -7560,10 +7564,7 @@ class BridgeSupportTest {
         @Test
         void updateCollections_whenReleasesInQueue_beforeRSKIP305_justEmitsPegoutTransactionCreatedEvent() throws IOException {
             // Arrange
-            Coin outpointValue1 = Coin.valueOf(300_000);
-            Coin outpointValue2 = Coin.valueOf(150_000);
-            Coin outpointValue3 = Coin.valueOf(50_000);
-            setUpReleaseRequests(outpointValue1, outpointValue2, outpointValue3);
+            setUpReleaseRequests();
 
             ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
             setUpWithActivations(lovellActivations);
@@ -7580,13 +7581,9 @@ class BridgeSupportTest {
         }
 
         @Test
-        void updateCollections_whenReleasesInQueue_afterRSKIP305_processReleaseTransactionInfo() throws IOException {
+        void updateCollections_whenReleasesInQueueAndLegacyFed_afterRSKIP305_shouldSetRedeemDataInScriptSigAndProcessReleaseTransactionInfo() throws IOException {
             // Arrange
-            Coin outpointValue1 = Coin.valueOf(300_000);
-            Coin outpointValue2 = Coin.valueOf(150_000);
-            Coin outpointValue3 = Coin.valueOf(50_000);
-            setUpReleaseRequests(outpointValue1, outpointValue2, outpointValue3);
-
+            setUpReleaseRequests();
             setUpWithActivations(allActivations);
 
             // Act
@@ -7595,6 +7592,39 @@ class BridgeSupportTest {
 
             // Assert
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+
+            // check the active fed redeem script data is in input script sig
+            Script scriptSig = releaseTransaction.getInput(0).getScriptSig();
+            int redeemScriptIndex = scriptSig.getChunks().size() - 1;
+            byte[] redeemData = scriptSig.getChunks().get(redeemScriptIndex).data;
+            assertArrayEquals(activeFederation.getRedeemScript().getProgram(), redeemData);
+
+            List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
+            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
+        }
+
+        @Test
+        void updateCollections_whenReleasesInQueueAndSegwitCompatibleFed_shouldSetRedeemDataInWitnessAndProcessReleaseTransactionInfo() throws IOException {
+            // Arrange
+            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+            federationStorageProvider.setNewFederation(activeFederation);
+
+            setUpReleaseRequests();
+            setUpWithActivations(allActivations);
+
+            // Act
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+
+            // Assert
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+
+            // check the active fed redeem script data is in input witness
+            TransactionWitness witness = releaseTransaction.getWitness(0);
+            int redeemScriptIndex = witness.getPushCount() - 1;
+            byte[] redeemData = witness.getPush(redeemScriptIndex);
+            assertArrayEquals(activeFederation.getRedeemScript().getProgram(), redeemData);
+
             List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
             assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
         }
