@@ -131,13 +131,8 @@ public abstract class SystemProperties {
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
-            if (isSystemProfilingEnabled(this.configFromFiles)) {
-                JmxProfiler jmxProfiler = new JmxProfiler();
-                jmxProfiler.register(ManagementFactory.getPlatformMBeanServer());
 
-                ProfilerFactory.configure(jmxProfiler);
-                logger.info("JMX profiler enabled");
-            }
+            setupProfilerIfNeeded(this.configFromFiles);
 
             if (logger.isTraceEnabled()){
                 logger.trace(
@@ -804,5 +799,17 @@ public abstract class SystemProperties {
     public StableMinGasPriceSystemConfig getStableGasPriceSystemConfig() {
         Config config = configFromFiles.getConfig(StableMinGasPriceSystemConfig.STABLE_GAS_PRICE_CONFIG_PATH_PROPERTY);
         return new StableMinGasPriceSystemConfig(config);
+    }
+
+    private static void setupProfilerIfNeeded(Config config) {
+        if (!isSystemProfilingEnabled(config)) {
+            return;
+        }
+
+        JmxProfiler jmxProfiler = new JmxProfiler();
+        jmxProfiler.register(ManagementFactory.getPlatformMBeanServer());
+
+        ProfilerFactory.configure(jmxProfiler);
+        logger.info("JMX profiler enabled");
     }
 }
