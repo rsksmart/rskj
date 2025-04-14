@@ -73,8 +73,10 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -93,6 +95,41 @@ class BridgeSerializationUtilsTest {
 
     private static final Address ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "first");
     private static final Address OTHER_ADDRESS = BitcoinTestUtils.createP2PKHAddress(MAINNET_PARAMETERS, "second");
+
+    private static Stream<Arguments> validRskAddressesProvider() {
+        return Stream.of(
+            Arguments.of(TestUtils.generateAddress("address1")),
+            Arguments.of(TestUtils.generateAddress("address2")),
+            Arguments.of(TestUtils.generateAddress("address3"))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("validRskAddressesProvider")
+    void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
+        // Act & Assert
+        byte[] actualSerializedAddress = BridgeSerializationUtils.serializeRskAddress(address);
+        assertNotNull(actualSerializedAddress);
+
+        RskAddress actualDeserializedAddress = BridgeSerializationUtils.deserializeRskAddress(actualSerializedAddress);
+        assertNotNull(actualDeserializedAddress);
+
+        assertEquals(address, actualDeserializedAddress);
+    }
+
+    @Test
+    void serializeRskAddress_whenNull_shouldFail() {
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskAddress(null));
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void deserializeRskAddress_whenNullOrEmptyData_shouldReturnNull(byte[] data) {
+        // Act & Assert
+        RskAddress actualAddress = BridgeSerializationUtils.deserializeRskAddress(data);
+        assertNull(actualAddress);
+    }
 
     @Test
     void serializeAndDeserializeBtcTransaction_withValidDataAndInputs_shouldReturnEqualResults() {
