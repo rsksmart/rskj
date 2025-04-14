@@ -29,7 +29,7 @@ jobs:
 
       - name: Setup Java JDK
         if: ${{ matrix.language == 'java' }}
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -39,15 +39,15 @@ jobs:
         run: ./configure.sh
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@5f8171a638ada777af81d42b55959a643bb29017 #v3.28.12
+        uses: github/codeql-action/init@45775bd8235c68ba998cffa5171334d58593da47 #v3.28.15
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@5f8171a638ada777af81d42b55959a643bb29017 #v3.28.12
+        uses: github/codeql-action/autobuild@45775bd8235c68ba998cffa5171334d58593da47 #v3.28.15
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@5f8171a638ada777af81d42b55959a643bb29017 #v3.28.12
+        uses: github/codeql-action/analyze@45775bd8235c68ba998cffa5171334d58593da47 #v3.28.15
         with:
           category: "/language:${{ matrix.language }}"
