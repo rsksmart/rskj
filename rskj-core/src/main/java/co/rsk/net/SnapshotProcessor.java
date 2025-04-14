@@ -69,6 +69,7 @@ public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
 
+    public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
@@ -453,7 +454,7 @@ public class SnapshotProcessor implements InternalService {
         LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
 
         long requestBlockNumber = requestMessage.getBlockNumber();
-        if (requestBlockNumber < 2) {
+        if (requestBlockNumber < 2 || requestBlockNumber > blockchain.getBestBlock().getNumber()) {
             logger.debug("Snap blocks request from {} failed because of invalid block number {}", sender.getPeerNodeID(), requestBlockNumber);
             return;
         }
@@ -467,13 +468,13 @@ public class SnapshotProcessor implements InternalService {
 
     private void retrieveBlocksAndDifficultiesBackwards(long fromBlock, long toBlock, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties) {
         Block currentBlock = blockchain.getBlockByNumber(toBlock);
-        blocks.add(currentBlock);
-        difficulties.add(blockStore.getTotalDifficultyForBlock(currentBlock));
-
-        while (currentBlock.getNumber() > fromBlock) {
-            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+        while (currentBlock != null && currentBlock.getNumber() >= fromBlock) {
             blocks.addFirst(currentBlock);
             difficulties.addFirst(blockStore.getTotalDifficultyForBlock(currentBlock));
+            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+        }
+        if (currentBlock == null) {
+            logger.warn("No block found for block number {}", toBlock);
         }
     }
 
