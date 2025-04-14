@@ -3,13 +3,15 @@ package co.rsk.peg.union;
 public enum UnionResponseCode {
     SUCCESS(0),
     UNAUTHORIZED_CALLER(-1),
-    // Invalid value when The amount requested, combined with previously requested amounts, exceeds the current locking cap value.
-    // or invalid value when increasing union bridge locking cap
+    // Response codes when the value specified is invalid:
+    // 1. The requested amount of RBTC, combined with previously requested amounts, exceeds the current locking cap value.
+    // 2. The returned amount exceeds the total amount of RBTC previously transferred.
+    // 3. The new cap value is less than the current cap or excessive.
     INVALID_VALUE(-2),
-    // Response codes when enabling or disabling union bridge operations
+    // Response codes when enabling already enabled or disabling already disabled union bridge operations
     ALREADY_PAUSED(-3),
     ALREADY_UNPAUSED(-4),
-    // Environment restriction when prevent union bridge address being updated on production
+    // Environment restriction for preventing union bridge address being updated on production
     ENVIRONMENT_DISABLED(-5),
     GENERIC_ERROR(-10)
     ;
