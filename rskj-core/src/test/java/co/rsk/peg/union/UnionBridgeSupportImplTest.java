@@ -72,6 +72,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             unionBridgeConstants,
+            allActivations,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -110,6 +111,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             unionBridgeConstants,
+            allActivations,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -135,6 +137,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             unionBridgeConstants,
+            allActivations,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -155,7 +158,7 @@ class UnionBridgeSupportImplTest {
         assertAddressWasSet(secondNewUnionBridgeContractAddress);
 
         // Check that the address was stored in the storage
-        unionBridgeSupport.save(allActivations);
+        unionBridgeSupport.save();
         assertAddressWasStored(secondNewUnionBridgeContractAddress);
     }
 
@@ -164,6 +167,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             UnionBridgeMainNetConstants.getInstance(),
+            allActivations,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -207,6 +211,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             unionBridgeConstants,
+            allActivations,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -231,6 +236,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             unionBridgeConstants,
+            lovell700,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -238,7 +244,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, newUnionBridgeContractAddress);
 
         // act
-        unionBridgeSupport.save(lovell700);
+        unionBridgeSupport.save();
 
         // assert
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
@@ -251,6 +257,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeSupport unionBridgeSupport = new UnionBridgeSupportImpl(
             unionBridgeConstants,
+            allActivations,
             unionBridgeStorageProvider,
             signatureCache
         );
@@ -260,7 +267,7 @@ class UnionBridgeSupportImplTest {
         Assertions.assertEquals(actualResponseCode, UnionResponseCode.SUCCESS.getCode());
 
         // act
-        unionBridgeSupport.save(allActivations);
+        unionBridgeSupport.save();
 
         // assert
         RskAddress actualRskAddress = storageAccessor.getFromRepository(

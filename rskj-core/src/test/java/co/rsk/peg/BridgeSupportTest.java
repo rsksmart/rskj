@@ -55,6 +55,15 @@ import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.storage.*;
+import co.rsk.peg.union.UnionBridgeStorageProvider;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionBridgeSupportImpl;
+import co.rsk.peg.union.UnionResponseCode;
+import co.rsk.peg.union.constants.UnionBridgeConstants;
+import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
+import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.peg.vote.ABICallSpec;
@@ -105,6 +114,7 @@ class BridgeSupportTest {
     private LockingCapSupport lockingCapSupport;
     private FederationSupport federationSupport;
     private FeePerKbSupport feePerKbSupport;
+    private UnionBridgeSupport unionBridgeSupport;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -147,6 +157,14 @@ class BridgeSupportTest {
             lockingCapStorageProvider,
             activationsAfterForks,
             LockingCapMainNetConstants.getInstance(),
+            signatureCache
+        );
+
+        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
+        unionBridgeSupport = new UnionBridgeSupportImpl(
+            UnionBridgeMainNetConstants.getInstance(),
+            activationsAfterForks,
+            unionBridgeStorageProvider,
             signatureCache
         );
     }
@@ -764,6 +782,70 @@ class BridgeSupportTest {
             // Assert
             assertTrue(actualResult);
             assertEquals(newLockingCap, bridgeSupport.getLockingCap());
+        }
+    }
+
+    @Nested
+    @Tag("unionBridge")
+    class UnionBridgeTest {
+
+        private BridgeSupport bridgeSupport;
+        private Transaction transaction;
+        private RskAddress unionBridgeContractAddress;
+
+        @BeforeEach
+        void setUp() {
+            unionBridgeSupport = mock(UnionBridgeSupportImpl.class);
+            bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(
+                unionBridgeSupport
+            ).build();
+
+            transaction = mock(Transaction.class);
+            unionBridgeContractAddress = TestUtils.generateAddress("unionBridgeContractAddress");
+        }
+
+        @ParameterizedTest
+        @MethodSource("unionResponseCodeProvider")
+        void setUnionBridgeContractAddress_shouldReturnResultedResponseCode(UnionResponseCode expectedUnionResponseCode) {
+            // arrange
+            when(bridgeSupport.setUnionBridgeContractAddressForTestnet(any(),
+                any())).thenReturn(
+                expectedUnionResponseCode.getCode()
+            );
+
+            // act
+            int actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction,
+                unionBridgeContractAddress);
+
+            // assert
+            Assertions.assertEquals(
+                expectedUnionResponseCode.getCode(),
+                actualResponseCode
+            );
+            verify(unionBridgeSupport).setUnionBridgeContractAddressForTestnet(
+                transaction,
+                unionBridgeContractAddress
+            );
+            // Verify save method is not called when setAddress is called
+            verify(unionBridgeSupport, never()).save();
+        }
+
+        private static Stream<Arguments> unionResponseCodeProvider() {
+            return Stream.of(
+                Arguments.of(UnionResponseCode.SUCCESS),
+                Arguments.of(UnionResponseCode.ENVIRONMENT_DISABLED),
+                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
+                Arguments.of(UnionResponseCode.GENERIC_ERROR)
+            );
+        }
+
+        @Test
+        void save() {
+            // act
+            bridgeSupport.save();
+
+            // assert
+            verify(unionBridgeSupport, times(1)).save();
         }
     }
 
@@ -6732,6 +6814,7 @@ class BridgeSupportTest {
             whitelistSupport,
             mock(FederationSupport.class),
             lockingCapSupport,
+            unionBridgeSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -8490,6 +8573,7 @@ class BridgeSupportTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             blockStoreFactory,
             activations,
             signatureCache

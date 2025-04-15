@@ -52,6 +52,9 @@ import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.storage.*;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
@@ -132,6 +135,8 @@ public class BridgeSupportIT {
     private WhitelistSupport whitelistSupport;
     private WhitelistStorageProvider whitelistStorageProvider;
     private LockingCapSupport lockingCapSupport;
+    private UnionBridgeSupport unionBridgeSupport;
+
     private Repository track;
 
     private BridgeSupport bridgeSupport;
@@ -158,6 +163,14 @@ public class BridgeSupportIT {
             lockingCapStorageProvider,
             activations,
             LockingCapMainNetConstants.getInstance(),
+            signatureCache
+        );
+        UnionBridgeStorageProviderImpl unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(
+            inMemoryStorage);
+        unionBridgeSupport = new UnionBridgeSupportImpl(
+            BridgeMainNetConstants.getInstance().getUnionBridgeConstants(),
+            activations,
+            unionBridgeStorageProvider,
             signatureCache
         );
 
@@ -448,6 +461,7 @@ public class BridgeSupportIT {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
