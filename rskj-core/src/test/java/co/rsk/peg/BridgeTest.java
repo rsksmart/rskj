@@ -18,6 +18,7 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.test.builders.BridgeBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -25,6 +26,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -3386,6 +3388,51 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
     }
+
+    @Test
+    void setUnionBridgeContractAddressForTestnet_beforeRSKIP502_shouldFail() {
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.lovell700())
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+        byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+
+        assertThrows(VMException.class, () -> bridge.execute(data));
+    }
+
+    private static Stream<Arguments> setUnionBridgeContractAddressForTestnetConstantsProvider() {
+        return Stream.of(
+            Arguments.of(Constants.regtest(), UnionResponseCode.SUCCESS),
+            Arguments.of(Constants.testnet2(ActivationConfigsForTest.all()), UnionResponseCode.SUCCESS),
+            Arguments.of(Constants.mainnet(), UnionResponseCode.ENVIRONMENT_DISABLED)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("setUnionBridgeContractAddressForTestnetConstantsProvider")
+    void setUnionBridgeContractAddressForTestnet_afterRSKIP502_shouldSetNewAddress(Constants constants, UnionResponseCode expectedUnionResponseCode) throws VMException {
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+
+        when(bridgeSupportMock.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(
+            expectedUnionResponseCode.getCode());
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.all())
+            .bridgeSupport(bridgeSupportMock)
+            .constants(constants)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+        byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+
+        byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
+
+        int actualUnionResponseCode = decodedResult.intValue();
+        assertEquals(expectedUnionResponseCode.getCode(), actualUnionResponseCode);
+        verify(bridgeSupportMock, times(1)).setUnionBridgeContractAddressForTestnet(any(), any());
+    }
+
 
     private static Stream<Arguments> msgTypesAndActivations() {
         List<Arguments> argumentsList = new ArrayList<>();
