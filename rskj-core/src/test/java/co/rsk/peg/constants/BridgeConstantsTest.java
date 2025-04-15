@@ -10,6 +10,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.*;
 import co.rsk.peg.feeperkb.constants.*;
 import co.rsk.peg.lockingcap.constants.*;
+import co.rsk.peg.union.constants.UnionBridgeConstants;
+import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
+import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.peg.whitelist.constants.*;
 import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -203,6 +207,26 @@ class BridgeConstantsTest {
             Arguments.of(BridgeMainNetConstants.getInstance(), LockingCapMainNetConstants.getInstance()),
             Arguments.of(BridgeTestNetConstants.getInstance(), LockingCapTestNetConstants.getInstance()),
             Arguments.of(new BridgeRegTestConstants(), LockingCapRegTestConstants.getInstance())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("getUnionBridgeConstantsProvider")
+    void getUnionBridgeConstants(BridgeConstants bridgeConstants, UnionBridgeConstants expectedValue) {
+        // Act
+        UnionBridgeConstants actualUnionBridgeConstants = bridgeConstants.getUnionBridgeConstants();
+
+        // Assert
+        assertInstanceOf(expectedValue.getClass(), actualUnionBridgeConstants);
+    }
+
+    private static Stream<Arguments> getUnionBridgeConstantsProvider() {
+        return Stream.of(
+            Arguments.of(BridgeMainNetConstants.getInstance(),
+                UnionBridgeMainNetConstants.getInstance()),
+            Arguments.of(BridgeTestNetConstants.getInstance(),
+                UnionBridgeTestNetConstants.getInstance()),
+            Arguments.of(new BridgeRegTestConstants(), UnionBridgeRegTestConstants.getInstance())
         );
     }
 }
