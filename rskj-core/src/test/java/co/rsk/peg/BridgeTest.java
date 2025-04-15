@@ -3396,6 +3396,50 @@ class BridgeTest {
         }
     }
 
+    @Test
+    void setUnionBridgeContractAddressForTestnet_beforeRSKIP502_shouldFail() {
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.lovell700())
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+        byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+
+        assertThrows(VMException.class, () -> bridge.execute(data));
+    }
+
+    private static Stream<Arguments> constantsProvider() {
+        return Stream.of(
+            Arguments.of(Constants.regtest(), UnionResponseCode.SUCCESS),
+            Arguments.of(Constants.testnet2(ActivationConfigsForTest.all()), UnionResponseCode.SUCCESS),
+            Arguments.of(Constants.mainnet(), UnionResponseCode.ENVIRONMENT_DISABLED)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("constantsProvider")
+    void setUnionBridgeContractAddressForTestnet_afterRSKIP502_shouldSetNewAddress(Constants constants, UnionResponseCode expectedUnionResponseCode) throws VMException {
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+
+        when(bridgeSupportMock.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(
+            expectedUnionResponseCode.getCode());
+        Bridge bridge = bridgeBuilder
+            .activationConfig(ActivationConfigsForTest.all())
+            .bridgeSupport(bridgeSupportMock)
+            .constants(constants)
+            .build();
+
+        CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+        byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+
+        byte[] result = bridge.execute(data);
+        BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
+
+        assertEquals(expectedUnionResponseCode.getCode(), decodedResult.intValue());
+        verify(bridgeSupportMock, times(1)).setUnionBridgeContractAddressForTestnet(any(), any());
+    }
+
+
 
     @Nested
     @Tag("unionBridge")
