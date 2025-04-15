@@ -32,6 +32,10 @@ import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.union.UnionBridgeStorageProvider;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
@@ -91,6 +95,11 @@ public class BridgeSupportFactory {
         );
         LockingCapSupport lockingCapSupport = getLockingCapSupportInstance(bridgeStorageAccessor, activations);
 
+        UnionBridgeSupport unionBridgeSupport = getUnionBridgeSupportInstance(
+            bridgeStorageAccessor,
+            activations
+        );
+
         BridgeEventLogger eventLogger = null;
         if (logs != null) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
@@ -116,8 +125,20 @@ public class BridgeSupportFactory {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             btcBlockStoreFactory,
             activations,
+            signatureCache
+        );
+    }
+
+    private UnionBridgeSupport getUnionBridgeSupportInstance(StorageAccessor bridgeStorageAccessor, ActivationConfig.ForBlock activations) {
+        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
+
+        return new UnionBridgeSupportImpl(
+            bridgeConstants.getUnionBridgeConstants(),
+            activations,
+            unionBridgeStorageProvider,
             signatureCache
         );
     }
