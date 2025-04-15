@@ -58,6 +58,11 @@ import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.storage.*;
+import co.rsk.peg.union.UnionBridgeStorageProvider;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionBridgeSupportImpl;
+import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.peg.vote.ABICallSpec;
@@ -138,6 +143,7 @@ class BridgeSupportTest {
     private FederationStorageProvider federationStorageProvider;
     private FederationSupport federationSupport;
     private FeePerKbSupport feePerKbSupport;
+    private UnionBridgeSupport unionBridgeSupport;
     private SignatureCache signatureCache;
     private PartialMerkleTree pmtWithTransactions;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
@@ -171,6 +177,14 @@ class BridgeSupportTest {
             lockingCapStorageProvider,
             allActivations,
             lockingCapMainnetConstants,
+            signatureCache
+        );
+
+        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
+        unionBridgeSupport = new UnionBridgeSupportImpl(
+            UnionBridgeMainNetConstants.getInstance(),
+            activationsAfterForks,
+            unionBridgeStorageProvider,
             signatureCache
         );
 
@@ -6523,6 +6537,7 @@ class BridgeSupportTest {
             whitelistSupport,
             mock(FederationSupport.class),
             lockingCapSupport,
+            unionBridgeSupport,
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class),
             signatureCache
@@ -9080,6 +9095,7 @@ class BridgeSupportTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             blockStoreFactory,
             activations,
             signatureCache
