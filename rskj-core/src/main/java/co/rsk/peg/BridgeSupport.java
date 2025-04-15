@@ -1151,6 +1151,7 @@ public class BridgeSupport {
 
         // complete tx with input and change output
         SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);
+        sendRequest.signInputs = false;
         activeFederationWallet.completeTx(sendRequest);
 
         return svpFundTransaction;
@@ -2988,6 +2989,7 @@ public class BridgeSupport {
             sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
             sr.recipientsPayFees = true;
             try {
+                sr.signInputs = false;
                 originWallet.completeTx(sr);
                 for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
                     transactionInput.disconnect();

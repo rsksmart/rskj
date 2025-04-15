@@ -146,6 +146,7 @@ public class ReleaseTransactionBuilder {
         sendRequestConfigurator.configure(sr);
 
         try {
+            sr.signInputs = false;
             wallet.completeTx(sr);
 
             // Disconnect input from output because we don't need the reference and it interferes serialization
