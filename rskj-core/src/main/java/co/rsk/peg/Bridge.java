@@ -224,6 +224,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
+    // Union Bridge Contract functions
+    public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
@@ -1480,6 +1483,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getEstimatedFeesForNextPegOutEvent");
 
         return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
+    public int setUnionBridgeContractAddressForTestnet(Object[] args) {
+        logger.trace("setUnionBridgeContractAddressForTestnet");
+        // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
+        RskAddress unionBridgeContractAddress = new RskAddress((DataWord) args[0]);
+        return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress);
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
