@@ -4,7 +4,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -16,12 +16,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
 
     private final UnionBridgeConstants constants;
+    private final ActivationConfig.ForBlock activations;
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
 
-    public UnionBridgeSupportImpl(UnionBridgeConstants constants, UnionBridgeStorageProvider storageProvider,
+    public UnionBridgeSupportImpl(UnionBridgeConstants constants, ActivationConfig.ForBlock activations, UnionBridgeStorageProvider storageProvider,
         SignatureCache signatureCache) {
         this.constants = constants;
+        this.activations = activations;
         this.storageProvider = storageProvider;
         this.signatureCache = signatureCache;
     }
@@ -66,7 +68,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void save(ForBlock activations) {
+    public void save() {
         this.storageProvider.save(activations);
     }
 }
