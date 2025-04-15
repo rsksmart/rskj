@@ -40,6 +40,7 @@ import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -83,6 +84,7 @@ class BridgeSupportFlyoverTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private LockingCapSupport lockingCapSupport;
     private WhitelistSupport whitelistSupport;
+    private UnionBridgeSupport unionBridgeSupport;
     private FederationSupportBuilder federationSupportBuilder;
     private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
@@ -97,6 +99,7 @@ class BridgeSupportFlyoverTest {
         lockingCapSupport = mock(LockingCapSupport.class);
         whitelistSupport = mock(WhitelistSupport.class);
         federationSupportBuilder = FederationSupportBuilder.builder();
+        unionBridgeSupport = mock(UnionBridgeSupport.class);
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
@@ -2973,6 +2976,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             mock(FederationSupport.class),
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3063,6 +3067,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3162,6 +3167,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3260,6 +3266,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3370,6 +3377,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3482,6 +3490,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
@@ -3536,6 +3545,7 @@ class BridgeSupportFlyoverTest {
             whitelistSupport,
             mock(FederationSupport.class),
             lockingCapSupport,
+            unionBridgeSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
             signatureCache
