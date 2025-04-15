@@ -49,6 +49,7 @@ import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
@@ -122,6 +123,7 @@ public class BridgeSupport {
 
     private final Context btcContext;
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final UnionBridgeSupport unionBridgeSupport;
     private BtcBlockStoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
@@ -142,6 +144,7 @@ public class BridgeSupport {
         WhitelistSupport whitelistSupport,
         FederationSupport federationSupport,
         LockingCapSupport lockingCapSupport,
+        UnionBridgeSupport unionBridgeSupport,
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
         ActivationConfig.ForBlock activations,
         SignatureCache signatureCache) {
@@ -158,6 +161,7 @@ public class BridgeSupport {
         this.whitelistSupport = whitelistSupport;
         this.federationSupport = federationSupport;
         this.lockingCapSupport = lockingCapSupport;
+        this.unionBridgeSupport = unionBridgeSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
         this.signatureCache = signatureCache;
@@ -185,6 +189,7 @@ public class BridgeSupport {
         whitelistSupport.save();
         federationSupport.save();
         lockingCapSupport.save();
+        unionBridgeSupport.save();
     }
 
     /**
@@ -2882,6 +2887,10 @@ public class BridgeSupport {
         );
 
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
+    }
+
+    public int setUnionBridgeContractAddressForTestnet(Transaction tx, RskAddress unionBridgeContractAddress) {
+        return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
