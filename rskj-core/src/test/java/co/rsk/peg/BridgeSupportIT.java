@@ -168,8 +168,8 @@ public class BridgeSupportIT {
         UnionBridgeStorageProviderImpl unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(
             inMemoryStorage);
         unionBridgeSupport = new UnionBridgeSupportImpl(
-            BridgeMainNetConstants.getInstance().getUnionBridgeConstants(),
             activations,
+            BridgeMainNetConstants.getInstance().getUnionBridgeConstants(),
             unionBridgeStorageProvider,
             signatureCache
         );

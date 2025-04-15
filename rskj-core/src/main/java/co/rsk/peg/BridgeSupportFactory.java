@@ -136,8 +136,8 @@ public class BridgeSupportFactory {
         UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
 
         return new UnionBridgeSupportImpl(
-            bridgeConstants.getUnionBridgeConstants(),
             activations,
+            bridgeConstants.getUnionBridgeConstants(),
             unionBridgeStorageProvider,
             signatureCache
         );
