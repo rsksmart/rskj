@@ -19,6 +19,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.Peer;
@@ -154,9 +155,9 @@ public abstract class SyncMessageHandler implements Runnable {
     public abstract static class Job implements Runnable {
         private final Peer sender;
         private final MessageType msgType;
-        private final Profiler.MetricKind metricKind;
+        private final MetricKind metricKind;
 
-        public Job(Peer sender, Message msg, Profiler.MetricKind metricKind) {
+        public Job(Peer sender, Message msg, MetricKind metricKind) {
             this.sender = sender;
             this.msgType = msg.getMessageType();
             this.metricKind = metricKind;
@@ -170,7 +171,7 @@ public abstract class SyncMessageHandler implements Runnable {
             return msgType;
         }
 
-        public Profiler.MetricKind getMetricKind() {
+        public MetricKind getMetricKind() {
             return metricKind;
         }
 

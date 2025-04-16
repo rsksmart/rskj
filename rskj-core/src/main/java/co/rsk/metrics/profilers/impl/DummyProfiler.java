@@ -2,6 +2,7 @@ package co.rsk.metrics.profilers.impl;
 
 
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 
 /**

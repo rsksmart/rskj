@@ -22,7 +22,7 @@ import co.rsk.config.InternalService;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
-import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
@@ -209,7 +209,7 @@ public class SnapshotProcessor implements InternalService {
             return;
         }
 
-        offerJob(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATUS_REQUEST) {
+        scheduleJob(new SyncMessageHandler.Job(sender, requestMessage, MetricKind.SNAP_STATUS_REQUEST) {
             @Override
             public void run() {
                 processSnapStatusRequestInternal(sender, requestMessage);
@@ -435,7 +435,7 @@ public class SnapshotProcessor implements InternalService {
             return;
         }
 
-        offerJob(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_BLOCKS_REQUEST) {
+        scheduleJob(new SyncMessageHandler.Job(sender, requestMessage, MetricKind.SNAP_BLOCKS_REQUEST) {
             @Override
             public void run() {
                 processSnapBlocksRequestInternal(sender, requestMessage);
@@ -522,7 +522,7 @@ public class SnapshotProcessor implements InternalService {
             return;
         }
 
-        offerJob(new SyncMessageHandler.Job(sender, requestMessage, Profiler.MetricKind.SNAP_STATE_CHUNK_REQUEST) {
+        scheduleJob(new SyncMessageHandler.Job(sender, requestMessage, MetricKind.SNAP_STATE_CHUNK_REQUEST) {
             @Override
             public void run() {
                 processStateChunkRequestInternal(sender, requestMessage);
@@ -736,11 +736,11 @@ public class SnapshotProcessor implements InternalService {
         }
     }
 
-    private void offerJob(SyncMessageHandler.Job job) {
+    private void scheduleJob(SyncMessageHandler.Job job) {
         Peer sender = job.getSender();
         NodeID senderId = sender.getPeerNodeID();
         long jobCount = this.requestQueue.stream().filter(j -> j.getSender().getPeerNodeID().equals(senderId)).count();
-        if (jobCount > this.maxSenderRequests) {
+        if (jobCount >= this.maxSenderRequests) {
             logger.warn("Too many jobs: [{}] from sender: [{}]. Skipping job of type: [{}]", jobCount, sender, job.getMsgType());
             return;
         }
