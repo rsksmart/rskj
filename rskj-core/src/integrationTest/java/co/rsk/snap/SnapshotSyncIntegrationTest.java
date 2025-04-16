@@ -55,7 +55,6 @@ public class SnapshotSyncIntegrationTest {
     private static final String TAG_TO_REPLACE_CLIENT_DATABASE_PATH = "<CLIENT_NODE_DATABASE_PATH>";
     private static final String TAG_TO_REPLACE_CLIENT_PORT = "<CLIENT_PORT>";
     private static final String TAG_TO_REPLACE_CLIENT_RPC_HTTP_PORT = "<CLIENT_RPC_HTTP_PORT>";
-    private static final String TAG_TO_REPLACE_CLIENT_RPC_WS_PORT = "<CLIENT_RPC_WS_PORT>";
 
     private static final String RSKJ_SERVER_CONF_FILE_NAME = "snap-sync-server-rskj.conf";
     private static final String RSKJ_CLIENT_CONF_FILE_NAME = "snap-sync-client-rskj.conf";
@@ -155,7 +154,6 @@ public class SnapshotSyncIntegrationTest {
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_SERVER_PORT, String.valueOf(portServer)));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_PORT, String.valueOf(portClient)));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_RPC_HTTP_PORT, String.valueOf(portClientRpc)));
-        tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_RPC_WS_PORT, String.valueOf(portClient + 2)));
         tagsWithValues.add(new ImmutablePair<>(TAG_TO_REPLACE_CLIENT_DATABASE_PATH, tempDirDatabasePath));
 
         RskjConfigurationFileFixture.substituteTagsOnRskjConfFile(rskConfFileClient.toString(), tagsWithValues);
@@ -173,7 +171,7 @@ public class SnapshotSyncIntegrationTest {
         List<String> accounts = OkHttpClientTestFixture.PRE_FUNDED_ACCOUNTS;
         Random rand = new Random(111);
 
-        for (int i = 0; i < 700; i++) {
+        for (int i = 0; i < 900; i++) {
             OkHttpClientTestFixture.FromToAddressPair[] pairs = IntStream.range(0, 10)
                     .mapToObj(n -> of(accounts.get(rand.nextInt(accounts.size())), accounts.get(rand.nextInt(accounts.size()))))
                     .toArray(OkHttpClientTestFixture.FromToAddressPair[]::new);
