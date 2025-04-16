@@ -25,8 +25,7 @@ import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 
 import javax.annotation.Nonnull;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
+import javax.management.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +42,9 @@ public class JmxProfiler implements Profiler {
             try {
                 ObjectName name = new ObjectName("co.rsk.metrics.Jmx:type=profiler,name=" + kind);
                 mbs.registerMBean(jmxMetric, name);
-            } catch (Exception e) {
+            } catch (MalformedObjectNameException | NotCompliantMBeanException | MBeanRegistrationException |
+                     InstanceAlreadyExistsException e) {
+                jmxMetrics.clear();
                 throw new RuntimeException("Failed to register JMX metric: " + kind, e);
             }
 

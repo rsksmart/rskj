@@ -607,10 +607,6 @@ public abstract class SystemProperties {
         return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
     }
 
-    public boolean isSystemProfilingEnabled() {
-        return isSystemProfilingEnabled(this.configFromFiles);
-    }
-
     private static boolean isSystemProfilingEnabled(Config config) {
         return getBoolean(config, PROPERTY_SYSTEM_PROFILING_ENABLED, false);
     }

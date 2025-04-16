@@ -62,13 +62,20 @@ public class JmxMetric implements JmxMetricMBean {
     public synchronized void updateDuration(long duration) {
         switch (this.aggregate) {
             case SUM:
-            case AVG:
                 if (this.counter == 0) {
                     this.counter++;
                     this.duration = duration;
                 } else {
                     this.duration = this.duration + duration;
                 }
+                break;
+            case AVG:
+                if (this.counter == 0) {
+                    this.duration = duration;
+                } else {
+                    this.duration = this.duration + duration;
+                }
+                this.counter++;
                 break;
             case MAX:
                 if (this.counter == 0) {

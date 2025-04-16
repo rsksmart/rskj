@@ -61,6 +61,17 @@ class JmxProfilerTest {
     }
 
     @Test
+    void register_whenMBeanServerFailsToRegisterBeen_thenRuntimeExceptionIsThrown() throws NotCompliantMBeanException, InstanceAlreadyExistsException, MBeanRegistrationException {
+        // Arrange
+        JmxProfiler jmxProfiler = new JmxProfiler();
+        MBeanServer mbs = mock(MBeanServer.class);
+        when(mbs.registerMBean(any(), any())).thenThrow(MBeanRegistrationException.class);
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> jmxProfiler.register(mbs));
+    }
+
+    @Test
     void start_whenNullMetricKind_thenNPEIsThrown() {
         // Arrange
         JmxProfiler jmxProfiler = new JmxProfiler();
