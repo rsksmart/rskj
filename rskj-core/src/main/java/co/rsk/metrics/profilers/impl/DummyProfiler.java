@@ -2,6 +2,7 @@ package co.rsk.metrics.profilers.impl;
 
 
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 
 /**
@@ -11,7 +12,7 @@ public class DummyProfiler implements Profiler {
 
 
     @Override
-    public Metric start(PROFILING_TYPE type) {
+    public Metric start(MetricKind kind) {
         return null;
     }
 

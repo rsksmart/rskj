@@ -19,6 +19,10 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
@@ -41,7 +45,10 @@ import java.util.*;
  * Created by ajlopez on 5/11/2016.
  */
 public class NodeBlockProcessor implements BlockProcessor {
+
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
+
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
@@ -179,6 +186,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHeadersRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash, int count) {
+        Metric metric = profiler.start(MetricKind.BLOCK_HEADERS_REQUEST);
+
         logger.trace("Processing headers request {} {} from {}", requestId, ByteUtil.toHexString(hash), sender.getPeerNodeID());
 
         if (count > syncConfiguration.getChunkSize()) {
@@ -208,6 +217,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(requestId, headers);
 
         sender.sendMessage(response);
+
+        profiler.stop(metric);
     }
 
     /**
