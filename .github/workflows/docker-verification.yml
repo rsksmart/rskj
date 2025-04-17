@@ -20,4 +20,48 @@ jobs:
 
       - name: Validate Docker container
         run: |
-          ./validate-docker-container.sh
+          set -e
+          # Build the image
+          docker build -t rsksmart/rskj:latest .
+
+          # Run the container in detached mode, capture its ID
+          container_id=$(docker run -d --name rskj-container rsksmart/rskj:latest --regtest)
+
+          # Ensure the container is stopped on exit or on interruption
+          trap 'docker stop "$container_id"' EXIT INT QUIT TERM
+
+          # Give a couple of seconds for the container to start.
+          sleep 5
+
+          # Verify the container actually started
+          if [ "$(docker inspect -f '{{.State.Running}}' rskj-container)" != "true" ]; then
+              echo "Container failed to start"
+              exit 1
+          fi
+
+          # Poll the logs until we see an IMPORTED_BEST block
+          max_attempts=20
+          attempts=0
+          count=0
+
+          while [ $attempts -lt $max_attempts ]; do
+              count=$(docker logs rskj-container | grep -c "IMPORTED_BEST")
+
+              if [ $count -gt 0 ]; then
+                  echo "✅ Found 'IMPORTED_BEST' block in logs!"
+                  break
+              fi
+
+              echo "Waiting for 5 seconds for blocks to be imported..."
+              sleep 5
+              echo "Continuing to check imported blocks"
+
+              attempts=$((attempts + 1))
+          done
+
+          if [ $count -le 0 ]; then
+              echo "❌ 'IMPORTED_BEST' block not found in logs after $max_attempts attempts"
+              exit 1
+          fi
+
+          echo "Container is running properly"
