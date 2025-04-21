@@ -6,6 +6,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 public interface UnionBridgeStorageProvider {
     void setAddress(RskAddress address);
-    Optional<RskAddress> getAddress();
+    Optional<RskAddress> getAddress(ActivationConfig.ForBlock activations);
     void save(ActivationConfig.ForBlock activations);
 }

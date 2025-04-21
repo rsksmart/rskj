@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -14,13 +15,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeSupportImpl.class);
 
-
+    private final ActivationConfig.ForBlock activations;
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
 
-    public UnionBridgeSupportImpl(UnionBridgeConstants constants, UnionBridgeStorageProvider storageProvider,
+    public UnionBridgeSupportImpl(ForBlock activations, UnionBridgeConstants constants, UnionBridgeStorageProvider storageProvider,
         SignatureCache signatureCache) {
+        this.activations = activations;
         this.constants = constants;
         this.storageProvider = storageProvider;
         this.signatureCache = signatureCache;
@@ -49,7 +51,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             }
 
             // Check if the address is already set
-            RskAddress currentUnionBridgeAddress = storageProvider.getAddress().orElse(constants.getAddress());
+            RskAddress currentUnionBridgeAddress = storageProvider.getAddress(activations).orElse(constants.getAddress());
             if (unionBridgeContractAddress.equals(currentUnionBridgeAddress)) {
                 String baseMessage = String.format("The given union bridge contract address is already the current address. Current address: %s", currentUnionBridgeAddress);
                 logger.warn("[{}] {}", SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
@@ -66,7 +68,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public void save(ForBlock activations) {
+    public void save(ActivationConfig.ForBlock activations) {
         this.storageProvider.save(activations);
     }
 }
