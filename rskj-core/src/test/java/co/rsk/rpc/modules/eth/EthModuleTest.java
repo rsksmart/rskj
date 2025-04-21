@@ -17,7 +17,6 @@
  */
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -26,9 +25,13 @@ import co.rsk.core.Wallet;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -37,6 +40,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
@@ -106,6 +110,53 @@ class EthModuleTest {
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
+
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void callSmokeTestWithAccountOverride() {
+        AccountOverride accountOverride = new AccountOverride();
+        accountOverride.setAddress(TestUtils.generateAddress("test"));
+        accountOverride.setBalance(BigInteger.valueOf(100000));
+
+        CallArguments args = new CallArguments();
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"),List.of(accountOverride));
 
         assertEquals(expectedResult, actualResult);
     }
@@ -973,6 +1024,8 @@ class EthModuleTest {
 
         assertTrue(result.isEmpty(), "Expected no transactions as wallet is disabled");
     }
+
+    
 
 
     private Transaction createMockTransaction(String fromAddress) {
