@@ -52,7 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 public class SnapshotProcessorTest {
-    public static final int TEST_CHUNK_SIZE = 200;
+    private static final int TEST_CHUNK_SIZE = 200;
+    private static final int TEST_CHECKPOINT_DISTANCE = 10;
     private static final long THREAD_JOIN_TIMEOUT = 10_000; // 10 secs
 
     private Blockchain blockchain;
@@ -97,6 +98,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
         doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
@@ -123,6 +125,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
 
@@ -167,6 +170,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
         //when
@@ -191,6 +195,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
 
@@ -219,6 +224,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 200,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
 
@@ -262,6 +268,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
 
@@ -292,6 +299,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false,
                 listener) {
@@ -333,6 +341,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false,
                 listener) {
@@ -374,6 +383,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false,
                 listener) {
@@ -410,6 +420,7 @@ public class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
                 true,
                 false);
 
