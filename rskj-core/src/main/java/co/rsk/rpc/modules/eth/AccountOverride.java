@@ -1,4 +1,4 @@
-package co.rsk.rpc.modules.eth.subscribe;
+package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -6,9 +6,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class AccountOverride {
     private BigInteger balance;
@@ -68,12 +66,9 @@ public class AccountOverride {
         this.address = address;
     }
 
-    public RskAddress getMovePrecompileToAddress() {
-        return movePrecompileToAddress;
-    }
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
-        this.movePrecompileToAddress = movePrecompileToAddress;
+        throw new UnsupportedOperationException("Move precompile to address is not supported yet");
     }
 
     public Repository applyToRepository(Repository repository) {
@@ -82,7 +77,8 @@ public class AccountOverride {
         }
 
         if (balance != null) {
-            repository.addBalance(address, new Coin(balance));
+            Coin storedValue = Optional.ofNullable(repository.getBalance(address)).orElse(Coin.ZERO);
+            repository.addBalance(address, new Coin(balance).subtract(storedValue));
         }
 
         if (nonce != null) {
@@ -92,7 +88,9 @@ public class AccountOverride {
         if (code != null) {
             repository.saveCode(address, code);
         }
-
+        if(stateDiff != null && state != null) {
+            throw new IllegalStateException("AccountOverride.stateDiff and AccountOverride.state cannot be set at the same time");
+        }
         if (state != null) {
             Iterator<DataWord> keys = repository.getStorageKeys(address);
             while (keys.hasNext()) {
@@ -128,6 +126,6 @@ public class AccountOverride {
 
     @Override
     public int hashCode() {
-        return Objects.hash(balance, nonce, code, state, stateDiff, address, movePrecompileToAddress);
+        return Objects.hash(balance, nonce, Arrays.hashCode(code), state, stateDiff, address, movePrecompileToAddress);
     }
 }
