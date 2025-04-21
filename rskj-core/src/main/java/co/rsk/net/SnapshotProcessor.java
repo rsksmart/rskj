@@ -71,7 +71,6 @@ public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
 
-    public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
@@ -79,6 +78,7 @@ public class SnapshotProcessor implements InternalService {
     private final TrieStore trieStore;
     private final BlockStore blockStore;
     private final int chunkSize;
+    private final int checkpointDistance;
     private final SnapshotPeersInformation peersInformation;
     private final TransactionPool transactionPool;
 
@@ -108,12 +108,13 @@ public class SnapshotProcessor implements InternalService {
                              BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                              BlockHeaderValidationRule blockHeaderValidator,
                              int chunkSize,
+                             int checkpointDistance,
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
                              boolean isParallelEnabled) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
     }
 
     @VisibleForTesting
@@ -127,6 +128,7 @@ public class SnapshotProcessor implements InternalService {
                       BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                       BlockHeaderValidationRule blockHeaderValidator,
                       int chunkSize,
+                      int checkpointDistance,
                       int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
@@ -135,6 +137,7 @@ public class SnapshotProcessor implements InternalService {
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
+        this.checkpointDistance = checkpointDistance;
         this.maxSenderRequests = maxSenderRequests;
         this.blockStore = blockStore;
         this.transactionPool = transactionPool;
@@ -219,11 +222,12 @@ public class SnapshotProcessor implements InternalService {
 
     void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
-        long checkpointBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+        long checkpointBlockNumber = Math.max(0, bestBlockNumber - checkpointDistance);
+        long from = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
         logger.debug("Processing snapshot status request, checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
         List<Block> blocks = Lists.newArrayList();
         List<BlockDifficulty> difficulties = Lists.newArrayList();
-        for (long i = checkpointBlockNumber - BLOCK_CHUNK_SIZE; i < checkpointBlockNumber; i++) {
+        for (long i = from; i < checkpointBlockNumber; i++) {
             Block block = blockchain.getBlockByNumber(i);
             blocks.add(block);
             difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
