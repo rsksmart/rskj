@@ -474,7 +474,7 @@ public class SnapshotProcessor implements InternalService {
             currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
         }
         if (currentBlock == null) {
-            logger.warn("No block found for block number {}", toBlock);
+            logger.warn("No block found for block number {}", currentBlock);
         }
     }
 
