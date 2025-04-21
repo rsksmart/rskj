@@ -1,5 +1,7 @@
 Dockerfile
 
-.circleci
 .git
 .github
+.idea
+.vscode
+logs
