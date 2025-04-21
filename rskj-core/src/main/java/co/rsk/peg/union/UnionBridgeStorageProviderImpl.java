@@ -12,7 +12,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
 
     private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
-
     private final StorageAccessor bridgeStorageAccessor;
 
     private RskAddress unionBridgeAddress;
@@ -44,7 +43,11 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public Optional<RskAddress> getAddress() {
+    public Optional<RskAddress> getAddress(ActivationConfig.ForBlock activations) {
+        if (!activations.isActive(ConsensusRule.RSKIP502)) {
+            return Optional.empty();
+        }
+
         return Optional.ofNullable(unionBridgeAddress).or(
             () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
