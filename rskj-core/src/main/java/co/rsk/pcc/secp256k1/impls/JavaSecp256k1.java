@@ -102,6 +102,17 @@ public class JavaSecp256k1 extends AbstractSecp256k1 {
         }
         return p1;
     }
+    byte[] getOutput(ECPoint res) {
+        byte[] o;
+        res = res.normalize(); // allow affine coordinates
+        if (res.isInfinity()) {
+            o = encodeInfinity();
+        } else
+            o = encodeRes(res.getAffineXCoord().getEncoded(),
+                    res.getAffineYCoord().getEncoded());
+        return o;
+    }
+
     @Override
     public int add(byte[] data, int length) {
         output = new byte[64];
@@ -121,13 +132,8 @@ public class JavaSecp256k1 extends AbstractSecp256k1 {
             return returnError();
         }
         ECPoint res = p1.add(p2);
+        output = getOutput(res);
 
-        res = res.normalize(); // allow affine coordinates
-        if (res.isInfinity()) {
-            output = encodeInfinity();
-        } else
-            output = encodeRes(res.getAffineXCoord().getEncoded(),
-                 res.getAffineYCoord().getEncoded());
         return 1;
     }
 
@@ -149,12 +155,7 @@ public class JavaSecp256k1 extends AbstractSecp256k1 {
 
         ECPoint res = p.multiply(BIUtil.toBI(s));
         res = res.normalize();
-
-        if (res.isInfinity()) {
-            output = encodeInfinity();
-        } else
-            output = encodeRes(res.getAffineXCoord().getEncoded(),
-                    res.getAffineYCoord().getEncoded());
+        output = getOutput(res);
         return 1;
     }
 
