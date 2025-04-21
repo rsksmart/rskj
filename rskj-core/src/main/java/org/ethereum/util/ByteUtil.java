@@ -99,6 +99,9 @@ public class ByteUtil {
         System.arraycopy(biBytes, start, bytes, numBytes - length, length);
         return bytes;
     }
+    public static String bigIntegerToHex(BigInteger value) {
+        return ByteUtil.toHexString(ByteUtil.bigIntegerToBytes(value));
+    }
 
     /**
      * Omitting sign indication byte.
