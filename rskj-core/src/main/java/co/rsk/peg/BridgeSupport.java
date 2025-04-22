@@ -1198,7 +1198,7 @@ public class BridgeSupport {
         addSpendingFederationBaseScript(svpSpendTransaction, proposedFederationInputIndex, proposedFederationRedeemScript, proposedFederationFormatVersion);
 
         Script flyoverFederationRedeemScript = getFlyoverFederationRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        Script flyoverOutputScript = getFlyoverFederationOutputScript(proposedFederationFormatVersion, flyoverFederationRedeemScript);
+        Script flyoverOutputScript = getFlyoverFederationOutputScript(flyoverFederationRedeemScript, proposedFederation.getFormatVersion());
         TransactionOutput outputToFlyoverProposedFed = searchForOutput(
             svpFundTxSigned.getOutputs(),
             flyoverOutputScript
@@ -1435,7 +1435,7 @@ public class BridgeSupport {
         if (!activations.isActive(ConsensusRule.RSKIP379)){
             return;
         }
-        Optional<Sha256Hash> pegoutTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+        Optional<Sha256Hash> pegoutTxSigHash = getFirstInputSigHash(pegoutTx);
         if (!pegoutTxSigHash.isPresent()){
             throw new IllegalStateException(String.format("SigHash could not be obtained from btc tx %s", pegoutTx.getHash()));
         }
@@ -1618,7 +1618,7 @@ public class BridgeSupport {
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
             );
 
-        if (!nextPegoutWithEnoughConfirmations.isPresent()) {
+        if (nextPegoutWithEnoughConfirmations.isEmpty()) {
             return;
         }
 
@@ -1761,7 +1761,7 @@ public class BridgeSupport {
             eventLogger.logAddSignature(signingFederationMember, releaseTx, releaseCreationRskTxHashSerialized);
         }
 
-        processSigning(signingFederationMember, signatures, releaseCreationRskTxHash, releaseTx);
+        processSigning(signingFederationMember, federation, signatures, releaseCreationRskTxHash, releaseTx);
 
         if (!BridgeUtils.hasEnoughSignatures(btcContext, releaseTx)) {
             logMissingSignatures(releaseTx, releaseCreationRskTxHash, federation);
@@ -1813,7 +1813,7 @@ public class BridgeSupport {
             return;
         }
 
-        processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
+        processSigning(federationMember, proposedFederation, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
        
         // save current fed signature back in storage
         svpSpendTxWFS.setValue(svpSpendTx);
@@ -1855,14 +1855,17 @@ public class BridgeSupport {
 
     private void processSigning(
         FederationMember federatorMember,
+        Federation federation,
         List<byte[]> signatures,
         Keccak256 releaseCreationRskTxHash,
-        BtcTransaction btcTx) {
+        BtcTransaction btcTx
+    ) {
 
-        // Build input hashes for signatures
+        int federationFormatVersion = federation.getFormatVersion();
+        // Build input sig hashes for signatures
         List<Sha256Hash> sigHashes = new ArrayList<>();
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
-            Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(btcTx, i);
+            Sha256Hash sigHash = generateSigHashForFederationFormatVersion(btcTx, i, federationFormatVersion);
             sigHashes.add(sigHash);
         }
 
@@ -1877,11 +1880,22 @@ public class BridgeSupport {
         }
 
         // All signatures are correct. Proceed to signing
-        boolean signed = sign(federatorBtcPublicKey, txSigs, sigHashes, releaseCreationRskTxHash, btcTx);
+        boolean signed = sign(federatorBtcPublicKey, federation, txSigs, sigHashes, releaseCreationRskTxHash, btcTx);
 
         if (signed && activations.isActive(ConsensusRule.RSKIP326)) {
             eventLogger.logAddSignature(federatorMember, btcTx, releaseCreationRskTxHash.getBytes());
         }
+    }
+
+    private Sha256Hash generateSigHashForFederationFormatVersion(BtcTransaction btcTx, int inputIndex, int federationFormatVersion) {
+        if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            return generateSigHashForP2SHTransactionInput(btcTx, inputIndex);
+        }
+
+        return provider.getReleaseOutpointsValues(btcTx.getHash())
+            .map(releaseOutpointsValues -> releaseOutpointsValues.get(inputIndex))
+            .map(prevValue -> generateSigHashForSegwitTransactionInput(btcTx, inputIndex, prevValue))
+            .orElseThrow(IllegalArgumentException::new);
     }
 
     private List<TransactionSignature> getTransactionSignatures(BtcECKey federatorBtcPublicKey, List<Sha256Hash> sigHashes, List<byte[]> signatures) throws SignatureException {
@@ -1929,19 +1943,19 @@ public class BridgeSupport {
 
     private boolean sign(
         BtcECKey federatorBtcPublicKey,
+        Federation federation,
         List<TransactionSignature> txSigs,
         List<Sha256Hash> sigHashes,
         Keccak256 releaseCreationRskTxHash,
-        BtcTransaction btcTx) {
+        BtcTransaction btcTx
+    ) {
 
         boolean signed = false;
         for (int i = 0; i < sigHashes.size(); i++) {
             Sha256Hash sigHash = sigHashes.get(i);
-            TransactionInput input = btcTx.getInput(i);
-            Script inputScript = input.getScriptSig();
 
             boolean alreadySignedByThisFederator =
-                BridgeUtils.isInputSignedByThisFederator(federatorBtcPublicKey, sigHash, input);
+                BridgeUtils.isInputSignedByThisFederator(btcTx, i, federatorBtcPublicKey, sigHash);
 
             if (alreadySignedByThisFederator) {
                 logger.warn("[sign] Input {} of tx {} already signed by this federator.", i, releaseCreationRskTxHash);
@@ -1953,14 +1967,11 @@ public class BridgeSupport {
                 logger.debug("[sign] Couldn't extract redeem script from input {} of tx {}.", i, btcTx.getHash());
                 break;
             }
-            Script redeemScript = redeemScriptOpt.get();
 
             try {
-                int sigIndex = inputScript.getSigInsertionIndex(sigHash, federatorBtcPublicKey);
-                Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+                int sigIndex = getSigInsertionIndex(btcTx, i, sigHash, federatorBtcPublicKey);
+                signInput(btcTx, i, txSigs.get(i), sigIndex, federation.getP2SHScript());
 
-                Script inputScriptWithSignature = outputScript.getScriptSigWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex);
-                input.setScriptSig(inputScriptWithSignature);
                 logger.debug("[sign] Tx input {} for tx {} signed.", i, releaseCreationRskTxHash);
                 signed = true;
             } catch (IllegalStateException e) {
@@ -2845,12 +2856,12 @@ public class BridgeSupport {
             federationRedeemScript
         );
 
-        Script flyoverP2shOutputScript = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
+        Script flyoverOutputScript = getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
 
         return new FlyoverFederationInformation(
             flyoverDerivationHash,
             federation.getP2SHScript().getPubKeyHash(),
-            flyoverP2shOutputScript.getPubKeyHash()
+            flyoverOutputScript.getPubKeyHash()
         );
     }
 
