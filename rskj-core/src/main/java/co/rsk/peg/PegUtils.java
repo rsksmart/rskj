@@ -317,7 +317,7 @@ public class PegUtils {
 
     public static Script getFlyoverFederationScriptPubKey(Keccak256 flyoverDerivationHash, Federation federation) {
         Script flyoverRedeemScript = getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript());
-        return getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
+        return getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
     }
 
     public static Script getFlyoverFederationRedeemScript(Keccak256 flyoverDerivationHash, Script federationRedeemScript) {
@@ -325,8 +325,8 @@ public class PegUtils {
             .of(flyoverDerivationHash, federationRedeemScript);
     }
 
-    public static Script getFlyoverFederationOutputScript(int formatVersion, Script flyoverRedeemScript) {
-        if (formatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+    public static Script getFlyoverFederationOutputScript(Script flyoverRedeemScript, int federationFormatVersion) {
+        if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
             return ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
         }
 

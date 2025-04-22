@@ -17,12 +17,14 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.inputHasWitness;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
@@ -303,31 +305,12 @@ public final class BridgeUtils {
      * @return 0 if was signed by the required number of federators, amount of missing signatures otherwise
      */
     public static int countMissingSignatures(Context btcContext, BtcTransaction btcTx) {
+        Context.propagate(btcContext);
+
         // Check missing signatures for only one input as it is not
         // possible for a federator to leave unsigned inputs in a tx
-        Context.propagate(btcContext);
-        int unsigned = 0;
-
-        TransactionInput input = btcTx.getInput(0);
-        Script scriptSig = input.getScriptSig();
-        List<ScriptChunk> chunks = scriptSig.getChunks();
-
-        int lastChunk;
-        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
-
-        if (isErpType(redeemScript)) {
-            lastChunk = chunks.size() - 2;
-        } else {
-            lastChunk = chunks.size() - 1;
-        }
-
-        for (int i = 1; i < lastChunk; i++) {
-            ScriptChunk chunk = chunks.get(i);
-            if (!chunk.isOpCode() && chunk.data.length == 0) {
-                unsigned++;
-            }
-        }
-        return unsigned;
+        int inputIndex = 0;
+        return countInputMissingSignatures(btcTx, inputIndex);
     }
 
     private static boolean isErpType(Script redeemScript) {
@@ -345,31 +328,64 @@ public final class BridgeUtils {
         // When the tx is constructed OP_0 are placed where signature should go.
         // Check all OP_0 have been replaced with actual signatures in all inputs
         Context.propagate(btcContext);
-        Script scriptSig;
-        List<ScriptChunk> chunks;
-        Script redeemScript;
 
-        int lastChunk;
-        for (TransactionInput input : btcTx.getInputs()) {
-            scriptSig = input.getScriptSig();
-            chunks = scriptSig.getChunks();
-            redeemScript = new Script(chunks.get(chunks.size() - 1).data);
-
-            if (isErpType(redeemScript)
-            ) {
-                lastChunk = chunks.size() - 2;
-            } else {
-                lastChunk = chunks.size() - 1;
-            }
-
-            for (int i = 1; i < lastChunk; i++) {
-                ScriptChunk chunk = chunks.get(i);
-                if (!chunk.isOpCode() && chunk.data.length == 0) {
-                    return false;
-                }
+        for (int i = 0; i < btcTx.getInputs().size(); i ++) {
+            if (countInputMissingSignatures(btcTx, i) > 0) {
+                return false;
             }
         }
         return true;
+    }
+
+    private static int countInputMissingSignatures(BtcTransaction btcTx, int inputIndex) {
+        Script redeemScript = BitcoinUtils.extractRedeemScriptFromInput(btcTx, inputIndex)
+            .orElseThrow(IllegalArgumentException::new);
+
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            return countInputScriptSigMissingSignatures(btcTx.getInput(inputIndex), redeemScript);
+        }
+
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        return countInputWitnessMissingSignatures(inputWitness, redeemScript);
+    }
+
+    private static int countInputScriptSigMissingSignatures(TransactionInput input, Script redeemScript) {
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+
+        int missingSigs = 0;
+        int chunksToSubstract = countValuesToSubstract(redeemScript);
+        int lastChunk = scriptSigChunks.size() - chunksToSubstract;
+        for (int i = 1; i < lastChunk; i++) {
+            ScriptChunk chunk = scriptSigChunks.get(i);
+            if (!chunk.isOpCode() && chunk.data.length == 0) {
+                missingSigs++;
+            }
+        }
+
+        return missingSigs;
+    }
+
+    private static int countInputWitnessMissingSignatures(TransactionWitness inputWitness, Script redeemScript) {
+        int missingSigs = 0;
+        int pushesToSubstract = countValuesToSubstract(redeemScript);
+        int lastPush = inputWitness.getPushCount() - pushesToSubstract;
+        for (int i = 1; i < lastPush; i++) {
+            byte[] push = inputWitness.getPush(i);
+            if (push.length == 0) {
+                missingSigs++;
+            }
+        }
+        return missingSigs;
+    }
+
+    private static int countValuesToSubstract(Script redeemScript) {
+        // when the redeem script is not erp, last value is for redeem script arg
+        if (!isErpType(redeemScript)) {
+            return 1;
+        }
+
+        // when the redeem script is erp, last values are for op_notif arg and redeem script arg
+        return 2;
     }
 
     public static Address recoverBtcAddressFromEthTransaction(Transaction tx, NetworkParameters networkParameters) {
@@ -511,14 +527,25 @@ public final class BridgeUtils {
     }
 
     /**
-     * Check if the p2sh multisig scriptsig of the given input was already signed by federatorPublicKey.
+     * Check if the redeem data of the given input was already signed by federatorPublicKey.
+     * @param btcTx the btc transaction
+     * @param inputIndex The input index
      * @param federatorPublicKey The key that may have been used to sign
      * @param sighash the sighash that corresponds to the input
-     * @param input The input
      * @return true if the input was already signed by the specified key, false otherwise.
      */
-    public static boolean isInputSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, TransactionInput input) {
-        List<ScriptChunk> chunks = input.getScriptSig().getChunks();
+    public static boolean isInputSignedByThisFederator(BtcTransaction btcTx, int inputIndex, BtcECKey federatorPublicKey, Sha256Hash sighash) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            Script inputScriptSig = btcTx.getInput(inputIndex).getScriptSig();
+            return isInputScriptSigSignedByThisFederator(federatorPublicKey, sighash, inputScriptSig);
+        }
+
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        return isInputWitnessSignedByThisFederator(federatorPublicKey, sighash, inputWitness);
+    }
+
+    private static boolean isInputScriptSigSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, Script inputScriptSig) {
+        List<ScriptChunk> chunks = inputScriptSig.getChunks();
         for (int j = 1; j < chunks.size() - 1; j++) {
             ScriptChunk chunk = chunks.get(j);
 
@@ -526,13 +553,31 @@ public final class BridgeUtils {
                 continue;
             }
 
-            TransactionSignature sig2 = TransactionSignature.decodeFromBitcoin(chunk.data, false, false);
-
-            if (federatorPublicKey.verify(sighash, sig2)) {
+            if (signatureIsCorrect(federatorPublicKey, sighash, chunk.data)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean isInputWitnessSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, TransactionWitness inputWitness) {
+        for (int j = 1; j < inputWitness.getPushCount() - 1; j++) {
+            byte[] push = inputWitness.getPush(j);
+
+            if (push.length == 0) {
+                continue;
+            }
+
+            if (signatureIsCorrect(federatorPublicKey, sighash, push)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean signatureIsCorrect(BtcECKey federatorPublicKey, Sha256Hash sigHash, byte[] data) {
+        TransactionSignature sig2 = TransactionSignature.decodeFromBitcoin(data, false, false);
+        return federatorPublicKey.verify(sigHash, sig2);
     }
 
     public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
