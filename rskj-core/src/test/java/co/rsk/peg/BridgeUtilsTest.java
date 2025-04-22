@@ -501,12 +501,13 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         tx.addInput(txInput);
+        int inputIndex = 0;
 
         List<ScriptChunk> chunks = inputScript.getChunks();
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
 
-        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
         BtcECKey.ECDSASignature sig = federator1Key.sign(sighash);
 
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
@@ -517,7 +518,7 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federator1Key, sighash);
 
         // Assert
         Assertions.assertTrue(isSigned);
@@ -552,12 +553,13 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         tx.addInput(txInput);
+        int inputIndex = 0;
 
         List<ScriptChunk> chunks = inputScript.getChunks();
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
 
-        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
         BtcECKey.ECDSASignature sig = federator1Key.sign(sighash);
 
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
@@ -568,7 +570,7 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator2Key, sighash, txInput);
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federator2Key, sighash);
 
         // Assert
         Assertions.assertFalse(isSigned);
@@ -603,15 +605,16 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         tx.addInput(txInput);
+        int inputIndex = 0;
 
         List<ScriptChunk> chunks = inputScript.getChunks();
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
 
-        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federator1Key, sighash);
 
         // Assert
         Assertions.assertFalse(isSigned);

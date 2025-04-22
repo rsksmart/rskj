@@ -110,7 +110,7 @@ class PegUtilsTest {
     @MethodSource("redeemScriptArgs")
     void getFlyoverOutputScript_fromRealValues_shouldReturnSameRealOutputScript(Federation federation) {
         Script flyoverRedeemScript = getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript());
-        Script outputScript = getFlyoverFederationOutputScript(activeFederation.getFormatVersion(), flyoverRedeemScript); // OP_HASH160 outputScript OP_EQUAL
+        Script outputScript = getFlyoverFederationOutputScript(flyoverRedeemScript, activeFederation.getFormatVersion()); // OP_HASH160 outputScript OP_EQUAL
 
         byte[] scriptPubKey = Hex.decode("18fc3b52a5b7d5277f41b9765719b45bfa427730");
         assertArrayEquals(scriptPubKey, outputScript.getPubKeyHash());
@@ -120,7 +120,7 @@ class PegUtilsTest {
     void getFlyoverOutputScript_forSegwitFed_shouldReturnSameOutputScript() {
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
         Script flyoverRedeemScript = getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript());
-        Script outputScript = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript); // OP_HASH160 outputScript OP_EQUAL
+        Script outputScript = getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion()); // OP_HASH160 outputScript OP_EQUAL
 
         byte[] scriptPubKey = Hex.decode("cd590f2ea7252ab5c202f822c4ff28a294f6f016");
         assertArrayEquals(scriptPubKey, outputScript.getPubKeyHash());

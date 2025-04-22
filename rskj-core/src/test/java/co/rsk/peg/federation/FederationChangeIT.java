@@ -52,7 +52,7 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.junit.jupiter.api.Test;
 
 class FederationChangeIT {
-    private static final ActivationConfig.ForBlock ACTIVATIONS = ActivationConfigsForTest.lovell700().forBlock(0);
+    private static final ActivationConfig.ForBlock ACTIVATIONS = ActivationConfigsForTest.all().forBlock(0);
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants BRIDGE_CONSTANTS = BridgeMainNetConstants.getInstance();
     private static final FederationConstants FEDERATION_CONSTANTS = BRIDGE_CONSTANTS.getFederationConstants();
@@ -287,7 +287,7 @@ class FederationChangeIT {
         var erpPubKeys = FEDERATION_CONSTANTS.getErpFedPubKeysList();
         var activationDelay = FEDERATION_CONSTANTS.getErpFedActivationDelay();
 
-        return FederationFactory.buildP2shErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shP2wshErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
     }
 
     private int voteToCreatePendingFederation(Transaction tx) {
@@ -416,7 +416,7 @@ class FederationChangeIT {
         var svpSpendTxCreationHash = svpSpendTxWaitingForSignatures.get().getKey();
         var svpSpendTx = svpSpendTxWaitingForSignatures.get().getValue();
         var svpSpendTxSigHashes = IntStream.range(0, svpSpendTx.getInputs().size())
-            .mapToObj(i -> BitcoinUtils.generateSigHashForP2SHTransactionInput(svpSpendTx, i))
+            .mapToObj(i -> BitcoinUtils.generateSigHashForSegwitTransactionInput(svpSpendTx, i, svpSpendTx.getInput(i).getValue()))
             .toList();
         for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, 5)) {
             List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
@@ -706,8 +706,13 @@ class FederationChangeIT {
     }
 
     private BtcTransaction createPegout(Federation federation, String senderSeed) {
+        var prevTx = new BtcTransaction(NETWORK_PARAMS);
+        prevTx.addOutput(Coin.COIN, federation.getAddress());
+
+        TransactionOutput outpoint = prevTx.getOutput(0);
         var pegout = new BtcTransaction(NETWORK_PARAMS);
-        pegout.addInput(BitcoinTestUtils.createHash(1), 0, BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(federation.getRedeemScript()));
+        pegout.addInput(outpoint);
+        BitcoinUtils.addSpendingFederationBaseScript(pegout, 0, federation.getRedeemScript(), federation.getFormatVersion());
 
         var receiverPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
         pegout.addOutput(Coin.COIN, receiverPublicKey);
