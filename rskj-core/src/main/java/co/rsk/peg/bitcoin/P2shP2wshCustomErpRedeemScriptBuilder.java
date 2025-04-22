@@ -27,18 +27,8 @@ public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBui
         long csvValue
     ) {
         ScriptBuilder scriptBuilder = new ScriptBuilder();
-        if (defaultThreshold <= 0) {
-            throw new IllegalArgumentException("Default threshold must be greater than 0");
-        }
-
-        if (defaultThreshold > defaultPublicKeys.size()) {
-            throw new IllegalArgumentException("The number of default public keys must be greater or equal than default threshold");
-        }
-
-        if (defaultThreshold > 66) {
-            throw new IllegalArgumentException("The protocol only supports 66 signers");
-        }
-
+        Script customRedeemScript = ScriptBuilder.createCustomRedeemScript(defaultThreshold, defaultPublicKeys);
+        scriptBuilder.addChunks(customRedeemScript.getChunks());
         return scriptBuilder.op(ScriptOpCodes.OP_NOTIF).build();
     }
 }

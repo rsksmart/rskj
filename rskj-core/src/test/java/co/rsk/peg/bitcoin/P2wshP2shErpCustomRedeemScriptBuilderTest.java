@@ -94,9 +94,6 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
     void of_withAThresholdGreaterThanTheSignaturesTheProtocolSupports_shouldThrowAnError() {
         // Arrange
         int aboveMaximumDefaultThreshold = 67;
-        List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fb01"}, true
-        );
 
         try {
             // Act
@@ -119,7 +116,6 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
         );
 
         byte[] p2shp2wshErpCustomRedeemScriptProgram = redeemScript.getProgram();
-
         int opNOTIFIndex = 0; //First byte should be OP_NOTIF
         byte actualOpCodeInOpNotIfPosition = p2shp2wshErpCustomRedeemScriptProgram[opNOTIFIndex];
 
