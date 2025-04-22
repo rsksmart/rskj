@@ -1,9 +1,11 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
+import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.PegTestUtils.createHash3;
-import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -19,6 +21,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
@@ -27,13 +30,19 @@ import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.InMemoryStorage;
+import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
+
+import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -57,10 +66,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportAddSignatureTest {
     private static final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
-
+    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
     private final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
-    private final FederationConstants federationConstants = bridgeRegTestConstants.getFederationConstants();
+    private final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private final Instant creationTime = Instant.ofEpochMilli(1000L);
     private final long creationBlockNumber = 0L;
 
@@ -69,6 +78,7 @@ class BridgeSupportAddSignatureTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private WhitelistSupport whitelistSupport;
     private LockingCapSupport lockingCapSupport;
+    private List<LogInfo> logs;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -721,6 +731,106 @@ class BridgeSupportAddSignatureTest {
             new Object[]{rskTxHash.getBytes(), expectedRskAddress},
             new Object[]{federatorBtcPubKey.getPubKey()}
         );
+    }
+
+    @Test
+    void addSignature_correctFederator_whenFedIsSegwit_shouldSign() throws IOException {
+        // arrange
+        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(bridgeMainnetConstants.getFederationConstants())
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activationsAfterForks)
+            .build();
+
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
+        logs = new ArrayList<>();
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+            bridgeMainnetConstants,
+            activationsAfterForks,
+            logs
+        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activationsAfterForks)
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withProvider(bridgeStorageProvider)
+            .withFederationSupport(federationSupport)
+            .build();
+
+        final List<BtcECKey> keys = getBtcEcKeysFromSeeds(
+            new String[] {"signer1", "signer2", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
+            true
+        );
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
+        federationStorageProvider.setNewFederation(activeFederation);
+
+        // create pegout to be signed
+        BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
+        prevTx.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        Keccak256 rskTxHash = createHash3(1);
+        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
+        pegout.setVersion(BTC_TX_VERSION_2);
+        // add input
+        pegout.addInput(prevTx.getOutput(0));
+        int inputIndex = 0;
+        // add output
+        pegout.addOutput(Coin.MILLICOIN, activeFederation.getAddress());
+        // sign input
+        BitcoinUtils.addSpendingFederationBaseScript(pegout, inputIndex, activeFederation.getRedeemScript(), activeFederation.getFormatVersion());
+
+        // save outpoints values
+        Coin amountReceived = pegout.getInput(inputIndex).getValue();
+        List<Coin> outpointsValues = List.of(amountReceived);
+        repository.addStorageBytes(
+            bridgeAddress,
+            getStorageKeyForReleaseOutpointsValues(pegout.getHash()),
+            BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+        );
+        // add pegout wfs to repo
+        SortedMap<Keccak256, BtcTransaction> pegouts = new TreeMap<>();
+        pegouts.put(rskTxHash, pegout);
+        repository.addStorageBytes(bridgeAddress,
+            PEGOUTS_WAITING_FOR_SIGNATURES.getKey(),
+            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(pegouts)
+        );
+
+        SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+        assertEquals(1, pegoutsWFS.size());
+        BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
+
+        // act
+        // sign with all federators
+        List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegout);
+        List<BtcECKey> federatorSignersKeys = keys.subList(0, 5); // we only need 5/9 signers
+        for (BtcECKey federatorSignerKey : federatorSignersKeys) {
+            List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
+            bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
+        }
+
+        // assert
+        for (BtcECKey federatorSignerKey : federatorSignersKeys) {
+            assertFederatorSigning(
+                rskTxHash.getBytes(),
+                pegoutWFS,
+                sigHashes,
+                activeFederation,
+                federatorSignerKey,
+                logs
+            );
+        }
+        assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
+
+        // assert pegout was removed from wfs structure
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForSignatures().size());
+
     }
 
     private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
