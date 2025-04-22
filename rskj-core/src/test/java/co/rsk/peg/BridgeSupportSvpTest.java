@@ -73,8 +73,6 @@ class BridgeSupportSvpTest {
 
     private static final CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
     private static final CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-    private static final CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
-    private static final CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
     private static final CallTransaction.Function commitFederationFailedEvent = BridgeEvents.COMMIT_FEDERATION_FAILED.getEvent();
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
@@ -136,7 +134,7 @@ class BridgeSupportSvpTest {
         );
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
-        proposedFederation = P2shErpFederationBuilder.builder().build();
+        proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
         federationStorageProvider.setProposedFederation(proposedFederation);
 
         federationSupport = FederationSupportBuilder.builder()
@@ -342,8 +340,8 @@ class BridgeSupportSvpTest {
             byte[] proposedFederationRedeemScriptSerialized = proposedFederation.getRedeemScript().getProgram();
             byte[] encodedData = getEncodedData(commitFederationFailedEvent, proposedFederationRedeemScriptSerialized, rskExecutionBlock.getNumber());
 
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
         }
 
         private void assertNoSVPValues() {
@@ -478,11 +476,11 @@ class BridgeSupportSvpTest {
 
             CallTransaction.Function updateCollectionsEvent = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
             List<DataWord> encodedTopics = getEncodedTopics(updateCollectionsEvent);
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
+            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
 
             String senderData = rskTx.getSender(mock(SignatureCache.class)).toHexString();
             byte[] encodedData = getEncodedData(updateCollectionsEvent, senderData);
-            assertEventWasEmittedWithExpectedData(encodedData);
+            assertEventWasEmittedWithExpectedData(logs, encodedData);
         }
     }
 
@@ -747,7 +745,7 @@ class BridgeSupportSvpTest {
         private void assertSvpSpendTxHasExpectedInputsAndOutputs() {
             List<TransactionInput> inputs = svpSpendTransaction.getInputs();
             assertEquals(2, inputs.size());
-            assertInputsHaveExpectedScriptSig(inputs);
+            assertInputsHaveExpectedRedeemData(svpSpendTransaction);
             assertInputsOutpointHashIsFundTxHash(inputs, svpFundTransaction.getHash());
 
             List<TransactionOutput> outputs = svpSpendTransaction.getOutputs();
@@ -763,24 +761,42 @@ class BridgeSupportSvpTest {
             assertOutputWasSentToExpectedScriptWithExpectedAmount(outputs, activeFederation.getP2SHScript(), valueToSendBackToActiveFed);
         }
 
-        private void assertInputsHaveExpectedScriptSig(List<TransactionInput> inputs) {
-            TransactionInput inputToProposedFederation = inputs.get(0);
+        private void assertInputsHaveExpectedRedeemData(BtcTransaction tx) {
             Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-            assertInputHasExpectedScriptSig(inputToProposedFederation, proposedFederationRedeemScript);
+            assertInputHasExpectedRedeemData(tx, 0, proposedFederationRedeemScript);
 
-            TransactionInput inputToFlyoverProposedFederation = inputs.get(1);
-            Script flyoverRedeemScript =
-                getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-            assertInputHasExpectedScriptSig(inputToFlyoverProposedFederation, flyoverRedeemScript);
+            Script flyoverRedeemScript = getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+            assertInputHasExpectedRedeemData(tx, 1, flyoverRedeemScript);
         }
 
-        private void assertInputHasExpectedScriptSig(TransactionInput input, Script redeemScript) {
+        private void assertInputHasExpectedRedeemData(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+            TransactionInput input = btcTx.getInput(inputIndex);
+            if (!inputHasWitness(btcTx, inputIndex)) {
+                assertScriptSigHasExpectedRedeemData(input, redeemScript);
+            }
+
+            TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+            assertWitnessHasExpectedRedeemData(inputWitness, redeemScript);
+        }
+
+        private void assertScriptSigHasExpectedRedeemData(TransactionInput input, Script redeemScript) {
             List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
             int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
 
             assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
             for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
                 assertEquals(0, chunk.opcode);
+            }
+        }
+
+        private void assertWitnessHasExpectedRedeemData(TransactionWitness inputWitness, Script redeemScript) {
+            int totalPushes = inputWitness.getPushCount();
+            int redeemScriptIndex = totalPushes - 1;
+            assertArrayEquals(redeemScript.getProgram(), inputWitness.getPush(redeemScriptIndex)); // last push should be the redeem script
+
+            byte[] emptyByte = new byte[] {};
+            for (int i = 0; i < redeemScriptIndex; i++) { // all the other pushes should be zero
+                assertArrayEquals(emptyByte, inputWitness.getPush(i));
             }
         }
 
@@ -826,7 +842,7 @@ class BridgeSupportSvpTest {
 
             // assert
             for (BtcECKey wrongSigningKey : wrongSigningKeys) {
-                assertFederatorDidNotSignInputs(svpSpendTransaction.getInputs(), svpSpendTxSigHashes, wrongSigningKey);
+                assertFederatorDidNotSignInputs(svpSpendTransaction, svpSpendTxSigHashes, wrongSigningKey);
             }
 
             assertAddSignatureWasNotLogged();
@@ -846,7 +862,7 @@ class BridgeSupportSvpTest {
 
             // assert
             for (BtcECKey key : proposedFederationSignersKeys) {
-                assertFederatorDidNotSignInputs(svpSpendTransaction.getInputs(), svpSpendTxSigHashes, key);
+                assertFederatorDidNotSignInputs(svpSpendTransaction, svpSpendTxSigHashes, key);
             }
 
             assertAddSignatureWasNotLogged();
@@ -875,7 +891,7 @@ class BridgeSupportSvpTest {
 
             // assert
             for (BtcECKey proposedFederatorSignerKeys : proposedFederationSignersKeys) {
-                assertFederatorDidNotSignInputs(svpSpendTransaction.getInputs(), svpSpendTxSigHashes, proposedFederatorSignerKeys);
+                assertFederatorDidNotSignInputs(svpSpendTransaction, svpSpendTxSigHashes, proposedFederatorSignerKeys);
             }
 
             assertAddSignatureWasNotLogged();
@@ -893,17 +909,17 @@ class BridgeSupportSvpTest {
 
             // assert
             for (BtcECKey proposedFederatorSignerKeys : proposedFederationSignersKeys) {
-                assertFederatorDidNotSignInputs(svpSpendTransaction.getInputs(), svpSpendTxSigHashes, proposedFederatorSignerKeys);
+                assertFederatorDidNotSignInputs(svpSpendTransaction, svpSpendTxSigHashes, proposedFederatorSignerKeys);
             }
 
             assertAddSignatureWasNotLogged();
             assertSvpSpendTxWFSWasNotRemoved();
         }
 
-        private void assertFederatorDidNotSignInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
-            for (TransactionInput input : inputs) {
-                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
-                assertFalse(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
+        private void assertFederatorDidNotSignInputs(BtcTransaction btcTx, List<Sha256Hash> sigHashes, BtcECKey key) {
+            for (int i = 0; i < btcTx.getInputs().size(); i++) {
+                Sha256Hash sigHash = sigHashes.get(i);
+                assertFalse(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
             }
         }
 
@@ -927,13 +943,14 @@ class BridgeSupportSvpTest {
             for (BtcECKey proposedFederatorSignerKey : proposedFederationSignersKeys) {
                 assertFederatorSigning(
                     svpSpendTxCreationHash.getBytes(),
-                    svpSpendTransaction.getInputs(),
+                    svpSpendTransaction,
                     svpSpendTxSigHashes,
                     proposedFederation,
-                    proposedFederatorSignerKey
+                    proposedFederatorSignerKey,
+                    logs
                 );
             }
-            assertLogReleaseBtc(svpSpendTxCreationHash, svpSpendTransaction);
+            assertLogReleaseBtc(logs, svpSpendTransaction, svpSpendTxCreationHash);
             assertLogsSize(proposedFederationSignersKeys.size() + 1); // proposedFedSigners size for addSignature, +1 for release btc
             assertNoSvpSpendTxWFS();
         }
@@ -958,72 +975,28 @@ class BridgeSupportSvpTest {
             }
 
             // assert
-            List<TransactionInput> pegoutInputs = pegout.getInputs();
             for (BtcECKey key : activeFedSignersKeys) {
                 assertFederatorSigning(
                     rskTxHash.getBytes(),
-                    pegout.getInputs(),
+                    pegout,
                     pegoutTxSigHashes,
                     activeFederation,
-                    key
+                    key,
+                    logs
                 );
             }
 
-            assertLogReleaseBtc(rskTxHash, pegout);
+            assertLogReleaseBtc(logs, pegout, rskTxHash);
             assertLogsSize(activeFedSignersKeys.size() + 1); // activeFedSignersKeys size for addSignature, +1 for release btc
 
             for (BtcECKey key : proposedFederationSignersKeys) {
-                assertFederatorDidNotSignInputs(pegoutInputs, pegoutTxSigHashes, key);
+                assertFederatorDidNotSignInputs(pegout, pegoutTxSigHashes, key);
             }
             assertSvpSpendTxWFSWasNotRemoved();
         }
 
         private void assertLogsSize(int expectedLogs) {
             assertEquals(expectedLogs, logs.size());
-        }
-
-        private void assertFederatorSigning(
-            byte[] rskTxHashSerialized,
-            List<TransactionInput> inputs,
-            List<Sha256Hash> sigHashes,
-            Federation federation,
-            BtcECKey key
-        ) {
-            Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(key);
-            assertTrue(federationMember.isPresent());
-            assertLogAddSignature(federationMember.get(), rskTxHashSerialized);
-            assertFederatorSignedInputs(inputs, sigHashes, key);
-        }
-
-        private void assertLogAddSignature(FederationMember federationMember, byte[] rskTxHash) {
-            ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
-            String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
-
-            List<DataWord> encodedTopics = getEncodedTopics(addSignatureEvent, rskTxHash, federatorRskAddress);
-
-            BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
-            byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
-
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
-        }
-
-        private void assertLogReleaseBtc(Keccak256 rskTxHash, BtcTransaction btcTx) {
-            byte[] rskTxHashSerialized = rskTxHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
-
-            byte[] btcTxSerialized = btcTx.bitcoinSerialize();
-            byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
-
-            assertEventWasEmittedWithExpectedTopics(encodedTopics);
-            assertEventWasEmittedWithExpectedData(encodedData);
-        }
-
-        private void assertFederatorSignedInputs(List<TransactionInput> inputs, List<Sha256Hash> sigHashes, BtcECKey key) {
-            for (TransactionInput input : inputs) {
-                Sha256Hash sigHash = sigHashes.get(inputs.indexOf(input));
-                assertTrue(BridgeUtils.isInputSignedByThisFederator(key, sigHash, input));
-            }
         }
     }
 
@@ -1705,11 +1678,12 @@ class BridgeSupportSvpTest {
         int proposedFederationFormatVersion = proposedFederation.getFormatVersion();
 
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, proposedFederation.getP2SHScript());
-        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-        addSpendingFederationBaseScript(svpSpendTransaction, 0, proposedFederationRedeemScript, proposedFederationFormatVersion);
 
+        Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
         Script flyoverRedeemScript = getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, getFlyoverFederationOutputScript(proposedFederationFormatVersion, flyoverRedeemScript));
+        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, getFlyoverFederationOutputScript(flyoverRedeemScript, proposedFederationFormatVersion));
+
+        addSpendingFederationBaseScript(svpSpendTransaction, 0, proposedFederationRedeemScript, proposedFederationFormatVersion);
         addSpendingFederationBaseScript(svpSpendTransaction, 1, flyoverRedeemScript, proposedFederationFormatVersion);
     }
 
@@ -1718,6 +1692,17 @@ class BridgeSupportSvpTest {
     }
 
     private void saveSvpSpendTransactionValues() {
+        // save outpoints values
+        List<Coin> outpointsValues = new ArrayList<>();
+        for (TransactionInput input : svpSpendTransaction.getInputs()) {
+            outpointsValues.add(input.getValue());
+        }
+        repository.addStorageBytes(
+            bridgeContractAddress,
+            getStorageKeyForReleaseOutpointsValues(svpSpendTransaction.getHash()),
+            BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+        );
+
         bridgeStorageProvider.setSvpSpendTxHashUnsigned(svpSpendTransaction.getHash());
 
         Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures = new AbstractMap.SimpleEntry<>(svpSpendTxCreationHash, svpSpendTransaction);
@@ -1783,15 +1768,15 @@ class BridgeSupportSvpTest {
         List<DataWord> rejectedPeginEncodedTopics = getEncodedTopics(rejectedPeginEvent, btcTxHashSerialized);
         byte[] rejectedPeginEncodedData = getEncodedData(rejectedPeginEvent, INVALID_AMOUNT.getValue());
 
-        assertEventWasEmittedWithExpectedTopics(rejectedPeginEncodedTopics);
-        assertEventWasEmittedWithExpectedData(rejectedPeginEncodedData);
+        assertEventWasEmittedWithExpectedTopics(logs, rejectedPeginEncodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, rejectedPeginEncodedData);
 
         Function unrefundablePeginEvent = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
         List<DataWord> encodedTopics = getEncodedTopics(unrefundablePeginEvent, btcTxHashSerialized);
         byte[] encodedData = getEncodedData(unrefundablePeginEvent, NonRefundablePeginReason.INVALID_AMOUNT.getValue());
 
-        assertEventWasEmittedWithExpectedTopics(encodedTopics);
-        assertEventWasEmittedWithExpectedData(encodedData);
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
     private void assertNoSvpFundTxHashUnsigned() {
@@ -1825,8 +1810,8 @@ class BridgeSupportSvpTest {
 
         byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
 
-        assertEventWasEmittedWithExpectedTopics(encodedTopics);
-        assertEventWasEmittedWithExpectedData(encodedData);
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
     private void assertReleaseTransactionInfoWasProcessed(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
@@ -1843,8 +1828,8 @@ class BridgeSupportSvpTest {
         byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(outpointValues);
         byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
 
-        assertEventWasEmittedWithExpectedTopics(encodedTopics);
-        assertEventWasEmittedWithExpectedData(encodedData);
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
     private void assertReleasesOutpointsValuesWereSaved(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
@@ -1860,15 +1845,5 @@ class BridgeSupportSvpTest {
         Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
         assertTrue(releaseOutpointsValues.isPresent());
         assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
-    }
-
-    private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
-        assertTrue(topicOpt.isPresent());
-    }
-
-    private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-        Optional<LogInfo> data = getLogsData(logs, expectedData);
-        assertTrue(data.isPresent());
     }
 }

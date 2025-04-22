@@ -849,7 +849,8 @@ class BitcoinUtilsTest {
 
         // assert
         TransactionWitness expectedWitness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-        assertEquals(expectedWitness, transaction.getWitness(inputIndex));
+        // TODO check why this fails when using assertEquals
+        assertTrue(expectedWitness.equals(transaction.getWitness(inputIndex)));
 
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
         Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
@@ -858,7 +859,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void generateSigHashForP2SHInput_shouldGenerateExpectedSigHash() {
+    void generateSigHashForP2SHTransactionInput_shouldGenerateExpectedSigHash() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
@@ -882,6 +883,31 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void generateSigHashForSegwitTransactionInput_shouldGenerateExpectedSigHash() {
+        // arrange
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        Script redeemScript = federation.getRedeemScript();
+
+        Coin prevValue = Coin.valueOf(1000);
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(prevValue, federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+
+        int inputIndex = 0;
+        addSpendingFederationBaseScript(transaction, inputIndex, redeemScript, federation.getFormatVersion());
+
+        // act
+        Sha256Hash sigHash = generateSigHashForSegwitTransactionInput(transaction, inputIndex, transaction.getInput(inputIndex).getValue());
+
+        // assert
+        Sha256Hash expectedSigHash = transaction.hashForWitnessSignature(inputIndex, redeemScript, prevValue, BtcTransaction.SigHash.ALL, false);
+        assertEquals(expectedSigHash, sigHash);
+    }
+
+    @Test
     void generateSigHashForP2SHInput_forEmptyInputScript_shouldThrowIllegalArgumentException() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
@@ -897,6 +923,25 @@ class BitcoinUtilsTest {
         // act & assert
         assertThrows(IllegalArgumentException.class,
             () -> generateSigHashForP2SHTransactionInput(transaction, inputIndex));
+    }
+
+    @Test
+    void generateSigHashForSegwitTransactionInput_whenNoRedeemData_shouldThrowIllegalArgumentException() {
+        // arrange
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+
+        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
+        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionOutput outpoint = fundTransaction.getOutput(0);
+        transaction.addInput(outpoint);
+        int inputIndex = 0;
+
+        // act & assert
+        Coin prevValue = transaction.getInput(inputIndex).getValue();
+        assertThrows(IllegalArgumentException.class,
+            () -> generateSigHashForSegwitTransactionInput(transaction, inputIndex, prevValue));
     }
 
     @Test

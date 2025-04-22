@@ -160,8 +160,15 @@ public class BitcoinTestUtils {
 
     public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
         return IntStream.range(0, btcTx.getInputs().size())
-            .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
+            .mapToObj(i -> generateTransactionInputSigHash(btcTx, i))
             .toList();
+    }
+
+    public static Sha256Hash generateTransactionInputSigHash(BtcTransaction btcTx, int inputIndex) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            return generateSigHashForP2SHTransactionInput(btcTx, inputIndex);
+        }
+        return generateSigHashForSegwitTransactionInput(btcTx, inputIndex, btcTx.getInput(inputIndex).getValue());
     }
 
     public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
