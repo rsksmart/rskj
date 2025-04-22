@@ -7495,12 +7495,13 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test release transaction info processing")
     class ReleaseTransactionInfo {
-        private List<LogInfo> logs;
-
         private final Coin outpointValue1 = Coin.valueOf(300_000);
         private final Coin outpointValue2 = Coin.valueOf(150_000);
         private final Coin outpointValue3 = Coin.valueOf(50_000);
+
+        private List<LogInfo> logs;
         private BridgeEventLogger bridgeEventLogger;
+        private Block currentBlock;
 
         @BeforeEach
         void setUp() {
@@ -7628,6 +7629,76 @@ class BridgeSupportTest {
 
             List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
             assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
+        }
+
+
+        @Test
+        void pegouts_it() throws IOException {
+            // Arrange
+            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+            federationStorageProvider.setNewFederation(activeFederation);
+
+            setUpReleaseRequests();
+            setUpWithActivations(allActivations);
+
+            // Act
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+
+            // Assert
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+
+            // check the active fed redeem script data is in input witness
+            TransactionWitness witness = releaseTransaction.getWitness(0);
+            int redeemScriptIndex = witness.getPushCount() - 1;
+            byte[] redeemData = witness.getPush(redeemScriptIndex);
+            assertArrayEquals(activeFederation.getRedeemScript().getProgram(), redeemData);
+
+            List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
+            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
+            List<byte[]> bytes = new ArrayList<>();
+            bytes.add(new byte[]{});
+
+            var blockNumber =
+                bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
+            var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(blockNumber)
+                .build();
+            currentBlock = Block.createBlockFromHeader(blockHeader, true);
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(allActivations)
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withRepository(repository)
+                .withProvider(bridgeStorageProvider)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(currentBlock)
+                .build();
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+
+            bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, allActivations);
+            SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+            var blockNumber2 = currentBlock.getNumber() + 100;
+            var blockHeader2 = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(blockNumber2)
+                .build();
+            currentBlock = Block.createBlockFromHeader(blockHeader2, true);
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(allActivations)
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withRepository(repository)
+                .withProvider(bridgeStorageProvider)
+                //.withEventLogger(bridgeEventLogger)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(currentBlock)
+                //.withBtcLockSenderProvider(btcLockSenderProvider)
+                .build();
+
+            bridgeSupport.addSignature(new BtcECKey(), bytes, new Keccak256(Hex.decode("518509e8054fdb2572ad27a84ad8e7a47d62372cbab6b701d1044d7c402e2de0")));
         }
 
         @Test
