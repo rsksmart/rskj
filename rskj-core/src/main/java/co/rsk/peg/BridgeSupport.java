@@ -3017,11 +3017,13 @@ public class BridgeSupport {
     }
 
     private Federation getFederationFromTxOutputs(BtcTransaction btcTx) {
+        // checking against active fed first
         Federation activeFederation = getActiveFederation();
         if (outputsMatchFederation(btcTx, activeFederation)){
             return activeFederation;
         }
 
+        // and then against retiring fed
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation != null && outputsMatchFederation(btcTx, retiringFederation)) {
             return retiringFederation;
@@ -3083,6 +3085,16 @@ public class BridgeSupport {
         return false;
     }
 
+    // In order to add new segwit compatible fed, a decision had to be made
+    // to locate the redeem data where it should be
+    // (in the input witness for segwit, in the script sig for legacy).
+    // The only problematic scenario would be having to create a rejection release
+    // with outputs for both p2sh-erp retiring fed and p2sh-p2wsh-erp active fed.
+    // The decision is to choose the active federation format version.
+    // Since a transaction that has inputs from both feds will never be correctly signed,
+    // because the addSignature method signs all the tx inputs with the received key,
+    // we don't really care about this very rare case.
+    // But it's worth to explain the expected behaviour.
     private void generateRejectionReleaseFromFederation(
         BtcTransaction btcTx,
         Address btcRefundAddress,
