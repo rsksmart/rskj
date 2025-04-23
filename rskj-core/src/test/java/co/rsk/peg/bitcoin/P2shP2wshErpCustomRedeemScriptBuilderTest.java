@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class P2shP2wshErpCustomRedeemScriptBuilderTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-    public static final long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
+    private static final long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
     private static final List<BtcECKey> oneDefaultKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fb01"}, true
     );
@@ -28,12 +28,11 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
     );
     private static final int ERP_THRESHOLD = emergencyKeys.size() / 2 + 1;
     private static final int ONE_SIGNATURE_DEFAULT_THRESHOLD = 1;
-
     private static final P2shP2wshCustomErpRedeemScriptBuilder builder = P2shP2wshCustomErpRedeemScriptBuilder.builder();
-    private static final List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+    private static final List<BtcECKey> manyDefaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
     );
-    private static final int MANY_SIGNATURE_DEFAULT_THRESHOLD = defaultKeys.size() / 2 + 1;
+    private static final int MANY_SIGNATURE_DEFAULT_THRESHOLD = manyDefaultKeys.size() / 2 + 1;
 
     @Test
     void of_withZeroSignaturesThreshold_shouldThrowAnError() {
@@ -44,7 +43,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             IllegalArgumentException.class,
             () ->
                 builder.of(
-                    defaultKeys, zeroThreshold, null, 0, 0
+                    manyDefaultKeys, zeroThreshold, null, 0, 0
                 )
         );
     }
@@ -58,7 +57,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             IllegalArgumentException.class,
             () ->
                 builder.of(
-                    defaultKeys, negativeThreshold, null, 0, 0
+                    manyDefaultKeys, negativeThreshold, null, 0, 0
                 )
         );
     }
@@ -87,7 +86,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             IllegalArgumentException.class,
             () ->
                 builder.of(
-                    defaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
+                    manyDefaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
                 )
         );
     }
@@ -110,7 +109,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         assertEquals((byte) ScriptOpCodes.OP_NOTIF, actualOpCode);
 
         // defaultCustomRedeemScript - Second byte should be the PubKey
-        int pubKeyIndex = opNotIfIndex+1; //Second byte should have the pubkey size
+        int pubKeyIndex = opNotIfIndex + 1; //Second byte should have the pubKey size
         byte actualPubKeyLength = p2shp2wshErpCustomRedeemScriptProgram[pubKeyIndex++];
         List<BtcECKey> reversedDefaultKeys = Lists.reverse(defaultKeys);
         byte[] expectedFederatorPubKey = reversedDefaultKeys.get(0).getPubKey();
@@ -130,7 +129,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         reversedDefaultKeys = reversedDefaultKeys.subList(1, reversedDefaultKeys.size());
         for (BtcECKey pubKey : reversedDefaultKeys) {
             // defaultCustomRedeemScript - Forth opcode should be the OP_SWAP for the PubKey1
-            int opSwapIndex = opCheckSigIndex+1;
+            int opSwapIndex = opCheckSigIndex + 1;
             actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opSwapIndex];
 
             assertEquals((byte) ScriptOpCodes.OP_SWAP, actualOpCode);
@@ -152,7 +151,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             assertEquals((byte) ScriptOpCodes.OP_CHECKSIG, actualOpCode);
 
             // defaultCustomRedeemScript - After the CHECKSIG & SWAP opcodes should be the OP_ADD to check total of signatures provided
-            int opAddIndex = opCheckSigIndex+1;
+            int opAddIndex = opCheckSigIndex + 1;
             actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opAddIndex];
 
             assertEquals((byte) ScriptOpCodes.OP_ADD, actualOpCode);
@@ -160,13 +159,13 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         }
 
         // defaultRedeemScript - The second last is the number of signatures expected
-        int thresholdIndex = opCheckSigIndex+1;
+        int thresholdIndex = opCheckSigIndex + 1;
         byte actualThreshold = p2shp2wshErpCustomRedeemScriptProgram[thresholdIndex];
 
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(threshold)), actualThreshold);
 
         // defaultCustomRedeemScript - The second last is the number of signatures expected
-        int opNumEqualIndex = thresholdIndex+1;
+        int opNumEqualIndex = thresholdIndex + 1;
         actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opNumEqualIndex];
 
         assertEquals((byte) ScriptOpCodes.OP_NUMEQUAL, actualOpCode);
@@ -193,7 +192,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
                 ONE_SIGNATURE_DEFAULT_THRESHOLD
             ),
             Arguments.of(
-                defaultKeys,
+                manyDefaultKeys,
                 MANY_SIGNATURE_DEFAULT_THRESHOLD
             )
         );
