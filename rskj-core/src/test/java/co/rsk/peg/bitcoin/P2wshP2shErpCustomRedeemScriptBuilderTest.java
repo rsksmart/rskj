@@ -18,11 +18,12 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
     private static final List<BtcECKey> oneDefaultKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fb01"}, true
     );
-    private static final List<BtcECKey> oneEmergencyKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-        new String[]{"fb04"}, true
-        );
+
+    private static final List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        new String[]{"fb01", "fb02", "fb03", "fb04"}, true
+    );
+    private static final int erpThreshold = emergencyKeys.size() / 2 + 1;
     private static final int oneSignatureDefaultThreshold = 1;
-    private static final int oneSignatureErpThreshold = 1;
 
     @Test
     void of_withZeroSignaturesThreshold_shouldThrowAnError() {
@@ -106,7 +107,7 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
     void of_withOnePublicKey_shouldHaveTheCorrectRedeemScript() {
         // Act
         Script redeemScript = P2shP2wshCustomErpRedeemScriptBuilder.builder().of(
-            oneDefaultKey, oneSignatureDefaultThreshold, oneEmergencyKey, oneSignatureErpThreshold, CSV_VALUE
+            oneDefaultKey, oneSignatureDefaultThreshold, emergencyKeys, erpThreshold, CSV_VALUE
         );
 
         byte[] p2shp2wshErpCustomRedeemScriptProgram = redeemScript.getProgram();
@@ -171,6 +172,6 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
         assertEquals((byte) ScriptOpCodes.OP_DROP, p2shp2wshErpCustomRedeemScriptProgram[opDropIndex]);
 
         // ERP
-        ErpRedeemScriptTestUtils.assertEmergencyRedeemScript(p2shp2wshErpCustomRedeemScriptProgram, oneEmergencyKey, opDropIndex, oneSignatureErpThreshold);
+        ErpRedeemScriptTestUtils.assertEmergencyRedeemScript(p2shp2wshErpCustomRedeemScriptProgram, emergencyKeys, opDropIndex, erpThreshold);
     }
 }
