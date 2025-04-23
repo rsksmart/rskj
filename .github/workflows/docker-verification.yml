@@ -1,18 +1,21 @@
 name: Docker image validation
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - 'Dockerfile'
       - '.github/workflows/docker-verification.yml'
     types: [opened, synchronize, reopened]
 
 # Declare default permissions as read only.
-permissions: read-all
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   docker:
     runs-on: ubuntu-24.04
+    if: github.event.pull_request.head.repo.fork == false
 
     steps:
       - name: Checkout
