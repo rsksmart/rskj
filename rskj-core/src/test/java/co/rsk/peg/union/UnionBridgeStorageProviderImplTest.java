@@ -122,6 +122,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void setAndSaveAddress_whenNull_shouldNotStoreNull() {
         // Arrange
+        // To simulate, there is an address already stored in the storage
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             storedUnionBridgeContractAddress, BridgeSerializationUtils::serializeRskAddress
@@ -132,9 +133,10 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.save(allActivations);
 
         // Assert
+        // Check existing address is still stored
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(allActivations);
-        assertTrue(actualAddress.isEmpty());
-        assertNoAddressIsStored();
+        assertTrue(actualAddress.isPresent());
+        assertGivenAddressIsStored(storedUnionBridgeContractAddress);
     }
 
     private void assertNoAddressIsStored() {
@@ -142,26 +144,6 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress);
         assertNull(retrievedAddress);
-    }
-
-    @Test
-    void setAndSaveAddress_whenStoredAddressButGivenAddressIsNull_shouldNotStoreNull() {
-        // Arrange
-        RskAddress expectedUnionBridgeContractAddress = TestUtils.generateAddress(
-            "expectedUnionBridgeContractAddress");
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            BridgeSerializationUtils.serializeRskAddress(expectedUnionBridgeContractAddress));
-
-        // Act
-        unionBridgeStorageProvider.setAddress(null);
-        unionBridgeStorageProvider.save(allActivations);
-
-        // Assert
-        Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(allActivations);
-        assertTrue(actualAddress.isPresent());
-        assertEquals(expectedUnionBridgeContractAddress, actualAddress.get());
-        assertGivenAddressIsStored(actualAddress.get());
     }
 
     private void assertGivenAddressIsStored(RskAddress newUnionBridgeAddress) {
