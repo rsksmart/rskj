@@ -27,7 +27,7 @@ public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBui
         int emergencyThreshold,
         long csvValue
     ) {
-        logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
+        logger.debug("[of] Creating the redeem script from the scripts");
 
         ScriptBuilder scriptBuilder = new ScriptBuilder();
         Script customRedeemScript = ScriptBuilder.createCustomRedeemScript(defaultThreshold, defaultPublicKeys);
