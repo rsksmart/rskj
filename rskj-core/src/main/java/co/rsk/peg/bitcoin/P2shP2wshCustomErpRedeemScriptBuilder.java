@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBuilder {
+    private static final Logger logger = LoggerFactory.getLogger(P2shP2wshCustomErpRedeemScriptBuilder.class);
 
     private P2shP2wshCustomErpRedeemScriptBuilder() {}
 
@@ -26,10 +27,23 @@ public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBui
         int emergencyThreshold,
         long csvValue
     ) {
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
+        logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
+
         ScriptBuilder scriptBuilder = new ScriptBuilder();
         Script customRedeemScript = ScriptBuilder.createCustomRedeemScript(defaultThreshold, defaultPublicKeys);
-        scriptBuilder.addChunks(customRedeemScript.getChunks());
-        return scriptBuilder.op(ScriptOpCodes.OP_NOTIF).build();
+        Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
+
+        return scriptBuilder
+            .op(ScriptOpCodes.OP_NOTIF)
+            .addChunks(customRedeemScript.getChunks())
+            .op(ScriptOpCodes.OP_ELSE)
+            .data(serializedCsvValue)
+            .op(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY)
+            .op(ScriptOpCodes.OP_DROP)
+            .addChunks(emergencyRedeemScript.getChunks())
+            .op(ScriptOpCodes.OP_ENDIF)
+            .build();
     }
 }
 

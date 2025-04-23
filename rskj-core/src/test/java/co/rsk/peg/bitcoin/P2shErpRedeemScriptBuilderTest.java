@@ -3,12 +3,10 @@ package co.rsk.peg.bitcoin;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
-import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -106,9 +104,6 @@ class P2shErpRedeemScriptBuilderTest {
          * OP_ENDIF
          */
 
-        int expectedCsvValueLength =  BigInteger.valueOf(csvValue).toByteArray().length;
-        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
-
         byte[] p2shErpRedeemScriptProgram = p2shErpRedeemScript.getProgram();
         assertTrue(p2shErpRedeemScriptProgram.length > 0);
 
@@ -152,53 +147,14 @@ class P2shErpRedeemScriptBuilderTest {
         final int OP_ELSE_INDEX = OP_CHECK_MULTISIG_IN_IF_INDEX + 1;
         assertEquals((byte)ScriptOpCodes.OP_ELSE, p2shErpRedeemScriptProgram[OP_ELSE_INDEX]);
 
-        // Next byte should equal csv value length
+        // Next byte should equal csv value length and then the csv value
         final int CSV_VALUE_LENGTH_INDEX = OP_ELSE_INDEX + 1;
-        assertEquals(expectedCsvValueLength, p2shErpRedeemScriptProgram[CSV_VALUE_LENGTH_INDEX]);
+        int CSV_OP_CODE_INDEX = ErpRedeemScriptTestUtils.assertCsvValue(CSV_VALUE_LENGTH_INDEX, csvValue, p2shErpRedeemScriptProgram);
 
-        // Next bytes should equal the csv value in bytes
-        final int CSV_VALUE_START_INDEX = CSV_VALUE_LENGTH_INDEX + 1;
-        for (int i = 0; i < expectedCsvValueLength; i++) {
-            int currentCsvValueIndex = CSV_VALUE_START_INDEX + i;
-            assertEquals(serializedCsvValue[i], p2shErpRedeemScriptProgram[currentCsvValueIndex]);
-        }
-
-        final int CSV_OP_CODE_INDEX = CSV_VALUE_START_INDEX + expectedCsvValueLength;
-        assertEquals((byte)ScriptOpCodes.OP_CHECKSEQUENCEVERIFY,
-            p2shErpRedeemScriptProgram[CSV_OP_CODE_INDEX]);
-
+        // Next byte should equal OP_DROP
         final int OP_DROP_INDEX = CSV_OP_CODE_INDEX + 1;
         assertEquals((byte)ScriptOpCodes.OP_DROP, p2shErpRedeemScriptProgram[OP_DROP_INDEX]);
 
-        // Next byte should equal M, from an M/N multisig
-        final int OP_M_ERP_INDEX = OP_DROP_INDEX + 1;
-
-        int expectedMErp = erpThreshold;
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(expectedMErp)), p2shErpRedeemScriptProgram[OP_M_ERP_INDEX]);
-
-        int erpPubKeysIndex = OP_M_ERP_INDEX + 1;
-        for (BtcECKey btcErpEcKey : erpKeys) {
-            byte actualErpKeyLength = p2shErpRedeemScriptProgram[erpPubKeysIndex++];
-
-            byte[] erpPubKey = btcErpEcKey.getPubKey();
-            assertEquals(erpPubKey.length, actualErpKeyLength);
-            for (byte characterErpPubKey : erpPubKey) {
-                assertEquals(characterErpPubKey, p2shErpRedeemScriptProgram[erpPubKeysIndex++]);
-            }
-        }
-
-        // Next byte should equal N, from an M/N multisig
-        final int N_ERP_INDEX = erpPubKeysIndex;
-        int actualNErpFederation = p2shErpRedeemScriptProgram[N_ERP_INDEX];
-        int expectedNErpFederation = erpKeys.size();
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(expectedNErpFederation)), actualNErpFederation);
-
-        // Next byte should equal OP_CHECKMULTISIG
-        final int OP_CHECK_MULTISIG_INDEX = N_ERP_INDEX + 1;
-        assertEquals((byte)ScriptOpCodes.OP_CHECKMULTISIG, p2shErpRedeemScriptProgram[OP_CHECK_MULTISIG_INDEX]);
-
-        // Next byte should equal OP_ENDIF
-        final int OP_ENDIF_INDEX = OP_CHECK_MULTISIG_INDEX + 1;
-        assertEquals((byte)ScriptOpCodes.OP_ENDIF, p2shErpRedeemScriptProgram[OP_ENDIF_INDEX]);
+        ErpRedeemScriptTestUtils.assertEmergencyRedeemScript(p2shErpRedeemScriptProgram, erpKeys, OP_DROP_INDEX, erpThreshold);
     }
 }
