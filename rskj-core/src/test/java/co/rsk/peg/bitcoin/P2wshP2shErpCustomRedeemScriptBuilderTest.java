@@ -18,12 +18,12 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
     private static final List<BtcECKey> oneDefaultKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fb01"}, true
     );
-
     private static final List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fb01", "fb02", "fb03", "fb04"}, true
     );
     private static final int erpThreshold = emergencyKeys.size() / 2 + 1;
     private static final int oneSignatureDefaultThreshold = 1;
+    private static final P2shP2wshCustomErpRedeemScriptBuilder builder = P2shP2wshCustomErpRedeemScriptBuilder.builder();
 
     @Test
     void of_withZeroSignaturesThreshold_shouldThrowAnError() {
@@ -32,17 +32,13 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
         List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true);
 
-        try {
-            // Act
-            P2shP2wshCustomErpRedeemScriptBuilder.builder().of(
-                defaultKeys, zeroThreshold, null, 0, 0
-            );
-        } catch (Exception e) {
-            // Assert
-            assertInstanceOf(IllegalArgumentException.class, e);
-            return;
-        }
-        fail();
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                builder.of(
+                    defaultKeys, zeroThreshold, null, 0, 0
+                )
+        );
     }
 
     @Test
@@ -52,17 +48,13 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
         List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true);
 
-        try {
-            // Act
-            P2shP2wshCustomErpRedeemScriptBuilder.builder().of(
-                defaultKeys, negativeThreshold, null, 0, 0
-            );
-        } catch (Exception e) {
-            // Assert
-            assertInstanceOf(IllegalArgumentException.class, e);
-            return;
-        }
-        fail();
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                builder.of(
+                    defaultKeys, negativeThreshold, null, 0, 0
+                )
+        );
     }
 
     @Test
@@ -70,17 +62,14 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
         // Arrange
         int threshold = 2;
 
-        try {
-            // Act
-            P2shP2wshCustomErpRedeemScriptBuilder.builder().of(
-                oneDefaultKey, threshold, null, 0, 0
-            );
-        } catch (Exception e) {
-            // Assert
-            assertInstanceOf(IllegalArgumentException.class, e);
-            return;
-        }
-        fail();
+        // Act & Assert
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                builder.of(
+                    oneDefaultKey, threshold, null, 0, 0
+                )
+        );
     }
 
     @Test
@@ -90,23 +79,19 @@ class P2wshP2shErpCustomRedeemScriptBuilderTest {
         List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fa01", "fa02", "fa03"}, true);
 
-        try {
-            // Act
-            P2shP2wshCustomErpRedeemScriptBuilder.builder().of(
-                defaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
-            );
-        } catch (Exception e) {
-            // Assert
-            assertInstanceOf(IllegalArgumentException.class, e);
-            return;
-        }
-        fail();
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                builder.of(
+                    defaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
+                )
+        );
     }
 
     @Test
     void of_withOnePublicKey_shouldHaveTheCorrectRedeemScript() {
         // Act
-        Script redeemScript = P2shP2wshCustomErpRedeemScriptBuilder.builder().of(
+        Script redeemScript = builder.of(
             oneDefaultKey, oneSignatureDefaultThreshold, emergencyKeys, erpThreshold, CSV_VALUE
         );
 
