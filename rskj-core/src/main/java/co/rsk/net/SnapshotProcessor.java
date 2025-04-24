@@ -34,7 +34,6 @@ import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
@@ -70,6 +69,7 @@ public class SnapshotProcessor implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
 
+    public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
@@ -223,29 +223,25 @@ public class SnapshotProcessor implements InternalService {
     void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
         long checkpointBlockNumber = Math.max(0, bestBlockNumber - checkpointDistance);
-        long from = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
+        long lowerBlockNumberToRetrieve = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
         logger.debug("Processing snapshot status request, checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
-        List<Block> blocks = Lists.newArrayList();
-        List<BlockDifficulty> difficulties = Lists.newArrayList();
-        for (long i = from; i < checkpointBlockNumber; i++) {
-            Block block = blockchain.getBlockByNumber(i);
-            blocks.add(block);
-            difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
-        }
 
-        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
-        blocks.add(checkpointBlock);
-        difficulties.add(blockStore.getTotalDifficultyForHash(checkpointBlock.getHash().getBytes()));
-        byte[] rootHash = checkpointBlock.getStateRoot();
+        LinkedList<Block> blocks = new LinkedList<>();
+        LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
+
+        retrieveBlocksAndDifficultiesBackwards(lowerBlockNumberToRetrieve,checkpointBlockNumber, blocks, difficulties);
+
+        Block currentBlock = blocks.getLast();
+        byte[] rootHash = currentBlock.getStateRoot();
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
-
         if (opt.isEmpty()) {
-            logger.warn("trie is not present for rootHash: {}", Bytes.of(rootHash));
+            logger.warn("Trie is not present for rootHash: {}", Bytes.of(rootHash));
+            // Handle the error appropriately, e.g., send an error response or throw an exception
             return;
         }
-
         long trieSize = opt.get().getTotalSize();
         logger.debug("Processing snapshot status request - rootHash: {} trieSize: {}", rootHash, trieSize);
+
         SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(requestMessage.getId(), blocks, difficulties, trieSize);
         sender.sendMessage(responseMessage);
     }
@@ -299,7 +295,7 @@ public class SnapshotProcessor implements InternalService {
 
             Block parentBlock = blockStore.getBlockByHash(block.getParentHash().getBytes());
             if (parentBlock != null) {
-                if (areBlockPairsValid(new ImmutablePair<>(parentBlock, blockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes())), blockPair, false)) {
+                if (areBlockPairsValid(new ImmutablePair<>(parentBlock, blockStore.getTotalDifficultyForBlock(parentBlock)), blockPair, false)) {
                     state.addBlock(blockPair);
                     state.setLastVerifiedBlockHeader(blockPair.getLeft().getHeader());
                     return true;
@@ -454,26 +450,32 @@ public class SnapshotProcessor implements InternalService {
 
     void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
         logger.debug("Processing snap blocks request");
-        List<Block> blocks = Lists.newArrayList();
-        List<BlockDifficulty> difficulties = Lists.newArrayList();
+        LinkedList<Block> blocks = new LinkedList<>();
+        LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
 
-        if (requestMessage.getBlockNumber() < 2) {
-            logger.debug("Snap blocks request from {} failed because of invalid block number {}", sender.getPeerNodeID(), requestMessage.getBlockNumber());
+        long requestBlockNumber = requestMessage.getBlockNumber();
+        if (requestBlockNumber < 2 || requestBlockNumber > blockchain.getBestBlock().getNumber()) {
+            logger.debug("Snap blocks request from {} failed because of invalid block number {}", sender.getPeerNodeID(), requestBlockNumber);
             return;
         }
 
-        long startingBlockNumber = Math.max(1, requestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE);
-        for (long i = startingBlockNumber; i < requestMessage.getBlockNumber(); i++) {
-            Block block = blockchain.getBlockByNumber(i);
-            if (block == null) {
-                break;
-            }
-            blocks.add(block);
-            difficulties.add(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()));
-        }
+        long fromBlock = Math.max(1, requestMessage.getBlockNumber() - BLOCK_CHUNK_SIZE);
+        retrieveBlocksAndDifficultiesBackwards(fromBlock,requestBlockNumber-1, blocks, difficulties);
         logger.debug("Sending snap blocks response. From block {} to block {} - chunksize {}", blocks.get(0).getNumber(), blocks.get(blocks.size() - 1).getNumber(), BLOCK_CHUNK_SIZE);
         SnapBlocksResponseMessage responseMessage = new SnapBlocksResponseMessage(requestMessage.getId(), blocks, difficulties);
         sender.sendMessage(responseMessage);
+    }
+
+    private void retrieveBlocksAndDifficultiesBackwards(long fromBlock, long toBlock, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties) {
+        Block currentBlock = blockchain.getBlockByNumber(toBlock);
+        while (currentBlock != null && currentBlock.getNumber() >= fromBlock) {
+            blocks.addFirst(currentBlock);
+            difficulties.addFirst(blockStore.getTotalDifficultyForBlock(currentBlock));
+            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+        }
+        if (currentBlock == null) {
+            logger.warn("No block found for block number {}", currentBlock);
+        }
     }
 
     public void processSnapBlocksResponse(SnapSyncState state, Peer sender, SnapBlocksResponseMessage responseMessage) {

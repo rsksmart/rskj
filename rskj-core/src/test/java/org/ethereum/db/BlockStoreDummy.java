@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -107,6 +106,11 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
+        return null;
+    }
+
+    @Override
+    public BlockDifficulty getTotalDifficultyForBlock(Block block) {
         return null;
     }
 
