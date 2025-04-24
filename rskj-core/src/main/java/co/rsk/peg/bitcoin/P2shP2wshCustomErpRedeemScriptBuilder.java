@@ -30,9 +30,12 @@ public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBui
         logger.debug("[of] Creating the redeem script from the scripts");
 
         Script customRedeemScript = ScriptBuilder.createCustomRedeemScript(defaultThreshold, defaultPublicKeys);
+
+        // no need for using the new redeem script format for the emergency keys since the regular
+        // Multisig supports up to 15 keys
         Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
 
-        ErpRedeemScriptBuilderUtils.validateCSVRedeemScriptValue(csvValue);
+        ErpRedeemScriptBuilderUtils.validateCSVValue(csvValue);
 
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
         ScriptBuilder scriptBuilder = new ScriptBuilder();

@@ -123,19 +123,15 @@ class P2shErpRedeemScriptBuilderTest {
         int pubKeysIndex = M_STANDARD_VALUE_INDEX + 1;
         for (int i = 0; i < defaultKeys.size(); i++) {
             BtcECKey btcFederatorKey = defaultKeys.get(i);
-            byte actualPubKeyLength = p2shErpRedeemScriptProgram[pubKeysIndex++];
-
             byte[] expectedFederatorPubKey = btcFederatorKey.getPubKey();
-            assertEquals(expectedFederatorPubKey.length, actualPubKeyLength);
-
-            for (byte characterPubKey : expectedFederatorPubKey) {
-                assertEquals(characterPubKey, p2shErpRedeemScriptProgram[pubKeysIndex++]);
-            }
+            pubKeysIndex = ErpRedeemScriptTestUtils.assertPublicKeyAndReturnTheNextIndex(
+                p2shErpRedeemScriptProgram, expectedFederatorPubKey, pubKeysIndex
+            );
         }
 
         // Next byte should equal N, from an M/N multisig
         final int N_STANDARD_VALUE_INDEX = pubKeysIndex;
-        int numberOfStandardKeys = defaultKeys.size();
+            int numberOfStandardKeys = defaultKeys.size();
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(numberOfStandardKeys)), p2shErpRedeemScriptProgram[N_STANDARD_VALUE_INDEX]);
 
         // Next byte should equal OP_CHECKMULTISIG
@@ -155,6 +151,6 @@ class P2shErpRedeemScriptBuilderTest {
         final int OP_DROP_INDEX = CSV_OP_CODE_INDEX + 1;
         assertEquals((byte)ScriptOpCodes.OP_DROP, p2shErpRedeemScriptProgram[OP_DROP_INDEX]);
 
-        ErpRedeemScriptTestUtils.assertEmergencyRedeemScript(p2shErpRedeemScriptProgram, erpKeys, OP_DROP_INDEX, erpThreshold);
+        ErpRedeemScriptTestUtils.assertMultiSigRedeemScript(p2shErpRedeemScriptProgram, erpKeys, OP_DROP_INDEX + 1);
     }
 }
