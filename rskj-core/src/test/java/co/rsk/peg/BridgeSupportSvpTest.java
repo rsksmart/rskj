@@ -615,7 +615,7 @@ class BridgeSupportSvpTest {
             // Arrange
             arrangeSvpFundTransactionUnsigned();
 
-            BtcTransaction pegout = createPegout(proposedFederation.getRedeemScript());
+            BtcTransaction pegout = createPegout(proposedFederation);
             savePegoutIndex(pegout);
             signInputs(pegout); // a transaction trying to be registered should be signed
             setUpForTransactionRegistration(pegout);
@@ -941,7 +941,7 @@ class BridgeSupportSvpTest {
         void addSignature_forNormalPegout_whenSvpIsOngoing_shouldAddJustActiveFederatorsSignaturesToPegout() throws Exception {
             Keccak256 rskTxHash = RskTestUtils.createHash(2);
 
-            BtcTransaction pegout = createPegout(activeFederation.getRedeemScript());
+            BtcTransaction pegout = createPegout(activeFederation);
             SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
             pegoutsWFS.put(rskTxHash, pegout);
 
@@ -1036,7 +1036,7 @@ class BridgeSupportSvpTest {
             arrangeSvpSpendTransaction();
             setUpForTransactionRegistration(svpSpendTransaction);
 
-            BtcTransaction pegout = createPegout(proposedFederation.getRedeemScript());
+            BtcTransaction pegout = createPegout(proposedFederation);
             savePegoutIndex(pegout);
             signInputs(pegout);
             setUpForTransactionRegistration(pegout);
@@ -1199,8 +1199,9 @@ class BridgeSupportSvpTest {
                 getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_2")
             );
             Script redeemScript = ScriptBuilder.createRedeemScript(2, pubKeys);
-            Script scriptSig = BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+            Script scriptSig = BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
             pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
+
             Coin amountToSend = Coin.COIN;
             pegin.addOutput(amountToSend, activeFederation.getAddress());
             setUpForTransactionRegistration(pegin);
@@ -1634,8 +1635,7 @@ class BridgeSupportSvpTest {
     private void recreateSvpFundTransactionUnsigned() {
         svpFundTransaction = new BtcTransaction(btcMainnetParams);
 
-        Sha256Hash parentTxHash = BitcoinTestUtils.createHash(1);
-        addInput(svpFundTransaction, parentTxHash, proposedFederation.getRedeemScript());
+        addInput(svpFundTransaction, proposedFederation);
 
         svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
         Address flyoverProposedFederationAddress = PegUtils.getFlyoverFederationAddress(
@@ -1646,22 +1646,23 @@ class BridgeSupportSvpTest {
         svpFundTransaction.addOutput(svpFundTxOutputsValue, flyoverProposedFederationAddress);
     }
 
-    private BtcTransaction createPegout(Script redeemScript) {
+    private BtcTransaction createPegout(Federation federation) {
         BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
-        Sha256Hash parentTxHash = BitcoinTestUtils.createHash(2);
-        addInput(pegout, parentTxHash, redeemScript);
+        addInput(pegout, federation);
         addOutputChange(pegout);
 
         return pegout;
     }
 
-    private void addInput(BtcTransaction transaction, Sha256Hash parentTxHash, Script redeemScript) {
+    private void addInput(BtcTransaction transaction, Federation federation) {
         // we need to add an input that we can actually sign
-        transaction.addInput(
-            parentTxHash,
-            0,
-            createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript)
-        );
+        var prevTx = new BtcTransaction(btcMainnetParams);
+        prevTx.addOutput(Coin.COIN, federation.getAddress());
+        TransactionOutput outpoint = prevTx.getOutput(0);
+
+        int inputIndex = 0;
+        transaction.addInput(outpoint);
+        addSpendingFederationBaseScript(transaction, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
     }
 
     private void addOutputChange(BtcTransaction transaction) {
@@ -1702,13 +1703,11 @@ class BridgeSupportSvpTest {
         // add inputs
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, proposedFederation.getP2SHScript());
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-        svpSpendTransaction.getInput(0)
-            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
+        addSpendingFederationBaseScript(svpSpendTransaction, 0, proposedFederationRedeemScript, proposedFederation.getFormatVersion());
 
         Script flyoverRedeemScript = getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
-        svpSpendTransaction.getInput(1)
-            .setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+        addSpendingFederationBaseScript(svpSpendTransaction, 1, flyoverRedeemScript, proposedFederation.getFormatVersion());
     }
 
     private void addSpendTransactionOutput(Coin amountToSend) {
