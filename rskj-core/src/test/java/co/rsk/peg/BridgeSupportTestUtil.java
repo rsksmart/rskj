@@ -107,80 +107,8 @@ public final class BridgeSupportTestUtil {
         when(currentStored.getHeight()).thenReturn(headHeight);
     }
 
-    public static Keccak256 getFlyoverDerivationHash(
-        ActivationConfig.ForBlock activations,
-        Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
-        Address lpBtcAddress,
-        RskAddress lbcAddress
-    ) {
-        byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
-        byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
-        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
-        byte[] lbcAddressBytes = lbcAddress.getBytes();
-        byte[] result = new byte[
-            flyoverDerivationHashData.length +
-                userRefundAddressBytes.length +
-                lpBtcAddressBytes.length +
-                lbcAddressBytes.length
-            ];
-
-        int dstPosition = 0;
-
-        System.arraycopy(
-            flyoverDerivationHashData,
-            0,
-            result,
-            dstPosition,
-            flyoverDerivationHashData.length
-        );
-        dstPosition += flyoverDerivationHashData.length;
-
-        System.arraycopy(
-            userRefundAddressBytes,
-            0,
-            result,
-            dstPosition,
-            userRefundAddressBytes.length
-        );
-        dstPosition += userRefundAddressBytes.length;
-
-        System.arraycopy(
-            lbcAddressBytes,
-            0,
-            result,
-            dstPosition,
-            lbcAddressBytes.length
-        );
-        dstPosition += lbcAddressBytes.length;
-
-        System.arraycopy(
-            lpBtcAddressBytes,
-            0,
-            result,
-            dstPosition,
-            lpBtcAddressBytes.length
-        );
-
-        return new Keccak256(HashUtil.keccak256(result));
-    }
-
     public static DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
         return RELEASES_OUTPOINTS_VALUES.getCompoundKey("-", releaseTxHash.toString());
-    }
-
-    public static PartialMerkleTree createValidPmtToRegisterTransaction(
-        BridgeConstants bridgeConstants,
-        BtcTransaction btcTx,
-        int btcBlockToRegisterHeight,
-        BtcBlockStoreWithCache btcBlockStore
-    ) throws Exception {
-        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
-        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), networkParameters);
-        var chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
-        return pmtWithTransactions;
     }
 
     public static BtcTransaction getReleaseFromPegoutsWFC(BridgeStorageProvider bridgeStorageProvider) throws IOException {
