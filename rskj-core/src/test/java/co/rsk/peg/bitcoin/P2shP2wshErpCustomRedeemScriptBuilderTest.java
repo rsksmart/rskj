@@ -29,10 +29,10 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
     private static final int ERP_THRESHOLD = emergencyKeys.size() / 2 + 1;
     private static final int ONE_SIGNATURE_DEFAULT_THRESHOLD = 1;
     private static final P2shP2wshCustomErpRedeemScriptBuilder builder = P2shP2wshCustomErpRedeemScriptBuilder.builder();
-    private static final List<BtcECKey> manyDefaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+    private static final List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09"}, true
     );
-    private static final int MANY_SIGNATURE_DEFAULT_THRESHOLD = manyDefaultKeys.size() / 2 + 1;
+    private static final int DEFAULT_THRESHOLD = defaultKeys.size() / 2 + 1;
 
     @Test
     void of_withZeroSignaturesThreshold_shouldThrowAnError() {
@@ -43,9 +43,24 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             IllegalArgumentException.class,
             () ->
                 builder.of(
-                    manyDefaultKeys, zeroThreshold, null, 0, 0
+                    defaultKeys, zeroThreshold, null, 0, 0
                 )
         );
+    }
+
+    @Test
+    void of_withTheSameDefaultPubKeys_withDifferentOrder__shouldBeEquals() {
+        // Arrange
+        Script scriptA = builder.of(
+            defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE
+        );
+
+        List<BtcECKey> reversedKeys = Lists.reverse(defaultKeys);
+        Script scriptB = builder.of(
+            reversedKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE
+        );
+
+        assertArrayEquals(scriptA.getProgram(), scriptB.getProgram());
     }
 
     @Test
@@ -57,7 +72,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             IllegalArgumentException.class,
             () ->
                 builder.of(
-                    manyDefaultKeys, negativeThreshold, null, 0, 0
+                    defaultKeys, negativeThreshold, null, 0, 0
                 )
         );
     }
@@ -86,7 +101,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             IllegalArgumentException.class,
             () ->
                 builder.of(
-                    manyDefaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
+                    defaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
                 )
         );
     }
@@ -192,8 +207,8 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
                 ONE_SIGNATURE_DEFAULT_THRESHOLD
             ),
             Arguments.of(
-                manyDefaultKeys,
-                MANY_SIGNATURE_DEFAULT_THRESHOLD
+                defaultKeys,
+                DEFAULT_THRESHOLD
             )
         );
     }
