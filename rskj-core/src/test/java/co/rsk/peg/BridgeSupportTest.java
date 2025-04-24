@@ -7770,7 +7770,7 @@ class BridgeSupportTest {
                 getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_2")
             );
             Script redeemScript = ScriptBuilder.createRedeemScript(2, pubKeys);
-            Script scriptSig = BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+            Script scriptSig = BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
             pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
             pegin.addOutput(amountToSend, activeFederation.getAddress());
 

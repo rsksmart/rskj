@@ -2,7 +2,6 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -692,12 +691,12 @@ class FederationChangeIT {
         flyoverPeginBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
 
         userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMS, senderSeed);
-        var flyoverDerivationHash = BridgeSupportTestUtil.getFlyoverDerivationHash(
-            ACTIVATIONS,
+        var flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             DERIVATION_ARGUMENTS_HASH,
             userRefundBtcAddress,
             LIQUIDITY_PROVIDER_BTC_ADDRESS,
-            LBC_ADDRESS
+            LBC_ADDRESS,
+            ACTIVATIONS
         );
 
         var flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(NETWORK_PARAMS, flyoverDerivationHash, federation);
@@ -708,7 +707,7 @@ class FederationChangeIT {
 
     private BtcTransaction createPegout(Federation federation, String senderSeed) {
         var pegout = new BtcTransaction(NETWORK_PARAMS);
-        pegout.addInput(BitcoinTestUtils.createHash(1), 0, createBaseP2SHInputScriptThatSpendsFromRedeemScript(federation.getRedeemScript()));
+        pegout.addInput(BitcoinTestUtils.createHash(1), 0, BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(federation.getRedeemScript()));
 
         var receiverPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
         pegout.addOutput(Coin.COIN, receiverPublicKey);
