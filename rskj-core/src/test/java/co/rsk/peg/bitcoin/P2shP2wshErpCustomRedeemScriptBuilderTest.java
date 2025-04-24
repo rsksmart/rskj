@@ -11,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class P2shP2wshErpCustomRedeemScriptBuilderTest {
 
+    private static final int ABOVE_MAXIMUM_DEFAULT_THRESHOLD = 67;
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
     private static final List<BtcECKey> oneDefaultKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(
@@ -35,20 +37,6 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
     private static final int DEFAULT_THRESHOLD = defaultKeys.size() / 2 + 1;
 
     @Test
-    void of_withZeroSignaturesThreshold_shouldThrowAnError() {
-        // Arrange
-        int zeroThreshold = 0;
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                builder.of(
-                    defaultKeys, zeroThreshold, null, 0, 0
-                )
-        );
-    }
-
-    @Test
     void of_withTheSameDefaultPubKeys_withDifferentOrder__shouldBeEquals() {
         // Arrange
         Script scriptA = builder.of(
@@ -63,46 +51,54 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         assertArrayEquals(scriptA.getProgram(), scriptB.getProgram());
     }
 
-    @Test
-    void of_withNegativeSignaturesThreshold_shouldThrowAnError() {
-        // Arrange
-        int negativeThreshold = -1;
-
+    @ParameterizedTest()
+    @MethodSource("invalidInputsArgsProvider")
+    void of_invalidInputs_throwsException(
+        Class<Exception> expectedException,
+        List<BtcECKey> defaultKeys,
+        Integer defaultThreshold,
+        List<BtcECKey> erpKeys,
+        Integer erpThreshold,
+        Long csvValue
+    ) {
         assertThrows(
-            IllegalArgumentException.class,
+            expectedException,
             () ->
                 builder.of(
-                    defaultKeys, negativeThreshold, null, 0, 0
+                    defaultKeys, defaultThreshold, erpKeys, erpThreshold, csvValue
                 )
         );
     }
 
-    @Test
-    void of_withLessSignaturesThanThresholdSpecified_shouldThrowAnError() {
-        // Arrange
-        int threshold = 2;
-
-        // Act & Assert
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                builder.of(
-                    oneDefaultKey, threshold, null, 0, 0
-                )
-        );
-    }
-
-    @Test
-    void of_withAThresholdGreaterThanTheSignaturesTheProtocolSupports_shouldThrowAnError() {
-        // Arrange
-        int aboveMaximumDefaultThreshold = 67;
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                builder.of(
-                    defaultKeys, aboveMaximumDefaultThreshold, null, 0, 0
-                )
+    private static Stream<Arguments> invalidInputsArgsProvider() {
+        long surpassingMaxCsvValue = ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1;
+        return Stream.of(
+            // defaultKeys is null
+            Arguments.of(NullPointerException.class, null, 0, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            // defaultThreshold is zero
+            Arguments.of(IllegalArgumentException.class, defaultKeys, 0, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            // defaultThreshold is negative
+            Arguments.of(IllegalArgumentException.class, defaultKeys, -1, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            // empty default keys
+            Arguments.of(IllegalArgumentException.class, Collections.emptyList(), 0, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            // threshold greater than default keys size
+            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size() + 1, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            // erpKeys is null
+            Arguments.of(NullPointerException.class, defaultKeys, DEFAULT_THRESHOLD, null, ERP_THRESHOLD, CSV_VALUE),
+            // defaultThreshold is above maximum allowed
+            Arguments.of(NullPointerException.class, defaultKeys, ABOVE_MAXIMUM_DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            // empty erp keys
+            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, Collections.emptyList(), ERP_THRESHOLD, CSV_VALUE),
+            // erp threshold is negative
+            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, -1, CSV_VALUE),
+            // erp threshold greater than erp keys size
+            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, emergencyKeys.size() + 1, CSV_VALUE),
+            // csv is negative
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, -1L),
+            // csv is zero
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, 0L),
+            // csv is above the maximum allowed
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, surpassingMaxCsvValue)
         );
     }
 
