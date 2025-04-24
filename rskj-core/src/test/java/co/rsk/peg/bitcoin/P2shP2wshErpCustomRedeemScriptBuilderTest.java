@@ -86,7 +86,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             // erpKeys is null
             Arguments.of(NullPointerException.class, defaultKeys, DEFAULT_THRESHOLD, null, ERP_THRESHOLD, CSV_VALUE),
             // defaultThreshold is above maximum allowed
-            Arguments.of(NullPointerException.class, defaultKeys, ABOVE_MAXIMUM_DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, ABOVE_MAXIMUM_DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
             // empty erp keys
             Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, Collections.emptyList(), ERP_THRESHOLD, CSV_VALUE),
             // erp threshold is negative
