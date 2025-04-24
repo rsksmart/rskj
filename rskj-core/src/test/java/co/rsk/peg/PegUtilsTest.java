@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -39,7 +40,9 @@ class PegUtilsTest {
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
-    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
+    private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+
+    private static final Keccak256 flyoverDerivationHash = new Keccak256("fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d500439");
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -47,7 +50,7 @@ class PegUtilsTest {
     private BridgeStorageProvider provider;
     private Address userAddress;
     private Federation retiringFederation;
-    private Federation activeFederation;
+    private static Federation activeFederation;
 
     @BeforeEach
     void init() {
@@ -64,17 +67,39 @@ class PegUtilsTest {
         activeFederation = createP2shErpFederation(federationMainNetConstants, activeFedSigners);
     }
 
+    @Test
+    void getFlyoverDerivationHash_returnsExpectedDerivationHash() {
+        // arrange
+        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "userRefundBtcAddress");
+        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "lpBtcAddress");
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(5);
+        RskAddress lbcAddress = new RskAddress("461750b4824b14c3d9b7702bc6fbb82469082b23");
+
+        // act
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress,
+            activations
+        );
+
+        // assert
+        Keccak256 expectedDerivationHash = new Keccak256(Hex.decode("56d4f6bd69378ef607e091832903ddc2b5aac5008bd06987a26f14bb248c44d8"));
+        assertEquals(expectedDerivationHash, flyoverDerivationHash);
+    }
+
     @ParameterizedTest
-    @MethodSource("derivationHashAndRedeemScriptArgs")
-    void getFlyoverRedeemScript_fromRealValues_shouldReturnSameRealRedeemScript(Keccak256 flyoverDerivationHash, Federation federation) {
+    @MethodSource("redeemScriptArgs")
+    void getFlyoverRedeemScript_fromRealValues_shouldReturnSameRealRedeemScript(Federation federation) {
         Script flyoverRedeemScript = new Script(Hex.decode("20fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d50043975645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68"));
 
         assertEquals(flyoverRedeemScript, getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript()));
     }
 
     @ParameterizedTest
-    @MethodSource("derivationHashAndRedeemScriptArgs")
-    void getFlyoverScriptPubKey_fromRealValues_shouldReturnSameRealOutputScript(Keccak256 flyoverDerivationHash, Federation federation) {
+    @MethodSource("redeemScriptArgs")
+    void getFlyoverScriptPubKey_fromRealValues_shouldReturnSameRealScriptPubKey(Federation federation) {
         Script scriptPubKey = getFlyoverFederationScriptPubKey(flyoverDerivationHash, federation); // OP_HASH160 outputScript OP_EQUAL
         byte[] outputScript = Hex.decode("18fc3b52a5b7d5277f41b9765719b45bfa427730");
 
@@ -82,17 +107,35 @@ class PegUtilsTest {
     }
 
     @ParameterizedTest
-    @MethodSource("derivationHashAndRedeemScriptArgs")
-    void getFlyoverAddress_fromRealValues_shouldReturnSameRealAddress(Keccak256 flyoverDerivationHash, Federation federation) {
+    @MethodSource("redeemScriptArgs")
+    void getFlyoverOutputScript_fromRealValues_shouldReturnSameRealOutputScript(Federation federation) {
+        Script flyoverRedeemScript = getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript());
+        Script outputScript = getFlyoverFederationOutputScript(activeFederation.getFormatVersion(), flyoverRedeemScript); // OP_HASH160 outputScript OP_EQUAL
+
+        byte[] scriptPubKey = Hex.decode("18fc3b52a5b7d5277f41b9765719b45bfa427730");
+        assertArrayEquals(scriptPubKey, outputScript.getPubKeyHash());
+    }
+
+    @Test
+    void getFlyoverOutputScript_forSegwitFed_shouldReturnSameOutputScript() {
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        Script flyoverRedeemScript = getFlyoverFederationRedeemScript(flyoverDerivationHash, federation.getRedeemScript());
+        Script outputScript = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript); // OP_HASH160 outputScript OP_EQUAL
+
+        byte[] scriptPubKey = Hex.decode("cd590f2ea7252ab5c202f822c4ff28a294f6f016");
+        assertArrayEquals(scriptPubKey, outputScript.getPubKeyHash());
+    }
+
+    @ParameterizedTest
+    @MethodSource("redeemScriptArgs")
+    void getFlyoverAddress_fromRealValues_shouldReturnSameRealAddress(Federation federation) {
         Address flyoverAddress = Address.fromBase58(btcMainnetParams, "33y8JWrSe4byp3DKmy2Mkyykz2dzP8Lmvn");
 
         assertEquals(flyoverAddress, getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, federation));
     }
 
-    private static Stream<Arguments> derivationHashAndRedeemScriptArgs() {
+    private static Stream<Arguments> redeemScriptArgs() {
         // reference from https://mempool.space/tx/ffaebdabce5b1cc1b2ab95657cf087a67ade6a29ecc9ca7d4e2089e346a3e1b3
-
-        Keccak256 flyoverDerivationHash = new Keccak256("fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d500439");
 
         List<BtcECKey> membersKeys = Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
@@ -105,10 +148,10 @@ class PegUtilsTest {
             BtcECKey.fromPublicOnly(Hex.decode("03b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf903")),
             BtcECKey.fromPublicOnly(Hex.decode("03b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b35888771906"))
         );
-        Federation federation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(membersKeys).build();
+        activeFederation = P2shErpFederationBuilder.builder().withMembersBtcPublicKeys(membersKeys).build();
 
         return Stream.of(
-            Arguments.of(flyoverDerivationHash, federation)
+            Arguments.of(activeFederation)
         );
     }
 
