@@ -36,8 +36,6 @@ import static org.mockito.Mockito.*;
 
 class SnapBlocksRequestMessageTest {
 
-    private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Block block4Test = new BlockGenerator().getBlock(1);
     private final SnapBlocksRequestMessage underTest = new SnapBlocksRequestMessage(1, block4Test.getNumber());
 
