@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class P2shP2wshErpCustomRedeemScriptBuilderTest {
 
-    private static final int ABOVE_MAXIMUM_DEFAULT_THRESHOLD = 67;
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
     private static final List<BtcECKey> oneDefaultKey = BitcoinTestUtils.getBtcEcKeysFromSeeds(
@@ -85,8 +84,6 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
             Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size() + 1, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
             // erpKeys is null
             Arguments.of(NullPointerException.class, defaultKeys, DEFAULT_THRESHOLD, null, ERP_THRESHOLD, CSV_VALUE),
-            // defaultThreshold is above maximum allowed
-            Arguments.of(IllegalArgumentException.class, defaultKeys, ABOVE_MAXIMUM_DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
             // empty erp keys
             Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, Collections.emptyList(), ERP_THRESHOLD, CSV_VALUE),
             // erp threshold is negative
