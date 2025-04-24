@@ -42,7 +42,7 @@ class PegUtilsTest {
     private static final Context context = new Context(bridgeMainnetConstants.getBtcParams());
     private static final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
 
-    private static final Keccak256 flyoverDerivationHash = new Keccak256("fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d500439");
+    private static Keccak256 flyoverDerivationHash;
 
     private static final int FIRST_OUTPUT_INDEX = 0;
     private static final int FIRST_INPUT_INDEX = 0;
@@ -76,7 +76,7 @@ class PegUtilsTest {
         RskAddress lbcAddress = new RskAddress("461750b4824b14c3d9b7702bc6fbb82469082b23");
 
         // act
-        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+        flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
@@ -136,6 +136,7 @@ class PegUtilsTest {
 
     private static Stream<Arguments> redeemScriptArgs() {
         // reference from https://mempool.space/tx/ffaebdabce5b1cc1b2ab95657cf087a67ade6a29ecc9ca7d4e2089e346a3e1b3
+        flyoverDerivationHash = new Keccak256("fc2bb93810d3d2332fed0b291c03822100a813eceaa0665896e0c82a8d500439");
 
         List<BtcECKey> membersKeys = Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
@@ -646,7 +647,7 @@ class PegUtilsTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+        flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
