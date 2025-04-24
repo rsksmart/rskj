@@ -10,9 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static co.rsk.peg.bitcoin.ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE;
-import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
-
 public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBuilder {
     private static final Logger logger = LoggerFactory.getLogger(P2shP2wshCustomErpRedeemScriptBuilder.class);
 
@@ -34,19 +31,12 @@ public class P2shP2wshCustomErpRedeemScriptBuilder implements ErpRedeemScriptBui
 
         Script customRedeemScript = ScriptBuilder.createCustomRedeemScript(defaultThreshold, defaultPublicKeys);
         Script emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
+
+        ErpRedeemScriptBuilderUtils.validateCSVRedeemScriptValue(csvValue);
+
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
-
-        if (csvValue <= 0 || csvValue > MAX_CSV_VALUE) {
-            String message = String.format(
-                "Provided csv value %d must be larger than 0 and lower than %d",
-                csvValue,
-                MAX_CSV_VALUE
-            );
-            logger.warn("[of] {}", message);
-            throw new RedeemScriptCreationException(message, INVALID_CSV_VALUE);
-        }
-
         ScriptBuilder scriptBuilder = new ScriptBuilder();
+
         return scriptBuilder
             .op(ScriptOpCodes.OP_NOTIF)
             .addChunks(customRedeemScript.getChunks())
