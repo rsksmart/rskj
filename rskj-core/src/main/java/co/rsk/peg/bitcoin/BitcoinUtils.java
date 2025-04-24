@@ -123,7 +123,7 @@ public class BitcoinUtils {
         }
     }
 
-    public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
+    public static Script createBaseInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         return outputScript.createEmptyInputScript(null, redeemScript);
     }
@@ -149,9 +149,9 @@ public class BitcoinUtils {
         return TransactionWitness.of(pushes);
     }
 
-    public static void addBaseScriptThatSpendsFromFederationRedeemScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
+    public static void addSpendingFederationBaseScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
         if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
-            Script inputScript = createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+            Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
             btcTx.getInput(inputIndex).setScriptSig(inputScript);
             return;
         }
