@@ -525,6 +525,7 @@ task RepositoryFuzzStorageRoot(type: Test) {
  *          MutableTrieCacheFuzzPuts, RepositoryFuzzStorageRoot
  **/
 task runAllFuzzTests {
+
     dependsOn orgEthereumVMFuzzOpcodes, coRSKVMFuzzTestNativeContractInputSize, WorldFuzzWorldFuzz,
             PrecompiledContractFuzzIdentityRandom, PrecompiledContractFuzzSha256Random,
             PrecompiledContractFuzzRimpempdRandom, PrecompiledContractFuzzEcrecoverRandom,
@@ -551,6 +552,7 @@ task runAllFuzzTests {
         println "<##############################################>\n"
     }
 }
+
 
 // Ensure that MergedFuzzCoverageTestReport runs after runAllFuzzTests, regardless of outcome
 runAllFuzzTests.finalizedBy('MergedFuzzCoverageTestReport')
