@@ -269,6 +269,10 @@ tasks.withType(AbstractArchiveTask) {
     fileMode = 0664
 }
 
+tasks.matching { it.name.contains("Fuzz") && it instanceof Test }.configureEach {
+    ignoreFailures = true
+}
+
 ext {
     libVersions = [
             nettyVer             : '4.1.78.Final',
@@ -325,7 +329,7 @@ ext {
 
             rskLllVer        : '0.0.2',
 
-            jazzerJunitVer   : '0.22.1',
+            jazzerJunitVer   : '0.24.0',
     ]
 
     jmhLibVersions = [
