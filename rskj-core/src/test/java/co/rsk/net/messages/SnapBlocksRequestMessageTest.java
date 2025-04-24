@@ -19,9 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Test;
