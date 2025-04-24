@@ -1187,23 +1187,25 @@ public class BridgeSupport {
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+        int proposedFederationFormatVersion = proposedFederation.getFormatVersion();
+
         TransactionOutput outputToProposedFed = searchForOutput(
             svpFundTxSigned.getOutputs(),
             proposedFederation.getP2SHScript()
         ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
         svpSpendTransaction.addInput(outputToProposedFed);
         int proposedFederationInputIndex = 0;
-        addBaseScriptThatSpendsFromFederationRedeemScript(svpSpendTransaction, proposedFederationInputIndex, proposedFederation.getRedeemScript(), proposedFederation.getFormatVersion());
+        addSpendingFederationBaseScript(svpSpendTransaction, proposedFederationInputIndex, proposedFederationRedeemScript, proposedFederationFormatVersion);
 
         Script flyoverFederationRedeemScript = getFlyoverFederationRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        Script flyoverOutputScript = getFlyoverFederationOutputScript(proposedFederation.getFormatVersion(), flyoverFederationRedeemScript);
+        Script flyoverOutputScript = getFlyoverFederationOutputScript(proposedFederationFormatVersion, flyoverFederationRedeemScript);
         TransactionOutput outputToFlyoverProposedFed = searchForOutput(
             svpFundTxSigned.getOutputs(),
             flyoverOutputScript
         ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to flyover proposed federation was not found in fund transaction."));
         svpSpendTransaction.addInput(outputToFlyoverProposedFed);
         int flyoverFederationInputIndex = 1;
-        addBaseScriptThatSpendsFromFederationRedeemScript(svpSpendTransaction, flyoverFederationInputIndex, flyoverFederationRedeemScript, proposedFederation.getFormatVersion());
+        addSpendingFederationBaseScript(svpSpendTransaction, flyoverFederationInputIndex, flyoverFederationRedeemScript, proposedFederation.getFormatVersion());
 
         Coin valueSentToProposedFed = outputToProposedFed.getValue();
         Coin valueSentToFlyoverProposedFed = outputToFlyoverProposedFed.getValue();

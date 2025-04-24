@@ -78,7 +78,7 @@ import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
-import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
+import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -115,7 +115,6 @@ class BridgeSupportFlyoverTest {
     private Repository repository;
     private FederationStorageProvider federationStorageProvider;
     private BridgeSupportBuilder bridgeSupportBuilder;
-    private BridgeSupport bridgeSupport;
     private LockingCapStorageProvider lockingCapStorageProvider;
     private LockingCapSupport lockingCapSupport;
     private WhitelistSupport whitelistSupport;
@@ -841,13 +840,13 @@ class BridgeSupportFlyoverTest {
 
     @Nested
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("test release transaction info processing")
-    class ReleaseTransactionInfo {
-        private final Federation activeFederation = P2shErpFederationBuilder.builder().build();
+    @Tag("test flyover pegin that surpasses locking cap different scenarios")
+    class FlyoverPeginThatSurpassesLockingCap {
         private final int btcBlockToRegisterHeight = bridgeConstantsMainnet.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstantsMainnet.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
 
         private final Coin amountRequestedThatSurpassesLockingCap = lockingCapMainnetConstants.getInitialValue().add(Coin.SATOSHI);
 
+        private Block currentBlock;
         private Repository repository;
         private BridgeStorageProvider bridgeStorageProvider;
         private BridgeSupport bridgeSupport;
@@ -856,6 +855,7 @@ class BridgeSupportFlyoverTest {
         private BtcBlockStoreWithCache btcBlockStore;
 
         private BtcTransaction flyoverBtcTx;
+        private Keccak256 flyoverDerivationHash;
         private PartialMerkleTree pmtWithTransactions;
 
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
@@ -869,6 +869,7 @@ class BridgeSupportFlyoverTest {
             FederationSupport federationSupport = federationSupportBuilder
                 .withFederationConstants(federationConstantsMainnet)
                 .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(currentBlock)
                 .withActivations(activations)
                 .build();
 
@@ -884,6 +885,7 @@ class BridgeSupportFlyoverTest {
 
             bridgeSupport = bridgeSupportBuilder
                 .withActivations(activations)
+                .withExecutionBlock(currentBlock)
                 .withBridgeConstants(bridgeConstantsMainnet)
                 .withProvider(bridgeStorageProvider)
                 .withRepository(repository)
@@ -969,21 +971,137 @@ class BridgeSupportFlyoverTest {
             assertReleaseTransactionInfoWasProcessed(logs, releaseRejectionTransaction, List.of(amountRequestedThatSurpassesLockingCap));
         }
 
+        @Test
+        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shErpActiveAndP2shErpRetiringFeds_shouldSetRedeemDataInInputsScriptSig() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            federationStorageProvider.setOldFederation(retiringFederation);
+
+            List<BtcECKey> newFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09"}, true
+            );
+            activeFederation = P2shErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(newFedKeys)
+                .build();
+
+            // Move the required blocks ahead for the new powpeg to become active
+            var blockNumber =
+                activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
+            advanceBlockchainTo(blockNumber);
+
+            setUpWithActivations(allActivations);
+            createFlyoverBtcTransaction(allActivations);
+            // adding output to retiring fed
+            var retiringFederationFlyoverAddress = getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, retiringFederation);
+            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, retiringFederationFlyoverAddress);
+
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+            bridgeSupport.save();
+
+            // assert
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+
+            // we should get refund liq provider response
+            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+
+            // pegout should have two inputs, one related to the active fed and one to the retiring fed
+            assertEquals(2, pegout.getInputs().size());
+            // since active fed is legacy, redeem data should be in the script sig
+            // first input should belong to active fed
+            var activeFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, activeFederation.getRedeemScript());
+            assertScriptSigHasExpectedInputRedeemData(activeFederationFlyoverRedeemScript, pegout.getInput(0));
+            // second input should belong to retiring fed
+            var retiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
+            assertScriptSigHasExpectedInputRedeemData(retiringFederationFlyoverRedeemScript, pegout.getInput(1));
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shP2wshErpActiveAndP2shErpRetiringFeds_shouldSetRedeemDataInInputsWitness() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            federationStorageProvider.setOldFederation(retiringFederation);
+            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+
+            // Move the required blocks ahead for the new powpeg to become active
+            var blockNumber =
+                activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
+            advanceBlockchainTo(blockNumber);
+
+            setUpWithActivations(allActivations);
+            createFlyoverBtcTransaction(allActivations);
+            // adding output to retiring fed
+            var retiringFederationFlyoverAddress = getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, retiringFederation);
+            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, retiringFederationFlyoverAddress);
+
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+            bridgeSupport.save();
+
+            // assert
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+
+            // we should get refund liq provider response
+            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+
+            // pegout should have two inputs, one related to the active fed and one to the retiring fed
+            assertEquals(2, pegout.getInputs().size());
+            // since active fed is segwit compatible, redeem data should be in the witness
+            // first input data should belong to active fed
+            var activeFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, activeFederation.getRedeemScript());
+            assertWitnessHasExpectedInputRedeemData(activeFederationFlyoverRedeemScript, pegout.getWitness(0));
+            // second input data should belong to retiring fed
+            var retiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
+            assertWitnessHasExpectedInputRedeemData(retiringFederationFlyoverRedeemScript, pegout.getWitness(1));
+        }
+
         private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
+            createFlyoverBtcTransaction(activations);
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+        }
+
+        private void createFlyoverBtcTransaction(ActivationConfig.ForBlock activations) {
             flyoverBtcTx = new BtcTransaction(btcMainnetParams);
             flyoverBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
 
-            var flyoverDerivationHash = BridgeSupportTestUtil.getFlyoverDerivationHash(
-                activations,
+            flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
                 derivationArgumentsHash,
                 userRefundBtcAddress,
                 lpBtcAddress,
-                lbcAddress
+                lbcAddress,
+                activations
             );
 
             var flyoverActiveFederationAddress = PegUtils.getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, activeFederation);
             flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, flyoverActiveFederationAddress);
-            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
         }
 
         private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcBlockWithPmtHeight) throws Exception {
@@ -992,6 +1110,13 @@ class BridgeSupportFlyoverTest {
 
             recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
             bridgeStorageProvider.save();
+        }
+
+        private void advanceBlockchainTo(long blockNumber) {
+            var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(blockNumber)
+                .build();
+            currentBlock = Block.createBlockFromHeader(blockHeader, true);
         }
 
         private void assertReleaseTransactionInfoWasProcessed(
@@ -1039,6 +1164,21 @@ class BridgeSupportFlyoverTest {
             Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
             assertTrue(releaseOutpointsValues.isPresent());
             assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
+        }
+
+        private void assertScriptSigHasExpectedInputRedeemData(Script expectedRedeemScript, TransactionInput input) {
+            List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+            int redeemScriptIndex = scriptSigChunks.size() - 1;
+            byte[] redeemData = scriptSigChunks.get(redeemScriptIndex).data;
+
+            assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
+        }
+
+        private void assertWitnessHasExpectedInputRedeemData(Script expectedRedeemScript, TransactionWitness witness) {
+            int firstInputRedeemScriptIndex = witness.getPushCount() - 1;
+            byte[] redeemFirstInputData = witness.getPush(firstInputRedeemScriptIndex);
+
+            assertArrayEquals(expectedRedeemScript.getProgram(), redeemFirstInputData);
         }
     }
 
@@ -1753,196 +1893,6 @@ class BridgeSupportFlyoverTest {
             true
         );
         Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
-    }
-
-    @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-    @Tag("test flyover pegin that surpasses locking cap different scenarios")
-    class FlyoverPeginThatSurpassesLockingCap {
-        private final int btcBlockToRegisterHeight = bridgeConstantsMainnet.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstantsMainnet.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
-
-        private BridgeStorageProvider bridgeStorageProvider;
-        private BtcTransaction flyoverBtcTx;
-        private Script activeFederationFlyoverRedeemScript;
-        private Script retiringFederationFlyoverRedeemScript;
-        private PartialMerkleTree pmtWithTransactions;
-
-        private void setUp() throws Exception {
-            repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstantsMainnet.getMaxRbtc()));
-            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, allActivations);
-
-            federationStorageProvider.setOldFederation(retiringFederation);
-            federationStorageProvider.setNewFederation(activeFederation);
-
-            // Move the required blocks ahead for the new powpeg to become active
-            var blockNumber =
-                activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-                .setNumber(blockNumber)
-                .build();
-            Block block = Block.createBlockFromHeader(blockHeader, true);
-
-            FederationSupport federationSupport = FederationSupportBuilder.builder()
-                .withFederationConstants(federationConstantsMainnet)
-                .withFederationStorageProvider(federationStorageProvider)
-                .withRskExecutionBlock(block)
-                .withActivations(allActivations)
-                .build();
-
-            lockingCapSupport = new LockingCapSupportImpl(
-                lockingCapStorageProvider,
-                allActivations,
-                bridgeConstantsMainnet.getLockingCapConstants(),
-                signatureCache
-            );
-
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory =
-                new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
-            BtcBlockStoreWithCache btcBlockStore =
-                btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, allActivations);
-            PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
-            BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
-
-            bridgeSupport = BridgeSupportBuilder.builder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withExecutionBlock(block)
-                .withActivations(allActivations)
-                .withBridgeConstants(bridgeConstantsMainnet)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withBtcLockSenderProvider(btcLockSenderProvider)
-                .withPeginInstructionsProvider(peginInstructionsProvider)
-                .withFederationSupport(federationSupport)
-                .withFeePerKbSupport(feePerKbSupport)
-                .withLockingCapSupport(lockingCapSupport)
-                .build();
-
-            var flyoverDerivationHash = BridgeSupportTestUtil.getFlyoverDerivationHash(
-                allActivations,
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lpBtcAddress,
-                lbcAddress
-            );
-
-            // create flyover tx
-            flyoverBtcTx = new BtcTransaction(btcMainnetParams);
-            flyoverBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
-            Coin amountRequestedThatSurpassesLockingCap = bridgeConstantsMainnet.getLockingCapConstants().getInitialValue().add(Coin.SATOSHI);
-
-            // add output to active fed
-            activeFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
-                .of(flyoverDerivationHash, activeFederation.getRedeemScript());
-            var activeFederationFlyoverOutputScript = getFlyoverFederationOutputScript(activeFederation.getFormatVersion(), activeFederationFlyoverRedeemScript);
-            var activeFederationFlyoverAddress = Address.fromP2SHScript(btcMainnetParams, activeFederationFlyoverOutputScript);
-            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, activeFederationFlyoverAddress);
-
-            // add output to retiring fed
-            retiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
-                .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
-            var retiringFederationFlyoverOutputScript = getFlyoverFederationOutputScript(retiringFederation.getFormatVersion(), retiringFederationFlyoverRedeemScript);
-            var retiringFederationFlyoverAddress = Address.fromP2SHScript(btcMainnetParams, retiringFederationFlyoverOutputScript);
-            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, retiringFederationFlyoverAddress);
-
-            // set up for registering tx
-            pmtWithTransactions = createValidPmtToRegisterTransaction(bridgeConstantsMainnet, flyoverBtcTx, btcBlockToRegisterHeight, btcBlockStore);
-            bridgeStorageProvider.save();
-        }
-
-        @Test
-        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shErpActiveAndP2shErpRetiringFeds_shouldSetRedeemDataInInputsScriptSig() throws Exception {
-            // arrange
-            retiringFederation = P2shErpFederationBuilder.builder().build();
-
-            List<BtcECKey> newFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-                new String[]{"newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09"}, true
-            );
-            activeFederation = P2shErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(newFedKeys)
-                .build();
-
-            setUp();
-
-            // act
-            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
-                rskTx,
-                flyoverBtcTx.bitcoinSerialize(),
-                btcBlockToRegisterHeight,
-                pmtWithTransactions.bitcoinSerialize(),
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lbcAddress,
-                lpBtcAddress,
-                true
-            );
-            bridgeSupport.save();
-
-            // assert
-            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-
-            // we should get refund liq provider response
-            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
-
-            // pegout should have two inputs, one related to the active fed and one to the retiring fed
-            assertEquals(2, pegout.getInputs().size());
-            // since active fed is legacy, redeem data should be in the script sig
-            // first input should belong to active fed
-            assertScriptSigHasExpectedInputRedeemData(activeFederationFlyoverRedeemScript, pegout.getInput(0));
-            // second input should belong to retiring fed
-            assertScriptSigHasExpectedInputRedeemData(retiringFederationFlyoverRedeemScript, pegout.getInput(1));
-        }
-
-        @Test
-        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shP2wshErpActiveAndP2shErpRetiringFeds_shouldSetRedeemDataInInputsWitness() throws Exception {
-            // arrange
-            retiringFederation = P2shErpFederationBuilder.builder().build();
-            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
-
-            setUp();
-
-            // act
-            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
-                rskTx,
-                flyoverBtcTx.bitcoinSerialize(),
-                btcBlockToRegisterHeight,
-                pmtWithTransactions.bitcoinSerialize(),
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lbcAddress,
-                lpBtcAddress,
-                true
-            );
-            bridgeSupport.save();
-
-            // assert
-            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-
-            // we should get refund liq provider response
-            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
-
-            // pegout should have two inputs, one related to the active fed and one to the retiring fed
-            assertEquals(2, pegout.getInputs().size());
-            // since active fed is segwit compatible, redeem data should be in the witness
-            // first input data should belong to active fed
-            assertWitnessHasExpectedInputRedeemData(activeFederationFlyoverRedeemScript, pegout.getWitness(0));
-            // second input data should belong to retiring fed
-            assertWitnessHasExpectedInputRedeemData(retiringFederationFlyoverRedeemScript, pegout.getWitness(1));
-        }
-
-        private void assertScriptSigHasExpectedInputRedeemData(Script expectedRedeemScript, TransactionInput input) {
-            List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
-            int redeemScriptIndex = scriptSigChunks.size() - 1;
-            byte[] redeemData = scriptSigChunks.get(redeemScriptIndex).data;
-
-            assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
-        }
-
-        private void assertWitnessHasExpectedInputRedeemData(Script expectedRedeemScript, TransactionWitness witness) {
-            int firstInputRedeemScriptIndex = witness.getPushCount() - 1;
-            byte[] redeemFirstInputData = witness.getPush(firstInputRedeemScriptIndex);
-
-            assertArrayEquals(expectedRedeemScript.getProgram(), redeemFirstInputData);
-        }
     }
 
     @Test
