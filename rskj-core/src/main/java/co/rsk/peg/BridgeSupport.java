@@ -3012,7 +3012,8 @@ public class BridgeSupport {
         WalletProvider walletProvider
     ) throws IOException {
         // non-flyover wallet provider implementation does not use the addresses
-        Wallet wallet = walletProvider.provide(btcTx, null);
+        List<Address> emptyList = new ArrayList<>();
+        Wallet wallet = walletProvider.provide(btcTx, emptyList);
 
         Federation federation = getFederationFromTxOutputs(btcTx);
         generateRejectionReleaseFromFederation(btcTx, btcRefundAddress, federation, rskTxHash, totalAmount, wallet);
