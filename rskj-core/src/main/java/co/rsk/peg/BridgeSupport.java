@@ -3019,6 +3019,16 @@ public class BridgeSupport {
         generateRejectionReleaseFromFederation(btcTx, btcRefundAddress, federation, rskTxHash, totalAmount, wallet);
     }
 
+    // Having to create a rejection release with outputs for both
+    // p2sh-erp retiring fed and p2sh-p2wsh-erp active fed would be problematic
+    // since the redeem input data goes in different places
+    // (script sig when legacy, witness when segwit).
+    // The decision for this scenario is to choose the active federation format version.
+    //
+    // Disclaimer: a transaction like this will never be correctly signed,
+    // because the addSignature method signs all the tx inputs with the received key,
+    // so we don't really care about this very rare case.
+    // But it's worth to explain the decision and the expected behaviour.
     private Federation getFederationFromTxOutputs(BtcTransaction btcTx) {
         // checking against active fed first
         Federation activeFederation = getActiveFederation();
@@ -3062,6 +3072,9 @@ public class BridgeSupport {
         generateRejectionReleaseFromFederation(btcTx, btcRefundAddress, federation, rskTxHash, totalAmount, wallet);
     }
 
+    /**
+     * same comment as for {@link #getFederationFromTxOutputs(BtcTransaction)}
+     */
     private Federation getFlyoverFederationFromTxOutputs(Keccak256 flyoverDerivationHash, BtcTransaction btcTx) {
         Federation activeFederation = getActiveFederation();
         if (outputsMatchFlyoverFederation(btcTx, activeFederation, flyoverDerivationHash)){
@@ -3088,16 +3101,6 @@ public class BridgeSupport {
         return false;
     }
 
-    // In order to add new segwit compatible fed, a decision had to be made
-    // to locate the redeem data where it should be
-    // (in the input witness for segwit, in the script sig for legacy).
-    // The only problematic scenario would be having to create a rejection release
-    // with outputs for both p2sh-erp retiring fed and p2sh-p2wsh-erp active fed.
-    // The decision is to choose the active federation format version.
-    // Since a transaction that has inputs from both feds will never be correctly signed,
-    // because the addSignature method signs all the tx inputs with the received key,
-    // we don't really care about this very rare case.
-    // But it's worth to explain the expected behaviour.
     private void generateRejectionReleaseFromFederation(
         BtcTransaction btcTx,
         Address btcRefundAddress,
