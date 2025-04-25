@@ -1021,13 +1021,15 @@ class BridgeSupportFlyoverTest {
             assertEquals(2, pegout.getInputs().size());
             // since active fed is legacy, redeem data should be in the script sig
             // first input should belong to active fed
-            var activeFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+            var inputToActiveFlyoverFed = pegout.getInput(0);
+            var expectedActiveFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, activeFederation.getRedeemScript());
-            assertScriptSigHasExpectedInputRedeemData(activeFederationFlyoverRedeemScript, pegout.getInput(0));
+            assertScriptSigHasExpectedInputRedeemData(expectedActiveFederationFlyoverRedeemScript, inputToActiveFlyoverFed);
             // second input should belong to retiring fed
-            var retiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+            var inputToRetiringFlyoverFed = pegout.getInput(1);
+            var expectedRetiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
-            assertScriptSigHasExpectedInputRedeemData(retiringFederationFlyoverRedeemScript, pegout.getInput(1));
+            assertScriptSigHasExpectedInputRedeemData(expectedRetiringFederationFlyoverRedeemScript, inputToRetiringFlyoverFed);
         }
 
         @Test
@@ -1074,13 +1076,15 @@ class BridgeSupportFlyoverTest {
             assertEquals(2, pegout.getInputs().size());
             // since active fed is segwit compatible, redeem data should be in the witness
             // first input data should belong to active fed
-            var activeFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+            var witnessToActiveFlyoverFed = pegout.getWitness(0);
+            var expectedActiveFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, activeFederation.getRedeemScript());
-            assertWitnessHasExpectedInputRedeemData(activeFederationFlyoverRedeemScript, pegout.getWitness(0));
+            assertWitnessHasExpectedInputRedeemData(expectedActiveFederationFlyoverRedeemScript, witnessToActiveFlyoverFed);
             // second input data should belong to retiring fed
-            var retiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+            var witnessToRetiringFlyoverFed = pegout.getWitness(1);
+            var expectedRetiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
-            assertWitnessHasExpectedInputRedeemData(retiringFederationFlyoverRedeemScript, pegout.getWitness(1));
+            assertWitnessHasExpectedInputRedeemData(expectedRetiringFederationFlyoverRedeemScript, witnessToRetiringFlyoverFed);
         }
 
         private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
