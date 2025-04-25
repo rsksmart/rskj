@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2025 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Coin;
@@ -6,7 +23,11 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public class AccountOverride {
     private BigInteger balance;
@@ -14,9 +35,16 @@ public class AccountOverride {
     private byte[] code;
     private Map<DataWord, DataWord> state;
     private Map<DataWord, DataWord> stateDiff;
-    private RskAddress address;
+    private final RskAddress address;
     //TODO movePrecompile to address
     private RskAddress movePrecompileToAddress;
+
+    public AccountOverride(RskAddress address) {
+        if(address == null) {
+            throw new IllegalArgumentException("Address cannot be null");
+        }
+        this.address = address;
+    }
 
     public BigInteger getBalance() {
         return balance;
@@ -61,11 +89,6 @@ public class AccountOverride {
     public RskAddress getAddress() {
         return address;
     }
-
-    public void setAddress(RskAddress address) {
-        this.address = address;
-    }
-
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
         throw new UnsupportedOperationException("Move precompile to address is not supported yet");
