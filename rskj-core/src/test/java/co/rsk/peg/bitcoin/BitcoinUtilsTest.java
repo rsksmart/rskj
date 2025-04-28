@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -746,7 +747,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void createBaseP2SHInputScriptThatSpendsFromRedeemScript_forLegacyFed_shouldCreateExpectedScript() {
+    void createBaseInputScriptThatSpendsFromRedeemScript_forLegacyFed_shouldCreateExpectedScript() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
@@ -773,7 +774,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void addBaseScriptThatSpendsFromFederationRedeemScript_forLegacyFed_shouldAddExpectedScriptToScriptSig() {
+    void addSpendingFederationBaseScript_forLegacyFed_shouldAddExpectedScriptToScriptSig() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
@@ -796,7 +797,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void createBaseScriptThatSpendsFederationFromRedeemScript_forSegwitFed_shouldCreateExpectedInputWitness() {
+    void createBaseWitnessThatSpendsFromErpRedeemScript_shouldCreateExpectedInputWitness() {
         // arrange
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
@@ -830,7 +831,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void addBaseScriptThatSpendsFromFederationRedeemScript_forSegwitFed_shouldAddExpectedInputWitness() {
+    void addSpendingFederationBaseScript_forSegwitFed_shouldAddExpectedInputWitness() {
         // arrange
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
@@ -849,6 +850,11 @@ class BitcoinUtilsTest {
         // assert
         TransactionWitness expectedWitness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         assertEquals(expectedWitness, transaction.getWitness(inputIndex));
+
+        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
+        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build();
+        assertEquals(oneChunkSegwitScriptSig, transaction.getInput(inputIndex).getScriptSig());
     }
 
     @Test
