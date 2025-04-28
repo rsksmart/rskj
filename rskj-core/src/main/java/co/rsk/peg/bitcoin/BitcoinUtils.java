@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
 
 import co.rsk.bitcoinj.core.*;
@@ -150,14 +151,25 @@ public class BitcoinUtils {
     }
 
     public static void addSpendingFederationBaseScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
+        TransactionInput input = btcTx.getInput(inputIndex);
+
         if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
             Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
-            btcTx.getInput(inputIndex).setScriptSig(inputScript);
+            input.setScriptSig(inputScript);
             return;
         }
 
         TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(inputIndex, witnessScript);
+        setSegwitScriptSig(input, redeemScript);
+    }
+
+    private static void setSegwitScriptSig(TransactionInput txIn, Script redeemScript) {
+        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
+        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build(); // we need it to be in one chunk
+
+        txIn.setScriptSig(oneChunkSegwitScriptSig);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
