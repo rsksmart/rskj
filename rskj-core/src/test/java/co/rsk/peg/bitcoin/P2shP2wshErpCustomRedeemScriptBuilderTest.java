@@ -2,7 +2,6 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import com.google.common.collect.Lists;
@@ -11,10 +10,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.bitcoin.ErpRedeemScriptTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class P2shP2wshErpCustomRedeemScriptBuilderTest {
@@ -120,19 +121,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
          *  PUBKEYS...N
          *  OP_N
          *  OP_CHECKMULTISIG
-         * OP_ENDIF
          */
-
-        // Arrange
-        /*
-        * Retrieving the federation public keys returns them in lexicographical order. The same happens with the
-        * corresponding signatures. However, the signatures provided are in reverse order than the public keys
-        * in the redeem script. Therefore, we are pushing the keys in reverse order to keep the signatures unmodified.
-        * This is because when evaluating the script, the push operations are added at the bottom of the stack and
-        * compared against the last element in it (i.e., the one that is right above the operation). So the first
-        * pushed operation will be compared against the bottom element of the stack.
-        */
-        List<BtcECKey> reversedDefaultKeys = Lists.reverse(defaultKeys);
 
         // Act
         Script redeemScript = builder.of(
@@ -142,74 +131,19 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         // Assert
         byte[] p2shp2wshErpCustomRedeemScriptProgram = redeemScript.getProgram();
 
-        // redeemScript - First opcode should be the OP_NOTIF
-        int opNotIfIndex = 0;
-        byte actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opNotIfIndex];
+        // [1..csvValueStart)
+        int csvValueStart = calculateCustomRedeemScriptLength(defaultKeys);
+        byte[] erpCustomRedeemScriptProgram = Arrays.copyOfRange(p2shp2wshErpCustomRedeemScriptProgram, 0, csvValueStart); // [1..csvValue)
+        assertCustomERPRedeemScript(erpCustomRedeemScriptProgram, defaultKeys);
 
-        assertEquals((byte) ScriptOpCodes.OP_NOTIF, actualOpCode);
+        // [csvValueStart..nMultiSigStart)
+        int nMultiSigStart = csvValueStart + calculateCSVValueLength(csvValue);
+        byte[] csvValueProgram = Arrays.copyOfRange(p2shp2wshErpCustomRedeemScriptProgram, csvValueStart, nMultiSigStart);
+        assertCsvValueSection(csvValueProgram, csvValue);
 
-        // defaultCustomRedeemScript - First bytes should be the PubKey and OP_CHECKSIG
-        int startingPubKeyIndex = opNotIfIndex + 1;
-        byte[] expectedFederatorPubKey = reversedDefaultKeys.get(0).getPubKey();
-        int opCheckSigIndex = assertPubKeyAndCheckSig(p2shp2wshErpCustomRedeemScriptProgram, expectedFederatorPubKey, startingPubKeyIndex);
-        reversedDefaultKeys = reversedDefaultKeys.subList(1, reversedDefaultKeys.size());
-
-        for (BtcECKey pubKey : reversedDefaultKeys) {
-            // defaultCustomRedeemScript - After the OP_CHECKSIG opcode should be the OP_SWAP for the PubKey
-            int opSwapIndex = opCheckSigIndex + 1;
-            actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opSwapIndex];
-
-            assertEquals((byte) ScriptOpCodes.OP_SWAP, actualOpCode);
-            // defaultCustomRedeemScript - After the OP_SWAP there should be the pubKey and the OP_CHECKSIG
-            int pubKeyLengthIndex = opSwapIndex + 1;
-            byte[] expectedPubKey = pubKey.getPubKey();
-            opCheckSigIndex = assertPubKeyAndCheckSig(p2shp2wshErpCustomRedeemScriptProgram, expectedPubKey, pubKeyLengthIndex);
-
-            // defaultCustomRedeemScript - After the OP_CHECKSIG opcode there should be the OP_ADD
-            // to check total of signatures provided
-            int opAddIndex = opCheckSigIndex + 1;
-            actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opAddIndex];
-
-            assertEquals((byte) ScriptOpCodes.OP_ADD, actualOpCode);
-            opCheckSigIndex = opAddIndex;
-        }
-
-        // defaultRedeemScript - After the signatures there should be the number of signatures expected
-        int thresholdIndex = opCheckSigIndex + 1;
-        byte actualThreshold = p2shp2wshErpCustomRedeemScriptProgram[thresholdIndex];
-
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(defaultThreshold)), actualThreshold);
-
-        // defaultCustomRedeemScript - Finally, there should be the OP_NUMEQUAL
-        int opNumEqualIndex = thresholdIndex + 1;
-        actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opNumEqualIndex];
-
-        assertEquals((byte) ScriptOpCodes.OP_NUMEQUAL, actualOpCode);
-
-        // redeemScript - Next byte should equal OP_ELSE
-        int opElseIndex = opNumEqualIndex + 1;
-        assertEquals((byte) ScriptOpCodes.OP_ELSE, p2shp2wshErpCustomRedeemScriptProgram[opElseIndex]);
-
-        // redeemScript - Next bytes should equal the csv value in bytes
-        int opCheckSequenceVerifyIndex = ErpRedeemScriptTestUtils.assertCsvValue(opElseIndex + 1, csvValue, p2shp2wshErpCustomRedeemScriptProgram);
-
-        // redeemScript - Next bytes should equal OP_DROP
-        int opDropIndex = opCheckSequenceVerifyIndex + 1;
-        assertEquals((byte) ScriptOpCodes.OP_DROP, p2shp2wshErpCustomRedeemScriptProgram[opDropIndex]);
-
-        // ErpRedeemScript - Next bytes should equal the emergency redeem script
-        ErpRedeemScriptTestUtils.assertMultiSigRedeemScript(p2shp2wshErpCustomRedeemScriptProgram, emergencyKeys, opDropIndex + 1);
-    }
-
-    private static int assertPubKeyAndCheckSig(byte[] p2shp2wshErpCustomRedeemScriptProgram, byte[] expectedPubKey, int startingIndex) {
-        int opCheckSigIndex = ErpRedeemScriptTestUtils.assertPublicKeyAndReturnTheNextIndex(
-            p2shp2wshErpCustomRedeemScriptProgram, expectedPubKey, startingIndex
-        );
-
-        // defaultCustomRedeemScript - After the pubKey there should be an OP_CHECKSIG for the pubKey
-        byte  actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[opCheckSigIndex];
-
-        assertEquals((byte) ScriptOpCodes.OP_CHECKSIG, actualOpCode);
-        return opCheckSigIndex;
+        // [multiSigStart .. end]
+        int nMultiSigEnd = p2shp2wshErpCustomRedeemScriptProgram.length - 1;
+        byte[] nMultiSigProgram = Arrays.copyOfRange(p2shp2wshErpCustomRedeemScriptProgram, nMultiSigStart, nMultiSigEnd);
+        assertNMultiSig(nMultiSigProgram, emergencyKeys);
     }
 }
