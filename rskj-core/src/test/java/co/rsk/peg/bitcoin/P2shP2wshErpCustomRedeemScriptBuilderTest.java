@@ -20,29 +20,29 @@ import static org.junit.jupiter.api.Assertions.*;
 class P2shP2wshErpCustomRedeemScriptBuilderTest {
 
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
-    private static final long CSV_VALUE = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
+    private static final long csvValue = bridgeMainnetConstants.getFederationConstants().getErpFedActivationDelay();
     private static final List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fb01", "fb02", "fb03", "fb04"}, true
     );
-    private static final int ERP_THRESHOLD = emergencyKeys.size() / 2 + 1;
+    private static final int erpThreshold = emergencyKeys.size() / 2 + 1;
     private static final P2shP2wshCustomErpRedeemScriptBuilder builder = P2shP2wshCustomErpRedeemScriptBuilder.builder();
     private static final List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
         new String[]{"fa00","fa01", "fa02", "fa03", "fa04", "fa05", "fa06", "fa07", "fa08", "fa09",
             "fa10","fa11", "fa12", "fa13", "fa14", "fa15", "fa16", "fa17", "fa18", "fa19",
         }, true
     );
-    private static final int DEFAULT_THRESHOLD = defaultKeys.size() / 2 + 1;
+    private static final int defaultThreshold = defaultKeys.size() / 2 + 1;
 
     @Test
     void of_withTwoScripts_withTheSameDefaultPubKeys_withDifferentOrder_shouldSortTheKeysAndTurnThemEquals() {
         // Arrange
         Script scriptA = builder.of(
-            defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE
+            defaultKeys, defaultThreshold, emergencyKeys, erpThreshold, csvValue
         );
 
         List<BtcECKey> reversedKeys = Lists.reverse(defaultKeys);
         Script scriptB = builder.of(
-            reversedKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE
+            reversedKeys, defaultThreshold, emergencyKeys, erpThreshold, csvValue
         );
 
         assertArrayEquals(scriptA.getProgram(), scriptB.getProgram());
@@ -70,29 +70,29 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
     private static Stream<Arguments> invalidInputsArgsProvider() {
         return Stream.of(
             // defaultKeys is null
-            Arguments.of(NullPointerException.class, null, 0, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(NullPointerException.class, null, 0, emergencyKeys, erpThreshold, csvValue),
             // defaultThreshold is zero
-            Arguments.of(IllegalArgumentException.class, defaultKeys, 0, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, 0, emergencyKeys, erpThreshold, csvValue),
             // defaultThreshold is negative
-            Arguments.of(IllegalArgumentException.class, defaultKeys, -1, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, -1, emergencyKeys, erpThreshold, csvValue),
             // empty default keys
-            Arguments.of(IllegalArgumentException.class, Collections.emptyList(), 0, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, Collections.emptyList(), 0, emergencyKeys, erpThreshold, csvValue),
             // threshold greater than default keys size
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size() + 1, emergencyKeys, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size() + 1, emergencyKeys, erpThreshold, csvValue),
             // erpKeys is null
-            Arguments.of(NullPointerException.class, defaultKeys, DEFAULT_THRESHOLD, null, ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(NullPointerException.class, defaultKeys, defaultThreshold, null, erpThreshold, csvValue),
             // empty erp keys
-            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, Collections.emptyList(), ERP_THRESHOLD, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, Collections.emptyList(), erpThreshold, csvValue),
             // erp threshold is negative
-            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, -1, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, emergencyKeys, -1, csvValue),
             // erp threshold greater than erp keys size
-            Arguments.of(IllegalArgumentException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, emergencyKeys.size() + 1, CSV_VALUE),
+            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, emergencyKeys, emergencyKeys.size() + 1, csvValue),
             // csv is negative
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, -1L),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, emergencyKeys, erpThreshold, -1L),
             // csv is zero
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, 0L),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, emergencyKeys, erpThreshold, 0L),
             // csv is above the maximum allowed
-            Arguments.of(RedeemScriptCreationException.class, defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1)
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, emergencyKeys, erpThreshold, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1)
         );
     }
 
@@ -136,7 +136,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
 
         // Act
         Script redeemScript = builder.of(
-            defaultKeys, DEFAULT_THRESHOLD, emergencyKeys, ERP_THRESHOLD, CSV_VALUE
+            defaultKeys, defaultThreshold, emergencyKeys, erpThreshold, csvValue
         );
 
         // Assert
@@ -178,7 +178,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         int thresholdIndex = opCheckSigIndex + 1;
         byte actualThreshold = p2shp2wshErpCustomRedeemScriptProgram[thresholdIndex];
 
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(DEFAULT_THRESHOLD)), actualThreshold);
+        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(defaultThreshold)), actualThreshold);
 
         // defaultCustomRedeemScript - Finally, there should be the OP_NUMEQUAL
         int opNumEqualIndex = thresholdIndex + 1;
@@ -191,7 +191,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         assertEquals((byte) ScriptOpCodes.OP_ELSE, p2shp2wshErpCustomRedeemScriptProgram[opElseIndex]);
 
         // redeemScript - Next bytes should equal the csv value in bytes
-        int opCheckSequenceVerifyIndex = ErpRedeemScriptTestUtils.assertCsvValue(opElseIndex + 1, CSV_VALUE, p2shp2wshErpCustomRedeemScriptProgram);
+        int opCheckSequenceVerifyIndex = ErpRedeemScriptTestUtils.assertCsvValue(opElseIndex + 1, csvValue, p2shp2wshErpCustomRedeemScriptProgram);
 
         // redeemScript - Next bytes should equal OP_DROP
         int opDropIndex = opCheckSequenceVerifyIndex + 1;
