@@ -773,13 +773,6 @@ class BridgeSupportSvpTest {
             assertInputHasExpectedScriptSig(inputToFlyoverProposedFederation, flyoverRedeemScript);
         }
 
-        private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
-            for (TransactionInput input : inputs) {
-                Sha256Hash outpointHash = input.getOutpoint().getHash();
-                assertEquals(svpFundTxHashSigned, outpointHash);
-            }
-        }
-
         private void assertInputHasExpectedScriptSig(TransactionInput input, Script redeemScript) {
             List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
             int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
@@ -787,6 +780,13 @@ class BridgeSupportSvpTest {
             assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
             for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
                 assertEquals(0, chunk.opcode);
+            }
+        }
+
+        private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
+            for (TransactionInput input : inputs) {
+                Sha256Hash outpointHash = input.getOutpoint().getHash();
+                assertEquals(svpFundTxHashSigned, outpointHash);
             }
         }
     }
