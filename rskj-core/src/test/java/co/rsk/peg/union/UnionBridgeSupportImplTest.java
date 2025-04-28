@@ -9,6 +9,7 @@ import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import java.util.Optional;
@@ -69,7 +70,7 @@ class UnionBridgeSupportImplTest {
 
     private static Stream<Arguments> unionBridgeConstants() {
         return Stream.of(
-            Arguments.of(UnionBridgeTestNetConstants.getInstance()),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance()),
             Arguments.of(UnionBridgeTestNetConstants.getInstance())
         );
     }
