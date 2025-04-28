@@ -109,7 +109,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setAddress_whenEmptyAddress_shouldNotStoreEmptyAddress() {
+    void setAddress_whenEmptyAddress_shouldNotSetEmptyAddress() {
         // Arrange
         RskAddress emptyAddress = new RskAddress(new byte[20]);
 
@@ -136,6 +136,7 @@ class UnionBridgeStorageProviderImplTest {
         // Check existing address is still stored
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(allActivations);
         assertTrue(actualAddress.isPresent());
+        // Check stored address is the same as the one before
         assertGivenAddressIsStored(storedUnionBridgeContractAddress);
     }
 
@@ -155,15 +156,18 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setAddress_withoutSaving_shouldNotStore() {
-        // Act
+    void setAddress_withoutSaving_shouldCachedTheAddressButNotStore() {
+        // Arrange
+        Optional<RskAddress> initialAddress = unionBridgeStorageProvider.getAddress(allActivations);
+        assertTrue(initialAddress.isEmpty());
 
+        // Act
         unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
 
         // Assert
-        assertNoAddressIsStored();
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(allActivations);
         assertTrue(actualAddress.isPresent());
+        assertNoAddressIsStored();
     }
 
     @Test
