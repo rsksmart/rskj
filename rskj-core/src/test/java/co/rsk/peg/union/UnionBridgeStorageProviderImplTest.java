@@ -92,7 +92,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getAddress_whenExistsStoredAddress_shouldReturnStoredAddress() {
+    void getAddress_whenStoredAddress_shouldReturnStoredAddress() {
         // Arrange
         RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
             "unionBridgeContractAddress");
