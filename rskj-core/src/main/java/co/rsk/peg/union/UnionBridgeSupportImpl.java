@@ -17,6 +17,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeSupportImpl.class);
 
     private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
+    public static final String LOG_PATTERN = "[{}] {}";
 
     private final ActivationConfig.ForBlock activations;
     private final UnionBridgeConstants constants;
@@ -42,7 +43,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             String currentNetworkId = constants.getBtcParams().getId();
             if (currentNetworkId.equals(NetworkParameters.ID_MAINNET)) {
                 String baseMessage = String.format("Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s", currentNetworkId);
-                logger.warn("[{}] {}", SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
+                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
                 return UnionResponseCode.ENVIRONMENT_DISABLED.getCode();
             }
 
@@ -50,14 +51,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
             if (!authorizer.isAuthorized(tx, signatureCache)) {
                 String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
-                logger.warn("[{}] {}}", SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
+                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
                 return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
             }
 
             // Check if the address is valid
             if (unionBridgeContractAddress == null || unionBridgeContractAddress.equals(EMPTY_ADDRESS)) {
                 String baseMessage = "Union Bridge Contract Address cannot be null or empty";
-                logger.warn("[{}] {}", SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
+                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
                 return UnionResponseCode.INVALID_VALUE.getCode();
             }
 
@@ -65,7 +66,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             RskAddress currentUnionBridgeAddress = storageProvider.getAddress(activations).orElse(constants.getAddress());
             if (unionBridgeContractAddress.equals(currentUnionBridgeAddress)) {
                 String baseMessage = String.format("The given union bridge contract address is already the current address. Current address: %s", currentUnionBridgeAddress);
-                logger.warn("[{}] {}", SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
+                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
                 return UnionResponseCode.INVALID_VALUE.getCode();
             }
 
