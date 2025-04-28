@@ -21,7 +21,6 @@ import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
@@ -1024,16 +1023,16 @@ class BridgeSupportFlyoverTest {
             var inputToActiveFlyoverFed = pegout.getInput(0);
             var expectedActiveFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, activeFederation.getRedeemScript());
-            assertScriptSigHasExpectedInputRedeemData(expectedActiveFederationFlyoverRedeemScript, inputToActiveFlyoverFed);
+            assertScriptSigHasExpectedInputRedeemData(inputToActiveFlyoverFed, expectedActiveFederationFlyoverRedeemScript);
             // second input should belong to retiring fed
             var inputToRetiringFlyoverFed = pegout.getInput(1);
             var expectedRetiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
-            assertScriptSigHasExpectedInputRedeemData(expectedRetiringFederationFlyoverRedeemScript, inputToRetiringFlyoverFed);
+            assertScriptSigHasExpectedInputRedeemData(inputToRetiringFlyoverFed, expectedRetiringFederationFlyoverRedeemScript);
         }
 
         @Test
-        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shP2wshErpActiveAndP2shErpRetiringFeds_shouldSetRedeemDataInInputsWitness() throws Exception {
+        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shP2wshErpActiveAndP2shErpRetiringFeds_shouldSetFixedScriptSig_shouldSetRedeemDataInInputsWitness() throws Exception {
             // arrange
             retiringFederation = P2shErpFederationBuilder.builder().build();
             federationStorageProvider.setOldFederation(retiringFederation);
@@ -1076,15 +1075,23 @@ class BridgeSupportFlyoverTest {
             assertEquals(2, pegout.getInputs().size());
             // since active fed is segwit compatible, redeem data should be in the witness
             // first input data should belong to active fed
-            var witnessToActiveFlyoverFed = pegout.getWitness(0);
+            int activeFlyoverFedInputIndex = 0;
             var expectedActiveFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, activeFederation.getRedeemScript());
-            assertWitnessHasExpectedInputRedeemData(expectedActiveFederationFlyoverRedeemScript, witnessToActiveFlyoverFed);
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                pegout.getWitness(activeFlyoverFedInputIndex),
+                pegout.getInput(activeFlyoverFedInputIndex),
+                expectedActiveFederationFlyoverRedeemScript
+            );
             // second input data should belong to retiring fed
-            var witnessToRetiringFlyoverFed = pegout.getWitness(1);
+            int retiringFlyoverFedInputIndex = 1;
             var expectedRetiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
                 .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
-            assertWitnessHasExpectedInputRedeemData(expectedRetiringFederationFlyoverRedeemScript, witnessToRetiringFlyoverFed);
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                pegout.getWitness(retiringFlyoverFedInputIndex),
+                pegout.getInput(retiringFlyoverFedInputIndex),
+                expectedRetiringFederationFlyoverRedeemScript
+            );
         }
 
         private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
@@ -1168,21 +1175,6 @@ class BridgeSupportFlyoverTest {
             Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
             assertTrue(releaseOutpointsValues.isPresent());
             assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
-        }
-
-        private void assertScriptSigHasExpectedInputRedeemData(Script expectedRedeemScript, TransactionInput input) {
-            List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
-            int redeemScriptIndex = scriptSigChunks.size() - 1;
-            byte[] redeemData = scriptSigChunks.get(redeemScriptIndex).data;
-
-            assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
-        }
-
-        private void assertWitnessHasExpectedInputRedeemData(Script expectedRedeemScript, TransactionWitness witness) {
-            int firstInputRedeemScriptIndex = witness.getPushCount() - 1;
-            byte[] redeemFirstInputData = witness.getPush(firstInputRedeemScriptIndex);
-
-            assertArrayEquals(expectedRedeemScript.getProgram(), redeemFirstInputData);
         }
     }
 
