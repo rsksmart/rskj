@@ -1,24 +1,25 @@
 package co.rsk.peg;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.trie.Trie;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 
@@ -119,5 +120,27 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
         return pegoutEntry.getBtcTransaction();
+    }
+
+    public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
+        // assert last push has the redeem script
+        int redeemScriptIndex = witness.getPushCount() - 1;
+        byte[] redeemData = witness.getPush(redeemScriptIndex);
+        assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
+
+        // assert the script sig has expected fixed redeem script data
+        byte[] redeemScriptHash = Sha256Hash.hash(expectedRedeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build();
+        Script actualScriptSig = input.getScriptSig();
+        assertEquals(oneChunkSegwitScriptSig, actualScriptSig);
+    }
+
+    public static void assertScriptSigHasExpectedInputRedeemData(TransactionInput input, Script expectedRedeemScript) {
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+        int redeemScriptIndex = scriptSigChunks.size() - 1;
+        byte[] redeemData = scriptSigChunks.get(redeemScriptIndex).data;
+
+        assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
     }
 }

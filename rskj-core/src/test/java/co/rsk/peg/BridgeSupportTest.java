@@ -7590,10 +7590,7 @@ class BridgeSupportTest {
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
 
             // check the active fed redeem script data is in input script sig
-            Script scriptSig = releaseTransaction.getInput(0).getScriptSig();
-            int redeemScriptIndex = scriptSig.getChunks().size() - 1;
-            byte[] redeemData = scriptSig.getChunks().get(redeemScriptIndex).data;
-            assertArrayEquals(activeFederation.getRedeemScript().getProgram(), redeemData);
+            assertScriptSigHasExpectedInputRedeemData(releaseTransaction.getInput(0), activeFederation.getRedeemScript());
 
             List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
             assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
@@ -7615,11 +7612,14 @@ class BridgeSupportTest {
             // Assert
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
 
-            // check the active fed redeem script data is in input witness
-            TransactionWitness witness = releaseTransaction.getWitness(0);
-            int redeemScriptIndex = witness.getPushCount() - 1;
-            byte[] redeemData = witness.getPush(redeemScriptIndex);
-            assertArrayEquals(activeFederation.getRedeemScript().getProgram(), redeemData);
+            // check the active fed redeem script data
+            Script redeemScript = activeFederation.getRedeemScript();
+            int inputIndex = 0;
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                releaseTransaction.getWitness(inputIndex),
+                releaseTransaction.getInput(inputIndex),
+                redeemScript
+            );
 
             List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
             assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
@@ -7740,15 +7740,22 @@ class BridgeSupportTest {
             assertEquals(2, releaseTransaction.getInputs().size());
             // since active fed is segwit compatible, redeem data should be in the witness
             // first input data should belong to active fed
-            TransactionWitness firstInputWitness = releaseTransaction.getWitness(0);
-            int firstInputRedeemScriptIndex = firstInputWitness.getPushCount() - 1;
-            byte[] redeemFirstInputData = firstInputWitness.getPush(firstInputRedeemScriptIndex);
-            assertArrayEquals(activeFederation.getRedeemScript().getProgram(), redeemFirstInputData);
+            Script activeFedRedeemScript = activeFederation.getRedeemScript();
+            int activeFedInputIndex = 0;
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                releaseTransaction.getWitness(activeFedInputIndex),
+                releaseTransaction.getInput(activeFedInputIndex),
+                activeFedRedeemScript
+            );
+
             // second input data should belong to retiring fed
-            TransactionWitness secondInputWitness = releaseTransaction.getWitness(1);
-            int secondInputRedeemScriptIndex = secondInputWitness.getPushCount() - 1;
-            byte[] redeemSecondInputData = secondInputWitness.getPush(secondInputRedeemScriptIndex);
-            assertArrayEquals(retiringFederation.getRedeemScript().getProgram(), redeemSecondInputData);
+            Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
+            int retiringFedInputIndex = 1;
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                releaseTransaction.getWitness(retiringFedInputIndex),
+                releaseTransaction.getInput(retiringFedInputIndex),
+                retiringFedRedeemScript
+            );
         }
 
         private BtcTransaction arrangeLegacyPeginFromMultiSigToActiveFed(Coin amountToSend, ActivationConfig.ForBlock activations) throws Exception {

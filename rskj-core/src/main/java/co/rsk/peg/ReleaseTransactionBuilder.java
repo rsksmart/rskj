@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.FederationFormatVersion;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -33,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -234,13 +234,12 @@ public class ReleaseTransactionBuilder {
 
     private void signSegwitTxInputs(BtcTransaction tx) {
         for (int i = 0; i < tx.getInputs().size(); i++) {
-            TransactionInput txIn = tx.getInput(i);
-            RedeemData redeemData = txIn.getConnectedRedeemData(wallet);
-            checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txIn.getOutpoint().getHash());
+            TransactionInput txInput = tx.getInput(i);
+            RedeemData redeemData = txInput.getConnectedRedeemData(wallet);
+            checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txInput.getOutpoint().getHash());
             Script redeemScript = redeemData.redeemScript;
 
-            TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-            tx.setWitness(i, witness);
+            addSpendingFederationBaseScript(tx, i, redeemScript, federationFormatVersion);
         }
     }
 
