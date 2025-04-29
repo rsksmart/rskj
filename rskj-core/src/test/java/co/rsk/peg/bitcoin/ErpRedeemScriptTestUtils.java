@@ -75,6 +75,7 @@ public class ErpRedeemScriptTestUtils {
         assertEquals((byte) ScriptOpCodes.OP_NOTIF, actualOpCode);
 
         // defaultCustomRedeemScript - First bytes should be the PubKey and OP_CHECKSIG
+        // It checks the first pubKey separately, since it is not preceded by an OP_SWAP
         BtcECKey expectedPubKey = reversedDefaultKeys.get(0);
         int pubKeyEnd = programCounter + calculatePubKeyBytesLength(expectedPubKey);
         byte[] expectedPubKeyBytes = expectedPubKey.getPubKey();
