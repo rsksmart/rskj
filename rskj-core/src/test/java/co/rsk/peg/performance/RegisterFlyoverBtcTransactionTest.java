@@ -173,7 +173,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
                 federationRedeemScript
             );
 
-            Script flyoverP2SH = getFlyoverFederationOutputScript(genesisFederation.getFormatVersion(), flyoverRedeemScript);
+            Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
             Address flyoverFederationAddress = Address.fromP2SHScript(
                 bridgeConstants.getBtcParams(), flyoverP2SH);
 
