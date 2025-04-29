@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.script.ScriptOpCodes;
 import com.google.common.collect.Lists;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,11 +16,16 @@ public class ErpRedeemScriptTestUtils {
     public static int calculateMultiSigLength(List<BtcECKey> keys) {
         int threshold = 1;
         int pubKeysNumber = keys.size();
-        int pubKeysLengthByte = 1;
-        int pubKey = keys.get(0).getPubKey().length;
+        int pubKey = calculatePubKeyBytesLength(keys.get(0));
         int opN = 1;
         int opCheckMultisig = 1;
-        return threshold + pubKeysNumber * (pubKeysLengthByte + pubKey) + opN + opCheckMultisig;
+        return threshold + pubKeysNumber * pubKey + opN + opCheckMultisig;
+    }
+
+    private static int calculatePubKeyBytesLength(BtcECKey key) {
+        int pubKeysLengthByte = 1;
+        int pubKey = key.getPubKey().length;
+        return pubKeysLengthByte + pubKey;
     }
 
     public static int calculateCSVValueLength(long csvValue) {
@@ -33,7 +39,11 @@ public class ErpRedeemScriptTestUtils {
 
     public static int calculateCustomRedeemScriptLength(List<BtcECKey> keys) {
         int opNotIf = 1;
-        int pubKeyAndCheckSigLength = calculatePubKeyAndCheckSigLength(keys.get(0).getPubKey());
+        byte[] publicKey = keys.get(0).getPubKey();
+        int opCheckSig = 1;
+        int pubKeyLengthByte = 1;
+        int pubKey = publicKey.length;
+        int pubKeyAndCheckSigLength = pubKeyLengthByte + pubKey + opCheckSig;
         int customRedeemScriptLength = opNotIf + pubKeyAndCheckSigLength;
 
         int opSwap = 1;
@@ -45,13 +55,6 @@ public class ErpRedeemScriptTestUtils {
         customRedeemScriptLength += (threshold + opNumEqual);
 
         return customRedeemScriptLength;
-    }
-
-    public static int calculatePubKeyAndCheckSigLength(byte[] publicKey) {
-        int opCheckSig = 1;
-        int pubKeyLengthByte = 1;
-        int pubKey = publicKey.length;
-        return pubKeyLengthByte + pubKey + opCheckSig;
     }
 
     public static void assertCustomERPRedeemScript(byte[] p2shp2wshErpCustomRedeemScriptProgram, List<BtcECKey> defaultKeys) {
@@ -72,20 +75,16 @@ public class ErpRedeemScriptTestUtils {
         assertEquals((byte) ScriptOpCodes.OP_NOTIF, actualOpCode);
 
         // defaultCustomRedeemScript - First bytes should be the PubKey and OP_CHECKSIG
-        byte[] expectedPubKey = reversedDefaultKeys.get(0).getPubKey();
-
-        // First byte should have the pubKey size
-        byte actualPubKeyLength1 = p2shp2wshErpCustomRedeemScriptProgram[programCounter++];
-        assertEquals(expectedPubKey.length, actualPubKeyLength1);
-
-        // Next, it should have the public key
-        for (byte expectedCharacterPubKey : expectedPubKey) {
-            assertEquals(expectedCharacterPubKey, p2shp2wshErpCustomRedeemScriptProgram[programCounter++]);
-        }
+        BtcECKey expectedPubKey = reversedDefaultKeys.get(0);
+        int pubKeyEnd = programCounter + calculatePubKeyBytesLength(expectedPubKey);
+        byte[] expectedPubKeyBytes = expectedPubKey.getPubKey();
+        byte[] pubKeyProgram = Arrays.copyOfRange(p2shp2wshErpCustomRedeemScriptProgram, programCounter, pubKeyEnd);
+        assertPublicKeyInScript(pubKeyProgram, expectedPubKeyBytes);
+        programCounter = pubKeyEnd;
 
         // After the pubKey there should be an OP_CHECKSIG for the pubKey
-        byte actualOpCode2 = p2shp2wshErpCustomRedeemScriptProgram[programCounter++];
-        assertEquals((byte) ScriptOpCodes.OP_CHECKSIG, actualOpCode2);
+        actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[programCounter++];
+        assertEquals((byte) ScriptOpCodes.OP_CHECKSIG, actualOpCode);
 
         reversedDefaultKeys = reversedDefaultKeys.subList(1, reversedDefaultKeys.size());
 
@@ -95,15 +94,11 @@ public class ErpRedeemScriptTestUtils {
             assertEquals((byte) ScriptOpCodes.OP_SWAP, actualOpCode);
             // defaultCustomRedeemScript - After the OP_SWAP there should be the pubKey and the OP_CHECKSIG
 
-            expectedPubKey = pubKey.getPubKey();
-            // First byte should have the pubKey size
-            byte actualPubKeyLength = p2shp2wshErpCustomRedeemScriptProgram[programCounter++];
-            assertEquals(expectedPubKey.length, actualPubKeyLength);
-
-            // Next, it should have the public key
-            for (byte expectedCharacterPubKey : expectedPubKey) {
-                assertEquals(expectedCharacterPubKey, p2shp2wshErpCustomRedeemScriptProgram[programCounter++]);
-            }
+            pubKeyEnd = programCounter + calculatePubKeyBytesLength(pubKey);
+            expectedPubKeyBytes = pubKey.getPubKey();
+            pubKeyProgram = Arrays.copyOfRange(p2shp2wshErpCustomRedeemScriptProgram, programCounter, pubKeyEnd);
+            assertPublicKeyInScript(pubKeyProgram, expectedPubKeyBytes);
+            programCounter = pubKeyEnd;
 
             // After the pubKey there should be an OP_CHECKSIG for the pubKey
             actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[programCounter++];
@@ -122,6 +117,18 @@ public class ErpRedeemScriptTestUtils {
         // defaultCustomRedeemScript - Finally, there should be the OP_NUMEQUAL
         actualOpCode = p2shp2wshErpCustomRedeemScriptProgram[programCounter];
         assertEquals((byte) ScriptOpCodes.OP_NUMEQUAL, actualOpCode);
+    }
+
+    private static void assertPublicKeyInScript(byte[] p2shp2wshErpCustomRedeemScriptProgram, byte[] expectedPubKey) {
+        int pubKeyIndex = 0;
+        // First byte should have the pubKey size
+        byte actualPubKeyLength = p2shp2wshErpCustomRedeemScriptProgram[pubKeyIndex++];
+        assertEquals(expectedPubKey.length, actualPubKeyLength);
+
+        // Next, it should have the public key
+        for (byte expectedCharacterPubKey : expectedPubKey) {
+            assertEquals(expectedCharacterPubKey, p2shp2wshErpCustomRedeemScriptProgram[pubKeyIndex++]);
+        }
     }
 
     public static void assertCsvValueSection(byte[] csvScript, long csvValue) {
@@ -158,16 +165,11 @@ public class ErpRedeemScriptTestUtils {
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(threshold)), nMultiSigProgram[programCounter++]);
 
         for (BtcECKey btcEcKey : pubKeys) {
-            byte[] pubKey = btcEcKey.getPubKey();
-
-            // First byte should have the pubKey size
-            byte actualPubKeyLength = nMultiSigProgram[programCounter++];
-            assertEquals(pubKey.length, actualPubKeyLength);
-
-            // Next should have the pubKey
-            for (byte expectedCharacterPubKey : pubKey) {
-                assertEquals(expectedCharacterPubKey, nMultiSigProgram[programCounter++]);
-            }
+            byte[] expectedPubKeyBytes = btcEcKey.getPubKey();
+            int pubKeyEnd = programCounter + calculatePubKeyBytesLength(btcEcKey);
+            byte[] pubKeyProgram = Arrays.copyOfRange(nMultiSigProgram, programCounter, pubKeyEnd);
+            assertPublicKeyInScript(pubKeyProgram, expectedPubKeyBytes);
+            programCounter = pubKeyEnd;
         }
 
         // Next byte should equal N, from an M/N multisig
