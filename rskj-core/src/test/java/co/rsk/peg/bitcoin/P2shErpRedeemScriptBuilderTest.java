@@ -96,7 +96,6 @@ class P2shErpRedeemScriptBuilderTest {
          *  OP_N
          *  OP_CHECKMULTISIG
          * OP_ELSE
-         *  OP_PUSHBYTES
          *  CSV_VALUE
          *  OP_CHECKSEQUENCEVERIFY
          *  OP_DROP
@@ -125,7 +124,7 @@ class P2shErpRedeemScriptBuilderTest {
         assertCsvValueSection(csvValueProgram, csvValue);
 
         // [multiSigStart .. end]
-        int nEmergencyMultiSigEnd = p2shErpRedeemScriptProgram.length - 1;
+        int nEmergencyMultiSigEnd = p2shErpRedeemScriptProgram.length;
         nMultiSigProgram = Arrays.copyOfRange(p2shErpRedeemScriptProgram, nEmergencyMultiSigStart, nEmergencyMultiSigEnd);
         assertNMultiSig(nMultiSigProgram, erpKeys);
     }

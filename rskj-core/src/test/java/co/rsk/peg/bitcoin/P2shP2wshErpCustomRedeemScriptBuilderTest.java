@@ -105,20 +105,22 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
          *  <pubkey1>
          *  OP_CHECKSIG
          *  OP_SWAP
+         *  <pubkey2>
+         *  OP_CHECKSIG
+         *  OP_ADD
          *  ...
+         *  OP_SWAP
          *  <pubkeyn>
          *  OP_CHECKSIG
-         *  OP_SWAP
          *  OP_ADD
-         *  <M>
+         *  OP_M
          *  OP_NUMEQUAL
          * OP_ELSE
-         *  OP_PUSHBYTES
-         *  CSV_VALUE
+         *  <csv_value>
          *  OP_CHECKSEQUENCEVERIFY
          *  OP_DROP
          *  OP_M
-         *  PUBKEYS...N
+         *  <pubkey1>...<pubkeyN>
          *  OP_N
          *  OP_CHECKMULTISIG
          */
@@ -142,7 +144,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
         assertCsvValueSection(csvValueProgram, csvValue);
 
         // [multiSigStart .. end]
-        int nMultiSigEnd = p2shp2wshErpCustomRedeemScriptProgram.length - 1;
+        int nMultiSigEnd = p2shp2wshErpCustomRedeemScriptProgram.length;
         byte[] nMultiSigProgram = Arrays.copyOfRange(p2shp2wshErpCustomRedeemScriptProgram, nMultiSigStart, nMultiSigEnd);
         assertNMultiSig(nMultiSigProgram, emergencyKeys);
     }
