@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -80,7 +81,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             federation.getRedeemScript()
         );
 
-        Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script p2SHOutputScript = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
         byte[] flyoverFederationP2SH = p2SHOutputScript.getPubKeyHash();
 
         FlyoverFederationInformation flyoverFederationInformation =
@@ -112,7 +113,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             nonStandardErpFederation.getRedeemScript()
         );
 
-        Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script p2SHOutputScript = getFlyoverFederationOutputScript(nonStandardErpFederation.getFormatVersion(), flyoverRedeemScript);
         byte[] flyoverFederationP2SH = p2SHOutputScript.getPubKeyHash();
 
         FlyoverFederationInformation flyoverFederationInformation =
