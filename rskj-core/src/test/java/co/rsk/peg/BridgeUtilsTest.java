@@ -63,6 +63,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -1493,8 +1494,7 @@ class BridgeUtilsTest {
                 federation.getRedeemScript()
             );
 
-            Script flyoverP2SH = ScriptBuilder
-                .createP2SHOutputScript(flyoverRedeemScript);
+            Script flyoverP2SH = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
             address = Address.fromP2SHHash(networkParameters, flyoverP2SH.getPubKeyHash());
             program = flyoverRedeemScript.getProgram();
 
