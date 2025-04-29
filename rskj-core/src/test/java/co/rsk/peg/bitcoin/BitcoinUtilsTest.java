@@ -848,7 +848,6 @@ class BitcoinUtilsTest {
 
         // assert
         TransactionWitness expectedWitness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-        // TODO check why this fails
         assertEquals(expectedWitness, transaction.getWitness(inputIndex));
 
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
