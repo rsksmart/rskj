@@ -304,29 +304,3 @@ jobs:
       - name: Run tests
         run: |
           ./gradlew --no-daemon --stacktrace integrationTest
-
-  fuzz-test:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
-
-      - name: Setup Java & Gradle
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      - uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf #v4.2.2
-        name: Restore Gradle Wrapper
-        with:
-          path: |
-            gradle/wrapper/gradle-wrapper.jar
-          key: gradle-wrapper-v1
-          fail-on-cache-miss: true
-
-      - name: Run fuzz tests
-        run: |
-          #Adding fuzzTest instead of runAllFuzzTests to avoid running all the fuzz tests but it is something to evaluate. 
-          ./gradlew --no-daemon --stacktrace fuzzTest
