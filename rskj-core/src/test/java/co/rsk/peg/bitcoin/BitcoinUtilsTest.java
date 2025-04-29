@@ -825,8 +825,7 @@ class BitcoinUtilsTest {
         assertArrayEquals(emptyByte, inputWitness.getPush(opNotIfIndex));
 
         for (int i = 1; i < opNotIfIndex; i++) { // all the other pushes should be empty, for signing
-            byte[] emptyBytesForSigning = new byte[72];
-            assertArrayEquals(emptyBytesForSigning, inputWitness.getPush(i));
+            assertArrayEquals(emptyByte, inputWitness.getPush(i));
         }
     }
 
@@ -849,8 +848,8 @@ class BitcoinUtilsTest {
 
         // assert
         TransactionWitness expectedWitness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-        // TODO check why this fails when using assertEquals
-        assertTrue(expectedWitness.equals(transaction.getWitness(inputIndex)));
+        // TODO check why this fails
+        assertEquals(expectedWitness, transaction.getWitness(inputIndex));
 
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
         Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();

@@ -772,32 +772,11 @@ class BridgeSupportSvpTest {
         private void assertInputHasExpectedRedeemData(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
             TransactionInput input = btcTx.getInput(inputIndex);
             if (!inputHasWitness(btcTx, inputIndex)) {
-                assertScriptSigHasExpectedRedeemData(input, redeemScript);
+                assertScriptSigHasExpectedInputRedeemData(input, redeemScript);
             }
 
             TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
-            assertWitnessHasExpectedRedeemData(inputWitness, redeemScript);
-        }
-
-        private void assertScriptSigHasExpectedRedeemData(TransactionInput input, Script redeemScript) {
-            List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
-            int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
-
-            assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
-            for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
-                assertEquals(0, chunk.opcode);
-            }
-        }
-
-        private void assertWitnessHasExpectedRedeemData(TransactionWitness inputWitness, Script redeemScript) {
-            int totalPushes = inputWitness.getPushCount();
-            int redeemScriptIndex = totalPushes - 1;
-            assertArrayEquals(redeemScript.getProgram(), inputWitness.getPush(redeemScriptIndex)); // last push should be the redeem script
-
-            byte[] emptyByte = new byte[] {};
-            for (int i = 0; i < redeemScriptIndex; i++) { // all the other pushes should be zero
-                assertArrayEquals(emptyByte, inputWitness.getPush(i));
-            }
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(inputWitness, input, redeemScript);
         }
 
         private void assertInputsOutpointHashIsFundTxHash(List<TransactionInput> inputs, Sha256Hash svpFundTxHashSigned) {
