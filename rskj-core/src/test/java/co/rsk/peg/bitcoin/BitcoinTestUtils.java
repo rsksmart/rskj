@@ -277,7 +277,7 @@ public class BitcoinTestUtils {
         pushes.add(emptyByte); // OP_0
 
         for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
-            pushes.add(new byte[72]);
+            pushes.add(emptyByte);
         }
 
         pushes.add(emptyByte); // OP_NOTIF
