@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.PegUtils.getFlyoverFederationRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
@@ -1701,13 +1702,15 @@ class BridgeSupportSvpTest {
     private void addSpendTransactionInputs() {
         recreateSvpFundTransactionSigned();
         // add inputs
+        int proposedFederationFormatVersion = proposedFederation.getFormatVersion();
+
         addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, proposedFederation.getP2SHScript());
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
-        addSpendingFederationBaseScript(svpSpendTransaction, 0, proposedFederationRedeemScript, proposedFederation.getFormatVersion());
+        addSpendingFederationBaseScript(svpSpendTransaction, 0, proposedFederationRedeemScript, proposedFederationFormatVersion);
 
         Script flyoverRedeemScript = getFlyoverFederationRedeemScript(bridgeMainNetConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
-        addSpendingFederationBaseScript(svpSpendTransaction, 1, flyoverRedeemScript, proposedFederation.getFormatVersion());
+        addInputFromMatchingOutputScript(svpSpendTransaction, svpFundTransaction, getFlyoverFederationOutputScript(proposedFederationFormatVersion, flyoverRedeemScript));
+        addSpendingFederationBaseScript(svpSpendTransaction, 1, flyoverRedeemScript, proposedFederationFormatVersion);
     }
 
     private void addSpendTransactionOutput(Coin amountToSend) {
