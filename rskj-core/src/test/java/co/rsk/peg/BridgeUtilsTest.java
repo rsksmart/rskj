@@ -1492,7 +1492,7 @@ class BridgeUtilsTest {
                 federation.getRedeemScript()
             );
 
-            Script flyoverP2SH = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
+            Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
             address = Address.fromP2SHHash(networkParameters, flyoverP2SH.getPubKeyHash());
             program = flyoverRedeemScript.getProgram();
 

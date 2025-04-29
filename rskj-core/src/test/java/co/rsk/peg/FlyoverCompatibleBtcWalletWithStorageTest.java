@@ -11,7 +11,6 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
@@ -81,7 +80,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             federation.getRedeemScript()
         );
 
-        Script p2SHOutputScript = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
+        Script p2SHOutputScript = getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
         byte[] flyoverFederationP2SH = p2SHOutputScript.getPubKeyHash();
 
         FlyoverFederationInformation flyoverFederationInformation =
@@ -113,7 +112,7 @@ class FlyoverCompatibleBtcWalletWithStorageTest {
             nonStandardErpFederation.getRedeemScript()
         );
 
-        Script p2SHOutputScript = getFlyoverFederationOutputScript(nonStandardErpFederation.getFormatVersion(), flyoverRedeemScript);
+        Script p2SHOutputScript = getFlyoverFederationOutputScript(flyoverRedeemScript, nonStandardErpFederation.getFormatVersion());
         byte[] flyoverFederationP2SH = p2SHOutputScript.getPubKeyHash();
 
         FlyoverFederationInformation flyoverFederationInformation =
