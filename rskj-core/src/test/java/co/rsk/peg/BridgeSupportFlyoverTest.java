@@ -3534,7 +3534,7 @@ class BridgeSupportFlyoverTest {
             federationRedeemScript
         );
 
-        Script flyoverP2SHScript = getFlyoverFederationOutputScript(genesisFederation.getFormatVersion(), flyoverRedeemScript);
+        Script flyoverP2SHScript = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
 
         FlyoverFederationInformation expectedFlyoverFederationInformation =
             new FlyoverFederationInformation(flyoverDerivationHash,
@@ -3585,7 +3585,7 @@ class BridgeSupportFlyoverTest {
             genesisFederation.getRedeemScript()
         );
 
-        Script flyoverP2SH = getFlyoverFederationOutputScript(genesisFederation.getFormatVersion(), flyoverRedeemScript);
+        Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
 
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
