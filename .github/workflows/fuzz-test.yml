@@ -52,4 +52,4 @@ jobs:
       - name: Run fuzz tests
         run: |
           #Adding fuzzTest instead of runAllFuzzTests to avoid running all the fuzz tests but it is something to evaluate. 
-          ./gradlew --no-daemon --stacktrace fuzzTest
+          JAZZER_FUZZ=1 ./gradlew runAllFuzzTests --info --continue
