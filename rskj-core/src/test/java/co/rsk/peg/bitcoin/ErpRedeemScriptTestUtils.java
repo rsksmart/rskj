@@ -120,15 +120,15 @@ public class ErpRedeemScriptTestUtils {
         assertEquals((byte) ScriptOpCodes.OP_NUMEQUAL, actualOpCode);
     }
 
-    private static void assertPublicKeyInScript(byte[] p2shp2wshErpCustomRedeemScriptProgram, byte[] expectedPubKey) {
+    private static void assertPublicKeyInScript(byte[] pubKey, byte[] expectedPubKey) {
         int pubKeyIndex = 0;
         // First byte should have the pubKey size
-        byte actualPubKeyLength = p2shp2wshErpCustomRedeemScriptProgram[pubKeyIndex++];
+        byte actualPubKeyLength = pubKey[pubKeyIndex++];
         assertEquals(expectedPubKey.length, actualPubKeyLength);
 
         // Next, it should have the public key
         for (byte expectedCharacterPubKey : expectedPubKey) {
-            assertEquals(expectedCharacterPubKey, p2shp2wshErpCustomRedeemScriptProgram[pubKeyIndex++]);
+            assertEquals(expectedCharacterPubKey, pubKey[pubKeyIndex++]);
         }
     }
 
