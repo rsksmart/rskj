@@ -987,7 +987,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            advanceBlockchainTo(blockNumber);
+            currentBlock = getBlockWithBlockNumber(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
@@ -1042,7 +1042,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            advanceBlockchainTo(blockNumber);
+            currentBlock = getBlockWithBlockNumber(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
@@ -1122,13 +1122,6 @@ class BridgeSupportFlyoverTest {
 
             recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
             bridgeStorageProvider.save();
-        }
-
-        private void advanceBlockchainTo(long blockNumber) {
-            var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-                .setNumber(blockNumber)
-                .build();
-            currentBlock = Block.createBlockFromHeader(blockHeader, true);
         }
 
         private void assertReleaseTransactionInfoWasProcessed(

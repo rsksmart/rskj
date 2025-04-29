@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeaderBuilder;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -128,6 +131,13 @@ public final class BridgeSupportTestUtil {
         PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
 
         return pegoutEntry.getBtcTransaction();
+    }
+
+    public static Block getBlockWithBlockNumber(long blockNumber) {
+        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
+            .build();
+        return Block.createBlockFromHeader(blockHeader, true);
     }
 
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
