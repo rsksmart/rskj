@@ -78,6 +78,7 @@ import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -3533,7 +3534,7 @@ class BridgeSupportFlyoverTest {
             federationRedeemScript
         );
 
-        Script flyoverP2SHScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverP2SHScript = getFlyoverFederationOutputScript(genesisFederation.getFormatVersion(), flyoverRedeemScript);
 
         FlyoverFederationInformation expectedFlyoverFederationInformation =
             new FlyoverFederationInformation(flyoverDerivationHash,
@@ -3584,7 +3585,7 @@ class BridgeSupportFlyoverTest {
             genesisFederation.getRedeemScript()
         );
 
-        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverP2SH = getFlyoverFederationOutputScript(genesisFederation.getFormatVersion(), flyoverRedeemScript);
 
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
