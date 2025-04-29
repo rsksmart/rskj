@@ -223,10 +223,7 @@ class FederationChangeIT {
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
         var blockNumber = 0L;
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = getBlockWithBlockNumber(blockNumber);
 
         federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
@@ -466,10 +463,7 @@ class FederationChangeIT {
         // Move the required blocks ahead for the new powpeg to become active
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(ACTIVATIONS);
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = getBlockWithBlockNumber(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -479,10 +473,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationBegin() + 1L;
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = getBlockWithBlockNumber(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -492,10 +483,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationEnd(ACTIVATIONS) + 1L;
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = getBlockWithBlockNumber(blockNumber);
 
         advanceBlockchainTo(currentBlock);
 
