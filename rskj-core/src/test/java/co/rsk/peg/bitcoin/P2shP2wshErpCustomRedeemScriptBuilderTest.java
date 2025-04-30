@@ -123,6 +123,7 @@ class P2shP2wshErpCustomRedeemScriptBuilderTest {
          *  <pubkey1>...<pubkeyN>
          *  OP_N
          *  OP_CHECKMULTISIG
+         * OP_ENDIF
          */
 
         // Act
