@@ -17,10 +17,9 @@ public class ErpRedeemScriptTestUtils {
     public static int calculateMultiSigLength(List<BtcECKey> keys) {
         int threshold = 1;
         int pubKeysNumber = keys.size();
-        int pubKey = PUB_KEY_LENGTH;
         int opN = 1;
         int opCheckMultisig = 1;
-        return threshold + pubKeysNumber * pubKey + opN + opCheckMultisig;
+        return threshold + pubKeysNumber * PUB_KEY_LENGTH + opN + opCheckMultisig;
     }
 
     public static int calculateCSVValueLength(long csvValue) {
