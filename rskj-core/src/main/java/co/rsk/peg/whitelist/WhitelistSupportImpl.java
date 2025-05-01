@@ -7,6 +7,8 @@ import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -43,27 +45,27 @@ public class WhitelistSupportImpl implements WhitelistSupport {
     }
 
     @Override
-    public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
+    public Optional<LockWhitelistEntry> getLockWhitelistEntryByIndex(int index) {
         List<LockWhitelistEntry> entries = storageProvider.getLockWhitelist(
             activations,
             networkParameters
         ).getAll();
 
         if (index < 0 || index >= entries.size()) {
-            return null;
+            return Optional.empty();
         }
-        return entries.get(index);
+        return Optional.ofNullable(entries.get(index));
     }
 
     @Override
-    public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
+    public Optional<LockWhitelistEntry> getLockWhitelistEntryByAddress(String addressBase58) {
         try {
             Address address = Address.fromBase58(networkParameters, addressBase58);
 
-            return storageProvider.getLockWhitelist(activations, networkParameters).get(address);
+            return Optional.ofNullable(storageProvider.getLockWhitelist(activations, networkParameters).get(address));
         } catch (AddressFormatException e) {
             logger.warn("[getLockWhitelistEntryByAddress] {}", INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return null;
+            return Optional.empty();
         }
     }
 

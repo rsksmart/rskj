@@ -55,6 +55,11 @@ class RemascConfigFactoryTest {
         Assertions.assertNotNull(remascConfig);
         Assertions.assertNotNull(remascConfig.getRskLabsAddress());
         Assertions.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
+
+        remascConfig = factory.createRemascConfig("testnet2");
+        Assertions.assertNotNull(remascConfig);
+        Assertions.assertNotNull(remascConfig.getRskLabsAddress());
+        Assertions.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
     }
 
     @Test
