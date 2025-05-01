@@ -17,6 +17,10 @@
  */
 package co.rsk.net.sync;
 
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.*;
 import org.ethereum.core.BlockHeader;
@@ -29,7 +33,12 @@ public interface SyncState {
     void newBlockHeaders(Peer peer, List<BlockHeader> chunk);
 
     default void newBlockHeaders(Peer peer, BlockHeadersResponseMessage message) {
+        Profiler profiler = ProfilerFactory.getInstance();
+        Metric metric = profiler.start(MetricKind.BLOCK_HEADERS_RESPONSE);
+
         newBlockHeaders(peer, message.getBlockHeaders());
+
+        profiler.stop(metric);
     }
 
     // TODO(mc) don't receive a full message

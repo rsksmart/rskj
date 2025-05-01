@@ -18,6 +18,7 @@
  */
 package co.rsk.net.sync;
 
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.Message;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,7 +133,7 @@ class SyncMessageHandlerTest {
     }
 
     private void putJob(Runnable action) throws InterruptedException {
-        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class)) {
+        jobQueue.put(new SyncMessageHandler.Job(mock(Peer.class), mock(Message.class), mock(MetricKind.class)) {
             @Override
             public void run() {
                 action.run();

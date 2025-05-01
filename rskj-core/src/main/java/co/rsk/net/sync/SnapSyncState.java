@@ -19,6 +19,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.messages.*;
@@ -40,9 +41,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
-import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
-import static co.rsk.net.sync.SnapSyncRequestManager.SendRequestException;
+import static co.rsk.net.sync.SnapSyncRequestManager.*;
 
 public class SnapSyncState extends BaseSyncState {
 
@@ -125,7 +124,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, MetricKind.SNAP_STATUS_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processSnapStatusResponse(SnapSyncState.this, sender, responseMessage);
@@ -145,7 +144,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, MetricKind.SNAP_BLOCKS_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processSnapBlocksResponse(SnapSyncState.this, sender, responseMessage);
@@ -165,7 +164,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, MetricKind.SNAP_STATE_CHUNK_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processStateChunkResponse(SnapSyncState.this, sender, responseMessage);
@@ -185,7 +184,7 @@ public class SnapSyncState extends BaseSyncState {
         }
 
         try {
-            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage) {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, MetricKind.BLOCK_HEADERS_RESPONSE) {
                 @Override
                 public void run() {
                     snapshotProcessor.processBlockHeaderChunk(SnapSyncState.this, sender, responseMessage.getBlockHeaders());

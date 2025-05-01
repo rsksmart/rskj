@@ -16,12 +16,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.metrics.profilers;
+package co.rsk.metrics.profilers.impl;
+
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
+import co.rsk.metrics.profilers.Profiler;
 
 /**
- * A Metric models a specific measurement. This empty interface is the minimum required information any core class taking
- * measurements must be aware of
+ * A DisabledProfiler has no logic, it does not perform any profiling. It can be used as the default Profiler implementation
  */
-public interface Metric {
+public final class DisabledProfiler implements Profiler {
 
+    public static final DisabledProfiler INSTANCE = new DisabledProfiler();
+
+    private DisabledProfiler() { /* hidden */ }
+
+    @Override
+    public Metric start(MetricKind kind) {
+        return null;
+    }
+
+    @Override
+    public void stop(Metric metric) {
+        // ignore
+    }
 }

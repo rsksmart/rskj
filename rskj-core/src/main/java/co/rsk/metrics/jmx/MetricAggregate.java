@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2025 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,12 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.metrics.profilers;
+package co.rsk.metrics.jmx;
 
-/**
- * A Metric models a specific measurement. This empty interface is the minimum required information any core class taking
- * measurements must be aware of
- */
-public interface Metric {
-
+public enum MetricAggregate {
+    SUM,
+    AVG,
+    MAX,
+    MIN,
+    LAST
 }

@@ -53,6 +53,7 @@ import static org.mockito.Mockito.*;
 public class SnapshotProcessorTest {
     private static final int TEST_CHUNK_SIZE = 200;
     private static final int TEST_CHECKPOINT_DISTANCE = 10;
+    private static final int TEST_MAX_SENDER_REQUESTS = 3;
     private static final long THREAD_JOIN_TIMEOUT = 10_000; // 10 secs
 
     private Blockchain blockchain;
@@ -98,6 +99,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
         doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
@@ -125,6 +127,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
 
@@ -170,6 +173,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
 
@@ -206,6 +210,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
 
@@ -243,6 +248,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 200,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
 
@@ -287,6 +293,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
 
@@ -318,6 +325,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
                 listener) {
@@ -342,6 +350,56 @@ public class SnapshotProcessorTest {
     }
 
     @Test
+    void givenProcessSnapStatusRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException {
+        //given
+        NodeID nodeID = mock(NodeID.class);
+        Peer mPeer = mock(Peer.class);
+        when(mPeer.getPeerNodeID()).thenReturn(nodeID);
+        SnapStatusRequestMessage msg = mock(SnapStatusRequestMessage.class);
+        CountDownLatch execLatch = new CountDownLatch(4);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, execLatch);
+        doAnswer(invocation -> {
+            assertTrue(startLatch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+            return null;
+        }).when(listener).onStart();
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                listener) {
+            @Override
+            void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
+                execLatch.countDown();
+            }
+        };
+        underTest.start();
+
+        //when
+        for (int i = 0; i < 4; i++) {
+            underTest.processSnapStatusRequest(mPeer, msg);
+        }
+        startLatch.countDown();
+
+        //then
+        assertTrue(execLatch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(3)).onJobRun(jobArg.capture());
+    }
+
+    @Test
     void givenProcessSnapBlocksRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
         //given
         Peer mPeer = mock(Peer.class);
@@ -360,6 +418,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
                 listener) {
@@ -384,6 +443,56 @@ public class SnapshotProcessorTest {
     }
 
     @Test
+    void givenProcessSnapBlocksRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException {
+        //given
+        NodeID nodeID = mock(NodeID.class);
+        Peer mPeer = mock(Peer.class);
+        when(mPeer.getPeerNodeID()).thenReturn(nodeID);
+        SnapBlocksRequestMessage msg = mock(SnapBlocksRequestMessage.class);
+        CountDownLatch execLatch = new CountDownLatch(4);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, execLatch);
+        doAnswer(invocation -> {
+            assertTrue(startLatch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+            return null;
+        }).when(listener).onStart();
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                listener) {
+            @Override
+            void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
+                execLatch.countDown();
+            }
+        };
+        underTest.start();
+
+        //when
+        for (int i = 0; i < 4; i++) {
+            underTest.processSnapBlocksRequest(mPeer, msg);
+        }
+        startLatch.countDown();
+
+        //then
+        assertTrue(execLatch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(3)).onJobRun(jobArg.capture());
+    }
+
+    @Test
     void givenProcessStateChunkRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
         //given
         Peer mPeer = mock(Peer.class);
@@ -402,6 +511,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
                 listener) {
@@ -426,6 +536,56 @@ public class SnapshotProcessorTest {
     }
 
     @Test
+    void givenProcessStateChunkRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException {
+        //given
+        NodeID nodeID = mock(NodeID.class);
+        Peer mPeer = mock(Peer.class);
+        when(mPeer.getPeerNodeID()).thenReturn(nodeID);
+        SnapStateChunkRequestMessage msg = mock(SnapStateChunkRequestMessage.class);
+        CountDownLatch execLatch = new CountDownLatch(4);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, execLatch);
+        doAnswer(invocation -> {
+            assertTrue(startLatch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+            return null;
+        }).when(listener).onStart();
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                listener) {
+            @Override
+            void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
+                execLatch.countDown();
+            }
+        };
+        underTest.start();
+
+        //when
+        for (int i = 0; i < 4; i++) {
+            underTest.processStateChunkRequest(mPeer, msg);
+        }
+        startLatch.countDown();
+
+        //then
+        assertTrue(execLatch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(3)).onJobRun(jobArg.capture());
+    }
+
+    @Test
     void givenErrorRLPData_thenOnStateChunkErrorIsCalled() {
         underTest = new SnapshotProcessor(
                 blockchain,
@@ -439,6 +599,7 @@ public class SnapshotProcessorTest {
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
                 TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
 

@@ -18,6 +18,10 @@
 
 package co.rsk.net.sync;
 
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
@@ -34,6 +38,8 @@ public abstract class SyncMessageHandler implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger("syncmessagehandler");
 
+    private static final Profiler profiler = ProfilerFactory.getInstance();
+
     public static final String QUEUE_NAME = "queue";
 
     private final String name;
@@ -41,10 +47,6 @@ public abstract class SyncMessageHandler implements Runnable {
     private final BlockingQueue<Job> jobQueue;
 
     private final Listener listener;
-
-    protected SyncMessageHandler(String name, BlockingQueue<Job> jobQueue) {
-        this(name, jobQueue, null);
-    }
 
     protected SyncMessageHandler(String name, BlockingQueue<Job> jobQueue, Listener listener) {
         this.name = name;
@@ -64,12 +66,14 @@ public abstract class SyncMessageHandler implements Runnable {
 
         Job job = null;
         while (isRunning()) {
+            Metric metric = null;
             try {
                 job = jobQueue.take();
 
+                metric = profiler.start(job.getMetricKind());
+
                 MDC.put(QUEUE_NAME, name);
                 processJob(job);
-
             } catch (InterruptedException e) {
                 handleInterruptedException(e);
                 Thread.currentThread().interrupt();
@@ -78,6 +82,10 @@ public abstract class SyncMessageHandler implements Runnable {
                 handleException(job, e);
             } finally {
                 MDC.remove(QUEUE_NAME);
+
+                if (metric != null) {
+                    profiler.stop(metric);
+                }
             }
         }
 
@@ -99,11 +107,11 @@ public abstract class SyncMessageHandler implements Runnable {
         job.run();
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Finished processing of msg: [{}] from: [{}] for: [{}] after [{}] seconds.",
+            logger.debug("Finished processing of msg: [{}] from: [{}] for: [{}] after [{}] seconds",
                     job.getMsgType(), job.getSender(), name,
                     FormatUtils.formatNanosecondsToSeconds(Duration.between(jobStart, Instant.now()).toNanos()));
         }
-        //TODO ask about this listener as it seems it is always null
+
         handleListenerOnProcessJob(job);
     }
 
@@ -147,15 +155,12 @@ public abstract class SyncMessageHandler implements Runnable {
     public abstract static class Job implements Runnable {
         private final Peer sender;
         private final MessageType msgType;
+        private final MetricKind metricKind;
 
-        public Job(Peer sender, Message msg) {
+        public Job(Peer sender, Message msg, MetricKind metricKind) {
             this.sender = sender;
             this.msgType = msg.getMessageType();
-        }
-
-        public Job(Peer sender, MessageType msgType) {
-            this.sender = sender;
-            this.msgType = msgType;
+            this.metricKind = metricKind;
         }
 
         public Peer getSender() {
@@ -164,6 +169,10 @@ public abstract class SyncMessageHandler implements Runnable {
 
         public MessageType getMsgType() {
             return msgType;
+        }
+
+        public MetricKind getMetricKind() {
+            return metricKind;
         }
 
         @Override

@@ -2092,6 +2092,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     ),
                     getRskSystemProperties().getSnapshotChunkSize(),
                     checkpointDistance,
+                    getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
                     getRskSystemProperties().isSnapshotParallelEnabled()
             );
