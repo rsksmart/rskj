@@ -15,17 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.modules.eth.subscribe;
-
+package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.IReadWrittenKeysTracker;
 import co.rsk.core.bc.ReadWrittenKeysTracker;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.rpc.modules.eth.AccountOverride;
-import co.rsk.rpc.modules.eth.DefaultStateOverrideApplier;
-import co.rsk.rpc.modules.eth.StateOverrideApplier;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -43,7 +39,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AccountOverrideTest {
+class DefaultStateOverrideApplierTest {
+
     private static final BigInteger DEFAULT_BALANCE = BigInteger.valueOf(1000);
     private static final byte[] DEFAULT_CODE = TestUtils.generateBytes(1,10);
     private static final BigInteger DEFAULT_NONCE = BigInteger.valueOf(5);
@@ -55,9 +52,7 @@ class AccountOverrideTest {
     private AccountOverride accountOverride;
     private MutableRepository repository;
     private RskAddress address;
-    private StateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
-
-
+    private DefaultStateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
     @BeforeEach
     void setup() {
         address = TestUtils.generateAddress("address");

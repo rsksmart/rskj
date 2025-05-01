@@ -108,8 +108,7 @@ class EthModuleDSLTest {
         String result = eth.call(callArgumentsParam, blockIdentifierParam);
         assertEquals(10, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(new RskAddress(contractAddress));
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
         DataWord key = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000000");
         DataWord value = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000014");
         accountOverride.setState(Map.of(key, value));
@@ -153,8 +152,7 @@ class EthModuleDSLTest {
         String result = eth.call(callArgumentsParam, blockIdentifierParam);
         assertEquals(10, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(new RskAddress(contractAddress));
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
         byte[] newCode = HexUtils.stringHexToByteArray(runtimeByteCode);
         accountOverride.setCode(newCode);
 
@@ -186,8 +184,7 @@ class EthModuleDSLTest {
         String result = eth.call(callArgumentsParam, blockIdentifierParam);
         assertNotEquals(defaultBalance, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(acc.getAddress());
+        AccountOverride accountOverride = new AccountOverride(acc.getAddress());
         accountOverride.setBalance(BigInteger.valueOf(defaultBalance));
         String result2 = eth.call(callArgumentsParam, blockIdentifierParam, List.of(accountOverride));
 

@@ -87,6 +87,7 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
+    private final StateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -148,7 +149,7 @@ public class EthModule
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
         } else if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
             mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
-            accountOverrideList.forEach(accountOverride -> accountOverride.applyToRepository(mutableRepository));
+            accountOverrideList.forEach(accountOverride -> stateOverrideApplier.applyToRepository(mutableRepository, accountOverride));
         } else {
             mutableRepository = null;
         }
