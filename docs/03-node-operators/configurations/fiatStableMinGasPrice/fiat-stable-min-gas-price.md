@@ -103,15 +103,17 @@ miner {
 
         source {
 	        # method options: HTTP_GET | ETH_CALL
-					# Examples:
-					method = "HTTP_GET"
-					params {
-						url = "https://domain.info/ticker"
-						jsonPath = "/USD/buy"
-						timeout = 2 seconds # Value's type is `Duration`, e.g. 1.1 seconds, 2.5 minutes, 3 hours, 4 days.
+            # Examples:
+            method = "HTTP_GET"
+            params {
+                url = "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
+                # response: {"ethereum":{"usd":1848.79}}
+                jsonPath = "ethereum/usd"
+                timeout = 2 seconds # Value's type is `Duration`, e.g. 1.1 seconds, 2.5 minutes, 3 hours, 4 days.
+            }
         }
 				
-				minStableGasPrice = 4265280000000 # 0.00000426528 USD per gas unit
+		minStableGasPrice = 4265280000000 # 0.00000426528 USD per gas unit
         # The time the miner client will wait to refresh price from the source.
         # Value's type is `Duration`, e.g. 1.1 seconds, 2.5 minutes, 3 hours, 4 days.
         refreshRate = 6 hours
