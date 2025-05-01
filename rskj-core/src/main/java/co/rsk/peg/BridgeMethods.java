@@ -834,6 +834,17 @@ public enum BridgeMethods {
         (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
+    ),
+    GET_UNION_BRIDGE_LOCKING_CAP(
+        CallTransaction.Function.fromSignature(
+            "getUnionBridgeLockingCap",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(3_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Long>) Bridge::getUnionBridgeLockingCap,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
     )
     ;
 

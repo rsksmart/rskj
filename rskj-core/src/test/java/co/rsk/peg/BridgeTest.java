@@ -3470,6 +3470,47 @@ class BridgeTest {
             int actualUnionResponseCode = decodedResult.intValue();
             assertEquals(expectedUnionResponseCode, actualUnionResponseCode);
         }
+
+        @Test
+        void getUnionBridgeLockingCap_beforeRSKIP502_shouldFail() {
+            bridge = bridgeBuilder
+                .activationConfig(ActivationConfigsForTest.lovell700())
+                .build();
+
+            CallTransaction.Function getUnionBridgeLockingCapFunction = Bridge.GET_UNION_BRIDGE_LOCKING_CAP;
+            byte[] data = getUnionBridgeLockingCapFunction.encode();
+
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        private static Stream<Arguments> constantsProvider() {
+            return Stream.of(
+                Arguments.of(Constants.regtest()),
+                Arguments.of(Constants.testnet2(ActivationConfigsForTest.all())),
+                Arguments.of(Constants.mainnet())
+            );
+        }
+
+        @ParameterizedTest()
+        @MethodSource("constantsProvider")
+        void getUnionBridgeLockingCap_afterRSKIP502_shouldReturnLockingCap(Constants constants)
+            throws VMException {
+            // Arrange
+            Coin initialLockingCap = constants.getBridgeConstants().getUnionBridgeConstants()
+                .getInitialLockingCap();
+            when(bridgeSupport.getUnionBridgeLockingCap()).thenReturn(Optional.of(initialLockingCap));
+
+            byte[] data = Bridge.GET_UNION_BRIDGE_LOCKING_CAP.encode();
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger)Bridge.GET_UNION_BRIDGE_LOCKING_CAP.decodeResult(result)[0];
+            Coin actualLockingCap = Coin.valueOf(decodedResult.longValue());
+            Coin expectedLockingCap = Coin.valueOf(initialLockingCap.getValue());
+            assertEquals(expectedLockingCap, actualLockingCap);
+        }
     }
 
     private static Stream<Arguments> msgTypesAndActivations() {
