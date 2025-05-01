@@ -2893,6 +2893,10 @@ public class BridgeSupport {
         return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
     }
 
+    public Optional<Coin> getUnionBridgeLockingCap() {
+        return unionBridgeSupport.getLockingCap();
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }
