@@ -31,8 +31,7 @@ public class AccountOverride {
     private byte[] code;
     private Map<DataWord, DataWord> state;
     private Map<DataWord, DataWord> stateDiff;
-    private final RskAddress address;
-    //TODO movePrecompile to address
+    private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
     public AccountOverride(RskAddress address) {
@@ -89,7 +88,6 @@ public class AccountOverride {
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
         throw new UnsupportedOperationException("Move precompile to address is not supported yet");
     }
-
 
     @Override
     public boolean equals(Object o) {
