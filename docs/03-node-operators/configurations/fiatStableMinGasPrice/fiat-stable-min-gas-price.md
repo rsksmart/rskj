@@ -17,7 +17,7 @@ In the context of **RSKj** and **cryptocurrency**, **Fiat Stable MinGasPrice** u
 - If RBTC price suddenly spikes, gas fees could become ridiculously high in dollar terms.
 - By using a **fiat-stable minimum**, systems can ensure fair and predictable pricing for users and maintain network security and validator incentives.
 
-### Motivation and context for the changes
+## Motivation and context for the changes
 
 Currently, RSK miners can set the minimum gas price (MinGasPrice) using the miner.minGasPrice configuration, which is denominated in WEI and inherently linked to the Bitcoin price. This linkage causes transaction costs to fluctuate with Bitcoin's value, potentially leading to increased costs when Bitcoin appreciates, thereby adversely affecting user experience.
 
