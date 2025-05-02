@@ -2,7 +2,7 @@
 
 In the context of **RSKj** and **cryptocurrency**, **Fiat Stable MinGasPrice** usually refers to a way of **stabilizing the minimum gas price** based on the value of a **fiat currency** (like USD, EUR, etc.).
 
-Let me break it down simply:
+**Important Definitions:**
 
 - **Gas Price**: In RSKj, when you send a transaction or interact with a smart contract, you pay a *gas fee* to the network. The *gas price* is how much you pay per unit of gas.
 - **Fiat Stable**: This suggests trying to **peg** (or stabilize) the *minimum gas price* to a **fixed value in fiat currency**, even though RSKj's currency (RBTC) is volatile.
