@@ -49,7 +49,7 @@ This approach uses a **centralized or semi-centralized API** to fetch the curren
 - Simple, flexible, easy to integrate.
 - Can pull from a wide range of data sources.
 
-### ❌ Cons:
+#### ❌ Cons:
 
 - **Centralization risk** – you're trusting the HTTP source.
 - **Not trustless** – the blockchain doesn't verify the result.
