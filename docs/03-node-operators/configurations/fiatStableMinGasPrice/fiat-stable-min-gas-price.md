@@ -88,9 +88,7 @@ This approach fetches the **RBTC-to-fiat price from a smart contract**, often po
 
 ## RSK Configuration
 
-[https://github.com/rsksmart/rskj/pull/2310/files#diff-242a8c6b5d9003504710db696af1f94412a52cdbd3369df55cff4be2ea8697eaR204-R234](https://github.com/rsksmart/rskj/pull/2310/files#diff-242a8c6b5d9003504710db696af1f94412a52cdbd3369df55cff4be2ea8697eaR204-R234)
-
-You can see in master that this is a miner configuration and looks like this:
+Miner configurations depends on the desired method used to request the min gas price. An [example miner configuration can be seen here](https://github.com/rsksmart/rskj/pull/2310/files#diff-242a8c6b5d9003504710db696af1f94412a52cdbd3369df55cff4be2ea8697eaR204-R234)
 
 **HTTP CALL**
 
