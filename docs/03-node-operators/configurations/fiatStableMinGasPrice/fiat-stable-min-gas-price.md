@@ -86,7 +86,7 @@ This approach fetches the **RBTC-to-fiat price from a smart contract**, often po
 | HTTP API (Off-chain) | Centralized | Low | Fast | Backend services, UI, analytics |
 | On-chain Oracle | Decentralized | Moderate | Near real-time | Smart contracts, DeFi, DAOs |
 
-### RSK Configuration
+## RSK Configuration
 
 [https://github.com/rsksmart/rskj/pull/2310/files#diff-242a8c6b5d9003504710db696af1f94412a52cdbd3369df55cff4be2ea8697eaR204-R234](https://github.com/rsksmart/rskj/pull/2310/files#diff-242a8c6b5d9003504710db696af1f94412a52cdbd3369df55cff4be2ea8697eaR204-R234)
 
