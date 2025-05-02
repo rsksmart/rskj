@@ -121,7 +121,7 @@ miner {
 
 **ETH CALL**
 
-Will use ETH to request the min gas price
+Configurations for using ETH CALL to request the min gas price
 
 ```yaml
 miner {
