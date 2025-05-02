@@ -67,7 +67,7 @@ This approach fetches the **RBTC-to-fiat price from a smart contract**, often po
 - The gas price is derived using the oracle's latest reported price.
 - This is done **inside smart contracts**, ensuring consistency and trust.
 
-### ✅ Pros:
+#### ✅ Pros:
 
 - **Trustless and secure** – all nodes agree on the same value.
 - **Tamper-resistant** – oracle data is resistant to manipulation.
