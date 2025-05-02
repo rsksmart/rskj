@@ -79,7 +79,7 @@ This approach fetches the **RBTC-to-fiat price from a smart contract**, often po
 - **Oracle update frequency** – price may not always be up to the second.
 - **Complexity** – needs integration with oracle networks and possibly fallback logic.
 
-### Summary Table:
+## Summary Table:
 
 | Method | Trust Level | Cost | Speed | Use Case |
 | --- | --- | --- | --- | --- |
