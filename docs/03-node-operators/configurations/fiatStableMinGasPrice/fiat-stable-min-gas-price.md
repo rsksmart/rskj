@@ -44,7 +44,7 @@ This approach uses a **centralized or semi-centralized API** to fetch the curren
 - Example: If you want the gas price to represent $0.01, and RBTC = $2000, then:
   `minGasPrice = 0.01 / 2000 = 0.000005 RBTC (or 5 gwei)`
 
-### ✅ Pros:
+#### ✅ Pros:
 
 - Simple, flexible, easy to integrate.
 - Can pull from a wide range of data sources.
