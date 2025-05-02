@@ -12,7 +12,7 @@ In the context of **RSKj** and **cryptocurrency**, **Fiat Stable MinGasPrice** u
 
 **Fiat Stable MinGasPrice** means setting a minimum gas price that, no matter how much RBTC's price goes up or down, tries to represent a *fixed real-world value* (like "always costing about 0.01 USD worth of gas minimum").
 
-### Why does it matter?
+## Why does it matter?
 
 - If RBTC price suddenly spikes, gas fees could become ridiculously high in dollar terms.
 - By using a **fiat-stable minimum**, systems can ensure fair and predictable pricing for users and maintain network security and validator incentives.
