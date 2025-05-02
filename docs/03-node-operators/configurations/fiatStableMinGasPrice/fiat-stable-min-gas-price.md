@@ -92,7 +92,7 @@ Miner configurations depends on the desired method used to request the min gas p
 
 **HTTP CALL**
 
-Will use HTTP to request the min gas price
+Configurations for using HTTP to request the min gas price
 
 ```yaml
 miner {
