@@ -38,45 +38,70 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
-        try {
-            // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-            String currentNetworkId = constants.getBtcParams().getId();
-            if (currentNetworkId.equals(NetworkParameters.ID_MAINNET)) {
-                String baseMessage = String.format("Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s", currentNetworkId);
-                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
-                return UnionResponseCode.ENVIRONMENT_DISABLED.getCode();
-            }
-
-            // Check if the caller is authorized to set a new bridge contract address
-            AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
-            if (!authorizer.isAuthorized(tx, signatureCache)) {
-                String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
-                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
-                return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
-            }
-
-            // Check if the address is valid
-            if (unionBridgeContractAddress == null || unionBridgeContractAddress.equals(EMPTY_ADDRESS)) {
-                String baseMessage = "Union Bridge Contract Address cannot be null or empty";
-                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
-                return UnionResponseCode.INVALID_VALUE.getCode();
-            }
-
-            // Check if the address is already set
-            RskAddress currentUnionBridgeAddress = storageProvider.getAddress(activations).orElse(constants.getAddress());
-            if (unionBridgeContractAddress.equals(currentUnionBridgeAddress)) {
-                String baseMessage = String.format("The given union bridge contract address is already the current address. Current address: %s", currentUnionBridgeAddress);
-                logger.warn(LOG_PATTERN, SET_UNION_BRIDGE_ADDRESS_TAG, baseMessage);
-                return UnionResponseCode.INVALID_VALUE.getCode();
-            }
-
-            storageProvider.setAddress(unionBridgeContractAddress);
-            logger.info("[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, currentUnionBridgeAddress, unionBridgeContractAddress);
-            return UnionResponseCode.SUCCESS.getCode();
-        } catch (Exception e) {
-            logger.error("[{}] Unexpected error setting Union Bridge Contract Address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, e.getMessage(), e);
-            return UnionResponseCode.GENERIC_ERROR.getCode();
+        // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
+        if (isEnvironmentDisable()) {
+            return UnionResponseCode.ENVIRONMENT_DISABLED.getCode();
         }
+
+        if (isUnauthorizedCaller(tx)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+        }
+
+        if (isInvalidAddress(unionBridgeContractAddress)) {
+            return UnionResponseCode.INVALID_VALUE.getCode();
+        }
+
+        RskAddress currentUnionBridgeAddress = storageProvider.getAddress(activations).orElse(constants.getAddress());
+        if (isAddressAlreadyStored(currentUnionBridgeAddress, unionBridgeContractAddress)) {
+            return UnionResponseCode.INVALID_VALUE.getCode();
+        }
+
+        storageProvider.setAddress(unionBridgeContractAddress);
+        logger.info("[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, currentUnionBridgeAddress, unionBridgeContractAddress);
+        return UnionResponseCode.SUCCESS.getCode();
+    }
+
+    private boolean isEnvironmentDisable() {
+        String currentNetworkId = constants.getBtcParams().getId();
+
+        boolean isEnvironmentDisable = currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+        if (isEnvironmentDisable) {
+            String baseMessage = String.format("Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s", currentNetworkId);
+            logger.warn(LOG_PATTERN, "isEnvironmentDisable", baseMessage);
+        }
+        return isEnvironmentDisable;
+    }
+
+    private boolean isUnauthorizedCaller(Transaction tx) {
+        // Check if the caller is isUnauthorizedCaller to set a new bridge contract address
+        AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
+        boolean isUnauthorizedCaller = !authorizer.isAuthorized(tx, signatureCache);
+        if (!isUnauthorizedCaller) {
+            String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isUnauthorizedCaller", baseMessage);
+        }
+
+        return isUnauthorizedCaller;
+    }
+
+    private boolean isInvalidAddress(RskAddress unionBridgeContractAddress) {
+        // Check if the address is valid
+        boolean isInvalidAddress = unionBridgeContractAddress == null || unionBridgeContractAddress.equals(EMPTY_ADDRESS);
+        if (!isInvalidAddress) {
+            String baseMessage = "Union Bridge Contract Address cannot be null or empty";
+            logger.warn(LOG_PATTERN, "isInvalidAddress", baseMessage);
+        }
+        return isInvalidAddress;
+    }
+
+    private boolean isAddressAlreadyStored(RskAddress currentUnionBridgeContractAddress, RskAddress newUnionBridgeContractAddress) {
+        // Check if the address is already set
+        boolean isAddressAlreadyStored = currentUnionBridgeContractAddress.equals(newUnionBridgeContractAddress);
+        if (isAddressAlreadyStored) {
+            String baseMessage = String.format("The given union bridge contract address is already the current address. Current address: %s", currentUnionBridgeContractAddress);
+            logger.warn(LOG_PATTERN, "isAddressAlreadyStored", baseMessage);
+        }
+        return isAddressAlreadyStored;
     }
 
     @Override
