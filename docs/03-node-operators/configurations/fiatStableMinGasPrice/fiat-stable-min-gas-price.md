@@ -21,7 +21,42 @@ In the context of **RSKj** and **cryptocurrency**, **Fiat Stable MinGasPrice** u
 
 Currently, RSK miners can set the minimum gas price (MinGasPrice) using the miner.minGasPrice configuration, which is denominated in WEI and inherently linked to the Bitcoin price. This linkage causes transaction costs to fluctuate with Bitcoin's value, potentially leading to increased costs when Bitcoin appreciates, thereby adversely affecting user experience.
 
-To address this issue, the proposed feature aims to empower miners with the ability to specify and configure the minimum gas price in fiat currency. This change would stabilize transaction costs in fiat terms, regardless of cryptocurrency market variations, and is intended to enhance predictability and user satisfaction. The system used to support only one configuration parameter for setting the MinGasPrice. See an example [here](https://www.notion.so/Minimum-Gas-Price-Feature-Validation-on-Testnet-122c132873f9807ba817f63a13aa7720?pvs=21),
+To address this issue, the proposed feature aims to empower miners with the ability to specify and configure the minimum gas price in fiat currency. This change would stabilize transaction costs in fiat terms, regardless of cryptocurrency market variations, and is intended to enhance predictability and user satisfaction. The system used to support only one configuration parameter for setting the MinGasPrice. See an example here:
+
+```yaml
+miner {
+	# The default gas price
+	minGasPrice = 60000000
+	server.enabled = true
+	
+	client {
+	    enabled = true
+	    delayBetweenBlocks = 0 seconds
+	    delayBetweenRefreshes = 1 seconds
+	}
+	
+	coinbase.secret = regtest_miner_secret_please_change
+	
+	stableGasPrice {
+	    enabled = true
+	
+	    source {
+	         method = "ETH_CALL"
+	         params {
+	            from = "0x0000000000000000000000000000000000000000"
+	            to = "0xCA41630b09048b6f576459C34341cAB8Dc2cBE7E"
+	            data = "0xdf16e52d"
+	         }
+	    }
+	
+	    minStableGasPrice = 476190000000 # 0.00000426528 USD per gas unit
+	
+	    # # The time the miner client will wait to refresh price from the source.
+	    # # Value's type is `Duration`, e.g. 1.1 seconds, 2.5 minutes, 3 hours, 4 days.
+	    refreshRate = 10 minutes
+	}
+}
+```
 
 The goal is to give miners a capability to specify / configure min gas price value denominated in a fiat currency.
 
@@ -55,9 +90,7 @@ This approach uses a **centralized or semi-centralized API** to fetch the curren
 - **Not trustless** – the blockchain doesn't verify the result.
 - **Latency and reliability** – dependent on network and endpoint availability.
 
----
-
-## ⛓️ **On-Chain Oracle Call (Decentralized/Trustless Method)**
+### ⛓️ **On-Chain Oracle Call (Decentralized/Trustless Method)**
 
 This approach fetches the **RBTC-to-fiat price from a smart contract**, often powered by a **decentralized oracle network** like **Chainlink**.
 
