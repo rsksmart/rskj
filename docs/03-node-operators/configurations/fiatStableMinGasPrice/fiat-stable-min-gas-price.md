@@ -73,7 +73,7 @@ This approach fetches the **RBTC-to-fiat price from a smart contract**, often po
 - **Tamper-resistant** – oracle data is resistant to manipulation.
 - **Fully on-chain** – compatible with DeFi, DAO governance, etc.
 
-### ❌ Cons:
+#### ❌ Cons:
 
 - **Gas cost** – reading from an oracle contract uses gas.
 - **Oracle update frequency** – price may not always be up to the second.
