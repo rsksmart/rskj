@@ -90,7 +90,7 @@ This approach uses a **centralized or semi-centralized API** to fetch the curren
 - **Not trustless** – the blockchain doesn't verify the result.
 - **Latency and reliability** – dependent on network and endpoint availability.
 
-### ⛓️ **On-Chain Oracle Call (Decentralized/Trustless Method)**
+## ⛓️ On-Chain Oracle Call (Decentralized/Trustless Method)
 
 This approach fetches the **RBTC-to-fiat price from a smart contract**, often powered by a **decentralized oracle network** like **Chainlink**.
 
