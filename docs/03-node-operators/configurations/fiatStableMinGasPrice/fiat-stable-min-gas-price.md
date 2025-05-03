@@ -64,7 +64,7 @@ The goal is to give miners a capability to specify / configure min gas price val
 
 [https://github.com/rsksmart/rskj/pull/2310](https://github.com/rsksmart/rskj/pull/2310)
 
-## **🔗 HTTP Call (Off-Chain Method)**
+## 🔗 HTTP Call (Off-Chain Method)
 
 This approach uses a **centralized or semi-centralized API** to fetch the current **RBTC-to-fiat price** and then calculate a gas price based on that.
 
