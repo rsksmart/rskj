@@ -13,10 +13,12 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKMULTISIG;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
@@ -63,7 +65,7 @@ class ErpRedeemScriptBuilderUtilsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1})
+    @MethodSource("invalidCsvValues")
     void createInvalidErpFederation_invalidCsvValues(long csvValue) {
         activationDelayValue = csvValue;
 
@@ -212,6 +214,25 @@ class ErpRedeemScriptBuilderUtilsTest {
                 activationDelayValue)
         );
         assertEquals(INVALID_INTERNAL_REDEEM_SCRIPTS, exception.getReason());
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidCsvValues")
+    void validateCSVValue_withInvalidCsvValues_ShouldThrowAnException(long csvValue) {
+        RedeemScriptCreationException exception = assertThrows(
+            RedeemScriptCreationException.class,
+            () -> ErpRedeemScriptBuilderUtils.validateCSVValue(
+                csvValue)
+        );
+        assertEquals(INVALID_CSV_VALUE, exception.getReason());
+    }
+
+    private static Stream<Arguments> invalidCsvValues() {
+        return Stream.of(
+            Arguments.of(-100),
+            Arguments.of(0L),
+            Arguments.of(ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1)
+        );
     }
 
     private Script createMultiSigScript(List<BtcECKey> keys,

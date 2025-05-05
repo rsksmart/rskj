@@ -35,6 +35,10 @@ public class ErpRedeemScriptBuilderUtils {
             throw new RedeemScriptCreationException(message, INVALID_INTERNAL_REDEEM_SCRIPTS);
         }
 
+        validateCSVValue(csvValue);
+    }
+
+    public static void validateCSVValue(Long csvValue) {
         if (csvValue <= 0 || csvValue > MAX_CSV_VALUE) {
             String message = String.format(
                 "Provided csv value %d must be larger than 0 and lower than %d",
