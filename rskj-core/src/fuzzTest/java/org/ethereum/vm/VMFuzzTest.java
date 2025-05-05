@@ -42,7 +42,6 @@ public class VMFuzzTest {
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
-    /* XXX: This is failing, check why */
     @Tag("orgEthereumVMFuzzOpcodes")
     @FuzzTest
     public void testFuzzVM(FuzzedDataProvider dataProvider) {
@@ -177,12 +176,13 @@ public class VMFuzzTest {
     public void randomAddmod(FContext ctx) {
         randomPush(ctx);
         randomPush(ctx);
+        randomPush(ctx);
         addmod(ctx);
     }
 
     public void addmod(FContext ctx) {
         Assertions.assertTrue(ctx.stack >= 2);
-        ctx.stack--;
+        ctx.stack -= 2;
         ctx.steps++;
         ctx.buffer.put(OpCodes.OP_ADDMOD);
     }
@@ -190,12 +190,13 @@ public class VMFuzzTest {
     public void randomMulmod(FContext ctx) {
         randomPush(ctx);
         randomPush(ctx);
+        randomPush(ctx);
         mulmod(ctx);
     }
 
     public void mulmod(FContext ctx) {
         Assertions.assertTrue(ctx.stack >= 2);
-        ctx.stack--;
+        ctx.stack -= 2;
         ctx.steps++;
         ctx.buffer.put(OpCodes.OP_MULMOD);
     }
@@ -238,11 +239,13 @@ public class VMFuzzTest {
 
     public void randomSignextend(FContext ctx) {
         randomPush(ctx);
+        randomPush(ctx);
         signextend(ctx);
     }
 
     public void signextend(FContext ctx) {
         Assertions.assertTrue(ctx.stack >= 1);
+        ctx.stack--;
         ctx.steps++;
         ctx.buffer.put(OpCodes.OP_SIGNEXTEND);
     }
