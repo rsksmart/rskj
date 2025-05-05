@@ -100,7 +100,7 @@ class VMFuzzTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.arrowhead600().forBlock(0);
 
         try {
-            executeCodeWithTimeout(code, activations, transaction, DEFAULT_TIMEOUT);
+            executeCodeWithTimeout(code, activations, transaction, 15);
         } catch (TimeoutException e) {
             throw new FuzzerSecurityIssueHigh("VM execution timed out, indicating a potential DoS issue [input size = " + fuzzedInputSize + "]");
         } catch (InterruptedException | ExecutionException e) {

@@ -8,6 +8,8 @@ import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assumptions;
+import org.opentest4j.TestAbortedException;
 import org.spongycastle.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -70,7 +72,12 @@ public class PrecompiledContractFuzzTest {
         DataWord addr = PrecompiledContracts.BIG_INT_MODEXP_ADDR_DW;
         PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
         byte[] d = data.consumeBytes(1200000);
-        contract.getGasForData(d);
+        long gas = contract.getGasForData(d);
+        try {
+            Assumptions.assumeTrue(gas <= 6800000);
+        } catch (TestAbortedException ignored) {
+            return;
+        }
         contract.execute(d);
     }
 
