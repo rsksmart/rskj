@@ -113,7 +113,7 @@ class BridgeSupportTest {
 
     private static final ActivationConfig.ForBlock genesisActivations = ActivationConfigsForTest.genesis().forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
-    private static final Federation activeFederation = P2shErpFederationBuilder.builder().build();
+    private static Federation activeFederation = P2shErpFederationBuilder.builder().build();
 
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
@@ -913,7 +913,7 @@ class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
+        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsMainnet);
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
@@ -929,10 +929,10 @@ class BridgeSupportTest {
 
         // Create transaction
         Coin lockValue = Coin.COIN;
-        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
-        tx.addOutput(lockValue, federationStorageProviderMock.getNewFederation(any(), any()).getAddress());
+        BtcTransaction btcTx = new BtcTransaction(bridgeMainNetConstants.getBtcParams());
+        btcTx.addOutput(lockValue, genesisFederation.getAddress());
         BtcECKey srcKey = new BtcECKey();
-        tx.addInput(
+        btcTx.addInput(
             BitcoinTestUtils.createHash(1),
             0,
             ScriptBuilder.createInputScript(null, srcKey)
@@ -942,7 +942,7 @@ class BridgeSupportTest {
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
         List<Sha256Hash> hashes = new ArrayList<>();
-        hashes.add(tx.getHash());
+        hashes.add(btcTx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(bridgeMainNetConstants.getBtcParams(), bits, hashes, 1);
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
         co.rsk.bitcoinj.core.BtcBlock btcBlock = new co.rsk.bitcoinj.core.BtcBlock(
@@ -972,7 +972,7 @@ class BridgeSupportTest {
         when(mockBridgeStorageProvider.getPegoutsWaitingForConfirmations()).thenReturn(mock(PegoutsWaitingForConfirmations.class));
 
         federationSupport = federationSupportBuilder
-            .withFederationConstants(federationConstantsRegtest)
+            .withFederationConstants(federationConstantsMainnet)
             .withFederationStorageProvider(federationStorageProviderMock)
             .withRskExecutionBlock(executionBlock)
             .withActivations(activations)
@@ -993,7 +993,7 @@ class BridgeSupportTest {
 
         bridgeSupport.registerBtcTransaction(
             mock(Transaction.class),
-            tx.bitcoinSerialize(),
+            btcTx.bitcoinSerialize(),
             height,
             pmt.bitcoinSerialize()
         );
@@ -7492,6 +7492,11 @@ class BridgeSupportTest {
     class ReleaseTransactionInfo {
         private List<LogInfo> logs;
 
+        private final Coin outpointValue1 = Coin.valueOf(300_000);
+        private final Coin outpointValue2 = Coin.valueOf(150_000);
+        private final Coin outpointValue3 = Coin.valueOf(50_000);
+        private BridgeEventLogger bridgeEventLogger;
+
         @BeforeEach
         void setUp() {
             repository = createRepository();
@@ -7507,7 +7512,7 @@ class BridgeSupportTest {
             btcBlockStoreFactory =
                 new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
 
-            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+            bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 activations,
                 logs
@@ -7528,7 +7533,7 @@ class BridgeSupportTest {
                 .build();
         }
 
-        private void setUpReleaseRequests(Coin outpointValue1, Coin outpointValue2, Coin outpointValue3) {
+        private void setUpReleaseRequests() {
             // save utxos in active federation wallet
             List<UTXO> activeFederationUTXOs = List.of(
                 BitcoinTestUtils.createUTXO(1, 0, outpointValue1, activeFederation.getAddress()),
@@ -7555,10 +7560,7 @@ class BridgeSupportTest {
         @Test
         void updateCollections_whenReleasesInQueue_beforeRSKIP305_justEmitsPegoutTransactionCreatedEvent() throws IOException {
             // Arrange
-            Coin outpointValue1 = Coin.valueOf(300_000);
-            Coin outpointValue2 = Coin.valueOf(150_000);
-            Coin outpointValue3 = Coin.valueOf(50_000);
-            setUpReleaseRequests(outpointValue1, outpointValue2, outpointValue3);
+            setUpReleaseRequests();
 
             ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
             setUpWithActivations(lovellActivations);
@@ -7575,13 +7577,9 @@ class BridgeSupportTest {
         }
 
         @Test
-        void updateCollections_whenReleasesInQueue_afterRSKIP305_processReleaseTransactionInfo() throws IOException {
+        void updateCollections_whenReleasesInQueueAndLegacyFed_afterRSKIP305_shouldSetRedeemDataInScriptSigAndProcessReleaseTransactionInfo() throws IOException {
             // Arrange
-            Coin outpointValue1 = Coin.valueOf(300_000);
-            Coin outpointValue2 = Coin.valueOf(150_000);
-            Coin outpointValue3 = Coin.valueOf(50_000);
-            setUpReleaseRequests(outpointValue1, outpointValue2, outpointValue3);
-
+            setUpReleaseRequests();
             setUpWithActivations(allActivations);
 
             // Act
@@ -7590,6 +7588,39 @@ class BridgeSupportTest {
 
             // Assert
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+
+            // check the active fed redeem script data is in input script sig
+            assertScriptSigHasExpectedInputRedeemData(releaseTransaction.getInput(0), activeFederation.getRedeemScript());
+
+            List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
+            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
+        }
+
+        @Test
+        void updateCollections_whenReleasesInQueueAndSegwitCompatibleFed_shouldSetRedeemDataInWitnessAndProcessReleaseTransactionInfo() throws IOException {
+            // Arrange
+            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+            federationStorageProvider.setNewFederation(activeFederation);
+
+            setUpReleaseRequests();
+            setUpWithActivations(allActivations);
+
+            // Act
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+
+            // Assert
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+
+            // check the active fed redeem script data
+            Script redeemScript = activeFederation.getRedeemScript();
+            int inputIndex = 0;
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                releaseTransaction.getWitness(inputIndex),
+                releaseTransaction.getInput(inputIndex),
+                redeemScript
+            );
+
             List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
             assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
         }
@@ -7600,7 +7631,7 @@ class BridgeSupportTest {
             ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
             setUpWithActivations(lovellActivations);
             Coin amountToSend = Coin.COIN;
-            BtcTransaction pegin = arrangeLegacyPeginFromMultiSig(amountToSend, lovellActivations);
+            BtcTransaction pegin = arrangeLegacyPeginFromMultiSigToActiveFed(amountToSend, lovellActivations);
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -7630,7 +7661,7 @@ class BridgeSupportTest {
             // arrange
             setUpWithActivations(allActivations);
             Coin amountToSend = Coin.COIN;
-            BtcTransaction pegin = arrangeLegacyPeginFromMultiSig(amountToSend, allActivations);
+            BtcTransaction pegin = arrangeLegacyPeginFromMultiSigToActiveFed(amountToSend, allActivations);
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -7646,18 +7677,104 @@ class BridgeSupportTest {
             assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, List.of(amountToSend));
         }
 
-        private BtcTransaction arrangeLegacyPeginFromMultiSig(Coin amountToSend, ActivationConfig.ForBlock activations) throws Exception {
+        @Test
+        void registerBtcTransaction_forRefundableLegacyPeginFromMultisig_withOutputsToLegacyRetiringFedAndSegwitActiveFed_shouldSetRedeemDataInTxWitness() throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            Federation retiringFederation = P2shErpFederationBuilder.builder().build();
+
+            // adding one new key to active fed so redeem scripts are different
+            List<BtcECKey> keys = retiringFederation.getBtcPublicKeys();
+            keys.add(getBtcEcKeyFromSeed("new key"));
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(keys)
+                .build();
+
+            // arrange for both feds being live
+            federationStorageProvider.setOldFederation(retiringFederation);
+            federationStorageProvider.setNewFederation(activeFederation);
+            var blockNumber = federationConstantsMainnet.getFederationActivationAge(allActivations) + 1;
+            var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+                .setNumber(blockNumber)
+                .build();
+            Block currentBlock = Block.createBlockFromHeader(blockHeader, true);
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationConstantsMainnet)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(currentBlock)
+                .withActivations(allActivations)
+                .build();
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(allActivations)
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withRepository(repository)
+                .withProvider(bridgeStorageProvider)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withExecutionBlock(currentBlock)
+                .withEventLogger(bridgeEventLogger)
+                .build();
+
+            // create pegin
+            Coin amountToSendToActiveFed = Coin.COIN;
+            BtcTransaction pegin = createLegacyPeginFromMultiSigToActiveFed(amountToSendToActiveFed);
+            Coin amountToSendToRetiringFed = amountToSendToActiveFed.div(2);
+            pegin.addOutput(amountToSendToRetiringFed, retiringFederation.getAddress());
+            setUpForTransactionRegistration(pegin, allActivations);
+
+            // act
+            bridgeSupport.registerBtcTransaction(
+                tx,
+                pegin.bitcoinSerialize(),
+                pegoutTxIndexActivationHeight,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+            bridgeSupport.save();
+
+            // assert
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, List.of(amountToSendToActiveFed, amountToSendToRetiringFed));
+
+            // release should have two inputs, one related to the active fed and one to the retiring fed
+            assertEquals(2, releaseTransaction.getInputs().size());
+            // since active fed is segwit compatible, redeem data should be in the witness
+            // first input data should belong to active fed
+            Script activeFedRedeemScript = activeFederation.getRedeemScript();
+            int activeFedInputIndex = 0;
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                releaseTransaction.getWitness(activeFedInputIndex),
+                releaseTransaction.getInput(activeFedInputIndex),
+                activeFedRedeemScript
+            );
+
+            // second input data should belong to retiring fed
+            Script retiringFedRedeemScript = retiringFederation.getRedeemScript();
+            int retiringFedInputIndex = 1;
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                releaseTransaction.getWitness(retiringFedInputIndex),
+                releaseTransaction.getInput(retiringFedInputIndex),
+                retiringFedRedeemScript
+            );
+        }
+
+        private BtcTransaction arrangeLegacyPeginFromMultiSigToActiveFed(Coin amountToSend, ActivationConfig.ForBlock activations) throws Exception {
+            BtcTransaction pegin = createLegacyPeginFromMultiSigToActiveFed(amountToSend);
+            setUpForTransactionRegistration(pegin, activations);
+
+            return pegin;
+        }
+
+        private BtcTransaction createLegacyPeginFromMultiSigToActiveFed(Coin amountToSend) {
             BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
             List<BtcECKey> pubKeys = Arrays.asList(
                 getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_1"),
                 getBtcEcKeyFromSeed("legacy_pegin_p2sh_multisig_key_2")
             );
             Script redeemScript = ScriptBuilder.createRedeemScript(2, pubKeys);
-            Script scriptSig = BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript(redeemScript);
+            Script scriptSig = BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
             pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
             pegin.addOutput(amountToSend, activeFederation.getAddress());
-
-            setUpForTransactionRegistration(pegin, activations);
 
             return pegin;
         }

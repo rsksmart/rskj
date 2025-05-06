@@ -19,8 +19,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.peg.federation.FederationFormatVersion;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -28,6 +31,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Given a set of UTXOs, a ReleaseTransactionBuilder
@@ -74,19 +80,32 @@ public class ReleaseTransactionBuilder {
 
     private final NetworkParameters params;
     private final Wallet wallet;
+    private final int federationFormatVersion;
     private final Address changeAddress;
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
 
+    /**
+     * Creates a release transaction builder.
+     *
+     * @param params                        network params
+     * @param wallet                        wallet to be used to build the release tx
+     * @param federationFormatVersion       needed to correctly set the redeem input data (script sig for legacy fed, witness for segwit fed)
+     * @param feePerKb                      fee per kb
+     * @param activations                   activations
+     * @return federation member's public key
+     */
     public ReleaseTransactionBuilder(
         NetworkParameters params,
         Wallet wallet,
+        int federationFormatVersion,
         Address changeAddress,
         Coin feePerKb,
         ActivationConfig.ForBlock activations
     ) {
         this.params = params;
         this.wallet = wallet;
+        this.federationFormatVersion = federationFormatVersion;
         this.changeAddress = changeAddress;
         this.feePerKb = feePerKb;
         this.activations = activations;
@@ -129,24 +148,15 @@ public class ReleaseTransactionBuilder {
     }
 
     private BuildResult buildWithConfiguration(
-            SendRequestConfigurator sendRequestConfigurator,
-            String operationDescription) {
-
+        SendRequestConfigurator sendRequestConfigurator,
+        String operationDescription
+    ) {
         // Build a tx and send request and configure it
-        BtcTransaction btcTx = new BtcTransaction(params);
-
-        if (activations.isActive(ConsensusRule.RSKIP201)) {
-            btcTx.setVersion(BTC_TX_VERSION_2);
-        }
-
-        SendRequest sr = SendRequest.forTx(btcTx);
-        // Default settings
-        defaultSettingsConfigurator.configure(sr);
-        // Specific settings
-        sendRequestConfigurator.configure(sr);
+        BtcTransaction btcTx = setDefaultTxConfig();
+        SendRequest sr = setSrConfiguration(sendRequestConfigurator, btcTx);
 
         try {
-            wallet.completeTx(sr);
+            completeTx(sr);
 
             // Disconnect input from output because we don't need the reference and it interferes serialization
             for (TransactionInput transactionInput : btcTx.getInputs()) {
@@ -184,6 +194,52 @@ public class ReleaseTransactionBuilder {
             // Comment out panic logging for now
             // panicProcessor.panic("utxoprovider", "UTXO provider exception " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.UTXO_PROVIDER_EXCEPTION);
+        }
+    }
+
+    private BtcTransaction setDefaultTxConfig() {
+        // Build a tx and send request and configure it
+        BtcTransaction btcTx = new BtcTransaction(params);
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
+            btcTx.setVersion(BTC_TX_VERSION_2);
+        }
+
+        return btcTx;
+    }
+
+    private SendRequest setSrConfiguration(SendRequestConfigurator sendRequestConfigurator, BtcTransaction btcTx) {
+        SendRequest sr = SendRequest.forTx(btcTx);
+        // Default settings
+        defaultSettingsConfigurator.configure(sr);
+        // Specific settings
+        sendRequestConfigurator.configure(sr);
+
+        if (federationFormatVersion == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            sr.signInputs = false;
+            sr.isSegwitCompatible = true;
+        }
+
+        return sr;
+    }
+
+    private void completeTx(SendRequest sr) throws InsufficientMoneyException {
+        wallet.completeTx(sr);
+
+        if (!sr.isSegwitCompatible) {
+            return;
+        }
+
+        signSegwitTxInputs(sr.tx);
+    }
+
+    private void signSegwitTxInputs(BtcTransaction tx) {
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            TransactionInput txInput = tx.getInput(i);
+            RedeemData redeemData = txInput.getConnectedRedeemData(wallet);
+            checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txInput.getOutpoint().getHash());
+            Script redeemScript = redeemData.redeemScript;
+
+            addSpendingFederationBaseScript(tx, i, redeemScript, federationFormatVersion);
         }
     }
 

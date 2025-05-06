@@ -1,26 +1,27 @@
 package co.rsk.peg;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.trie.Trie;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
@@ -107,65 +108,39 @@ public final class BridgeSupportTestUtil {
         when(currentStored.getHeight()).thenReturn(headHeight);
     }
 
-    public static Keccak256 getFlyoverDerivationHash(
-        ActivationConfig.ForBlock activations,
-        Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
-        Address lpBtcAddress,
-        RskAddress lbcAddress
-    ) {
-        byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
-        byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
-        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
-        byte[] lbcAddressBytes = lbcAddress.getBytes();
-        byte[] result = new byte[
-            flyoverDerivationHashData.length +
-                userRefundAddressBytes.length +
-                lpBtcAddressBytes.length +
-                lbcAddressBytes.length
-            ];
-
-        int dstPosition = 0;
-
-        System.arraycopy(
-            flyoverDerivationHashData,
-            0,
-            result,
-            dstPosition,
-            flyoverDerivationHashData.length
-        );
-        dstPosition += flyoverDerivationHashData.length;
-
-        System.arraycopy(
-            userRefundAddressBytes,
-            0,
-            result,
-            dstPosition,
-            userRefundAddressBytes.length
-        );
-        dstPosition += userRefundAddressBytes.length;
-
-        System.arraycopy(
-            lbcAddressBytes,
-            0,
-            result,
-            dstPosition,
-            lbcAddressBytes.length
-        );
-        dstPosition += lbcAddressBytes.length;
-
-        System.arraycopy(
-            lpBtcAddressBytes,
-            0,
-            result,
-            dstPosition,
-            lpBtcAddressBytes.length
-        );
-
-        return new Keccak256(HashUtil.keccak256(result));
-    }
-
     public static DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
         return RELEASES_OUTPOINTS_VALUES.getCompoundKey("-", releaseTxHash.toString());
+    }
+
+    public static BtcTransaction getReleaseFromPegoutsWFC(BridgeStorageProvider bridgeStorageProvider) throws IOException {
+        // we assume that the only present release is the expected one
+        PegoutsWaitingForConfirmations pegoutsWFC = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutsWFCEntries = pegoutsWFC.getEntries();
+        Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutsWFCEntries.iterator();
+        PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
+
+        return pegoutEntry.getBtcTransaction();
+    }
+
+    public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
+        // assert last push has the redeem script
+        int redeemScriptIndex = witness.getPushCount() - 1;
+        byte[] redeemData = witness.getPush(redeemScriptIndex);
+        assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
+
+        // assert the script sig has expected fixed redeem script data
+        byte[] redeemScriptHash = Sha256Hash.hash(expectedRedeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(redeemScriptHash).build();
+        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build();
+        Script actualScriptSig = input.getScriptSig();
+        assertEquals(oneChunkSegwitScriptSig, actualScriptSig);
+    }
+
+    public static void assertScriptSigHasExpectedInputRedeemData(TransactionInput input, Script expectedRedeemScript) {
+        List<ScriptChunk> scriptSigChunks = input.getScriptSig().getChunks();
+        int redeemScriptIndex = scriptSigChunks.size() - 1;
+        byte[] redeemData = scriptSigChunks.get(redeemScriptIndex).data;
+
+        assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
     }
 }

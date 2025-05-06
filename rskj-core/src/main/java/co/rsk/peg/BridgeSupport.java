@@ -70,7 +70,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
@@ -514,9 +513,13 @@ public class BridgeSupport {
         }
     }
 
-    private void handleRefundablePegin(BtcTransaction btcTx, Keccak256 rskTxHash,
-        PeginEvaluationResult peginEvaluationResult, Address btcRefundAddress)
-        throws IOException {
+    private void handleRefundablePegin(
+        BtcTransaction btcTx,
+        Keccak256 rskTxHash,
+        PeginEvaluationResult peginEvaluationResult,
+        Address btcRefundAddress
+    ) throws IOException {
+
         RejectedPeginReason rejectedPeginReason = peginEvaluationResult.getRejectedPeginReason()
             .orElseThrow(() -> {
                 // This flow should never be reached. There should always be a rejected pegin reason.
@@ -1143,7 +1146,7 @@ public class BridgeSupport {
         // add outputs to proposed fed and proposed fed with flyover prefix
         svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
         Address proposedFederationWithFlyoverPrefixAddress =
-            getFlyoverAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation.getRedeemScript());
+            getFlyoverFederationAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation);
         svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederationWithFlyoverPrefixAddress);
 
         // complete tx with input and change output
@@ -1184,21 +1187,25 @@ public class BridgeSupport {
         svpSpendTransaction.setVersion(BTC_TX_VERSION_2);
 
         Script proposedFederationRedeemScript = proposedFederation.getRedeemScript();
+        int proposedFederationFormatVersion = proposedFederation.getFormatVersion();
+
         TransactionOutput outputToProposedFed = searchForOutput(
             svpFundTxSigned.getOutputs(),
             proposedFederation.getP2SHScript()
         ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to proposed federation was not found in fund transaction."));
         svpSpendTransaction.addInput(outputToProposedFed);
-        svpSpendTransaction.getInput(0).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(proposedFederationRedeemScript));
+        int proposedFederationInputIndex = 0;
+        addSpendingFederationBaseScript(svpSpendTransaction, proposedFederationInputIndex, proposedFederationRedeemScript, proposedFederationFormatVersion);
 
-        Script flyoverRedeemScript = getFlyoverRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
-        Script flyoverOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverFederationRedeemScript = getFlyoverFederationRedeemScript(bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederationRedeemScript);
+        Script flyoverOutputScript = getFlyoverFederationOutputScript(proposedFederationFormatVersion, flyoverFederationRedeemScript);
         TransactionOutput outputToFlyoverProposedFed = searchForOutput(
             svpFundTxSigned.getOutputs(),
             flyoverOutputScript
         ).orElseThrow(() -> new IllegalStateException("[createSvpSpendTransaction] Output to flyover proposed federation was not found in fund transaction."));
         svpSpendTransaction.addInput(outputToFlyoverProposedFed);
-        svpSpendTransaction.getInput(1).setScriptSig(createBaseP2SHInputScriptThatSpendsFromRedeemScript(flyoverRedeemScript));
+        int flyoverFederationInputIndex = 1;
+        addSpendingFederationBaseScript(svpSpendTransaction, flyoverFederationInputIndex, flyoverFederationRedeemScript, proposedFederation.getFormatVersion());
 
         Coin valueSentToProposedFed = outputToProposedFed.getValue();
         Coin valueSentToFlyoverProposedFed = outputToFlyoverProposedFed.getValue();
@@ -1377,10 +1384,12 @@ public class BridgeSupport {
             return;
         }
 
-        // Pegouts are attempted using the currently active federation wallet.
+        // Pegouts are attempted using the currently active federation.
+        int activeFederationFormatVersion = getActiveFederation().getFormatVersion();
         final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 btcContext.getParams(),
                 activeFederationWallet,
+                activeFederationFormatVersion,
                 getActiveFederationAddress(),
                 getFeePerKb(),
                 activations
@@ -1511,7 +1520,8 @@ public class BridgeSupport {
         List<UTXO> utxosToUse,
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations,
         Wallet wallet,
-        Transaction rskTx) {
+        Transaction rskTx
+    ) {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
@@ -2670,7 +2680,8 @@ public class BridgeSupport {
             derivationArgumentsHash,
             userRefundAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
         logger.debug("[registerFlyoverBtcTransaction] flyover derivation hash: {}", flyoverDerivationHash);
 
@@ -2750,22 +2761,23 @@ public class BridgeSupport {
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
             InternalTransaction internalTx = (InternalTransaction) rskTx;
             logger.info("[registerFlyoverBtcTransaction] Locking cap surpassed, going to return funds!");
-            List<FlyoverFederationInformation> fbFederations = flyoverRetiringFederationInformation.isPresent() ?
-                Arrays.asList(flyoverActiveFederationInformation, flyoverRetiringFederationInformation.get()) :
-                Collections.singletonList(flyoverActiveFederationInformation);
+            List<FlyoverFederationInformation> fbFederations = flyoverRetiringFederationInformation
+                .map(flyoverFederationInformation -> Arrays.asList(flyoverActiveFederationInformation, flyoverFederationInformation))
+                .orElseGet(() -> Collections.singletonList(flyoverActiveFederationInformation));
             WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations);
 
             provider.markFlyoverDerivationHashAsUsed(btcTxHashWithoutWitness, flyoverDerivationHash);
 
+            Keccak256 rskTxHash = new Keccak256(internalTx.getOriginHash());
             if (shouldTransferToContract) {
                 logger.debug("[registerFlyoverBtcTransaction] Returning to liquidity provider");
-                generateRejectionRelease(btcTx, lpBtcAddress, addresses, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
+                generateFlyoverRejectionReleaseWithWalletProvider(btcTx, lpBtcAddress, flyoverDerivationHash, addresses, rskTxHash, totalAmount, walletProvider);
                 return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value());
-            } else {
-                logger.debug("[registerFlyoverBtcTransaction] Returning to user");
-                generateRejectionRelease(btcTx, userRefundAddress, addresses, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
-                return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value());
             }
+
+            logger.debug("[registerFlyoverBtcTransaction] Returning to user");
+            generateFlyoverRejectionReleaseWithWalletProvider(btcTx, userRefundAddress, flyoverDerivationHash, addresses, rskTxHash, totalAmount, walletProvider);
+            return BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value());
         }
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
@@ -2833,7 +2845,7 @@ public class BridgeSupport {
             federationRedeemScript
         );
 
-        Script flyoverP2shOutputScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverP2shOutputScript = getFlyoverFederationOutputScript(federation.getFormatVersion(), flyoverRedeemScript);
 
         return new FlyoverFederationInformation(
             flyoverDerivationHash,
@@ -2867,63 +2879,6 @@ public class BridgeSupport {
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
 
         return wallet;
-    }
-
-    protected Keccak256 getFlyoverDerivationHash(
-        Keccak256 derivationArgumentsHash,
-        Address userRefundAddress,
-        Address lpBtcAddress,
-        RskAddress lbcAddress
-    ) {
-        byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
-        byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
-        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
-        byte[] lbcAddressBytes = lbcAddress.getBytes();
-        byte[] result = new byte[
-            flyoverDerivationHashData.length +
-            userRefundAddressBytes.length +
-            lpBtcAddressBytes.length +
-            lbcAddressBytes.length
-        ];
-
-        int dstPosition = 0;
-
-        System.arraycopy(
-            flyoverDerivationHashData,
-            0,
-            result,
-            dstPosition,
-            flyoverDerivationHashData.length
-        );
-        dstPosition += flyoverDerivationHashData.length;
-
-        System.arraycopy(
-            userRefundAddressBytes,
-            0,
-            result,
-            dstPosition,
-            userRefundAddressBytes.length
-        );
-        dstPosition += userRefundAddressBytes.length;
-
-        System.arraycopy(
-            lbcAddressBytes,
-            0,
-            result,
-            dstPosition,
-            lbcAddressBytes.length
-        );
-        dstPosition += lbcAddressBytes.length;
-
-        System.arraycopy(
-            lpBtcAddressBytes,
-            0,
-            result,
-            dstPosition,
-            lpBtcAddressBytes.length
-        );
-
-        return new Keccak256(HashUtil.keccak256(result));
     }
 
    // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
@@ -3049,17 +3004,116 @@ public class BridgeSupport {
         }
     }
 
-    private void generateRejectionRelease(
+    private void generateRejectionReleaseWithWalletProvider(
         BtcTransaction btcTx,
         Address btcRefundAddress,
+        Keccak256 rskTxHash,
+        Coin totalAmount,
+        WalletProvider walletProvider
+    ) throws IOException {
+        // non-flyover wallet provider implementation does not use the addresses
+        List<Address> emptyList = new ArrayList<>();
+        Wallet wallet = walletProvider.provide(btcTx, emptyList);
+
+        Federation federation = getFederationFromTxOutputs(btcTx);
+        generateRejectionReleaseFromFederation(btcTx, btcRefundAddress, federation, rskTxHash, totalAmount, wallet);
+    }
+
+    // Having to create a rejection release with outputs for both
+    // p2sh-erp retiring fed and p2sh-p2wsh-erp active fed would be problematic
+    // since the redeem input data goes in different places
+    // (script sig when legacy, witness when segwit).
+    // The decision for this scenario is to choose the active federation format version.
+    //
+    // Disclaimer: a transaction like this will never be correctly signed,
+    // because the addSignature method signs all the tx inputs with the received key,
+    // so we don't really care about this very rare case.
+    // But it's worth to explain the decision and the expected behaviour.
+    private Federation getFederationFromTxOutputs(BtcTransaction btcTx) {
+        // checking against active fed first
+        Federation activeFederation = getActiveFederation();
+        if (outputsMatchFederation(btcTx, activeFederation)){
+            return activeFederation;
+        }
+
+        // and then against retiring fed
+        Federation retiringFederation = getRetiringFederation();
+        if (retiringFederation != null && outputsMatchFederation(btcTx, retiringFederation)) {
+            return retiringFederation;
+        }
+
+        throw new IllegalStateException("Couldn't extract federation from btcTx outputs.");
+    }
+
+    private boolean outputsMatchFederation(BtcTransaction btcTx, Federation federation) {
+        for (TransactionOutput output : btcTx.getOutputs()) {
+            Address extractedAddress = output.getAddressFromP2SH(networkParameters);
+
+            if (extractedAddress != null && extractedAddress.equals(federation.getAddress())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void generateFlyoverRejectionReleaseWithWalletProvider(
+        BtcTransaction btcTx,
+        Address btcRefundAddress,
+        Keccak256 flyoverDerivationHash,
         List<Address> spendingAddresses,
         Keccak256 rskTxHash,
         Coin totalAmount,
-        WalletProvider walletProvider) throws IOException {
+        WalletProvider walletProvider
+    ) throws IOException {
+        Wallet wallet = walletProvider.provide(btcTx, spendingAddresses);
+
+        Federation federation = getFlyoverFederationFromTxOutputs(flyoverDerivationHash, btcTx);
+        generateRejectionReleaseFromFederation(btcTx, btcRefundAddress, federation, rskTxHash, totalAmount, wallet);
+    }
+
+    /**
+     * same comment as for {@link #getFederationFromTxOutputs(BtcTransaction)}
+     */
+    private Federation getFlyoverFederationFromTxOutputs(Keccak256 flyoverDerivationHash, BtcTransaction btcTx) {
+        Federation activeFederation = getActiveFederation();
+        if (outputsMatchFlyoverFederation(btcTx, activeFederation, flyoverDerivationHash)){
+            return activeFederation;
+        }
+
+        Federation retiringFederation = getRetiringFederation();
+        if (retiringFederation != null && outputsMatchFlyoverFederation(btcTx, retiringFederation, flyoverDerivationHash)) {
+            return retiringFederation;
+        }
+
+        throw new IllegalStateException("Couldn't extract federation from btcTx outputs.");
+    }
+
+    private boolean outputsMatchFlyoverFederation(BtcTransaction btcTx, Federation federation, Keccak256 flyoverDerivationHash) {
+        for (TransactionOutput output : btcTx.getOutputs()) {
+            Address extractedAddress = output.getAddressFromP2SH(networkParameters);
+            Address flyoverFederationAddress = getFlyoverFederationAddress(networkParameters, flyoverDerivationHash, federation);
+            if (extractedAddress != null && extractedAddress.equals(flyoverFederationAddress)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void generateRejectionReleaseFromFederation(
+        BtcTransaction btcTx,
+        Address btcRefundAddress,
+        Federation federation,
+        Keccak256 rskTxHash,
+        Coin totalAmount,
+        Wallet wallet
+    ) throws IOException {
 
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
             btcContext.getParams(),
-            walletProvider.provide(btcTx, spendingAddresses),
+            wallet,
+            federation.getFormatVersion(),
             btcRefundAddress,
             getFeePerKb(),
             activations
@@ -3068,7 +3122,7 @@ public class BridgeSupport {
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
         if (buildReturnResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.warn(
-                "[generateRejectionRelease] Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}",
+                "[generateRejectionReleaseFromFederation] Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}",
                 buildReturnResult.getResponseCode(),
                 btcTx.getHash(),
                 btcRefundAddress,
@@ -3079,16 +3133,15 @@ public class BridgeSupport {
             return;
         }
 
-        BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
-
         logger.info(
-            "[generateRejectionRelease] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
+            "[generateRejectionReleaseFromFederation] Rejecting peg-in tx built successfully: Refund to address: {}. RskTxHash: {}. Value {}.",
             btcRefundAddress,
             rskTxHash,
             totalAmount
         );
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
+        BtcTransaction refundPegoutTransaction = buildReturnResult.getBtcTx();
         settleReleaseRejection(pegoutsWaitingForConfirmations, refundPegoutTransaction, rskTxHash, totalAmount);
     }
 
@@ -3104,10 +3157,10 @@ public class BridgeSupport {
         Keccak256 rskTxHash,
         Coin totalAmount
     ) throws IOException {
-        WalletProvider createWallet = (BtcTransaction btcTransaction, List<Address> addresses) -> {
+        WalletProvider walletProvider = (BtcTransaction btcTransaction, List<Address> addresses) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
-            List<UTXO> utxosToUs = btcTx.getWalletOutputs(
+            List<UTXO> utxosToUse = btcTx.getWalletOutputs(
                 getNoSpendWalletForLiveFederations(false)
             )
                 .stream()
@@ -3124,10 +3177,10 @@ public class BridgeSupport {
                 .toList();
             // Use the list of UTXOs to build a transaction builder
             // for the return btc transaction generation
-            return getUTXOBasedWalletForLiveFederations(utxosToUs, false);
+            return getUTXOBasedWalletForLiveFederations(utxosToUse, false);
         };
 
-        generateRejectionRelease(btcTx, senderBtcAddress, null, rskTxHash, totalAmount, createWallet);
+        generateRejectionReleaseWithWalletProvider(btcTx, senderBtcAddress, rskTxHash, totalAmount, walletProvider);
     }
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {
