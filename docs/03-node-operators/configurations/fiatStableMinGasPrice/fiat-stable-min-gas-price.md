@@ -127,7 +127,7 @@ Miner configurations depends on the desired method used to request the min gas p
 
 Configurations for using HTTP to request the min gas price
 
-```yaml
+```
 miner {
     stableGasPrice {
         enabled = false
@@ -144,36 +144,53 @@ miner {
             }
         }
 				
-		minStableGasPrice = 4265280000000 # 0.00000426528 USD per gas unit
+        minStableGasPrice = 4265280000000 # 0.00000426528 USD per gas unit
         # The time the miner client will wait to refresh price from the source.
         # Value's type is `Duration`, e.g. 1.1 seconds, 2.5 minutes, 3 hours, 4 days.
         refreshRate = 6 hours
     }
 }
 ```
+
+Parameters for the `source`:
+* `method`: will choose the way of getting the min gas price, in this case through HTTP CALL.
+* `url`: is the HTTP url that will be used to get the min gas price.
+* `jsonPath`: assuming the response type we get from the API is JSON, this is the path to extract the information from the JSON response.
+* `timeout`: wait time to get the response. If the response takes longer than the amount set, an exception will be thrown.
+
 
 **ETH CALL**
 
 Configurations for using ETH CALL to request the min gas price
 
-```yaml
+```
 miner {
     stableGasPrice {
         enabled = false
 
         source {
-	         method = "ETH_CALL"
-	         params {
-	            from: "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd825",
-	            to: "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826",
-	            data: "0x8300df49"
-	         }
+             method = "ETH_CALL"
+             params {
+                from: "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd825",
+                to: "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826",
+                data: "0x8300df49"
+             }
         }
-        
-				minStableGasPrice = 4265280000000 # 0.00000426528 USD per gas unit
+
+        minStableGasPrice = 4265280000000 # 0.00000426528 USD per gas unit
         # The time the miner client will wait to refresh price from the source.
         # Value's type is `Duration`, e.g. 1.1 seconds, 2.5 minutes, 3 hours, 4 days.
         refreshRate = 6 hours
     }
 }
 ```
+
+Parameters for the `source`:
+
+* `method`: will choose the way of getting the min gas price, in this case through ETH CALL, using the smart contracts.
+* `from`: technically not required by the EVM to read state, but it's needed for: 
+  * **Contextual computation**: Some smart contracts behave differently based on the caller (`msg.sender`)
+  * **Simulating gas costs**: `eth_call` can simulate how much gas a given sender would need.
+  * **Fallback behavior**: Some contracts restrict who can call them.
+* `to`: is required because you're calling a specific smart contract. Without to, RSKj wouldn’t know which contract to interact with. 
+* `data`: this is the function that we want to call from the contract.
