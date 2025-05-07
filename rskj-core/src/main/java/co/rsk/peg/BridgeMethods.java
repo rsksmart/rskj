@@ -830,7 +830,7 @@ public enum BridgeMethods {
             new String[]{"address"},
             new String[]{"int"}
         ),
-        fixedCost(24000L),
+        fixedCost(24000L), // TODO: Define final cost
         (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
