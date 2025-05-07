@@ -190,18 +190,7 @@ public class CallTraceTransformer {
         }
         return logInfoResultList;
     }
-
-    private static LogInfoResult fromLogInfo(LogInfo logInfo, int index) {
-        String address = HexUtils.toJsonHex(logInfo.getAddress());
-        List<String> topics = logInfo.getTopics().stream().map(DataWord::getData).map(HexUtils::toJsonHex).toList();
-        String data = HexUtils.toJsonHex(logInfo.getData());
-        return LogInfoResult.builder()
-                .index(index)
-                .address(address)
-                .topics(topics)
-                .data(data)
-                .build();
-    }
+    
     private static LogInfoResult fromLogInfo(LogInfo logInfo) {
         String address = HexUtils.toJsonHex(logInfo.getAddress());
         List<String> topics = logInfo.getTopics().stream().map(DataWord::getData).map(HexUtils::toJsonHex).toList();
