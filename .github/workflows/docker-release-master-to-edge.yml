@@ -1,4 +1,4 @@
-name: Docker image release for edge from master
+name: Docker image release for edge and master tags from master
 
 on:
   push:
@@ -23,6 +23,7 @@ jobs:
           images: rsksmart/rskj
           tags: |
             type=edge
+            type=ref,event=branch
 
       - name: DockerHub login
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
