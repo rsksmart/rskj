@@ -60,6 +60,7 @@ import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.union.UnionResponseCode;
+import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.utils.NonRefundablePeginReason;
@@ -790,24 +791,37 @@ class BridgeSupportTest {
         private static final ActivationConfig.ForBlock lovell = ActivationConfigsForTest.lovell700().forBlock(0);
         private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
-        private static final BridgeConstants constants = BridgeMainNetConstants.getInstance();
+        private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+        private static final UnionBridgeConstants unionBridgeConstants = bridgeConstants.getUnionBridgeConstants();
 
+        private UnionBridgeSupport unionBridgeSupport;
         private BridgeSupport bridgeSupport;
+
+        private static final RskAddress authorizerRskAddress = new RskAddress(
+            ECKey.fromPublicOnly(Hex.decode(
+                    "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
+                .getAddress());
+        private SignatureCache signatureCache;
         private Transaction transaction;
+
         private RskAddress unionBridgeContractAddress;
+
 
         @BeforeEach
         void setUp() {
+            signatureCache = mock(SignatureCache.class);
             unionBridgeSupport = UnionBridgeSupportBuilder.builder()
                 .withActivations(allActivations)
-                .withConstants(constants.getUnionBridgeConstants())
+                .withSignatureCache(signatureCache)
+                .withConstants(unionBridgeConstants)
                 .build();
             bridgeSupport = bridgeSupportBuilder
                 .withUnionBridgeSupport(unionBridgeSupport)
-                .withBridgeConstants(constants)
+                .withBridgeConstants(bridgeConstants)
                 .build();
 
             transaction = mock(Transaction.class);
+            when(transaction.getSender(signatureCache)).thenReturn(authorizerRskAddress);
             unionBridgeContractAddress = TestUtils.generateAddress("unionBridgeContractAddress");
         }
 
@@ -876,7 +890,7 @@ class BridgeSupportTest {
             Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
-            Coin expectedLockingCap = constants.getUnionBridgeConstants().getInitialLockingCap();
+            Coin expectedLockingCap = bridgeConstants.getUnionBridgeConstants().getInitialLockingCap();
 
             assertTrue(actualUnionBridgeLockingCap.isPresent());
             assertEquals(expectedLockingCap, actualUnionBridgeLockingCap.get());
@@ -906,6 +920,38 @@ class BridgeSupportTest {
             // assert
             assertTrue(actualUnionBridgeLockingCap.isPresent());
             assertEquals(storedLockingCap, actualUnionBridgeLockingCap.get());
+        }
+
+        @ParameterizedTest
+        @MethodSource("increaseUnionBridgeLockingCapResponseCodeProvider")
+        void increaseUnionBridgeLockingCap_shouldReturnResultedResponseCode(UnionResponseCode expectedUnionResponseCode) {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(),
+                any())).thenReturn(
+                expectedUnionResponseCode.getCode()
+            );
+            bridgeSupport = bridgeSupportBuilder
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+            Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.SATOSHI);
+
+            // act
+            int actualResult = bridgeSupport.increaseUnionBridgeLockingCap(transaction, newLockingCap);
+
+            // assert
+            assertEquals(UnionResponseCode.SUCCESS.getCode(), actualResult);
+            verify(unionBridgeSupport).increaseLockingCap(transaction, newLockingCap);
+        }
+
+        private static Stream<Arguments> increaseUnionBridgeLockingCapResponseCodeProvider() {
+            return Stream.of(
+                Arguments.of(UnionResponseCode.SUCCESS),
+                Arguments.of(UnionResponseCode.INVALID_VALUE),
+                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER)
+            );
         }
 
         @Test
