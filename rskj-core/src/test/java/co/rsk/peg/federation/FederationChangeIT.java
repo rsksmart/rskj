@@ -223,7 +223,7 @@ class FederationChangeIT {
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
         var blockNumber = 0L;
-        currentBlock = getBlockWithBlockNumber(blockNumber);
+        currentBlock = buildBlock(blockNumber);
 
         federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
@@ -463,7 +463,7 @@ class FederationChangeIT {
         // Move the required blocks ahead for the new powpeg to become active
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(ACTIVATIONS);
-        currentBlock = getBlockWithBlockNumber(blockNumber);
+        currentBlock = buildBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -473,7 +473,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationBegin() + 1L;
-        currentBlock = getBlockWithBlockNumber(blockNumber);
+        currentBlock = buildBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -483,7 +483,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationEnd(ACTIVATIONS) + 1L;
-        currentBlock = getBlockWithBlockNumber(blockNumber);
+        currentBlock = buildBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
 
