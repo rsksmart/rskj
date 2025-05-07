@@ -2,13 +2,16 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
+import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
@@ -268,7 +271,7 @@ class BitcoinUtilsTest {
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
@@ -293,7 +296,7 @@ class BitcoinUtilsTest {
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
@@ -324,7 +327,7 @@ class BitcoinUtilsTest {
         int outputIndex = 0;
         for (int i = 0; i < numberOfInputs; i++) {
             migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
-            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
+            TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
             migrationTx.setWitness(i, witness);
         }
 
@@ -351,7 +354,7 @@ class BitcoinUtilsTest {
         int numberOfInputAndOutputs = 3;
         for (int i = 0; i < numberOfInputAndOutputs; i++) {
             btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
-            TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+            TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
             btcTx.setWitness(i, witness);
             btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
         }
@@ -381,7 +384,7 @@ class BitcoinUtilsTest {
         Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
 
-        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(anotherRedeemScript);
+        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(anotherRedeemScript);
         btcTx.setWitness(1, witness);
 
         // Act
@@ -407,7 +410,7 @@ class BitcoinUtilsTest {
         Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
         migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-        TransactionWitness witness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
+        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
         migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
 
         Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();
@@ -540,6 +543,299 @@ class BitcoinUtilsTest {
             // Assert
             assertTrue(redeemScript.isPresent());
             assertEquals(expectedRedeemScript, redeemScript.get());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("test sig insertion index and sign input methods for legacy and segwit feds")
+    class Signing {
+        private final List<BtcECKey> federationSignersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"
+        }, true); // we need the priv keys
+        private final BtcECKey firstFederatorSigningKey = federationSignersKeys.get(0);
+        private final BtcECKey secondFederatorSigningKey = federationSignersKeys.get(1);
+        private final BtcECKey thirdFederatorSigningKey = federationSignersKeys.get(2);
+        private final byte[] emptyByte = new byte[] {};
+        private final int inputIndex = 0; // our tx will just have one input
+
+        private BtcTransaction tx;
+        private List<Sha256Hash> sigHashes;
+        private Sha256Hash sigHash;
+
+        private void setUp(Federation federation) {
+            BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
+            prevTx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+            Coin prevValue = Coin.COIN;
+            prevTx.addOutput(prevValue, federation.getAddress());
+
+            tx = new BtcTransaction(btcMainnetParams);
+            tx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+            tx.addInput(prevTx.getOutput(0));
+
+            addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
+
+            sigHashes = generateTransactionInputsSigHashes(tx);
+            sigHash = sigHashes.get(inputIndex);
+        }
+
+        @ParameterizedTest
+        @MethodSource("federationArgs")
+        void getSigInsertionIndex_forFirstAndSecondFederators_shouldReturnCorrectInsertionIndex(Federation federation) {
+            // arrange
+            setUp(federation);
+
+            // act & assert
+            // index for first federator
+            // should be 0
+            int firstFederatorSigInsertionIndex = getSigInsertionIndex(tx, inputIndex, sigHash, firstFederatorSigningKey);
+
+            int expectedFirstFederatorSigInsertionIndex = 0;
+            assertEquals(expectedFirstFederatorSigInsertionIndex, firstFederatorSigInsertionIndex);
+
+            // index for second federator
+            // when there are no signatures added yet
+            // should be 0
+            int expectedSecondFederatorSigInsertionIndex = 0;
+            assertEquals(expectedSecondFederatorSigInsertionIndex, getSigInsertionIndex(tx, inputIndex, sigHash, secondFederatorSigningKey));
+
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, federation.getP2SHScript());
+            // after signing with first federator,
+            // second fed sig insertion index should be 1
+            expectedSecondFederatorSigInsertionIndex = 1;
+            assertEquals(expectedSecondFederatorSigInsertionIndex, getSigInsertionIndex(tx, inputIndex, sigHash, secondFederatorSigningKey));
+        }
+
+        private static Stream<Federation> federationArgs() {
+            return Stream.of(
+                P2shErpFederationBuilder.builder().build(),
+                P2shP2wshErpFederationBuilder.builder().build()
+            );
+        }
+
+        @Test
+        void signInput_forFirstAndSecondFederators_legacyFed_shouldSignInTheCorrectOrder() {
+            // arrange
+            Federation federation = P2shErpFederationBuilder.builder().build();
+            setUp(federation);
+
+            // act
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, federation.getP2SHScript());
+            // sign with second federator
+            signTxWithKey(secondFederatorSigningKey, federation.getP2SHScript());
+
+            // assert
+            // after signing with second federator,
+            // we should have both sigs placed in corresponding indexes
+            Script scriptSig = tx.getInput(inputIndex).getScriptSig();
+
+            int emptyByteIndex = 0;
+            byte[] firstValue = scriptSig.getChunks().get(emptyByteIndex).data;
+            assertFirstValueIsAnEmptyByte(firstValue);
+
+            int firstFederatorSignatureIndex = 1;
+            assertSigInScriptSig(scriptSig, firstFederatorSigningKey, firstFederatorSignatureIndex);
+
+            int secondFederatorSignatureIndex = 2;
+            assertSigInScriptSig(scriptSig, secondFederatorSigningKey, secondFederatorSignatureIndex);
+        }
+
+        @Test
+        void signInput_forFirstAndSecondFederators_segwitFed_shouldSignInTheCorrectOrder() {
+            // arrange
+            Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+            setUp(federation);
+
+            // act
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, federation.getP2SHScript());
+            // sign with second federator
+            signTxWithKey(secondFederatorSigningKey, federation.getP2SHScript());
+
+            // assert
+            TransactionWitness inputWitness = tx.getWitness(inputIndex);
+
+            int emptyByteIndex = 0;
+            byte[] firstValue = inputWitness.getPush(emptyByteIndex);
+            assertFirstValueIsAnEmptyByte(firstValue);
+
+            // first federator sig
+            int firstFederatorSignatureIndex = 1;
+            assertSigInWitness(inputWitness, firstFederatorSigningKey, firstFederatorSignatureIndex);
+
+            // second federator sig
+            int secondFederatorSignatureIndex = 2;
+            assertSigInWitness(inputWitness, secondFederatorSigningKey, secondFederatorSignatureIndex);
+        }
+
+        @Test
+        void signInput_forSecondAndFirstFederators_legacyFed_shouldSignInTheCorrectOrder() {
+            // arrange
+            Federation federation = P2shErpFederationBuilder.builder().build();
+            setUp(federation);
+
+            // act
+            // sign with second federator
+            signTxWithKey(secondFederatorSigningKey, federation.getP2SHScript());
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, federation.getP2SHScript());
+
+            // assert
+            // after signing with second federator,
+            // we should have both sigs placed in corresponding indexes
+            Script scriptSig = tx.getInput(inputIndex).getScriptSig();
+
+            int emptyByteIndex = 0;
+            byte[] firstValue = scriptSig.getChunks().get(emptyByteIndex).data;
+            assertFirstValueIsAnEmptyByte(firstValue);
+
+            int firstFederatorSignatureIndex = 1;
+            assertSigInScriptSig(scriptSig, firstFederatorSigningKey, firstFederatorSignatureIndex);
+
+            int secondFederatorSignatureIndex = 2;
+            assertSigInScriptSig(scriptSig, secondFederatorSigningKey, secondFederatorSignatureIndex);
+        }
+
+        @Test
+        void signInput_forSecondAndFirstFederators_segwitFed_shouldSignInTheCorrectOrder() {
+            // arrange
+            Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+            setUp(federation);
+
+            // act
+            // sign with second federator
+            signTxWithKey(secondFederatorSigningKey, federation.getP2SHScript());
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, federation.getP2SHScript());
+
+            // assert
+            TransactionWitness inputWitness = tx.getWitness(inputIndex);
+
+            int emptyByteIndex = 0;
+            byte[] firstValue = inputWitness.getPush(emptyByteIndex);
+            assertFirstValueIsAnEmptyByte(firstValue);
+
+            // first federator sig
+            int firstFederatorSignatureIndex = 1;
+            assertSigInWitness(inputWitness, firstFederatorSigningKey, firstFederatorSignatureIndex);
+
+            // second federator sig
+            int secondFederatorSignatureIndex = 2;
+            assertSigInWitness(inputWitness, secondFederatorSigningKey, secondFederatorSignatureIndex);
+        }
+
+        @Test
+        void signInput_forFirstAndThirdAndSecondFederators_legacyFed_shouldSignInTheCorrectOrder() {
+            // arrange
+            Federation federation = P2shErpFederationBuilder.builder().build();
+            setUp(federation);
+
+            // act & assert
+            // sign with first and third federators
+            Script outputScript = federation.getP2SHScript();
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, outputScript);
+            // sign with third federator
+            signTxWithKey(thirdFederatorSigningKey, outputScript);
+
+            Script scriptSig = tx.getInput(inputIndex).getScriptSig();
+
+            int emptyByteIndex = 0;
+            byte[] firstValue = scriptSig.getChunks().get(emptyByteIndex).data;
+            assertFirstValueIsAnEmptyByte(firstValue);
+
+            // first federator sig should be the first one found
+            int firstFederatorSignatureIndex = 1;
+            assertSigInScriptSig(scriptSig, firstFederatorSigningKey, firstFederatorSignatureIndex);
+
+            // third federator sig should be the second one found
+            int thirdFederatorSignatureIndex = 2;
+            assertSigInScriptSig(scriptSig, thirdFederatorSigningKey, thirdFederatorSignatureIndex);
+
+            // sign with second federator
+            signTxWithKey(secondFederatorSigningKey, outputScript);
+            // second federator sig should be the second one found
+            scriptSig = tx.getInput(inputIndex).getScriptSig(); // to get the updated script sig
+            int secondFederatorSignatureIndex = 2;
+            assertSigInScriptSig(scriptSig, secondFederatorSigningKey, secondFederatorSignatureIndex);
+
+            // now, third federator sig should be the third one found
+            thirdFederatorSignatureIndex = 3;
+            assertSigInScriptSig(scriptSig, thirdFederatorSigningKey, thirdFederatorSignatureIndex);
+        }
+
+        @Test
+        void signInput_forFirstAndThirdAndSecondFederators_segwitFed_shouldSignInTheCorrectOrder() {
+            // arrange
+            Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+            setUp(federation);
+
+            // act
+            Script outputScript = federation.getP2SHScript();
+            // sign with first federator
+            signTxWithKey(firstFederatorSigningKey, outputScript);
+            // sign with third federator
+            signTxWithKey(thirdFederatorSigningKey, outputScript);
+
+            // assert
+            TransactionWitness inputWitness = tx.getWitness(inputIndex);
+
+            int emptyByteIndex = 0;
+            byte[] firstValue = inputWitness.getPush(emptyByteIndex);
+            assertFirstValueIsAnEmptyByte(firstValue);
+
+            // first federator sig should be the first one found
+            int firstFederatorSignatureIndex = 1;
+            assertSigInWitness(inputWitness, firstFederatorSigningKey, firstFederatorSignatureIndex);
+
+            // third federator sig should be the second one found
+            int thirdFederatorSignatureIndex = 2;
+            assertSigInWitness(inputWitness, thirdFederatorSigningKey, thirdFederatorSignatureIndex);
+
+            // sign with second federator
+            signTxWithKey(secondFederatorSigningKey, outputScript);
+            // second federator sig should be the second one found
+            inputWitness = tx.getWitness(inputIndex); // to get the updated witness
+            int secondFederatorSignatureIndex = 2;
+            assertSigInWitness(inputWitness, secondFederatorSigningKey, secondFederatorSignatureIndex);
+
+            // now, third federator sig should be the third one found
+            thirdFederatorSignatureIndex = 3;
+            assertSigInWitness(inputWitness, thirdFederatorSigningKey, thirdFederatorSignatureIndex);
+        }
+
+        private void signTxWithKey(BtcECKey signingKey, Script outputScript) {
+            int sigInsertionIndex = getSigInsertionIndex(tx, inputIndex, sigHash, signingKey);
+            List<byte[]> federatorSigs = generateSignerEncodedSignatures(signingKey, sigHashes);
+            byte[] federatorSig = federatorSigs.get(inputIndex);
+
+            TransactionSignature federatorTxSig = new TransactionSignature(BtcECKey.ECDSASignature.decodeFromDER(federatorSig), BtcTransaction.SigHash.ALL, false);
+            signInput(tx, inputIndex, federatorTxSig, sigInsertionIndex, outputScript);
+        }
+
+        private void assertFirstValueIsAnEmptyByte(byte[] data) {
+            assertArrayEquals(emptyByte, data);
+        }
+
+        private void assertSigInScriptSig(Script scriptSig, BtcECKey signingKey, int sigIndex) {
+            ScriptChunk chunkForSignature = scriptSig.getChunks().get(sigIndex);
+            byte[] signature = chunkForSignature.data;
+            checkNotNull(signature);
+
+            assertSig(signingKey, signature);
+        }
+
+        private void assertSigInWitness(TransactionWitness witness, BtcECKey signingKey, int sigIndex) {
+            byte[] pushForSignature = witness.getPush(sigIndex);
+            checkNotNull(pushForSignature);
+            assertSig(signingKey, pushForSignature);
+        }
+
+        private void assertSig(BtcECKey signingKey, byte[] sig) {
+            TransactionSignature firstSignatureDecoded = TransactionSignature.decodeFromBitcoin(sig, false, false);
+            assertTrue(signingKey.verify(sigHash, firstSignatureDecoded));
         }
     }
 
@@ -810,7 +1106,7 @@ class BitcoinUtilsTest {
         transaction.addInput(outpoint);
 
         // act
-        TransactionWitness inputWitness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        TransactionWitness inputWitness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
 
         // assert
         int redeemScriptChunkIndex = inputWitness.getPushCount() - 1;
@@ -847,7 +1143,7 @@ class BitcoinUtilsTest {
         addSpendingFederationBaseScript(transaction, inputIndex, redeemScript, federation.getFormatVersion());
 
         // assert
-        TransactionWitness expectedWitness = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        TransactionWitness expectedWitness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         assertEquals(expectedWitness, transaction.getWitness(inputIndex));
 
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
@@ -886,7 +1182,7 @@ class BitcoinUtilsTest {
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
         Script redeemScript = federation.getRedeemScript();
 
-        Coin prevValue = Coin.valueOf(1000);
+        Coin prevValue = Coin.COIN;
         BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
         fundTransaction.addOutput(prevValue, federation.getAddress());
 
