@@ -133,7 +133,7 @@ public final class BridgeSupportTestUtil {
         return pegoutEntry.getBtcTransaction();
     }
 
-    public static Block getBlockWithBlockNumber(long blockNumber) {
+    public static Block buildBlock(long blockNumber) {
         var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
             .setNumber(blockNumber)
             .build();
