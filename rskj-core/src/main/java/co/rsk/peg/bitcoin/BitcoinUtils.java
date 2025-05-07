@@ -306,6 +306,79 @@ public class BitcoinUtils {
 
         // put signature in witness
         TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
-        inputWitness.setPush(sigInsertionIndex + 1, signature.encodeToBitcoin());
+
+        int sigsPrefixCount = 1;
+        int sigsSuffixCount = 1;
+        List<byte[]> inputWitnessPushesWithSignature = updateWitnessWithSignature(inputWitness, signature.encodeToBitcoin(), sigInsertionIndex, sigsPrefixCount, sigsSuffixCount);
+        inputWitness = TransactionWitness.of(inputWitnessPushesWithSignature);
+        btcTx.setWitness(inputIndex, inputWitness);
+    }
+
+    public static List<byte[]> updateWitnessWithSignature(TransactionWitness inputWitness, byte[] signature, int targetIndex, int sigsPrefixCount, int sigsSuffixCount) {
+
+        int totalChunks = inputWitness.getPushCount();
+
+        byte[] emptyByte = new byte[] {};
+        byte[] secondToLastPush = inputWitness.getPush(totalChunks - sigsSuffixCount - 1);
+
+        boolean hasMissingSigs = Arrays.equals(secondToLastPush, emptyByte);
+        Preconditions.checkArgument(hasMissingSigs, "ScriptSig is already filled with signatures");
+
+        List<byte[]> firstPushes = new ArrayList<>();
+        for (int pushIndex = 0; pushIndex < sigsPrefixCount; pushIndex++) {
+            byte[] push = inputWitness.getPush(pushIndex);
+            firstPushes.add(push);
+        }
+        List<byte[]> finalPushes = new ArrayList<>(firstPushes);
+
+        int pos = 0;
+        boolean inserted = false;
+
+        List<byte[]> secondPushes = new ArrayList<>();
+        for (int pushIndex = sigsPrefixCount; pushIndex < totalChunks - sigsSuffixCount; pushIndex++) {
+            byte[] push = inputWitness.getPush(pushIndex);
+            secondPushes.add(push);
+        }
+        Iterator<byte[]> var11 = secondPushes.iterator();
+
+        byte[] push;
+        while (var11.hasNext()) {
+            push = var11.next();
+            if (pos == targetIndex) {
+                inserted = true;
+                finalPushes.add(signature);
+                ++pos;
+            }
+
+
+            if (!Arrays.equals(push, emptyByte)) {
+                finalPushes.add(push);
+                ++pos;
+            }
+        }
+
+        for(; pos < totalChunks - sigsPrefixCount - sigsSuffixCount; ++pos) {
+            if (pos == targetIndex) {
+                inserted = true;
+                finalPushes.add(signature);
+            } else {
+                finalPushes.add(emptyByte);
+            }
+        }
+
+        List<byte[]> thirdPushes = new ArrayList<>();
+        for (int pushIndex = totalChunks - sigsSuffixCount; pushIndex < totalChunks; pushIndex++) {
+            push = inputWitness.getPush(pushIndex);
+            thirdPushes.add(push);
+        }
+        var11 = thirdPushes.iterator();
+
+        while (var11.hasNext()) {
+            push = var11.next();
+            finalPushes.add(push);
+        }
+
+        Preconditions.checkState(inserted);
+        return finalPushes;
     }
 }

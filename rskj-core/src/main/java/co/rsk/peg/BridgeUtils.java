@@ -576,8 +576,8 @@ public final class BridgeUtils {
     }
 
     private static boolean signatureIsCorrect(BtcECKey federatorPublicKey, Sha256Hash sigHash, byte[] data) {
-        TransactionSignature sig2 = TransactionSignature.decodeFromBitcoin(data, false, false);
-        return federatorPublicKey.verify(sigHash, sig2);
+        TransactionSignature decodedSignature = TransactionSignature.decodeFromBitcoin(data, false, false);
+        return federatorPublicKey.verify(sigHash, decodedSignature);
     }
 
     public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
