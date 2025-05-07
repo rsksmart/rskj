@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
@@ -139,14 +140,6 @@ class UnionBridgeSupportImplTest {
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(allActivations);
         Assertions.assertTrue(actualAddress.isPresent());
         Assertions.assertEquals(expectedAddress, actualAddress.get());
-    }
-
-    private void assertAddressWasStored(RskAddress expectedAddress) {
-        RskAddress actualRskAddress = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            BridgeSerializationUtils::deserializeRskAddress
-        );
-        Assertions.assertEquals(expectedAddress, actualRskAddress);
     }
 
     @ParameterizedTest
@@ -400,6 +393,129 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
+    @MethodSource("unionBridgeConstantsProvider")
+    void increaseLockingCap_preRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldSetLockingButNotStore(
+        UnionBridgeConstants unionBridgeConstants) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(lovell700)
+            .withConstants(unionBridgeConstants)
+            .build();
+
+        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+
+        // act
+        int actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.SUCCESS.getCode());
+        assertNoLockingCapIsStored();
+    }
+
+    @ParameterizedTest
+    @MethodSource("unionBridgeConstantsProvider")
+    void increaseLockingCap_postRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldSetButNotStoreLockingCap(
+        UnionBridgeConstants unionBridgeConstants) {
+        // arrange
+        // Stored a locking cap in the storage to demonstrate that the new locking cap is set but not stored
+        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            initialLockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants)
+            .build();
+
+
+        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+
+        // act
+        int actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.SUCCESS.getCode());
+        assertLockingCapWasSet(newLockingCap);
+        assertLNewLockingCapWasNotStored(newLockingCap);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidLockingCapProvider")
+    void increaseLockingCap_whenInvalidLockingCap_shouldReturnInvalidValue(Coin newLockingCap) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(UnionBridgeMainNetConstants.getInstance())
+            .build();
+
+        // act
+        int actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.INVALID_VALUE.getCode());
+        assertNoLockingCapIsStored();
+    }
+
+    public static Stream<Arguments> invalidLockingCapProvider() {
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+
+        Coin maxRbtc = BridgeMainNetConstants.getInstance().getMaxRbtc();
+        Coin moreThanMaxRbtc = maxRbtc.add(Coin.CENT);
+
+        Coin initialLockingCap = bridgeConstants.getInitialLockingCap();
+        Coin lessThanInitialLockingCap = initialLockingCap.minus(Coin.CENT);
+        Coin maxLockingCap = initialLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
+        Coin moreThanMaxLockingCap = maxLockingCap.add(Coin.CENT);
+
+        return Stream.of(
+            Arguments.of(Coin.NEGATIVE_SATOSHI),
+            Arguments.of(Coin.ZERO),
+            Arguments.of(lessThanInitialLockingCap), // less than the initial locking cap
+            Arguments.of(initialLockingCap),
+            Arguments.of(moreThanMaxLockingCap),
+            Arguments.of(moreThanMaxRbtc)
+        );
+    }
+
+    private void assertLockingCapWasSet(Coin newLockingCap) {
+        Optional<Coin> cacheLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Assertions.assertTrue(cacheLockingCap.isPresent());
+        Assertions.assertEquals(newLockingCap, cacheLockingCap.get());
+    }
+
+    private void assertLNewLockingCapWasNotStored(Coin newLockingCap) {
+        Coin storedLockingCap = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            BridgeSerializationUtils::deserializeCoin
+        );
+        Assertions.assertNotEquals(newLockingCap, storedLockingCap);
+    }
+
+    @Test
+    void increaseLockingCap_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(
+            TestUtils.generateAddress("notAuthorizedAddress"));
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants)
+            .build();
+        Coin initialLockingCap = bridgeConstants.getInitialLockingCap();
+        Coin newLockingCap = initialLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+
+        // act
+        int actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.UNAUTHORIZED_CALLER.getCode());
+        assertNoLockingCapIsStored();
+    }
+
+    @ParameterizedTest
     @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void save_preRSKIP502_shouldSetButDoNotStoreGivenAddress(UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -415,6 +531,7 @@ class UnionBridgeSupportImplTest {
         // assert
         assertAddressWasSet(unionBridgeContractAddress);
         assertNoAddressIsStored();
+        assertNoLockingCapIsStored();
     }
 
     @ParameterizedTest
@@ -428,11 +545,33 @@ class UnionBridgeSupportImplTest {
             unionBridgeContractAddress);
         Assertions.assertEquals(actualResponseCode, UnionResponseCode.SUCCESS.getCode());
 
+        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+        int actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+        Assertions.assertEquals(actualLockingCapResponseCode, UnionResponseCode.SUCCESS.getCode());
+
         // act
         unionBridgeSupport.save();
 
         // assert
         assertAddressWasSet(unionBridgeContractAddress);
         assertAddressWasStored(unionBridgeContractAddress);
+        assertLockingCapWasStored(newLockingCap);
+    }
+
+    private void assertAddressWasStored(RskAddress expectedAddress) {
+        RskAddress actualRskAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        Assertions.assertEquals(expectedAddress, actualRskAddress);
+    }
+
+    private void assertLockingCapWasStored(Coin newLockingCap) {
+        Coin storedLockingCap = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            BridgeSerializationUtils::deserializeCoin
+        );
+        Assertions.assertEquals(newLockingCap, storedLockingCap);
     }
 }

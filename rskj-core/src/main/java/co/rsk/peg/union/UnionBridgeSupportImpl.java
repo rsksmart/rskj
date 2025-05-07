@@ -115,6 +115,53 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
+    public int increaseLockingCap(Transaction tx, Coin newCap) {
+        final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
+
+        if (isUnauthorizedCaller(tx, INCREASE_LOCKING_CAP_TAG)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+        }
+
+        if (isInvalidLockingCap(newCap)) {
+            return UnionResponseCode.INVALID_VALUE.getCode();
+        }
+
+        storageProvider.setLockingCap(newCap);
+        logger.info("[{}] Union Locking Cap has been increased. New value: {}",
+            INCREASE_LOCKING_CAP_TAG, newCap.value);
+        return UnionResponseCode.SUCCESS.getCode();
+    }
+
+    private boolean isInvalidLockingCap(Coin newCap) {
+        Coin currentLockingCap = storageProvider.getLockingCap(activations)
+            .orElse(constants.getInitialLockingCap());
+
+        if (newCap.compareTo(currentLockingCap) < 1) {
+            logger.warn(
+                "[{}] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
+                "isInvalidLockingCap", newCap.value, currentLockingCap.value);
+            return true;
+        }
+
+        Coin maxLockingCapIncreaseAllowed = currentLockingCap.multiply(
+            constants.getLockingCapIncrementsMultiplier());
+        if (newCap.compareTo(maxLockingCapIncreaseAllowed) > 0) {
+            logger.warn(
+                "[{}] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
+                "isInvalidLockingCap", newCap.value, maxLockingCapIncreaseAllowed.value);
+            return true;
+        }
+
+        if (newCap.compareTo(constants.getMaxRbtc()) > 0) {
+            logger.warn(
+                "[{}] Attempted value tries to increase Union Locking Cap above the maximum RBTC value. Value attempted: {} . maxRbtc: {}",
+                "isInvalidLockingCap", newCap.value, constants.getMaxRbtc().value);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void save() {
         storageProvider.save(activations);
     }
