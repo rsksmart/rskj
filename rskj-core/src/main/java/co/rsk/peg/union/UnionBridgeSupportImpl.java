@@ -38,7 +38,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (isEnvironmentDisable()) {
+        if (isEnvironmentDisabled()) {
             return UnionResponseCode.ENVIRONMENT_DISABLED.getCode();
         }
 
@@ -60,7 +60,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return UnionResponseCode.SUCCESS.getCode();
     }
 
-    private boolean isEnvironmentDisable() {
+    private boolean isEnvironmentDisabled() {
         String currentNetworkId = constants.getBtcParams().getId();
 
         boolean isEnvironmentDisable = currentNetworkId.equals(NetworkParameters.ID_MAINNET);
@@ -75,7 +75,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         // Check if the caller is isUnauthorizedCaller to set a new bridge contract address
         AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
         boolean isUnauthorizedCaller = !authorizer.isAuthorized(tx, signatureCache);
-        if (!isUnauthorizedCaller) {
+        if (isUnauthorizedCaller) {
             String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
             logger.warn(LOG_PATTERN, "isUnauthorizedCaller", baseMessage);
         }
@@ -86,7 +86,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isInvalidAddress(RskAddress unionBridgeContractAddress) {
         // Check if the address is valid
         boolean isInvalidAddress = unionBridgeContractAddress == null || unionBridgeContractAddress.equals(EMPTY_ADDRESS);
-        if (!isInvalidAddress) {
+        if (isInvalidAddress) {
             String baseMessage = "Union Bridge Contract Address cannot be null or empty";
             logger.warn(LOG_PATTERN, "isInvalidAddress", baseMessage);
         }
