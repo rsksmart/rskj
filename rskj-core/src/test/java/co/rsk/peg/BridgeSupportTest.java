@@ -7507,7 +7507,7 @@ class BridgeSupportTest {
             Coin feePerKb = Coin.valueOf(10_000L);
             when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
-            currentBlock = getBlockWithBlockNumber(0L);
+            currentBlock = buildBlock(0L);
         }
 
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
@@ -7657,7 +7657,7 @@ class BridgeSupportTest {
 
             // advance blockchain so pegouts have enough confirmations
             var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
-            currentBlock = getBlockWithBlockNumber(blockNumber);
+            currentBlock = buildBlock(blockNumber);
             updateBridgeSupport();
 
             // call update collections so pegouts are moved from wfc to wfs
@@ -7672,7 +7672,7 @@ class BridgeSupportTest {
 
             // advance blockchain to start signing pegout
             var newBlockNumber = currentBlock.getNumber() + 1;
-            currentBlock = getBlockWithBlockNumber(newBlockNumber);
+            currentBlock = buildBlock(newBlockNumber);
             updateBridgeSupport();
 
             // we need to recreate the federators keys to have the priv keys for signing
@@ -7774,7 +7774,7 @@ class BridgeSupportTest {
             federationStorageProvider.setOldFederation(retiringFederation);
             federationStorageProvider.setNewFederation(activeFederation);
             var blockNumber = federationConstantsMainnet.getFederationActivationAge(allActivations) + 1;
-            currentBlock = getBlockWithBlockNumber(blockNumber);
+            currentBlock = buildBlock(blockNumber);
 
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(federationConstantsMainnet)
