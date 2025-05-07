@@ -263,25 +263,4 @@ public class BitcoinTestUtils {
         searchForOutput(outputs, expectedOutputScript)
             .ifPresent(transaction::addInput);
     }
-
-    public static TransactionWitness createBaseWitnessThatSpendsFromErpRedeemScript(Script redeemScript) {
-        //
-        int pushForEmptyByte = 1;
-        int pushForOpNotif = 1;
-        int pushForRedeemScript = 1;
-        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
-        int witnessSize = pushForRedeemScript + pushForOpNotif + numberOfSignaturesRequiredToSpend + pushForEmptyByte;
-
-        List<byte[]> pushes = new ArrayList<>(witnessSize);
-        byte[] emptyByte = {};
-        pushes.add(emptyByte); // OP_0
-
-        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
-            pushes.add(emptyByte);
-        }
-
-        pushes.add(emptyByte); // OP_NOTIF
-        pushes.add(redeemScript.getProgram());
-        return TransactionWitness.of(pushes);
-    }
 }
