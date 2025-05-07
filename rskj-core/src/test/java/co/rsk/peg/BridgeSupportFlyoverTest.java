@@ -987,7 +987,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            currentBlock = getBlockWithBlockNumber(blockNumber);
+            currentBlock = buildBlock(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
@@ -1042,7 +1042,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            currentBlock = getBlockWithBlockNumber(blockNumber);
+            currentBlock = buildBlock(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
