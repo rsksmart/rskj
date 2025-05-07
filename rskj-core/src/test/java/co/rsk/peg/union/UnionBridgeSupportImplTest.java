@@ -3,6 +3,7 @@ package co.rsk.peg.union;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.InMemoryStorage;
@@ -68,15 +69,23 @@ class UnionBridgeSupportImplTest {
         when(rskTx.getSender(signatureCache)).thenReturn(authorizerRskAddress);
     }
 
-    private static Stream<Arguments> unionBridgeConstants() {
+    private static Stream<Arguments> unionBridgeConstantsForSetUnionBridgeContractAddress() {
         return Stream.of(
             Arguments.of(UnionBridgeRegTestConstants.getInstance()),
             Arguments.of(UnionBridgeTestNetConstants.getInstance())
         );
     }
 
+    private static Stream<Arguments> unionBridgeConstantsProvider() {
+        return Stream.of(
+            Arguments.of(UnionBridgeRegTestConstants.getInstance()),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance()),
+            Arguments.of(UnionBridgeMainNetConstants.getInstance())
+        );
+    }
+
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccessCode(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -106,7 +115,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_postRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccess(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -141,7 +150,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -169,7 +178,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_postRSKIP502_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -192,7 +201,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_whenStoredAddress_shouldReturnSuccessCodeButDoNotStoreAnyAddress(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -251,7 +260,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -277,7 +286,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -301,7 +310,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsEmpty_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -325,8 +334,71 @@ class UnionBridgeSupportImplTest {
         assertNoAddressIsStored();
     }
 
+    @Test
+    void getUnionBridgeLockingCap_beforeRSKIP502_shouldReturnEmpty() {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(lovell700)
+            .build();
+
+        // act
+        Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
+
+        // assert
+        Assertions.assertTrue(actualLockingCap.isEmpty());
+        assertNoLockingCapIsStored();
+    }
+
+    private void assertNoLockingCapIsStored() {
+        Coin storedLockingCap = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            BridgeSerializationUtils::deserializeCoin
+        );
+        Assertions.assertNull(storedLockingCap);
+    }
+
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsProvider")
+    void getUnionBridgeLockingCap_whenNoStoredLockingCap_shouldReturnConstantInitialLockingCap(
+        UnionBridgeConstants unionBridgeConstants) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants).build();
+
+        // act
+        Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
+
+        // assert
+        Assertions.assertTrue(actualLockingCap.isPresent());
+        Coin expectedInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        Assertions.assertEquals(expectedInitialLockingCap, actualLockingCap.get());
+        assertNoLockingCapIsStored();
+    }
+
+    @ParameterizedTest
+    @MethodSource("unionBridgeConstantsProvider")
+    void getUnionBridgeLockingCap_whenStoredLockingCap_shouldReturnStoredLockingCap(
+        UnionBridgeConstants unionBridgeConstants) {
+        // arrange
+        Coin expectedLockingCap = Coin.FIFTY_COINS;
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants).build();
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            expectedLockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
+
+        // act
+        Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
+
+        // assert
+        Assertions.assertTrue(actualLockingCap.isPresent());
+        Assertions.assertEquals(expectedLockingCap, actualLockingCap.get());
+    }
+
+    @ParameterizedTest
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void save_preRSKIP502_shouldSetButDoNotStoreGivenAddress(UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -344,7 +416,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstants")
+    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void save_postRSKIP502_shouldSave(UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder

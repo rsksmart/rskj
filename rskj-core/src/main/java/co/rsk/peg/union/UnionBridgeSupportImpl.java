@@ -1,11 +1,14 @@
 package co.rsk.peg.union;
 
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -101,6 +104,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             logger.warn(LOG_PATTERN, "isAddressAlreadyStored", baseMessage);
         }
         return isAddressAlreadyStored;
+    }
+
+    @Override
+    public Optional<Coin> getLockingCap() {
+        if (!activations.isActive(ConsensusRule.RSKIP502)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+            storageProvider.getLockingCap(activations).orElse(constants.getInitialLockingCap()));
     }
 
     @Override
