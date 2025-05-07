@@ -2898,6 +2898,10 @@ public class BridgeSupport {
         return unionBridgeSupport.getLockingCap().orElse(Coin.NEGATIVE_SATOSHI);
     }
 
+    public UnionResponseCode increaseUnionBridgeLockingCap(Transaction tx, Coin newLockingCap) {
+        return unionBridgeSupport.increaseLockingCap(tx, newLockingCap);
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }
