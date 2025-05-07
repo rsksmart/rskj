@@ -419,8 +419,14 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            initialLockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants)
+            .withStorageProvider(unionBridgeStorageProvider)
             .build();
 
 
