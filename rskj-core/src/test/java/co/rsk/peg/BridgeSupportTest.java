@@ -68,6 +68,7 @@ import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
+import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import co.rsk.util.HexUtils;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -786,16 +787,25 @@ class BridgeSupportTest {
     @Tag("unionBridge")
     class UnionBridgeTest {
 
+        private static final ActivationConfig.ForBlock lovell = ActivationConfigsForTest.lovell700().forBlock(0);
+        private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+
+        private static final BridgeConstants constants = BridgeMainNetConstants.getInstance();
+
         private BridgeSupport bridgeSupport;
         private Transaction transaction;
         private RskAddress unionBridgeContractAddress;
 
         @BeforeEach
         void setUp() {
-            unionBridgeSupport = mock(UnionBridgeSupportImpl.class);
-            bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(
-                unionBridgeSupport
-            ).build();
+            unionBridgeSupport = UnionBridgeSupportBuilder.builder()
+                .withActivations(allActivations)
+                .withConstants(constants.getUnionBridgeConstants())
+                .build();
+            bridgeSupport = bridgeSupportBuilder
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .withBridgeConstants(constants)
+                .build();
 
             transaction = mock(Transaction.class);
             unionBridgeContractAddress = TestUtils.generateAddress("unionBridgeContractAddress");
@@ -805,10 +815,14 @@ class BridgeSupportTest {
         @MethodSource("unionResponseCodeProvider")
         void setUnionBridgeContractAddress_shouldReturnResultedResponseCode(UnionResponseCode expectedUnionResponseCode) {
             // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(),
                 any())).thenReturn(
                 expectedUnionResponseCode.getCode()
             );
+            bridgeSupport = bridgeSupportBuilder
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
 
             // act
             int actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction,
@@ -837,7 +851,69 @@ class BridgeSupportTest {
         }
 
         @Test
+        void getUnionBridgeLockingCap_beforeRskip502_shouldReturnEmpty() {
+            // arrange
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(lovell)
+                .withUnionBridgeSupport(
+                    UnionBridgeSupportBuilder
+                        .builder()
+                        .withActivations(lovell)
+                        .build()
+                )
+                .build();
+
+            // act
+            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+
+            // assert
+            assertTrue(actualUnionBridgeLockingCap.isEmpty());
+        }
+
+        @Test
+        void getUnionBridgeLockingCap_whenNoLockingCapIsStored_shouldReturnInitialConstantLockingCapValue() {
+            // act
+            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+
+            // assert
+            Coin expectedLockingCap = constants.getUnionBridgeConstants().getInitialLockingCap();
+
+            assertTrue(actualUnionBridgeLockingCap.isPresent());
+            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap.get());
+        }
+
+        @Test
+        void getUnionBridgeLockingCap_whenStoredLockingCap_shouldReturnStoredLockingCap() {
+            // arrange
+            UnionBridgeStorageProvider unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
+            Coin storedLockingCap = Coin.COIN.multiply(10);
+            when(unionBridgeStorageProvider.getLockingCap(any())).thenReturn(Optional.of(storedLockingCap));
+
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(allActivations)
+                .withUnionBridgeSupport(
+                    UnionBridgeSupportBuilder
+                        .builder()
+                        .withStorageProvider(unionBridgeStorageProvider)
+                        .withActivations(allActivations)
+                        .build()
+                )
+                .build();
+
+            // act
+            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+
+            // assert
+            assertTrue(actualUnionBridgeLockingCap.isPresent());
+            assertEquals(storedLockingCap, actualUnionBridgeLockingCap.get());
+        }
+
+        @Test
         void save() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
+
             // act
             bridgeSupport.save();
 
