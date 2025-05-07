@@ -31,6 +31,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
 import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
+import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
@@ -227,6 +228,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Union Bridge Contract functions
     public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
     public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function INCREASE_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
 
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
@@ -1495,8 +1497,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public long getUnionBridgeLockingCap(Object[] args) {
         logger.trace("getUnionBridgeLockingCap");
-
         return bridgeSupport.getUnionBridgeLockingCap().getValue();
+    }
+
+    public int increaseUnionBridgeLockingCap(Object[] args) {
+        logger.trace("increaseUnionBridgeLockingCap");
+        try {
+            Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
+            return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
+        } catch (BridgeIllegalArgumentException e) {
+            logger.warn("Exception in increaseUnionBridgeLockingCap", e);
+            return UnionResponseCode.INVALID_VALUE.getCode();
+        }
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
