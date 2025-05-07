@@ -45,7 +45,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.ENVIRONMENT_DISABLED.getCode();
         }
 
-        if (isUnauthorizedCaller(tx)) {
+        if (isUnauthorizedCaller(tx, SET_UNION_BRIDGE_ADDRESS_TAG)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
         }
 
@@ -74,12 +74,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isEnvironmentDisable;
     }
 
-    private boolean isUnauthorizedCaller(Transaction tx) {
+    private boolean isUnauthorizedCaller(Transaction tx, String invokedMethod) {
         // Check if the caller is isUnauthorizedCaller to set a new bridge contract address
         AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
         boolean isUnauthorizedCaller = !authorizer.isAuthorized(tx, signatureCache);
         if (!isUnauthorizedCaller) {
-            String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
+            String baseMessage = String.format("Caller is not authorized to invoke %s method. Caller address: %s", invokedMethod, tx.getSender());
             logger.warn(LOG_PATTERN, "isUnauthorizedCaller", baseMessage);
         }
 
@@ -114,6 +114,53 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         return Optional.of(
             storageProvider.getLockingCap(activations).orElse(constants.getInitialLockingCap()));
+    }
+
+    @Override
+    public int increaseLockingCap(Transaction tx, Coin newCap) {
+        final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
+
+        if (isUnauthorizedCaller(tx, INCREASE_LOCKING_CAP_TAG)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+        }
+
+        if (isInvalidLockingCap(newCap)) {
+            return UnionResponseCode.INVALID_VALUE.getCode();
+        }
+
+        storageProvider.setLockingCap(newCap);
+        logger.info("[{}] Union Locking Cap has been increased. New value: {}",
+            INCREASE_LOCKING_CAP_TAG, newCap.value);
+        return UnionResponseCode.SUCCESS.getCode();
+    }
+
+    private boolean isInvalidLockingCap(Coin newCap) {
+        Coin currentLockingCap = storageProvider.getLockingCap(activations)
+            .orElse(constants.getInitialLockingCap());
+
+        if (newCap.compareTo(currentLockingCap) < 1) {
+            logger.warn(
+                "[{}] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
+                "isInvalidLockingCap", newCap.value, currentLockingCap.value);
+            return true;
+        }
+
+        Coin maxLockingCapIncreaseAllowed = currentLockingCap.multiply(
+            constants.getLockingCapIncrementsMultiplier());
+        if (newCap.compareTo(maxLockingCapIncreaseAllowed) > 0) {
+            logger.warn(
+                "[{}] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
+                "isInvalidLockingCap", newCap.value, maxLockingCapIncreaseAllowed.value);
+            return true;
+        }
+
+        if (newCap.compareTo(constants.getMaxRbtc()) > 0) {
+            logger.warn(
+                "[{}] Attempted value tries to increase Union Locking Cap above the maximum RBTC value. Value attempted: {} . maxRbtc: {}",
+                "isInvalidLockingCap", newCap.value, constants.getMaxRbtc().value);
+            return true;
+        }
+        return false;
     }
 
     @Override
