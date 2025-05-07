@@ -18,13 +18,17 @@ import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.FederationMember.KeyType;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.test.builders.BridgeBuilder;
+import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -35,6 +39,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -3454,8 +3460,7 @@ class BridgeTest {
         @Test
         void setUnionBridgeContractAddressForTestnet_afterRSKIP502_emptyArgument_shouldFail() throws VMException {
             int expectedUnionResponseCode = UnionResponseCode.INVALID_VALUE.getCode();
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(
-                expectedUnionResponseCode);
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(expectedUnionResponseCode);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
             byte[] data = function.encode();
