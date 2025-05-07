@@ -822,7 +822,20 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP271),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
-    );
+    ),
+    // Union Bridge Methods
+    SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET(
+        CallTransaction.Function.fromSignature(
+            "setUnionBridgeContractAddressForTestnet",
+            new String[]{"address"},
+            new String[]{"int"}
+        ),
+        fixedCost(24000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    )
+    ;
 
     private static class CallTypeHelper {
         private static final Predicate<MsgType> ALLOW_STATIC_CALL = callType ->
