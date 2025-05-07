@@ -1496,7 +1496,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public long getUnionBridgeLockingCap(Object[] args) {
         logger.trace("getUnionBridgeLockingCap");
 
-        return bridgeSupport.getUnionBridgeLockingCap().getValue();
+        return bridgeSupport.getUnionBridgeLockingCap().orElse(Coin.NEGATIVE_SATOSHI).getValue();
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
