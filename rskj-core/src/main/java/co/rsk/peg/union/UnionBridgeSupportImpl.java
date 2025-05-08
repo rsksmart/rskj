@@ -5,7 +5,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.math.BigInteger;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
