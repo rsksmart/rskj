@@ -2832,6 +2832,10 @@ public class BridgeSupport {
         return unionBridgeSupport.getLockingCap();
     }
 
+    public int increaseUnionBridgeLockingCap(Transaction tx, Coin newLockingCap) {
+        return unionBridgeSupport.increaseLockingCap(tx, newLockingCap);
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }
