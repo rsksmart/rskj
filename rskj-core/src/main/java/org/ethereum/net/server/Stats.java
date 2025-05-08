@@ -29,9 +29,10 @@ public class Stats {
 
     // Current minute messages counter
     private long minute;
-    // Reject messages over this treshold
+
+    // Reject messages over this threshold
     // Is calculated using Exponential moving average
-    private long perMinuteThreshold;
+    private final long perMinuteThreshold;
 
     // events counters
     // 100% heuristics
@@ -44,25 +45,28 @@ public class Stats {
     private double avg; //in ms
 
     // how fast avg and mpm update
-    private double alpha_m;
-    private double alpha_a;
+    private final double alpha_m;
+    private final double alpha_a;
 
     // scores for blocks and others
-    private double maxBlock;
-    private double maxOther;
+    private final double maxBlock;
+    private final double maxOther;
 
     public Stats() {
-        avg = 500;
-        alpha_m = 0.3;
-        alpha_a = 0.03;
-
-        perMinuteThreshold = 1000;
-
-        maxBlock = 200;
-        maxOther = 100;
-        mpm = 1;
+        this(1000);
     }
 
+    public Stats(long perMinuteThreshold) {
+        this.avg = 500;
+        this.alpha_m = 0.3;
+        this.alpha_a = 0.03;
+
+        this.perMinuteThreshold = perMinuteThreshold;
+
+        this.maxBlock = 200;
+        this.maxOther = 100;
+        this.mpm = 1;
+    }
 
     public synchronized double update(long timestamp, MessageType type) {
         long min = timestamp / 60000;
@@ -117,7 +121,6 @@ public class Stats {
     }
 
     private double priority(MessageType type) {
-
         switch (type) {
             case TRANSACTIONS:
                 return 2;
@@ -151,9 +154,23 @@ public class Stats {
                 return 0.5;
             case BLOCK_HEADERS_RESPONSE_MESSAGE:
                 return 5;
+            case SNAP_BLOCKS_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_BLOCKS_RESPONSE_MESSAGE:
+                return 3;
+            case SNAP_STATUS_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_STATUS_RESPONSE_MESSAGE:
+                return 3;
+            case SNAP_STATE_CHUNK_REQUEST_MESSAGE:
+                return 1;
+            case SNAP_STATE_CHUNK_RESPONSE_MESSAGE:
+                return 3;
+            default:
+                return 0.0;
         }
-        return 0.0;
     }
+
     public synchronized void imported(boolean best) {
         if (best) {
             importedBest++;
@@ -161,7 +178,6 @@ public class Stats {
             importedNotBest++;
         }
     }
-
 
     @Override
     public String toString() {
@@ -185,7 +201,6 @@ public class Stats {
         return mpm;
     }
 
-
     @VisibleForTesting
     public long getMinute() {
         return minute;
@@ -205,5 +220,4 @@ public class Stats {
     public void setImportedNotBest(int importedNotBest) {
         this.importedNotBest = importedNotBest;
     }
-
 }

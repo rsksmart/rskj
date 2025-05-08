@@ -22,6 +22,8 @@ package org.ethereum.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.mining.StableMinGasPriceSystemConfig;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.impl.JmxProfiler;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -38,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -100,6 +103,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
 
     public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
+    public static final String PROPERTY_SYSTEM_PROFILING_ENABLED = "system.profiling.enabled";
 
     public static final String PROPERTY_CHECK_JAVA_VERSION = "system.checkJavaVersion";
 
@@ -127,7 +131,10 @@ public abstract class SystemProperties {
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
-            if(logger.isTraceEnabled()){
+
+            setupProfilerIfNeeded(this.configFromFiles);
+
+            if (logger.isTraceEnabled()){
                 logger.trace(
                         "Config trace: {}",
                         configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
@@ -299,6 +306,14 @@ public abstract class SystemProperties {
         });
 
         return ret;
+    }
+
+    public List<Node> getSnapBootNodes() {
+        if (!configFromFiles.hasPath("sync.snapshot.client.snapBootNodes")) {
+            return Collections.emptyList();
+        }
+        List<? extends ConfigObject> list = configFromFiles.getObjectList("sync.snapshot.client.snapBootNodes");
+        return list.stream().map(this::parsePeer).collect(Collectors.toList());
     }
 
     public Integer peerChannelReadTimeout() {
@@ -599,6 +614,10 @@ public abstract class SystemProperties {
         return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
     }
 
+    private static boolean isSystemProfilingEnabled(Config config) {
+        return getBoolean(config, PROPERTY_SYSTEM_PROFILING_ENABLED, false);
+    }
+
     public boolean shouldCheckJavaVersion() {
         return getBoolean(PROPERTY_CHECK_JAVA_VERSION, true);
     }
@@ -624,6 +643,10 @@ public abstract class SystemProperties {
     }
 
     protected boolean getBoolean(String path, boolean val) {
+        return getBoolean(configFromFiles, path, val);
+    }
+
+    private static boolean getBoolean(Config configFromFiles, String path, boolean val) {
         return configFromFiles.hasPath(path) ? configFromFiles.getBoolean(path) : val;
     }
 
@@ -779,5 +802,17 @@ public abstract class SystemProperties {
     public StableMinGasPriceSystemConfig getStableGasPriceSystemConfig() {
         Config config = configFromFiles.getConfig(StableMinGasPriceSystemConfig.STABLE_GAS_PRICE_CONFIG_PATH_PROPERTY);
         return new StableMinGasPriceSystemConfig(config);
+    }
+
+    private static void setupProfilerIfNeeded(Config config) {
+        if (!isSystemProfilingEnabled(config)) {
+            return;
+        }
+
+        JmxProfiler jmxProfiler = new JmxProfiler();
+        jmxProfiler.register(ManagementFactory.getPlatformMBeanServer());
+
+        ProfilerFactory.configure(jmxProfiler);
+        logger.info("JMX profiler enabled");
     }
 }

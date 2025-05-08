@@ -19,8 +19,15 @@ package co.rsk.config;
 
 import co.rsk.cli.OptionalizableCliArg;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.config.SystemProperties;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Options that the node can receive via command line arguments.
@@ -41,6 +48,50 @@ public enum NodeCliOptions implements OptionalizableCliArg {
             return config.withValue(SystemProperties.PROPERTY_BASE_PATH, ConfigValueFactory.fromAnyRef(configValue));
         }
     },
+    SYNC_MODE("sync-mode", true) {
+        @Override
+        public Config withConfig(Config config, String configValue) {
+            SyncMode mode;
+            try {
+                mode = SyncMode.valueOf(configValue.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid sync mode: " + configValue + ". The valid options are <full> or <snap>.");
+            }
+
+            if (mode == SyncMode.SNAP) {
+                return config.withValue(RskSystemProperties.PROPERTY_SNAP_CLIENT_ENABLED, ConfigValueFactory.fromAnyRef(true));
+            }
+            return config;
+        }
+    },
+    SNAP_NODES("snap-nodes", true) {
+        @Override
+        public Config withConfig(Config config, String configValue) {
+            try {
+                List<ConfigObject> snapConfigObjects = Arrays.stream(configValue.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(this::createConfigObjectFromSnapNode)
+                        .collect(Collectors.toList());
+
+                if(!snapConfigObjects.isEmpty()) {
+                    ConfigValue snapConfigValue = ConfigValueFactory.fromIterable(snapConfigObjects);
+                    return config.withValue(RskSystemProperties.PROPERTY_SNAP_NODES, snapConfigValue);
+                }
+                return config;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("expecting URL in the format enode://PUBKEY@HOST:PORT", e);
+            }
+        }
+        private ConfigObject createConfigObjectFromSnapNode(String snapNode) {
+            try {
+                return ConfigValueFactory.fromMap(Collections.singletonMap("url", ConfigValueFactory.fromAnyRef(snapNode)));
+            } catch (Exception e) {
+                throw new RuntimeException("Error processing SnapBoot Nodes configuration. Ensure the URL format is 'enode://PUBKEY@HOST:PORT'.");
+            }
+        }
+    }
     ;
 
     private final String optionName;

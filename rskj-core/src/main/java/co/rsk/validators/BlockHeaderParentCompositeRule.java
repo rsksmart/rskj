@@ -18,7 +18,6 @@
 
 package co.rsk.validators;
 
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,7 @@ public class BlockHeaderParentCompositeRule implements BlockHeaderParentDependan
     }
 
     @Override
-    public boolean isValid(BlockHeader header, Block parent) {
+    public boolean isValid(BlockHeader header, BlockHeader parent) {
         String shortHash = header.getPrintableHash();
         long number = header.getNumber();
         logger.debug("Validating parent header {} {}", shortHash, number);

@@ -69,7 +69,13 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        if (tryStartLongForwardSync()) {
+        logger.trace("Starting tryStartSyncing");
+
+        if (tryStartSnapshotSync()) {
+            return;
+        }
+
+        if (tryStartBlockForwardSync()) {
             return;
         }
 
@@ -80,22 +86,51 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         syncEventsHandler.onLongSyncUpdate(false, null);
     }
 
-    private boolean tryStartLongForwardSync() {
+    private boolean tryStartSnapshotSync() {
+        if (!syncConfiguration.isClientSnapSyncEnabled()) {
+            logger.trace("Snap syncing disabled");
+            return false;
+        }
+
+        Optional<Peer> bestPeerOpt = peersInformation.getBestSnapPeer();
+        Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
+
+        if (bestPeerOpt.isEmpty() || peerBestBlockNumOpt.isEmpty()) {
+            logger.trace("Snap syncing not possible, no snap-capable peer available");
+            return false;
+        }
+
+        // we consider Snap as part of the Long Sync
+        if (!isValidSnapDistance(peerBestBlockNumOpt.get())) {
+            logger.trace("Snap syncing not required");
+            return false;
+        }
+
+        // we consider Snap as part of the Long Sync
+        syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
+
+        // start snap syncing
+        syncEventsHandler.startSnapSync(bestPeerOpt.get());
+        return true;
+    }
+
+    private boolean tryStartBlockForwardSync() {
         Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
+
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
             logger.trace("Forward syncing not possible, no valid peer");
             return false;
         }
 
         if (!shouldLongSync(peerBestBlockNumOpt.get())) {
-            logger.debug("Forward syncing not required");
+            logger.trace("Forward syncing not required");
             return false;
         }
 
         // start "long" / "forward" sync
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
-        syncEventsHandler.startSyncing(bestPeerOpt.get());
+        syncEventsHandler.startBlockForwardSyncing(bestPeerOpt.get());
         return true;
     }
 
@@ -120,6 +155,11 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     private boolean shouldLongSync(long peerBestBlockNumber) {
         long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
         return distanceToTip > syncConfiguration.getLongSyncLimit() || checkGenesisConnected();
+    }
+
+    private boolean isValidSnapDistance(long peerBestBlockNumber) {
+        long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
+        return distanceToTip > syncConfiguration.getSnapshotSyncLimit();
     }
 
     private Optional<Long> getPeerBestBlockNumber(Peer peer) {

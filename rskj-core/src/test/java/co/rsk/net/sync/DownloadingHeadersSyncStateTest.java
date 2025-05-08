@@ -126,7 +126,7 @@ class DownloadingHeadersSyncStateTest {
 
         when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.empty());
 
-        syncState.newBlockHeaders(new ArrayList<>());
+        syncState.newBlockHeaders(selectedPeer, new ArrayList<>());
 
         verify(syncEventsHandler, times(1)).onSyncIssue(selectedPeer,
                 "Current chunk not present on {}", DownloadingHeadersSyncState.class);
@@ -157,7 +157,7 @@ class DownloadingHeadersSyncStateTest {
 
         List<BlockHeader> chunk = new ArrayList<>();
         chunk.add(mock(BlockHeader.class));
-        syncState.newBlockHeaders(chunk);
+        syncState.newBlockHeaders(selectedPeer, chunk);
 
         verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                 "Unexpected chunk size received on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
@@ -191,7 +191,7 @@ class DownloadingHeadersSyncStateTest {
         byte[] headerHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"headerHash",32);
         when(header.getHash().getBytes()).thenReturn(headerHash);; // different from chunkHash
         chunk.add(header);
-        syncState.newBlockHeaders(chunk);
+        syncState.newBlockHeaders(selectedPeer, chunk);
 
         verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                 "Unexpected chunk header hash received on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));

@@ -22,6 +22,7 @@ import co.rsk.config.InternalService;
 import co.rsk.db.StateRootsStore;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.trie.TrieStore;
@@ -100,7 +101,7 @@ public class BlockChainFlusher implements InternalService, Flusher {
     }
 
     private void flushAll() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKCHAIN_FLUSH);
+        Metric metric = profiler.start(MetricKind.BLOCKCHAIN_FLUSH);
 
         long saveTime = System.nanoTime();
         trieStore.flush();
