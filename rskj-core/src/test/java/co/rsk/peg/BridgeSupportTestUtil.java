@@ -1,9 +1,10 @@
 package co.rsk.peg;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
+import static co.rsk.peg.BridgeEventsTestUtils.getLogsData;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASES_OUTPOINTS_VALUES;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -11,17 +12,27 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationMember;
 import co.rsk.trie.Trie;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeaderBuilder;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
@@ -122,6 +133,13 @@ public final class BridgeSupportTestUtil {
         return pegoutEntry.getBtcTransaction();
     }
 
+    public static Block buildBlock(long blockNumber) {
+        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
+            .setNumber(blockNumber)
+            .build();
+        return Block.createBlockFromHeader(blockHeader, true);
+    }
+
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
         // assert last push has the redeem script
         int redeemScriptIndex = witness.getPushCount() - 1;
@@ -142,5 +160,62 @@ public final class BridgeSupportTestUtil {
         byte[] redeemData = scriptSigChunks.get(redeemScriptIndex).data;
 
         assertArrayEquals(expectedRedeemScript.getProgram(), redeemData);
+    }
+
+    public static void assertFederatorSigning(
+        byte[] rskTxHashSerialized,
+        BtcTransaction btcTx,
+        List<Sha256Hash> sigHashes,
+        Federation federation,
+        BtcECKey key,
+        List<LogInfo> logs
+    ) {
+        Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(key);
+        assertTrue(federationMember.isPresent());
+        assertLogAddSignature(logs, federationMember.get(), rskTxHashSerialized);
+        assertFederatorSignedInputs(btcTx, sigHashes, key);
+    }
+
+    private static void assertFederatorSignedInputs(BtcTransaction btcTx, List<Sha256Hash> sigHashes, BtcECKey key) {
+        for (int i = 0; i < btcTx.getInputs().size(); i++) {
+            Sha256Hash sigHash = sigHashes.get(i);
+            assertTrue(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
+        }
+    }
+
+    private static void assertLogAddSignature(List<LogInfo> logs, FederationMember federationMember, byte[] rskTxHash) {
+        CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
+        ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
+        String federatorRskAddress = ByteUtil.toHexString(federatorRskPublicKey.getAddress());
+
+        List<DataWord> encodedTopics = getEncodedTopics(addSignatureEvent, rskTxHash, federatorRskAddress);
+
+        BtcECKey federatorBtcPublicKey = federationMember.getBtcPublicKey();
+        byte[] encodedData = getEncodedData(addSignatureEvent, federatorBtcPublicKey.getPubKey());
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertLogReleaseBtc(List<LogInfo> logs, BtcTransaction btcTx, Keccak256 rskTxHash) {
+        CallTransaction.Function releaseBtcEvent = BridgeEvents.RELEASE_BTC.getEvent();
+        byte[] rskTxHashSerialized = rskTxHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(releaseBtcEvent, rskTxHashSerialized);
+
+        byte[] btcTxSerialized = btcTx.bitcoinSerialize();
+        byte[] encodedData = getEncodedData(releaseBtcEvent, btcTxSerialized);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
+        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
+        assertTrue(topicOpt.isPresent());
+    }
+
+    public static void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
+        Optional<LogInfo> data = getLogsData(logs, expectedData);
+        assertTrue(data.isPresent());
     }
 }
