@@ -560,11 +560,8 @@ class BridgeUtilsTest {
 
         // sign
         TransactionWitness inputWitness = tx.getWitness(inputIndex);
-        int sigsPrefixCount = 1;
-        int sigsSuffixCount = 1;
-        List<byte[]> inputWitnessPushesWithSignature = updateWitnessWithSignature(inputWitness, txSig.encodeToBitcoin(), sigInsertionIndex, sigsPrefixCount, sigsSuffixCount);
-        inputWitness = TransactionWitness.of(inputWitnessPushesWithSignature);
-        tx.setWitness(inputIndex, inputWitness);
+        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(federation.getP2SHScript(), txSig.encodeToBitcoin(), sigInsertionIndex);
+        tx.setWitness(inputIndex, inputWitnessWithSignature);
 
         // Act
         boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federatorSigningKey, sigHash);
