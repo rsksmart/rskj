@@ -845,7 +845,18 @@ public enum BridgeMethods {
         (BridgeMethodExecutorTyped<Long>) Bridge::getUnionBridgeLockingCap,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
-    )
+    ),
+    INCREASE_UNION_BRIDGE_LOCKING_CAP(
+        CallTransaction.Function.fromSignature(
+            "increaseUnionBridgeLockingCap",
+            new String[]{"int256"},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
     ;
 
     private static class CallTypeHelper {
