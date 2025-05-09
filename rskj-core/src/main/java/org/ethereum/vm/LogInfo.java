@@ -128,9 +128,10 @@ public class LogInfo {
         return logIndex;
     }
 
-    public int setLogIndex(int logIndex) {
-        return this.logIndex = logIndex;
+    public void setLogIndex(int logIndex) {
+        this.logIndex = logIndex;
     }
+
     @Override
     public String toString() {
 
