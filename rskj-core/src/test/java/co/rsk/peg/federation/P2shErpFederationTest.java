@@ -203,17 +203,11 @@ class P2shErpFederationTest {
         newDefaultKeys.add(federator10PublicKey);
         defaultKeys = newDefaultKeys;
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        ScriptCreationException exception = assertThrows(
-            ScriptCreationException.class,
-            () -> builder.of(
-                defaultKeys,
-                defaultThreshold,
-                emergencyKeys,
-                emergencyThreshold,
-                activationDelayValue
-            )
-        );
+        federation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultKeys)
+            .build();
+        ScriptCreationException exception =
+            assertThrows(ScriptCreationException.class, () -> federation.getRedeemScript());
         assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
     }
 
