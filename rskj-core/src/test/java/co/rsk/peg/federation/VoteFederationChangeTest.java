@@ -343,8 +343,15 @@ class VoteFederationChangeTest {
     }
 
     @Test
-    void voteCommitFederation_commitFederationWithOver10Members_throwsException() {
+    void voteCommitFederation_preRSKIP305_commitFederationWithOver10Members_throwsException() {
         // Arrange
+        activations = ActivationConfigsForTest.lovell700().forBlock(0L);
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationMainnetConstants)
+            .withFederationStorageProvider(storageProvider)
+            .withRskExecutionBlock(rskExecutionBlock)
+            .withActivations(activations)
+            .build();
         voteAndAssertCreateEmptyPendingFederation();
 
         // Voting to add 11 federators to pending federation
@@ -358,6 +365,26 @@ class VoteFederationChangeTest {
             () -> voteToCommitPendingFederation(secondAuthorizedTx));
         String expectedMessage = "The script size is 525, that is above the maximum allowed.";
         assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void voteCommitFederation_postRSKIP305_commitFederationWith20Members_shouldNotThrow() {
+        // Arrange
+        voteAndAssertCreateEmptyPendingFederation();
+
+        // Voting to add 20 federators to pending federation
+        final int EXPECTED_COUNT_OF_MEMBERS = 20;
+        voteAndAssertAddFederatorPublicKeysToPendingFederation(EXPECTED_COUNT_OF_MEMBERS);
+
+        // Act and assert
+        voteToCommitPendingFederation(firstAuthorizedTx);
+        voteToCommitPendingFederation(secondAuthorizedTx);
+
+        Optional<Federation> proposedFederation = storageProvider.getProposedFederation(federationMainnetConstants, activations);
+        assertTrue(proposedFederation.isPresent());
+
+        List<BtcECKey> membersPubKeys = proposedFederation.get().getBtcPublicKeys();
+        assertEquals(EXPECTED_COUNT_OF_MEMBERS, membersPubKeys.size());
     }
 
     @Test
