@@ -2,7 +2,6 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
-import static com.google.common.base.Preconditions.checkArgument;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -175,15 +174,33 @@ public class BitcoinUtils {
 
         TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(inputIndex, witnessScript);
-        setSegwitScriptSig(input, redeemScript);
+        Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
+        input.setScriptSig(segwitScriptSig);
     }
 
-    private static void setSegwitScriptSig(TransactionInput txIn, Script redeemScript) {
+    public static Script buildSegwitScriptSig(Script redeemScript) {
+        if (redeemScript == null) {
+            throw new IllegalArgumentException("redeemScript must not be null");
+        }
+        // we need the hashed redeem script to be in one chunk
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
-        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
-        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build(); // we need it to be in one chunk
+        Script segwitScriptSig = new ScriptBuilder()
+            .number(OP_0)
+            .data(hashedRedeemScript)
+            .build();
 
-        txIn.setScriptSig(oneChunkSegwitScriptSig);
+        return new ScriptBuilder()
+            .data(segwitScriptSig.getProgram())
+            .build();
+    }
+
+    public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {
+        if (segwitScriptSig == null) {
+            throw new IllegalArgumentException("SegwitScriptSig must not be null");
+        }
+        byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
+        // The whole program is [22 00 20 + redeemScriptHash], so we just need to skip the first 3 bytes.
+        return Arrays.copyOfRange(segwitScriptSigProgram, 3, segwitScriptSigProgram.length);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {

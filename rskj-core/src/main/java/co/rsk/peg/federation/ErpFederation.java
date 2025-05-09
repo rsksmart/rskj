@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.peg.bitcoin.ErpRedeemScriptBuilder;
 import co.rsk.peg.bitcoin.RedeemScriptCreationException;
+import co.rsk.peg.bitcoin.ScriptValidations;
 import co.rsk.peg.utils.EcKeyUtils;
 
 import java.util.Collections;
@@ -74,11 +75,24 @@ public class ErpFederation extends Federation {
                     getNumberOfEmergencySignaturesRequired(),
                     activationDelay
                 );
+
+                validateScriptSize();
             } catch (RedeemScriptCreationException e) {
                 throw new ErpFederationCreationException(e.getMessage(), e, REDEEM_SCRIPT_CREATION_FAILED);
             }
         }
         return redeemScript;
+    }
+
+    private void validateScriptSize() {
+        if (getFormatVersion() != P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            // since the redeem script is located in the script sig,
+            // we need to check it does not surpass the maximum allowed size
+            ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
+            return;
+        }
+
+        ScriptValidations.validateSizeOfRedeemScriptForWitness(redeemScript);
     }
 
     private RedeemScriptParser getRedeemScriptParser() {

@@ -2,7 +2,7 @@ package co.rsk.peg.federation;
 
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
-import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static org.junit.jupiter.api.Assertions.*;
@@ -203,18 +203,12 @@ class P2shErpFederationTest {
         newDefaultKeys.add(federator10PublicKey);
         defaultKeys = newDefaultKeys;
 
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
-        ScriptCreationException exception = assertThrows(
-            ScriptCreationException.class,
-            () -> builder.of(
-                defaultKeys,
-                defaultThreshold,
-                emergencyKeys,
-                emergencyThreshold,
-                activationDelayValue
-            )
-        );
-        assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
+        federation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultKeys)
+            .build();
+        ScriptCreationException exception =
+            assertThrows(ScriptCreationException.class, () -> federation.getRedeemScript());
+        assertEquals(ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE, exception.getReason());
     }
 
     @Test
