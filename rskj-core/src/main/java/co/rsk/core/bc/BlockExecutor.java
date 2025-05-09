@@ -394,7 +394,7 @@ public class BlockExecutor {
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
-            TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed, totalGasUsed,logIndexOffset);
+            TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed, totalGasUsed, logIndexOffset);
 
             loggingExecuteTxAndReceipt(block, i, tx);
 
