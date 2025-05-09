@@ -2,7 +2,6 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
-import static com.google.common.base.Preconditions.checkArgument;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -179,11 +178,28 @@ public class BitcoinUtils {
     }
 
     private static void setSegwitScriptSig(TransactionInput txIn, Script redeemScript) {
-        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
-        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
-        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build(); // we need it to be in one chunk
+        Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
+        txIn.setScriptSig(segwitScriptSig);
+    }
 
-        txIn.setScriptSig(oneChunkSegwitScriptSig);
+    public static Script buildSegwitScriptSig(Script redeemScript) {
+        // we need the hashed redeem script to be in one chunk
+        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder()
+            .number(OP_0)
+            .data(hashedRedeemScript)
+            .build();
+
+        return new ScriptBuilder()
+            .data(segwitScriptSig.getProgram())
+            .build();
+    }
+
+    public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {
+        byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
+        // the whole program is [22 00 20 + rs]
+        String hashedRedeemScript = Hex.toHexString(segwitScriptSigProgram).substring(6);
+        return Hex.decode(hashedRedeemScript);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
