@@ -469,7 +469,7 @@ class BlockHeaderContractTest {
         BlockGenerator blockGenerator = new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig());
 
         Block childBlock = blockGenerator.createChildBlock(
-                parent, new ArrayList<>(), new ArrayList<>(), parent.getDifficulty().asBigInteger().longValue(),
+                parent, new ArrayList<>(), new ArrayList<>(), null, parent.getDifficulty().asBigInteger().longValue(),
                 MIN_GAS_PRICE, parent.getGasLimit(), coinbase
         );
 
