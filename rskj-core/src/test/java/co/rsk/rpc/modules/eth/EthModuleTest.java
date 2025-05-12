@@ -1024,9 +1024,6 @@ class EthModuleTest {
         assertTrue(result.isEmpty(), "Expected no transactions as wallet is disabled");
     }
 
-    
-
-
     private Transaction createMockTransaction(String fromAddress) {
         Transaction transaction = mock(Transaction.class);
         RskAddress address = new RskAddress(fromAddress);

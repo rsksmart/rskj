@@ -141,7 +141,7 @@ public class EthModule
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
 
-        MutableRepository mutableRepository;
+        MutableRepository mutableRepository = null;
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
@@ -149,9 +149,9 @@ public class EthModule
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
         } else if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
             mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
-            accountOverrideList.forEach(accountOverride -> stateOverrideApplier.applyToRepository(mutableRepository, accountOverride));
-        } else {
-            mutableRepository = null;
+            for(AccountOverride accountOverride : accountOverrideList) {
+               stateOverrideApplier.applyToRepository(mutableRepository,accountOverride);
+            }
         }
         CallArguments callArgs = argsParam.toCallArguments();
 
