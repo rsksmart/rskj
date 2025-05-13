@@ -4,6 +4,7 @@ import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.BridgeUtils.calculatePegoutTxSize;
 import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
 import static co.rsk.peg.PegUtils.getFlyoverFederationRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
@@ -77,6 +78,10 @@ class BridgeSupportSvpTest {
 
     private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
 
+    private final List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+        "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+        "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
+    }, true);
     private List<LogInfo> logs;
     private BridgeEventLogger bridgeEventLogger;
 
@@ -134,7 +139,9 @@ class BridgeSupportSvpTest {
         );
         bridgeStorageAccessor.saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY.getKey(), activeFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
 
-        proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        proposedFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(membersBtcPublicKeys)
+            .build();
         federationStorageProvider.setProposedFederation(proposedFederation);
 
         federationSupport = FederationSupportBuilder.builder()
@@ -751,7 +758,7 @@ class BridgeSupportSvpTest {
             List<TransactionOutput> outputs = svpSpendTransaction.getOutputs();
             assertEquals(1, outputs.size());
 
-            long calculatedTransactionSize = 1762L; // using calculatePegoutTxSize method
+            long calculatedTransactionSize = calculatePegoutTxSize(allActivations, proposedFederation, 2, 1);
             Coin fees = feePerKb
                 .multiply(calculatedTransactionSize * 12L / 10L) // back up calculation
                 .divide(1000);
@@ -796,8 +803,8 @@ class BridgeSupportSvpTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("Spend transaction signing tests")
     class SpendTxSigning {
-        private final List<BtcECKey> proposedFederationSignersKeys =
-            BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true); // this is needed to have the private keys too
+        private final int threshold = membersBtcPublicKeys.size() / 2 + 1;
+        private final List<BtcECKey> proposedFederationSignersKeys = membersBtcPublicKeys.subList(0, threshold);
         private List<Sha256Hash> svpSpendTxSigHashes;
 
         @BeforeEach
