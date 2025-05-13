@@ -62,10 +62,10 @@ class FederationChangeIT {
             new String[]{
                 "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
     private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
-    private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS =
-        BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{
-                "newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09"}, true);
+    private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+        "newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09", "newMember10",
+        "newMember11", "newMember12", "newMember13", "newMember14", "newMember15", "newMember16", "newMember17", "newMember18", "newMember19", "newMember20"
+    }, true);
     private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(NEW_FEDERATION_MEMBERS_KEYS);
     private static final SignatureCache SIGNATURE_CACHE = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
@@ -415,7 +415,8 @@ class FederationChangeIT {
         var svpSpendTxSigHashes = IntStream.range(0, svpSpendTx.getInputs().size())
             .mapToObj(i -> BitcoinUtils.generateSigHashForSegwitTransactionInput(svpSpendTx, i, svpSpendTx.getInput(i).getValue()))
             .toList();
-        for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, 5)) {
+        int threshold = NEW_FEDERATION_MEMBERS_KEYS.size() / 2 + 1;
+        for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, threshold)) {
             List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
             bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
         }
@@ -907,7 +908,7 @@ class FederationChangeIT {
 
     private void assertPendingFederationIsBuiltAsExpected(PendingFederation pendingFederation) {
         assertNotNull(pendingFederation);
-        assertEquals(9, pendingFederation.getSize());
+        assertEquals(20, pendingFederation.getSize());
         assertTrue(pendingFederation.getMembers().containsAll(NEW_FEDERATION_MEMBERS));
     }
 

@@ -72,7 +72,7 @@ class StandardMultisigFederationTest {
     }
 
     @Test
-    void createInvalidFederation_aboveMaxScriptSigSize() {
+    void createValidFederation_aboveMaxScriptSigSize() {
         List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         BtcECKey federator15PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("03b65684ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6")
@@ -85,10 +85,10 @@ class StandardMultisigFederationTest {
         long creationBlockNumber = federation.getCreationBlockNumber();
         NetworkParameters networkParameters = federation.getBtcParams();
         FederationArgs federationArgs = new FederationArgs(newMembers, creationTime, creationBlockNumber, networkParameters);
-        ScriptCreationException exception =
-            assertThrows(ScriptCreationException.class,
-                () -> FederationFactory.buildStandardMultiSigFederation(federationArgs));
-        assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
+        // this is intentional since the serialization of federations just serializes the standard part
+        // when adding segwit, this thrown an exception since the p2sh-p2wsh erp federation with 20 members
+        // exceeded the redeem script size limit. So the decision was to remove the size limit check.
+        assertDoesNotThrow(() -> FederationFactory.buildStandardMultiSigFederation(federationArgs));
     }
 
     @Test
