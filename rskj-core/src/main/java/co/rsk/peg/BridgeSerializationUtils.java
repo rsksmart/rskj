@@ -643,6 +643,19 @@ public class BridgeSerializationUtils {
         return data == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(data);
     }
 
+    public static byte[] serializeRskCoin(co.rsk.core.Coin coin) {
+        return RLP.encodeBigInteger(coin.asBigInteger());
+    }
+
+    @Nullable
+    public static co.rsk.core.Coin deserializeRskCoin(byte[] data) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        return new co.rsk.core.Coin(RLP.decodeBigInteger(data, 0));
+    }
+
     public static byte[] serializeCoin(Coin coin) {
         return RLP.encodeBigInteger(BigInteger.valueOf(coin.getValue()));
     }
