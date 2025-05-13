@@ -104,6 +104,8 @@ class BridgeSerializationUtilsTest {
         );
     }
 
+
+
     @ParameterizedTest
     @MethodSource("validRskAddressesProvider")
     void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
@@ -1208,6 +1210,28 @@ class BridgeSerializationUtilsTest {
             nullValue());
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(new byte[0]),
             nullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideValidRskCoins")
+    void serializeDeserializationRskCoin_whenValidCoin_shouldSerialize(co.rsk.core.Coin coin) {
+        byte[] actualSerializedValue = BridgeSerializationUtils.serializeRskCoin(coin);
+        assertArrayEquals(RLP.encodeBigInteger(coin.asBigInteger()), actualSerializedValue);
+
+        co.rsk.core.Coin deserializedValue = BridgeSerializationUtils.deserializeRskCoin(actualSerializedValue);
+        assertEquals(coin, deserializedValue);
+    }
+
+    public static Stream<Arguments> provideValidRskCoins() {
+        BigInteger weiPerEther = BigInteger.TEN.pow(18);
+
+        return Stream.of(
+            Arguments.of(co.rsk.core.Coin.ZERO),
+            Arguments.of(co.rsk.core.Coin.valueOf(Long.MAX_VALUE)),
+            Arguments.of(new co.rsk.core.Coin(weiPerEther)),
+            Arguments.of(new co.rsk.core.Coin(weiPerEther).multiply(BigInteger.valueOf(100))),
+            Arguments.of(new co.rsk.core.Coin(weiPerEther).multiply(BigInteger.valueOf(Long.MAX_VALUE)))
+        );
     }
 
     @Test
