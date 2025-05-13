@@ -33,7 +33,7 @@ import java.util.Collections;
 public class LogIndexPlan extends BasePlan{
 
     private EthFilter blockRangeAndTopicFilter;
-    private EthFilter bockHashFilter;
+    private EthFilter blockHashFilter;
     private String txReceiptHash;
 
     @Setup(Level.Trial) // move to "Level.Iteration" in case we set a batch size at some point
@@ -48,7 +48,7 @@ public class LogIndexPlan extends BasePlan{
         blockRangeAndTopicFilter.addSingleTopic(topic);
 
         String blockHash = config.getString("getLogs.blockHash");
-        bockHashFilter = new EthFilter(blockHash);
+        blockHashFilter = new EthFilter(blockHash);
 
         txReceiptHash = config.getString("getLogs.transactionHash");
     }
@@ -61,7 +61,7 @@ public class LogIndexPlan extends BasePlan{
         return txReceiptHash;
     }
 
-    public EthFilter getBockHashFilter() {
-        return bockHashFilter;
+    public EthFilter getBlockHashFilter() {
+        return blockHashFilter;
     }
 }
