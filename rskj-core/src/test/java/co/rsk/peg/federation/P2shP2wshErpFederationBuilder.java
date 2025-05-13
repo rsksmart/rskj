@@ -24,15 +24,8 @@ public class P2shP2wshErpFederationBuilder {
 
     private P2shP2wshErpFederationBuilder() {
         this.membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-            "member01",
-            "member02",
-            "member03",
-            "member04",
-            "member05",
-            "member06",
-            "member07",
-            "member08",
-            "member09"
+            "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+            "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
         }, true);
         this.membersRskPublicKeys = new ArrayList<>();
         this.membersMstPublicKeys = new ArrayList<>();
