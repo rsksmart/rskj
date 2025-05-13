@@ -91,7 +91,7 @@ class P2shP2wshErpFederationTest {
         ScriptChunk p2shScriptChunk = chunks.get(1);
         int expectedPushDataLength = 20;
         assertEquals(expectedPushDataLength, p2shScriptChunk.opcode);
-        String expectedP2hScript = "06a14e7744052c27af5387bda078b25c8581bb57";
+        String expectedP2hScript = "ef29a598f5b514f1b6f6d546c5e611c8f2cf02f3";
         assertArrayEquals(Hex.decode(expectedP2hScript), p2shScriptChunk.data);
 
         int opEqual = chunks.get(2).opcode;
@@ -409,7 +409,7 @@ class P2shP2wshErpFederationTest {
          *  OP_DROP
          *  OP_M
          *  PUBKEYS...N
-         *  OP_N
+         *  OP_PUSHDATA1 N
          *  OP_CHECKMULTISIG
          * OP_ENDIF
          */
@@ -446,7 +446,9 @@ class P2shP2wshErpFederationTest {
 
         // Next byte should equal N, from an M/N multisig
         int n = sortedDefaultPublicKeys.size();
-        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
+        int bytesForN = 1;
+        assertEquals(bytesForN, script[index++]);
+        assertEquals(n, script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
         assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
