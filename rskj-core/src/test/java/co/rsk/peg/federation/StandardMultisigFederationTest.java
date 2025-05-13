@@ -72,7 +72,7 @@ class StandardMultisigFederationTest {
     }
 
     @Test
-    void createInvalidFederation_aboveMaxScriptSigSize() {
+    void createValidFederation_aboveMaxScriptSigSize_shouldThrowScriptCreationException() {
         List<BtcECKey> newKeys = federation.getBtcPublicKeys();
         BtcECKey federator15PublicKey = BtcECKey.fromPublicOnly(
             Hex.decode("03b65684ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6")

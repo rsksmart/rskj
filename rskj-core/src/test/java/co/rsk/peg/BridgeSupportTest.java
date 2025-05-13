@@ -7632,7 +7632,14 @@ class BridgeSupportTest {
         @Test
         void pegoutsFlow_fromAReleaseRequest_toBeingCorrectlySignedForFederators_whenSegwitFed() throws IOException {
             // arrange
-            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+            // we need to recreate the federators keys to have the priv keys for signing
+            List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+                "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+                "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
+            }, true);
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(membersBtcPublicKeys)
+                .build();
             federationStorageProvider.setNewFederation(activeFederation);
             setUpReleaseRequests();
             setUpWithActivations(allActivations);
@@ -7675,9 +7682,7 @@ class BridgeSupportTest {
             currentBlock = buildBlock(newBlockNumber);
             updateBridgeSupport();
 
-            // we need to recreate the federators keys to have the priv keys for signing
-            List<BtcECKey> signers =
-                BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05",}, true);
+            List<BtcECKey> signers = membersBtcPublicKeys.subList(0, activeFederation.getNumberOfSignaturesRequired());
             // sign with federators
             List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegoutWFS);
             for (BtcECKey federatorSignerKey : signers) {
