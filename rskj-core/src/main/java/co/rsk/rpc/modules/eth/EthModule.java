@@ -59,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +87,7 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
+    private final StateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -133,35 +135,40 @@ public class EthModule
         return state.stateToMap();
     }
 
-    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
-        if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        } else {
-            return call(argsParam, bnOrId);
-        }
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
+        return call(argsParam, bnOrId, Collections.emptyList());
     }
 
-    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
-        String hReturn = null;
-        CallArguments args = argsParam.toCallArguments();
-        try {
-            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
-            Block block = result.getBlock();
-            Trie finalState = result.getFinalState();
-            ProgramResult res;
-            if (finalState != null) {
-                res = callConstantWithState(args, block, finalState);
-            } else {
-                res = callConstant(args, block);
-            }
-            handleTransactionRevertIfHappens(res);
-            hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
 
+        MutableRepository mutableRepository = null;
+        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
+        Block block = result.getBlock();
+
+        if (result.getFinalState() != null) {
+            mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
+        } else if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
+            mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
+            for(AccountOverride accountOverride : accountOverrideList) {
+               stateOverrideApplier.applyToRepository(mutableRepository,accountOverride);
+            }
+        }
+        CallArguments callArgs = argsParam.toCallArguments();
+
+        String hReturn = null;
+        try {
+            ProgramResult programResult = mutableRepository != null ?
+                    callConstant(callArgs, block, mutableRepository) :
+                    callConstant(callArgs, block);
+
+            handleTransactionRevertIfHappens(programResult);
+            hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
         } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
     }
+
 
     public String estimateGas(CallArgumentsParam args, @Nonnull BlockIdentifierParam bnOrId) {
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
@@ -295,6 +302,21 @@ public class EthModule
     public ProgramResult callConstant(CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
+                executionBlock,
+                executionBlock.getCoinbase(),
+                hexArgs.getGasPrice(),
+                hexArgs.gasLimitForCall(this.gasCallCap),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
+    }
+
+    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        return reversibleTransactionExecutor.executeTransaction(
+                snapshot,
                 executionBlock,
                 executionBlock.getCoinbase(),
                 hexArgs.getGasPrice(),

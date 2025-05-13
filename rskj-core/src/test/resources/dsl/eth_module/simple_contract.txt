@@ -1,0 +1,43 @@
+
+comment
+Simple contract created
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SimpleStorage {
+    uint public storedData;
+
+    constructor() {
+        storedData = 10;
+    }
+
+    function get() public view returns (uint) {
+        return storedData;
+    }
+}
+
+end
+
+account_new acc1 20000000
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600e575f80fd5b50600a5f8190555060d8806100225f395ff3fe6080604052348015600e575f80fd5b50600436106030575f3560e01c80632a1afcd91460345780636d4ce63c14604e575b5f80fd5b603a6068565b60405160459190608b565b60405180910390f35b6054606d565b604051605f9190608b565b60405180910390f35b5f5481565b5f8054905090565b5f819050919050565b6085816075565b82525050565b5f602082019050609c5f830184607e565b9291505056fea2646970667358221220b4e997d985ec532ad9581a5a81d8812faea53a1735aab2d7ac8efcdc963d254664736f6c634300081a0033
+    gas 150742
+    build
+
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 7500000
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01
+
