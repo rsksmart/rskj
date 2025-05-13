@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class LogIndexBenchmark {
 
     @Benchmark
-    public void ethGetLogsRandAndTopic(LogIndexPlan plan) throws HttpRpcException {
+    public void ethGetLogsRangeAndTopic(LogIndexPlan plan) throws HttpRpcException {
         EthFilter filter = plan.getBlockRangeAndTopicFilter();
         plan.getWeb3Connector().ethGetLogs(filter);
     }
@@ -45,7 +45,7 @@ public class LogIndexBenchmark {
 
     @Benchmark
     public void getLogsByBlockHash(LogIndexPlan plan) throws HttpRpcException {
-        EthFilter blockFilter = plan.getBockHashFilter();
+        EthFilter blockFilter = plan.getBlockHashFilter();
         plan.getWeb3Connector().ethGetLogs(blockFilter);
     }
 }
