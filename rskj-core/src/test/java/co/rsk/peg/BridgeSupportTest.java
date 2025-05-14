@@ -25,6 +25,7 @@ import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createUTXO;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
+import static co.rsk.peg.federation.FederationStorageIndexKey.OLD_FEDERATION_BTC_UTXOS_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
@@ -1115,6 +1116,7 @@ class BridgeSupportTest {
             any(Coin.class)
         );
     }
+
     @Test
     void eventLoggerLogPeginRejectionEvents_before_rskip_181_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -1889,7 +1891,7 @@ class BridgeSupportTest {
 
         // P2SH-P2WPKH tx
         BtcECKey srcKey1 = getBtcEcKeyFromSeed("p2shp2wpkh_sender");
-        byte[] redeemScript = ByteUtil.merge(new byte[]{ 0x00, 0x14}, srcKey1.getPubKeyHash());
+        byte[] redeemScript = ByteUtil.merge(new byte[]{0x00, 0x14}, srcKey1.getPubKeyHash());
 
         Script witnessScript = new ScriptBuilder()
             .data(redeemScript)
@@ -2762,7 +2764,7 @@ class BridgeSupportTest {
         // If all outputs are sent to the active fed then it's the migration tx; if not, it's the peg-out batch
         for (PegoutsWaitingForConfirmations.Entry entry : pegoutsWaitingForConfirmations.getEntries()) {
             List<TransactionOutput> walletOutputs = entry.getBtcTransaction().getWalletOutputs(newFedWallet);
-            if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()){
+            if (walletOutputs.size() == entry.getBtcTransaction().getOutputs().size()) {
                 migrationTx = entry;
             } else {
                 pegoutBatchTx = entry;
@@ -3699,7 +3701,7 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstantsRegtest, provider, activations)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider =getBtcLockSenderProvider(
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
             TxSenderAddressType.P2SHP2WPKH,
             btcAddress,
             rskAddress
@@ -7267,7 +7269,7 @@ class BridgeSupportTest {
             // assert that block 849134 was correctly saved
             assertEquals(btcBlockStoreWithCachePreRSKIP434.getChainHead().getHeader().getHash(), block849134.getHash());
 
-            BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
+            BtcBlock[] headersToSend = new BtcBlock[]{block849135, block849136, block849137, blockWithTooMuchWork, block849139};
             // assert blocks until 849137 are correctly saved
             // and blocks from 849138 are not saved
             bridgeSupportPreRSKIP434.receiveHeaders(headersToSend);
@@ -7310,7 +7312,7 @@ class BridgeSupportTest {
             // assert that block 849134 was correctly saved
             assertEquals(btcBlockStoreWithCachePostRSKIP434.getChainHead().getHeader().getHash(), block849134.getHash());
 
-            BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
+            BtcBlock[] headersToSend = new BtcBlock[]{block849135, block849136, block849137, blockWithTooMuchWork, block849139};
             // assert all blocks are correctly saved
             bridgeSupportPostRSKIP434.receiveHeaders(headersToSend);
             assertNotNull(btcBlockStoreWithCachePostRSKIP434.get(block849135.getHash()));
@@ -7384,7 +7386,7 @@ class BridgeSupportTest {
             // assert that block 849134 was correctly saved
             assertEquals(btcBlockStoreWithCache.getChainHead().getHeader().getHash(), block849134.getHash());
 
-            BtcBlock[] headersToSend = new BtcBlock[] { block849135, block849136, block849137, blockWithTooMuchWork, block849139 };
+            BtcBlock[] headersToSend = new BtcBlock[]{block849135, block849136, block849137, blockWithTooMuchWork, block849139};
             // assert all blocks are correctly saved
             bridgeSupport.receiveHeaders(headersToSend);
             assertNotNull(btcBlockStoreWithCache.get(block849135.getHash()));
@@ -7498,9 +7500,10 @@ class BridgeSupportTest {
         private final Coin outpointValue1 = Coin.valueOf(300_000);
         private final Coin outpointValue2 = Coin.valueOf(150_000);
         private final Coin outpointValue3 = Coin.valueOf(50_000);
+        private final List<Coin> outpointValues = List.of(outpointValue1, outpointValue2, outpointValue3);
+        private final Coin totalAmountRequested = outpointValue1.add(outpointValue2).add(outpointValue3);
 
         private List<LogInfo> logs;
-        private BridgeEventLogger bridgeEventLogger;
         private Block currentBlock;
 
         @BeforeEach
@@ -7520,7 +7523,7 @@ class BridgeSupportTest {
             btcBlockStoreFactory =
                 new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
 
-            bridgeEventLogger = new BridgeEventLoggerImpl(
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainNetConstants,
                 activations,
                 logs
@@ -7579,9 +7582,16 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // Assert
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
-            List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
-            assertLogPegoutTransactionCreated(logs, releaseTransaction, expectedOutpointsValues);
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+            Keccak256 releaseCreationTxHash = tx.getHash();
+
+            PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber());
+            assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+            assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
+            assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointValues);
+
             assertReleaseOutpointsValuesWereNotSavedInStorage(releaseTransaction);
         }
 
@@ -7596,13 +7606,21 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // Assert
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
 
             // check the active fed redeem script data is in input script sig
             assertScriptSigHasExpectedInputRedeemData(releaseTransaction.getInput(0), activeFederation.getRedeemScript());
 
-            List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
-            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                currentBlock.getNumber(),
+                tx.getHash(),
+                releaseTransaction,
+                outpointValues,
+                totalAmountRequested
+            );
         }
 
         @Test
@@ -7619,7 +7637,7 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // Assert
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
 
             // check the active fed redeem script data
             Script redeemScript = activeFederation.getRedeemScript();
@@ -7630,8 +7648,16 @@ class BridgeSupportTest {
                 redeemScript
             );
 
-            List<Coin> expectedOutpointsValues = List.of(outpointValue1, outpointValue2, outpointValue3);
-            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, expectedOutpointsValues);
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                currentBlock.getNumber(),
+                tx.getHash(),
+                releaseTransaction,
+                outpointValues,
+                totalAmountRequested
+            );
         }
 
         @Test
@@ -7654,12 +7680,17 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // get release from pegouts wfc
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             // assert release transaction was created as expected
-            assertReleaseTransactionInfoWasProcessed(
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
                 logs,
+                currentBlock.getNumber(),
+                tx.getHash(),
                 releaseTransaction,
-                List.of(outpointValue1, outpointValue2, outpointValue3)
+                outpointValues,
+                totalAmountRequested
             );
             assertWitnessAndScriptSigHaveExpectedInputRedeemData(
                 releaseTransaction.getWitness(0),
@@ -7733,7 +7764,13 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // assert
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+            Keccak256 releaseCreationTxHash = tx.getHash();
+
+            PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+            assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber());
+            assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, amountToSend);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, List.of(amountToSend));
             assertReleaseOutpointsValuesWereNotSavedInStorage(releaseTransaction);
         }
@@ -7763,8 +7800,17 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // assert
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
-            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, List.of(amountToSend));
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertReleaseRejectionWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                currentBlock.getNumber(),
+                tx.getHash(),
+                releaseTransaction,
+                List.of(amountToSend),
+                amountToSend
+            );
         }
 
         @Test
@@ -7811,8 +7857,19 @@ class BridgeSupportTest {
             bridgeSupport.save();
 
             // assert
-            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC();
-            assertReleaseTransactionInfoWasProcessed(logs, releaseTransaction, List.of(amountToSendToActiveFed, amountToSendToRetiringFed));
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            List<Coin> outpointValues = List.of(amountToSendToActiveFed, amountToSendToRetiringFed);
+            Coin totalAmountRequested = amountToSendToActiveFed.add(amountToSendToRetiringFed);
+            assertReleaseRejectionWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                currentBlock.getNumber(),
+                tx.getHash(),
+                releaseTransaction,
+                outpointValues,
+                totalAmountRequested
+            );
 
             // release should have two inputs, one related to the active fed and one to the retiring fed
             assertEquals(2, releaseTransaction.getInputs().size());
@@ -7855,46 +7912,6 @@ class BridgeSupportTest {
             pegin.addOutput(amountToSend, activeFederation.getAddress());
 
             return pegin;
-        }
-
-        private BtcTransaction getReleaseFromPegoutsWFC() throws IOException {
-            PegoutsWaitingForConfirmations pegoutsWFC = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
-            Set<PegoutsWaitingForConfirmations.Entry> pegoutsWFCEntries = pegoutsWFC.getEntries();
-            assertEquals(1, pegoutsWFCEntries.size());
-            // we now know that the only present release is the expected one
-            Iterator<PegoutsWaitingForConfirmations.Entry> iterator = pegoutsWFCEntries.iterator();
-            PegoutsWaitingForConfirmations.Entry pegoutEntry = iterator.next();
-
-            return pegoutEntry.getBtcTransaction();
-        }
-
-        private void assertReleaseTransactionInfoWasProcessed(
-            List<LogInfo> logs,
-            BtcTransaction releaseTransaction,
-            List<Coin> expectedOutpointsValues
-        ) {
-            assertLogPegoutTransactionCreated(logs, releaseTransaction, expectedOutpointsValues);
-            assertReleaseOutpointsValuesWereSaved(releaseTransaction, expectedOutpointsValues);
-        }
-
-        private void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
-            CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-            Sha256Hash pegoutTransactionHash = releaseTransaction.getHash();
-            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
-
-            byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(expectedOutpointsValues);
-            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
-
-            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-            assertEventWasEmittedWithExpectedData(logs, encodedData);
-        }
-
-        private void assertReleaseOutpointsValuesWereSaved(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
-            Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransaction.getHash());
-
-            assertTrue(releaseOutpointsValues.isPresent());
-            assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
         }
     }
 
@@ -8020,7 +8037,7 @@ class BridgeSupportTest {
         // until the expected number is reached
         for (int i = 0; i < expectedTransactions; i++) {
             bridgeSupport.updateCollections(mock(Transaction.class));
-            assertEquals(i+1, pegoutsWaitingForConfirmations.getEntries().size());
+            assertEquals(i + 1, pegoutsWaitingForConfirmations.getEntries().size());
         }
         assertTrue(utxosToMigrate.isEmpty()); // Migrated UTXOs are removed from the list
 
@@ -8048,6 +8065,113 @@ class BridgeSupportTest {
         });
 
         assertTrue(expectedInputSizes.isEmpty()); // All expected sizes should have been found and removed
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("test migration transaction between different types of feds")
+    class MigrationTransaction {
+        Coin value1 = Coin.valueOf(1_000_000);
+        Coin value2 = Coin.valueOf(500_000);
+        Coin value3 = Coin.valueOf(300_000);
+        List<Coin> utxos = Arrays.asList(value1, value2, value3);
+        Coin totalAmountRequested = value1.add(value2).add(value3);
+        List<UTXO> retiringFederationUTXOs;
+        List<LogInfo> logs;
+        long blockNumber;
+
+        private void setUp(Federation retiringFederation, Federation activeFederation) {
+            federationStorageProvider.setOldFederation(retiringFederation);
+            retiringFederationUTXOs = Arrays.asList(
+                BitcoinTestUtils.createUTXO(1, 0, utxos.get(0), retiringFederation.getAddress()),
+                BitcoinTestUtils.createUTXO(2, 0, utxos.get(1), retiringFederation.getAddress()),
+                BitcoinTestUtils.createUTXO(3, 0, utxos.get(2), retiringFederation.getAddress())
+            );
+            bridgeStorageAccessor.saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY.getKey(), retiringFederationUTXOs, BridgeSerializationUtils::serializeUTXOList);
+
+            federationStorageProvider.setNewFederation(activeFederation);
+
+            blockNumber = federationConstantsMainnet.getFederationActivationAge(allActivations) + federationConstantsMainnet.getFundsMigrationAgeSinceActivationBegin() + activeFederation.getCreationBlockNumber() + 1;
+            Block currentBlock = RskTestUtils.createRskBlock(blockNumber);
+            federationSupport = FederationSupportBuilder.builder()
+                .withFederationConstants(federationConstantsMainnet)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(currentBlock)
+                .withActivations(allActivations)
+                .build();
+
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainNetConstants,
+                allActivations,
+                logs
+            );
+
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(allActivations)
+                .withBridgeConstants(bridgeMainNetConstants)
+                .withRepository(repository)
+                .withProvider(bridgeStorageProvider)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(currentBlock)
+                .build();
+        }
+
+        @ParameterizedTest
+        @MethodSource("federationArgs")
+        void migration_fromLegacyRetiring_toLegacyActiveFed(Federation retiringFederation, Federation activeFederation) throws IOException {
+            // arrange
+            setUp(retiringFederation, activeFederation);
+
+            bridgeSupport.updateCollections(tx);
+            bridgeSupport.save();
+
+            BtcTransaction migrationTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertReleaseWasSettled(
+                repository,
+                bridgeStorageProvider,
+                logs,
+                blockNumber,
+                tx.getHash(),
+                migrationTransaction,
+                utxos,
+                totalAmountRequested
+            );
+        }
+
+        private static Stream<Arguments> federationArgs() {
+            Federation legacyRetiringFederation = P2shErpFederationBuilder.builder().build();
+            List<BtcECKey> legacyActiveMembersBtcKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"active01", "active02", "active03", "active04", "active05", "active06", "active07", "active08", "active09"},
+                true
+            );
+            Federation legacyActiveFederation = P2shErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(legacyActiveMembersBtcKeys)
+                .build();
+
+            Federation segwitActiveFederation = P2shP2wshErpFederationBuilder.builder()
+                .build();
+
+            List<BtcECKey> segwitRetiringMembersBtcKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+                    "retiring01", "retiring02", "retiring03", "retiring04", "retiring05", "retiring06", "retiring07", "retiring08", "retiring09", "retiring10",
+                    "retiring11", "retiring12", "retiring13", "retiring14", "retiring15", "retiring16", "retiring17", "retiring18", "retiring19", "retiring20"
+                },
+                true
+            );
+            Federation segwitRetiringFederation = P2shP2wshErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(segwitRetiringMembersBtcKeys)
+                .build();
+
+            return Stream.of(
+                Arguments.of(legacyRetiringFederation, legacyActiveFederation),
+                Arguments.of(legacyRetiringFederation, segwitActiveFederation),
+                Arguments.of(segwitRetiringFederation, segwitActiveFederation)
+            );
+        }
+
     }
 
     @Test
