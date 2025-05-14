@@ -12,10 +12,13 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.BitcoinUtils;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.trie.Trie;
@@ -33,6 +36,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 
 public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
@@ -181,6 +185,113 @@ public final class BridgeSupportTestUtil {
             Sha256Hash sigHash = sigHashes.get(i);
             assertTrue(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
         }
+    }
+
+    public static void assertReleaseRejectionWasSettled(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedOutpointsValues,
+        Coin totalAmountRequested
+    ) throws IOException {
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, executionBlock);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
+        assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
+    }
+
+    public static void assertReleaseWasSettled(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        long executionBlock,
+        Keccak256 releaseCreationTxHash,
+        BtcTransaction releaseTransaction,
+        List<Coin> expectedOutpointsValues,
+        Coin totalAmountRequested
+    ) throws IOException {
+        PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
+        assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock);
+        assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+        assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
+        assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
+    }
+
+    public static void assertPegoutWasAddedToPegoutsWaitingForConfirmations(PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations, Sha256Hash pegoutTransactionHash, Keccak256 releaseCreationTxHash, long executionBlock) {
+        Set<PegoutsWaitingForConfirmations.Entry> pegoutEntries = pegoutsWaitingForConfirmations.getEntries();
+        Optional<PegoutsWaitingForConfirmations.Entry> pegoutEntry = pegoutEntries.stream()
+            .filter(entry -> entry.getBtcTransaction().getHash().equals(pegoutTransactionHash) &&
+                entry.getPegoutCreationRskBlockNumber().equals(executionBlock) &&
+                entry.getPegoutCreationRskTxHash().equals(releaseCreationTxHash))
+            .findFirst();
+        assertTrue(pegoutEntry.isPresent());
+    }
+
+    public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getFirstInputSigHash(pegoutTransaction);
+        assertTrue(pegoutTxSigHashOpt.isPresent());
+
+        Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
+        assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
+    }
+
+    public static void assertLogReleaseRequested(List<LogInfo> logs, Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash, Coin requestedAmount) {
+        CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
+
+        byte[] releaseCreationTxHashSerialized = releaseCreationTxHash.getBytes();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(releaseRequestedEvent, releaseCreationTxHashSerialized, pegoutTransactionHashSerialized);
+
+        byte[] encodedData = getEncodedData(releaseRequestedEvent, requestedAmount.getValue());
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertReleaseTransactionInfoWasProcessed(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        BtcTransaction releaseTransaction,
+        List<Coin> outpointsValues
+    ) {
+        assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointsValues);
+        assertReleaseOutpointsValuesWereSaved(repository, bridgeStorageProvider, releaseTransaction, outpointsValues);
+    }
+
+    public static void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
+        CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
+        Sha256Hash pegoutTransactionHash = releaseTransaction.getHash();
+        byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
+
+        byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(expectedOutpointsValues);
+        byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    private static void assertReleaseOutpointsValuesWereSaved(Repository repository, BridgeStorageProvider bridgeStorageProvider, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
+        RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+
+        Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
+        // assert entry was saved in storage
+        byte[] savedReleaseOutpointsValues = repository.getStorageBytes(
+            bridgeContractAddress,
+            getStorageKeyForReleaseOutpointsValues(releaseTransaction.getHash())
+        );
+        assertNotNull(savedReleaseOutpointsValues);
+
+        // assert saved values are the expected ones
+        Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
+        assertTrue(releaseOutpointsValues.isPresent());
+        assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
     }
 
     private static void assertLogAddSignature(List<LogInfo> logs, FederationMember federationMember, byte[] rskTxHash) {
