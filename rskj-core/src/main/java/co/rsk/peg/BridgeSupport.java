@@ -1115,7 +1115,14 @@ public class BridgeSupport {
 
     private void processSvpFundTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation) {
         try {
-            BtcTransaction svpFundTransactionUnsigned = createSvpFundTransaction(proposedFederation);
+            ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = buildSvpFundTransaction(proposedFederation);
+            ReleaseTransactionBuilder.Response responseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
+            if (responseCode != ReleaseTransactionBuilder.Response.SUCCESS) {
+                logger.warn("[processSvpFundTransactionUnsigned] Couldn't create svp fund transaction. Got {} response code", responseCode);
+                return;
+            }
+
+            BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.getBtcTx();
             provider.setSvpFundTxHashUnsigned(svpFundTransactionUnsigned.getHash());
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
 
@@ -1123,11 +1130,6 @@ public class BridgeSupport {
             // one output to proposed fed, one output to flyover proposed fed
             Coin totalValueSentToProposedFederation = bridgeConstants.getSvpFundTxOutputsValue().multiply(2);
             settleReleaseRequest(utxosToUse, pegoutsWaitingForConfirmations, svpFundTransactionUnsigned, rskTxHash, totalValueSentToProposedFederation);
-        } catch (InsufficientMoneyException e) {
-            logger.error(
-                "[processSvpFundTransactionUnsigned] Insufficient funds for creating the fund transaction. Error message: {}",
-                e.getMessage()
-            );
         } catch (IOException e) {
             logger.error(
                 "[processSvpFundTransactionUnsigned] IOException getting the pegouts waiting for confirmations. Error message: {}",
@@ -1136,35 +1138,23 @@ public class BridgeSupport {
         }
     }
 
-    private BtcTransaction createSvpFundTransaction(Federation proposedFederation) throws InsufficientMoneyException {
+    private ReleaseTransactionBuilder.BuildResult buildSvpFundTransaction(Federation proposedFederation) {
         Wallet activeFederationWallet = getActiveFederationWallet(true);
+        Federation activeFederation = getActiveFederation();
+        ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+            btcContext.getParams(),
+            activeFederationWallet,
+            activeFederation.getFormatVersion(),
+            activeFederation.getAddress(),
+            getFeePerKb(),
+            activations
+        );
 
-        BtcTransaction svpFundTransaction = new BtcTransaction(networkParameters);
-        svpFundTransaction.setVersion(BTC_TX_VERSION_2);
-
-        Coin svpFundTxOutputsValue = bridgeConstants.getSvpFundTxOutputsValue();
-        // add outputs to proposed fed and proposed fed with flyover prefix
-        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
-        Address proposedFederationWithFlyoverPrefixAddress =
-            getFlyoverFederationAddress(networkParameters, bridgeConstants.getProposedFederationFlyoverPrefix(), proposedFederation);
-        svpFundTransaction.addOutput(svpFundTxOutputsValue, proposedFederationWithFlyoverPrefixAddress);
-
-        // complete tx with input and change output
-        SendRequest sendRequest = createSvpFundTransactionSendRequest(svpFundTransaction);
-        activeFederationWallet.completeTx(sendRequest);
-
-        return svpFundTransaction;
-    }
-
-    private SendRequest createSvpFundTransactionSendRequest(BtcTransaction transaction) {
-        SendRequest sendRequest = SendRequest.forTx(transaction);
-        sendRequest.changeAddress = getActiveFederationAddress();
-        sendRequest.feePerKb = feePerKbSupport.getFeePerKb();
-        sendRequest.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-        sendRequest.recipientsPayFees = false;
-        sendRequest.shuffleOutputs = false;
-
-        return sendRequest;
+        return txBuilder.buildSvpFundTransaction(
+            proposedFederation,
+            bridgeConstants.getProposedFederationFlyoverPrefix(),
+            bridgeConstants.getSvpFundTxOutputsValue()
+        );
     }
 
     private void processSvpSpendTransactionUnsigned(Keccak256 rskTxHash, Federation proposedFederation, BtcTransaction svpFundTxSigned) {
@@ -1338,7 +1328,8 @@ public class BridgeSupport {
         Keccak256 rskTxHash,
         Wallet retiringFederationWallet,
         Address activeFederationAddress,
-        List<UTXO> utxosToUse) throws IOException {
+        List<UTXO> utxosToUse
+    ) throws IOException {
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = provider.getPegoutsWaitingForConfirmations();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
@@ -2944,44 +2935,33 @@ public class BridgeSupport {
         Coin expectedMigrationValue = originWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
-            BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
-            if (activations.isActive(ConsensusRule.RSKIP376)){
-                migrationBtcTx.setVersion(BTC_TX_VERSION_2);
-            }
+            ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                networkParameters,
+                originWallet,
+                getRetiringFederation().getFormatVersion(),
+                destinationAddress,
+                getFeePerKb(),
+                activations
+            );
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildMigrationTransaction(expectedMigrationValue, destinationAddress);
 
-            migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
-
-            SendRequest sr = SendRequest.forTx(migrationBtcTx);
-            sr.changeAddress = destinationAddress;
-            sr.feePerKb = getFeePerKb();
-            sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-            sr.recipientsPayFees = true;
-            try {
-                originWallet.completeTx(sr);
-                for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
-                    transactionInput.disconnect();
+            switch (result.getResponseCode()) {
+                case SUCCESS -> {
+                    BtcTransaction migrationBtcTx = result.getBtcTx();
+                    for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
+                        transactionInput.disconnect();
+                    }
+                    return Pair.of(migrationBtcTx, result.getSelectedUTXOs());
                 }
 
-                List<UTXO> selectedUTXOs = originWallet
-                    .getUTXOProvider()
-                    .getOpenTransactionOutputs(originWallet.getWatchedAddresses())
-                    .stream()
-                    .filter(utxo -> migrationBtcTx.getInputs().stream().anyMatch(input ->
-                        input.getOutpoint().getHash().equals(utxo.getHash()) && input.getOutpoint().getIndex() == utxo.getIndex()
-                    )).collect(Collectors.toList());
+                case UTXO_PROVIDER_EXCEPTION ->
+                    throw new RuntimeException("[createMigrationTransaction] Unexpected UTXO provider error");
 
-                return Pair.of(migrationBtcTx, selectedUTXOs);
-            } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
-                logger.debug(
-                    "[createMigrationTransaction] Error while creating migration transaction. Exception type {}. Message {}",
-                    e.getClass(),
-                    e.getMessage()
-                );
-                expectedMigrationValue = expectedMigrationValue.divide(2);
-            } catch(Wallet.DustySendRequested e) {
-                throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied", e);
-            } catch (UTXOProviderException e) {
-                throw new RuntimeException("[createMigrationTransaction] Unexpected UTXO provider error", e);
+                case DUSTY_SEND_REQUESTED ->
+                    throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied");
+
+                case INSUFFICIENT_MONEY, EXCEED_MAX_TRANSACTION_SIZE, COULD_NOT_ADJUST_DOWNWARDS ->
+                    expectedMigrationValue = expectedMigrationValue.divide(2);
             }
         }
     }
