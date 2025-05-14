@@ -968,7 +968,7 @@ class BridgeSupportFlyoverTest {
             // assert
             assertEquals(BigInteger.valueOf(expectedResponseCodeResult), result);
             BtcTransaction releaseRejectionTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-            assertReleaseTransactionInfoWasProcessed(logs, releaseRejectionTransaction, List.of(amountRequestedThatSurpassesLockingCap));
+            assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseRejectionTransaction, List.of(amountRequestedThatSurpassesLockingCap));
         }
 
         @Test
@@ -1122,53 +1122,6 @@ class BridgeSupportFlyoverTest {
 
             recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
             bridgeStorageProvider.save();
-        }
-
-        private void assertReleaseTransactionInfoWasProcessed(
-            List<LogInfo> logs,
-            BtcTransaction releaseTransaction,
-            List<Coin> expectedOutpointsValues
-        ) {
-            assertLogPegoutTransactionCreated(logs, releaseTransaction, expectedOutpointsValues);
-            assertReleaseOutpointsValuesWereSaved(releaseTransaction, expectedOutpointsValues);
-        }
-
-        private void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
-            CallTransaction.Function pegoutTransactionCreatedEvent = BridgeEvents.PEGOUT_TRANSACTION_CREATED.getEvent();
-            Sha256Hash pegoutTransactionHash = releaseTransaction.getHash();
-            byte[] pegoutTransactionHashSerialized = pegoutTransactionHash.getBytes();
-            List<DataWord> encodedTopics = getEncodedTopics(pegoutTransactionCreatedEvent, pegoutTransactionHashSerialized);
-
-            byte[] serializedOutpointValues = UtxoUtils.encodeOutpointValues(expectedOutpointsValues);
-            byte[] encodedData = getEncodedData(pegoutTransactionCreatedEvent, serializedOutpointValues);
-
-            assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
-            assertEventWasEmittedWithExpectedData(logs, encodedData);
-        }
-
-        private void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
-            Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
-            assertTrue(topicOpt.isPresent());
-        }
-
-        private void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
-            Optional<LogInfo> data = getLogsData(logs, expectedData);
-            assertTrue(data.isPresent());
-        }
-
-        private void assertReleaseOutpointsValuesWereSaved(BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
-            Sha256Hash releaseTransactionHash = releaseTransaction.getHash();
-            // assert entry was saved in storage
-            byte[] savedReleaseOutpointsValues = repository.getStorageBytes(
-                bridgeContractAddress,
-                getStorageKeyForReleaseOutpointsValues(releaseTransaction.getHash())
-            );
-            assertNotNull(savedReleaseOutpointsValues);
-
-            // assert saved values are the expected ones
-            Optional<List<Coin>> releaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTransactionHash);
-            assertTrue(releaseOutpointsValues.isPresent());
-            assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
         }
     }
 

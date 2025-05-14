@@ -23,6 +23,8 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationFormatVersion;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -30,8 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
+import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
 import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -46,6 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ReleaseTransactionBuilder {
 
+    private static final int BTC_TX_VERSION_1 = 1;
     public static final int BTC_TX_VERSION_2 = 2;
 
     public class BuildResult {
@@ -139,6 +142,25 @@ public class ReleaseTransactionBuilder {
         }, String.format("batching %d pegouts", entries.size()));
     }
 
+    public BuildResult buildSvpFundTransaction(Federation proposedFederation, Keccak256 proposedFederationFlyoverPrefix, Coin svpFundTxOutputsValue) {
+        return buildWithConfiguration((SendRequest sr) -> {
+            sr.tx.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
+            sr.tx.addOutput(svpFundTxOutputsValue, getFlyoverFederationAddress(params, proposedFederationFlyoverPrefix, proposedFederation));
+            sr.changeAddress = changeAddress;
+            sr.recipientsPayFees = false;
+        }, String.format("sending %s in svp fund transaction", svpFundTxOutputsValue));
+    }
+
+    public BuildResult buildMigrationTransaction(Coin migrationValue, Address destinationAddress) {
+        return buildWithConfiguration((SendRequest sr) -> {
+            if (!activations.isActive(ConsensusRule.RSKIP376)){
+                sr.tx.setVersion(BTC_TX_VERSION_1);
+            }
+            sr.tx.addOutput(migrationValue, destinationAddress);
+            sr.changeAddress = destinationAddress;
+        }, String.format("sending %s in svp fund transaction", migrationValue));
+    }
+
     public BuildResult buildEmptyWalletTo(Address to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
@@ -171,28 +193,23 @@ public class ReleaseTransactionBuilder {
                         input.getOutpoint().getIndex() == utxo.getIndex()
                     )
                 )
-                .collect(Collectors.toList());
+                .toList();
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
             logger.warn(String.format("Not enough BTC in the wallet to complete %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.INSUFFICIENT_MONEY);
         } catch (Wallet.CouldNotAdjustDownwards e) {
             logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.COULD_NOT_ADJUST_DOWNWARDS);
+        } catch (Wallet.DustySendRequested e) {
+            logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
+            return new BuildResult(null, null, Response.DUSTY_SEND_REQUESTED);
         } catch (Wallet.ExceededMaxTransactionSize e) {
             logger.warn(String.format("Tx size too big %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("exceededmaxtransactionsize", "Tx size too big " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.EXCEED_MAX_TRANSACTION_SIZE);
         } catch (UTXOProviderException e) {
             logger.warn(String.format("UTXO provider exception sending %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("utxoprovider", "UTXO provider exception " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.UTXO_PROVIDER_EXCEPTION);
         }
     }
@@ -254,8 +271,8 @@ public class ReleaseTransactionBuilder {
         SUCCESS,
         INSUFFICIENT_MONEY,
         COULD_NOT_ADJUST_DOWNWARDS,
+        DUSTY_SEND_REQUESTED,
         EXCEED_MAX_TRANSACTION_SIZE,
         UTXO_PROVIDER_EXCEPTION
     }
-
 }
