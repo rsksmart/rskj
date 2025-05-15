@@ -160,10 +160,10 @@ files:
   # Docs from 03-node-operators/09-troubleshooting/
   - input: docs/03-node-operators/09-troubleshooting/index.md
     output: transformed/03-node-operators/09-troubleshooting/index.md
-    title: Troubleshooting
+    title: Troubleshooting RSKj Node
     sidebar_label: Troubleshooting
     sidebar_position: 11
     tags:  [rsk, rskj, rootstock, node, faq, troubleshoot]
-    description: "How to solve some known or frequently encountered issues when working with RSKj"
+    description: "How to solve some known or frequently encountered issues when working with the RSKj node"
 
   # Add more files as needed
