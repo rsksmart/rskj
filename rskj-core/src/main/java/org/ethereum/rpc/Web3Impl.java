@@ -410,6 +410,20 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
+        if (blockRefParam.getIdentifier() != null) {
+            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
+        }
+        return eth_call(args, blockRefParam.getInputs());
+    }
+
+    @Override
+    public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<String, AccountOverrideParam> overrides) {
+        logger.info("Received staetOverrideParam {}", overrides);
+        return "ok";
+    }
+
+    @Override
     public String eth_getCode(HexAddressParam address, BlockRefParam blockRefParam) {
         if (blockRefParam.getIdentifier() != null) {
             return this.getCode(address, blockRefParam.getIdentifier());

@@ -23,16 +23,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.parameters.BlockHashParam;
-import org.ethereum.rpc.parameters.FilterRequestParam;
-import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.BlockRefParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-import org.ethereum.rpc.parameters.HexIndexParam;
-import org.ethereum.rpc.parameters.HexNumberParam;
-import org.ethereum.rpc.parameters.TxHashParam;
+import org.ethereum.rpc.parameters.*;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -47,13 +38,6 @@ public interface Web3EthModule {
         return getEthModule().sign(addr.getAddress().toHexString(), data.getAsHexString());
     }
 
-    default String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
-        if (blockRefParam.getIdentifier() != null) {
-            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
-        }
-        return eth_call(args, blockRefParam.getInputs());
-    }
-
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
     }
@@ -61,6 +45,10 @@ public interface Web3EthModule {
     default String eth_chainId() {
         return getEthModule().chainId();
     }
+
+    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam);
+
+    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<String, AccountOverrideParam> overrides);
 
     String eth_estimateGas(CallArgumentsParam args);
     String eth_estimateGas(CallArgumentsParam args, BlockIdentifierParam bnOrId);
