@@ -48,7 +48,7 @@ To expose metrics for Prometheus, you can use the [Prometheus JMX Exporter](http
 
 - Replace `/path/to/jmx_prometheus_javaagent.jar` with the path to the downloaded jmx agent JAR file.
 - Replace `8080` with the port where the metrics will be exposed.
-- Replace `/path/to/config.yaml` with the path to your configuration file.
+- Replace `/path/to/config.yaml` with the path to the configuration file you created in the step 2.
 
 4. **Run Prometheus**
    Configure Prometheus to scrape metrics from your node by adding the following to your `prometheus.yml`:
