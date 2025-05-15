@@ -15,7 +15,6 @@ public class UnionBridgeSupportBuilder {
     private UnionBridgeStorageProvider storageProvider;
     private SignatureCache signatureCache;
 
-
     private UnionBridgeSupportBuilder() {
         this.activations = mock(ActivationConfig.ForBlock.class);
         this.constants = mock(UnionBridgeConstants.class);
