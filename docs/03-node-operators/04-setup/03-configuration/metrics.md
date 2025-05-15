@@ -20,6 +20,8 @@ Java Management Extensions (JMX) can be used to expose metrics for tools like JC
 - Open JConsole (`jconsole` command).
 - Enter the hostname and port (e.g., `localhost:9010`).
 
+Note: For more details on using JConsole, refer to the official documentation: [JConsole Documentation](https://docs.oracle.com/javase/8/docs/technotes/guides/management/jconsole.html).
+
 ---
 
 #### 2. Expose Metrics for Prometheus Using Prometheus JMX Exporter
