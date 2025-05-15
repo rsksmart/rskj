@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionBridgeSupportImplTest {
 
+    private static final UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
     private static final ActivationConfig.ForBlock lovell700 = ActivationConfigsForTest.lovell700()
         .forBlock(0);
     private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all()
@@ -514,6 +515,125 @@ class UnionBridgeSupportImplTest {
         assertNoLockingCapIsStored();
     }
 
+    @Test
+    void requestUnionRbtc_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(
+            TestUtils.generateAddress("notAuthorizedAddress"));
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants)
+            .build();
+
+        BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(weiPerEther);
+
+        // act
+        int actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.UNAUTHORIZED_CALLER.getCode());
+    }
+
+    @Test
+    void requestUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(unionBridgeConstants).build();
+
+        // act
+        int actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, null);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.INVALID_VALUE.getCode());
+    }
+    
+    private static Stream<Arguments> invalidAmountArgProvider() {
+        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        /*
+            lockingCapIncrementsMultiplier = 2
+            lockingCap = initialLockingCap * lockingCapIncrementsMultiplier
+            previousAmountTransferred = initialLockingCap
+            amountSurpassingLockingCap = previousAmountRequest + initialLockingCap + 1 satoshi
+         */
+        co.rsk.core.Coin amountRequestToSurpassLockingCap = co.rsk.core.Coin.fromBitcoin(initialLockingCap)
+            .add(co.rsk.core.Coin.fromBitcoin(Coin.CENT));
+        return Stream.of(
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(-1))),
+            Arguments.of(co.rsk.core.Coin.ZERO),
+            Arguments.of(amountRequestToSurpassLockingCap)
+        );
+    }
+
+    @ParameterizedTest()
+    @MethodSource("invalidAmountArgProvider")
+    void requestUnionRbtc_whenInvalidValue_shouldReturnInvalidValue(co.rsk.core.Coin amountRequested) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(unionBridgeConstants).build();
+        
+        // To simulate the case where a locking cap is store
+        Coin newLockingCap = unionBridgeConstants.getInitialLockingCap()
+            .multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            newLockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
+        // to simulate the case where there is a previous amount requested
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            amountRequested,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+        
+        // act
+        int actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.INVALID_VALUE.getCode());
+    }
+
+    private static Stream<Arguments> validAmountArgProvider() {
+        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        /*
+            lockingCapIncrementsMultiplier = 2
+            lockingCap = initialLockingCap * lockingCapIncrementsMultiplier
+            previousAmountTransferred = initialLockingCap
+            amountSurpassingLockingCap = previousAmountRequest + initialLockingCap + 1 satoshi
+         */
+        co.rsk.core.Coin amountRequestToEqualLockingCap = co.rsk.core.Coin.fromBitcoin(initialLockingCap);
+        BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+
+        return Stream.of(
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(1))),
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(100))),
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(1000))),
+            Arguments.of(new co.rsk.core.Coin(weiPerEther)),
+            Arguments.of(amountRequestToEqualLockingCap)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("validAmountArgProvider")
+    void requestUnionRbtc_whenValidValue_shouldReturnSuccessCode(co.rsk.core.Coin amountRequested) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(unionBridgeConstants).build();
+
+        // act
+        int actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
+
+        // assert
+        Assertions.assertEquals(actualResponseCode, UnionResponseCode.SUCCESS.getCode());
+    }
+
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
     void save_preRSKIP502_shouldSetButDoNotStoreGivenAddress(UnionBridgeConstants unionBridgeConstants) {
@@ -531,6 +651,15 @@ class UnionBridgeSupportImplTest {
         assertAddressWasSet(unionBridgeContractAddress);
         assertNoAddressIsStored();
         assertNoLockingCapIsStored();
+        assertNoUnionRbtcIsStored();
+    }
+
+    private void assertNoUnionRbtcIsStored() {
+        co.rsk.core.Coin actualAmountTransferred = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        Assertions.assertNull(actualAmountTransferred);
     }
 
     @ParameterizedTest
@@ -549,6 +678,10 @@ class UnionBridgeSupportImplTest {
         int actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(actualLockingCapResponseCode, UnionResponseCode.SUCCESS.getCode());
 
+        co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(BigInteger.valueOf(100));
+        int actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
+        Assertions.assertEquals(actualRequestUnionRbtcResponseCode, UnionResponseCode.SUCCESS.getCode());
+
         // act
         unionBridgeSupport.save();
 
@@ -556,6 +689,7 @@ class UnionBridgeSupportImplTest {
         assertAddressWasSet(unionBridgeContractAddress);
         assertAddressWasStored(unionBridgeContractAddress);
         assertLockingCapWasStored(newLockingCap);
+        assertUnionRbtcWasStored(amountRequested);
     }
 
     private void assertAddressWasStored(RskAddress expectedAddress) {
@@ -572,5 +706,13 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::deserializeCoin
         );
         Assertions.assertEquals(newLockingCap, storedLockingCap);
+    }
+
+    private void assertUnionRbtcWasStored(co.rsk.core.Coin amountRequested) {
+        co.rsk.core.Coin actualAmountTransferred = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        Assertions.assertEquals(amountRequested, actualAmountTransferred);
     }
 }
