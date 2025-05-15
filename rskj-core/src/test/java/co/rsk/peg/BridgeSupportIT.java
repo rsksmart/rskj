@@ -167,12 +167,12 @@ public class BridgeSupportIT {
         );
         UnionBridgeStorageProviderImpl unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(
             inMemoryStorage);
-        unionBridgeSupport = new UnionBridgeSupportImpl(
-            activations,
-            BridgeMainNetConstants.getInstance().getUnionBridgeConstants(),
-            unionBridgeStorageProvider,
-            signatureCache
-        );
+        unionBridgeSupport = UnionBridgeSupportBuilder
+            .builder()
+            .withActivations(activations)
+            .withSignatureCache(signatureCache)
+            .withConstants(BridgeMainNetConstants.getInstance().getUnionBridgeConstants())
+            .withStorageProvider(unionBridgeStorageProvider).build();
 
         track = createRepository().startTracking();
 

@@ -26,8 +26,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
 
-    public UnionBridgeSupportImpl(ActivationConfig.ForBlock activations, UnionBridgeConstants constants, UnionBridgeStorageProvider storageProvider,
-        SignatureCache signatureCache) {
+    public UnionBridgeSupportImpl(
+        ActivationConfig.ForBlock activations,
+        UnionBridgeConstants constants,
+        UnionBridgeStorageProvider storageProvider,
+        SignatureCache signatureCache
+    ) {
         this.activations = activations;
         this.constants = constants;
         this.storageProvider = storageProvider;
@@ -89,11 +93,10 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     private boolean isUnauthorizedCaller(Transaction tx) {
-        // Check if the caller is isUnauthorizedCaller to set a new bridge contract address
         AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
         boolean isUnauthorizedCaller = !authorizer.isAuthorized(tx, signatureCache);
         if (isUnauthorizedCaller) {
-            String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
+            String baseMessage = String.format("Caller is not authorized to execute this method. Caller address: %s", tx.getSender());
             logger.warn(LOG_PATTERN, "isUnauthorizedCaller", baseMessage);
         }
 
@@ -144,6 +147,60 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Union Locking Cap has been increased. New value: {}",
             INCREASE_LOCKING_CAP_TAG, newCap.value);
         return UnionResponseCode.SUCCESS;
+    }
+
+    @Override
+    public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amount) {
+        final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
+
+        if (isCallerNoUnionBridgeContractAddress(tx)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
+        }
+
+        if (isInvalidAmount(amount)) {
+            return UnionResponseCode.INVALID_VALUE;
+        }
+
+        storageProvider.setWeisTransferredToUnionBridge(amount);
+        logger.info("[{}] Amount requested by the union bridge has been transferred. Amount Requested: {}.", REQUEST_UNION_RBTC_TAG, amount);
+        return UnionResponseCode.SUCCESS;
+    }
+
+    private boolean isCallerNoUnionBridgeContractAddress(Transaction tx) {
+        RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
+        boolean isCallerNoUnionBridgeContractAddress = !tx.getSender(signatureCache).equals(unionBridgeContractAddress);
+        if (isCallerNoUnionBridgeContractAddress) {
+            String baseMessage = String.format("Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s", tx.getSender(), unionBridgeContractAddress);
+            logger.warn(LOG_PATTERN, "isCallerNoUnionBridgeContractAddress", baseMessage);
+        }
+        return isCallerNoUnionBridgeContractAddress;
+    }
+
+    private boolean isInvalidAmount(co.rsk.core.Coin amountRequested) {
+        boolean isAmountNullOrGreaterThanZero = amountRequested == null || amountRequested.compareTo(co.rsk.core.Coin.ZERO) < 1;
+        if (isAmountNullOrGreaterThanZero) {
+            logger.warn(
+                "[{isInvalidAmount}] Amount requested cannot be negative or zero. Amount requested: {}", amountRequested);
+            return true;
+        }
+
+        co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(storageProvider.getLockingCap(activations)
+            .orElse(constants.getInitialLockingCap()));
+
+        co.rsk.core.Coin previousAmountRequested = storageProvider.getWeisTransferredToUnionBridge(activations)
+            .orElse(co.rsk.core.Coin.ZERO);
+
+        co.rsk.core.Coin newAmountRequested = previousAmountRequested.add(amountRequested);
+        boolean doesNewAmountAndPreviousAmountRequestedSurpassLockingCap =
+            newAmountRequested.compareTo(lockingCap) > 0;
+        if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
+            logger.warn(
+                "[{isInvalidAmount}] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}", previousAmountRequested, newAmountRequested, lockingCap
+            );
+            return true;
+        }
+
+        return false;
     }
 
     private boolean isInvalidLockingCap(Coin newCap) {
