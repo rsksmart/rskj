@@ -8,6 +8,8 @@ import org.ethereum.core.Transaction;
 
 public interface UnionBridgeSupport {
 
+    RskAddress getUnionBridgeContractAddress();
+
     UnionResponseCode setUnionBridgeContractAddressForTestnet(Transaction tx,
         RskAddress unionBridgeContractAddress);
 
