@@ -26,8 +26,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
 
-    public UnionBridgeSupportImpl(ActivationConfig.ForBlock activations, UnionBridgeConstants constants, UnionBridgeStorageProvider storageProvider,
-        SignatureCache signatureCache) {
+    public UnionBridgeSupportImpl(
+        ActivationConfig.ForBlock activations,
+        UnionBridgeConstants constants,
+        UnionBridgeStorageProvider storageProvider,
+        SignatureCache signatureCache
+    ) {
         this.activations = activations;
         this.constants = constants;
         this.storageProvider = storageProvider;
@@ -132,6 +136,52 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Union Locking Cap has been increased. New value: {}",
             INCREASE_LOCKING_CAP_TAG, newCap.value);
         return UnionResponseCode.SUCCESS.getCode();
+    }
+
+    @Override
+    public int requestUnionRbtc(Transaction tx, co.rsk.core.Coin amount) {
+        final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
+
+        if (isUnauthorizedCaller(tx, REQUEST_UNION_RBTC_TAG)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+        }
+
+        if (isInvalidAmount(amount)) {
+            return UnionResponseCode.INVALID_VALUE.getCode();
+        }
+
+        storageProvider.setWeiTransferredToUnionBridge(amount);
+        logger.info("[{}] Amount requested by the union bridge has been transferred. Amount Requested: {}.", REQUEST_UNION_RBTC_TAG, amount);
+        return UnionResponseCode.SUCCESS.getCode();
+    }
+
+    private boolean isInvalidAmount(co.rsk.core.Coin amountRequested) {
+        boolean isAmountNullOrGreaterThanZero = amountRequested == null || amountRequested.compareTo(co.rsk.core.Coin.ZERO) < 1;
+        if (isAmountNullOrGreaterThanZero) {
+            logger.warn(
+                "[{}] Amount requested cannot be negative or zero. Amount requested: {}",
+                "isInvalidAmount", amountRequested);
+            return true;
+        }
+
+        co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(storageProvider.getLockingCap(activations)
+            .orElse(constants.getInitialLockingCap()));
+
+        co.rsk.core.Coin previousAmountRequested = storageProvider.getWeiTransferredToUnionBridge(activations)
+            .orElse(co.rsk.core.Coin.ZERO);
+
+        co.rsk.core.Coin newAmountRequested = previousAmountRequested.add(amountRequested);
+        boolean doesNewAmountAndPreviousAmountRequestedSurpassLockingCap =
+            newAmountRequested.compareTo(lockingCap) > 0;
+        if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
+            logger.warn(
+                "[{}] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}",
+                "isInvalidAmount", previousAmountRequested, newAmountRequested, lockingCap
+            );
+            return true;
+        }
+
+        return false;
     }
 
     private boolean isInvalidLockingCap(Coin newCap) {

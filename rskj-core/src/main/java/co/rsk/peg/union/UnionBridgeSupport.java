@@ -14,5 +14,7 @@ public interface UnionBridgeSupport {
 
     int increaseLockingCap(Transaction tx, Coin newCap);
 
+    int requestUnionRbtc(Transaction tx, co.rsk.core.Coin amount);
+
     void save();
 }
