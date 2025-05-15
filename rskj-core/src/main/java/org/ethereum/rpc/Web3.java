@@ -22,7 +22,10 @@ import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringReputationSummary;
-import org.ethereum.rpc.parameters.*;
+import org.ethereum.rpc.parameters.CallArgumentsParam;
+import org.ethereum.rpc.parameters.HexAddressParam;
+import org.ethereum.rpc.parameters.HexDurationParam;
+import org.ethereum.rpc.parameters.HexKeyParam;
 
 import java.util.Map;
 

@@ -33,6 +33,7 @@ import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.eth.AccountOverride;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -405,22 +406,66 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_call(CallArgumentsParam args, Map<String, String> inputs, List<AccountOverride> accountOverrideList) {
+        return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber), accountOverrideList));
+    }
+
+    @Override
     public String eth_call(CallArgumentsParam args, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber)));
+        return eth_call(args, inputs, Collections.emptyList());
     }
 
     @Override
     public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
-        if (blockRefParam.getIdentifier() != null) {
-            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
-        }
-        return eth_call(args, blockRefParam.getInputs());
+        return eth_call(args, blockRefParam, Map.of());
     }
 
     @Override
-    public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<String, AccountOverrideParam> overrides) {
-        logger.info("Received staetOverrideParam {}", overrides);
-        return "ok";
+    public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam) {
+        List<AccountOverride> accountOverrideList = accParam.entrySet().stream()
+                .map(entry -> getAccountOverride(entry.getKey(), entry.getValue()))
+                .toList();
+        if (blockRefParam.getIdentifier() != null) {
+            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()), accountOverrideList);
+        }
+        return eth_call(args, blockRefParam.getInputs(), accountOverrideList);
+    }
+
+    private AccountOverride getAccountOverride(HexAddressParam hexAddressParam, AccountOverrideParam accountOverrideParam) {
+        AccountOverride accountOverride = new AccountOverride(hexAddressParam.getAddress());
+
+        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
+            accountOverride.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
+        }
+
+        if (accountOverrideParam.getBalance() != null) {
+            accountOverride.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
+        }
+
+        if (accountOverrideParam.getNonce() != null) {
+            accountOverride.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.getNonce().getHexNumber()));
+        }
+
+        if (accountOverrideParam.getCode() != null) {
+            accountOverride.setCode(accountOverrideParam.getCode().getRawDataBytes());
+        }
+
+        if (accountOverrideParam.getState() != null) {
+            Map<DataWord, DataWord> state = new HashMap<>();
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
+                state.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
+            }
+            accountOverride.setState(state);
+        }
+
+        if (accountOverrideParam.getStateDiff() != null) {
+            Map<DataWord, DataWord> stateDiff = new HashMap<>();
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
+                stateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
+            }
+            accountOverride.setStateDiff(stateDiff);
+        }
+        return accountOverride;
     }
 
     @Override

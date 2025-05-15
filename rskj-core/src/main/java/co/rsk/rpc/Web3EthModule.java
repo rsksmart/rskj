@@ -18,6 +18,7 @@
 
 package co.rsk.rpc;
 
+import co.rsk.rpc.modules.eth.AccountOverride;
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
@@ -26,6 +27,7 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.parameters.*;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings({"java:S100", "java:S112"})
@@ -46,11 +48,8 @@ public interface Web3EthModule {
         return getEthModule().chainId();
     }
 
-    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam);
-
-    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<String, AccountOverrideParam> overrides);
-
     String eth_estimateGas(CallArgumentsParam args);
+
     String eth_estimateGas(CallArgumentsParam args, BlockIdentifierParam bnOrId);
 
     EthModule getEthModule();
@@ -70,6 +69,12 @@ public interface Web3EthModule {
     String eth_blockNumber();
 
     String eth_call(CallArgumentsParam args, Map<String, String> blockRef); // NOSONAR
+
+    String eth_call(CallArgumentsParam args, Map<String, String> blockRef, List<AccountOverride> accountOverrideList);
+
+    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam);
+
+    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam);
 
     String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 

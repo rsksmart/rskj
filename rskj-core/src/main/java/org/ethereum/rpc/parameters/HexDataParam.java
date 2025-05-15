@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -48,6 +49,10 @@ public class HexDataParam implements Serializable {
 
     public String getAsHexString() {
         return "0x" + ByteUtil.toHexString(rawDataBytes);
+    }
+
+    public DataWord getAsDataWord() {
+        return DataWord.valueOf(rawDataBytes);
     }
 
     public static class Deserializer extends StdDeserializer<HexDataParam> {
