@@ -72,7 +72,7 @@ class UnionBridgeSupportImplTest {
         when(rskTx.getSender(signatureCache)).thenReturn(authorizerRskAddress);
     }
 
-    private static Stream<Arguments> unionBridgeConstantsForSetUnionBridgeContractAddress() {
+    private static Stream<Arguments> testnetAndRegtestConstantsProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeRegTestConstants.getInstance()),
             Arguments.of(UnionBridgeTestNetConstants.getInstance())
@@ -87,8 +87,83 @@ class UnionBridgeSupportImplTest {
         );
     }
 
+    @Test
+    void getUnionBridgeContractAddress_beforeRSKIP502_shouldReturnEmpty() {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(lovell700)
+            .build();
+
+        // act
+        Optional<RskAddress> actualRskAddress = unionBridgeSupport.getUnionBridgeContractAddress();
+
+        // assert
+        Assertions.assertTrue(actualRskAddress.isEmpty());
+        assertNoAddressIsStored();
+    }
+
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("unionBridgeConstantsProvider")
+    void getUnionBridgeContractAddress_whenNoStoredAddress_shouldReturnConstantAddress(
+        UnionBridgeConstants unionBridgeConstants) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants).build();
+
+        // act
+        Optional<RskAddress> actualRskAddress = unionBridgeSupport.getUnionBridgeContractAddress();
+
+        // assert
+        Assertions.assertTrue(actualRskAddress.isPresent());
+        Assertions.assertEquals(unionBridgeConstants.getAddress(), actualRskAddress.get());
+    }
+
+    @ParameterizedTest
+    @MethodSource("testnetAndRegtestConstantsProvider")
+    void getUnionBridgeContractAddress_whenStoredAddress_shouldReturnStoredAddress(
+        UnionBridgeConstants unionBridgeConstants) {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants).build();
+        // to simulate the case where there is a previous address stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            unionBridgeContractAddress,
+            BridgeSerializationUtils::serializeRskAddress
+        );
+
+        // act
+        Optional<RskAddress> actualRskAddress = unionBridgeSupport.getUnionBridgeContractAddress();
+
+        // assert
+        Assertions.assertTrue(actualRskAddress.isPresent());
+        Assertions.assertEquals(unionBridgeContractAddress, actualRskAddress.get());
+    }
+
+    @Test
+    void getUnionBridgeContractAddress_whenMainnet_shouldReturnConstant() {
+        // arrange
+        // to simulate the case where there is a previous address stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            unionBridgeContractAddress,
+            BridgeSerializationUtils::serializeRskAddress
+        );
+
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(unionBridgeConstants).build();
+
+        // act
+        Optional<RskAddress> actualRskAddress = unionBridgeSupport.getUnionBridgeContractAddress();
+
+        // assert
+        Assertions.assertTrue(actualRskAddress.isPresent());
+        Assertions.assertEquals(unionBridgeConstants.getAddress(), actualRskAddress.get());
+    }
+
+    @ParameterizedTest
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccessCode(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -118,7 +193,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_postRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccess(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -145,7 +220,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -173,7 +248,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_postRSKIP502_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -196,7 +271,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_whenStoredAddress_shouldReturnSuccessCodeButDoNotStoreAnyAddress(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -255,7 +330,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -281,7 +356,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -305,7 +380,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsEmpty_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -635,7 +710,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void save_preRSKIP502_shouldSetButDoNotStoreGivenAddress(UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -663,7 +738,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
+    @MethodSource("testnetAndRegtestConstantsProvider")
     void save_postRSKIP502_shouldSave(UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder

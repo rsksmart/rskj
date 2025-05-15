@@ -39,6 +39,23 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
+    public Optional<RskAddress> getUnionBridgeContractAddress() {
+        if (!activations.isActive(ConsensusRule.RSKIP502)) {
+            return Optional.empty();
+        }
+        if (isCurrentEnvironmentMainnet()) {
+            return Optional.of(constants.getAddress());
+        }
+
+        return Optional.of(storageProvider.getAddress(activations).orElse(constants.getAddress()));
+    }
+
+    private boolean isCurrentEnvironmentMainnet() {
+        String currentNetworkId = constants.getBtcParams().getId();
+        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+    }
+
+    @Override
     public int setUnionBridgeContractAddressForTestnet(@Nonnull Transaction tx, RskAddress unionBridgeContractAddress) {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
 
