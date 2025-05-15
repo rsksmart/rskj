@@ -123,6 +123,14 @@ files:
     description: 'Transaction rate limiting on the Rootstock network. The features, their importance, how to use and configure them.'
     tags: [node operators, rocksdb, node, rskj, rate, limit]
 
+  - input: docs/03-node-operators/04-setup/03-configuration/metrics.md
+    output: transformed/03-node-operators/04-setup/03-configuration/metrics.md
+    title: Exposing RSKj node metrics
+    sidebar_label: Metrics
+    sidebar_position: 800
+    description: 'This page provides instructions for exposing metrics from an RSKj node to be consumed by monitoring tools like JConsole and Prometheus'
+    tags: [node operators, node, rskj, jmx, metric, jconsole, prometheus]
+
   # Docs from 03-node-operators/04-setup/04-node-runner
 
   - input: docs/03-node-operators/04-setup/04-node-runner/cli.md
