@@ -62,7 +62,6 @@ import co.rsk.peg.storage.*;
 import co.rsk.peg.union.UnionBridgeStorageProvider;
 import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import co.rsk.peg.union.UnionBridgeSupport;
-import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
@@ -185,12 +184,14 @@ class BridgeSupportTest {
         );
 
         UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
-        unionBridgeSupport = new UnionBridgeSupportImpl(
-            activationsAfterForks,
-            UnionBridgeMainNetConstants.getInstance(),
-            unionBridgeStorageProvider,
-            signatureCache
-        );
+
+        unionBridgeSupport = UnionBridgeSupportBuilder
+            .builder()
+            .withActivations(allActivations)
+            .withConstants(UnionBridgeMainNetConstants.getInstance())
+            .withStorageProvider(unionBridgeStorageProvider)
+            .withSignatureCache(signatureCache)
+            .build();
 
         repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, allActivations);
