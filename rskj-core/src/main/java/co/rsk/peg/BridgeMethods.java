@@ -857,6 +857,17 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
+    REQUEST_UNION_RBTC(
+        CallTransaction.Function.fromSignature(
+            "requestUnionRbtc",
+            new String[]{"int256"},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::requestUnionRbtc,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
     ;
 
     private static class CallTypeHelper {
