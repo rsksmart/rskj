@@ -226,6 +226,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     // Union Bridge Contract functions
     public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+    public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
 
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
@@ -1490,6 +1491,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
         RskAddress unionBridgeContractAddress = new RskAddress((DataWord) args[0]);
         return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress);
+    }
+
+    public long getUnionBridgeLockingCap(Object[] args) {
+        logger.trace("getUnionBridgeLockingCap");
+
+        Optional<Coin> lockingCap = bridgeSupport.getUnionBridgeLockingCap();
+
+        // This is an illegal state and should never happen
+        if (lockingCap.isEmpty()) {
+            throw new IllegalStateException("No stored or default locking cap was found.");
+        }
+        return lockingCap.get().getValue();
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
