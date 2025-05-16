@@ -1,7 +1,11 @@
 # Experimental Features
 
-Below you can find all the experimental features released with RSKj, alongside the version and
-height in which they were introduced, there are instructions on how you can configure, customize
+Below you can find all the experimental features released with RSKj. The experimental features are not enabled by default, 
+and you need to explicitly enable them in your configuration file. These are features that are still being tested and may not be fully stable, 
+we decide to release them so the community can start to use it and provide feedback about it. So we can also validate, improve and iterate 
+on them before they are released as stable features in the future.
+
+You will also find the version and height in which they were introduced, there are instructions on how you can configure, customize
 and start using them.
 
 ## Snapshot Sync
@@ -11,23 +15,24 @@ snapshot of the state of the blockchain, rather than downloading the whole block
 genesis. This can significantly reduce the time it takes to synchronize a node, especially for large
 blockchains.
 
-Full Long Sync is the standard method for getting a new RSKj node to match up with the existing
-blockchain network. The goal is to make sure the new node downloads and checks every transaction,
-contract, and block, starting from the very first one. This approach uses up quite a bit of time and
+### When was it released?
+Snapshot Sync was released in RSKj version LOVELL-7.1.0, if you are using a version higher than this, you can enable and use this feature.
+
+
+Full Long Sync is the standard method for getting a new RSKj node to match up with the existing  blockchain network. The goal is to make sure 
+the new node downloads and checks every transaction, contract, and block, starting from the very first one. This approach uses up quite a bit of time and
 computer resources.
 
-Snapshot Sync is designed to make the sync process faster but still safe: Instead of getting the
-whole blockchain history, state data is downloaded up to a certain point where there's enough
-information to rebuild the whole state quickly.
+Snapshot Sync is designed to make the sync process faster but still safe: Instead of getting the full blockchain history, state data is downloaded up 
+to a certain point where there's enough information to rebuild the whole state quickly.
 
-Snapshot Sync main goal is to have a new RSKj node ready to use in a shorter time in comparison to
-using the default Full Long Sync method.
+The main goal of Snapshot Sync is to have a new RSKj node ready to use in a shorter time in comparison to using the default Full Long Sync method.
 
 ### How to Configure Snap-Capable Nodes
 Nodes can be configured as Snap servers and/or clients by adding a new `snapshot` config block to the `sync` configurations.
 
 #### Snap Server
-A node can be configured as a Snap Server by simply adding the following to the `sync` configuration block:
+A node can be configured as a Snap Server by adding the following to the `sync` configuration block:
 
 ```yaml
 snapshot = {
@@ -148,6 +153,9 @@ Until the whole process ends, and the following logs will look something like th
 ## Fiat Stable MinGasPrice
 
 In the context of **RSKj** and **cryptocurrency**, **Fiat Stable MinGasPrice** usually refers to a way of **stabilizing the minimum gas price** based on the value of a **fiat currency** (like USD, EUR, etc.).
+
+### When was it released?
+Fiat Stable MinGasPrice was released in RSKj version LOVELL-7.1.0, if you are using a version higher than this, you can enable and use this feature.
 
 **Important Definitions:**
 

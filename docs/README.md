@@ -1,4 +1,4 @@
-# DevPortal documentation automatic syncrhonization 
+# DevPortal documentation automatic synchronization
 
 This document explain the pipeline and process that was confogured to set up 
 the process to automatically update the Devportal documentation related with core team
@@ -60,11 +60,11 @@ synched with the one we have here. For example, we have the folder `03-node-oper
 ```
 
 The idea is that any file changed under the `03-node-operators` folder will be automatically updated in the DevPortal
-[repository](https://github.com/rsksmart/devportal/tree/main/docs/03-node-operators/04-setup) in a 
-Pull Request (PR) created by the pipeline configured `devportal-update.yml` in the core repository, as you can see
-an example [here](https://github.com/rsksmart/devportal/pull/291).
+[repository](https://github.com/rsksmart/devportal/tree/main/docs/03-node-operators/04-setup) in a Pull Request (PR) created by the pipeline configured `devportal-update.yml` in the core repository, as you can see
+an example [here](https://github.com/rsksmart/devportal/pull/291).  
 
-It can be checked under a successfully run, the PR created in the pipeline 
+Once the devportal-update pipeline runs, you can go to Actions and check under a successfully run, that it was created a PR in devportal 
+in the step `Create Pull Request` from the pipeline. You can also check the logs of the pipeline to see the details of the PR created.
 [Update DevPortal Documentation](https://github.com/rsksmart/rskj/actions/workflows/devportal-update.yml).
 
 ## Pipeline Configuration
@@ -92,7 +92,7 @@ and applies the necessary formatting and metadata.
 It reads the input file, adds metadata (such as sidebar information, title, tags, and description), and 
 writes the processed content to an output file.
 
-### Configuration file yaml
+### Configuration file - yaml
 
 This file contains the list of all files that should be processed and synced against the `devportal` 
 repository. Each file should have the following parameters:
@@ -107,7 +107,7 @@ repository. Each file should have the following parameters:
 brackets and separated by comma. Ex.: `[hardware, specs, requirements]`
 - **render_features** (str, optional): Rendering features to be applied to the document.
 
-Once a new file is added to be synced, we should add it to this list. It's worth mention that
+Once a new file is added to be synced, we should add it to this list. It's worth mentioning that
 this configuration file should contain the `metadata` configuration to be added in the header
 of each doc file. This `metadata` is the `frontmatter` that the DevPortal uses to render the file
-and should be got from the `devportal` repository.
+and should be gotten from the `devportal` source repository.
