@@ -22,7 +22,6 @@ import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.test.builders.BridgeBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
-import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -35,9 +34,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.core.CallTransaction.Param;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
@@ -3395,7 +3392,6 @@ class BridgeTest {
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
     }
-
 
     @Nested
     @Tag("unionBridge")
