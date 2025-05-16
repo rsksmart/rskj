@@ -25,10 +25,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
+import co.rsk.pcc.secp256k1.Secp256k1Addition;
+import co.rsk.pcc.secp256k1.Secp256k1Multiplication;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.pcc.environment.Environment;
+import co.rsk.pcc.secp256k1.impls.AbstractSecp256k1;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
@@ -79,6 +82,8 @@ public class PrecompiledContracts {
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
     public static final String ENVIRONMENT_ADDR_STR = "0000000000000000000000000000000001000011";
+    public static final String SECP256K1_ADD_ADDR_STR = "0000000000000000000000000000000001000016";
+    public static final String SECP256K1_MUL_ADDR_STR = "0000000000000000000000000000000001000017";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
@@ -95,6 +100,9 @@ public class PrecompiledContracts {
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
     public static final DataWord ENVIRONMENT_ADDR_DW = DataWord.valueFromHex(ENVIRONMENT_ADDR_STR);
 
+    public static final DataWord SECP256K1_ADD_DW = DataWord.valueFromHex(SECP256K1_ADD_ADDR_STR);
+    public static final DataWord SECP256K1_MUL_DW = DataWord.valueFromHex(SECP256K1_MUL_ADDR_STR);
+
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
     public static final RskAddress RIPEMPD160_ADDR = new RskAddress(RIPEMPD160_ADDR_DW);
@@ -109,6 +117,8 @@ public class PrecompiledContracts {
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
     public static final RskAddress ENVIRONMENT_ADDR = new RskAddress(ENVIRONMENT_ADDR_STR);
+    public static final RskAddress SECP256K1_ADD_ADDR = new RskAddress(SECP256K1_ADD_ADDR_STR);
+    public static final RskAddress SECP256K1_MUL_ADDR = new RskAddress(SECP256K1_MUL_ADDR_STR);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -127,6 +137,8 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(SECP256K1_ADD_ADDR, ConsensusRule.RSKIP137),
+                    new AbstractMap.SimpleEntry<>(SECP256K1_MUL_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
                     new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
@@ -203,6 +215,13 @@ public class PrecompiledContracts {
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_PAIRING_DW)) {
             return new BN128Pairing(activations, AbstractAltBN128.create());
+        }
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(SECP256K1_ADD_DW)) {
+            return new Secp256k1Addition(activations, AbstractSecp256k1.create());
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(SECP256K1_MUL_DW)) {
+            return new Secp256k1Multiplication(activations, AbstractSecp256k1.create());
         }
 
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
