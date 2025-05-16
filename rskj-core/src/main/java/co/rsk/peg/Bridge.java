@@ -229,6 +229,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
     public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function INCREASE_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function REQUEST_UNION_RBTC = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
 
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
@@ -1509,6 +1510,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             logger.warn("Exception in increaseUnionBridgeLockingCap", e);
             return UnionResponseCode.INVALID_VALUE.getCode();
         }
+    }
+
+    public int requestUnionRbtc(Object[] args) {
+        logger.trace("requestUnionRbtc");
+        co.rsk.core.Coin amountRequested = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.requestUnionRbtc(rskTx, amountRequested).getCode();
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
