@@ -62,6 +62,7 @@ public class Genesis extends Block {
                 header,
                 Collections.emptyList(),
                 Collections.emptyList(),
+                null,
                 isRskip126Enabled,
                 false
         );
