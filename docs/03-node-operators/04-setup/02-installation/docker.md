@@ -39,7 +39,7 @@ You should see the following response:
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
 
-More information about Docker install [here](https://docs.docker.com/install/).
+More information about [How to Install Docker](https://docs.docker.com/install/).
 
 ## Install RSKj Using Docker
 

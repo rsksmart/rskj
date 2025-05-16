@@ -87,4 +87,4 @@ infer-out/
 # jenv
 .java-version
 
-json-rpc-doc/rpc/openrpc.json
+doc/rpc/openrpc.json
