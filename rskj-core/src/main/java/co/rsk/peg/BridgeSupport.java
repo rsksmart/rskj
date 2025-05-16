@@ -51,6 +51,7 @@ import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
@@ -2834,6 +2835,17 @@ public class BridgeSupport {
 
     public int increaseUnionBridgeLockingCap(Transaction tx, Coin newLockingCap) {
         return unionBridgeSupport.increaseLockingCap(tx, newLockingCap);
+    }
+
+    public int requestUnionBridgeRbtc(Transaction tx, co.rsk.core.Coin amountRequested) {
+        int responseCode = unionBridgeSupport.requestUnionRbtc(tx, amountRequested);
+        if (responseCode == UnionResponseCode.SUCCESS.getCode()) {
+            RskAddress unionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress()
+                .orElseThrow(IllegalStateException::new); // It should never be null
+            transferTo(unionBridgeContractAddress, amountRequested);
+            eventLogger.logUnionRbtcReleased(unionBridgeContractAddress, amountRequested);
+        }
+        return responseCode;
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {

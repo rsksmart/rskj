@@ -591,7 +591,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void requestUnionRbtc_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
+    void requestUnionBridgeRbtc_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -614,7 +614,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void requestUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
+    void requestUnionBridgeRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withActivations(allActivations)
@@ -646,7 +646,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest()
     @MethodSource("invalidAmountArgProvider")
-    void requestUnionRbtc_whenInvalidValue_shouldReturnInvalidValue(co.rsk.core.Coin amountRequested) {
+    void requestUnionBridgeRbtc_whenInvalidValue_shouldReturnInvalidValue(co.rsk.core.Coin amountRequested) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withActivations(allActivations)
@@ -696,7 +696,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("validAmountArgProvider")
-    void requestUnionRbtc_whenValidValue_shouldReturnSuccessCode(co.rsk.core.Coin amountRequested) {
+    void requestUnionBridgeRbtc_whenValidValue_shouldReturnSuccessCode(co.rsk.core.Coin amountRequested) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withActivations(allActivations)
