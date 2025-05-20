@@ -1,6 +1,7 @@
 package co.rsk.peg.union;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
@@ -46,7 +47,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             );
         }
 
-        if (!isNull(weiTransferredToUnionBridge)) {
+        if (nonNull(weiTransferredToUnionBridge)) {
             bridgeStorageAccessor.saveToRepository(
                 UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
                 weiTransferredToUnionBridge,
@@ -103,7 +104,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public void setWeiTransferredToUnionBridge(co.rsk.core.Coin weiTransferred) {
-        if (weiTransferred != null && weiTransferred.compareTo(co.rsk.core.Coin.ZERO) < 0) {
+        if (nonNull(weiTransferred) && weiTransferred.compareTo(co.rsk.core.Coin.ZERO) < 0) {
             throw new IllegalArgumentException("Wei transferred to Union Bridge cannot be negative");
         }
         this.weiTransferredToUnionBridge = weiTransferred;
