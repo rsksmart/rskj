@@ -79,11 +79,11 @@ public class AccountOverrideParam {
         }
 
         public Map<HexDataParam, HexDataParam> getDataMap(String paramName, JsonNode node) {
-            Map<HexDataParam, HexDataParam> map = new HashMap<>();
             JsonNode jsonMap = node.get(paramName);
             if (jsonMap == null || jsonMap.isNull()) {
-                return map;
+                return null;
             }
+            Map<HexDataParam, HexDataParam> map = new HashMap<>();
             jsonMap.fields().forEachRemaining(entry -> {
                 HexDataParam key = new HexDataParam(entry.getKey());
                 HexDataParam value = new HexDataParam(entry.getValue().asText());
