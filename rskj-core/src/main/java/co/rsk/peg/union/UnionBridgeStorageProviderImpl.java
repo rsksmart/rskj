@@ -1,6 +1,7 @@
 package co.rsk.peg.union;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
@@ -18,6 +19,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     private RskAddress unionBridgeAddress;
     private Coin unionBridgeLockingCap;
+    private co.rsk.core.Coin weiTransferredToUnionBridge;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -42,6 +44,14 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
                 unionBridgeLockingCap,
                 BridgeSerializationUtils::serializeCoin
+            );
+        }
+
+        if (nonNull(weiTransferredToUnionBridge)) {
+            bridgeStorageAccessor.saveToRepository(
+                UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+                weiTransferredToUnionBridge,
+                BridgeSerializationUtils::serializeRskCoin
             );
         }
     }
@@ -88,6 +98,28 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
                 BridgeSerializationUtils::deserializeCoin
+            ))
+        );
+    }
+
+    @Override
+    public void setWeiTransferredToUnionBridge(co.rsk.core.Coin weiTransferred) {
+        if (nonNull(weiTransferred) && weiTransferred.compareTo(co.rsk.core.Coin.ZERO) < 0) {
+            throw new IllegalArgumentException("Wei transferred to Union Bridge cannot be negative");
+        }
+        this.weiTransferredToUnionBridge = weiTransferred;
+    }
+
+    @Override
+    public Optional<co.rsk.core.Coin> getWeiTransferredToUnionBridge(ForBlock activations) {
+        if (!activations.isActive(ConsensusRule.RSKIP502)) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(weiTransferredToUnionBridge).or(
+            () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
+                UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+                BridgeSerializationUtils::deserializeRskCoin
             ))
         );
     }
