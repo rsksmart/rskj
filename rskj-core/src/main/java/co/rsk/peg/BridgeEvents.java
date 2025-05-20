@@ -78,7 +78,12 @@ public enum BridgeEvents {
     PEGOUT_TRANSACTION_CREATED("pegout_transaction_created", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
         new CallTransaction.Param(false, Fields.UTXO_OUTPOINT_VALUES, SolidityType.getType(SolidityType.BYTES))
-    });
+    }),
+    UNION_RBTC_RELEASED("union_rbtc_released", new CallTransaction.Param[] {
+        new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
+        new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
+    }),
+    ;
 
     private final String eventName;
     private final CallTransaction.Param[] params;
