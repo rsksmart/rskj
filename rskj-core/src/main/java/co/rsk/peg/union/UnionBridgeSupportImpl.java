@@ -118,7 +118,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public int increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
-        if (isUnauthorizedCaller(tx, INCREASE_LOCKING_CAP_TAG)) {
+        if (isUnauthorizedCaller(tx)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
         }
 
