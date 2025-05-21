@@ -147,12 +147,18 @@ public class EthModule
 
         if (result.getFinalState() != null) {
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
-        } else if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
-            mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
-            for(AccountOverride accountOverride : accountOverrideList) {
-               stateOverrideApplier.applyToRepository(mutableRepository,accountOverride);
+        }
+
+        if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
+            if (mutableRepository == null) {
+                mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
+            }
+            for (AccountOverride accountOverride : accountOverrideList) {
+                stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
             }
         }
+
+
         CallArguments callArgs = argsParam.toCallArguments();
 
         String hReturn = null;

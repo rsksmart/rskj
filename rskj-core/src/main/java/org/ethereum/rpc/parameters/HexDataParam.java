@@ -28,6 +28,8 @@ import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
 public class HexDataParam implements Serializable {
@@ -67,5 +69,17 @@ public class HexDataParam implements Serializable {
             String hexRawData = jp.getText();
             return new HexDataParam(hexRawData);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        HexDataParam that = (HexDataParam) o;
+        return Objects.deepEquals(rawDataBytes, that.rawDataBytes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(rawDataBytes);
     }
 }

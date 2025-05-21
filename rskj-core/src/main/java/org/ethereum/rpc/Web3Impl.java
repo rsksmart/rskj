@@ -410,10 +410,6 @@ public class Web3Impl implements Web3 {
         return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber), accountOverrideList));
     }
 
-    public String eth_call(CallArgumentsParam args, Map<String, String> inputs) {
-        return eth_call(args, inputs, Collections.emptyList());
-    }
-
     @Override
     public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
         return eth_call(args, blockRefParam, Map.of());
@@ -608,8 +604,8 @@ public class Web3Impl implements Web3 {
     protected String invokeByBlockRef(Map<String, String> inputs, UnaryOperator<String> toInvokeByBlockNumber) {
         final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
         return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
-                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
-                        .orElseThrow(() -> invalidParamError("Invalid block input"))
+                    .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
+                    .orElseThrow(() -> invalidParamError("Invalid block input"))
                 );
     }
 

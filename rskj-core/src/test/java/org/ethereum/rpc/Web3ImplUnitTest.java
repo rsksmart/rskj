@@ -11,6 +11,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.eth.AccountOverride;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -34,6 +35,7 @@ import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -49,13 +51,14 @@ class Web3ImplUnitTest {
 
     private Web3Impl target;
     private Web3InformationRetriever retriever;
+    private EthModule ethModule;
 
     @BeforeEach
     void setup() {
         blockchain = mock(Blockchain.class);
         Block firstBlock = mock(Block.class);
         when(blockchain.getBestBlock()).thenReturn(firstBlock);
-
+        ethModule = mock(EthModule.class);
         retriever = mock(Web3InformationRetriever.class);
         target = new Web3Impl(
                 mock(Ethereum.class),
@@ -66,7 +69,7 @@ class Web3ImplUnitTest {
                 mock(MinerClient.class),
                 mock(MinerServer.class),
                 mock(PersonalModule.class),
-                mock(EthModule.class),
+                ethModule,
                 mock(EvmModule.class),
                 mock(TxPoolModule.class),
                 mock(MnrModule.class),
@@ -108,12 +111,12 @@ class Web3ImplUnitTest {
         when(aip.getBalance(expectedAddress))
                 .thenReturn(new Coin(BigInteger.ONE));
 
-        String result = target.eth_getBalance(new HexAddressParam(addr),new BlockRefParam(id));
+        String result = target.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(id));
         assertEquals("0x1", result);
     }
 
     @Test
-    //validates invokeByBlockRef call
+        //validates invokeByBlockRef call
     void eth_getBalanceByBlockRef() {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -122,10 +125,10 @@ class Web3ImplUnitTest {
             }
         };
         final Web3Impl spyTarget = spy(target);
-        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef), any());
         String result = spyTarget.eth_getBalance(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals("0x1", result);
-        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        verify(spyTarget).invokeByBlockRef(eq(blockRef), any());
     }
 
     @Test
@@ -134,7 +137,7 @@ class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         String storageIdx = "0x01";
 
-        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexAddressParam hexAddressParam = new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
         BlockRefParam blockRefParam = new BlockRefParam(id);
 
@@ -153,7 +156,7 @@ class Web3ImplUnitTest {
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
-        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexAddressParam hexAddressParam = new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
         BlockRefParam blockRefParam = new BlockRefParam(id);
 
@@ -168,8 +171,8 @@ class Web3ImplUnitTest {
     }
 
     @Test
-    //validates invokeByBlockRef call
-    void  eth_getStorageAtByBlockRef() {
+        //validates invokeByBlockRef call
+    void eth_getStorageAtByBlockRef() {
         final String addr = "0x0011223344556677880011223344556677889900";
         final String storageIdx = "0x01";
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -180,14 +183,14 @@ class Web3ImplUnitTest {
         final Web3Impl spyTarget = spy(target);
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000001";
 
-        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexAddressParam hexAddressParam = new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
         BlockRefParam blockRefParam = new BlockRefParam(blockRef);
 
-        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef), any());
         String result = spyTarget.eth_getStorageAt(hexAddressParam, hexNumberParam, blockRefParam);
         assertEquals(expectedData, result);
-        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        verify(spyTarget).invokeByBlockRef(eq(blockRef), any());
     }
 
 
@@ -199,7 +202,7 @@ class Web3ImplUnitTest {
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
-        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexAddressParam hexAddressParam = new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
         BlockRefParam blockRefParam = new BlockRefParam(id);
 
@@ -220,10 +223,10 @@ class Web3ImplUnitTest {
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
-        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexAddressParam hexAddressParam = new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
         BlockRefParam blockRefParam = new BlockRefParam(id);
-        byte[] resultBytes = TestUtils.generateBytes("result",64);
+        byte[] resultBytes = TestUtils.generateBytes("result", 64);
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(id)).thenReturn(aip);
@@ -245,7 +248,7 @@ class Web3ImplUnitTest {
         String storageIdx = "0x01";
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
-        HexAddressParam hexAddressParam =  new HexAddressParam(addr);
+        HexAddressParam hexAddressParam = new HexAddressParam(addr);
         HexNumberParam hexNumberParam = new HexNumberParam(storageIdx);
         BlockRefParam blockRefParam = new BlockRefParam(id);
 
@@ -284,8 +287,8 @@ class Web3ImplUnitTest {
     }
 
     @Test
-    //validates invokeByBlockRef call
-    void  eth_getCode() {
+        //validates invokeByBlockRef call
+    void eth_getCode() {
         final String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -293,16 +296,16 @@ class Web3ImplUnitTest {
             }
         };
         final Web3Impl spyTarget = spy(target);
-        final String expectedData =  "0x010203";
-        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        final String expectedData = "0x010203";
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef), any());
         String result = spyTarget.eth_getCode(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals(expectedData, result);
-        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        verify(spyTarget).invokeByBlockRef(eq(blockRef), any());
     }
 
     @Test
-    //validates invokeByBlockRef call
-    void  eth_callAtByBlockRef() {
+        //validates invokeByBlockRef call
+    void eth_callAtByBlockRef() {
 
         CallArguments argsForCall = new CallArguments();
         argsForCall.setTo("0x0011223344556677880011223344556677889900");
@@ -315,15 +318,15 @@ class Web3ImplUnitTest {
         final Web3Impl spyTarget = spy(target);
         final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
 
-        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
-        String result = spyTarget.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall),blockRef);
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef), any());
+        String result = spyTarget.eth_call(TransactionFactoryHelper.toCallArgumentsParam(argsForCall), new BlockRefParam(blockRef));
         assertEquals(expectedData, result);
-        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        verify(spyTarget).invokeByBlockRef(eq(blockRef), any());
     }
 
     @Test
-    //validates invokeByBlockRef call
-    void  eth_getBlockTransactionCountByBlockRef() {
+        //validates invokeByBlockRef call
+    void eth_getBlockTransactionCountByBlockRef() {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -331,10 +334,10 @@ class Web3ImplUnitTest {
             }
         };
         final Web3Impl spyTarget = spy(target);
-        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef), any());
         String result = spyTarget.eth_getTransactionCount(new HexAddressParam(addr), new BlockRefParam(blockRef));
         assertEquals("0x1", result);
-        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        verify(spyTarget).invokeByBlockRef(eq(blockRef), any());
     }
 
     @Test
@@ -392,4 +395,56 @@ class Web3ImplUnitTest {
 
         assertEquals("0x2", result);
     }
+
+    @Test
+    void when_eth_CallWithAccountOverride_ethModule_receives_correct_params() {
+        CallArgumentsParam callArgumentsParam = getValidCallArgumentsParam();
+        BlockRefParam blockRefParam = new BlockRefParam("latest");
+        AccountOverrideParam overrideParam = getValidAccountOverrideParam();
+        HexAddressParam hexAddressParam = new HexAddressParam("0xaaa4567890123456789012345678901234567890");
+        when(ethModule.call(any(), any(), any())).thenReturn("OK");
+
+
+        target.eth_call(callArgumentsParam, blockRefParam, Map.of(hexAddressParam, overrideParam));
+
+        ArgumentCaptor<CallArgumentsParam> callArgumentsParamArgumentCaptor = ArgumentCaptor.forClass(CallArgumentsParam.class);
+        ArgumentCaptor<BlockIdentifierParam> blockIdentifierParamArgumentCaptor = ArgumentCaptor.forClass(BlockIdentifierParam.class);
+        ArgumentCaptor<List<AccountOverride>> accountOverrideParamArgumentCaptor = ArgumentCaptor.forClass(List.class);
+
+        verify(ethModule, times(1)).call(callArgumentsParamArgumentCaptor.capture(), blockIdentifierParamArgumentCaptor.capture(), accountOverrideParamArgumentCaptor.capture());
+
+        CallArgumentsParam receivedCallArgs = callArgumentsParamArgumentCaptor.getValue();
+        assertEquals(callArgumentsParam, receivedCallArgs);
+
+        BlockIdentifierParam blockIdentifierParam = blockIdentifierParamArgumentCaptor.getValue();
+        assertEquals("latest", blockIdentifierParam.getIdentifier());
+
+        List<AccountOverride> receivedOverrides = accountOverrideParamArgumentCaptor.getValue();
+        assertEquals(1, receivedOverrides.size());
+        AccountOverride receivedOverride = receivedOverrides.get(0);
+        assertEquals(hexAddressParam.getAddress(), receivedOverride.getAddress());
+        BigInteger expectedBalance = BigInteger.valueOf(HexUtils.jsonHexToLong(overrideParam.getBalance().getHexNumber()));
+        assertEquals(expectedBalance, receivedOverride.getBalance());
+        assertEquals(HexUtils.jsonHexToLong(overrideParam.getNonce().getHexNumber()), receivedOverride.getNonce());
+        assertEquals(overrideParam.getCode().getRawDataBytes(), receivedOverride.getCode());
+    }
+
+
+    private AccountOverrideParam getValidAccountOverrideParam() {
+        HexNumberParam balance = new HexNumberParam("0x02");
+        HexNumberParam nonce = new HexNumberParam("0x01");
+        HexDataParam code = new HexDataParam("0x010203");
+        Map<HexDataParam, HexDataParam> state = Map.of(
+                new HexDataParam("0x01"), new HexDataParam("0x02")
+        );
+        return new AccountOverrideParam(balance, nonce, code, state, null, null);
+    }
+
+    private CallArgumentsParam getValidCallArgumentsParam() {
+        HexAddressParam from = new HexAddressParam("0x0011223344556677880011223344556677889900");
+        HexAddressParam to = new HexAddressParam("0x0011223344556677880011223344556677889900");
+        HexDataParam data = new HexDataParam("0x010203");
+        return new CallArgumentsParam(from, to, null, null, null, null, null, null, data, null);
+    }
+
 }
