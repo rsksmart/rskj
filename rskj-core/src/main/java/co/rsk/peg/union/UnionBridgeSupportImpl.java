@@ -111,9 +111,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         if (!activations.isActive(ConsensusRule.RSKIP502)) {
             return Optional.empty();
         }
-
-        return Optional.of(
-            storageProvider.getLockingCap(activations).orElse(constants.getInitialLockingCap()));
+        return Optional.of(storageProvider.getLockingCap(activations).orElse(constants.getInitialLockingCap()));
     }
 
     @Override
