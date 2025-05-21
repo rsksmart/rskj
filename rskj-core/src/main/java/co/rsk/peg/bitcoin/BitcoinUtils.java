@@ -2,8 +2,10 @@ package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.peg.federation.FederationFormatVersion;
 import com.google.common.base.Preconditions;
@@ -39,9 +41,7 @@ public class BitcoinUtils {
     }
 
     public static Optional<Script> extractRedeemScriptFromInput(BtcTransaction transaction, int inputIndex) {
-        TransactionWitness inputWitness = transaction.getWitness(inputIndex);
-
-        if (inputWitness.equals(TransactionWitness.getEmpty())) {
+        if (!inputHasWitness(transaction, inputIndex)) {
             return extractRedeemScriptFromInputScriptSig(transaction.getInput(inputIndex));
         }
 
@@ -88,6 +88,21 @@ public class BitcoinUtils {
             );
             return Optional.empty();
         }
+    }
+
+    public static boolean inputHasWitness(BtcTransaction btcTx, int inputIndex) {
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        return !inputWitness.equals(TransactionWitness.getEmpty());
+    }
+
+    public static int getSigInsertionIndex(BtcTransaction tx, int inputIndex, Sha256Hash sigHash, BtcECKey signingKey) {
+        if (!inputHasWitness(tx, inputIndex)) {
+            Script inputScript = tx.getInput(inputIndex).getScriptSig();
+            return inputScript.getSigInsertionIndex(sigHash, signingKey);
+        }
+
+        TransactionWitness inputWitness = tx.getWitness(inputIndex);
+        return inputWitness.getSigInsertionIndex(sigHash, signingKey);
     }
 
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
@@ -140,9 +155,8 @@ public class BitcoinUtils {
         byte[] emptyByte = {};
         pushes.add(emptyByte); // OP_0
 
-        byte[] bytesForSignature = new byte[72];
         for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
-            pushes.add(bytesForSignature);
+            pushes.add(emptyByte);
         }
 
         pushes.add(emptyByte); // OP_NOTIF
@@ -183,6 +197,13 @@ public class BitcoinUtils {
             .flatMap(BitcoinUtils::extractRedeemScriptFromInputScriptSig)
             .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
             .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
+    }
+
+    public static Sha256Hash generateSigHashForSegwitTransactionInput(BtcTransaction btcTx, int inputIndex, Coin prevValue) {
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        return extractRedeemScriptFromInputWitness(inputWitness)
+            .map(redeemScript -> btcTx.hashForWitnessSignature(inputIndex, redeemScript, prevValue, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from segwit input"));
     }
 
     public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx, ActivationConfig.ForBlock activations) {
@@ -242,5 +263,22 @@ public class BitcoinUtils {
         );
 
         return Sha256Hash.wrap(witnessCommitmentHash);
+    }
+
+    public static void signInput(BtcTransaction btcTx, int inputIndex, TransactionSignature signature, int sigInsertionIndex, Script outputScript) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            // put signature in script sig
+            TransactionInput input = btcTx.getInput(inputIndex);
+            Script inputScript = input.getScriptSig();
+            Script inputScriptWithSignature =
+                outputScript.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigInsertionIndex);
+            input.setScriptSig(inputScriptWithSignature);
+            return;
+        }
+
+        // put signature in witness
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(outputScript, signature.encodeToBitcoin(), sigInsertionIndex);
+        btcTx.setWitness(inputIndex, inputWitnessWithSignature);
     }
 }
