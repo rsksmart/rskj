@@ -337,7 +337,9 @@ class UnionBridgeSupportImplTest {
     @Test
     void getUnionBridgeLockingCap_beforeRSKIP502_shouldReturnEmpty() {
         // arrange
+        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants)
             .withActivations(lovell700)
             .build();
 
@@ -359,7 +361,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
-    void getUnionBridgeLockingCap_whenNoStoredLockingCap_shouldReturnConstantInitialLockingCap(
+    void getUnionBridgeLockingCap_whenNoStoredLockingCap_shouldReturnInitialLockingCap(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -369,8 +371,8 @@ class UnionBridgeSupportImplTest {
         Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
 
         // assert
-        Assertions.assertTrue(actualLockingCap.isPresent());
         Coin expectedInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        Assertions.assertTrue(actualLockingCap.isPresent());
         Assertions.assertEquals(expectedInitialLockingCap, actualLockingCap.get());
         assertNoLockingCapIsStored();
     }

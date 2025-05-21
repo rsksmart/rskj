@@ -1496,13 +1496,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public long getUnionBridgeLockingCap(Object[] args) {
         logger.trace("getUnionBridgeLockingCap");
 
-        Optional<Coin> lockingCap = bridgeSupport.getUnionBridgeLockingCap();
-
-        // This is an illegal state and should never happen
-        if (lockingCap.isEmpty()) {
-            throw new IllegalStateException("No stored or default locking cap was found.");
-        }
-        return lockingCap.get().getValue();
+        return bridgeSupport.getUnionBridgeLockingCap().getValue();
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
