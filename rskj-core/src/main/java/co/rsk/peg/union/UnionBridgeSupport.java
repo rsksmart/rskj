@@ -2,6 +2,7 @@ package co.rsk.peg.union;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
+
 import java.util.Optional;
 import org.ethereum.core.Transaction;
 
