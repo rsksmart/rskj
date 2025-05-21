@@ -3496,9 +3496,9 @@ class BridgeTest {
         void getUnionBridgeLockingCap_afterRSKIP502_shouldReturnLockingCap(Constants constants)
             throws VMException {
             // Arrange
-            Coin initialLockingCap = constants.getBridgeConstants().getUnionBridgeConstants()
+            Coin expectedLockingCap = constants.getBridgeConstants().getUnionBridgeConstants()
                 .getInitialLockingCap();
-            when(bridgeSupport.getUnionBridgeLockingCap()).thenReturn(Optional.of(initialLockingCap));
+            when(unionBridgeSupport.getLockingCap()).thenReturn(Optional.of(expectedLockingCap));
 
             byte[] data = Bridge.GET_UNION_BRIDGE_LOCKING_CAP.encode();
 
@@ -3508,7 +3508,6 @@ class BridgeTest {
             // Assert
             BigInteger decodedResult = (BigInteger)Bridge.GET_UNION_BRIDGE_LOCKING_CAP.decodeResult(result)[0];
             Coin actualLockingCap = Coin.valueOf(decodedResult.longValue());
-            Coin expectedLockingCap = Coin.valueOf(initialLockingCap.getValue());
             assertEquals(expectedLockingCap, actualLockingCap);
         }
     }
