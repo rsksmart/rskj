@@ -880,35 +880,35 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getUnionBridgeLockingCap_beforeRskip502_shouldReturnEmpty() {
+        void getUnionBridgeLockingCap_beforeRskip502_shouldReturnNegativeOne() {
             // arrange
             bridgeSupport = bridgeSupportBuilder
                 .withActivations(lovell)
                 .withUnionBridgeSupport(
                     UnionBridgeSupportBuilder
                         .builder()
+                        .withConstants(constants.getUnionBridgeConstants())
                         .withActivations(lovell)
                         .build()
                 )
                 .build();
 
             // act
-            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
-            assertTrue(actualUnionBridgeLockingCap.isEmpty());
+            Coin expectedLockingCap = Coin.NEGATIVE_SATOSHI;
+            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap);
         }
 
         @Test
         void getUnionBridgeLockingCap_whenNoLockingCapIsStored_shouldReturnInitialConstantLockingCapValue() {
             // act
-            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
             Coin expectedLockingCap = constants.getUnionBridgeConstants().getInitialLockingCap();
-
-            assertTrue(actualUnionBridgeLockingCap.isPresent());
-            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap.get());
+            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap);
         }
 
         @Test
@@ -930,11 +930,10 @@ class BridgeSupportTest {
                 .build();
 
             // act
-            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
-            assertTrue(actualUnionBridgeLockingCap.isPresent());
-            assertEquals(storedLockingCap, actualUnionBridgeLockingCap.get());
+            assertEquals(storedLockingCap, actualUnionBridgeLockingCap);
         }
 
         @Test
