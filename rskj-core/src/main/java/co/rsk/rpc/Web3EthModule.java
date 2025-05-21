@@ -23,16 +23,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.parameters.BlockHashParam;
-import org.ethereum.rpc.parameters.FilterRequestParam;
-import org.ethereum.rpc.parameters.BlockIdentifierParam;
-import org.ethereum.rpc.parameters.BlockRefParam;
-import org.ethereum.rpc.parameters.CallArgumentsParam;
-import org.ethereum.rpc.parameters.HexAddressParam;
-import org.ethereum.rpc.parameters.HexDataParam;
-import org.ethereum.rpc.parameters.HexIndexParam;
-import org.ethereum.rpc.parameters.HexNumberParam;
-import org.ethereum.rpc.parameters.TxHashParam;
+import org.ethereum.rpc.parameters.*;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -47,13 +38,6 @@ public interface Web3EthModule {
         return getEthModule().sign(addr.getAddress().toHexString(), data.getAsHexString());
     }
 
-    default String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
-        if (blockRefParam.getIdentifier() != null) {
-            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()));
-        }
-        return eth_call(args, blockRefParam.getInputs());
-    }
-
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
     }
@@ -63,6 +47,7 @@ public interface Web3EthModule {
     }
 
     String eth_estimateGas(CallArgumentsParam args);
+
     String eth_estimateGas(CallArgumentsParam args, BlockIdentifierParam bnOrId);
 
     EthModule getEthModule();
@@ -81,7 +66,9 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
-    String eth_call(CallArgumentsParam args, Map<String, String> blockRef); // NOSONAR
+    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam);
+
+    String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam);
 
     String eth_getBalance(HexAddressParam address, BlockRefParam blockRefParam) throws Exception;
 
