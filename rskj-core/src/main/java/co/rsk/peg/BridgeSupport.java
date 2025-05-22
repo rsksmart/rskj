@@ -2828,8 +2828,8 @@ public class BridgeSupport {
         return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
     }
 
-    public Optional<Coin> getUnionBridgeLockingCap() {
-        return unionBridgeSupport.getLockingCap();
+    public Coin getUnionBridgeLockingCap() {
+        return unionBridgeSupport.getLockingCap().orElse(Coin.NEGATIVE_SATOSHI);
     }
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
