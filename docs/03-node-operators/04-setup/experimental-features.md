@@ -89,7 +89,10 @@ sync {
   snapshot {
     client {
       enabled = true
-      ...
+      checkHistoricalHeaders = true
+      parallel = false
+      chunkSize = 50
+      limit = 10000
       snapBootNodes = [
         {
           nodeId = "f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da"
