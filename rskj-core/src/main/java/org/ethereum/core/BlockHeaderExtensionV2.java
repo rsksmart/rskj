@@ -50,18 +50,22 @@ public class BlockHeaderExtensionV2 extends BlockHeaderExtensionV1 {
 
     @Override
     protected void addElementsEncoded(List<byte[]> fieldToEncodeList) {
-        super.addElementsEncoded(fieldToEncodeList);
         if (this.superChainDataHash != null) {
             fieldToEncodeList.add(RLP.encodeElement(this.superChainDataHash));
+        } else {
+            fieldToEncodeList.add(RLP.encodeElement(new byte[0]));
         }
+        super.addElementsEncoded(fieldToEncodeList);
     }
 
     public static BlockHeaderExtensionV2 fromEncoded(byte[] encoded) {
         RLPList rlpExtension = RLP.decodeList(encoded);
+        byte[] logsBloom = rlpExtension.get(0).getRLPData();
+        byte[] superChainDataHash = rlpExtension.get(1).getRLPData();
         return new BlockHeaderExtensionV2(
-                rlpExtension.get(0).getRLPData(),
-                toEdges(rlpExtension.get(1).getRLPRawData()),
-                rlpExtension.get(2).getRLPData()
+                logsBloom,
+                rlpExtension.size() == 3 ? toEdges(rlpExtension.get(2).getRLPRawData()) : null,
+                superChainDataHash
         );
     }
 

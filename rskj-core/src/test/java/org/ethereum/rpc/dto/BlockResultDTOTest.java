@@ -112,7 +112,7 @@ class BlockResultDTOTest {
     @Test
     void getBlockResultDTO_containsObsoleteFields() {
         Block block = buildBlockWithTransactions(Collections.emptyList());
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, constants, activationConfig, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertEquals("0x0000000000000000000000000000000000000000000000000000000000000000", blockResultDTO.getMixHash());
         Assertions.assertEquals("0x0000000000000000", blockResultDTO.getNonce());
