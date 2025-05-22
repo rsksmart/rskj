@@ -25,6 +25,7 @@ import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.bc.SuperBridgeEvent;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -102,7 +103,8 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
         return false;
     }
 
-    private boolean areSuperBlockFieldsValid(Block block, SuperBlockFields superBlockFields) {
+    @VisibleForTesting
+    protected boolean areSuperBlockFieldsValid(Block block, SuperBlockFields superBlockFields) {
         Pair<Block, List<Block>> superParentAndAncestors = FamilyUtils.findSuperParentAndAncestors(blockStore, block.getHeader());
 
         Block superParent = superParentAndAncestors.getLeft();
