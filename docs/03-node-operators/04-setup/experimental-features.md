@@ -16,8 +16,8 @@ genesis. This can significantly reduce the time it takes to synchronize a node, 
 blockchains.
 
 ### When was it released?
-Snapshot Sync was released in RSKj version LOVELL-7.1.0, if you are using a version higher than this, you can enable and use this feature.
 
+Snapshot Sync was released in RSKj version LOVELL-7.1.0, if you are using a version higher than this, you can enable and use this feature.
 
 Full Long Sync is the standard method for getting a new RSKj node to match up with the existing  blockchain network. The goal is to make sure 
 the new node downloads and checks every transaction, contract, and block, starting from the very first one. This approach uses up quite a bit of time and
@@ -29,9 +29,11 @@ to a certain point where there's enough information to rebuild the whole state q
 The main goal of Snapshot Sync is to have a new RSKj node ready to use in a shorter time in comparison to using the default Full Long Sync method.
 
 ### How to Configure Snap-Capable Nodes
+
 Nodes can be configured as Snap servers and/or clients by adding a new `snapshot` config block to the `sync` configurations.
 
 #### Snap Server
+
 A node can be configured as a Snap Server by adding the following to the `sync` configuration block:
 
 ```yaml
@@ -65,7 +67,51 @@ snapshot = {
 }
 ```
 
+#### Snap-Capable Bootstrap Nodes
+
+To simplify testing of the experimental SnapSync feature introduced in RSKj LOVELL-7.1.0, Rootstock operates a set of publicly accessible
+Snap-capable Boot Nodes. These can be plugged in `snapshot.client.snapBootNodes` configuration to kick off fast state synchronization.
+
+The following are public Snap-capable Bootstrap Nodes provided by Rootstock:
+
+| Network | NodeID | Hostname |
+| ------- | ------ | -------- |
+| Mainnet | f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da | snapshot-sync-euw2-1.mainnet.rskcomputing.net |
+| Mainnet | e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215 | snapshot-sync-use1-1.mainnet.rskcomputing.net |
+| Testnet | fcbfbfce93671320d32ab36ab04ae1564a31892cba219f0a489337aad105dcfc0ebe7d7c2b109d1f4462e8e80588d8ef639b6f321cc1a3f51ec072bed3438105 | snapshot-sync-usw2-1.testnet.rskcomputing.net |
+| Testnet | 137eb4328a7c2298e26dd15bba4796a7cc30b5097f8a14b384c8dc78caab49fac7a897c39a5a7e87838ac6dc1a80b94891d274a85ac76e7342d66e8a9ed26bf5 | snapshot-sync-euw1-1.testnet.rskcomputing.net |
+
+**Mainnet Configuration Example**
+
+```yaml
+sync {
+  enabled = true
+  snapshot {
+    client {
+      enabled = true
+      checkHistoricalHeaders = true
+      parallel = false
+      chunkSize = 50
+      limit = 10000
+      snapBootNodes = [
+        {
+          nodeId = "f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da"
+          ip     = "snapshot-sync-euw2-1.mainnet.rskcomputing.net"
+          port   = 4444
+        },
+        {
+          nodeId = "e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215"
+          ip     = " snapshot-sync-use1-1.mainnet.rskcomputing.net"
+          port   = 4444
+        }
+      ]
+    }
+  }
+}
+```
+
 #### ⚠️ Important Notes
+
 - The minimal `sync` configuration for Snap Sync **MUST** include the `enabled` property set to `true` beside the node being configured as a Snap-Capable server or client, like this:
 
 ```yaml
