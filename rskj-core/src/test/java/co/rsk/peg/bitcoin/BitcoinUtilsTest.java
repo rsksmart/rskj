@@ -1181,6 +1181,55 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void buildSegwitScriptSig_withNullRedeemScript_shouldThrowNullPointerException() {
+        assertThrows(IllegalArgumentException.class, () ->
+            buildSegwitScriptSig(null)
+        );
+    }
+
+    @Test
+    void buildSegwitScriptSig_withEmptyScript_shouldProduceValidStructure() {
+        Script emptyScript = new Script(new byte[0]);
+
+        Script result = buildSegwitScriptSig(emptyScript);
+        List<ScriptChunk> chunks = result.getChunks();
+
+        assertEquals(1, chunks.size());
+
+        ScriptChunk chunk = chunks.get(0);
+        assertEquals(34, chunk.opcode);
+
+        Script segwitScript = new Script(chunk.data);
+        List<ScriptChunk> innerChunks = segwitScript.getChunks();
+
+        assertEquals(2, innerChunks.size());
+        assertEquals(0, innerChunks.get(0).opcode); // OP_0
+        assertEquals(32, innerChunks.get(1).data.length); // SHA-256 is always 32 bytes
+    }
+
+    @Test
+    void buildSegwitScriptSig_withNonStandardScript_shouldStillBuild() {
+        // Create a redeem script with arbitrary non-SegWit content
+        Script redeemScript = new ScriptBuilder()
+            .op(ScriptOpCodes.OP_ADD)
+            .op(ScriptOpCodes.OP_EQUAL)
+            .build();
+
+        Script result = buildSegwitScriptSig(redeemScript);
+
+        List<ScriptChunk> chunks = result.getChunks();
+        assertEquals(1, chunks.size());
+        assertEquals(34, chunks.get(0).opcode); // Still 0x22
+
+        Script embeddedScript = new Script(chunks.get(0).data);
+        List<ScriptChunk> innerChunks = embeddedScript.getChunks();
+
+        assertEquals(2, innerChunks.size());
+        assertEquals(0, innerChunks.get(0).opcode); // OP_0
+        assertEquals(32, innerChunks.get(1).data.length); // SHA-256 hash
+    }
+
+    @Test
     void extractHashedRedeemScriptProgramFromSegwitScriptSig_returnsExpectedHash() {
         // arrange
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
@@ -1192,6 +1241,32 @@ class BitcoinUtilsTest {
         // assert
         byte[] expectedHashedRedeemScript = Sha256Hash.hash(federation.getRedeemScript().getProgram());
         assertArrayEquals(expectedHashedRedeemScript, hashedRedeemScript);
+    }
+
+    @Test
+    void extractHashedRedeemScriptProgramFromSegwitScriptSig_withNullScript_shouldThrow() {
+        assertThrows(IllegalArgumentException.class, () ->
+            extractHashedRedeemScriptProgramFromSegwitScriptSig(null)
+        );
+    }
+
+    @Test
+    void extractHashedRedeemScriptProgramFromSegwitScriptSig_withEmptyScript_shouldThrow() {
+        Script emptyScript = new Script(new byte[0]);
+        assertThrows(IllegalArgumentException.class, () ->
+            extractHashedRedeemScriptProgramFromSegwitScriptSig(emptyScript)
+        );
+    }
+
+    @Test
+    void extractHashedRedeemScriptProgramFromSegwitScriptSig_withTooShortValidScript_returnsEmptyArray() {
+        Script malformedScript = new ScriptBuilder()
+            .data(new byte[]{0x01, 0x02})
+            .build();
+
+        byte[] result = extractHashedRedeemScriptProgramFromSegwitScriptSig(malformedScript);
+
+        assertArrayEquals(new byte[0], result);
     }
 
     @Test

@@ -8,9 +8,9 @@ public class ScriptValidations {
     private ScriptValidations() {
     }
 
-    public static void validateScriptSigElementSize(Script script) throws ScriptCreationException {
+    public static void validateRedeemScripSize(Script redeemScript) throws ScriptCreationException {
         // Check if the size of the script does not exceed the maximum size allowed
-        int bytesFromScript = script.getProgram().length;
+        int bytesFromScript = redeemScript.getProgram().length;
         if (bytesFromScript > Script.MAX_SCRIPT_ELEMENT_SIZE) {
             String message = String.format("The script size is %d, that is above the maximum allowed.",
                 bytesFromScript
@@ -19,7 +19,7 @@ public class ScriptValidations {
         }
     }
 
-    public static void validateWitnessScriptSize(Script redeemScript, int numberOfSignaturesRequired) throws ScriptCreationException {
+    public static void validateP2WSHRedeemScriptSize(Script redeemScript, int numberOfSignaturesRequired) throws ScriptCreationException {
         // Check if the size of the script does not exceed the maximum size allowed
         int bytesFromScript = redeemScript.getProgram().length;
         int bytesFromSigning = numberOfSignaturesRequired * Script.SIG_SIZE;

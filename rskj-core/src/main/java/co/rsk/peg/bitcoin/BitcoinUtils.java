@@ -174,15 +174,14 @@ public class BitcoinUtils {
 
         TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(inputIndex, witnessScript);
-        setSegwitScriptSig(input, redeemScript);
-    }
-
-    private static void setSegwitScriptSig(TransactionInput txIn, Script redeemScript) {
         Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
-        txIn.setScriptSig(segwitScriptSig);
+        input.setScriptSig(segwitScriptSig);
     }
 
     public static Script buildSegwitScriptSig(Script redeemScript) {
+        if (redeemScript == null) {
+            throw new IllegalArgumentException("redeemScript must not be null");
+        }
         // we need the hashed redeem script to be in one chunk
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
         Script segwitScriptSig = new ScriptBuilder()
@@ -196,10 +195,11 @@ public class BitcoinUtils {
     }
 
     public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {
+        if (segwitScriptSig == null) {
+            throw new IllegalArgumentException("SegwitScriptSig must not be null");
+        }
         byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
-        // the whole program is [22 00 20 + rs]
-        String hashedRedeemScript = Hex.toHexString(segwitScriptSigProgram).substring(6);
-        return Hex.decode(hashedRedeemScript);
+        return Arrays.copyOfRange(segwitScriptSigProgram, 3, segwitScriptSigProgram.length);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {

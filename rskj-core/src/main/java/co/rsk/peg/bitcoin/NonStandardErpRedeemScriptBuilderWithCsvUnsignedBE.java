@@ -39,7 +39,7 @@ public class NonStandardErpRedeemScriptBuilderWithCsvUnsignedBE implements ErpRe
         Script redeemScript = createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
         
         logger.debug("[createRedeemScriptFromKeys] Validating redeem script size");
-        ScriptValidations.validateScriptSigElementSize(redeemScript);
+        ScriptValidations.validateRedeemScripSize(redeemScript);
         
         return redeemScript;
     }
