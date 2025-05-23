@@ -462,9 +462,9 @@ task generateResources {
         def commitHash = gitCommitHash()
         def currentBranch = gitCurrentBranch()
         generated.text = """
-build.hash=$commitHash
-build.branch=$currentBranch
-"""
+            build.hash=$commitHash
+            build.branch=$currentBranch
+            """
     }
 }
 
