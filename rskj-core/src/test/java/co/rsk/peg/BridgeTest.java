@@ -3440,7 +3440,7 @@ class BridgeTest {
         @MethodSource("setUnionBridgeContractAddressForTestnetConstantsProvider")
         void setUnionBridgeContractAddressForTestnet_afterRSKIP502_shouldSetNewAddress(Constants constants, UnionResponseCode expectedUnionResponseCode) throws VMException {
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(
-                expectedUnionResponseCode.getCode());
+                expectedUnionResponseCode);
             bridge = bridgeBuilder
                 .activationConfig(ActivationConfigsForTest.all())
                 .bridgeSupport(bridgeSupport)
@@ -3459,7 +3459,7 @@ class BridgeTest {
 
         @Test
         void setUnionBridgeContractAddressForTestnet_afterRSKIP502_emptyArgument_shouldFail() throws VMException {
-            int expectedUnionResponseCode = UnionResponseCode.INVALID_VALUE.getCode();
+            UnionResponseCode expectedUnionResponseCode = UnionResponseCode.INVALID_VALUE;
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(expectedUnionResponseCode);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
@@ -3468,7 +3468,7 @@ class BridgeTest {
             byte[] result = bridge.execute(data);
             BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedUnionResponseCode, actualUnionResponseCode);
+            assertEquals(expectedUnionResponseCode.getCode(), actualUnionResponseCode);
         }
 
         @Test
