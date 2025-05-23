@@ -51,6 +51,7 @@ import co.rsk.peg.pegin.*;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;
@@ -2824,7 +2825,7 @@ public class BridgeSupport {
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
     }
 
-    public int setUnionBridgeContractAddressForTestnet(Transaction tx, RskAddress unionBridgeContractAddress) {
+    public UnionResponseCode setUnionBridgeContractAddressForTestnet(Transaction tx, RskAddress unionBridgeContractAddress) {
         return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
     }
 
