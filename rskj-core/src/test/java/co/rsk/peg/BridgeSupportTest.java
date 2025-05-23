@@ -888,11 +888,11 @@ class BridgeSupportTest {
         @Test
         void getUnionBridgeLockingCap_whenNoLockingCapIsStored_shouldReturnInitialConstantLockingCapValue() {
             // act
-            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
             Coin expectedLockingCap = unionBridgeConstants.getInitialLockingCap();
-            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap);
+            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap.get());
         }
 
         @Test
@@ -914,10 +914,11 @@ class BridgeSupportTest {
                 .build();
 
             // act
-            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            Optional<Coin> actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
-            assertEquals(storedLockingCap, actualUnionBridgeLockingCap);
+            assertTrue(actualUnionBridgeLockingCap.isPresent());
+            assertEquals(storedLockingCap, actualUnionBridgeLockingCap.get());
         }
 
         @ParameterizedTest
@@ -925,7 +926,7 @@ class BridgeSupportTest {
         void increaseUnionBridgeLockingCap_shouldReturnResultedResponseCode(UnionResponseCode expectedUnionResponseCode) {
             // arrange
             unionBridgeSupport = mock(UnionBridgeSupport.class);
-            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(),
+            when(unionBridgeSupport.increaseLockingCap(any(),
                 any())).thenReturn(expectedUnionResponseCode);
             bridgeSupport = bridgeSupportBuilder
                 .withUnionBridgeSupport(unionBridgeSupport)
@@ -935,10 +936,10 @@ class BridgeSupportTest {
             Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.SATOSHI);
 
             // act
-            int actualResult = bridgeSupport.increaseUnionBridgeLockingCap(transaction, newLockingCap);
+            UnionResponseCode actualResult = bridgeSupport.increaseUnionBridgeLockingCap(transaction, newLockingCap);
 
             // assert
-            assertEquals(UnionResponseCode.SUCCESS.getCode(), actualResult);
+            assertEquals(expectedUnionResponseCode, actualResult);
             verify(unionBridgeSupport).increaseLockingCap(transaction, newLockingCap);
         }
 

@@ -1497,15 +1497,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public long getUnionBridgeLockingCap(Object[] args) {
         logger.trace("getUnionBridgeLockingCap");
-
-        return bridgeSupport.getUnionBridgeLockingCap().getValue();
+        return bridgeSupport.getUnionBridgeLockingCap().orElse(Coin.NEGATIVE_SATOSHI).getValue();
     }
 
     public int increaseUnionBridgeLockingCap(Object[] args) {
         logger.trace("increaseUnionBridgeLockingCap");
         try {
             Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
-            return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap);
+            return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
         } catch (BridgeIllegalArgumentException e) {
             logger.warn("Exception in increaseUnionBridgeLockingCap", e);
             return UnionResponseCode.INVALID_VALUE.getCode();

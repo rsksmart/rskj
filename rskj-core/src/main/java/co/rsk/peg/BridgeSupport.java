@@ -2829,11 +2829,11 @@ public class BridgeSupport {
         return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
     }
 
-    public Coin getUnionBridgeLockingCap() {
-        return unionBridgeSupport.getLockingCap().orElse(Coin.NEGATIVE_SATOSHI);
+    public Optional<Coin> getUnionBridgeLockingCap() {
+        return unionBridgeSupport.getLockingCap();
     }
 
-    public int increaseUnionBridgeLockingCap(Transaction tx, Coin newLockingCap) {
+    public UnionResponseCode increaseUnionBridgeLockingCap(Transaction tx, Coin newLockingCap) {
         return unionBridgeSupport.increaseLockingCap(tx, newLockingCap);
     }
 

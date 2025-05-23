@@ -14,7 +14,6 @@ import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.test.builders.UnionBridgeSupportBuilder;
-import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;

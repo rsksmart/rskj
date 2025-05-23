@@ -3541,9 +3541,8 @@ class BridgeTest {
         void increaseUnionBridgeLockingCap_afterRSKIP502_shouldIncreaseLockingCap()
             throws VMException {
             // Arrange
-            int expectedResponseCode = UnionResponseCode.SUCCESS.getCode();
-            when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
-                expectedResponseCode);
+            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+            when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(expectedResponseCode);
 
             byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.getValue());
 
@@ -3561,7 +3560,7 @@ class BridgeTest {
         void increaseUnionBridgeLockingCap_afterRSKIP502_invalidNewLockingCap_shouldReturnInvalidLockingCapCode()
             throws VMException {
             // Arrange
-            int expectedResponseCode = UnionResponseCode.INVALID_VALUE.getCode();
+            UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
 
@@ -3576,14 +3575,14 @@ class BridgeTest {
             BigInteger decodedResult = (BigInteger) Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.decodeResult(
                 result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedResponseCode, actualUnionResponseCode);
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
 
         @Test
         void increaseUnionBridgeLockingCap_afterRSKIP502_zeroNewLockingCap_shouldReturnInvalidLockingCapCode()
             throws VMException {
             // Arrange
-            int expectedResponseCode = UnionResponseCode.INVALID_VALUE.getCode();
+            UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
 
@@ -3597,14 +3596,14 @@ class BridgeTest {
             BigInteger decodedResult = (BigInteger) Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.decodeResult(
                 result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedResponseCode, actualUnionResponseCode);
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
 
         @Test
         void increaseUnionBridgeLockingCap_afterRSKIP502_notAuthorized_shouldReturnUnauthorizedCode()
             throws VMException {
             // Arrange
-            int expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+            UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
 
@@ -3617,13 +3616,13 @@ class BridgeTest {
             BigInteger decodedResult = (BigInteger) Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.decodeResult(
                 result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedResponseCode, actualUnionResponseCode);
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
 
         @Test
         void increaseUnionBridgeLockingCap_afterRSKIP502_emptyArgument_shouldFail() throws VMException {
             // Arrange
-            int expectedResponseCode = UnionResponseCode.INVALID_VALUE.getCode();
+            UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(expectedResponseCode);
 
             CallTransaction.Function function = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
@@ -3635,7 +3634,7 @@ class BridgeTest {
             // Assert
             BigInteger decodedResult = (BigInteger) Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.decodeResult(result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedResponseCode, actualUnionResponseCode);
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
     }
 
