@@ -1490,7 +1490,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("setUnionBridgeContractAddressForTestnet");
         // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
         RskAddress unionBridgeContractAddress = new RskAddress((DataWord) args[0]);
-        return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress);
+        return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress).getCode();
     }
 
     public long getUnionBridgeLockingCap(Object[] args) {
