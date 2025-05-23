@@ -35,32 +35,32 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public int setUnionBridgeContractAddressForTestnet(@Nonnull Transaction tx, RskAddress unionBridgeContractAddress) {
+    public UnionResponseCode setUnionBridgeContractAddressForTestnet(@Nonnull Transaction tx, RskAddress unionBridgeContractAddress) {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
 
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
         if (isEnvironmentDisabled()) {
-            return UnionResponseCode.ENVIRONMENT_DISABLED.getCode();
+            return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
         if (isUnauthorizedCaller(tx)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
         if (isInvalidAddress(unionBridgeContractAddress)) {
-            return UnionResponseCode.INVALID_VALUE.getCode();
+            return UnionResponseCode.INVALID_VALUE;
         }
 
         RskAddress currentUnionBridgeAddress = storageProvider.getAddress(activations).orElse(constants.getAddress());
         if (isAddressAlreadyStored(currentUnionBridgeAddress, unionBridgeContractAddress)) {
-            return UnionResponseCode.INVALID_VALUE.getCode();
+            return UnionResponseCode.INVALID_VALUE;
         }
 
         storageProvider.setAddress(unionBridgeContractAddress);
         logger.info("[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, currentUnionBridgeAddress, unionBridgeContractAddress);
-        return UnionResponseCode.SUCCESS.getCode();
+        return UnionResponseCode.SUCCESS;
     }
 
     private boolean isEnvironmentDisabled() {
@@ -115,21 +115,21 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public int increaseLockingCap(Transaction tx, Coin newCap) {
+    public UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
         if (isUnauthorizedCaller(tx)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER.getCode();
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
         if (isInvalidLockingCap(newCap)) {
-            return UnionResponseCode.INVALID_VALUE.getCode();
+            return UnionResponseCode.INVALID_VALUE;
         }
 
         storageProvider.setLockingCap(newCap);
         logger.info("[{}] Union Locking Cap has been increased. New value: {}",
             INCREASE_LOCKING_CAP_TAG, newCap.value);
-        return UnionResponseCode.SUCCESS.getCode();
+        return UnionResponseCode.SUCCESS;
     }
 
     private boolean isInvalidLockingCap(Coin newCap) {
@@ -138,8 +138,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         if (newCap.compareTo(currentLockingCap) < 1) {
             logger.warn(
-                "[{}] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
-                "isInvalidLockingCap", newCap.value, currentLockingCap.value);
+                "[isInvalidLockingCap] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
+                newCap.value, currentLockingCap.value);
             return true;
         }
 
@@ -147,17 +147,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             constants.getLockingCapIncrementsMultiplier());
         if (newCap.compareTo(maxLockingCapIncreaseAllowed) > 0) {
             logger.warn(
-                "[{}] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
-                "isInvalidLockingCap", newCap.value, maxLockingCapIncreaseAllowed.value);
+                "[isInvalidLockingCap] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
+                newCap.value, maxLockingCapIncreaseAllowed.value);
             return true;
         }
 
-        if (newCap.compareTo(constants.getMaxRbtc()) > 0) {
-            logger.warn(
-                "[{}] Attempted value tries to increase Union Locking Cap above the maximum RBTC value. Value attempted: {} . maxRbtc: {}",
-                "isInvalidLockingCap", newCap.value, constants.getMaxRbtc().value);
-            return true;
-        }
         return false;
     }
 

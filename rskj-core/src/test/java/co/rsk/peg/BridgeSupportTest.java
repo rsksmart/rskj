@@ -848,19 +848,19 @@ class BridgeSupportTest {
             unionBridgeSupport = mock(UnionBridgeSupport.class);
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(),
                 any())).thenReturn(
-                expectedUnionResponseCode.getCode()
+                expectedUnionResponseCode
             );
             bridgeSupport = bridgeSupportBuilder
                 .withUnionBridgeSupport(unionBridgeSupport)
                 .build();
 
             // act
-            int actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction,
+            UnionResponseCode actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction,
                 unionBridgeContractAddress);
 
             // assert
             Assertions.assertEquals(
-                expectedUnionResponseCode.getCode(),
+                expectedUnionResponseCode,
                 actualResponseCode
             );
             verify(unionBridgeSupport).setUnionBridgeContractAddressForTestnet(
