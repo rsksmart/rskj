@@ -1,38 +1,39 @@
 name: Execute Fuzzing Tests
 
 on:
-  push:
-    branches:
-      - "master"
-      - "*-rc"
+#  push:
+#    branches:
+#      - "master"
+#      - "*-rc"
   workflow_dispatch:
     inputs:
       branch:
         description: 'Branch for Fuzzing Tests'
         required: false
         default: 'master'
+  pull_request:
 
 jobs:
   fuzz-test:
-    needs: build
     runs-on: ubuntu-latest
+    env:
+      # Pick dispatch input on manual runs, PR head on pull_request, else the ref name
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
     steps:
       - name: Validate branch name
         id: validate-branch
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            github_event_inputs_branch: ${{ github.event.inputs.branch }}
-            github_ref_name: ${{ github.ref_name }}
         run: |
-          
-          if [[ ! "${{ github_event_inputs_branch || github_ref_name }}" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
-            echo "Invalid branch name: ${{ github_event_inputs_branch || github_ref_name }}"
+          echo "🔎  Testing branch = $TARGET_BRANCH"
+          if [[ ! "$TARGET_BRANCH" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
+            echo "❌  Invalid branch name: $TARGET_BRANCH"
             exit 1
-          fi        
+          fi
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
         with:
-          ref: ${{ github.event.inputs.branch || github.ref_name }}
+          ref: ${{ env.TARGET_BRANCH }}
 
       - name: Setup Java & Gradle
         uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
