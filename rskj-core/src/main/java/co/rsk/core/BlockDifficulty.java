@@ -86,6 +86,9 @@ public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializabl
         return new BlockDifficulty(value.subtract(other.value));
     }
 
+    public BlockDifficulty multiply(BigInteger val) {
+        return new BlockDifficulty(value.multiply(val));
+    }
 
     @Override
     public int compareTo(@Nonnull BlockDifficulty other) {
