@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto.signature;
 
+import co.rsk.util.HexUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.ImmutableTransaction;
@@ -57,6 +58,13 @@ public abstract class Secp256k1ServiceTest {
     private final BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
     private final BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
     private final byte v = 28;
+
+    private final String v1y = "29896722852569046015560700294576055776214335159245303116488692907525646231534";
+    // private final String v2y = "69211104694897500952317515077652022726490027694212560352756646854116994689233";
+    private String v1by2x = "90462569716653277674664832038037428010367175520031690655826237506178777087235";
+    private String v1by2y = "30122570767565969031174451675354718271714177419582540229636601003470726681395";
+    private String v1by9x = "46171929588085016379679198610744759757996296651373714437564035753833216770329";
+    private String v1by9y = "4076329532618667641907419885981677362511359868272295070859229146922980867493";
 
     private Secp256k1Service secp256k1;
 
@@ -304,6 +312,328 @@ public abstract class Secp256k1ServiceTest {
         ECKey privateKey = ECKey.fromPrivate(BigInteger.valueOf(1_000_000_000));
         ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
         sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    @Test
+    void testSecpAddTwoPoints() {
+        /*
+         Test should return correct result (taken from parity impl)
+         */
+        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000001" + ByteUtil.bigIntegerToHexDW(v1y) +
+                "0000000000000000000000000000000000000000000000000000000000000001" + ByteUtil.bigIntegerToHexDW(v1y);
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+        final var ox = new BigInteger(v1by2x);
+        final var oy = new BigInteger(v1by2y);
+        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void testSecpAddZeroPointsShouldBeZero() {
+        /*
+         Test should return zero
+         */
+        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000";
+
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void testSecpAddEmptyInputShouldBeZero() {
+        /*
+         Test should return zero
+         */
+        final var inputStr = "";
+
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void testSecpAddPointPlusInfinityIsPoint() {
+        /*
+         Test should return same point
+         */
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" + ByteUtil.bigIntegerToHexDW(v1y);
+
+        final var inputStr = outputStr +
+                "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void testSecpAddInfinityPlusPointIsPoint() {
+        /*
+         Test should return same point
+         */
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" +
+                ByteUtil.bigIntegerToHexDW(v1y);
+
+        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000" + outputStr;
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void testSecpAddPointNotOnCurveShouldFail() {
+        /*
+         Test should return empty byte array because point is not on curve
+         */
+        final var inputStr =
+                "1111111111111111111111111111111111111111111111111111111111111111" +
+                        "1111111111111111111111111111111111111111111111111111111111111111" +
+                        "1111111111111111111111111111111111111111111111111111111111111111" +
+                        "1111111111111111111111111111111111111111111111111111111111111111";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void shouldReturnInfinityOnIdenticalInputPointValuesOfX() {
+        final var p0x = new BigInteger("3");
+        final var p0y = new BigInteger("21320899557911560362763253855565071047772010424612278905734793689199612115787");
+        final var p1x = new BigInteger("3");
+        final var p1y = new BigInteger("-21320899557911560362763253855565071047772010424612278905734793689203907084060");
+
+        final var input = new byte[128];
+
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(p0x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(p0y.toByteArray());
+        final var x2Bytes = ByteUtil.stripLeadingZeroes(p1x.toByteArray());
+        final var y2Bytes = ByteUtil.stripLeadingZeroes(p1y.toByteArray());
+
+        System.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        System.arraycopy(x2Bytes, 0, input, 96 - x2Bytes.length, x2Bytes.length);
+        System.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
+
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000";
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void shouldReturnTrueAddAndComputeSlope()  {
+        final var p0x = new BigInteger("4");
+        final var p0y = new BigInteger("40508090799132825824753983223610497876805216745196355809233758402754120847507");
+
+        final var p1x = new BigInteger("1624070059937464756887933993293429854168590106605707304006200119738501412969");
+        final var p1y = new BigInteger("48810817106871756219742442189260392858217846784043974224646271552914041676099");
+
+        final var input = new byte[128];
+
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(p0x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(p0y.toByteArray());
+        final var x2Bytes = ByteUtil.stripLeadingZeroes(p1x.toByteArray());
+        final var y2Bytes = ByteUtil.stripLeadingZeroes(p1y.toByteArray());
+
+        System.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        System.arraycopy(x2Bytes, 0, input, 96 - x2Bytes.length, x2Bytes.length);
+        System.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
+
+        final var ox = new BigInteger("59470963110652214182270290319243047549711080187995156844066669631124720856270");
+        final var oy = new BigInteger("75549874947483386113764723043915448105868538368156141886808196158351727282824");
+        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.add(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+
+    }
+
+    @Test
+    void shouldReturnTrueMultiplyScalarAndPoint() {
+        final var x = BigInteger.valueOf(1);
+        final var y = new BigInteger(v1y);
+
+        final var multiplier = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+
+        final var input = new byte[96];
+
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
+        final var scalarBytes = ByteUtil.stripLeadingZeroes(multiplier.toByteArray());
+
+        System.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        System.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
+
+        final var ox = new BigInteger("68306631035792818416930554521980007078198693994042647901813352646899028694565");
+        final var oy = new BigInteger("763410389832780290161227297165449309800016629866253823160953352172730927280");
+        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void shouldReturnIdentityWhenMultipliedByScalarValueOne() {
+        final var x = new BigInteger("1");
+        final var y = new BigInteger(v1y);
+
+        final var multiplier = BigInteger.valueOf(1);
+
+        final var input = new byte[96];
+
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
+        final var scalarBytes = ByteUtil.stripLeadingZeroes(multiplier.toByteArray());
+
+        System.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        System.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
+
+        final var outputStr = ByteUtil.bigIntegerToHexDW("1") + ByteUtil.bigIntegerToHexDW(v1y);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void shouldReturnTrueMultiplyPointByScalar() {
+        final var x = BigInteger.valueOf(1);
+        final var y = new BigInteger(v1y);
+
+        final var multiplier = BigInteger.valueOf(9);
+
+        final var input = new byte[96];
+
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
+        final var scalarBytes = ByteUtil.stripLeadingZeroes(multiplier.toByteArray());
+
+        System.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        System.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
+
+        final var ox = new BigInteger(v1by9x);
+        final var oy = new BigInteger(v1by9y);
+        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void shouldReturnSumMultiplyPointByScalar() {
+        final var x = new BigInteger("1");
+        final var y = new BigInteger(v1y);
+
+        final var multiplier = BigInteger.valueOf(2);
+
+        final var input = new byte[96];
+
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
+        final var scalarBytes = ByteUtil.stripLeadingZeroes(multiplier.toByteArray());
+
+        System.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        System.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
+
+        final var ox = new BigInteger(v1by2x);
+        final var oy = new BigInteger(v1by2y);
+        String outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
+    }
+
+    @Test
+    void shouldFailForPointNotOnCurve() {
+        String inputStr = "1111111111111111111111111111111111111111111111111111111111111111" +
+                "1111111111111111111111111111111111111111111111111111111111111111" +
+                "1111111111111111111111111111111111111111111111111111111111111111";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void mulShouldFailForNotEnoughParams() {
+        String inputStr = "1111111111111111111111111111111111111111111111111111111111111111" +
+                "1111111111111111111111111111111111111111111111111111111111111111";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertNull(result);
+    }
+
+    @Test
+    void mulShouldFailEmptyParams() {
+        /*
+         * Behaviour on empty params establishes that correct output is zero byte array
+         */
+
+        final var inputStr = "";
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000";
+
+        final var input = HexUtils.stringHexToByteArray(inputStr);
+        final var output = HexUtils.stringHexToByteArray(outputStr);
+
+        final var result = secp256k1.mul(input, input.length);
+
+        Assertions.assertArrayEquals(result, output);
     }
 
     private void sign_signatureToKey_assert(ECKey privateKey, ECKey publicKey) {
