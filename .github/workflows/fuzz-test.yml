@@ -1,24 +1,23 @@
 name: Execute Fuzzing Tests
 
 on:
-#  push:
-#    branches:
-#      - "master"
-#      - "*-rc"
+  push:
+    branches:
+      - "master"
+      - "*-rc"
   workflow_dispatch:
     inputs:
       branch:
         description: 'Branch for Fuzzing Tests'
         required: false
         default: 'master'
-  pull_request:
 
 jobs:
   fuzz-test:
     runs-on: ubuntu-latest
     env:
-      # Pick dispatch input on manual runs, PR head on pull_request, else the ref name
-      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+      # Pick dispatch input on manual runs else the ref name
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
     steps:
       - name: Validate branch name
         id: validate-branch
