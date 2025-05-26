@@ -18,7 +18,7 @@
 
 package co.rsk.peg.federation;
 
-import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.Address;
@@ -88,7 +88,7 @@ class StandardMultisigFederationTest {
         ScriptCreationException exception =
             assertThrows(ScriptCreationException.class,
                 () -> FederationFactory.buildStandardMultiSigFederation(federationArgs));
-        assertEquals(ABOVE_MAX_SCRIPT_ELEMENT_SIZE, exception.getReason());
+        assertEquals(ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE, exception.getReason());
     }
 
     @Test
