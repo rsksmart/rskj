@@ -78,6 +78,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static co.rsk.util.HexUtils.*;
 import static java.lang.Math.max;
@@ -418,8 +419,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam) {
         List<AccountOverride> accountOverrideList = accParam.entrySet().stream()
-                .map(entry -> getAccountOverride(entry.getKey(), entry.getValue()))
-                .toList();
+                .map(entry -> getAccountOverride(entry.getKey(), entry.getValue())).collect(Collectors.toList());
         if (blockRefParam.getIdentifier() != null) {
             return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()), accountOverrideList);
         }
