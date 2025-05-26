@@ -31,6 +31,4 @@ public class UnionBridgeConstants {
     public AddressBasedAuthorizer getChangeAuthorizer() {
         return changeAuthorizer;
     }
-
-    public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 }

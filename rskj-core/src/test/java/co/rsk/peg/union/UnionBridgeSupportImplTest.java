@@ -87,7 +87,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
-    void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccessCode(
+    void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccessCodeButNotStoreAnyAddress(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -104,6 +104,10 @@ class UnionBridgeSupportImplTest {
             result
         );
         assertAddressWasSet(unionBridgeContractAddress);
+        assertNoAddressIsStored();
+
+        // call save and assert that the address is not stored
+        unionBridgeSupport.save();
         assertNoAddressIsStored();
     }
 
@@ -134,6 +138,10 @@ class UnionBridgeSupportImplTest {
         );
         assertAddressWasSet(unionBridgeContractAddress);
         assertNoAddressIsStored();
+
+        // call save and assert that the address is stored
+        unionBridgeSupport.save();
+        assertAddressWasStored(unionBridgeContractAddress);
     }
 
     private void assertAddressWasSet(RskAddress expectedAddress) {
@@ -195,7 +203,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsForSetUnionBridgeContractAddress")
-    void setUnionBridgeContractAddressForTestnet_whenStoredAddress_shouldReturnSuccessCodeButDoNotStoreAnyAddress(
+    void setUnionBridgeContractAddressForTestnet_whenStoredAddress_shouldUpdateToNewUnionBridgeContractAddress(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
 
@@ -227,6 +235,10 @@ class UnionBridgeSupportImplTest {
         );
         Assertions.assertEquals(unionBridgeContractAddress, actualRskAddress);
         Assertions.assertNotEquals(newUnionBridgeContractAddress, actualRskAddress);
+
+        // call save and assert that the new address is stored
+        unionBridgeSupport.save();
+        assertAddressWasStored(newUnionBridgeContractAddress);
     }
 
     @Test
@@ -394,7 +406,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
-    void increaseLockingCap_preRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldSetLockingButNotStore(
+    void increaseLockingCap_preRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldIncreaseLockingButNotStore(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -403,7 +415,7 @@ class UnionBridgeSupportImplTest {
             .build();
 
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
-        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
@@ -411,20 +423,22 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertNoLockingCapIsStored();
+
+        // call save and assert that the new locking cap is not stored
+        unionBridgeSupport.save();
+        assertNoLockingCapIsStored();
     }
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
-    void increaseLockingCap_postRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldSetButNotStoreLockingCap(
+    void increaseLockingCap_postRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldIncreaseLockingCap(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants)
             .build();
-
-
-        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
@@ -432,25 +446,27 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(newLockingCap);
-        assertLNewLockingCapWasNotStored(newLockingCap);
+        assertNewLockingCapWasNotStored(newLockingCap);
+
+        // call save and assert that the new locking cap is stored
+        unionBridgeSupport.save();
+        assertLockingCapWasStored(newLockingCap);
     }
 
-    @ParameterizedTest
-    @MethodSource("unionBridgeConstantsProvider")
-    void increaseLockingCap_postRSKIP502_whenMoreThanMaxRbtc_shouldSetButNotStoreLockingCap(
-        UnionBridgeConstants unionBridgeConstants) {
+    @Test
+    void increaseLockingCap_postRSKIP502_whenMoreThanMaxRbtc_shouldIncreaseLockingCap() {
         // arrange
+        Coin moreThanMaxRbtc = BridgeMainNetConstants.getInstance().getMaxRbtc().add(Coin.COIN);
+
         // Stored a locking cap in the storage to demonstrate that the new locking cap is valid when is possible
-        Coin maxRbtc = BridgeMainNetConstants.getInstance().getMaxRbtc();
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            maxRbtc,
+            moreThanMaxRbtc.divide(2),
             BridgeSerializationUtils::serializeCoin
         );
-        Coin moreThanMaxRbtc = maxRbtc.add(Coin.CENT);
 
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants)
+            .withConstants(UnionBridgeMainNetConstants.getInstance())
             .build();
 
         // act
@@ -459,7 +475,11 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(moreThanMaxRbtc);
-        assertLNewLockingCapWasNotStored(moreThanMaxRbtc);
+        assertNewLockingCapWasNotStored(moreThanMaxRbtc);
+
+        // call save and assert that the new locking cap is stored
+        unionBridgeSupport.save();
+        assertLockingCapWasStored(moreThanMaxRbtc);
     }
 
     @ParameterizedTest
@@ -476,24 +496,27 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
         assertNoLockingCapIsStored();
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
+        assertNoLockingCapIsStored();
     }
 
-    public static Stream<Arguments> invalidLockingCapProvider() {
+    private static Stream<Arguments> invalidLockingCapProvider() {
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
-
-        Coin maxRbtc = BridgeMainNetConstants.getInstance().getMaxRbtc();
-        Coin moreThanMaxRbtc = maxRbtc.add(Coin.CENT);
 
         Coin initialLockingCap = bridgeConstants.getInitialLockingCap();
         Coin lessThanInitialLockingCap = initialLockingCap.minus(Coin.CENT);
-        Coin maxLockingCap = initialLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
-        Coin moreThanMaxLockingCap = maxLockingCap.add(Coin.CENT);
+        Coin lockingCapAboveMaxIncreaseAmount = initialLockingCap
+            .multiply(bridgeConstants.getLockingCapIncrementsMultiplier())
+            .add(Coin.CENT);
 
         return Stream.of(
             Arguments.of(Coin.NEGATIVE_SATOSHI),
             Arguments.of(Coin.ZERO),
             Arguments.of(lessThanInitialLockingCap), // less than the initial locking cap
-            Arguments.of(initialLockingCap)
+            Arguments.of(initialLockingCap),
+            Arguments.of(lockingCapAboveMaxIncreaseAmount)
         );
     }
 
@@ -503,7 +526,7 @@ class UnionBridgeSupportImplTest {
         Assertions.assertEquals(newLockingCap, cacheLockingCap.get());
     }
 
-    private void assertLNewLockingCapWasNotStored(Coin newLockingCap) {
+    private void assertNewLockingCapWasNotStored(Coin newLockingCap) {
         Coin storedLockingCap = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeCoin
@@ -524,13 +547,17 @@ class UnionBridgeSupportImplTest {
             .withConstants(bridgeConstants)
             .build();
         Coin initialLockingCap = bridgeConstants.getInitialLockingCap();
-        Coin newLockingCap = initialLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+        Coin newLockingCap = initialLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+        assertNoLockingCapIsStored();
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
         assertNoLockingCapIsStored();
     }
 
@@ -565,7 +592,7 @@ class UnionBridgeSupportImplTest {
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
-        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.CENT);
+        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
@@ -574,16 +601,16 @@ class UnionBridgeSupportImplTest {
 
         // assert
         assertAddressWasSet(unionBridgeContractAddress);
-        assertAddressWasStored();
+        assertAddressWasStored(unionBridgeContractAddress);
         assertLockingCapWasStored(newLockingCap);
     }
 
-    private void assertAddressWasStored() {
+    private void assertAddressWasStored(RskAddress newUnionBridgeContractAddress) {
         RskAddress actualRskAddress = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        Assertions.assertEquals(unionBridgeContractAddress, actualRskAddress);
+        Assertions.assertEquals(newUnionBridgeContractAddress, actualRskAddress);
     }
 
     private void assertLockingCapWasStored(Coin newLockingCap) {
