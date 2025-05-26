@@ -88,11 +88,11 @@ public class ErpFederation extends Federation {
         if (getFormatVersion() != P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
             // since the redeem script is located in the script sig,
             // we need to check it does not surpass the maximum allowed size
-            ScriptValidations.validateRedeemScripSize(redeemScript);
+            ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
             return;
         }
 
-        ScriptValidations.validateP2WSHRedeemScriptSize(redeemScript, getNumberOfSignaturesRequired());
+        ScriptValidations.validateSizeOfRedeemScriptForWitness(redeemScript);
     }
 
     private RedeemScriptParser getRedeemScriptParser() {

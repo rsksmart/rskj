@@ -199,6 +199,7 @@ public class BitcoinUtils {
             throw new IllegalArgumentException("SegwitScriptSig must not be null");
         }
         byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
+        // The whole program is [22 00 20 + redeemScriptHash], so we just need to skip the first 3 bytes.
         return Arrays.copyOfRange(segwitScriptSigProgram, 3, segwitScriptSigProgram.length);
     }
 
