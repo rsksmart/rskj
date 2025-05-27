@@ -7,7 +7,13 @@ import java.util.Optional;
 import org.ethereum.core.Transaction;
 
 public interface UnionBridgeSupport {
-    int setUnionBridgeContractAddressForTestnet(Transaction tx, RskAddress unionBridgeContractAddress);
+
+    UnionResponseCode setUnionBridgeContractAddressForTestnet(Transaction tx,
+        RskAddress unionBridgeContractAddress);
+
     Optional<Coin> getLockingCap();
+
+    UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap);
+
     void save();
 }
