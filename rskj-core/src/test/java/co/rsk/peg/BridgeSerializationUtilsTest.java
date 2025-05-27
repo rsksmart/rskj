@@ -1210,6 +1210,42 @@ class BridgeSerializationUtilsTest {
             nullValue());
     }
 
+    @ParameterizedTest
+    @MethodSource("provideValidRskCoins")
+    void serializeDeserializationRskCoin_whenValidCoin_shouldSerialize(co.rsk.core.Coin coin) {
+        byte[] actualSerializedValue = BridgeSerializationUtils.serializeRskCoin(coin);
+        assertArrayEquals(RLP.encodeBigInteger(coin.asBigInteger()), actualSerializedValue);
+
+        co.rsk.core.Coin deserializedValue = BridgeSerializationUtils.deserializeRskCoin(actualSerializedValue);
+        assertEquals(coin, deserializedValue);
+    }
+
+    public static Stream<Arguments> provideValidRskCoins() {
+        BigInteger oneEth = BigInteger.TEN.pow(18);
+
+        return Stream.of(
+            Arguments.of(co.rsk.core.Coin.ZERO),
+            Arguments.of(co.rsk.core.Coin.valueOf(1)),
+            Arguments.of(new co.rsk.core.Coin(oneEth)),
+            Arguments.of(new co.rsk.core.Coin(oneEth).multiply(BigInteger.valueOf(100))),
+            Arguments.of(co.rsk.core.Coin.valueOf(Long.MAX_VALUE)),
+            Arguments.of(new co.rsk.core.Coin(oneEth).multiply(BigInteger.valueOf(Long.MAX_VALUE)))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidRskCoins")
+    void serializeDeserializationRskCoin_whenInvalidCoin_shouldFailToSerialize(co.rsk.core.Coin coin) {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskCoin(coin));
+    }
+
+    public static Stream<Arguments> provideInvalidRskCoins() {
+        return Stream.of(
+            Arguments.of(co.rsk.core.Coin.valueOf(Long.MIN_VALUE)),
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(-1)))
+        );
+    }
+
     @Test
     void serializeInteger() {
         Assertions.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(123), 0));
