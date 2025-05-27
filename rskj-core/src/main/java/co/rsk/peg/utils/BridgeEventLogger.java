@@ -83,4 +83,8 @@ public interface BridgeEventLogger {
     default void logPegoutTransactionCreated(Sha256Hash btcTxHash, List<Coin> outpointValues) {
         throw new UnsupportedOperationException();
     }
+
+    default void logUnionRbtcReleased(RskAddress receiver, co.rsk.core.Coin amount) {
+        throw new UnsupportedOperationException();
+    }
 }
