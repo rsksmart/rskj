@@ -606,6 +606,9 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializeRskCoin(co.rsk.core.Coin coin) {
+        if (coin == null || coin.compareTo(co.rsk.core.Coin.ZERO) < 0) {
+            throw new IllegalArgumentException("Rsk coin value cannot be negative.");
+        }
         return RLP.encodeBigInteger(coin.asBigInteger());
     }
 

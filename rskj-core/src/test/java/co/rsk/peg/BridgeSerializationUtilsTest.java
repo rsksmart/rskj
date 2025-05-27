@@ -104,8 +104,6 @@ class BridgeSerializationUtilsTest {
         );
     }
 
-
-
     @ParameterizedTest
     @MethodSource("validRskAddressesProvider")
     void serializeAndDeserializeRskAddress_validAddress_ok(RskAddress address) {
@@ -1223,14 +1221,28 @@ class BridgeSerializationUtilsTest {
     }
 
     public static Stream<Arguments> provideValidRskCoins() {
-        BigInteger weiPerEther = BigInteger.TEN.pow(18);
+        BigInteger oneEth = BigInteger.TEN.pow(18);
 
         return Stream.of(
             Arguments.of(co.rsk.core.Coin.ZERO),
+            Arguments.of(co.rsk.core.Coin.valueOf(1)),
+            Arguments.of(new co.rsk.core.Coin(oneEth)),
+            Arguments.of(new co.rsk.core.Coin(oneEth).multiply(BigInteger.valueOf(100))),
             Arguments.of(co.rsk.core.Coin.valueOf(Long.MAX_VALUE)),
-            Arguments.of(new co.rsk.core.Coin(weiPerEther)),
-            Arguments.of(new co.rsk.core.Coin(weiPerEther).multiply(BigInteger.valueOf(100))),
-            Arguments.of(new co.rsk.core.Coin(weiPerEther).multiply(BigInteger.valueOf(Long.MAX_VALUE)))
+            Arguments.of(new co.rsk.core.Coin(oneEth).multiply(BigInteger.valueOf(Long.MAX_VALUE)))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidRskCoins")
+    void serializeDeserializationRskCoin_whenInvalidCoin_shouldSerialize(co.rsk.core.Coin coin) {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskCoin(coin));
+    }
+
+    public static Stream<Arguments> provideInvalidRskCoins() {
+        return Stream.of(
+            Arguments.of(co.rsk.core.Coin.valueOf(Long.MIN_VALUE)),
+            Arguments.of(new co.rsk.core.Coin(BigInteger.valueOf(-1)))
         );
     }
 
