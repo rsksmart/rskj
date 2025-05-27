@@ -22,6 +22,7 @@ package org.ethereum.crypto.signature;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -319,16 +320,16 @@ public abstract class Secp256k1ServiceTest {
         /*
          Test should return correct result (taken from parity impl)
          */
-        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000001" + ByteUtil.bigIntegerToHexDW(v1y) +
-                "0000000000000000000000000000000000000000000000000000000000000001" + ByteUtil.bigIntegerToHexDW(v1y);
+        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000001" + TestUtils.bigIntegerToHexDW(v1y) +
+                "0000000000000000000000000000000000000000000000000000000000000001" + TestUtils.bigIntegerToHexDW(v1y);
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var ox = new BigInteger(v1by2x);
         final var oy = new BigInteger(v1by2y);
-        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -349,7 +350,7 @@ public abstract class Secp256k1ServiceTest {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -367,7 +368,7 @@ public abstract class Secp256k1ServiceTest {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -377,7 +378,7 @@ public abstract class Secp256k1ServiceTest {
         /*
          Test should return same point
          */
-        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" + ByteUtil.bigIntegerToHexDW(v1y);
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" + TestUtils.bigIntegerToHexDW(v1y);
 
         final var inputStr = outputStr +
                 "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -386,7 +387,7 @@ public abstract class Secp256k1ServiceTest {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -397,7 +398,7 @@ public abstract class Secp256k1ServiceTest {
          Test should return same point
          */
         final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" +
-                ByteUtil.bigIntegerToHexDW(v1y);
+                TestUtils.bigIntegerToHexDW(v1y);
 
         final var inputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
                 "0000000000000000000000000000000000000000000000000000000000000000" + outputStr;
@@ -405,7 +406,7 @@ public abstract class Secp256k1ServiceTest {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -423,7 +424,7 @@ public abstract class Secp256k1ServiceTest {
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertNull(result);
     }
@@ -451,7 +452,7 @@ public abstract class Secp256k1ServiceTest {
                 "0000000000000000000000000000000000000000000000000000000000000000";
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -478,10 +479,10 @@ public abstract class Secp256k1ServiceTest {
 
         final var ox = new BigInteger("59470963110652214182270290319243047549711080187995156844066669631124720856270");
         final var oy = new BigInteger("75549874947483386113764723043915448105868538368156141886808196158351727282824");
-        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.add(input, input.length);
+        final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(result, output);
 
@@ -506,10 +507,10 @@ public abstract class Secp256k1ServiceTest {
 
         final var ox = new BigInteger("68306631035792818416930554521980007078198693994042647901813352646899028694565");
         final var oy = new BigInteger("763410389832780290161227297165449309800016629866253823160953352172730927280");
-        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -531,10 +532,10 @@ public abstract class Secp256k1ServiceTest {
         System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
         System.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
 
-        final var outputStr = ByteUtil.bigIntegerToHexDW("1") + ByteUtil.bigIntegerToHexDW(v1y);
+        final var outputStr = TestUtils.bigIntegerToHexDW("1") + TestUtils.bigIntegerToHexDW(v1y);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -558,10 +559,10 @@ public abstract class Secp256k1ServiceTest {
 
         final var ox = new BigInteger(v1by9x);
         final var oy = new BigInteger(v1by9y);
-        final var outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -585,10 +586,10 @@ public abstract class Secp256k1ServiceTest {
 
         final var ox = new BigInteger(v1by2x);
         final var oy = new BigInteger(v1by2y);
-        String outputStr = ByteUtil.bigIntegerToHex(ox) + ByteUtil.bigIntegerToHex(oy);
+        String outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertArrayEquals(result, output);
     }
@@ -601,7 +602,7 @@ public abstract class Secp256k1ServiceTest {
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertNull(result);
     }
@@ -613,7 +614,7 @@ public abstract class Secp256k1ServiceTest {
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertNull(result);
     }
@@ -631,7 +632,7 @@ public abstract class Secp256k1ServiceTest {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        final var result = secp256k1.mul(input, input.length);
+        final var result = secp256k1.mul(input);
 
         Assertions.assertArrayEquals(result, output);
     }
