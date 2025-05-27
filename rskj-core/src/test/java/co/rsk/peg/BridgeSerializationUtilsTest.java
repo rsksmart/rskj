@@ -1235,7 +1235,7 @@ class BridgeSerializationUtilsTest {
 
     @ParameterizedTest
     @MethodSource("provideInvalidRskCoins")
-    void serializeDeserializationRskCoin_whenInvalidCoin_shouldSerialize(co.rsk.core.Coin coin) {
+    void serializeDeserializationRskCoin_whenInvalidCoin_shouldFailToSerialize(co.rsk.core.Coin coin) {
         Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeRskCoin(coin));
     }
 
