@@ -865,7 +865,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getUnionBridgeLockingCap_beforeRskip502_shouldReturnEmpty() {
+        void getUnionBridgeLockingCap_beforeRskip502_shouldReturnNegativeOne() {
             // arrange
             bridgeSupport = bridgeSupportBuilder
                 .withActivations(lovell)
@@ -935,7 +935,7 @@ class BridgeSupportTest {
                 .build();
 
             Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
-            Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier()).minus(Coin.SATOSHI);
+            Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
 
             // act
             UnionResponseCode actualResult = bridgeSupport.increaseUnionBridgeLockingCap(
