@@ -1,6 +1,5 @@
 package co.rsk.rpc.netty;
 
-import co.rsk.rpc.modules.eth.EthModule;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonResponse;
@@ -23,11 +22,9 @@ class Web3MethodResolutionTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private JsonRpcCustomServer jsonRpcServer;
     private Web3Impl web3Impl;
-    private EthModule ethModule;
 
     @BeforeEach
     void setup() {
-        ethModule = mock(EthModule.class);
         web3Impl = mock(Web3Impl.class);
         this.jsonRpcServer = new JsonRpcCustomServer(web3Impl, Web3.class, Collections.emptyList(), objectMapper);
     }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -56,6 +57,9 @@ public class AccountOverrideParam {
     }
 
     public static class Deserializer extends StdDeserializer<AccountOverrideParam> {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public Deserializer() {
             this(null);
