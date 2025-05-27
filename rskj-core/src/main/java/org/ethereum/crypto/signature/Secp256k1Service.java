@@ -115,7 +115,7 @@ public interface Secp256k1Service {
         }
     }
 
-    byte[] add(byte[] data, int length);
+    byte[] add(byte[] data);
 
-    byte[] mul(byte[] data, int length);
+    byte[] mul(byte[] data);
 }
