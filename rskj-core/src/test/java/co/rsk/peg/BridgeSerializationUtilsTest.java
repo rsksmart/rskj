@@ -73,6 +73,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
@@ -1171,6 +1172,26 @@ class BridgeSerializationUtilsTest {
             nullValue());
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(new byte[0]),
             nullValue());
+    }
+
+    @ParameterizedTest()
+    @MethodSource("provideNegativeValues")
+    void serializeAndDeserializeNegativeCoinValue(Coin value, Coin expectedValue) {
+        byte[] serialized = BridgeSerializationUtils.serializeCoin(value);
+        Coin deserialized = BridgeSerializationUtils.deserializeCoin(serialized);
+        System.out.println("Value: " + value + ", Deserialized: " + deserialized);
+        assertEquals(deserialized, expectedValue);
+        assertNotEquals(value, deserialized);
+    }
+
+    private static Stream<Arguments> provideNegativeValues() {
+        return Stream.of(
+            Arguments.of(Coin.valueOf(-1), Coin.valueOf(255)),
+            Arguments.of(Coin.valueOf(-2), Coin.valueOf(254)),
+            Arguments.of(Coin.valueOf(-3), Coin.valueOf(253)),
+            Arguments.of(Coin.valueOf(-1000), Coin.valueOf(64536)),
+            Arguments.of(Coin.valueOf(-1000000), Coin.valueOf(15777216))
+        );
     }
 
     @Test
