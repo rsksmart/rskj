@@ -49,11 +49,11 @@ class Secp256k1ServiceBC implements Secp256k1Service {
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
     // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
-    private static final X9ECParameters params = SECNamedCurves.getByName("secp256k1");
+    private static final X9ECParameters X_9_EC_PARAMETERS = SECNamedCurves.getByName("secp256k1");
 
     static {
-        CURVE = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
-        HALF_CURVE_ORDER = params.getN().shiftRight(1);
+        CURVE = new ECDomainParameters(X_9_EC_PARAMETERS.getCurve(), X_9_EC_PARAMETERS.getG(), X_9_EC_PARAMETERS.getN(), X_9_EC_PARAMETERS.getH());
+        HALF_CURVE_ORDER = X_9_EC_PARAMETERS.getN().shiftRight(1);
     }
 
     /**
@@ -132,13 +132,6 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         }
     }
 
-    public static byte[] getNegate(byte[] x1, byte[] y1) {
-        final var p1 = params.getCurve().createPoint(BIUtil.toBI(x1), BIUtil.toBI(y1));
-        final var neg = p1.negate().normalize();
-
-        return neg.getAffineYCoord().getEncoded();
-    }
-
     private static byte[] encodeRes(byte[] w1, byte[] w2) {
         var res = new byte[64];
 
@@ -163,7 +156,7 @@ class Secp256k1ServiceBC implements Secp256k1Service {
 
     private static boolean isValidPoint(byte[] x, byte[] y) {
         try {
-            params.getCurve().validatePoint(BIUtil.toBI(x), BIUtil.toBI(y));
+            X_9_EC_PARAMETERS.getCurve().validatePoint(BIUtil.toBI(x), BIUtil.toBI(y));
         } catch (java.lang.IllegalArgumentException e) {
             return false;
         }
@@ -174,20 +167,20 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         ECPoint p1;
 
         if (ByteUtil.isAllZeroes(x1) && (ByteUtil.isAllZeroes(y1))) {
-            p1 = params.getCurve().getInfinity();
+            p1 = X_9_EC_PARAMETERS.getCurve().getInfinity();
         } else {
             if (!isValidPoint(x1, y1)) {
                 return null;
             }
 
-            p1 = params.getCurve().createPoint(BIUtil.toBI(x1), BIUtil.toBI(y1));
+            p1 = X_9_EC_PARAMETERS.getCurve().createPoint(BIUtil.toBI(x1), BIUtil.toBI(y1));
         }
 
         return p1;
     }
 
     @Override
-    public byte[] add(byte[] data, int length) {
+    public byte[] add(byte[] data) {
         final var x1 = ByteUtil.parseWord(data, 0);
         final var y1 = ByteUtil.parseWord(data, 1);
 
@@ -210,7 +203,7 @@ class Secp256k1ServiceBC implements Secp256k1Service {
     }
 
     @Override
-    public byte[] mul(byte[] data, int length) {
+    public byte[] mul(byte[] data) {
         byte[] x = ByteUtil.parseWord(data, 0);
         byte[] y = ByteUtil.parseWord(data, 1);
 
