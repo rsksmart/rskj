@@ -161,6 +161,53 @@ class EthModuleTest {
     }
 
     @Test
+    void callSmokeTestWithAccountOverrideAndBlockFinalStateIsNotNull() {
+        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("test"));
+        accountOverride.setBalance(BigInteger.valueOf(100000));
+
+        CallArguments args = new CallArguments();
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+        when(blockResult.getFinalState()).thenReturn(new Trie());
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap());
+
+        String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
+
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
     void callWithoutReturn() {
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
