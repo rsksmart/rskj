@@ -35,6 +35,7 @@ import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.debug.trace.DebugTracer;
 import co.rsk.rpc.modules.debug.trace.RskTracer;
 import co.rsk.rpc.modules.debug.trace.TraceProvider;
+import co.rsk.rpc.modules.eth.DefaultStateOverrideApplier;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -1079,7 +1080,8 @@ class Web3ImplLogsTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                new DefaultStateOverrideApplier()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);

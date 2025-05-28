@@ -2776,7 +2776,8 @@ class Web3ImplTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
@@ -2896,7 +2897,8 @@ class Web3ImplTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
@@ -2962,7 +2964,8 @@ class Web3ImplTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
         TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
