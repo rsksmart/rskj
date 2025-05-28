@@ -203,7 +203,7 @@ public class ReleaseTransactionBuilder {
             logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
             return new BuildResult(null, null, Response.COULD_NOT_ADJUST_DOWNWARDS);
         } catch (Wallet.DustySendRequested e) {
-            logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
+            logger.warn(String.format("Tx contains a dust output %s", operationDescription), e);
             return new BuildResult(null, null, Response.DUSTY_SEND_REQUESTED);
         } catch (Wallet.ExceededMaxTransactionSize e) {
             logger.warn(String.format("Tx size too big %s", operationDescription), e);
