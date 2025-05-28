@@ -261,6 +261,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private GasPriceTracker gasPriceTracker;
     private BlockChainFlusher blockChainFlusher;
     private MinGasPriceProvider minGasPriceProvider;
+    private StateOverrideApplier stateOverrideApplier;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
 
     private volatile boolean closed;
@@ -519,6 +520,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return bridgeSupportFactory;
     }
 
+    public synchronized StateOverrideApplier getStateOverrideApplier() {
+        checkIfNotClosed();
+
+        if (stateOverrideApplier == null) {
+            stateOverrideApplier = new DefaultStateOverrideApplier();
+        }
+
+        return stateOverrideApplier;
+    }
+
     public synchronized BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
         checkIfNotClosed();
 
@@ -719,7 +730,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getEthModuleTransaction(),
                     getBridgeSupportFactory(),
                     getRskSystemProperties().getGasEstimationCap(),
-                    getRskSystemProperties().getCallGasCap()
+                    getRskSystemProperties().getCallGasCap(),
+                    getStateOverrideApplier()
             );
         }
 
