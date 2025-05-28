@@ -702,7 +702,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -748,7 +748,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -792,7 +792,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -839,7 +839,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -982,7 +982,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         List<Transaction> result = ethModule.ethPendingTransactions();
 
@@ -1011,7 +1011,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
         Transaction mockTransaction2 = createMockTransaction( "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
@@ -1048,7 +1048,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
         Transaction mockTransaction2 = createMockTransaction("0x13a15ed8c3b83efc744f2e0a7824a00846c21860");
@@ -1083,7 +1083,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
-                mock(DefaultStateOverrideApplier.class));
+                null);
 
         List<Transaction> result = ethModule.ethPendingTransactions();
 
