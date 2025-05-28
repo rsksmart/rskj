@@ -158,7 +158,7 @@ public class ReleaseTransactionBuilder {
             }
             sr.tx.addOutput(migrationValue, destinationAddress);
             sr.changeAddress = destinationAddress;
-        }, String.format("sending %s in svp fund transaction", migrationValue));
+        }, String.format("sending %s in migration transaction", migrationValue));
     }
 
     public BuildResult buildEmptyWalletTo(Address to) {
