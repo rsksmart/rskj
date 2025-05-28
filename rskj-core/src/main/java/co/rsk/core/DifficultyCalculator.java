@@ -37,15 +37,27 @@ public class DifficultyCalculator {
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
-        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
+        long blockNumber = header.getNumber();
+
+        boolean rskipPatoActive = activationConfig.isActive(ConsensusRule.RSKIP_PATO, blockNumber);
+        if(rskipPatoActive) {
+            return getBlockDifficultyPato(blockNumber);
+        }
+
+        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, blockNumber);
         if (!rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
             if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {
-                return constants.getMinimumDifficulty(header.getNumber());
+                return constants.getMinimumDifficulty(blockNumber);
             }
         }
 
         return getBlockDifficulty(header, parentHeader);
+    }
+
+    private BlockDifficulty getBlockDifficultyPato(long blockNumber) {
+      // TODO Auto-generated method stub
+      throw new UnsupportedOperationException("Unimplemented method 'getBlockDifficultyPato'");
     }
 
     private BlockDifficulty getBlockDifficulty(
