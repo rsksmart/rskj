@@ -434,7 +434,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean isSnapshotParallelEnabled() { return configFromFiles.getBoolean("sync.snapshot.client.parallel");}
 
-    public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.client.chunkSize");}
+    public int getSnapshotChunkSize() { return configFromFiles.getInt("sync.snapshot.server.chunkSize");}
 
     public int getSnapshotMaxSenderRequests() { return configFromFiles.getInt("sync.snapshot.server.maxSenderRequests");}
 

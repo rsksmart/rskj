@@ -27,14 +27,24 @@ import java.math.BigInteger;
 public class SnapStateChunkRequestMessage extends MessageWithId {
     private final long id;
     private final long from;
-    private final long chunkSize;
     private final long blockNumber;
 
+    @Deprecated
+    private final long chunkSize; // TODO: remove this field in the future, it is not used anymore
+
+    @Deprecated
     public SnapStateChunkRequestMessage(long id, long blockNumber, long from, long chunkSize) {
         this.id = id;
         this.from = from;
-        this.chunkSize = chunkSize;
         this.blockNumber = blockNumber;
+        this.chunkSize = chunkSize;
+    }
+
+    public SnapStateChunkRequestMessage(long id, long blockNumber, long from) {
+        this.id = id;
+        this.from = from;
+        this.blockNumber = blockNumber;
+        this.chunkSize = 0;
     }
 
     @Override
@@ -72,20 +82,20 @@ public class SnapStateChunkRequestMessage extends MessageWithId {
         RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
         byte[] rlpBlockNumber = message.get(0).getRLPData();
         byte[] rlpFrom = message.get(1).getRLPData();
-        byte[] rlpChunkSize = message.get(2).getRLPData();
         long blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
         long from = rlpFrom == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpFrom).longValue();
-        long chunkSize = rlpChunkSize == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpChunkSize).longValue();
-        return new SnapStateChunkRequestMessage(id, blockNumber, from, chunkSize);
+        return new SnapStateChunkRequestMessage(id, blockNumber, from);
     }
 
     public long getFrom() {
         return from;
     }
 
+    @Deprecated
     public long getChunkSize() {
         return chunkSize;
     }
+
     public long getBlockNumber() {
         return blockNumber;
     }

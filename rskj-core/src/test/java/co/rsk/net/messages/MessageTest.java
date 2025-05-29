@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -402,7 +401,7 @@ class MessageTest {
     void encodeDecodeStateChunkRequestMessage() {
         long someId = 42;
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 100L);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L);
 
         byte[] encoded = message.getEncoded();
 
