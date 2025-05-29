@@ -285,7 +285,7 @@ class CliToolsIntegrationTest {
     }
 
     @Test
-    void  whenImportBlocksRuns_shouldImportAllExportedBlocks() throws Exception {
+    void whenImportBlocksRuns_shouldImportAllExportedBlocks() throws Exception {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
