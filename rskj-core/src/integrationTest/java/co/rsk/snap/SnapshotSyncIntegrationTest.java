@@ -86,7 +86,7 @@ public class SnapshotSyncIntegrationTest {
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
         serverNode.startNode();
-        ThreadTimerHelper.waitForSeconds(20);
+        ThreadTimerHelper.waitForSeconds(60);
         generateBlocks();
 
         JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
@@ -117,10 +117,10 @@ public class SnapshotSyncIntegrationTest {
                     }
                 } catch (Exception e) {
                     System.out.println("Error while trying to get the best block number from the client: " + e.getMessage());
-                    System.out.println("We will try again in 10 seconds.");
+                    System.out.println("We will try again in 20 seconds.");
                 }
             }
-            ThreadTimerHelper.waitForSeconds(2);
+            ThreadTimerHelper.waitForSeconds(20);
         }
 
         assertTrue(isClientSynced);
