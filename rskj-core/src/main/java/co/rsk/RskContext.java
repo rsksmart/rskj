@@ -376,7 +376,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (blockFactory == null) {
-            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig());
+            RskSystemProperties systemProperties = getRskSystemProperties();
+            blockFactory = new BlockFactory(systemProperties.getNetworkConstants(), systemProperties.getActivationConfig());
         }
 
         return blockFactory;
@@ -488,6 +489,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
+                    getBlockStore(),
+                    getReceiptStore(),
                     getRepositoryLocator(),
                     getTransactionExecutorFactory(),
                     getRskSystemProperties()
@@ -1105,6 +1108,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getActivationConfig(),
                     rskSystemProperties.getNetworkConstants()
             );
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore());
             blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
@@ -1116,7 +1120,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                                     getProofOfWorkRule(),
                                     getForkDetectionDataRule(),
                                     blockTimeStampValidationRule,
-                                    new ValidGasUsedRule()
+                                    new ValidGasUsedRule(),
+                                    superBlockRule
                             ),
                             new BlockHeaderParentCompositeRule(
                                     new PrevMinGasPriceRule(),
@@ -1133,7 +1138,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
                     getForkDetectionDataRule(),
-                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig())
+                    new ValidTxExecutionSublistsEdgesRule(getRskSystemProperties().getActivationConfig()),
+                    superBlockRule
             );
         }
 
@@ -1787,10 +1793,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getActivationConfig(),
                     rskSystemProperties.getNetworkConstants()
             );
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore());
 
             final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
                     getProofOfWorkRule(),
-                    blockTimeStampValidationRule
+                    blockTimeStampValidationRule,
+                    superBlockRule
             );
 
             blockHeaderValidator = new BlockHeaderValidatorImpl(blockHeaderValidationRule);
