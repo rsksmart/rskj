@@ -209,7 +209,7 @@ class CliToolsIntegrationTest {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CommandLineFixture.runCommand(
                 cmd,
-                2,
+                1,
                 TimeUnit.MINUTES, proc -> {
                     try {
                         Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
@@ -228,7 +228,7 @@ class CliToolsIntegrationTest {
         long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
         long fromBlock = blockNumber - 10;
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock %s --toBlock %s %s", baseJavaCmd, buildLibsPath, jarName, fromBlock, blockNumber, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 2, TimeUnit.MINUTES);
+        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         RskContext rskContext = new RskContext(baseArgs);
 
@@ -287,19 +287,19 @@ class CliToolsIntegrationTest {
     @Test
     void  whenImportBlocksRuns_shouldImportAllExportedBlocks() throws Exception {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 2, TimeUnit.MINUTES);
+        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         File blocksFile = tempDir.resolve("blocks.txt").toFile();
 
         Assertions.assertTrue(blocksFile.createNewFile());
 
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExportBlocks --fromBlock 0 --toBlock 20 --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 2, TimeUnit.MINUTES);
+        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         FileUtil.recursiveDelete(databaseDir);
 
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ImportBlocks --file %s %s", baseJavaCmd, buildLibsPath, jarName, blocksFile.getAbsolutePath(), strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 2, TimeUnit.MINUTES);
+        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
 
         RskContext rskContext = new RskContext(baseArgs);
 
