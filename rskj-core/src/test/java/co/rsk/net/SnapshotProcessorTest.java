@@ -297,7 +297,7 @@ public class SnapshotProcessorTest {
                 true,
                 false);
 
-        SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1, TEST_CHUNK_SIZE);
+        SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1);
 
         //when
         underTest.processStateChunkRequestInternal(peer, snapStateChunkRequestMessage);

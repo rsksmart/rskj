@@ -19,7 +19,6 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -39,7 +38,7 @@ public class SnapStateChunkRequestMessageTest {
         //given
         Block block = new BlockGenerator().getBlock(1);
         long id4Test = 42L;
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), 0L, 0L);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), 0L);
 
         //when
         MessageType messageType = message.getMessageType();
@@ -54,16 +53,14 @@ public class SnapStateChunkRequestMessageTest {
         Block block = new BlockGenerator().getBlock(1);
         long id4Test = 42L;
         long from = 5L;
-        long chunkSize = 10L;
 
         //when
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), from, chunkSize);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, block.getNumber(), from);
 
         //then
         assertEquals(id4Test, message.getId());
         assertEquals(block.getNumber(),  message.getBlockNumber());
         assertEquals(from, message.getFrom());
-        assertEquals(chunkSize, message.getChunkSize());
     }
 
 
@@ -73,13 +70,12 @@ public class SnapStateChunkRequestMessageTest {
         long blockNumber = 1L;
         long id4Test = 42L;
         long from = 1L;
-        long chunkSize = 20L;
         byte[] expectedEncodedMessage = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
                 RLP.encodeBigInteger(BigInteger.valueOf(from)),
-                RLP.encodeBigInteger(BigInteger.valueOf(chunkSize)));
+                RLP.encodeBigInteger(BigInteger.valueOf(0L)));
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from, chunkSize);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from);
 
         //when
         byte[] encodedMessage = message.getEncodedMessageWithoutId();
@@ -94,9 +90,8 @@ public class SnapStateChunkRequestMessageTest {
         long blockNumber = 1L;
         long id4Test = 42L;
         long from = 1L;
-        long chunkSize = 20L;
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from, chunkSize);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from);
         byte[] expectedEncodedMessage = RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(id4Test)), message.getEncodedMessageWithoutId());
 
@@ -113,9 +108,8 @@ public class SnapStateChunkRequestMessageTest {
         long blockNumber = 1L;
         long id4Test = 42L;
         long from = 1L;
-        long chunkSize = 20L;
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from, chunkSize);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(id4Test, blockNumber, from);
         RLPList encodedRLPList = (RLPList) RLP.decode2(message.getEncodedMessage()).get(0);
 
         //when
@@ -126,14 +120,13 @@ public class SnapStateChunkRequestMessageTest {
         assertEquals(id4Test,((SnapStateChunkRequestMessage) decodedMessage).getId());
         assertEquals(from,((SnapStateChunkRequestMessage) decodedMessage).getFrom());
         assertEquals(blockNumber,((SnapStateChunkRequestMessage) decodedMessage).getBlockNumber());
-        assertEquals(chunkSize,((SnapStateChunkRequestMessage) decodedMessage).getChunkSize());
     }
 
     @Test
     void givenAcceptIsCalled_messageVisitorIsAppliedForMessage() {
         //given
         long someId = 42;
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 0L);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L);
         MessageVisitor visitor = mock(MessageVisitor.class);
 
         //when

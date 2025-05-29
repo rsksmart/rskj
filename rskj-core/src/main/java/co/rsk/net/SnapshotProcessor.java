@@ -515,7 +515,7 @@ public class SnapshotProcessor implements InternalService {
     /**
      * STATE CHUNK
      */
-    private void requestStateChunk(SnapSyncState state, Peer peer, long from, long blockNumber, int chunkSize) {
+    private void requestStateChunk(SnapSyncState state, Peer peer, long from, long blockNumber) {
         state.submitRequest(
                 snapPeerSelector(peer),
                 messageId -> new SnapStateChunkRequestMessage(messageId, blockNumber, from, chunkSize)
@@ -541,8 +541,8 @@ public class SnapshotProcessor implements InternalService {
 
         List<byte[]> trieEncoded = new ArrayList<>();
         Block block = blockchain.getBlockByNumber(request.getBlockNumber());
-        final long to = request.getFrom() + (request.getChunkSize() * CHUNK_ITEM_SIZE);
-        logger.debug("Processing state chunk request from node {}. From {} to calculated {} being chunksize {}", sender.getPeerNodeID(), request.getFrom(), to, request.getChunkSize());
+        final long to = request.getFrom() + (chunkSize * CHUNK_ITEM_SIZE);
+        logger.debug("Processing state chunk request from node {}. From {} to calculated {} being chunkSize {}", sender.getPeerNodeID(), request.getFrom(), to, chunkSize);
         logger.debug("Sending state chunk from {} to {}", request.getFrom(), to);
         TrieDTOInOrderIterator it = new TrieDTOInOrderIterator(trieStore, block.getStateRoot(), request.getFrom(), to);
 
@@ -617,7 +617,7 @@ public class SnapshotProcessor implements InternalService {
                 .findFirst()
                 .orElse(peer);
         logger.debug("Requesting state chunk \"from\" {} to peer {}", responseMessage.getFrom(), peer.getPeerNodeID());
-        requestStateChunk(state, alternativePeer, responseMessage.getFrom(), responseMessage.getBlockNumber(), chunkSize);
+        requestStateChunk(state, alternativePeer, responseMessage.getFrom(), responseMessage.getBlockNumber());
     }
 
     private void processOrderedStateChunkResponse(SnapSyncState state, Peer peer, SnapStateChunkResponseMessage message) throws Exception {
@@ -736,7 +736,7 @@ public class SnapshotProcessor implements InternalService {
         if (!taskQueue.isEmpty()) {
             ChunkTask task = taskQueue.poll();
 
-            requestStateChunk(state, peer, task.getFrom(), task.getBlockNumber(), chunkSize);
+            requestStateChunk(state, peer, task.getFrom(), task.getBlockNumber());
         } else {
             logger.warn("No more chunk request tasks.");
         }
