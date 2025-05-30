@@ -2654,11 +2654,9 @@ public class BridgeSupport {
         return feePerKB
             .multiply(pegoutTxSize) // times the size in bytes
             .divide(1000);
-
     }
 
-    private Coin getEstimatedFeesFromPegoutTransactionSimulation()  throws IOException {
-
+    private Coin getEstimatedFeesFromPegoutTransactionSimulation() throws IOException {
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
         List<ReleaseRequestQueue.Entry> releaseRequestListCopy = new ArrayList<>(
             releaseRequestQueue.getEntries().stream()
@@ -2689,11 +2687,9 @@ public class BridgeSupport {
         }
 
         Coin inputSum = buildResult.getBtcTx().getInputSum();
-
         Coin outputSum = buildResult.getBtcTx().getOutputSum();
 
         return inputSum.minus(outputSum);
-
     }
 
     public BigInteger registerFlyoverBtcTransaction(
