@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto.signature;
 
+import co.rsk.core.types.bytes.Bytes;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
@@ -49,11 +50,11 @@ class Secp256k1ServiceBC implements Secp256k1Service {
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
     // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
-    private static final X9ECParameters X_9_EC_PARAMETERS = SECNamedCurves.getByName("secp256k1");
+    private static final X9ECParameters X9_ELLIPTIC_CURVE_PARAMS = SECNamedCurves.getByName("secp256k1");
 
     static {
-        CURVE = new ECDomainParameters(X_9_EC_PARAMETERS.getCurve(), X_9_EC_PARAMETERS.getG(), X_9_EC_PARAMETERS.getN(), X_9_EC_PARAMETERS.getH());
-        HALF_CURVE_ORDER = X_9_EC_PARAMETERS.getN().shiftRight(1);
+        CURVE = new ECDomainParameters(X9_ELLIPTIC_CURVE_PARAMS.getCurve(), X9_ELLIPTIC_CURVE_PARAMS.getG(), X9_ELLIPTIC_CURVE_PARAMS.getN(), X9_ELLIPTIC_CURVE_PARAMS.getH());
+        HALF_CURVE_ORDER = X9_ELLIPTIC_CURVE_PARAMS.getN().shiftRight(1);
     }
 
     /**
@@ -138,8 +139,8 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         var w1Updated = ByteUtil.stripLeadingZeroes(w1);
         var w2Updated = ByteUtil.stripLeadingZeroes(w2);
 
-        System.arraycopy(w1Updated, 0, res, 32 - w1Updated.length, w1Updated.length);
-        System.arraycopy(w2Updated, 0, res, 64 - w2Updated.length, w2Updated.length);
+        Bytes.arraycopy(w1Updated, 0, res, 32 - w1Updated.length, w1Updated.length);
+        Bytes.arraycopy(w2Updated, 0, res, 64 - w2Updated.length, w2Updated.length);
 
         return res;
     }
@@ -156,7 +157,7 @@ class Secp256k1ServiceBC implements Secp256k1Service {
 
     private static boolean isValidPoint(byte[] x, byte[] y) {
         try {
-            X_9_EC_PARAMETERS.getCurve().validatePoint(BIUtil.toBI(x), BIUtil.toBI(y));
+            X9_ELLIPTIC_CURVE_PARAMS.getCurve().validatePoint(BIUtil.toBI(x), BIUtil.toBI(y));
         } catch (java.lang.IllegalArgumentException e) {
             return false;
         }
@@ -167,13 +168,13 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         ECPoint p1;
 
         if (ByteUtil.isAllZeroes(x1) && (ByteUtil.isAllZeroes(y1))) {
-            p1 = X_9_EC_PARAMETERS.getCurve().getInfinity();
+            p1 = X9_ELLIPTIC_CURVE_PARAMS.getCurve().getInfinity();
         } else {
             if (!isValidPoint(x1, y1)) {
                 return null;
             }
 
-            p1 = X_9_EC_PARAMETERS.getCurve().createPoint(BIUtil.toBI(x1), BIUtil.toBI(y1));
+            p1 = X9_ELLIPTIC_CURVE_PARAMS.getCurve().createPoint(BIUtil.toBI(x1), BIUtil.toBI(y1));
         }
 
         return p1;
@@ -204,19 +205,19 @@ class Secp256k1ServiceBC implements Secp256k1Service {
 
     @Override
     public byte[] mul(byte[] data) {
-        byte[] x = ByteUtil.parseWord(data, 0);
-        byte[] y = ByteUtil.parseWord(data, 1);
+        final var x = ByteUtil.parseWord(data, 0);
+        final var y = ByteUtil.parseWord(data, 1);
 
-        byte[] s = ByteUtil.parseWord(data, 2);
+        final var s = ByteUtil.parseWord(data, 2);
 
 
-        ECPoint p = getPoint(x, y);
+        final var p = getPoint(x, y);
 
         if (p == null) {
             return null;
         }
 
-        ECPoint res = p.multiply(BIUtil.toBI(s));
+        var res = p.multiply(BIUtil.toBI(s));
         res = res.normalize();
 
         return getOutput(res);

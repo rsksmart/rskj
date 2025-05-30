@@ -106,6 +106,14 @@ public interface Bytes extends BytesSlice {
      * @return the wrapped by this instance byte array.
      */
     byte[] asUnsafeByteArray();
+
+    static void arraycopy(byte[] orig, int srcPos, byte[] dest, int destPos, int length) {
+        if (orig == null) {
+            return;
+        }
+
+        Bytes.of(orig).slice(0, orig.length).arraycopy(srcPos, dest, destPos, length);
+    }
 }
 
 /**
