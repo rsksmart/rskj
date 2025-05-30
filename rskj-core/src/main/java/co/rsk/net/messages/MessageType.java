@@ -21,11 +21,11 @@ package co.rsk.net.messages;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -257,9 +257,46 @@ public enum MessageType {
             byte[] hash = list.get(0).getRLPData();
             return new NewBlockHashMessage(hash);
         }
-    };
+    },
+    SNAP_STATE_CHUNK_REQUEST_MESSAGE(20) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStateChunkRequestMessage.decodeMessage(list);
+        }
+    },
+    SNAP_STATE_CHUNK_RESPONSE_MESSAGE(21) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStateChunkResponseMessage.decodeMessage(list);
+        }
+    },
+    SNAP_STATUS_REQUEST_MESSAGE(22) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStatusRequestMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    SNAP_STATUS_RESPONSE_MESSAGE(23) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapStatusResponseMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    SNAP_BLOCKS_REQUEST_MESSAGE(24) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapBlocksRequestMessage.decodeMessage(list);
+        }
+    },
+    SNAP_BLOCKS_RESPONSE_MESSAGE(25) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return SnapBlocksResponseMessage.decodeMessage(blockFactory, list);
+        }
+    },
+    ;
 
-    private int type;
+    private final int type;
 
     MessageType(int type) {
         this.type = type;

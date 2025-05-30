@@ -18,7 +18,6 @@
  */
 package org.ethereum.jsontestsuite.runners;
 
-import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -31,6 +30,7 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.constants.BridgeRegTestConstants;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;

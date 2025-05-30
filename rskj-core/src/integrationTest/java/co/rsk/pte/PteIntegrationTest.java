@@ -16,14 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package pte;
+package co.rsk.pte;
 
 import co.rsk.util.OkHttpClientTestFixture;
 import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,11 +32,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import static co.rsk.util.OkHttpClientTestFixture.*;
+import static co.rsk.util.OkHttpClientTestFixture.ETH_GET_BLOCK_BY_NUMBER;
+import static co.rsk.util.OkHttpClientTestFixture.FromToAddressPair.of;
+import static co.rsk.util.OkHttpClientTestFixture.getEnvelopedMethodCalls;
 
 public class PteIntegrationTest {
 
@@ -86,23 +89,7 @@ public class PteIntegrationTest {
 
     @Test
     void whenParallelizableTransactionsAreSent_someAreExecutedInParallel() throws Exception {
-
         // Given
-
-        // Pre-funded Test Accounts on Regtest
-        List<String> accounts = Arrays.asList(
-                "0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826",
-                "0x7986b3df570230288501eea3d890bd66948c9b79",
-                "0x0a3aa774752ec2042c46548456c094a76c7f3a79",
-                "0xcf7cdbbb5f7ba79d3ffe74a0bba13fc0295f6036",
-                "0x39b12c05e8503356e3a7df0b7b33efa4c054c409",
-                "0xc354d97642faa06781b76ffb6786f72cd7746c97",
-                "0xdebe71e1de41fc77c44df4b6db940026e31b0e71",
-                "0x7857288e171c6159c5576d1bd9ac40c0c48a771c",
-                "0xa4dea4d5c954f5fd9e87f0e9752911e83a3d18b3",
-                "0x09a1eda29f664ac8f68106f6567276df0c65d859",
-                "0xec4ddeb4380ad69b3e509baad9f158cdf4e4681d"
-        );
 
         Map<String, Response> txResponseMap = new HashMap<>();
         Map<String, Map<Integer, String>> blocksResponseMap =  new HashMap<>();
@@ -125,9 +112,13 @@ public class PteIntegrationTest {
 
                         // Send bulk transactions
 
-                        Response txResponse = sendBulkTransactions(
-                                accounts.get(0), accounts.get(1), accounts.get(2), accounts.get(3),
-                                accounts.get(4), accounts.get(5), accounts.get(6), accounts.get(7));
+                        List<String> accounts = OkHttpClientTestFixture.PRE_FUNDED_ACCOUNTS;
+                        Response txResponse = OkHttpClientTestFixture.sendBulkTransactions(
+                                RPC_PORT,
+                                of(accounts.get(0), accounts.get(1)),
+                                of(accounts.get(2), accounts.get(3)),
+                                of(accounts.get(4), accounts.get(5)),
+                                of(accounts.get(6), accounts.get(7)));
 
                         txResponseMap.put("bulkTransactionsResponse", txResponse);
 
@@ -184,39 +175,6 @@ public class PteIntegrationTest {
                         "<BLOCK_NUM_OR_TAG>",
                         number)
         );
-
-        System.out.println(content);
-
-        return OkHttpClientTestFixture.sendJsonRpcMessage(content, RPC_PORT);
-    }
-
-    private Response sendBulkTransactions(
-            String addressFrom1, String addressTo1,
-            String addressFrom2, String addressTo2,
-            String addressFrom3, String addressTo3,
-            String addressFrom4, String addressTo4) throws IOException {
-
-        String gas = "0x9C40";
-        String gasPrice = "0x10";
-        String value = "0x500";
-
-        String[] placeholders = new String[]{
-                "<ADDRESS_FROM>", "<ADDRESS_TO>", "<GAS>",
-                "<GAS_PRICE>", "<VALUE>"
-        };
-
-        String content = getEnvelopedMethodCalls(
-                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
-                        new String[]{addressFrom1, addressTo1, gas, gasPrice, value}),
-                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
-                        new String[]{addressFrom2, addressTo2, gas, gasPrice, value}),
-                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
-                        new String[]{addressFrom3, addressTo3, gas, gasPrice, value}),
-                StringUtils.replaceEach(ETH_SEND_TRANSACTION, placeholders,
-                        new String[]{addressFrom4, addressTo4, gas, gasPrice, value})
-        );
-
-        System.out.println(content);
 
         return OkHttpClientTestFixture.sendJsonRpcMessage(content, RPC_PORT);
     }

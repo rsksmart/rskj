@@ -43,18 +43,24 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.net.NodeManager;
+import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskMockFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +82,7 @@ class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring, mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -108,7 +114,7 @@ class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring, mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
 
@@ -130,7 +136,7 @@ class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         sbp.setBlockGap(100000);
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring, mock(StatusResolver.class));
         Block block = new BlockGenerator().createBlock(200000, 0);
         Message message = new BlockMessage(block);
 
@@ -151,7 +157,7 @@ class NodeMessageHandlerTest {
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
@@ -171,7 +177,7 @@ class NodeMessageHandlerTest {
     @SuppressWarnings("squid:S2925") // Thread.sleep() used
     void postBlockMessageUsingProcessor() throws InterruptedException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, null,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
@@ -200,10 +206,109 @@ class NodeMessageHandlerTest {
         RskAddress bannedMiner = block.getCoinbase();
         doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
 
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null,null, null, null, scoring,
                 mock(StatusResolver.class));
 
         nodeMessageHandler.postMessage(sender, message, null);
+
+        Assertions.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
+    }
+
+    @Test
+    void checkSnapMessagesOrderAndPriority() {
+        RskSystemProperties config = spy(this.config);
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        SyncProcessor syncProcessor = mock(SyncProcessor.class);
+        StatusResolver statusResolver = mock(StatusResolver.class);
+        Status status = mock(Status.class);
+        ChannelManager channelManager = mock(ChannelManager.class);
+
+        // Mock snap messages
+        Message snapStateChunkRequestMessage = Mockito.mock(SnapStateChunkRequestMessage.class);
+        Message snapStateChunkResponseMessage = Mockito.mock(SnapStateChunkResponseMessage.class);
+        Message snapStatusRequestMessage = Mockito.mock(SnapStatusRequestMessage.class);
+        Message snapStatusResponseMessage = Mockito.mock(SnapStatusResponseMessage.class);
+        Message snapBlocksRequestMessage = Mockito.mock(SnapBlocksRequestMessage.class);
+        Message snapBlocksResponseMessage = Mockito.mock(SnapBlocksResponseMessage.class);
+
+        Mockito.when(snapStateChunkRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE);
+        Mockito.when(snapStateChunkResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE);
+        Mockito.when(snapStatusRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_REQUEST_MESSAGE);
+        Mockito.when(snapStatusResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_STATUS_RESPONSE_MESSAGE);
+        Mockito.when(snapBlocksRequestMessage.getMessageType()).thenReturn(MessageType.SNAP_BLOCKS_REQUEST_MESSAGE);
+        Mockito.when(snapBlocksResponseMessage.getMessageType()).thenReturn(MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE);
+
+        Mockito.when(status.getBestBlockNumber()).thenReturn(0L);
+        Mockito.when(status.getBestBlockHash()).thenReturn(ByteUtil.intToBytes(0));
+        Mockito.when(channelManager.broadcastStatus(any())).thenReturn(0);
+        Mockito.when(statusResolver.currentStatus()).thenReturn(status);
+
+        Channel sender = new Channel(null, null, mock(NodeManager.class), null, null, null, null);
+        InetAddress inetAddress = InetAddress.getLoopbackAddress();
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 500);
+        sender.setInetSocketAddress(inetSocketAddress);
+        sender.setNode(new NodeID(TestUtils.generatePeerId("peer")).getID());
+
+        RskAddress bannedMiner = new RskAddress("0000000000000000000000000000000000000023");
+        doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
+
+        MessageCounter messageCounter = mock(MessageCounter.class);
+        Mockito.doThrow(new IllegalAccessError()).when(messageCounter).decrement(any());
+
+        NodeMessageHandler nodeMessageHandler = Mockito.spy( new NodeMessageHandler(
+                config,
+                sbp,
+                syncProcessor,
+                null,
+                channelManager,
+                null,
+                scoring,
+                statusResolver,
+                Mockito.mock(Thread.class),
+                messageCounter
+        ));
+
+        nodeMessageHandler.postMessage(sender, snapStateChunkRequestMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStateChunkResponseMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStatusRequestMessage, null);
+        nodeMessageHandler.postMessage(sender, snapStatusResponseMessage, null);
+        nodeMessageHandler.postMessage(sender, snapBlocksRequestMessage, null);
+        nodeMessageHandler.postMessage(sender, snapBlocksResponseMessage, null);
+
+        Assertions.assertEquals(6, nodeMessageHandler.getMessageQueueSize());
+
+        ArgumentCaptor<Message> snapMessagesCaptor = ArgumentCaptor.forClass(Message.class);
+
+        nodeMessageHandler.start();
+        // Snap responses scores = 300
+        // Snap requests scores = 100
+
+        nodeMessageHandler.run();
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+        Assertions.assertEquals(MessageType.SNAP_STATE_CHUNK_RESPONSE_MESSAGE, snapMessagesCaptor.getValue().getMessageType());
+
+        nodeMessageHandler.run();
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+        Assertions.assertEquals(MessageType.SNAP_STATUS_RESPONSE_MESSAGE, snapMessagesCaptor.getValue().getMessageType());
+
+        nodeMessageHandler.run();
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+        Assertions.assertEquals(MessageType.SNAP_BLOCKS_RESPONSE_MESSAGE, snapMessagesCaptor.getValue().getMessageType());
+
+        nodeMessageHandler.run();
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+        Assertions.assertEquals(MessageType.SNAP_STATE_CHUNK_REQUEST_MESSAGE, snapMessagesCaptor.getValue().getMessageType());
+
+        nodeMessageHandler.run();
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+        Assertions.assertEquals(MessageType.SNAP_BLOCKS_REQUEST_MESSAGE, snapMessagesCaptor.getValue().getMessageType());
+
+        nodeMessageHandler.run();
+        Mockito.verify(nodeMessageHandler, atLeastOnce()).processMessage(any(Peer.class), snapMessagesCaptor.capture());
+        Assertions.assertEquals(MessageType.SNAP_STATUS_REQUEST_MESSAGE, snapMessagesCaptor.getValue().getMessageType());
+
+        nodeMessageHandler.stop();
 
         Assertions.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
     }
@@ -223,7 +328,7 @@ class NodeMessageHandlerTest {
 
         doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
 
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null,null, null, null, scoring,
                 mock(StatusResolver.class));
 
         nodeMessageHandler.postMessage(sender, message, null);
@@ -237,7 +342,7 @@ class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null,null, null, null, scoring,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
@@ -264,7 +369,7 @@ class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null,null, null, null, scoring, mock(StatusResolver.class));
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.getGenesisBlock();
 
@@ -292,7 +397,7 @@ class NodeMessageHandlerTest {
     @Test
     void processFutureBlockMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null,null, null, null, null,
                 mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
@@ -313,7 +418,7 @@ class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimplePeer sender = new SimplePeer();
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null,null, null, null, null,
                 mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -377,7 +482,7 @@ class NodeMessageHandlerTest {
                 null,
                 new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class), mock(EthereumListener.class));
         final NodeMessageHandler handler = new NodeMessageHandler(config,
-                bp, syncProcessor, null, null,
+                bp, syncProcessor, null, null, null,
                 null, mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -411,7 +516,7 @@ class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 null, mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
@@ -446,7 +551,7 @@ class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null,null, null, null, null,
                 mock(StatusResolver.class));
 
         SimplePeer sender = new SimplePeer();
@@ -478,7 +583,7 @@ class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, mock(StatusResolver.class));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, null, mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
 
@@ -502,7 +607,7 @@ class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, null,
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
@@ -537,7 +642,7 @@ class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, null,
                 mock(StatusResolver.class));
 
         SimplePeer sender = new SimplePeer();
@@ -572,7 +677,7 @@ class NodeMessageHandlerTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, null,
                 mock(StatusResolver.class));
 
         class TestCase {
@@ -679,7 +784,7 @@ class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, null,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, null, null,
                 mock(StatusResolver.class));
 
         Message message = mock(Message.class);
@@ -699,7 +804,7 @@ class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, scoring,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, transactionGateway, scoring,
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
@@ -741,7 +846,7 @@ class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, channelManager, transactionGateway, scoring,
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
@@ -772,7 +877,7 @@ class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, channelManager, transactionGateway, scoring,
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
@@ -808,7 +913,7 @@ class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
@@ -829,7 +934,7 @@ class NodeMessageHandlerTest {
     @Test
     void processBlockByHashRequestMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, null,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash().getBytes());
@@ -844,7 +949,7 @@ class NodeMessageHandlerTest {
     void processBlockHeadersRequestMessageUsingProcessor() {
         byte[] hash = TestUtils.generateBytes("sbp",32);
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, null,
                 mock(StatusResolver.class));
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
@@ -872,7 +977,7 @@ class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
@@ -888,8 +993,7 @@ class NodeMessageHandlerTest {
         }
 
         // assert that the surplus was not added
-        Assertions.assertEquals(config.getMessageQueueMaxSize(), (Integer) handler.getMessageQueueSize(sender));
-
+        Assertions.assertEquals(config.getMessageQueueMaxSize(), handler.getMessageQueueSize(sender));
     }
 
     @Test
@@ -977,7 +1081,7 @@ class NodeMessageHandlerTest {
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
@@ -998,7 +1102,7 @@ class NodeMessageHandlerTest {
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
@@ -1020,7 +1124,7 @@ class NodeMessageHandlerTest {
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
                 mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
@@ -1042,7 +1146,7 @@ class NodeMessageHandlerTest {
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
         PeerScoringManager scoring = mock(PeerScoringManager.class);
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
                 mock(StatusResolver.class), 1);
 
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
@@ -1062,7 +1166,7 @@ class NodeMessageHandlerTest {
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
         PeerScoringManager scoring = mock(PeerScoringManager.class);
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, scoring,
                 mock(StatusResolver.class), 0);
 
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();

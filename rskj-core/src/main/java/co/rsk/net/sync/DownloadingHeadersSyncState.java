@@ -73,7 +73,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
     }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk) {
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) {
         Optional<ChunkDescriptor> currentChunkOpt = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunkOpt.isPresent()) {
             syncEventsHandler.onSyncIssue(selectedPeer, "Current chunk not present on {}", this.getClass());

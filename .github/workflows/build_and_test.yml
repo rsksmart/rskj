@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -64,7 +64,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -79,23 +79,32 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Download build artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e #v4.2.1
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 #v4.3.0
         with:
           name: build-files
           path: |
             rskj-core/build
 
       - name: Download test results
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e #v4.2.1
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 #v4.3.0
         with:
           name: test-results
           path: |
             rskj-core/build/test-results/
 
       - name: Download test reports
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e #v4.2.1
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 #v4.3.0
         with:
           name: test-reports
+          path: |
+            rskj-core/build/reports/
+
+      - name: Upload HTML Test Report
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
+        with:
+          retention-days: 7
+          name: smell-test-html-test-report
           path: |
             rskj-core/build/reports/
 
@@ -147,7 +156,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e #v4.3.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
         with:
           node-version: '12.x'
       - name: Check Node.js version
@@ -177,7 +186,7 @@ jobs:
           node --unhandled-rejections=strict generateBtcBlocks.js
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -192,7 +201,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Download build artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e #v4.2.1
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 #v4.3.0
         with:
           name: build-files
           path: |
@@ -230,7 +239,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -262,6 +271,15 @@ jobs:
           path: |
             rskj-core/build/reports/
 
+      - name: Upload HTML Test Report
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
+        with:
+          retention-days: 7
+          name: unit-tests-java17-html-test-report
+          path: |
+            rskj-core/build/reports/
+
   integration-tests:
     needs: build
     runs-on: ubuntu-latest
@@ -269,7 +287,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
 
       - name: Setup Java & Gradle
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 #v4.7.0
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
         with:
           java-version: '17'
           distribution: 'temurin'
