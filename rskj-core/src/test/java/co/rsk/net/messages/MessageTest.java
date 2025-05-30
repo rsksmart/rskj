@@ -222,21 +222,21 @@ class MessageTest {
     @Test
     void encodeDecodeBlockHeadersResponseMessageWithoutRSKIP351() {
         ActivationConfig activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
-        BlockFactory blockFactory = new BlockFactory(activationConfig);
+        BlockFactory anotherBlockFactory = new BlockFactory(activationConfig);
         BlockMiner blockMiner = new BlockMiner(activationConfig);
 
         List<BlockHeader> headers = new ArrayList<>();
         for (int k = 1; k <= 4; k++) {
-            BlockHeader header = blockFactory.getBlockHeaderBuilder()
+            BlockHeader header = anotherBlockFactory.getBlockHeaderBuilder()
                     .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION + k)
                     .setIncludeForkDetectionData(true)
                     .build();
-            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
+            Block block = anotherBlockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), false);
             Block minedBlock = blockMiner.mineBlock(block);
             headers.add(minedBlock.getHeader());
         }
 
-        BlockHeadersResponseMessage newMessage = testBlockHeadersResponseMessage(blockFactory, headers);
+        BlockHeadersResponseMessage newMessage = testBlockHeadersResponseMessage(anotherBlockFactory, headers);
 
         for (int k = 0; k < headers.size(); k++) {
             assertEquals(headers.get(k).getNumber(), newMessage.getBlockHeaders().get(k).getNumber());
@@ -604,7 +604,6 @@ class MessageTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        BlockGenerator blockGenerator = this.blockGenerator;
         Block parent = blockGenerator.getGenesisBlock();
 
         for (int k = 1; k < 10; k++) {

@@ -50,7 +50,7 @@ import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class SnapshotProcessorTest {
+class SnapshotProcessorTest {
     private static final int TEST_CHUNK_SIZE = 200;
     private static final int TEST_CHECKPOINT_DISTANCE = 10;
     private static final int TEST_MAX_SENDER_REQUESTS = 3;
