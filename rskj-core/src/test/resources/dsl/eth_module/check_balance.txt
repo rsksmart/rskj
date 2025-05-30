@@ -1,0 +1,36 @@
+comment
+
+Simple checkBalance contract
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CheckSenderBalance {
+    function getMyBalance() public view returns (uint) {
+        return msg.sender.balance;
+    }
+}
+
+end
+
+account_new acc1 20000000
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 608060405234801561000f575f80fd5b5060c58061001c5f395ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c80634c73890914602a575b5f80fd5b60306044565b604051603b91906078565b60405180910390f35b5f3373ffffffffffffffffffffffffffffffffffffffff1631905090565b5f819050919050565b6072816062565b82525050565b5f60208201905060895f830184606b565b9291505056fea2646970667358221220c7d4fcf3078c2852b0165b9bde095a6b8e405c1cd68a1f19bd4bcdc33ec350d664736f6c63430008180033
+    gas 120468
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 7500000
+    build
+
+block_connect b01
+
+
+# Assert best block
+assert_best b01
