@@ -2627,24 +2627,74 @@ public class BridgeSupport {
         //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
         //  where N is the number of peg-outs requests waiting in the queue.
 
-        final int INPUT_MULTIPLIER = 2; // 2 inputs
-
         int pegoutRequestsCount = getQueuedPegoutsCount();
 
         if (!activations.isActive(ConsensusRule.RSKIP385) &&
-                (!activations.isActive(ConsensusRule.RSKIP271) || pegoutRequestsCount == 0)) {
+            (!activations.isActive(ConsensusRule.RSKIP271) || pegoutRequestsCount == 0)) {
             return Coin.ZERO;
         }
 
-        int totalOutputs = pegoutRequestsCount + 2; // N + 2 outputs
+        if(!activations.isActive(RSKIP305)) {
+            return getEstimatedFeesFromInputsAndOutputsCount();
+        }
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), INPUT_MULTIPLIER, totalOutputs);
+        return getEstimatedFeesFromPegoutTransactionSimulation();
+
+    }
+
+    private Coin getEstimatedFeesFromInputsAndOutputsCount() throws IOException {
+
+        int outputsCount = getQueuedPegoutsCount() + 2;
+        int inputsCount = 2;
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), inputsCount, outputsCount);
 
         Coin feePerKB = getFeePerKb();
 
         return feePerKB
-                .multiply(pegoutTxSize) // times the size in bytes
-                .divide(1000);
+            .multiply(pegoutTxSize) // times the size in bytes
+            .divide(1000);
+
+    }
+
+    private Coin getEstimatedFeesFromPegoutTransactionSimulation()  throws IOException {
+
+        ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
+        List<ReleaseRequestQueue.Entry> releaseRequestListCopy = new ArrayList<>(
+            releaseRequestQueue.getEntries().stream()
+                .map(rr -> new ReleaseRequestQueue.Entry(rr.getDestination(), rr.getAmount())).toList());
+
+        // One more pegout to estimate what the fee would be for with an extra pegout if requested
+        releaseRequestListCopy.add(new ReleaseRequestQueue.Entry(new BtcECKey().toAddress(this.networkParameters), Coin.valueOf(1, 0)));
+
+        Wallet activeFederationWallet = getActiveFederationWallet(true);
+        Federation activeFederation = getActiveFederation();
+
+        ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+            btcContext.getParams(),
+            activeFederationWallet,
+            activeFederation.getFormatVersion(),
+            activeFederation.getAddress(),
+            getFeePerKb(),
+            activations
+        );
+
+        ReleaseTransactionBuilder.BuildResult buildResult = txBuilder.buildBatchedPegouts(releaseRequestListCopy);
+
+        if(isNull(buildResult.getBtcTx())) {
+            logger.debug(
+                "[getEstimatedFeesFromPegoutTransactionSimulation] There are no uxtos available. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
+            );
+            // In case the simulated pegout transaction was not created, let's just return the estimation from the old logic.
+            return getEstimatedFeesFromInputsAndOutputsCount();
+        }
+
+        Coin inputSum = buildResult.getBtcTx().getInputSum();
+
+        Coin outputSum = buildResult.getBtcTx().getOutputSum();
+
+        return inputSum.minus(outputSum);
+
     }
 
     public BigInteger registerFlyoverBtcTransaction(
