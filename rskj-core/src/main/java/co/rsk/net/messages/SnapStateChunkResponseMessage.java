@@ -27,10 +27,10 @@ import java.math.BigInteger;
 public class SnapStateChunkResponseMessage extends MessageWithId {
     private final long id;
 
-    private final long to;
-    private final byte[] chunkOfTrieKeyValue;
-
     private final long from;
+    private final long to;
+
+    private final byte[] chunkOfTrieKeyValue;
 
     private final boolean complete;
     private final long blockNumber;
