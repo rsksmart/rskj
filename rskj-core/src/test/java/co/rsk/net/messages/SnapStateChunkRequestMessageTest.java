@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
-public class SnapStateChunkRequestMessageTest {
+class SnapStateChunkRequestMessageTest {
     @Test
     void getMessageType_returnCorrectMessageType() {
         //given
