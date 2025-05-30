@@ -2683,9 +2683,8 @@ public class BridgeSupport {
 
         if(isNull(buildResult.getBtcTx())) {
             logger.debug(
-                "[getEstimatedFeesFromPegoutTransactionSimulation] There are no uxtos available. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
-            );
-            // In case the simulated pegout transaction was not created, let's just return the estimation from the old logic.
+                "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
+            , buildResult.getResponseCode());
             return getEstimatedFeesFromInputsAndOutputsCount();
         }
 
