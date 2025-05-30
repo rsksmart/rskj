@@ -29,10 +29,8 @@ public class SnapStateChunkRequestMessage extends MessageWithId {
     private final long from;
     private final long blockNumber;
 
-    @Deprecated
-    private final long chunkSize; // TODO: remove this field in the future, it is not used anymore
+    private final long chunkSize; // TODO: remove this field in the future, when it is not used anymore
 
-    @Deprecated
     public SnapStateChunkRequestMessage(long id, long blockNumber, long from, long chunkSize) {
         this.id = id;
         this.from = from;
@@ -91,7 +89,7 @@ public class SnapStateChunkRequestMessage extends MessageWithId {
         return from;
     }
 
-    @Deprecated
+    @SuppressWarnings("unused")
     public long getChunkSize() {
         return chunkSize;
     }
