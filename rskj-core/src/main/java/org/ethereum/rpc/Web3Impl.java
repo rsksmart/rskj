@@ -849,10 +849,22 @@ public class Web3Impl implements Web3 {
         }
 
         Block block = blockStore.getBlockByHash(txInfo.getBlockHash());
-        Transaction tx = block.getTransactionsList().get(txInfo.getIndex());
-        txInfo.setTransaction(tx);
 
-        return new TransactionReceiptDTO(block, txInfo, signatureCache);
+        byte[] blockHash = block.getHash().getBytes();
+        int logIndexAcc = 0;
+        for(Transaction tx: block.getTransactionsList()) {
+
+            if(tx.getHash().equals(transactionHash.getHash())){
+                txInfo.setTransaction(tx);
+                break;
+            }
+            logIndexAcc += Optional.ofNullable(blockchain.getTransactionInfoByBlock(tx,blockHash))
+                    .map(TransactionInfo::getReceipt)
+                    .map(TransactionReceipt::getLogInfoList).map(List::size)
+                    .orElse(0);
+
+        }
+        return new TransactionReceiptDTO(block, txInfo, signatureCache, logIndexAcc);
     }
 
     @Override

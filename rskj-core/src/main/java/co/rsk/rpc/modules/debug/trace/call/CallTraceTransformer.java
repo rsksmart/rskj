@@ -184,19 +184,19 @@ public class CallTraceTransformer {
         if (logInfoList != null) {
             for (int i = 0; i < programResult.getLogInfoList().size(); i++) {
                 LogInfo logInfo = programResult.getLogInfoList().get(i);
-                LogInfoResult logInfoResult = fromLogInfo(logInfo, i);
+                LogInfoResult logInfoResult = fromLogInfo(logInfo);
                 logInfoResultList.add(logInfoResult);
             }
         }
         return logInfoResultList;
     }
-
-    private static LogInfoResult fromLogInfo(LogInfo logInfo, int index) {
+    
+    private static LogInfoResult fromLogInfo(LogInfo logInfo) {
         String address = HexUtils.toJsonHex(logInfo.getAddress());
         List<String> topics = logInfo.getTopics().stream().map(DataWord::getData).map(HexUtils::toJsonHex).toList();
         String data = HexUtils.toJsonHex(logInfo.getData());
         return LogInfoResult.builder()
-                .index(index)
+                .index(logInfo.getLogIndex())
                 .address(address)
                 .topics(topics)
                 .data(data)
