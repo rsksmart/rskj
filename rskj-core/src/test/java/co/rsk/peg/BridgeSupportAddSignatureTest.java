@@ -6,6 +6,7 @@ import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFede
 import static co.rsk.peg.PegTestUtils.createHash3;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
+import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -29,21 +30,16 @@ import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.lockingcap.LockingCapSupport;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
-import co.rsk.peg.storage.InMemoryStorage;
-import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.storage.*;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
-import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
-
+import co.rsk.test.builders.FederationSupportBuilder;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
-
-import co.rsk.test.builders.FederationSupportBuilder;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -51,9 +47,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.*;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -67,10 +61,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class BridgeSupportAddSignatureTest {
     private static final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
-    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
+
     private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
     private final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
+
+    private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
+
     private final Instant creationTime = Instant.ofEpochMilli(1000L);
     private final long creationBlockNumber = 0L;
 
@@ -79,7 +76,6 @@ class BridgeSupportAddSignatureTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
     private WhitelistSupport whitelistSupport;
     private LockingCapSupport lockingCapSupport;
-    private List<LogInfo> logs;
 
     @BeforeEach
     void setUpOnEachTest() {
@@ -748,7 +744,7 @@ class BridgeSupportAddSignatureTest {
 
         Repository repository = createRepository();
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
-        logs = new ArrayList<>();
+        List<LogInfo> logs = new ArrayList<>();
         BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
             bridgeMainnetConstants,
             activationsAfterForks,
