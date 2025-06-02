@@ -2681,7 +2681,7 @@ public class BridgeSupport {
 
         ReleaseTransactionBuilder.BuildResult buildResult = txBuilder.buildBatchedPegouts(releaseRequestListCopy);
 
-        if(isNull(buildResult.getBtcTx())) {
+        if(buildResult.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             logger.debug(
                 "[getEstimatedFeesFromPegoutTransactionSimulation] Simulated pegout btc transaction failed to be created with response code: {}. Cannot simulate a pegout btc release transaction. Will fallback to old logic."
             , buildResult.getResponseCode());
