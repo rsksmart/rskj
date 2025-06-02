@@ -49,7 +49,7 @@ class PegUtilsLegacyTest {
         // Peg-in is for the genesis federation ATM
         Context btcContext = new Context(networkParameters);
         Federation federation = getErpFederationWithPrivKeys(networkParameters, REGTEST_FEDERATION_PRIVATE_KEYS);
-        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Wallet wallet = new BridgeBtcWallet(btcContext, List.of(federation));
         Address federationAddress = federation.getAddress();
         wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
         when(activations.isActive(any(ConsensusRule.class))).thenReturn(false);
@@ -102,7 +102,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
         assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
@@ -126,7 +126,7 @@ class PegUtilsLegacyTest {
         tx.addInput(txIn);
         signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
         assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsRegtest, activations));
     }
 
@@ -142,7 +142,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
         assertTrue(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsMainnet, activations));
     }
 
@@ -166,7 +166,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
         assertFalse(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsMainnet, activations));
     }
 
@@ -189,7 +189,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
         assertTrue(isValidPegInTx(tx, federation, federationWallet, bridgeConstantsMainnet, activations));
     }
 
@@ -386,7 +386,7 @@ class PegUtilsLegacyTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
         assertFalse(isValidPegInTx(
             tx2,
-            Collections.singletonList(federation2),
+            List.of(federation2),
             federation1.getP2SHScript(),
             federationsWallet,
             minimumPeginTxValue,
@@ -493,7 +493,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverRedeemScript);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertTrue(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsMainnet, activations));
@@ -519,7 +519,7 @@ class PegUtilsLegacyTest {
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, flyoverRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
         Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsMainnet, activations));
     }
@@ -554,7 +554,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverNonStandardRedeemScript);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertTrue(isValidPegInTx(
             tx,
@@ -606,7 +606,7 @@ class PegUtilsLegacyTest {
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, flyoverNonStandardRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertFalse(isValidPegInTx(
             tx,
@@ -656,7 +656,7 @@ class PegUtilsLegacyTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, erpRedeemScript);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertTrue(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsRegtest, activations));
@@ -703,7 +703,7 @@ class PegUtilsLegacyTest {
         Script flyoverInputScriptSig = ScriptBuilder.createP2SHMultiSigInputScript(null, erpRedeemScript);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverInputScriptSig);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         Assertions.assertFalse(isValidPegInTx(tx, activeFederation, federationWallet,
             bridgeConstantsRegtest, activations));
@@ -749,11 +749,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -801,11 +801,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -856,11 +856,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -911,11 +911,11 @@ class PegUtilsLegacyTest {
 
         signWithNecessaryKeys(nonStandardErpFederation, flyoverNonStandardRedeemScript, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -959,11 +959,11 @@ class PegUtilsLegacyTest {
         tx.addInput(txInput);
         signWithErpFederation(nonStandardErpFederation, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -1008,11 +1008,11 @@ class PegUtilsLegacyTest {
         tx.addInput(txInput);
         signWithErpFederation(nonStandardErpFederation, retiredFederationKeys, txInput, tx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             retiredFederation.getP2SHScript(),
             federationWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
@@ -1035,11 +1035,11 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             minimumPeginValue,
@@ -1062,11 +1062,11 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
         tx.addOutput(minimumPeginValue.div(5), activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             bridgeConstantsMainnet.getMinimumPeginTxValue(activations),
@@ -1093,11 +1093,11 @@ class PegUtilsLegacyTest {
         tx.addOutput(minimumPeginValue, activeFederation.getAddress());
         tx.addOutput(aboveMinimumPeginValue, activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertFalse(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             minimumPeginValue,
@@ -1117,11 +1117,11 @@ class PegUtilsLegacyTest {
         BtcTransaction tx = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
         tx.addOutput(minimumPeginValue, activeFederation.getAddress());
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertTrue(isValidPegInTx(
             tx,
-            Collections.singletonList(activeFederation),
+            List.of(activeFederation),
             null,
             federationWallet,
             minimumPeginValue,
@@ -1212,7 +1212,7 @@ class PegUtilsLegacyTest {
             inputScriptSig
         );
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         assertEquals(expectedResult, isValidPegInTx(
             tx,
@@ -1284,7 +1284,7 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, migrationTxInput, migrationTx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         FederationContext federationContext = FederationContext.builder()
             .withActiveFederation(activeFederation)
@@ -1338,7 +1338,7 @@ class PegUtilsLegacyTest {
         List<FederationMember> activeFedMembers = getFederationMembersWithBtcKeys(activeFederationKeys);
         FederationArgs activeFedArgs =
             new FederationArgs(activeFedMembers, creationTime, 1L, btcParams);
-        
+
         Federation activeFederation = FederationFactory.buildP2shErpFederation(activeFedArgs, erpPubKeys, activationDelay);
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1478,7 +1478,7 @@ class PegUtilsLegacyTest {
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
 
-        Wallet federationWallet = new BridgeBtcWallet(btcContext, Collections.singletonList(activeFederation));
+        Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(activeFederation));
 
         FederationContext federationContext = FederationContext.builder()
             .withActiveFederation(activeFederation)
@@ -1800,7 +1800,7 @@ class PegUtilsLegacyTest {
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
         FederationArgs args = new FederationArgs(getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
@@ -1809,7 +1809,7 @@ class PegUtilsLegacyTest {
         Federation federation2 = FederationFactory.buildStandardMultiSigFederation(
             args
         );
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstantsRegtest.getBtcParams(), "randomAddress");
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -1822,13 +1822,13 @@ class PegUtilsLegacyTest {
         pegOutTx1.addInput(pegOutInput1);
         signWithNecessaryKeys(federation, REGTEST_FEDERATION_PRIVATE_KEYS, pegOutInput1, pegOutTx1);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(federation), activations));
         assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(federation, federation2), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation2), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(federation2), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, federation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(federation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, Arrays.asList(federation.getP2SHScript(), federation2.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(federation2.getP2SHScript())));
     }
 
     @Test
@@ -1873,24 +1873,24 @@ class PegUtilsLegacyTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardMultisigFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardMultisigFederation), activations));
         assertFalse(isPegOutTx(pegOutTx1, Arrays.asList(standardMultisigFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardMultisigFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, Arrays.asList(standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(standardMultisigFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(standardMultisigFederation), activations));
         assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(standardMultisigFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(standardMultisigFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, Arrays.asList(standardMultisigFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
     }
 
     @Test
@@ -1932,30 +1932,30 @@ class PegUtilsLegacyTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
         assertFalse(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, Arrays.asList(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(nonStandardErpFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, activations, nonStandardErpFederation.getDefaultP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(nonStandardErpFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(nonStandardErpFederation.getDefaultP2SHScript())));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
         assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, Arrays.asList(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(nonStandardErpFederation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, activations, nonStandardErpFederation.getDefaultP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(nonStandardErpFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(nonStandardErpFederation.getDefaultP2SHScript())));
     }
 
     @Test
@@ -2004,24 +2004,24 @@ class PegUtilsLegacyTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(defaultFederation, standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation, standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
 
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertTrue(isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
     }
 
     @Test
@@ -2039,7 +2039,7 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(federation), activations));
     }
 
     @Test
@@ -2058,7 +2058,7 @@ class PegUtilsLegacyTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(federation), activations));
     }
 
     @Test
