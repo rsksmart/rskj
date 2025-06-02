@@ -8425,6 +8425,182 @@ class BridgeSupportTest {
         );
     }
 
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit(BridgeConstants bridgeConstants) {
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+
+        FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+
+        ErpFederation p2shFed = P2shErpFederationBuilder.builder()
+            .withCreationTime(Instant.now())
+            .withCreationBlockNumber(1L)
+            .withNetworkParameters(bridgeConstants.getBtcParams())
+            .withErpPublicKeys(federationConstants.getErpFedPubKeysList())
+            .withErpActivationDelay(federationConstants.getErpFedActivationDelay())
+            .build();
+
+        ErpFederation p2shP2wshFed = P2shP2wshErpFederationBuilder.builder()
+            .withCreationTime(Instant.now())
+            .withCreationBlockNumber(1L)
+            .withNetworkParameters(bridgeConstants.getBtcParams())
+            .withErpPublicKeys(federationConstants.getErpFedPubKeysList())
+            .withErpActivationDelay(federationConstants.getErpFedActivationDelay())
+            .build();
+
+        ReleaseRequestQueue.Entry pegoutRequest1 = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("1").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(1, 0));
+        ReleaseRequestQueue.Entry pegoutRequest2 = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("2").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(2, 0));
+        ReleaseRequestQueue.Entry pegoutRequest3 = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("3").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(3, 0));
+
+        ReleaseRequestQueue.Entry bigPegoutRequest = new ReleaseRequestQueue.Entry(getBtcEcKeyFromSeed("4").toAddress(bridgeConstants.getBtcParams()), Coin.valueOf(10, 0));
+
+        UTXO p2shFedUtxo1 = createUTXO(Coin.valueOf(8, 0), p2shFed.getAddress());
+        UTXO p2shFedBigUtxoUtxo = createUTXO(Coin.valueOf(13, 0), p2shFed.getAddress());
+
+        UTXO p2shP2wshFedUtxo1 = createUTXO(Coin.valueOf(8, 0), p2shP2wshFed.getAddress());
+        UTXO p2shP2wshFedBigUtxo = createUTXO(Coin.valueOf(13, 0), p2shP2wshFed.getAddress());
+
+        return Stream.of(
+            // active fed is p2sh and there are 0 pegout requests
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9490L: 9820L),
+                List.of(),
+                List.of(p2shFedUtxo1)
+            ),
+            // active fed is p2sh and there are 1 pegout requests
+            // when there are no utxos available, the old logic should be executed and return the expected fee
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 17940L: 18600L),
+                List.of(pegoutRequest1),
+                List.of()
+            ),
+            // active fed is p2sh and there is 1 pegout request
+            // when there are utxos available, the new logic is used.
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9830L: 10160L),
+                List.of(pegoutRequest1),
+                List.of(p2shFedUtxo1)
+            ),
+            // active fed is p2sh and there are 2 pegout requests
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10170L: 10500L),
+                List.of(pegoutRequest1, pegoutRequest2),
+                List.of(p2shFedUtxo1)
+            ),
+            // active fed is p2sh and there are 3 pegout requests
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10510L: 10840L),
+                List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
+                List.of(p2shFedUtxo1)
+            ),
+
+            // 2 inputs
+            // active fed is p2sh and there is 2 pegout requests
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 18900L: 19560L),
+                List.of(pegoutRequest1, bigPegoutRequest),
+                List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
+            ),
+            // active fed is p2sh and there are 2 pegout requests
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19240L: 19900L),
+                List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
+                List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
+            ),
+            // active fed is p2sh and there are 3 pegout requests
+            Arguments.of(
+                activations,
+                p2shFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19580L: 20240L),
+                List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
+                List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
+            ),
+
+
+            // active fed is p2sh p2wsh and there are 0 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 5670L: 5750L), // Savings: 59.75% for mainnet. 58.57% for regtest.
+                List.of(),
+                List.of(p2shP2wshFedUtxo1)
+            ),
+            // active fed is p2sh p2wsh and there is 1 pegout requests
+            // when there are no utxos available, the old logic should be executed and return the expected fee
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 34080L: 34740L),
+                List.of(pegoutRequest1),
+                List.of()
+            ),
+            // active fed is p2sh p2wsh and there is 1 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 6010L: 6090L), // Savings: 61.12% for mainnet. 59.94% for regtest.
+                List.of(pegoutRequest1),
+                List.of(p2shP2wshFedUtxo1)
+            ),
+            // active fed is p2sh p2wsh and there are 2 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 6350L: 6430L), // Savings: 62.42% for mainnet. 61.24% for regtest.
+                List.of(pegoutRequest1, pegoutRequest2),
+                List.of(p2shP2wshFedUtxo1)
+            ),
+            // active fed is p2sh p2wsh and there are 3 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 6690L: 6770L), // Savings: 63.66% for mainnet. 62.45% for regtest.
+                List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
+                List.of(p2shP2wshFedUtxo1)
+            ),
+
+            // 2 inputs
+            // active fed is segwit and there is 1 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 11260L: 11430L), // Savings: 59.58% for mainnet. 58.45% for regtest.
+                List.of(pegoutRequest1, bigPegoutRequest),
+                List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
+            ),
+            // active fed is p2sh p2wsh and there are 2 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 11600L: 11770L), // Savings: 60.29% for mainnet. 59.13% for regtest.
+                List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
+                List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
+            ),
+            // active fed is p2sh p2wsh and there are 3 pegout requests
+            Arguments.of(
+                activations,
+                p2shP2wshFed,
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 11940L: 12110L), // Savings: 60.97% for mainnet. 59.83% for regtest.
+                List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
+                List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
+            )
+
+        );
+    }
+
     private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider() {
         BridgeRegTestConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
 
@@ -8446,6 +8622,23 @@ class BridgeSupportTest {
             preRskip385Mainnet,
             postRskip385Mainnet
         ).flatMap(Function.identity());
+    }
+
+    private static Stream<Arguments> getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit() {
+
+        BridgeRegTestConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
+
+        Stream<Arguments> postRskip305Regtest = getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit(bridgeConstantsRegtest);
+
+        BridgeMainNetConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+
+        Stream<Arguments> postRskip305Mainnet = getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit(bridgeMainNetConstants);
+
+        return Stream.of(
+            postRskip305Regtest,
+            postRskip305Mainnet
+        ).flatMap(Function.identity());
+
     }
 
     @ParameterizedTest
@@ -8477,6 +8670,50 @@ class BridgeSupportTest {
             .withActivations(activations)
             .withFederationSupport(federationSupport)
             .withFeePerKbSupport(feePerKbSupport)
+            .build();
+
+        // Act
+        Coin estimatedFeesForNextPegOutEvent = bridgeSupport.getEstimatedFeesForNextPegOutEvent();
+
+        // Assert
+        assertEquals(expectedEstimatedFee, estimatedFeesForNextPegOutEvent);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getEstimatedFeesForNextPegOutEventArgsProvider_forSegwit")
+    void getEstimatedFeesForNextPegOutEvent_forSegwit(
+        ActivationConfig.ForBlock activations,
+        Federation federation,
+        Coin expectedEstimatedFee,
+        List<ReleaseRequestQueue.Entry> releaseRequestQueueEntries,
+        List<UTXO> utxos
+    ) throws IOException {
+        // Arrange
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        FederationStorageProvider federationStorageProviderMock = mock(FederationStorageProvider.class);
+
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(releaseRequestQueueEntries);
+
+        when(provider.getReleaseRequestQueue()).thenReturn(releaseRequestQueue);
+        when(federationStorageProviderMock.getNewFederation(any(), any())).thenReturn(federation);
+
+        when(federationStorageProviderMock.getNewFederationBtcUTXOs(any(), any())).thenReturn(utxos);
+
+        feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.valueOf(10_000));
+
+        federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsRegtest)
+            .withFederationStorageProvider(federationStorageProviderMock)
+            .withActivations(activations)
+            .build();
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withProvider(provider)
+            .withActivations(activations)
+            .withFederationSupport(federationSupport)
+            .withFeePerKbSupport(feePerKbSupport)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .build();
 
         // Act
