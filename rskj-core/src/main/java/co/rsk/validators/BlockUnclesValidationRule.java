@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.validators;
 
 import co.rsk.core.bc.FamilyUtils;
@@ -30,20 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-/**
- * Validate the uncles in a block.
- * It validates that the uncle root hash correspond with the uncle list
- * It calculates the already used uncles in the block ancestors
- * It calculates the ancestors of the block
- * It validates that the uncle list is not too large
- * It validates that each uncle
- * - is not an ancestor
- * - is not a used uncle
- * - has a common ancestor with the block
- *
- * @return true if the uncles in block are valid, false if not
- */
 
 public class BlockUnclesValidationRule implements BlockValidationRule {
 
@@ -70,6 +55,19 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         this.blockValidationRule = new BlockUnclesHashValidationRule();
     }
 
+    /**
+     * Validate the uncles in a block.
+     * It validates that the uncle root hash correspond with the uncle list
+     * It calculates the already used uncles in the block ancestors
+     * It calculates the ancestors of the block
+     * It validates that the uncle list is not too large
+     * It validates that each uncle
+     * - is not an ancestor
+     * - is not a used uncle
+     * - has a common ancestor with the block
+     *
+     * @return true if the uncles in block are valid, false if not
+     */
     @Override
     public boolean isValid(Block block) {
 

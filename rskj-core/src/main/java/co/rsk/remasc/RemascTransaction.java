@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.remasc;
 
 import org.ethereum.config.Constants;
@@ -37,7 +36,7 @@ import co.rsk.util.HexUtils;
  *  and it is still in binary format.
  * </p>
  * <p>
- *  Use <b></b><i></>instanceOf<i/><b/> to know if a parsed transaction is a remasc transaction.
+ *  Use <b><i>instanceOf</i></b> to know if a parsed transaction is a remasc transaction.
  * </p>
  * <p>
  * If you would like an easier way to know if a transaction is a Remasc transaction rather than using
@@ -45,7 +44,7 @@ import co.rsk.util.HexUtils;
  * <blockquote>obj instanceOf RemascTransaction</blockquote>
  * </p>
  * <p>
- * <b>NOTE:</b> Consider that <b></b><i></>instanceOf<i/><b/> only will work if you create an
+ * <b>NOTE:</b> Consider that <b><i>instanceOf</i></b> only will work if you create an
  * instance of this class, otherwise using #{@link Transaction#isRemascTransaction(int, int)} is more
  * recommended and safe.
  * </p>
