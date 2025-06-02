@@ -660,6 +660,10 @@ class UnionBridgeSupportImplTest {
 
         // assert
         Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
+        assertNoUnionRbtcIsStored();
     }
 
     @Test
@@ -675,6 +679,10 @@ class UnionBridgeSupportImplTest {
 
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
+        assertNoUnionRbtcIsStored();
     }
     
     private static Stream<Arguments> invalidAmountArgProvider() {
@@ -712,11 +720,16 @@ class UnionBridgeSupportImplTest {
 
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
+        assertNoUnionRbtcIsStored();
     }
 
     private static Stream<Arguments> validAmountArgProvider() {
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
         co.rsk.core.Coin amountRequestEqualToLockingCap = co.rsk.core.Coin.fromBitcoin(initialLockingCap);
+
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
 
         return Stream.of(
@@ -742,6 +755,48 @@ class UnionBridgeSupportImplTest {
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+
+        // call save and assert that the amount is stored
+        unionBridgeSupport.save();
+        assertUnionRbtcWasStored(amountRequested);
+    }
+
+    @Test
+    void requestUnionRbtc_whenAmountToRequestEqualToLockingCap_shouldReturnSuccessCode() {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withActivations(allActivations)
+            .withConstants(unionBridgeConstants).build();
+
+        when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
+
+        Coin lockingCap = Coin.FIFTY_COINS;
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            lockingCap,
+            BridgeSerializationUtils::serializeCoin
+        );
+
+        // To simulate the case where a weis transferred is store
+        Coin twentyFiveRbtc = lockingCap.div(2);
+        co.rsk.core.Coin weisTransferred = co.rsk.core.Coin.fromBitcoin(twentyFiveRbtc);
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            weisTransferred,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+
+        co.rsk.core.Coin amountToRequest = co.rsk.core.Coin.fromBitcoin(twentyFiveRbtc);
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountToRequest);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+
+        // call save and assert that the amount is stored
+        unionBridgeSupport.save();
+        assertUnionRbtcWasStored(amountToRequest);
     }
 
     @ParameterizedTest
