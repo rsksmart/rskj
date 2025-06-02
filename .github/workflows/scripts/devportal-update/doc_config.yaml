@@ -1,0 +1,177 @@
+files:
+  - input: docs/03-node-operators/04-setup/reproducible-build.md
+    output: transformed/03-node-operators/04-setup/reproducible-build.md
+    sidebar_label: Reproducible Build
+    sidebar_position: 7
+    title: Gradle building
+    tags: [rsk, node, compile, reproducible, checksum, rootstock]
+    description: "A deterministic build process used to build Rootstock node JAR file. Provides a way to be reasonable sure that the JAR is built from GitHub RSKj repository. Makes sure that the same tested dependencies are used and statically built into the executable."
+
+  - input: docs/03-node-operators/04-setup/requirements.md
+    output: transformed/03-node-operators/04-setup/requirements.md
+    sidebar_label: Hardware Requirements
+    sidebar_position: 3
+    title: Minimum Hardware Requirements to Run a Rootstock Node
+    tags: [hardware, specs, requirements]
+    description: "Minimum hardware requirements for Rootstock."
+
+  - input: docs/03-node-operators/04-setup/security-chain.md
+    output: transformed/03-node-operators/04-setup/security-chain.md
+    sidebar_label: Security Chain
+    sidebar_position: 8
+    title: Verify security chain of RSKj source code
+    tags: [rsk, rskj, node, security, node operators, reproducible builds, verification]
+    description: "All the different ways that you can verify RSKj: Release signing key, fingerprint of the public key, SHA256SUMS.asc, binary dependencies, secure environment script"
+
+  - input: docs/03-node-operators/04-setup/experimental-features.md
+    output: transformed/03-node-operators/04-setup/experimental-features.md
+    sidebar_label: Experimental features
+    sidebar_position: 9
+    title: Experimental features from RSKj
+    tags: [rsk, rskj, node, node operators, experimental features]
+    description: "All the experimental features released in RSKj  are explained in this section, how to enable and what's the purpose of the feature"
+
+  # Docs from 03-node-operators/04-setup/02-installation
+  - input: docs/03-node-operators/04-setup/02-installation/docker.md
+    output: transformed/03-node-operators/04-setup/02-installation/docker.md
+    sidebar_label: Setup node on Docker
+    sidebar_position: 200
+    title: Setup node on Docker
+    tags: [docker, rootstock, desktop, macOS, rskj, windows, install, rsk, node, how-to, network, requirements, mainnet, testnet, regtest]
+    description: "Install RSKj using Docker."
+
+  - input: docs/03-node-operators/04-setup/02-installation/index.md
+    output: transformed/03-node-operators/04-setup/02-installation/index.md
+    sidebar_label: Node Installation
+    sidebar_position: 4
+    title: RSKj Node Installation
+    tags: [rsk, rootstock, rskj, node, developers, merged mining]
+    description: "Install RSKj on different OS."
+
+  - input: docs/03-node-operators/04-setup/02-installation/java.md
+    output: transformed/03-node-operators/04-setup/02-installation/java.md
+    sidebar_label: Setup node using Java
+    sidebar_position: 100
+    title: Setup node using Java
+    tags: [java, install, rootstock, rskj, node, how-to, network, requirements, mainnet, jar]
+    description: "Install RSKj using Java."
+
+  - input: docs/03-node-operators/04-setup/02-installation/ubuntu.md
+    output: transformed/03-node-operators/04-setup/02-installation/ubuntu.md
+    sidebar_label: Setup node on Ubuntu
+    sidebar_position: 300
+    title: Setup node on Ubuntu
+    tags: [ubuntu, install, rsk, rskj, node, how-to, network, requirements, mainnet]
+    description: "Install RSKj on Ubuntu."
+
+  # Docs from 03-node-operators/04-setup/03-configuration
+
+  - input: docs/03-node-operators/04-setup/03-configuration/02-cli.md
+    output: transformed/03-node-operators/04-setup/03-configuration/02-cli.md
+    sidebar_label: CLI
+    sidebar_position: 200
+    title: Command Line Interface
+    tags: [rsk, rskj, node, cli]
+    description: "Command Line Interface for Rootstock (RSK)"
+
+  - input: docs/03-node-operators/04-setup/03-configuration/03-reference.md
+    output: transformed/03-node-operators/04-setup/03-configuration/03-reference.md
+    sidebar_label: Reference
+    sidebar_position: 300
+    title: Rootstock Node Configuration Reference
+    tags: [ rsk, rskj, node, config, rpc api, node operators, rootstock ]
+    description: "Configuration reference for RSKj"
+    render_features: 'tables-with-borders'
+
+  - input: docs/03-node-operators/04-setup/03-configuration/04-switch-network.md
+    output: transformed/03-node-operators/04-setup/03-configuration/04-switch-network.md
+    title: Switch network
+    sidebar_position: 400
+    sidebar_label: Switch network
+    tags: [rsk, rskj, node, config, network, mainnet, testnet, regtest]
+    description: "How to switch your RSK node between the Mainnet, Testnet, and RegTest networks"
+
+  - input: docs/03-node-operators/04-setup/03-configuration/05-verbosity.md
+    output: transformed/03-node-operators/04-setup/03-configuration/05-verbosity.md
+    title: Configure Verbosity
+    sidebar_position: 500
+    sidebar_label: Configure Verbosity
+    tags: [rsk, rskj, node, config, node operators, rootstock, logs]
+    description: "Configure RSKj for desired log verbosity, finding log files, and using logback."
+
+  - input: docs/03-node-operators/04-setup/03-configuration/peer-scoring-system.md
+    output: transformed/03-node-operators/04-setup/03-configuration/peer-scoring-system.md
+    title: Peer Scoring System
+    sidebar_label: Peer Scoring System
+    sidebar_position: 600
+    tags: [rsk, rskj, node, config, peer, scoring]
+    description: " The peer scoring system protects the RSKj node's resources from abusive or malicious peers"
+
+  - input: docs/03-node-operators/04-setup/03-configuration/preferences.md
+    output: transformed/03-node-operators/04-setup/03-configuration/preferences.md
+    title: Set Config Preferences
+    sidebar_label: Setting Config Preferences
+    sidebar_position: 100
+    tags: [rsk, rskj, node, config]
+    description: "Setting your own config preferences, when using the Java command, Ubuntu, Azure, AWS, or Docker."
+
+  - input: docs/03-node-operators/04-setup/03-configuration/rate-limiting.md
+    output: transformed/03-node-operators/04-setup/03-configuration/rate-limiting.md
+    title: Transaction rate limiting
+    sidebar_label: Transaction Rate Limiter
+    sidebar_position: 700
+    description: 'Transaction rate limiting on the Rootstock network. The features, their importance, how to use and configure them.'
+    tags: [node operators, rocksdb, node, rskj, rate, limit]
+
+  - input: docs/03-node-operators/04-setup/03-configuration/metrics.md
+    output: transformed/03-node-operators/04-setup/03-configuration/metrics.md
+    title: Exposing RSKj node metrics
+    sidebar_label: Metrics
+    sidebar_position: 800
+    description: 'This page provides instructions for exposing metrics from an RSKj node to be consumed by monitoring tools like JConsole and Prometheus'
+    tags: [node operators, node, rskj, jmx, metric, jconsole, prometheus]
+
+  # Docs from 03-node-operators/04-setup/04-node-runner
+
+  - input: docs/03-node-operators/04-setup/04-node-runner/cli.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/cli.md
+    title: Running the RSKj Node using a CLI
+    sidebar_label: CLI
+    sidebar_position: 300
+    tags: [rsk, rskj, node, node operators, contribute]
+    description: "How to compile and run an RSKj node from the command line interface."
+
+  - input: docs/03-node-operators/04-setup/04-node-runner/linux.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/linux.md
+    title: How to compile and run an RSKj node on Linux
+    sidebar_label: Linux
+    sidebar_position: 500
+    tags: [rsk, rskj, node, contribute, linux]
+    description: "How to compile and run an RSKj node on Linux. Installing pre-requisites. Get source code. Ensure security chain. Get external dependencies. Compile and run. Configuring your IDE."
+
+  - input: docs/03-node-operators/04-setup/04-node-runner/macos.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/macos.md
+    title: How to compile and run an RSKj node on Mac OS
+    sidebar_label: MacOS
+    sidebar_position: 400
+    tags: [rsk, rskj, node, contribute, mac, osx]
+    description: "How to compile and run an RSKj node on Mac OSX. Installing pre-requisites. Get source code. Ensure security chain. Get external dependencies. Compile and run. Configuring your IDE."
+
+  - input: docs/03-node-operators/04-setup/04-node-runner/windows.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/windows.md
+    title: How to compile and run an RSKj node on Windows
+    sidebar_label: Windows
+    sidebar_position: 600
+    tags: [rsk, rskj, node, contribute, node operators, windows]
+    description: "How to compile and run an RSKj node on Windows. Installing pre-requisites. Get source code. Ensure security chain. Get external dependencies. Compile and run. Configuring your IDE."
+
+  # Docs from 03-node-operators/09-troubleshooting/
+  - input: docs/03-node-operators/09-troubleshooting/index.md
+    output: transformed/03-node-operators/09-troubleshooting/index.md
+    title: Troubleshooting RSKj Node
+    sidebar_label: Troubleshooting
+    sidebar_position: 11
+    tags:  [rsk, rskj, rootstock, node, faq, troubleshoot]
+    description: "How to solve some known or frequently encountered issues when working with the RSKj node"
+
+  # Add more files as needed

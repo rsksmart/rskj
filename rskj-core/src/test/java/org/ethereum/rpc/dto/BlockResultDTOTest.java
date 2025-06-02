@@ -35,6 +35,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -98,6 +99,14 @@ class BlockResultDTOTest {
         Assertions.assertTrue(blockResultDTO.getTransactions().isEmpty());
     }
 
+    @Test
+    void getBlockResultDTO_containsObsoleteFields() {
+        Block block = buildBlockWithTransactions(Collections.emptyList());
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        Assertions.assertEquals("0x0000000000000000000000000000000000000000000000000000000000000000", blockResultDTO.getMixHash());
+        Assertions.assertEquals("0x0000000000000000", blockResultDTO.getNonce());
+    }
 
     @Test
     void getBlockResultDTOWithNullSignatureRemascAndFullTransactions() {

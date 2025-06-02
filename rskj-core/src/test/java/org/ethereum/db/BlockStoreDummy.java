@@ -26,11 +26,11 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -110,6 +110,12 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
+    public BlockDifficulty getTotalDifficultyForBlock(Block block) {
+        return null;
+    }
+
+    @Override
+    @Nonnull
     public List<Block> getChainBlocksByNumber(long blockNumber) {
         return new ArrayList<>();
     }

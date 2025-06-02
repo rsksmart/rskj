@@ -62,6 +62,8 @@ public interface TransactionPool extends InternalService {
      */
     void processBest(Block block);
 
+    void setBestBlock(Block block);
+
     void removeTransactions(List<Transaction> txs);
 
     /**

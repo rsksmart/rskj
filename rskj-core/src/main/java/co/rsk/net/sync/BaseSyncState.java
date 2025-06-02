@@ -19,6 +19,9 @@ package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
+import co.rsk.net.messages.SnapBlocksResponseMessage;
+import co.rsk.net.messages.SnapStateChunkResponseMessage;
+import co.rsk.net.messages.SnapStatusResponseMessage;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -27,8 +30,8 @@ import java.time.Duration;
 import java.util.List;
 
 public abstract class BaseSyncState implements SyncState {
-    protected SyncConfiguration syncConfiguration;
-    protected SyncEventsHandler syncEventsHandler;
+    protected final SyncConfiguration syncConfiguration;
+    protected final SyncEventsHandler syncEventsHandler;
 
     protected Duration timeElapsed;
 
@@ -51,30 +54,34 @@ public abstract class BaseSyncState implements SyncState {
         }
     }
 
-    protected void onMessageTimeOut() {
-    }
+    protected void onMessageTimeOut() { /* empty */ }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk) {
-    }
+    public void newBlockHeaders(Peer peer, List<BlockHeader> chunk) { /* empty */ }
 
     @Override
-    public void newBody(BodyResponseMessage message, Peer peer) {
-    }
+    public void newBody(BodyResponseMessage message, Peer peer) { /* empty */ }
 
     @Override
-    public void newConnectionPointData(byte[] hash) {
-    }
+    public void newConnectionPointData(byte[] hash) { /* empty */ }
 
     @Override
-    public void newPeerStatus() { }
+    public void newPeerStatus() { /* empty */ }
 
     @Override
-    public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) {
-    }
+    public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) { /* empty */ }
 
     @Override
-    public void onEnter() { }
+    public void onSnapStatus(Peer sender, SnapStatusResponseMessage responseMessage) { /* empty */ }
+
+    @Override
+    public void onSnapBlocks(Peer sender, SnapBlocksResponseMessage responseMessage) { /* empty */ }
+
+    @Override
+    public void onSnapStateChunk(Peer peer, SnapStateChunkResponseMessage responseMessage) { /* empty */ }
+
+    @Override
+    public void onEnter() { /* empty */ }
 
     @VisibleForTesting
     public void messageSent() {
