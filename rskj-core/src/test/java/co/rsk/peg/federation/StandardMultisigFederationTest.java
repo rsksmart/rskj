@@ -21,34 +21,26 @@ package co.rsk.peg.federation;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.peg.bitcoin.ScriptCreationException;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import co.rsk.peg.constants.BridgeConstants;
-import co.rsk.peg.constants.BridgeMainNetConstants;
-import co.rsk.peg.bitcoin.ScriptCreationException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 
 class StandardMultisigFederationTest {
     private Federation federation;
     private NetworkParameters networkParameters;
 
-    private List<BtcECKey> keys;
     private List<BtcECKey> sortedPublicKeys;
     private List<byte[]> rskAddresses;
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
@@ -58,37 +50,17 @@ class StandardMultisigFederationTest {
         networkParameters = bridgeMainNetConstants.getBtcParams();
         federation = FederationTestUtils.getGenesisFederation(bridgeMainNetConstants.getFederationConstants());
 
-        keys = federation.getBtcPublicKeys();
+        List<BtcECKey> keys = federation.getBtcPublicKeys();
         sortedPublicKeys = keys.stream()
-            .sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+            .sorted(BtcECKey.PUBKEY_COMPARATOR).toList();
 
         List<ECKey> rskPubKeys = sortedPublicKeys.stream()
             .map(btcECKey -> ECKey.fromPublicOnly(btcECKey.getPubKey()))
-            .collect(Collectors.toList());
+            .toList();
         rskAddresses = rskPubKeys
             .stream()
             .map(ECKey::getAddress)
-            .collect(Collectors.toList());
-    }
-
-    @Test
-    void createValidFederation_aboveMaxScriptSigElementSize_shouldThrowScriptCreationException() {
-        List<BtcECKey> newKeys = federation.getBtcPublicKeys();
-        BtcECKey federator16PublicKey = BtcECKey.fromPublicOnly(
-            Hex.decode("03b65684ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6")
-        );
-
-        // add one member to exceed redeem script size limit
-        newKeys.add(federator16PublicKey);
-        List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
-        Instant creationTime = federation.getCreationTime();
-        long creationBlockNumber = federation.getCreationBlockNumber();
-        NetworkParameters networkParameters = federation.getBtcParams();
-        FederationArgs federationArgs = new FederationArgs(newMembers, creationTime, creationBlockNumber, networkParameters);
-        ScriptCreationException exception =
-            assertThrows(ScriptCreationException.class,
-                () -> FederationFactory.buildStandardMultiSigFederation(federationArgs));
-        assertEquals(ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE, exception.getReason());
+            .toList();
     }
 
     @Test
@@ -99,7 +71,7 @@ class StandardMultisigFederationTest {
         } catch (Exception e) {
             exception = true;
         }
-        Assertions.assertTrue(exception);
+        assertTrue(exception);
 
         exception = false;
         try {
@@ -107,7 +79,7 @@ class StandardMultisigFederationTest {
         } catch (Exception e) {
             exception = true;
         }
-        Assertions.assertTrue(exception);
+        assertTrue(exception);
     }
 
     @Test
@@ -115,7 +87,7 @@ class StandardMultisigFederationTest {
         assertEquals(federation, federation);
 
         assertNotEquals(null, federation);
-        assertNotEquals(federation, new Object());
+        assertNotEquals(new Object(), federation);
         assertNotEquals("something else", federation);
     }
 
@@ -214,7 +186,7 @@ class StandardMultisigFederationTest {
             federationArgs
         );
 
-        Assertions.assertNotEquals(federation, otherFederation);
+        assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -283,6 +255,28 @@ class StandardMultisigFederationTest {
         int opN = ScriptOpCodes.getOpCode("" + federation.getSize());
         assertEquals(opN, redeemScript.getChunks().get(redeemScript.getChunks().size() - 2).opcode);
         assertEquals(ScriptOpCodes.OP_CHECKMULTISIG, redeemScript.getChunks().get(redeemScript.getChunks().size() - 1).opcode);
+    }
+
+    @Test
+    void getRedeemScript__aboveMaxScriptSigElementSize_shouldThrowScriptCreationException() {
+        List<BtcECKey> newKeys = federation.getBtcPublicKeys();
+        BtcECKey federator16PublicKey = BtcECKey.fromPublicOnly(
+            Hex.decode("03b65684ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6")
+        );
+
+        // add one member to exceed redeem script size limit
+        newKeys.add(federator16PublicKey);
+        List<FederationMember> newMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newKeys);
+        Instant creationTime = federation.getCreationTime();
+        long creationBlockNumber = federation.getCreationBlockNumber();
+        FederationArgs federationArgs = new FederationArgs(newMembers, creationTime, creationBlockNumber, networkParameters);
+        Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(federationArgs);
+
+        ScriptCreationException exception = assertThrows(
+            ScriptCreationException.class,
+            standardMultisigFederation::getRedeemScript
+        );
+        assertEquals(ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE, exception.getReason());
     }
 
     @Test
@@ -365,20 +359,20 @@ class StandardMultisigFederationTest {
     void getMemberByBtcPublicKey_passing_existing_btcPublicKey_should_return_found_member(){
         BtcECKey existingMemberBtcPublicKey = sortedPublicKeys.get(0);
         Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(existingMemberBtcPublicKey);
-        Assertions.assertTrue(foundMember.isPresent());
-        Assertions.assertEquals(existingMemberBtcPublicKey, foundMember.get().getBtcPublicKey());
+        assertTrue(foundMember.isPresent());
+        assertEquals(existingMemberBtcPublicKey, foundMember.get().getBtcPublicKey());
     }
 
     @Test
     void getMemberByBtcPublicKey_passing_non_existing_btcPublicKey_should_return_empty(){
         BtcECKey noExistingBtcPublicKey = new BtcECKey();
         Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(noExistingBtcPublicKey);
-        Assertions.assertFalse(foundMember.isPresent());
+        assertFalse(foundMember.isPresent());
     }
 
     @Test
     void getMemberByBtcPublicKey_passing_null_btcPublicKey_should_return_empty(){
         Optional<FederationMember> foundMember = federation.getMemberByBtcPublicKey(null);
-        Assertions.assertFalse(foundMember.isPresent());
+        assertFalse(foundMember.isPresent());
     }
 }
