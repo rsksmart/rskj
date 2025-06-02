@@ -35,8 +35,6 @@ public class StandardMultisigFederation extends Federation {
         int formatVersion) {
 
         super(federationArgs, formatVersion);
-
-        validateRedeemScriptSize();
     }
 
     @Override
@@ -44,12 +42,8 @@ public class StandardMultisigFederation extends Federation {
         if (redeemScript == null) {
             redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
+        ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
 
         return redeemScript;
-    }
-
-    private void validateRedeemScriptSize() {
-        Script redeemScript = this.getRedeemScript();
-        ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
     }
 }
