@@ -64,7 +64,6 @@ class BridgeSupportAddSignatureTest {
 
     private final BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
     private final NetworkParameters btcRegTestParams = bridgeRegTestConstants.getBtcParams();
-    private final FederationConstants federationConstants = bridgeRegTestConstants.getFederationConstants();
 
     private final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
