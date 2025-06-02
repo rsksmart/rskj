@@ -37,7 +37,6 @@ public class StandardMultisigFederation extends Federation {
         super(federationArgs, formatVersion);
 
         validateRedeemScriptSize();
-
     }
 
     @Override
@@ -53,5 +52,4 @@ public class StandardMultisigFederation extends Federation {
         Script redeemScript = this.getRedeemScript();
         ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
     }
-
 }
