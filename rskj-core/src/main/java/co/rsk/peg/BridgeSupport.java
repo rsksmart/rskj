@@ -2897,6 +2897,16 @@ public class BridgeSupport {
         return unionBridgeSupport.increaseLockingCap(tx, newLockingCap);
     }
 
+    public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amountRequested) {
+        UnionResponseCode responseCode = unionBridgeSupport.requestUnionRbtc(tx, amountRequested);
+        if (responseCode == UnionResponseCode.SUCCESS) {
+            RskAddress unionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
+            transferTo(unionBridgeContractAddress, amountRequested);
+            eventLogger.logUnionRbtcReleased(unionBridgeContractAddress, amountRequested);
+        }
+        return responseCode;
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }

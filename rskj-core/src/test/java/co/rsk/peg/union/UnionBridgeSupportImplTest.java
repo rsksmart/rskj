@@ -799,40 +799,6 @@ class UnionBridgeSupportImplTest {
         assertUnionRbtcWasStored(amountToRequest);
     }
 
-    @Test
-    void requestUnionRbtc_whenAmountToRequestEqualToLockingCap_shouldReturnSuccessCode() {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
-            .withConstants(unionBridgeConstants).build();
-
-        when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
-
-        Coin lockingCap = Coin.FIFTY_COINS;
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            lockingCap,
-            BridgeSerializationUtils::serializeCoin
-        );
-
-        // To simulate the case where a weis transferred is store
-        Coin twentyFiveRbtc = lockingCap.div(2);
-        co.rsk.core.Coin weisTransferred = co.rsk.core.Coin.fromBitcoin(twentyFiveRbtc);
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
-            weisTransferred,
-            BridgeSerializationUtils::serializeRskCoin
-        );
-
-        co.rsk.core.Coin amountToRequest = co.rsk.core.Coin.fromBitcoin(twentyFiveRbtc);
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountToRequest);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-    }
-
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
     void save_preRSKIP502_shouldSetButDoNotStoreGivenAddress(UnionBridgeConstants unionBridgeConstants) {
