@@ -1793,7 +1793,7 @@ class PegUtilsLegacyTest {
     }
 
     @Test
-    void isPegOutTx_withStandardFederation() {
+    void isPegOutTx_fromStandardFederation() {
         Federation federation = getFederationWithPrivateKeys(REGTEST_FEDERATION_PRIVATE_KEYS);
 
         List<BtcECKey> activeFederationKeys = Stream.of(
@@ -1917,7 +1917,7 @@ class PegUtilsLegacyTest {
         Federation standardFederation = getErpFederationWithPrivKeys(networkParameters, REGTEST_FEDERATION_PRIVATE_KEYS);
 
         // Create a tx from the erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "randomAddress");
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -2022,6 +2022,38 @@ class PegUtilsLegacyTest {
         assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
         assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
         assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
+    }
+
+    @Test
+    void isPegOutTx_fromP2wshP2shFederation() {
+        ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+        Federation p2wshFederation = P2shP2wshErpFederationBuilder.builder().build();
+
+        // Create a tx from the federation to a random address
+        Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "randomAddress");
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        pegOutTx1.addOutput(Coin.COIN, randomAddress);
+        TransactionInput pegOutInput1 = new TransactionInput(
+            networkParameters,
+            pegOutTx1,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx1.addInput(pegOutInput1);
+        signWithErpFederation(nonStandardErpFederation, defaultFederationKeys, pegOutInput1, pegOutTx1);
+
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
+
+        assertTrue(isPegOutTx(pegOutTx1, List.of(defaultFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
+        assertFalse(isPegOutTx(pegOutTx1, List.of(standardFederation), activations));
+
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(defaultFederation.getP2SHScript())));
+        assertTrue(isPegOutTx(pegOutTx1, activations, Arrays.asList(defaultFederation.getP2SHScript(), standardFederation.getP2SHScript())));
+        assertFalse(isPegOutTx(pegOutTx1, activations, List.of(standardFederation.getP2SHScript())));
+
+        assertTrue(isPegOutTx(pegOutTx1, List.of(nonStandardErpFederation), activations));
+        assertTrue(isPegOutTx(pegOutTx1, activations, List.of(nonStandardErpFederation.getDefaultP2SHScript())));
     }
 
     @Test
@@ -2240,7 +2272,7 @@ class PegUtilsLegacyTest {
     @Test
     void scriptCorrectlySpends_fromAFederation_ok() {
         Federation federation = getErpFederationWithPrivKeys(networkParameters, REGTEST_FEDERATION_PRIVATE_KEYS);
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(networkParameters, "destinationAddress");
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
