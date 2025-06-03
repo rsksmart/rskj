@@ -66,16 +66,14 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public Optional<RskAddress> getAddress(ActivationConfig.ForBlock activations) {
-        if (!activations.isActive(ConsensusRule.RSKIP502)) {
-            return Optional.empty();
-        }
-
+    public Optional<RskAddress> getAddress() {
         return Optional.ofNullable(unionBridgeAddress).or(
-            () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
-                UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-                BridgeSerializationUtils::deserializeRskAddress
-            ))
+            () -> Optional.ofNullable(
+                bridgeStorageAccessor.getFromRepository(
+                    UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+                    BridgeSerializationUtils::deserializeRskAddress
+                )
+            )
         );
     }
 

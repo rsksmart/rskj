@@ -7,7 +7,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 public interface UnionBridgeStorageProvider {
     void setAddress(RskAddress address);
-    Optional<RskAddress> getAddress(ActivationConfig.ForBlock activations);
+    Optional<RskAddress> getAddress();
     void setLockingCap(Coin lockingCap);
     Optional<Coin> getLockingCap(ActivationConfig.ForBlock activations);
     Optional<co.rsk.core.Coin> getWeisTransferredToUnionBridge(ActivationConfig.ForBlock activations);

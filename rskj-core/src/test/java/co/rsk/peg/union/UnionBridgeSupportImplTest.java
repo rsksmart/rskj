@@ -87,23 +87,6 @@ class UnionBridgeSupportImplTest {
         );
     }
 
-    @Test
-    void getUnionBridgeContractAddress_beforeRSKIP502_shouldReturnConstantAddress() {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants)
-            .withActivations(lovell700)
-            .build();
-
-        // act
-        RskAddress actualUnionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
-
-        // assert
-        RskAddress expectedUnionBridgeContractAddress = unionBridgeConstants.getAddress();
-        Assertions.assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
-        assertNoAddressIsStored();
-    }
-
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
     void getUnionBridgeContractAddress_whenNoStoredAddress_shouldReturnConstantAddress(
@@ -223,7 +206,7 @@ class UnionBridgeSupportImplTest {
     }
 
     private void assertAddressWasSet(RskAddress expectedAddress) {
-        Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(allActivations);
+        Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
         Assertions.assertTrue(actualAddress.isPresent());
         Assertions.assertEquals(expectedAddress, actualAddress.get());
     }
@@ -252,7 +235,7 @@ class UnionBridgeSupportImplTest {
     }
 
     private void assertAddressWasNotSet(ActivationConfig.ForBlock activations) {
-        Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress(activations);
+        Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
         Assertions.assertTrue(actualAddress.isEmpty());
     }
 

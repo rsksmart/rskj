@@ -44,7 +44,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return constants.getAddress();
         }
 
-        return storageProvider.getAddress(activations).orElse(constants.getAddress());
+        return storageProvider.getAddress().orElse(constants.getAddress());
     }
 
     private boolean isCurrentEnvironmentMainnet() {
@@ -71,7 +71,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.INVALID_VALUE;
         }
 
-        RskAddress currentUnionBridgeAddress = storageProvider.getAddress(activations).orElse(constants.getAddress());
+        RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
         if (isAddressAlreadyStored(currentUnionBridgeAddress, unionBridgeContractAddress)) {
             return UnionResponseCode.INVALID_VALUE;
         }
