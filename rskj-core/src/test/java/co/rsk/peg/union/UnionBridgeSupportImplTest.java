@@ -394,32 +394,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
-    void increaseLockingCap_preRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldIncreaseLockingButNotStore(
-        UnionBridgeConstants unionBridgeConstants) {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(lovell700)
-            .withConstants(unionBridgeConstants)
-            .build();
-
-        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
-        Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertNoLockingCapIsStored();
-
-        // call save and assert that the new locking cap is not stored
-        unionBridgeSupport.save();
-        assertNoLockingCapIsStored();
-    }
-
-    @ParameterizedTest
-    @MethodSource("unionBridgeConstantsProvider")
-    void increaseLockingCap_postRSKIP502_whenMeetRequirementsToIncreaseLockingCap_shouldIncreaseLockingCap(
+    void increaseLockingCap_whenMeetRequirementsToIncreaseLockingCap_shouldIncreaseLockingCap(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
@@ -442,7 +417,7 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void increaseLockingCap_postRSKIP502_whenMoreThanMaxRbtc_shouldIncreaseLockingCap() {
+    void increaseLockingCap_whenMoreThanMaxRbtc_shouldIncreaseLockingCap() {
         // arrange
         Coin moreThanMaxRbtc = BridgeMainNetConstants.getInstance().getMaxRbtc().add(Coin.COIN);
 
