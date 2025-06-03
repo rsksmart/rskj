@@ -346,20 +346,20 @@ class UnionBridgeSupportImplTest {
         assertNoAddressIsStored();
     }
 
-    @Test
-    void getUnionBridgeLockingCap_beforeRSKIP502_shouldReturnEmpty() {
+    @ParameterizedTest
+    @MethodSource("unionBridgeConstantsProvider")
+    void getLockingCap_whenNoStoredLockingCap_shouldReturnInitialLockingCap(
+        UnionBridgeConstants unionBridgeConstants) {
         // arrange
-        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants)
-            .withActivations(lovell700)
-            .build();
+            .withConstants(unionBridgeConstants).build();
 
         // act
-        Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
+        Coin actualLockingCap = unionBridgeSupport.getLockingCap();
 
         // assert
-        Assertions.assertTrue(actualLockingCap.isEmpty());
+        Coin expectedInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        Assertions.assertEquals(expectedInitialLockingCap, actualLockingCap);
         assertNoLockingCapIsStored();
     }
 
@@ -373,25 +373,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
-    void getUnionBridgeLockingCap_whenNoStoredLockingCap_shouldReturnInitialLockingCap(
-        UnionBridgeConstants unionBridgeConstants) {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants).build();
-
-        // act
-        Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
-
-        // assert
-        Coin expectedInitialLockingCap = unionBridgeConstants.getInitialLockingCap();
-        Assertions.assertTrue(actualLockingCap.isPresent());
-        Assertions.assertEquals(expectedInitialLockingCap, actualLockingCap.get());
-        assertNoLockingCapIsStored();
-    }
-
-    @ParameterizedTest
-    @MethodSource("unionBridgeConstantsProvider")
-    void getUnionBridgeLockingCap_whenStoredLockingCap_shouldReturnStoredLockingCap(
+    void getLockingCap_whenStoredLockingCap_shouldReturnStoredLockingCap(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         Coin expectedLockingCap = Coin.FIFTY_COINS;
@@ -404,11 +386,10 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        Optional<Coin> actualLockingCap = unionBridgeSupport.getLockingCap();
+        Coin actualLockingCap = unionBridgeSupport.getLockingCap();
 
         // assert
-        Assertions.assertTrue(actualLockingCap.isPresent());
-        Assertions.assertEquals(expectedLockingCap, actualLockingCap.get());
+        Assertions.assertEquals(expectedLockingCap, actualLockingCap);
     }
 
     @ParameterizedTest
@@ -528,7 +509,7 @@ class UnionBridgeSupportImplTest {
     }
 
     private void assertLockingCapWasSet(Coin newLockingCap) {
-        Optional<Coin> cacheLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Optional<Coin> cacheLockingCap = unionBridgeStorageProvider.getLockingCap();
         Assertions.assertTrue(cacheLockingCap.isPresent());
         Assertions.assertEquals(newLockingCap, cacheLockingCap.get());
     }

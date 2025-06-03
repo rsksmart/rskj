@@ -3526,7 +3526,7 @@ class BridgeTest {
             // Arrange
             Coin expectedLockingCap = constants.getBridgeConstants().getUnionBridgeConstants()
                 .getInitialLockingCap();
-            when(unionBridgeSupport.getLockingCap()).thenReturn(Optional.of(expectedLockingCap));
+            when(unionBridgeSupport.getLockingCap()).thenReturn(expectedLockingCap);
 
             byte[] data = Bridge.GET_UNION_BRIDGE_LOCKING_CAP.encode();
 

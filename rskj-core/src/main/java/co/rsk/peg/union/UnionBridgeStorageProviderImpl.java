@@ -87,11 +87,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public Optional<Coin> getLockingCap(ForBlock activations) {
-        if (!activations.isActive(ConsensusRule.RSKIP502)) {
-            return Optional.empty();
-        }
-
+    public Optional<Coin> getLockingCap() {
         return Optional.ofNullable(unionBridgeLockingCap).or(
             () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),

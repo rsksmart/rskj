@@ -242,25 +242,9 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getLockingCap_beforeRSKIP502_shouldReturnEmpty() {
-        // Arrange
-        // To simulate, there is a locking cap already stored
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin);
-
-        // Act
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(lovell700);
-
-        // Assert
-        assertTrue(actualLockingCap.isEmpty());
-    }
-
-    @Test
     void getLockingCap_whenNoLockingCapStoredOrSet_shouldReturnEmpty() {
         // Act
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(
-            allActivations);
+        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
 
         // Assert
         assertTrue(actualLockingCap.isEmpty());
@@ -274,8 +258,7 @@ class UnionBridgeStorageProviderImplTest {
             unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin);
 
         // Act
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(
-            allActivations);
+        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
 
         // Assert
         assertTrue(actualLockingCap.isPresent());
@@ -288,8 +271,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setLockingCap(unionBridgeLockingCap);
 
         // Act
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(
-            allActivations);
+        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
 
         // Assert
         assertTrue(actualLockingCap.isPresent());
@@ -322,7 +304,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Assert
         assertNoLockingCapIsStored();
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(actualLockingCap.isPresent());
     }
 
@@ -341,7 +323,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Assert
         // Check existing locking cap is still stored
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(actualLockingCap.isPresent());
         assertGivenLockingCapIsStored(unionBridgeLockingCap);
     }
@@ -372,7 +354,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.save(allActivations);
 
         // Assert
-        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(actualLockingCap.isEmpty());
 
         assertNoLockingCapIsStored();
@@ -385,15 +367,14 @@ class UnionBridgeStorageProviderImplTest {
         // Check that the locking cap is not present nor in the cache
         assertNoLockingCapIsStored();
 
-        Optional<Coin> retrievedUnionBridgeLockingCap = unionBridgeStorageProvider.getLockingCap(
-            allActivations);
+        Optional<Coin> retrievedUnionBridgeLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(retrievedUnionBridgeLockingCap.isEmpty());
 
         // Set locking cap
         unionBridgeStorageProvider.setLockingCap(unionBridgeLockingCap);
 
         // Check that the locking cap is now present in the cache but not in the storage
-        Optional<Coin> cachedLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Optional<Coin> cachedLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(cachedLockingCap.isPresent());
         assertEquals(unionBridgeLockingCap, cachedLockingCap.get());
         assertNoLockingCapIsStored();
@@ -414,8 +395,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Act & Assert
         // Check that locking cap is stored
-        Optional<Coin> retrievedUnionBridgeLockingCap = unionBridgeStorageProvider.getLockingCap(
-            allActivations);
+        Optional<Coin> retrievedUnionBridgeLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(retrievedUnionBridgeLockingCap.isPresent());
         assertEquals(unionBridgeLockingCap, retrievedUnionBridgeLockingCap.get());
 
@@ -429,7 +409,7 @@ class UnionBridgeStorageProviderImplTest {
         assertEquals(unionBridgeLockingCap, originalLockingCap);
         assertNotEquals(newUnionBridgeLockingCap, originalLockingCap);
 
-        Optional<Coin> cachedLockingCap = unionBridgeStorageProvider.getLockingCap(allActivations);
+        Optional<Coin> cachedLockingCap = unionBridgeStorageProvider.getLockingCap();
         assertTrue(cachedLockingCap.isPresent());
         assertEquals(newUnionBridgeLockingCap, cachedLockingCap.get());
 

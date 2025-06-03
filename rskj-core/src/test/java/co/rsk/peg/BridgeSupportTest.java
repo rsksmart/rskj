@@ -909,28 +909,6 @@ class BridgeSupportTest {
         }
 
         @Test
-        void getUnionBridgeLockingCap_beforeRskip502_shouldReturnNegativeOne() {
-            // arrange
-            bridgeSupport = bridgeSupportBuilder
-                .withActivations(lovell)
-                .withUnionBridgeSupport(
-                    UnionBridgeSupportBuilder
-                        .builder()
-                        .withConstants(unionBridgeConstants)
-                        .withActivations(lovell)
-                        .build()
-                )
-                .build();
-
-            // act
-            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
-
-            // assert
-            Coin expectedLockingCap = Coin.NEGATIVE_SATOSHI;
-            assertEquals(expectedLockingCap, actualUnionBridgeLockingCap);
-        }
-
-        @Test
         void getUnionBridgeLockingCap_whenNoLockingCapIsStored_shouldReturnInitialConstantLockingCapValue() {
             // act
             Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
@@ -945,7 +923,7 @@ class BridgeSupportTest {
             // arrange
             UnionBridgeStorageProvider unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
             Coin storedLockingCap = Coin.COIN.multiply(10);
-            when(unionBridgeStorageProvider.getLockingCap(any())).thenReturn(Optional.of(storedLockingCap));
+            when(unionBridgeStorageProvider.getLockingCap()).thenReturn(Optional.of(storedLockingCap));
 
             bridgeSupport = bridgeSupportBuilder
                 .withActivations(allActivations)
