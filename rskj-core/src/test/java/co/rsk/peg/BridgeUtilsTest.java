@@ -969,7 +969,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_ZeroInput_ZeroOutput() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
@@ -982,13 +981,14 @@ class BridgeUtilsTest {
             federationArgs
         );
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0, false));
     }
 
     @Test
-    void testCalculatePegoutTxSize_2Inputs_2Outputs() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+    void calculatePegoutTxSize_preRSKIP305AndSendingIsSegwitTrue_shouldThrowException() {
 
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(false);
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
@@ -1002,7 +1002,32 @@ class BridgeUtilsTest {
 
         int inputSize = 2;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true));
+
+        Assertions.assertEquals("Segwit logic should not be activated yet.", ex.getMessage());
+
+    }
+
+    @Test
+    void calculatePegoutTxSize_preRSKIP305AndSendingIsSegwitFalse_returnsExpectedValue() {
+
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(false);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
+        FederationArgs federationArgs = new FederationArgs(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
+        );
+
+        int inputSize = 2;
+        int outputSize = 2;
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
 
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
@@ -1013,9 +1038,47 @@ class BridgeUtilsTest {
     }
 
     @Test
+    void testCalculatePegoutTxSize_2Inputs_2Outputs() {
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
+        FederationArgs federationArgs = new FederationArgs(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+        Federation federation = FederationFactory.buildStandardMultiSigFederation(
+            federationArgs
+        );
+
+        int inputSize = 2;
+        int outputSize = 2;
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+
+        assertEquals(2058, pegoutTxSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
+        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .01;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+
+        assertEquals(620, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage > 69);
+
+    }
+
+    @Test
     void testCalculatePegoutTxSize_9Inputs_2Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
@@ -1029,7 +1092,9 @@ class BridgeUtilsTest {
 
         int inputSize = 9;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+
+        assertEquals(9002, pegoutTxSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 9069; // Data for 9 inputs, 2 outputs From https://www.blockchain.com/btc/tx/15adf52f7b4b7a7e563fca92aec7bbe8149b87fac6941285a181e6fcd799a1cd
@@ -1037,11 +1102,21 @@ class BridgeUtilsTest {
         double tolerance = origTxSize * .01;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+
+        assertEquals(2533, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage > 69);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_10Inputs_20Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
@@ -1059,7 +1134,9 @@ class BridgeUtilsTest {
         int outputSize = 20;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+
+        assertEquals(10570, pegoutTxSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -1067,12 +1144,21 @@ class BridgeUtilsTest {
         double tolerance = origTxSize * .02;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+
+        assertEquals(3382, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 59);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_50Inputs_200Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
@@ -1089,7 +1175,9 @@ class BridgeUtilsTest {
         int outputSize = 200;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+
+        assertEquals(56010, pegoutTxSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -1097,12 +1185,21 @@ class BridgeUtilsTest {
         double tolerance = origTxSize * .02;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+
+        assertEquals(20072, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 59);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_50Inputs_200Outputs_nonStandardErpFederation() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1131,7 +1228,9 @@ class BridgeUtilsTest {
         int outputSize = 200;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, false);
+
+        assertEquals(26510, pegoutTxSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -1139,12 +1238,20 @@ class BridgeUtilsTest {
         double tolerance = origTxSize * .03;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, true);
+
+        assertEquals(12722, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 49);
     }
 
     @Test
     void testCalculatePegoutTxSize_100Inputs_50Outputs_nonStandardErpFederation() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1173,7 +1280,9 @@ class BridgeUtilsTest {
         int outputSize = 50;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, false);
+
+        assertEquals(41810, pegoutTxSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -1181,6 +1290,15 @@ class BridgeUtilsTest {
         double tolerance = origTxSize * .03;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, true);
+
+        assertEquals(14235, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 49);
+
     }
 
     @Test
