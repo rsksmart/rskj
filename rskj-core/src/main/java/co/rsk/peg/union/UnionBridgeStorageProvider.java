@@ -9,7 +9,7 @@ public interface UnionBridgeStorageProvider {
     void setAddress(RskAddress address);
     Optional<RskAddress> getAddress();
     void setLockingCap(Coin lockingCap);
-    Optional<Coin> getLockingCap(ActivationConfig.ForBlock activations);
+    Optional<Coin> getLockingCap();
     Optional<co.rsk.core.Coin> getWeisTransferredToUnionBridge(ActivationConfig.ForBlock activations);
     void setWeisTransferredToUnionBridge(co.rsk.core.Coin weisTransferred);
     void save(ActivationConfig.ForBlock activations);

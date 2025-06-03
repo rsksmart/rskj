@@ -2830,7 +2830,7 @@ public class BridgeSupport {
     }
 
     public Coin getUnionBridgeLockingCap() {
-        return unionBridgeSupport.getLockingCap().orElse(Coin.NEGATIVE_SATOSHI);
+        return unionBridgeSupport.getLockingCap();
     }
 
     public UnionResponseCode increaseUnionBridgeLockingCap(Transaction tx, Coin newLockingCap) {

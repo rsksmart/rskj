@@ -5,10 +5,8 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -127,11 +125,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public Optional<Coin> getLockingCap() {
-        if (!activations.isActive(ConsensusRule.RSKIP502)) {
-            return Optional.empty();
-        }
-        return Optional.of(storageProvider.getLockingCap(activations).orElse(constants.getInitialLockingCap()));
+    public Coin getLockingCap() {
+        return storageProvider.getLockingCap().orElse(constants.getInitialLockingCap());
     }
 
     @Override
@@ -187,7 +182,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return false;
         }
 
-        co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(getLockingCap().orElse(constants.getInitialLockingCap()));
+        co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(getLockingCap());
 
         co.rsk.core.Coin previousAmountRequested = storageProvider.getWeisTransferredToUnionBridge(activations)
             .orElse(co.rsk.core.Coin.ZERO);
@@ -206,8 +201,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     private boolean isValidLockingCap(Coin newCap) {
-        Coin currentLockingCap = storageProvider.getLockingCap(activations)
-            .orElse(constants.getInitialLockingCap());
+        Coin currentLockingCap = getLockingCap();
 
         if (newCap.compareTo(currentLockingCap) < 1) {
             logger.warn(
