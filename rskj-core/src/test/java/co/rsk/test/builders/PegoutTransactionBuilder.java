@@ -41,11 +41,10 @@ public class PegoutTransactionBuilder {
     }
 
     public PegoutTransactionBuilder withInput(Sha256Hash spendTxHash, int outputIndex) {
-        Script activeFederationRedeemScript = activeFederation.getRedeemScript();
         TransactionInput input = new TransactionInput(
             networkParameters,
             null,
-            activeFederationRedeemScript.getProgram(),
+            new byte[]{},
             new TransactionOutPoint(networkParameters, outputIndex, spendTxHash)
         );
 
