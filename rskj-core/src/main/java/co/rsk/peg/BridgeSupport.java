@@ -30,7 +30,6 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.bitcoin.*;
@@ -63,7 +62,6 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,6 +77,7 @@ import org.ethereum.vm.program.*;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -1213,7 +1212,7 @@ public class BridgeSupport {
     }
 
     private Coin calculateSvpSpendTxFees(Federation proposedFederation) {
-        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1);
+        int svpSpendTransactionSize = calculatePegoutTxSize(activations, proposedFederation, 2, 1, false);
         long svpSpendTransactionBackedUpSize = svpSpendTransactionSize * 12L / 10L; // just to be sure the fees sent will be enough
 
         return feePerKbSupport.getFeePerKb()
@@ -2647,7 +2646,7 @@ public class BridgeSupport {
         int outputsCount = getQueuedPegoutsCount() + 2;
         int inputsCount = 2;
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), inputsCount, outputsCount);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), inputsCount, outputsCount, false);
 
         Coin feePerKB = getFeePerKb();
 
