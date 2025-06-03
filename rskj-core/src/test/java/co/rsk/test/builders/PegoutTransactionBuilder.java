@@ -2,7 +2,7 @@ package co.rsk.test.builders;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
+import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
 import java.util.ArrayList;
@@ -82,6 +82,9 @@ public class PegoutTransactionBuilder {
         }
 
         for (TransactionInput input : inputs) {
+            Script baseScriptSig = BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(activeFederation.getRedeemScript());
+            input.setScriptSig(baseScriptSig);
+
             transaction.addInput(input);
         }
     }
