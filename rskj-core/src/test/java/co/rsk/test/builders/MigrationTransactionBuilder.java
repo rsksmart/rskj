@@ -1,7 +1,6 @@
 package co.rsk.test.builders;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.Federation;
@@ -68,6 +67,7 @@ public class MigrationTransactionBuilder {
             utxos.add(defaultUtxo);
         }
 
+        int inputIndex = 0;
         for (UTXO utxo : utxos) {
             TransactionInput input = new TransactionInput(
                 networkParameters,
@@ -76,10 +76,15 @@ public class MigrationTransactionBuilder {
                 new TransactionOutPoint(networkParameters, utxo.getIndex(), utxo.getHash())
             );
 
-            Script baseScriptSig = BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(retiringFederation.getRedeemScript());
-            input.setScriptSig(baseScriptSig);
-
             transaction.addInput(input);
+            BitcoinUtils.addSpendingFederationBaseScript(
+                transaction,
+                inputIndex,
+                retiringFederation.getRedeemScript(),
+                retiringFederation.getFormatVersion()
+            );
+
+            inputIndex++;
         }
     }
 
