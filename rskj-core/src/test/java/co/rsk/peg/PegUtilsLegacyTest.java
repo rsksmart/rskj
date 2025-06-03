@@ -2131,6 +2131,50 @@ class PegUtilsLegacyTest {
     }
 
     @Test
+    void isPegOutTx_fromFlyoverP2wshP2shFederation() {
+        Script standardFederationP2SHScript = standardFederation.getP2SHScript();
+        Script p2shErpFederationP2SHScript = ((ErpFederation) p2shErpFederation).getDefaultP2SHScript();
+        Script p2shP2wshErpFederationP2SHScript = ((ErpFederation) p2shP2wshErpFederation).getDefaultP2SHScript();
+
+        BtcTransaction pegoutTx = pegoutTransactionBuilder
+            .withActiveFederation(p2shP2wshErpFederation)
+            .build();
+
+        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
+            RskTestUtils.createHash(2),
+            p2shP2wshErpFederation.getRedeemScript()
+        );
+
+        // Override the transaction spending script to use the flyover redeem script
+        BitcoinUtils.addSpendingFederationBaseScript(
+            pegoutTx,
+            0,
+            flyoverRedeemScript,
+            p2shP2wshErpFederation.getFormatVersion()
+        );
+
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation), allActivations));
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation, p2shErpFederation), allActivations));
+        assertTrue(isPegOutTx(pegoutTx, List.of(p2shP2wshErpFederation, p2shErpFederation, standardFederation), allActivations));
+
+        assertFalse(isPegOutTx(pegoutTx, List.of(p2shErpFederation, standardFederation), allActivations));
+        assertFalse(isPegOutTx(pegoutTx, List.of(p2shErpFederation), allActivations));
+        assertFalse(isPegOutTx(pegoutTx, List.of(standardFederation), allActivations));
+
+        assertFalse(isPegOutTx(pegoutTx, allActivations, List.of(standardFederationP2SHScript)));
+        assertTrue(isPegOutTx(pegoutTx, allActivations, List.of(p2shP2wshErpFederationP2SHScript, p2shErpFederationP2SHScript)));
+        assertTrue(isPegOutTx(
+            pegoutTx,
+            allActivations,
+            List.of(
+                p2shP2wshErpFederationP2SHScript,
+                p2shErpFederationP2SHScript,
+                standardFederationP2SHScript
+            )
+        ));
+    }
+
+    @Test
     void isPegOutTx_noRedeemScript() {
         Federation federation = getErpFederationWithPrivKeys(networkParametersRegtest, REGTEST_FEDERATION_PRIVATE_KEYS);
         Address randomAddress = BitcoinTestUtils.createP2PKHAddress(networkParametersMainnet, "randomAddress");
