@@ -148,41 +148,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccessCode(
-        UnionBridgeConstants unionBridgeConstants) {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(lovell700)
-            .withConstants(unionBridgeConstants).build();
-
-        // act
-        UnionResponseCode result = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-
-        // assert
-        Assertions.assertEquals(
-            UnionResponseCode.SUCCESS,
-            result
-        );
-        assertAddressWasSet(unionBridgeContractAddress);
-        assertNoAddressIsStored();
-
-        // call save and assert that the address is not stored
-        unionBridgeSupport.save();
-        assertNoAddressIsStored();
-    }
-
-    private void assertNoAddressIsStored() {
-        RskAddress actualRskAddress = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            BridgeSerializationUtils::deserializeRskAddress
-        );
-        Assertions.assertNull(actualRskAddress);
-    }
-
-    @ParameterizedTest
-    @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_postRSKIP502_whenMeetRequirementsToUpdate_shouldReturnSuccess(
+    void setUnionBridgeContractAddressForTestnet_whenMeetRequirementsToUpdate_shouldReturnSuccess(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -205,6 +171,14 @@ class UnionBridgeSupportImplTest {
         assertAddressWasStored(unionBridgeContractAddress);
     }
 
+    private void assertNoAddressIsStored() {
+        RskAddress actualRskAddress = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            BridgeSerializationUtils::deserializeRskAddress
+        );
+        Assertions.assertNull(actualRskAddress);
+    }
+
     private void assertAddressWasSet(RskAddress expectedAddress) {
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
         Assertions.assertTrue(actualAddress.isPresent());
@@ -213,12 +187,11 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_preRSKIP502_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
+    void setUnionBridgeContractAddressForTestnet_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
-        ActivationConfig.ForBlock activations = lovell700;
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(activations)
+            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -230,36 +203,13 @@ class UnionBridgeSupportImplTest {
             UnionResponseCode.INVALID_VALUE,
             actualResponseCode
         );
-        assertAddressWasNotSet(activations);
+        assertAddressWasNotSet();
         assertNoAddressIsStored();
     }
 
-    private void assertAddressWasNotSet(ActivationConfig.ForBlock activations) {
+    private void assertAddressWasNotSet() {
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
         Assertions.assertTrue(actualAddress.isEmpty());
-    }
-
-    @ParameterizedTest
-    @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_postRSKIP502_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
-        UnionBridgeConstants unionBridgeConstants) {
-        // arrange
-        ActivationConfig.ForBlock activations = allActivations;
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(activations)
-            .withConstants(unionBridgeConstants).build();
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeConstants.getAddress());
-
-        // assert
-        Assertions.assertEquals(
-            UnionResponseCode.INVALID_VALUE,
-            actualResponseCode
-        );
-        assertAddressWasNotSet(activations);
-        assertNoAddressIsStored();
     }
 
     @ParameterizedTest
@@ -306,9 +256,8 @@ class UnionBridgeSupportImplTest {
     void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabledCode() {
         // arrange
         UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        ActivationConfig.ForBlock activations = allActivations;
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(activations)
+            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -321,7 +270,7 @@ class UnionBridgeSupportImplTest {
             expectedResponseCode,
             actualResponseCode
         );
-        assertAddressWasNotSet(activations);
+        assertAddressWasNotSet();
         assertNoAddressIsStored();
     }
 
@@ -330,9 +279,8 @@ class UnionBridgeSupportImplTest {
     void setUnionBridgeContractAddressForTestnet_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
-        ActivationConfig.ForBlock activations = allActivations;
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(activations)
+            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notAuthorizedAddress"));
@@ -347,7 +295,7 @@ class UnionBridgeSupportImplTest {
             expectedResponseCode,
             actualResponseCode
         );
-        assertAddressWasNotSet(activations);
+        assertAddressWasNotSet();
         assertNoAddressIsStored();
     }
 
@@ -356,9 +304,8 @@ class UnionBridgeSupportImplTest {
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
-        ActivationConfig.ForBlock activations = allActivations;
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(activations)
+            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -371,7 +318,7 @@ class UnionBridgeSupportImplTest {
             expectedResponseCode,
             actualResponseCode
         );
-        assertAddressWasNotSet(activations);
+        assertAddressWasNotSet();
         assertNoAddressIsStored();
     }
 
@@ -380,9 +327,8 @@ class UnionBridgeSupportImplTest {
     void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsEmpty_shouldReturnInvalidValue(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
-        ActivationConfig.ForBlock activations = allActivations;
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(activations)
+            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -396,7 +342,7 @@ class UnionBridgeSupportImplTest {
             expectedResponseCode,
             actualResponseCode
         );
-        assertAddressWasNotSet(activations);
+        assertAddressWasNotSet();
         assertNoAddressIsStored();
     }
 
