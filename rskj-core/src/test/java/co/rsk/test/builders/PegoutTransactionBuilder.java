@@ -80,11 +80,17 @@ public class PegoutTransactionBuilder {
             inputs.add(defaultInput);
         }
 
+        int inputIndex = 0;
         for (TransactionInput input : inputs) {
-            Script baseScriptSig = BitcoinUtils.createBaseInputScriptThatSpendsFromRedeemScript(activeFederation.getRedeemScript());
-            input.setScriptSig(baseScriptSig);
-
             transaction.addInput(input);
+            BitcoinUtils.addSpendingFederationBaseScript(
+                transaction,
+                inputIndex,
+                activeFederation.getRedeemScript(),
+                activeFederation.getFormatVersion()
+            );
+
+            inputIndex++;
         }
     }
 
