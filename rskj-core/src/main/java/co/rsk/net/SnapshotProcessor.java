@@ -97,6 +97,9 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
     private volatile Boolean isRunning;
     private final Thread thread;
 
+    // Cache for last processed snap status request
+    private CachedSnapStatusData lastSnapStatusCache;
+
     @SuppressWarnings("java:S107")
     public SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
@@ -223,17 +226,41 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
     void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
-        long checkpointBlockNumber = Math.max(0, bestBlockNumber - checkpointDistance);
+
+        // round to BLOCK_NUMBER_CHECKPOINT, so that the next checkpoint block selected is after 5000 blocks
+        long roundedBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
+
+        long checkpointBlockNumber = Math.max(0, roundedBlockNumber - checkpointDistance);
         long lowerBlockNumberToRetrieve = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
         logger.debug("Processing snapshot status request, checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
+
+        Block checkpointBlock = blockchain.getBlockByNumber(checkpointBlockNumber);
+        if (checkpointBlock == null) {
+            logger.warn("No block found for number: {}", checkpointBlockNumber);
+            return;
+        }
+
+        // Check if cached data can be used
+        CachedSnapStatusData snapStatusCache = this.lastSnapStatusCache;
+        if (snapStatusCache != null
+                && snapStatusCache.getBlockHash().equals(checkpointBlock.getHash())) {
+            logger.debug("Using cached snap status data for block hash: {}", snapStatusCache.getBlockHash());
+            SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(
+                    requestMessage.getId(),
+                    snapStatusCache.getBlocks(),
+                    snapStatusCache.getDifficulties(),
+                    snapStatusCache.getTrieSize()
+            );
+            sender.sendMessage(responseMessage);
+            return;
+        }
 
         LinkedList<Block> blocks = new LinkedList<>();
         LinkedList<BlockDifficulty> difficulties = new LinkedList<>();
 
-        retrieveBlocksAndDifficultiesBackwards(lowerBlockNumberToRetrieve,checkpointBlockNumber, blocks, difficulties);
+        retrieveBlocksAndDifficultiesBackwards(lowerBlockNumberToRetrieve, checkpointBlockNumber, blocks, difficulties);
 
-        Block currentBlock = blocks.getLast();
-        byte[] rootHash = currentBlock.getStateRoot();
+        byte[] rootHash = checkpointBlock.getStateRoot();
         Optional<TrieDTO> opt = trieStore.retrieveDTO(rootHash);
         if (opt.isEmpty()) {
             logger.warn("Trie is not present for rootHash: {}", Bytes.of(rootHash));
@@ -242,6 +269,9 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         }
         long trieSize = opt.get().getTotalSize();
         logger.debug("Processing snapshot status request - rootHash: {} trieSize: {}", rootHash, trieSize);
+
+        // Update cache
+        this.lastSnapStatusCache = new CachedSnapStatusData(checkpointBlock.getHash(), blocks, difficulties, trieSize);
 
         SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(requestMessage.getId(), blocks, difficulties, trieSize);
         sender.sendMessage(responseMessage);
@@ -462,7 +492,8 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         sender.sendMessage(responseMessage);
     }
 
-    private void retrieveBlocksAndDifficultiesBackwards(long fromBlock, long toBlock, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties) {
+    @VisibleForTesting
+    void retrieveBlocksAndDifficultiesBackwards(long fromBlock, long toBlock, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties) {
         Block currentBlock = blockchain.getBlockByNumber(toBlock);
         while (currentBlock != null && currentBlock.getNumber() >= fromBlock) {
             blocks.addFirst(currentBlock);
@@ -782,5 +813,43 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
         isRunning = Boolean.FALSE;
         thread.interrupt();
+    }
+
+    @VisibleForTesting
+    CachedSnapStatusData getLastSnapStatusCache() {
+        return lastSnapStatusCache;
+    }
+
+    /**
+     * Holds cached data for SnapStatus requests.
+     */
+    static class CachedSnapStatusData {
+        private final Keccak256 blockHash;
+        private final LinkedList<Block> blocks;
+        private final LinkedList<BlockDifficulty> difficulties;
+        private final long trieSize;
+
+        public CachedSnapStatusData(Keccak256 blockHash, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties, long trieSize) {
+            this.blockHash = blockHash;
+            this.blocks = blocks;
+            this.difficulties = difficulties;
+            this.trieSize = trieSize;
+        }
+
+        public Keccak256 getBlockHash() {
+            return blockHash;
+        }
+
+        public LinkedList<Block> getBlocks() {
+            return blocks;
+        }
+
+        public LinkedList<BlockDifficulty> getDifficulties() {
+            return difficulties;
+        }
+
+        public long getTrieSize() {
+            return trieSize;
+        }
     }
 }
