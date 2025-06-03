@@ -633,31 +633,74 @@ public final class BridgeUtils {
             activations,
             federation,
             INPUT_MULTIPLIER,
-            OUTPUT_MULTIPLIER
+            OUTPUT_MULTIPLIER,
+            false
         );
     }
 
-    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
+    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputsCount, int outputsCount, boolean isSegwit) {
 
-        if (inputs < 1 || outputs < 1) {
+        if (inputsCount < 1 || outputsCount < 1) {
             throw new IllegalArgumentException("Inputs or outputs should be more than 1");
         }
 
         if (!activations.isActive(ConsensusRule.RSKIP271)) {
-            return BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, inputs, outputs);
+            return BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, inputsCount, outputsCount);
         }
 
-        final int SIGNATURE_MULTIPLIER = 72;
-        BtcTransaction pegoutTx = new BtcTransaction(federation.getBtcParams());
-        for (int i = 0; i < inputs; i++) {
-            pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
+        if(isSegwit && !activations.isActive(ConsensusRule.RSKIP305)) {
+            throw new IllegalArgumentException("Segwit logic should not be activated yet.");
         }
-        for (int i = 0; i < outputs; i++) {
+
+        BtcTransaction pegoutTx = new BtcTransaction(federation.getBtcParams());
+
+        if(!isSegwit) {
+            for (int i = 0; i < inputsCount; i++) {
+                pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
+            }
+        }
+
+        for (int i = 0; i < outputsCount; i++) {
             pegoutTx.addOutput(Coin.ZERO, federation.getAddress());
         }
-        int baseSize = pegoutTx.bitcoinSerialize().length;
-        int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
 
-        return baseSize + signingSize;
+        int baseSize = calculateTxBaseSize(pegoutTx, inputsCount, isSegwit);
+
+        int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
+
+        int size = baseSize + signingSize;
+
+        if(!isSegwit) {
+            return size;
+        }
+
+        int totalSize = size + (inputsCount * federation.getRedeemScript().getProgram().length);
+
+        int txWeight = totalSize + (3 * baseSize);
+
+        return txWeight / 4;
+
     }
+
+    private static int getSigningSize(int numberOfSignaturesRequired, int inputsCount) {
+        int SIGNATURE_SIZE = 72;
+        return numberOfSignaturesRequired * inputsCount * SIGNATURE_SIZE;
+    }
+
+    private static int calculateTxBaseSize(BtcTransaction tx, int inputsCount, boolean isSegwit) {
+
+        int baseSize = tx.bitcoinSerialize().length;
+
+        if (!isSegwit) {
+            return baseSize;
+        }
+
+        int segwitCompatibleScriptSigSize = 36;
+
+        baseSize += inputsCount * segwitCompatibleScriptSigSize;
+
+        return baseSize;
+
+    }
+
 }
