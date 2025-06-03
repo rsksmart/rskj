@@ -819,8 +819,6 @@ class BridgeSupportTest {
     @Nested
     @Tag("unionBridge")
     class UnionBridgeTest {
-
-        private static final ActivationConfig.ForBlock lovell = ActivationConfigsForTest.lovell700().forBlock(0);
         private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
 
         private static final BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
@@ -970,6 +968,7 @@ class BridgeSupportTest {
 
         private static Stream<Arguments> increaseUnionBridgeLockingCapResponseCodeProvider() {
             return Stream.of(
+                Arguments.of(UnionResponseCode.SUCCESS),
                 Arguments.of(UnionResponseCode.GENERIC_ERROR),
                 Arguments.of(UnionResponseCode.INVALID_VALUE),
                 Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER)

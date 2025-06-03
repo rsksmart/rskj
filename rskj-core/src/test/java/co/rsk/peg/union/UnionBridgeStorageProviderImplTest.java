@@ -309,7 +309,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setAndSaveLockingCap_whenNull_shouldNotStoreNull() {
+    void setLockingCap_whenNull_shouldNotStoreNull() {
         // Arrange
         // To simulate, there is a locking cap already stored
         storageAccessor.saveToRepository(
@@ -337,18 +337,6 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void save_whenLockingCapSetAndBeforeRSKIP502_shouldNotStoreAnything() {
-        // Arrange
-        unionBridgeStorageProvider.setLockingCap(unionBridgeLockingCap);
-
-        // Act
-        unionBridgeStorageProvider.save(lovell700);
-
-        // Assert
-        assertNoLockingCapIsStored();
-    }
-
-    @Test
     void save_whenNoLockingCapSet_shouldNotStoreAnything() {
         // Act
         unionBridgeStorageProvider.save(allActivations);
@@ -361,7 +349,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getSetAndSaveLockingCap_whenNoLockingCapIsSaved_shouldSaveNewLockingCap() {
+    void save_whenNoLockingCapIsSaved_shouldSaveNewLockingCap() {
         // Act & Assert
 
         // Check that the locking cap is not present nor in the cache
@@ -387,7 +375,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getSetAndSaveLockingCap_whenStoredLockingCap_shouldOverrideWithTheNewOne() {
+    void save_whenStoredLockingCap_shouldOverrideWithTheNewOne() {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
@@ -416,43 +404,6 @@ class UnionBridgeStorageProviderImplTest {
         // Save the new locking cap
         unionBridgeStorageProvider.save(allActivations);
         assertGivenLockingCapIsStored(newUnionBridgeLockingCap);
-    }
-
-    @Test
-    void set_whenUnionAddressAndLockingCapAreOnlySet_shouldNotStore() {
-        // Arrange
-        // To simulate there is a locking cap and address already stored
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin
-        );
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            storedUnionBridgeContractAddress, BridgeSerializationUtils::serializeRskAddress
-        );
-
-        // Act
-        unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
-        unionBridgeStorageProvider.setLockingCap(newUnionBridgeLockingCap);
-
-        // Assert
-        // Check that the address and locking cap are not stored
-        Coin storedLockingCap = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            BridgeSerializationUtils::deserializeCoin
-        );
-
-        RskAddress storedAddress = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-            BridgeSerializationUtils::deserializeRskAddress
-        );
-
-        assertEquals(unionBridgeLockingCap, storedLockingCap);
-        assertEquals(storedUnionBridgeContractAddress, storedAddress);
-
-        // Check that the new address and locking cap are not stored
-        assertNotEquals(newUnionBridgeContractAddress, storedAddress);
-        assertNotEquals(newUnionBridgeLockingCap, storedLockingCap);
     }
 
     @Test
