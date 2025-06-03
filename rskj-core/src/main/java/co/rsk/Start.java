@@ -18,6 +18,8 @@
 package co.rsk;
 
 import co.rsk.util.PreflightChecksUtils;
+import liquibase.Contexts;
+import liquibase.LabelExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
