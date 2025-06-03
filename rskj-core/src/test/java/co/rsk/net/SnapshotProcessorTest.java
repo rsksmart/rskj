@@ -190,8 +190,8 @@ class SnapshotProcessorTest {
         assertNotNull(capturedMessage);
         int blockSize = capturedMessage.getBlocks().size();
         assertEquals(401, blockSize);
-        assertEquals(4600L,capturedMessage.getBlocks().get(0).getNumber());
-        assertEquals(5000L,capturedMessage.getBlocks().get(blockSize-1).getNumber());
+        assertEquals(4590L,capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(4990L,capturedMessage.getBlocks().get(blockSize-1).getNumber());
     }
 
     @Test
@@ -620,6 +620,59 @@ class SnapshotProcessorTest {
 
         verify(underTest, times(1)).onStateChunkResponseError(snapSyncState, peer, responseMessage);
         verify(snapSyncState, times(1)).submitRequest(any(PeerSelector.class), any(RequestFactory.class));
+    }
+
+    @Test
+    void givenProcessSnapStatusRequestCalledTwice_thenSecondCallUsesCachedValue() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5010);
+        underTest = spy(new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false));
+
+        SnapStatusRequestMessage requestMessage = mock(SnapStatusRequestMessage.class);
+
+        // When - First call should process normally and cache the result
+        underTest.processSnapStatusRequestInternal(peer, requestMessage);
+
+        // Verify first call generated a response and cached it
+        ArgumentCaptor<SnapStatusResponseMessage> responseCaptor = ArgumentCaptor.forClass(SnapStatusResponseMessage.class);
+        verify(peer).sendMessage(responseCaptor.capture());
+        assertNotNull(underTest.getLastSnapStatusCache());
+
+        // Store details of first response to compare with second call
+        SnapStatusResponseMessage firstResponse = responseCaptor.getValue();
+
+        // Reset mock to verify second call
+        reset(peer);
+
+        // When - Second call should use cached data
+        underTest.processSnapStatusRequestInternal(peer, requestMessage);
+
+        // Then - Verify second call used cached data
+        verify(peer).sendMessage(responseCaptor.capture());
+        SnapStatusResponseMessage secondResponse = responseCaptor.getValue();
+
+        // Verify the blocks and difficulties are the same objects (from cache)
+        assertSame(firstResponse.getBlocks(), secondResponse.getBlocks());
+        assertSame(firstResponse.getDifficulties(), secondResponse.getDifficulties());
+        assertEquals(firstResponse.getTrieSize(), secondResponse.getTrieSize());
+
+        // Verify retrieveBlocksAndDifficultiesBackwards was only called once (for the first request)
+        verify(underTest, times(1)).retrieveBlocksAndDifficultiesBackwards(
+                anyLong(), anyLong(), any(LinkedList.class), any(LinkedList.class));
     }
 
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {
