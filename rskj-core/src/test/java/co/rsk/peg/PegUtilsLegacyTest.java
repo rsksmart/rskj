@@ -19,6 +19,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.test.builders.MigrationTransactionBuilder;
 import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.time.Instant;
 import java.util.*;
@@ -44,11 +45,13 @@ class PegUtilsLegacyTest {
 
     private ActivationConfig.ForBlock activations;
     private PegoutTransactionBuilder pegoutTransactionBuilder;
+    private MigrationTransactionBuilder migrationTransactionBuilder;
 
     @BeforeEach
     void setupConfig() {
         activations = mock(ActivationConfig.ForBlock.class);
         pegoutTransactionBuilder = PegoutTransactionBuilder.builder();
+        migrationTransactionBuilder = MigrationTransactionBuilder.builder();
     }
 
     @Test
@@ -1801,6 +1804,64 @@ class PegUtilsLegacyTest {
             federationsWallet,
             bridgeConstantsRegtest.getMinimumPeginTxValue(activations),
             activations
+        ));
+    }
+
+    @Test
+    void isMigrationTx_fromP2shErpFederation_toP2shP2wshFederation() {
+        Context btcContext = new Context(networkParametersMainnet);
+        FederationContext federationContext = FederationContext.builder()
+            .withActiveFederation(p2shP2wshErpFederation)
+            .withRetiringFederation(p2shErpFederation)
+            .build();
+
+        BtcTransaction migrationTx = migrationTransactionBuilder
+            .withActiveFederation(federationContext.getActiveFederation())
+            .withRetiringFederation(federationContext.getRetiringFederation().get())
+            .build();
+
+        Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
+
+        assertTrue(isMigrationTx(
+            migrationTx,
+            federationContext,
+            federationsWallet,
+            bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations),
+            allActivations
+        ));
+    }
+
+    @Test
+    void isMigrationTx_fromP2shP2wshFederation_toP2shP2wshFederation() {
+        Context btcContext = new Context(networkParametersMainnet);
+
+        List<BtcECKey> newFederationKeys = new ArrayList<>();
+        for (int i=10; i<30; i++) {
+            BtcECKey key = BtcECKey.fromPrivate(Hex.decode(String.format("ff%s", i)));
+            newFederationKeys.add(key);
+        }
+        Federation newFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(newFederationKeys)
+            .build();
+
+        FederationContext federationContext = FederationContext.builder()
+            .withActiveFederation(newFederation)
+            .withRetiringFederation(p2shErpFederation)
+            .build();
+
+        BtcTransaction migrationTx = migrationTransactionBuilder
+            .withActiveFederation(federationContext.getActiveFederation())
+            .withRetiringFederation(federationContext.getRetiringFederation().get())
+            .build();
+
+        Wallet federationsWallet = new BridgeBtcWallet(btcContext, federationContext.getLiveFederations());
+
+        assertTrue(isMigrationTx(
+            migrationTx,
+            federationContext,
+            federationsWallet,
+            bridgeConstantsMainnet.getMinimumPeginTxValue(allActivations),
+            allActivations
         ));
     }
 
