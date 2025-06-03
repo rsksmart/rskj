@@ -59,7 +59,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (!isEnvironmentEnabled()) {
+        if (!isEnvironmentTestnetOrRegtest()) {
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
@@ -81,16 +81,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return UnionResponseCode.SUCCESS;
     }
 
-    private boolean isEnvironmentEnabled() {
+    private boolean isEnvironmentTestnetOrRegtest() {
         String currentNetworkId = constants.getBtcParams().getId();
 
-        boolean isMainnet = currentNetworkId.equals(NetworkParameters.ID_MAINNET);
-        if (isMainnet) {
+        boolean isTestnetOrRegtest = currentNetworkId.equals(NetworkParameters.ID_TESTNET) || currentNetworkId.equals(NetworkParameters.ID_REGTEST);
+        if (!isTestnetOrRegtest) {
             String baseMessage = String.format("Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s", currentNetworkId);
-            logger.warn(LOG_PATTERN, "isEnvironmentEnabled", baseMessage);
-            return false;
+            logger.warn(LOG_PATTERN, "isEnvironmentTestnetOrRegtest", baseMessage);
         }
-        return true;
+        return isTestnetOrRegtest;
     }
 
     private boolean isAuthorizedCaller(Transaction tx) {
@@ -99,21 +98,17 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         if (!isAuthorized) {
             String baseMessage = String.format("Caller is not authorized to execute this method. Caller address: %s", tx.getSender());
             logger.warn(LOG_PATTERN, "isAuthorizedCaller", baseMessage);
-            return false;
         }
-
-        return true;
+        return isAuthorized;
     }
 
     private boolean isValidAddress(RskAddress unionBridgeContractAddress) {
-        // Check if the address is valid
         boolean isValidAddress = unionBridgeContractAddress != null && !unionBridgeContractAddress.equals(EMPTY_ADDRESS);
         if (!isValidAddress) {
             String baseMessage = "Union Bridge Contract Address cannot be null or empty";
             logger.warn(LOG_PATTERN, "isValidAddress", baseMessage);
-            return false;
         }
-        return true;
+        return isValidAddress;
     }
 
     private boolean isAddressAlreadyStored(RskAddress currentUnionBridgeContractAddress, RskAddress newUnionBridgeContractAddress) {
@@ -180,8 +175,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     private boolean isValidAmount(co.rsk.core.Coin amountRequested) {
-        boolean isAmountNullOrLessThanZero = amountRequested == null || amountRequested.compareTo(co.rsk.core.Coin.ZERO) < 1;
-        if (isAmountNullOrLessThanZero) {
+        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(co.rsk.core.Coin.ZERO) < 1;
+        if (isAmountNullOrLessThanOne) {
             logger.warn(
                 "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}", amountRequested);
             return false;
