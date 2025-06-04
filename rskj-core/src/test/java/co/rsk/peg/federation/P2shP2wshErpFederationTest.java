@@ -1,30 +1,24 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.signTxInputWithKey;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
+import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static org.junit.jupiter.api.Assertions.*;
+
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegUtils;
 import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import java.time.Instant;
+import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static co.rsk.peg.bitcoin.BitcoinTestUtils.signTxInputWithKey;
-import static co.rsk.peg.bitcoin.BitcoinUtils.*;
-import static co.rsk.peg.federation.ErpFederationCreationException.Reason.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 class P2shP2wshErpFederationTest {
     private static final ErpFederation federation = P2shP2wshErpFederationBuilder.builder().build();
@@ -395,7 +389,7 @@ class P2shP2wshErpFederationTest {
         List<BtcECKey> emergencyPublicKeys = federation.getErpPubKeys();
         long activationDelayValue = federation.getActivationDelay();
 
-        /***
+        /*
          * Expected structure:
          * OP_NOTIF
          *  OP_M
@@ -451,7 +445,7 @@ class P2shP2wshErpFederationTest {
         assertEquals(n, script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
+        assertEquals((byte) ScriptOpCodes.OP_CHECKMULTISIG, script[index++]);
 
         // Next byte should equal OP_ELSE
         assertEquals(ScriptOpCodes.OP_ELSE, script[index++]);
@@ -460,11 +454,11 @@ class P2shP2wshErpFederationTest {
         assertEquals(serializedCsvValue.length, script[index++]);
 
         // Next bytes should equal the csv value in bytes
-        for (int i = 0; i < serializedCsvValue.length; i++) {
-            assertEquals(serializedCsvValue[i], script[index++]);
+        for (byte value : serializedCsvValue) {
+            assertEquals(value, script[index++]);
         }
 
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY).byteValue(), script[index++]);
+        assertEquals((byte) ScriptOpCodes.OP_CHECKSEQUENCEVERIFY, script[index++]);
         assertEquals(ScriptOpCodes.OP_DROP, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
@@ -473,7 +467,7 @@ class P2shP2wshErpFederationTest {
 
         for (BtcECKey key: sortedEmergencyPublicKeys) {
             byte[] pubkey = key.getPubKey();
-            assertEquals(Integer.valueOf(pubkey.length).byteValue(), script[index++]);
+            assertEquals(pubkey.length, script[index++]);
             for (byte b : pubkey) {
                 assertEquals(b, script[index++]);
             }
@@ -484,9 +478,9 @@ class P2shP2wshErpFederationTest {
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
+        assertEquals((byte) ScriptOpCodes.OP_CHECKMULTISIG, script[index++]);
 
-        assertEquals(ScriptOpCodes.OP_ENDIF, script[index++]);
+        assertEquals(ScriptOpCodes.OP_ENDIF, script[index]);
     }
 
     @Test
