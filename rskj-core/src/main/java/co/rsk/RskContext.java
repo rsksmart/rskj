@@ -353,9 +353,18 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         // initialization tasks and then we ask for the store
         getBlockchain();
         if (miningMainchainView == null) {
+            // todo(fede) remove this comment and below
+            // todo(fede) here we set the new desired window for the new difficulty algorithm
+
+            // int height = MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION; // it was like this, previously
+            int height = Math.max(
+                MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION,
+                DifficultyCalculator.BLOCK_COUNT_WINDOW
+            );
+
             miningMainchainView = new MiningMainchainViewImpl(
-                    getBlockStore(),
-                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+                getBlockStore(),
+                height
             );
         }
 

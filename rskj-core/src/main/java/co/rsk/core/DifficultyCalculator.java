@@ -21,10 +21,12 @@ package co.rsk.core;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.max;
 
@@ -56,10 +58,10 @@ public class DifficultyCalculator {
         return getBlockDifficulty(header, parentHeader);
     }
 
-    private static final long BLOCK_COUNT_WINDOW = 32; // last N blocks
+    private static final long BLOCK_COUNT_WINDOW = 30; // last N blocks
     private static final double ALPHA = 0.005; // todo(fede) checkout if double is the best fit
     private static final double BLOCK_TARGET = 20; // target time between blocks
-    private static final long UNCLE_TRESHOLD = 1;
+    private static final long UNCLE_TRESHOLD = 0.7;
 
     private BlockDifficulty getBlockDifficultyPato(long blockNumber, BlockHeader blockHeader, BlockHeader parentHeader) {
         if (blockNumber % BLOCK_COUNT_WINDOW != 0) {
@@ -83,6 +85,10 @@ public class DifficultyCalculator {
             .multiply(BigDecimal.valueOf(1 + F).toBigIntegerExact());
 
         return new BlockDifficulty(newDifficulty);
+    }
+
+    private long averageOf(BlockHeader parentHeader, long blockWindow, Function<Block, Long> func) {
+        
     }
 
     private BlockDifficulty getBlockDifficulty(
