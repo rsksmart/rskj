@@ -77,7 +77,6 @@ import org.ethereum.vm.program.*;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc

@@ -687,8 +687,8 @@ public final class BridgeUtils {
     }
 
     private static int getSigningSize(int numberOfSignaturesRequired, int inputsCount) {
-        final int SIGNATURE_SIZE = 72;
-        return numberOfSignaturesRequired * inputsCount * SIGNATURE_SIZE;
+        int signatureSize = 72;
+        return numberOfSignaturesRequired * inputsCount * signatureSize;
     }
 
     private static int calculateTxBaseSize(BtcTransaction tx, int inputsCount, boolean isSegwit) {
