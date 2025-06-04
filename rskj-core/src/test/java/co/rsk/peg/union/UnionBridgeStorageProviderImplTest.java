@@ -407,24 +407,9 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void getWeisTransferredToUnionBridge_beforeRSKIP502_shouldReturnEmpty() {
-        // Arrange
-        // To simulate WEIS_TRANSFERRED_TO_UNION_BRIDGE's value already stored
-        storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
-            amountTransferredToUnionBridge, BridgeSerializationUtils::serializeRskCoin);
-
-        // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(lovell700);
-
-        // Assert
-        assertTrue(actualWeisTransferredToUnionBridge.isEmpty());
-    }
-
-    @Test
     void getWeisTransferredToUnionBridge_whenNoValueIsStoredOrSet_shouldReturnEmpty() {
         // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(allActivations);
+        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         // Assert
         assertTrue(actualWeisTransferredToUnionBridge.isEmpty());
@@ -438,7 +423,7 @@ class UnionBridgeStorageProviderImplTest {
             amountTransferredToUnionBridge, BridgeSerializationUtils::serializeRskCoin);
 
         // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(allActivations);
+        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         // Assert
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
@@ -451,7 +436,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setWeisTransferredToUnionBridge(amountTransferredToUnionBridge);
 
         // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(allActivations);
+        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         // Assert
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
@@ -460,7 +445,7 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setWeisTransferredToUnionBridge_whenNegative_shouldNotSetNegative() {
+    void setWeisTransferredToUnionBridge_whenNegative_shouldThrowIllegalArgumentException() {
         // Arrange
         co.rsk.core.Coin negativeAmount = co.rsk.core.Coin.valueOf(-1);
 
@@ -473,15 +458,25 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void setWeisTransferredToUnionBridge_whenZero_shouldSetZero() {
         // Arrange
-        co.rsk.core.Coin zeronAmount = co.rsk.core.Coin.ZERO;
+        co.rsk.core.Coin zeroAmount = co.rsk.core.Coin.ZERO;
 
         // Act
-        unionBridgeStorageProvider.setWeisTransferredToUnionBridge(zeronAmount);
+        unionBridgeStorageProvider.setWeisTransferredToUnionBridge(zeroAmount);
 
         // Assert
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(allActivations);
+        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
-        assertEquals(zeronAmount, actualWeisTransferredToUnionBridge.get());
+        assertEquals(zeroAmount, actualWeisTransferredToUnionBridge.get());
+
+        // save the value
+        unionBridgeStorageProvider.save(allActivations);
+
+        // Create a new instance of the storage provider to retrieve the value from the storage
+        unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
+        Optional<co.rsk.core.Coin> savedWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+
+        assertTrue(savedWeisTransferredToUnionBridge.isPresent());
+        assertEquals(zeroAmount, savedWeisTransferredToUnionBridge.get());
     }
 
     @Test
@@ -491,7 +486,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Assert
         assertNoWeisTransferredToUnionBridgeIsStored();
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(allActivations);
+        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
     }
 
@@ -510,7 +505,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Assert
         // Check existing wei transferred to union bridge is still stored
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge(allActivations);
+        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
         assertGivenWeisTransferredToUnionBridgeIsStored(amountTransferredToUnionBridge);
     }
