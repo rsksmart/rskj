@@ -169,7 +169,6 @@ public class BridgeSupportIT {
             inMemoryStorage);
         unionBridgeSupport = UnionBridgeSupportBuilder
             .builder()
-            .withActivations(activations)
             .withSignatureCache(signatureCache)
             .withConstants(BridgeMainNetConstants.getInstance().getUnionBridgeConstants())
             .withStorageProvider(unionBridgeStorageProvider).build();

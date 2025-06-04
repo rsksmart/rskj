@@ -19,8 +19,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -34,10 +32,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 class UnionBridgeSupportImplTest {
 
     private static final UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
-    private static final ActivationConfig.ForBlock lovell700 = ActivationConfigsForTest.lovell700()
-        .forBlock(0);
-    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all()
-        .forBlock(0);
 
     private static final RskAddress authorizerRskAddress = new RskAddress(
         ECKey.fromPublicOnly(Hex.decode(
@@ -63,7 +57,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
         signatureCache = mock(SignatureCache.class);
         unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder()
-            .withActivations(allActivations)
             .withStorageProvider(unionBridgeStorageProvider)
             .withSignatureCache(signatureCache);
         unionBridgeSupport = unionBridgeSupportBuilder.build();
@@ -135,7 +128,6 @@ class UnionBridgeSupportImplTest {
         );
 
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -191,7 +183,6 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -226,7 +217,6 @@ class UnionBridgeSupportImplTest {
         );
 
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -257,7 +247,6 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -280,7 +269,6 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notAuthorizedAddress"));
@@ -305,7 +293,6 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -328,7 +315,6 @@ class UnionBridgeSupportImplTest {
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         // act
@@ -502,7 +488,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
+
             .withConstants(bridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notAuthorizedAddress"));
@@ -529,7 +515,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
+
             .withConstants(bridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notUnionBridgeContractAddress"));
@@ -555,7 +541,7 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
+
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
 
@@ -587,7 +573,7 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenInvalidValue_shouldReturnInvalidValue(co.rsk.core.Coin amountRequested) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
+
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
         
@@ -631,7 +617,7 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenValidValue_shouldReturnSuccessCode(co.rsk.core.Coin amountRequested) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
+
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
 
@@ -650,7 +636,6 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenAmountToRequestEqualToLockingCap_shouldReturnSuccessCode() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(allActivations)
             .withConstants(unionBridgeConstants).build();
 
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
@@ -684,26 +669,6 @@ class UnionBridgeSupportImplTest {
         assertUnionRbtcWasStored(amountToRequest);
     }
 
-    @ParameterizedTest
-    @MethodSource("testnetAndRegtestConstantsProvider")
-    void save_preRSKIP502_shouldSetButDoNotStoreGivenAddress(UnionBridgeConstants unionBridgeConstants) {
-        // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withActivations(lovell700)
-            .withConstants(unionBridgeConstants).build();
-
-        // act
-        unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeContractAddress);
-        unionBridgeSupport.save();
-
-        // assert
-        assertAddressWasSet(unionBridgeContractAddress);
-        assertNoAddressIsStored();
-        assertNoLockingCapIsStored();
-        assertNoUnionRbtcIsStored();
-    }
-
     private void assertNoUnionRbtcIsStored() {
         co.rsk.core.Coin actualAmountTransferred = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -714,7 +679,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
-    void save_postRSKIP502_shouldSave(UnionBridgeConstants unionBridgeConstants) {
+    void save_shouldSave(UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants).build();

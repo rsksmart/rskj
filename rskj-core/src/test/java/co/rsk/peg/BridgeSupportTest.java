@@ -186,13 +186,11 @@ class BridgeSupportTest {
 
         UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
 
-        unionBridgeSupport = UnionBridgeSupportBuilder
+        UnionBridgeSupportBuilder
             .builder()
-            .withActivations(allActivations)
             .withConstants(UnionBridgeMainNetConstants.getInstance())
             .withStorageProvider(unionBridgeStorageProvider)
-            .withSignatureCache(signatureCache)
-            .build();
+            .withSignatureCache(signatureCache);
 
         repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, allActivations);
@@ -844,7 +842,6 @@ class BridgeSupportTest {
             signatureCache = mock(SignatureCache.class);
             unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
             unionBridgeSupport = UnionBridgeSupportBuilder.builder()
-                .withActivations(allActivations)
                 .withSignatureCache(signatureCache)
                 .withConstants(unionBridgeConstants)
                 .withStorageProvider(unionBridgeStorageProvider)
@@ -929,7 +926,6 @@ class BridgeSupportTest {
                     UnionBridgeSupportBuilder
                         .builder()
                         .withStorageProvider(unionBridgeStorageProvider)
-                        .withActivations(allActivations)
                         .build()
                 )
                 .build();
