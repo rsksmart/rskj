@@ -6,7 +6,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import javax.annotation.Nonnull;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -19,18 +18,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
     public static final String LOG_PATTERN = "[{}] {}";
 
-    private final ActivationConfig.ForBlock activations;
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
 
     public UnionBridgeSupportImpl(
-        ActivationConfig.ForBlock activations,
         UnionBridgeConstants constants,
         UnionBridgeStorageProvider storageProvider,
         SignatureCache signatureCache
     ) {
-        this.activations = activations;
         this.constants = constants;
         this.storageProvider = storageProvider;
         this.signatureCache = signatureCache;
@@ -227,6 +223,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     @Override
     public void save() {
-        storageProvider.save(activations);
+        storageProvider.save();
     }
 }
