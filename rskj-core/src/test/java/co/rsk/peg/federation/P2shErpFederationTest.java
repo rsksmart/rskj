@@ -22,7 +22,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
@@ -226,7 +225,7 @@ class P2shErpFederationTest {
         assertEquals(federation, federation);
 
         assertNotEquals(null, federation);
-        assertNotEquals(federation, new Object());
+        assertNotEquals(new Object(), federation);
         assertNotEquals("something else", federation);
     }
 
@@ -420,7 +419,7 @@ class P2shErpFederationTest {
             "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
             "03db2ebad883823cefe8b2336c03b8d9c6afee4cbac77c7e935bc8c51ec20b2663",
             "03fb8e1d5d0392d35ca8c3656acb6193dbf392b3e89b9b7b86693f5c80f7ce8581",
-        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         String expectedProgram = "a914007c29a1d854639220aefca2587cdde07f381f4787";
         Address expectedAddress = Address.fromBase58(networkParameters, "2MsHnjFiAt5srgHJtwnwZTtZQPrKN8yiDqh");
 
@@ -454,7 +453,7 @@ class P2shErpFederationTest {
             "03ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f6",
             "03e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff6780299",
             "03b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b35888771906"
-        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         String expectedProgram = "a9142c1bab6ea51fdaf85c8366bd2b1502eaa69b6ae687";
         Address expectedAddress = Address.fromBase58(
             networkParameters,
@@ -481,7 +480,7 @@ class P2shErpFederationTest {
         emergencyKeys = emergencyKeys
             .stream()
             .map(BtcECKey::decompress)
-            .collect(Collectors.toList());
+            .toList();
 
         // Recreate federation
         ErpFederation federationWithUncompressedKeys = createDefaultP2shErpFederation();
@@ -529,14 +528,14 @@ class P2shErpFederationTest {
         long activationDelay,
         boolean signWithEmergencyMultisig) {
 
-        List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10"},
             true
         );
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(defaultKeys);
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(fedKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
 
-        List<BtcECKey> emergencyKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+        List<BtcECKey> erpKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
             new String[]{"erp1", "erp2", "erp3", "erp4"},
             true
         );
@@ -549,7 +548,7 @@ class P2shErpFederationTest {
         );
         ErpFederation p2shErpFed = FederationFactory.buildP2shErpFederation(
             federationArgs,
-            emergencyKeys,
+            erpKeys,
             activationDelay
         );
 
@@ -566,7 +565,7 @@ class P2shErpFederationTest {
         assertDoesNotThrow(() -> FederationTestUtils.spendFromErpFed(
             networkParameters,
             p2shErpFed,
-            signWithEmergencyMultisig ? emergencyKeys : defaultKeys,
+            signWithEmergencyMultisig ? erpKeys : fedKeys,
             fundTx.getHash(),
             0,
             destinationAddress,
@@ -602,7 +601,7 @@ class P2shErpFederationTest {
         List<BtcECKey> emergencyKeys,
         Long csvValue) {
 
-        /***
+        /*
          * Expected structure:
          * OP_NOTIF
          *  OP_M
@@ -653,7 +652,7 @@ class P2shErpFederationTest {
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
+        assertEquals((byte) ScriptOpCodes.OP_CHECKMULTISIG, script[index++]);
 
         // Next byte should equal OP_ELSE
         assertEquals(ScriptOpCodes.OP_ELSE, script[index++]);
@@ -662,11 +661,11 @@ class P2shErpFederationTest {
         assertEquals(serializedCsvValue.length, script[index++]);
 
         // Next bytes should equal the csv value in bytes
-        for (int i = 0; i < serializedCsvValue.length; i++) {
-            assertEquals(serializedCsvValue[i], script[index++]);
+        for (byte value : serializedCsvValue) {
+            assertEquals(value, script[index++]);
         }
 
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY).byteValue(), script[index++]);
+        assertEquals((byte) ScriptOpCodes.OP_CHECKSEQUENCEVERIFY, script[index++]);
         assertEquals(ScriptOpCodes.OP_DROP, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
@@ -675,7 +674,7 @@ class P2shErpFederationTest {
 
         for (BtcECKey key: emergencyKeys) {
             byte[] pubkey = key.getPubKey();
-            assertEquals(Integer.valueOf(pubkey.length).byteValue(), script[index++]);
+            assertEquals(pubkey.length, script[index++]);
             for (byte b : pubkey) {
                 assertEquals(b, script[index++]);
             }
@@ -686,9 +685,9 @@ class P2shErpFederationTest {
         assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_CHECKMULTISIG
-        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
+        assertEquals((byte) ScriptOpCodes.OP_CHECKMULTISIG, script[index++]);
 
-        assertEquals(ScriptOpCodes.OP_ENDIF, script[index++]);
+        assertEquals(ScriptOpCodes.OP_ENDIF, script[index]);
     }
 
     private static Stream<Arguments> spendFromP2shErpFedArgsProvider() {
@@ -746,7 +745,7 @@ class P2shErpFederationTest {
         }
 
         private List<BtcECKey> parseFed(List<String> fed) {
-            return fed.stream().map(Hex::decode).map(BtcECKey::fromPublicOnly).collect(Collectors.toList());
+            return fed.stream().map(Hex::decode).map(BtcECKey::fromPublicOnly).toList();
         }
     }
 }
