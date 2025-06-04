@@ -96,8 +96,7 @@ public class BridgeSupportFactory {
         LockingCapSupport lockingCapSupport = getLockingCapSupportInstance(bridgeStorageAccessor, activations);
 
         UnionBridgeSupport unionBridgeSupport = getUnionBridgeSupportInstance(
-            bridgeStorageAccessor,
-            activations
+            bridgeStorageAccessor
         );
 
         BridgeEventLogger eventLogger = null;
@@ -132,11 +131,10 @@ public class BridgeSupportFactory {
         );
     }
 
-    private UnionBridgeSupport getUnionBridgeSupportInstance(StorageAccessor bridgeStorageAccessor, ActivationConfig.ForBlock activations) {
+    private UnionBridgeSupport getUnionBridgeSupportInstance(StorageAccessor bridgeStorageAccessor) {
         UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
 
         return new UnionBridgeSupportImpl(
-            activations,
             bridgeConstants.getUnionBridgeConstants(),
             unionBridgeStorageProvider,
             signatureCache
