@@ -162,7 +162,6 @@ class BridgeSupportTest {
 
         UnionBridgeSupportBuilder
             .builder()
-            .withActivations(activationsAfterForks)
             .withConstants(UnionBridgeMainNetConstants.getInstance())
             .withStorageProvider(unionBridgeStorageProvider)
             .withSignatureCache(signatureCache);
@@ -812,7 +811,6 @@ class BridgeSupportTest {
             signatureCache = mock(SignatureCache.class);
             unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
             unionBridgeSupport = UnionBridgeSupportBuilder.builder()
-                .withActivations(allActivations)
                 .withSignatureCache(signatureCache)
                 .withConstants(unionBridgeConstants)
                 .withStorageProvider(unionBridgeStorageProvider)
@@ -897,7 +895,6 @@ class BridgeSupportTest {
                     UnionBridgeSupportBuilder
                         .builder()
                         .withStorageProvider(unionBridgeStorageProvider)
-                        .withActivations(allActivations)
                         .build()
                 )
                 .build();

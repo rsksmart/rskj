@@ -10,19 +10,11 @@ import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import java.util.Optional;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UnionBridgeStorageProviderImplTest {
-
-    private static final ActivationConfig.ForBlock lovell700 = ActivationConfigsForTest.lovell700()
-        .forBlock(0);
-    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all()
-        .forBlock(0);
-
     private static final RskAddress storedUnionBridgeContractAddress = TestUtils.generateAddress(
         "unionBridgeContractAddress");
     private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
@@ -87,7 +79,7 @@ class UnionBridgeStorageProviderImplTest {
         RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
             "unionBridgeContractAddress");
         unionBridgeStorageProvider.setAddress(unionBridgeContractAddress);
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Act
         Optional<RskAddress> actualUnionBridgeContractAddress = unionBridgeStorageProvider.getAddress();
@@ -119,7 +111,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Act
         unionBridgeStorageProvider.setAddress(null);
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Assert
         // Check existing address is still stored
@@ -160,21 +152,9 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void save_whenAddressSetAndBeforeRSKIP502_shouldNotStoreAnything() {
-        // Arrange
-        unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
-
-        // Act
-        unionBridgeStorageProvider.save(lovell700);
-
-        // Assert
-        assertNoAddressIsStored();
-    }
-
-    @Test
     void save_whenNoAddressSet_shouldNotStoreAnything() {
         // Act
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Assert
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
@@ -203,7 +183,7 @@ class UnionBridgeStorageProviderImplTest {
         assertEquals(newUnionBridgeContractAddress, cachedAddress.get());
 
         // Save the value
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Create a new instance of the storage provider to retrieve the address from the storage
         assertGivenAddressIsStored(newUnionBridgeContractAddress);
@@ -237,7 +217,7 @@ class UnionBridgeStorageProviderImplTest {
         assertEquals(newUnionBridgeContractAddress, cachedAddress.get());
 
         // Save the new union address
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
         assertGivenAddressIsStored(newUnionBridgeContractAddress);
     }
 
@@ -319,7 +299,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Act
         unionBridgeStorageProvider.setLockingCap(null);
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Assert
         // Check existing locking cap is still stored
@@ -339,7 +319,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void save_whenNoLockingCapSet_shouldNotStoreAnything() {
         // Act
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Assert
         Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
@@ -368,7 +348,7 @@ class UnionBridgeStorageProviderImplTest {
         assertNoLockingCapIsStored();
 
         // Save the value
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Create a new instance of the storage provider to retrieve the locking cap from the storage
         assertGivenLockingCapIsStored(unionBridgeLockingCap);
@@ -402,7 +382,7 @@ class UnionBridgeStorageProviderImplTest {
         assertEquals(newUnionBridgeLockingCap, cachedLockingCap.get());
 
         // Save the new locking cap
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
         assertGivenLockingCapIsStored(newUnionBridgeLockingCap);
     }
 
@@ -469,7 +449,7 @@ class UnionBridgeStorageProviderImplTest {
         assertEquals(zeroAmount, actualWeisTransferredToUnionBridge.get());
 
         // save the value
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Create a new instance of the storage provider to retrieve the value from the storage
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
@@ -501,7 +481,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Act
         unionBridgeStorageProvider.setWeisTransferredToUnionBridge(null);
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Assert
         // Check existing wei transferred to union bridge is still stored
@@ -515,22 +495,6 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin);
         assertNull(retrievedWeisTransferredToUnionBridge);
-    }
-
-    @Test
-    void save_whenUnionAddressAndLockingCapAreSetAndBeforeRSKIP502_shouldNotStoreAnything() {
-        // Arrange
-        unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
-        unionBridgeStorageProvider.setLockingCap(unionBridgeLockingCap);
-        unionBridgeStorageProvider.setWeisTransferredToUnionBridge(amountTransferredToUnionBridge);
-
-        // Act
-        unionBridgeStorageProvider.save(lovell700);
-
-        // Assert
-        assertNoAddressIsStored();
-        assertNoLockingCapIsStored();
-        assertNoWeisTransferredToUnionBridgeIsStored();
     }
 
     @Test
@@ -557,12 +521,23 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setWeisTransferredToUnionBridge(newAmountTransferredToUnionBridge);
 
         // Act
-        unionBridgeStorageProvider.save(allActivations);
+        unionBridgeStorageProvider.save();
 
         // Assert
         assertGivenAddressIsStored(newUnionBridgeContractAddress);
         assertGivenLockingCapIsStored(newUnionBridgeLockingCap);
         assertGivenWeisTransferredToUnionBridgeIsStored(newAmountTransferredToUnionBridge);
+    }
+
+    @Test
+    void save_whenNothingIsSet_shouldNotStoreAnything() {
+        // Act
+        unionBridgeStorageProvider.save();
+
+        // Assert
+        assertNoAddressIsStored();
+        assertNoLockingCapIsStored();
+        assertNoWeisTransferredToUnionBridgeIsStored();
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
