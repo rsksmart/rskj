@@ -1846,7 +1846,7 @@ class PegUtilsLegacyTest {
 
         FederationContext federationContext = FederationContext.builder()
             .withActiveFederation(newFederation)
-            .withRetiringFederation(p2shErpFederation)
+            .withRetiringFederation(p2shP2wshErpFederation)
             .build();
 
         BtcTransaction migrationTx = migrationTransactionBuilder
