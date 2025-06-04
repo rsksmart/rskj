@@ -9,7 +9,7 @@ import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
 import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvider {
@@ -105,16 +105,12 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public Optional<co.rsk.core.Coin> getWeisTransferredToUnionBridge(ForBlock activations) {
-        if (!activations.isActive(ConsensusRule.RSKIP502)) {
-            return Optional.empty();
-        }
-
-        return Optional.ofNullable(weisTransferredToUnionBridge).or(
-            () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
+    public Optional<co.rsk.core.Coin> getWeisTransferredToUnionBridge() {
+        return Optional.ofNullable(weisTransferredToUnionBridge).or(() -> Optional.ofNullable(
+            bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
                 BridgeSerializationUtils::deserializeRskCoin
-            ))
-        );
+            )
+        ));
     }
 }
