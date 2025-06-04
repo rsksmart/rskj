@@ -18,7 +18,6 @@
  */
 package co.rsk.peg;
 
-import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASE_REQUEST_QUEUE_WITH_TXHASH;
 import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
@@ -7922,16 +7921,6 @@ class BridgeSupportTest {
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activations);
         recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, pegoutTxIndexActivationHeight, btcMainnetParams);
         bridgeStorageProvider.save();
-    }
-
-    private void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
-        assertTrue(topicOpt.isPresent());
-    }
-
-    private void assertEventWasEmittedWithExpectedData(List<LogInfo> logs, byte[] expectedData) {
-        Optional<LogInfo> data = getLogsData(logs, expectedData);
-        assertTrue(data.isPresent());
     }
 
     @Test
