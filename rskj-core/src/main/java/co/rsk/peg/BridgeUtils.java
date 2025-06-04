@@ -30,6 +30,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFormatVersion;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbConstants;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
@@ -633,12 +634,11 @@ public final class BridgeUtils {
             activations,
             federation,
             INPUT_MULTIPLIER,
-            OUTPUT_MULTIPLIER,
-            false
+            OUTPUT_MULTIPLIER
         );
     }
 
-    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputsCount, int outputsCount, boolean isSegwit) {
+    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputsCount, int outputsCount) {
 
         if (inputsCount < 1 || outputsCount < 1) {
             throw new IllegalArgumentException("Inputs or outputs should be more than 1");
@@ -648,59 +648,58 @@ public final class BridgeUtils {
             return BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, inputsCount, outputsCount);
         }
 
-        if(isSegwit && !activations.isActive(ConsensusRule.RSKIP305)) {
-            throw new IllegalArgumentException("Segwit logic should not be activated yet.");
-        }
+        boolean isSegwit = federation.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
 
-        BtcTransaction pegoutTx = new BtcTransaction(federation.getBtcParams());
+        return isSegwit
+            ? calculateSegwitTxSize(federation, inputsCount, outputsCount)
+            : calculateLegacyTxSize(federation, inputsCount, outputsCount);
+    }
 
-        if(!isSegwit) {
-            for (int i = 0; i < inputsCount; i++) {
-                pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
-            }
+    private static int calculateLegacyTxSize(Federation federation, int inputsCount, int outputsCount) {
+        BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
+
+        for (int i = 0; i < inputsCount; i++) {
+            tx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
         }
 
         for (int i = 0; i < outputsCount; i++) {
-            pegoutTx.addOutput(Coin.ZERO, federation.getAddress());
+            tx.addOutput(Coin.ZERO, federation.getAddress());
         }
 
-        int baseSize = calculateTxBaseSize(pegoutTx, inputsCount, isSegwit);
-
+        int baseSize = calculateTxBaseSize(tx, inputsCount, false);
         int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
+        return baseSize + signingSize;
+    }
 
-        int size = baseSize + signingSize;
+    private static int calculateSegwitTxSize(Federation federation, int inputsCount, int outputsCount) {
+        BtcTransaction tx = new BtcTransaction(federation.getBtcParams());
 
-        if(!isSegwit) {
-            return size;
+        for (int i = 0; i < outputsCount; i++) {
+            tx.addOutput(Coin.ZERO, federation.getAddress());
         }
 
-        int totalSize = size + (inputsCount * federation.getRedeemScript().getProgram().length);
-
+        int baseSize = calculateTxBaseSize(tx, inputsCount, true);
+        int signingSize = getSigningSize(federation.getNumberOfSignaturesRequired(), inputsCount);
+        int totalSize = baseSize + signingSize + (inputsCount * federation.getRedeemScript().getProgram().length);
+        // As described in BIP141
         int txWeight = totalSize + (3 * baseSize);
-
         return txWeight / 4;
-
     }
 
     private static int getSigningSize(int numberOfSignaturesRequired, int inputsCount) {
-        int SIGNATURE_SIZE = 72;
+        final int SIGNATURE_SIZE = 72;
         return numberOfSignaturesRequired * inputsCount * SIGNATURE_SIZE;
     }
 
     private static int calculateTxBaseSize(BtcTransaction tx, int inputsCount, boolean isSegwit) {
-
         int baseSize = tx.bitcoinSerialize().length;
 
-        if (!isSegwit) {
-            return baseSize;
+        if (isSegwit) {
+            final int SEGWIT_COMPATIBLE_SCRIPT_SIG_SIZE = 36;
+            baseSize += inputsCount * SEGWIT_COMPATIBLE_SCRIPT_SIG_SIZE;
         }
 
-        int segwitCompatibleScriptSigSize = 36;
-
-        baseSize += inputsCount * segwitCompatibleScriptSigSize;
-
         return baseSize;
-
     }
 
 }
