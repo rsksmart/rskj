@@ -160,12 +160,13 @@ class BridgeSupportTest {
         );
 
         UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
-        unionBridgeSupport = new UnionBridgeSupportImpl(
-            activationsAfterForks,
-            UnionBridgeMainNetConstants.getInstance(),
-            unionBridgeStorageProvider,
-            signatureCache
-        );
+
+        UnionBridgeSupportBuilder
+            .builder()
+            .withActivations(activationsAfterForks)
+            .withConstants(UnionBridgeMainNetConstants.getInstance())
+            .withStorageProvider(unionBridgeStorageProvider)
+            .withSignatureCache(signatureCache);
     }
 
     @Test

@@ -26,8 +26,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
 
-    public UnionBridgeSupportImpl(ActivationConfig.ForBlock activations, UnionBridgeConstants constants, UnionBridgeStorageProvider storageProvider,
-        SignatureCache signatureCache) {
+    public UnionBridgeSupportImpl(
+        ActivationConfig.ForBlock activations,
+        UnionBridgeConstants constants,
+        UnionBridgeStorageProvider storageProvider,
+        SignatureCache signatureCache
+    ) {
         this.activations = activations;
         this.constants = constants;
         this.storageProvider = storageProvider;
@@ -55,15 +59,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (isEnvironmentDisabled()) {
+        if (!isEnvironmentTestnetOrRegtest()) {
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
-        if (isUnauthorizedCaller(tx)) {
+        if (!isAuthorizedCaller(tx)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
-        if (isInvalidAddress(unionBridgeContractAddress)) {
+        if (!isValidAddress(unionBridgeContractAddress)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
@@ -77,37 +81,34 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return UnionResponseCode.SUCCESS;
     }
 
-    private boolean isEnvironmentDisabled() {
+    private boolean isEnvironmentTestnetOrRegtest() {
         String currentNetworkId = constants.getBtcParams().getId();
 
-        boolean isEnvironmentDisable = currentNetworkId.equals(NetworkParameters.ID_MAINNET);
-        if (isEnvironmentDisable) {
+        boolean isTestnetOrRegtest = currentNetworkId.equals(NetworkParameters.ID_TESTNET) || currentNetworkId.equals(NetworkParameters.ID_REGTEST);
+        if (!isTestnetOrRegtest) {
             String baseMessage = String.format("Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s", currentNetworkId);
-            logger.warn(LOG_PATTERN, "isEnvironmentDisable", baseMessage);
+            logger.warn(LOG_PATTERN, "isEnvironmentTestnetOrRegtest", baseMessage);
         }
-        return isEnvironmentDisable;
+        return isTestnetOrRegtest;
     }
 
-    private boolean isUnauthorizedCaller(Transaction tx) {
-        // Check if the caller is isUnauthorizedCaller to set a new bridge contract address
+    private boolean isAuthorizedCaller(Transaction tx) {
         AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
-        boolean isUnauthorizedCaller = !authorizer.isAuthorized(tx, signatureCache);
-        if (isUnauthorizedCaller) {
-            String baseMessage = String.format("Caller is not authorized to update union bridge contract address. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isUnauthorizedCaller", baseMessage);
+        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
+        if (!isAuthorized) {
+            String baseMessage = String.format("Caller is not authorized to execute this method. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isAuthorizedCaller", baseMessage);
         }
-
-        return isUnauthorizedCaller;
+        return isAuthorized;
     }
 
-    private boolean isInvalidAddress(RskAddress unionBridgeContractAddress) {
-        // Check if the address is valid
-        boolean isInvalidAddress = unionBridgeContractAddress == null || unionBridgeContractAddress.equals(EMPTY_ADDRESS);
-        if (isInvalidAddress) {
+    private boolean isValidAddress(RskAddress unionBridgeContractAddress) {
+        boolean isValidAddress = unionBridgeContractAddress != null && !unionBridgeContractAddress.equals(EMPTY_ADDRESS);
+        if (!isValidAddress) {
             String baseMessage = "Union Bridge Contract Address cannot be null or empty";
-            logger.warn(LOG_PATTERN, "isInvalidAddress", baseMessage);
+            logger.warn(LOG_PATTERN, "isValidAddress", baseMessage);
         }
-        return isInvalidAddress;
+        return isValidAddress;
     }
 
     private boolean isAddressAlreadyStored(RskAddress currentUnionBridgeContractAddress, RskAddress newUnionBridgeContractAddress) {
@@ -132,11 +133,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
-        if (isUnauthorizedCaller(tx)) {
+        if (!isAuthorizedCaller(tx)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
-        if (isInvalidLockingCap(newCap)) {
+        if (!isValidLockingCap(newCap)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
@@ -146,27 +147,80 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return UnionResponseCode.SUCCESS;
     }
 
-    private boolean isInvalidLockingCap(Coin newCap) {
+    @Override
+    public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amount) {
+        final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
+
+        if (!isCallerUnionBridgeContractAddress(tx)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
+        }
+
+        if (!isValidAmount(amount)) {
+            return UnionResponseCode.INVALID_VALUE;
+        }
+
+        storageProvider.setWeisTransferredToUnionBridge(amount);
+        logger.info("[{}] Amount requested by the union bridge has been transferred. Amount Requested: {}.", REQUEST_UNION_RBTC_TAG, amount);
+        return UnionResponseCode.SUCCESS;
+    }
+
+    private boolean isCallerUnionBridgeContractAddress(Transaction tx) {
+        RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
+        boolean isCallerUnionBridgeContractAddress = tx.getSender(signatureCache).equals(unionBridgeContractAddress);
+        if (!isCallerUnionBridgeContractAddress) {
+            String baseMessage = String.format("Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s", tx.getSender(), unionBridgeContractAddress);
+            logger.warn(LOG_PATTERN, "isCallerUnionBridgeContractAddress", baseMessage);
+        }
+        return isCallerUnionBridgeContractAddress;
+    }
+
+    private boolean isValidAmount(co.rsk.core.Coin amountRequested) {
+        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(co.rsk.core.Coin.ZERO) < 1;
+        if (isAmountNullOrLessThanOne) {
+            logger.warn(
+                "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}", amountRequested);
+            return false;
+        }
+
+        co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(getLockingCap().orElse(constants.getInitialLockingCap()));
+
+        co.rsk.core.Coin previousAmountRequested = storageProvider.getWeisTransferredToUnionBridge(activations)
+            .orElse(co.rsk.core.Coin.ZERO);
+
+        co.rsk.core.Coin newAmountRequested = previousAmountRequested.add(amountRequested);
+        boolean doesNewAmountAndPreviousAmountRequestedSurpassLockingCap =
+            newAmountRequested.compareTo(lockingCap) > 0;
+        if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
+            logger.warn(
+                "[isValidAmount] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}", previousAmountRequested, newAmountRequested, lockingCap
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isValidLockingCap(Coin newCap) {
         Coin currentLockingCap = storageProvider.getLockingCap(activations)
             .orElse(constants.getInitialLockingCap());
 
         if (newCap.compareTo(currentLockingCap) < 1) {
             logger.warn(
-                "[isInvalidLockingCap] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
+                "[isValidLockingCap] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
                 newCap.value, currentLockingCap.value);
-            return true;
+            return false;
         }
 
         Coin maxLockingCapIncreaseAllowed = currentLockingCap.multiply(
             constants.getLockingCapIncrementsMultiplier());
         if (newCap.compareTo(maxLockingCapIncreaseAllowed) > 0) {
             logger.warn(
-                "[isInvalidLockingCap] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
+                "[isValidLockingCap] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
                 newCap.value, maxLockingCapIncreaseAllowed.value);
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     @Override
