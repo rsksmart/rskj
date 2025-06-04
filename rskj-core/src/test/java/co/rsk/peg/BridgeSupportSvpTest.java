@@ -781,7 +781,7 @@ class BridgeSupportSvpTest {
             List<TransactionOutput> outputs = svpSpendTransaction.getOutputs();
             assertEquals(1, outputs.size());
 
-            long calculatedTransactionSize = calculatePegoutTxSize(allActivations, proposedFederation, 2, 1, false);
+            long calculatedTransactionSize = calculatePegoutTxSize(allActivations, proposedFederation, 2, 1);
             Coin fees = feePerKb
                 .multiply(calculatedTransactionSize * 12L / 10L) // back up calculation
                 .divide(1000);
