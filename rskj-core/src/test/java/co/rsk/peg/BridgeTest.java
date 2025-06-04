@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.createHash3;
+import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,6 +22,7 @@ import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeBuilder;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import java.io.IOException;
@@ -3406,20 +3408,30 @@ class BridgeTest {
 
         private static final Coin newLockingCap = initialLockingCap.multiply(unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier());
         private UnionBridgeSupport unionBridgeSupport;
+        private Repository repository;
+        private BridgeEventLogger eventLogger;
         private BridgeSupport bridgeSupport;
         private Bridge bridge;
+        private Transaction rskTx;
 
         @BeforeEach
         void setUp() {
             unionBridgeSupport = mock(UnionBridgeSupport.class);
 
+            eventLogger = mock(BridgeEventLogger.class);
+            repository = mock(Repository.class);
             bridgeSupport = BridgeSupportBuilder.builder()
+                .withEventLogger(eventLogger)
+                .withRepository(repository)
                 .withUnionBridgeSupport(unionBridgeSupport).build();
+
+            rskTx = mock(Transaction.class);
 
             bridge = bridgeBuilder
                 .activationConfig(allActivations)
                 .constants(mainNetConstants)
                 .bridgeSupport(bridgeSupport)
+                .transaction(rskTx)
                 .build();
         }
 
@@ -3639,6 +3651,93 @@ class BridgeTest {
             BigInteger decodedResult = (BigInteger) Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.decodeResult(result)[0];
             int actualUnionResponseCode = decodedResult.intValue();
 
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+        }
+
+        @Test
+        void requestUnionRbtc_beforeRSKIP502_shouldFail() {
+            bridge = bridgeBuilder.activationConfig(ActivationConfigsForTest.lovell700()).build();
+
+            CallTransaction.Function function = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
+            byte[] data = function.encode();
+
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void requestUnionRbtc_afterRSKIP502_shouldTransferredRbtc() throws VMException {
+            // Arrange
+            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+            RskAddress unionBridgeContractAddress = mainNetConstants.getBridgeConstants()
+                .getUnionBridgeConstants().getAddress();
+            when(unionBridgeSupport.getUnionBridgeContractAddress()).thenReturn(
+                unionBridgeContractAddress);
+            when(unionBridgeSupport.requestUnionRbtc(any(), any())).thenReturn(
+                expectedResponseCode);
+
+            CallTransaction.Function function = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
+
+            BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+            co.rsk.core.Coin amountToRequest = new co.rsk.core.Coin(oneEth);
+            byte[] data = function.encode(amountToRequest.asBigInteger());
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.REQUEST_UNION_RBTC.decodeResult(
+                result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+            verify(unionBridgeSupport).requestUnionRbtc(rskTx, amountToRequest);
+            verify(eventLogger).logUnionRbtcReleased(unionBridgeContractAddress, amountToRequest);
+            verify(repository).transfer(BRIDGE_ADDR, unionBridgeContractAddress, amountToRequest);
+        }
+
+        @Test
+        void requestUnionRbtc_afterRSKIP502_notAuthorized_shouldReturnUnauthorizedCode()
+            throws VMException {
+            // Arrange
+            UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
+            when(unionBridgeSupport.requestUnionRbtc(any(), any())).thenReturn(
+                expectedResponseCode);
+
+            CallTransaction.Function function = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
+            BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+            co.rsk.core.Coin amountToRequest = new co.rsk.core.Coin(oneEth);
+            byte[] data = function.encode(amountToRequest.asBigInteger());
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.REQUEST_UNION_RBTC.decodeResult(
+                result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+            verify(unionBridgeSupport, times(1)).requestUnionRbtc(rskTx, amountToRequest);
+            verify(repository, never()).transfer(eq(BRIDGE_ADDR), any(RskAddress.class),
+                any(co.rsk.core.Coin.class));
+            verify(eventLogger, never()).logUnionRbtcReleased(any(RskAddress.class), any(co.rsk.core.Coin.class));
+        }
+
+        @Test
+        void requestBridgeRbtc_afterRSKIP502_emptyArgument_shouldReturnInvalidValue() throws VMException {
+            // Arrange
+            UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
+            // when no argument is passed, the default value assigned to the arg is zero
+            when(unionBridgeSupport.requestUnionRbtc(any(), eq(co.rsk.core.Coin.ZERO))).thenReturn(
+                expectedResponseCode);
+
+            CallTransaction.Function function = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.REQUEST_UNION_RBTC.decodeResult(result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
             assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
     }
