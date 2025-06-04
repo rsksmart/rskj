@@ -3,7 +3,6 @@ package co.rsk.peg.union;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
 import java.util.Optional;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 public interface UnionBridgeStorageProvider {
     void setAddress(RskAddress address);
@@ -12,5 +11,5 @@ public interface UnionBridgeStorageProvider {
     Optional<Coin> getLockingCap();
     Optional<co.rsk.core.Coin> getWeisTransferredToUnionBridge();
     void setWeisTransferredToUnionBridge(co.rsk.core.Coin weisTransferred);
-    void save(ActivationConfig.ForBlock activations);
+    void save();
 }
