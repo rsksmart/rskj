@@ -147,6 +147,10 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return UnionResponseCode.SUCCESS;
     }
 
+    private co.rsk.core.Coin getWeisTransferredToUnionBridge() {
+        return storageProvider.getWeisTransferredToUnionBridge().orElse(co.rsk.core.Coin.ZERO);
+    }
+
     @Override
     public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amount) {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
@@ -184,8 +188,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(getLockingCap());
 
-        co.rsk.core.Coin previousAmountRequested = storageProvider.getWeisTransferredToUnionBridge(activations)
-            .orElse(co.rsk.core.Coin.ZERO);
+        co.rsk.core.Coin previousAmountRequested = getWeisTransferredToUnionBridge();
 
         co.rsk.core.Coin newAmountRequested = previousAmountRequested.add(amountRequested);
         boolean doesNewAmountAndPreviousAmountRequestedSurpassLockingCap =
