@@ -30,7 +30,6 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.peg.bitcoin.*;
@@ -63,7 +62,6 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.tuple.Pair;
