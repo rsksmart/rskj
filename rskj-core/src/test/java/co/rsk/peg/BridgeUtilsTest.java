@@ -981,60 +981,7 @@ class BridgeUtilsTest {
             federationArgs
         );
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0, false));
-    }
-
-    @Test
-    void calculatePegoutTxSize_preRSKIP305AndSendingIsSegwitTrue_shouldThrowException() {
-
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(false);
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        int inputSize = 2;
-        int outputSize = 2;
-
-        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true));
-
-        Assertions.assertEquals("Segwit logic should not be activated yet.", ex.getMessage());
-
-    }
-
-    @Test
-    void calculatePegoutTxSize_preRSKIP305AndSendingIsSegwitFalse_returnsExpectedValue() {
-
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(false);
-        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
-        FederationArgs federationArgs = new FederationArgs(
-            FederationMember.getFederationMembersFromKeys(keys),
-            Instant.now(),
-            0,
-            networkParameters
-        );
-        Federation federation = FederationFactory.buildStandardMultiSigFederation(
-            federationArgs
-        );
-
-        int inputSize = 2;
-        int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
-
-        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
-        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
-        int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .01;
-
-        assertTrue(difference < tolerance && difference > -tolerance);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0));
     }
 
     @Test
@@ -1054,7 +1001,7 @@ class BridgeUtilsTest {
 
         int inputSize = 2;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(2058, pegoutTxSize);
 
@@ -1065,13 +1012,17 @@ class BridgeUtilsTest {
 
         assertTrue(difference < tolerance && difference > -tolerance);
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
 
-        assertEquals(620, pegoutTxSizeSegwit);
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(694, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
-        assertTrue(segWitSavingPercentage > 69);
+        assertTrue(segWitSavingPercentage > 59);
 
     }
 
@@ -1092,7 +1043,7 @@ class BridgeUtilsTest {
 
         int inputSize = 9;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(9002, pegoutTxSize);
 
@@ -1103,13 +1054,17 @@ class BridgeUtilsTest {
 
         assertTrue(difference < tolerance && difference > -tolerance);
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
 
-        assertEquals(2533, pegoutTxSizeSegwit);
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(2866, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
-        assertTrue(segWitSavingPercentage > 69);
+        assertTrue(segWitSavingPercentage > 59);
 
     }
 
@@ -1134,7 +1089,7 @@ class BridgeUtilsTest {
         int outputSize = 20;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(10570, pegoutTxSize);
 
@@ -1145,9 +1100,13 @@ class BridgeUtilsTest {
 
         assertTrue(difference < tolerance && difference > -tolerance);
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
 
-        assertEquals(3382, pegoutTxSizeSegwit);
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(3752, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
@@ -1175,7 +1134,7 @@ class BridgeUtilsTest {
         int outputSize = 200;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, false);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         assertEquals(56010, pegoutTxSize);
 
@@ -1186,9 +1145,13 @@ class BridgeUtilsTest {
 
         assertTrue(difference < tolerance && difference > -tolerance);
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize, true);
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
 
-        assertEquals(20072, pegoutTxSizeSegwit);
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(21922, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
@@ -1228,7 +1191,7 @@ class BridgeUtilsTest {
         int outputSize = 200;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, false);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
         assertEquals(26510, pegoutTxSize);
 
@@ -1239,9 +1202,13 @@ class BridgeUtilsTest {
 
         assertTrue(difference < tolerance && difference > -tolerance);
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, true);
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultFederationKeys)
+            .build();
 
-        assertEquals(12722, pegoutTxSizeSegwit);
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(13172, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
@@ -1280,7 +1247,7 @@ class BridgeUtilsTest {
         int outputSize = 50;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, nonStandardErpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, false);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
         assertEquals(41810, pegoutTxSize);
 
@@ -1291,9 +1258,13 @@ class BridgeUtilsTest {
 
         assertTrue(difference < tolerance && difference > -tolerance);
 
-        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize, true);
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultFederationKeys)
+            .build();
 
-        assertEquals(14235, pegoutTxSizeSegwit);
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(15135, pegoutTxSizeSegwit);
 
         double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
 
