@@ -33,12 +33,8 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
 
         byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csvValue);
         logger.debug("[createRedeemScriptFromKeys] Creating the redeem script from the scripts");
-        Script redeemScript = createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
 
-        logger.debug("[createRedeemScriptFromKeys] Validating redeem script size");
-        ScriptValidations.validateScriptSize(redeemScript);
-
-        return redeemScript;
+        return createRedeemScriptFromScripts(defaultRedeemScript, emergencyRedeemScript, serializedCsvValue);
     }
 
     private Script createRedeemScriptFromScripts(

@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.vote.ABICallElection;
 import co.rsk.peg.vote.ABICallSpec;
@@ -74,6 +75,17 @@ public class BridgeSerializationUtils {
         return new Keccak256(rskTxHashSerialized);
     }
 
+    public static byte[] serializeOutpointsValues(List<Coin> outpointsValues) {
+        return UtxoUtils.encodeOutpointValues(outpointsValues);
+    }
+
+    public static List<Coin> deserializeOutpointsValues(byte[] serializedOutpointsValues) {
+        if (isNull(serializedOutpointsValues)) {
+            throw new IllegalArgumentException("Serialized outpoints values cannot be null.");
+        }
+        return UtxoUtils.decodeOutpointValues(serializedOutpointsValues);
+    }
+
     public static byte[] serializeBtcTransaction(BtcTransaction btcTransaction) {
         return RLP.encodeElement(btcTransaction.bitcoinSerialize());
     }
@@ -89,7 +101,8 @@ public class BridgeSerializationUtils {
     private static BtcTransaction deserializeBtcTransaction(
         byte[] serializedTx,
         NetworkParameters networkParameters,
-        boolean txHasInputs) {
+        boolean txHasInputs
+    ) {
 
         if (serializedTx == null || serializedTx.length == 0) {
             return null;
@@ -108,7 +121,8 @@ public class BridgeSerializationUtils {
     private static BtcTransaction deserializeBtcTransactionFromRawTx(
         byte[] rawTx,
         NetworkParameters networkParameters,
-        boolean txHasInputs) {
+        boolean txHasInputs
+    ) {
 
         if (!txHasInputs) {
             BtcTransaction tx = new BtcTransaction(networkParameters);
@@ -312,7 +326,7 @@ public class BridgeSerializationUtils {
         List<byte[]> federationMembers = federation.getMembers().stream()
             .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
             .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
-            .collect(Collectors.toList());
+            .toList();
 
         byte[][] rlpElements = new byte[FEDERATION_RLP_LIST_SIZE][];
         rlpElements[FEDERATION_CREATION_TIME_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
@@ -342,7 +356,7 @@ public class BridgeSerializationUtils {
 
         RLPList rlpMembers = (RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX);
 
-        List<FederationMember> federationMembers = new ArrayList();
+        List<FederationMember> federationMembers = new ArrayList<>();
 
         for (int k = 0; k < rlpMembers.size(); k++) {
             RLPElement element = rlpMembers.get(k);
@@ -408,6 +422,12 @@ public class BridgeSerializationUtils {
                 federationConstants
             );
         }
+        if (version == P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            return BridgeSerializationUtils.deserializeP2shP2wshErpFederation(
+                data,
+                federationConstants
+            );
+        }
         // To keep backwards compatibility
         return BridgeSerializationUtils.deserializeStandardMultisigFederation(
             data,
@@ -416,7 +436,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static StandardMultisigFederation deserializeStandardMultisigFederation(
+    protected static StandardMultisigFederation deserializeStandardMultisigFederation(
         byte[] data,
         NetworkParameters networkParameters
     ) {
@@ -426,7 +446,8 @@ public class BridgeSerializationUtils {
             FederationMember::deserialize
         );
     }
-    public static ErpFederation deserializeNonStandardErpFederation(
+
+    protected static ErpFederation deserializeNonStandardErpFederation(
         byte[] data,
         FederationConstants federationConstants,
         ActivationConfig.ForBlock activations
@@ -444,7 +465,7 @@ public class BridgeSerializationUtils {
         return FederationFactory.buildNonStandardErpFederation(federationArgs, erpPubKeys, activationDelay, activations);
     }
 
-    public static ErpFederation deserializeP2shErpFederation(
+    protected static ErpFederation deserializeP2shErpFederation(
         byte[] data,
         FederationConstants federationConstants
     ) {
@@ -459,6 +480,23 @@ public class BridgeSerializationUtils {
         long activationDelay = federationConstants.getErpFedActivationDelay();
 
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
+    }
+
+    protected static ErpFederation deserializeP2shP2wshErpFederation(
+        byte[] data,
+        FederationConstants federationConstants
+    ) {
+        Federation federation = deserializeStandardMultisigFederationWithDeserializer(
+            data,
+            federationConstants.getBtcParams(),
+            FederationMember::deserialize
+        );
+
+        FederationArgs federationArgs = federation.getArgs();
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+
+        return FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:
@@ -883,7 +921,7 @@ public class BridgeSerializationUtils {
     // arg_1, ..., arg_n
     private static byte[] serializeABICallSpec(ABICallSpec spec) {
         byte[][] encodedArguments = Arrays.stream(spec.getArguments())
-                .map(arg -> RLP.encodeElement(arg))
+                .map(RLP::encodeElement)
                 .toArray(byte[][]::new);
         return RLP.encodeList(
                 RLP.encodeElement(spec.getFunction().getBytes(StandardCharsets.UTF_8)),
@@ -917,7 +955,7 @@ public class BridgeSerializationUtils {
         List<byte[]> encodedKeys = voters.stream()
                 .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getBytes()))
-                .collect(Collectors.toList());
+                .toList();
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
