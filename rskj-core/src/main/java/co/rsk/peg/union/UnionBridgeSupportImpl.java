@@ -155,7 +155,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.INVALID_VALUE;
         }
 
-        storageProvider.setWeisTransferredToUnionBridge(amount);
+        storageProvider.increaseWeisTransferredToUnionBridge(amount);
         logger.info("[{}] Amount requested by the union bridge has been transferred. Amount Requested: {}.", REQUEST_UNION_RBTC_TAG, amount);
         return UnionResponseCode.SUCCESS;
     }

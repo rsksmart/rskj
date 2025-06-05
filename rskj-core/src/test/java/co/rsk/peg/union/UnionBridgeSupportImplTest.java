@@ -491,7 +491,6 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
-
             .withConstants(bridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notAuthorizedAddress"));
@@ -518,7 +517,6 @@ class UnionBridgeSupportImplTest {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
-
             .withConstants(bridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notUnionBridgeContractAddress"));
@@ -544,7 +542,6 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
 
@@ -577,7 +574,6 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenInvalidValue_shouldReturnInvalidValue(Coin amountRequested) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
         
@@ -619,7 +615,6 @@ class UnionBridgeSupportImplTest {
     void requestUnionRbtc_whenValidValue_shouldReturnSuccessCode(Coin amountRequested) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
-
             .withConstants(unionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
 
@@ -635,39 +630,84 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
-    void requestUnionRbtc_whenAmountToRequestEqualToLockingCap_shouldReturnSuccessCode() {
+    void requestUnionRbtc_whenNewTotalWeisTransferredAmountEqualToLockingCap_shouldReturnSuccessCode() {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants).build();
 
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
 
-        Coin lockingCap = Coin.fromBitcoin(co.rsk.bitcoinj.core.Coin.FIFTY_COINS);
+        BigInteger oneRbtc = BigInteger.TEN.pow(18);
+        Coin initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(1000L));
+
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            lockingCap,
+            initialLockingCap,
             BridgeSerializationUtils::serializeRskCoin
         );
 
-        // To simulate the case where a weis transferred is store
-        Coin amountRequested = lockingCap.divide(BigInteger.TWO);
-
+        Coin currentWeisTransferredAmount = initialLockingCap.divide(BigInteger.valueOf(2L)); // 500 RBTC
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
-            amountRequested,
+            currentWeisTransferredAmount,
             BridgeSerializationUtils::serializeRskCoin
         );
+
+        Coin amountToRequest = initialLockingCap.divide(BigInteger.valueOf(2L)); // 500 RBTC
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx,
-            amountRequested);
+            amountToRequest);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
         // call save and assert that the amount is stored
         unionBridgeSupport.save();
-        assertUnionRbtcWasStored(amountRequested);
+
+        // The total weis transferred amount should equal the locking cap. (500 RBTC + 500 RBTC = 1000 RBTC)
+        assertUnionRbtcWasStored(initialLockingCap);
+    }
+
+    @Test
+    void requestUnionRbtc_whenNewTotalWeisTransferredAmountSurpassLockingCap_shouldReturnSuccessCode() {
+        // arrange
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(unionBridgeConstants).build();
+
+        when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeConstants.getAddress());
+
+        BigInteger oneRbtc = BigInteger.TEN.pow(18);
+        Coin initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(1000L));
+
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            initialLockingCap,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+
+        Coin currentWeisTransferredAmount = initialLockingCap.divide(BigInteger.valueOf(2L)); // 500 RBTC
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            currentWeisTransferredAmount,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+
+        Coin amountToRequest = initialLockingCap.divide(BigInteger.valueOf(2L)).add(Coin.valueOf(1)); // 500 RBTC + 1 wei
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx,
+            amountToRequest);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
+
+        Coin storedWeisTransferred = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        // The total weis transferred amount should not change, it should still be 500 RBTC
+        Assertions.assertEquals(currentWeisTransferredAmount, storedWeisTransferred);
     }
 
     private void assertNoUnionRbtcIsStored() {
@@ -786,7 +826,8 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
 
         // assert
-        assertUnionRbtcWasStored(amountRequested);
+        Coin expectedAmountTransferred = storedWeisTransferredAmount.add(amountRequested);
+        assertUnionRbtcWasStored(expectedAmountTransferred);
         assertNoAddressIsStored();
         assertNoLockingCapIsStored();
     }

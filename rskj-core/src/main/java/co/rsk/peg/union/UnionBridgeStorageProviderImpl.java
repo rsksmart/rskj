@@ -90,14 +90,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     }
 
     @Override
-    public void setWeisTransferredToUnionBridge(Coin weisTransferred) {
-        if (nonNull(weisTransferred) && weisTransferred.compareTo(Coin.ZERO) < 0) {
-            throw new IllegalArgumentException("amount transferred to Union Bridge cannot be negative");
-        }
-        this.weisTransferredToUnionBridge = weisTransferred;
-    }
-
-    @Override
     public Optional<Coin> getWeisTransferredToUnionBridge() {
         return Optional.ofNullable(weisTransferredToUnionBridge).or(() -> Optional.ofNullable(
             bridgeStorageAccessor.getFromRepository(
@@ -105,5 +97,14 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 BridgeSerializationUtils::deserializeRskCoin
             )
         ));
+    }
+
+    @Override
+    public void increaseWeisTransferredToUnionBridge(Coin amountRequested) {
+        if (isNull(amountRequested) || amountRequested.compareTo(Coin.ZERO) < 0) {
+            throw new IllegalArgumentException("Amount requested to Union Bridge cannot be null or negative");
+        }
+        Coin currentWeisTransferredToUnionBridge = getWeisTransferredToUnionBridge().orElse(Coin.ZERO);
+        this.weisTransferredToUnionBridge = currentWeisTransferredToUnionBridge.add(amountRequested);
     }
 }
