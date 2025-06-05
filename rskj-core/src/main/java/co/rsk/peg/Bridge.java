@@ -1496,20 +1496,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress).getCode();
     }
 
-    public long getUnionBridgeLockingCap(Object[] args) {
+    public BigInteger getUnionBridgeLockingCap(Object[] args) {
         logger.trace("getUnionBridgeLockingCap");
-        return bridgeSupport.getUnionBridgeLockingCap().getValue();
+        return bridgeSupport.getUnionBridgeLockingCap().asBigInteger();
     }
 
     public int increaseUnionBridgeLockingCap(Object[] args) {
         logger.trace("increaseUnionBridgeLockingCap");
-        try {
-            Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
-            return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
-        } catch (BridgeIllegalArgumentException e) {
-            logger.warn("Exception in increaseUnionBridgeLockingCap", e);
-            return UnionResponseCode.INVALID_VALUE.getCode();
-        }
+        co.rsk.core.Coin newLockingCap = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
     }
 
     public int requestUnionRbtc(Object[] args) {

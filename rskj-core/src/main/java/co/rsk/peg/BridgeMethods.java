@@ -842,7 +842,7 @@ public enum BridgeMethods {
             new String[]{"int256"}
         ),
         fixedCost(3_000L), // TODO: Define final cost
-        (BridgeMethodExecutorTyped<Long>) Bridge::getUnionBridgeLockingCap,
+        (BridgeMethodExecutorTyped<BigInteger>) Bridge::getUnionBridgeLockingCap,
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
