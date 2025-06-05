@@ -1,7 +1,7 @@
 package co.rsk.peg.union.constants;
 
-import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 
