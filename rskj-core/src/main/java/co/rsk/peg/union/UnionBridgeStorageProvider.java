@@ -10,6 +10,6 @@ public interface UnionBridgeStorageProvider {
     void setLockingCap(Coin lockingCap);
     Optional<Coin> getLockingCap();
     Optional<Coin> getWeisTransferredToUnionBridge();
-    void setWeisTransferredToUnionBridge(Coin weisTransferred);
+    void increaseWeisTransferredToUnionBridge(Coin amountRequested);
     void save();
 }
