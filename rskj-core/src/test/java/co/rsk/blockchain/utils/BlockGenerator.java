@@ -69,7 +69,7 @@ public class BlockGenerator {
 
     public BlockGenerator(Constants networkConstants, ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
-        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
+        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants, null);
         this.blockFactory = new BlockFactory(activationConfig);
     }
 
@@ -251,6 +251,7 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, coinbase, edges);
     }
 
+    // todo(fede) probably for test
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
                                   long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase, short[] edges) {
         if (txs == null) {

@@ -269,7 +269,7 @@ public class MinerManagerTest {
     private MinerServerImpl getMinerServer() {
         SimpleEthereum ethereum = new SimpleEthereum();
         ethereum.blockchain = blockchain;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(

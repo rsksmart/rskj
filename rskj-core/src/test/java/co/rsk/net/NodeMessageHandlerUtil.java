@@ -24,7 +24,7 @@ import static org.mockito.Mockito.mock;
 public class NodeMessageHandlerUtil {
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
 
     public static NodeMessageHandler createHandler(Blockchain blockchain) {
         final NetBlockStore store = new NetBlockStore();

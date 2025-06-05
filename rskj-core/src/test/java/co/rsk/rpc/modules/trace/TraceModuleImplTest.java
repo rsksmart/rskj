@@ -446,8 +446,8 @@ class TraceModuleImplTest {
                 world.getTransactionPool(),
                 new DifficultyCalculator(
                         rskSystemProperties.getActivationConfig(),
-                        rskSystemProperties.getNetworkConstants()
-                ),
+                        rskSystemProperties.getNetworkConstants(),
+                        null),
                 new GasLimitCalculator(rskSystemProperties.getNetworkConstants()),
                 new ForkDetectionDataCalculator(),
                 new DummyBlockValidationRule(),

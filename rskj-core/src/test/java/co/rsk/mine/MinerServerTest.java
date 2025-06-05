@@ -100,7 +100,7 @@ public abstract class MinerServerTest {
 
     protected void setUp(TestSystemProperties config) {
         this.config = config;
-        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
         rskTestContext = new RskTestFactory(tempDir, config) {
             @Override
             protected RepositoryLocator buildRepositoryLocator() {

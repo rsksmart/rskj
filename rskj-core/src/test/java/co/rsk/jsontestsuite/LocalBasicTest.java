@@ -97,7 +97,7 @@ class LocalBasicTest {
 
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
-            BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants).calcDifficulty(current, parent);
+            BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants, null).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficulty());
             if (c > 0)
                 logger.info(" Difficulty increase test\n");

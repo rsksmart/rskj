@@ -252,8 +252,7 @@ public class BlockToMineBuilder {
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
 
-        List<BlockHeader> difficultyBlockWindow = mainchainHeaders.subList(0, DifficultyCalculator.BLOCK_COUNT_WINDOW);
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader, difficultyBlockWindow));
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;
     }
 }

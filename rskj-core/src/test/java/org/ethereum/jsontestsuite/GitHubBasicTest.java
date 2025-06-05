@@ -44,7 +44,7 @@ class GitHubBasicTest {
 
     private static TestSystemProperties config = new TestSystemProperties();
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
 
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 

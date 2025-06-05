@@ -608,7 +608,7 @@ class TransactionModuleTest {
                         repositoryLocator,
                         blockStore,
                         transactionPool,
-                        new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                        new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null),
                         new GasLimitCalculator(config.getNetworkConstants()),
                         new ForkDetectionDataCalculator(),
                         mock(BlockUnclesValidationRule.class),

@@ -18,6 +18,8 @@
 
 package co.rsk.core;
 
+import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.core.bc.MiningMainchainView;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -38,17 +40,25 @@ public class DifficultyCalculator {
 
     private final ActivationConfig activationConfig;
     private final Constants constants;
+    private final MiningMainchainView mainchainView;
 
-    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, MiningMainchainView mainchainView) {
         this.activationConfig = activationConfig;
         this.constants = constants;
+
+        if (mainchainView == null) {
+            throw new IllegalArgumentException("mainchainView shouldn't be null");
+        }
+
+        this.mainchainView = mainchainView;
     }
 
-    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
+    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
         long blockNumber = header.getNumber();
 
         boolean rskipPatoActive = activationConfig.isActive(ConsensusRule.RSKIP_PATO, blockNumber);
         if(rskipPatoActive) {
+            List<BlockHeader> blockWindow = mainchainView.get().subList(0, (int) BLOCK_COUNT_WINDOW);
             return getBlockDifficultyPato(blockNumber, header, parentHeader, blockWindow);
         }
 

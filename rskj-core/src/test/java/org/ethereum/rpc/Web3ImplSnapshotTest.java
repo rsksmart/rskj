@@ -217,7 +217,7 @@ class Web3ImplSnapshotTest {
 
     private MinerServer getMinerServerForTest(SimpleEthereum ethereum, MinerClock clock) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(
                 config,

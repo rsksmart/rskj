@@ -49,7 +49,7 @@ class SyncProcessorTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
 
     @Test
     void noPeers() {
