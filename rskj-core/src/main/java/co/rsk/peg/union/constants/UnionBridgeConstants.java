@@ -11,6 +11,7 @@ public class UnionBridgeConstants {
     protected Coin initialLockingCap;
     protected int lockingCapIncrementsMultiplier;
     protected AddressBasedAuthorizer changeAuthorizer;
+    protected AddressBasedAuthorizer changeLockingCapAuthorizer;
 
     public NetworkParameters getBtcParams() {
         return btcParams;
@@ -30,5 +31,9 @@ public class UnionBridgeConstants {
 
     public AddressBasedAuthorizer getChangeAuthorizer() {
         return changeAuthorizer;
+    }
+
+    public AddressBasedAuthorizer getChangeLockingCapAuthorizer() {
+        return changeLockingCapAuthorizer;
     }
 }
