@@ -539,6 +539,120 @@ class UnionBridgeStorageProviderImplTest {
         assertNull(retrievedWeisTransferredToUnionBridge);
     }
 
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenNull_shouldThrowIllegalArgumentException() {
+        // Act & Assert
+        Assertions.assertThrows(IllegalArgumentException.class,
+            () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(null),
+            "Amount released cannot be null or negative");
+    }
+
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenNegative_shouldThrowIllegalArgumentException() {
+        // Arrange
+        Coin negativeAmount = Coin.valueOf(-1);
+
+        // Act & Assert
+        Assertions.assertThrows(IllegalArgumentException.class,
+            () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(negativeAmount),
+            "Amount released cannot be null or negative");
+    }
+
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenAmountGreaterThanStored_shouldThrowIllegalArgumentException() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            amountTransferredToUnionBridge, BridgeSerializationUtils::serializeRskCoin);
+        Coin tooLarge = amountTransferredToUnionBridge.add(Coin.valueOf(1));
+
+        // Act & Assert
+        Assertions.assertThrows(IllegalArgumentException.class,
+            () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(tooLarge),
+            "Cannot decrease weis transferred to Union Bridge below zero");
+    }
+
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenNoStoredValueAndDecreaseNonZero_shouldThrowIllegalArgumentException() {
+        Coin nonZero = Coin.valueOf(1);
+        Assertions.assertThrows(IllegalArgumentException.class,
+            () -> unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(nonZero),
+            "Cannot decrease weis transferred to Union Bridge below zero");
+    }
+
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenAmountEqualsStored_shouldSetZero() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            amountTransferredToUnionBridge, BridgeSerializationUtils::serializeRskCoin);
+
+        // Act
+        unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(amountTransferredToUnionBridge);
+
+        // Assert
+        Optional<Coin> actualWeisTransferred = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        assertTrue(actualWeisTransferred.isPresent());
+        assertEquals(Coin.ZERO, actualWeisTransferred.get());
+
+        // assert that before calling save, the value is not stored
+        assertGivenWeisTransferredToUnionBridgeIsStored(amountTransferredToUnionBridge);
+
+        // Call save to persist the value
+        unionBridgeStorageProvider.save();
+
+        // Check that the value is stored
+        assertGivenWeisTransferredToUnionBridgeIsStored(Coin.ZERO);
+    }
+
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenAmountLessThanStored_shouldDecreaseCorrectly() {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            amountTransferredToUnionBridge, BridgeSerializationUtils::serializeRskCoin);
+
+        // Act
+        Coin amountToReleaseLessThanStored = amountTransferredToUnionBridge.divide(BigInteger.TWO);
+        unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(amountToReleaseLessThanStored);
+
+        // Assert
+        Optional<Coin> actualWeisTransferred = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        assertTrue(actualWeisTransferred.isPresent());
+
+        Coin expectedWeisTransferred = amountTransferredToUnionBridge.subtract(amountToReleaseLessThanStored);
+        assertEquals(expectedWeisTransferred, actualWeisTransferred.get());
+
+        // assert that before calling save, the value is not stored
+        assertGivenWeisTransferredToUnionBridgeIsStored(amountTransferredToUnionBridge);
+
+        // Call save to persist the value
+        unionBridgeStorageProvider.save();
+
+        // Check that the value is stored
+        assertGivenWeisTransferredToUnionBridgeIsStored(expectedWeisTransferred);
+    }
+
+    @Test
+    void decreaseWeisTransferredToUnionBridge_whenNoStoredValueAndDecreaseZero_shouldSetZero() {
+        // Act
+        unionBridgeStorageProvider.decreaseWeisTransferredToUnionBridge(Coin.ZERO);
+
+        // Assert
+        Optional<Coin> actualWeisTransferred = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        assertTrue(actualWeisTransferred.isPresent());
+        assertEquals(Coin.ZERO, actualWeisTransferred.get());
+
+        // assert that before calling save, the value is not stored
+        assertNoWeisTransferredToUnionBridgeIsStored();
+
+        // Call save to persist the value
+        unionBridgeStorageProvider.save();
+
+        // Check that the value is stored
+        assertGivenWeisTransferredToUnionBridgeIsStored(Coin.ZERO);
+    }
+
     @ParameterizedTest
     @MethodSource("saveParametersProvider")
     void save_shouldStoreEachValueCorrectly(
