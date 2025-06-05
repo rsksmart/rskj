@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Objects;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
 public class HexDataParam implements Serializable {
