@@ -404,6 +404,7 @@ public class Web3Impl implements Web3 {
 
         return toQuantityJsonHex(b);
     }
+
     private String eth_call(CallArgumentsParam args, Map<String, String> inputs, List<AccountOverride> accountOverrideList) {
         return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber), accountOverrideList));
     }
