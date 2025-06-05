@@ -1,10 +1,11 @@
 package co.rsk.peg.union;
 
-import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.math.BigInteger;
 import javax.annotation.Nonnull;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
@@ -134,16 +135,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         storageProvider.setLockingCap(newCap);
         logger.info("[{}] Union Locking Cap has been increased. New value: {}",
-            INCREASE_LOCKING_CAP_TAG, newCap.value);
+            INCREASE_LOCKING_CAP_TAG, newCap);
         return UnionResponseCode.SUCCESS;
     }
 
-    private co.rsk.core.Coin getWeisTransferredToUnionBridge() {
-        return storageProvider.getWeisTransferredToUnionBridge().orElse(co.rsk.core.Coin.ZERO);
+    private Coin getWeisTransferredToUnionBridge() {
+        return storageProvider.getWeisTransferredToUnionBridge().orElse(Coin.ZERO);
     }
 
     @Override
-    public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amount) {
+    public UnionResponseCode requestUnionRbtc(Transaction tx, Coin amount) {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
         if (!isCallerUnionBridgeContractAddress(tx)) {
@@ -169,19 +170,19 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isCallerUnionBridgeContractAddress;
     }
 
-    private boolean isValidAmount(co.rsk.core.Coin amountRequested) {
-        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(co.rsk.core.Coin.ZERO) < 1;
+    private boolean isValidAmount(Coin amountRequested) {
+        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(Coin.ZERO) < 1;
         if (isAmountNullOrLessThanOne) {
             logger.warn(
                 "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}", amountRequested);
             return false;
         }
 
-        co.rsk.core.Coin lockingCap = co.rsk.core.Coin.fromBitcoin(getLockingCap());
+        Coin lockingCap = getLockingCap();
 
-        co.rsk.core.Coin previousAmountRequested = getWeisTransferredToUnionBridge();
+        Coin previousAmountRequested = getWeisTransferredToUnionBridge();
 
-        co.rsk.core.Coin newAmountRequested = previousAmountRequested.add(amountRequested);
+        Coin newAmountRequested = previousAmountRequested.add(amountRequested);
         boolean doesNewAmountAndPreviousAmountRequestedSurpassLockingCap =
             newAmountRequested.compareTo(lockingCap) > 0;
         if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
@@ -200,16 +201,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         if (newCap.compareTo(currentLockingCap) < 1) {
             logger.warn(
                 "[isValidLockingCap] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
-                newCap.value, currentLockingCap.value);
+                newCap, currentLockingCap);
             return false;
         }
 
         Coin maxLockingCapIncreaseAllowed = currentLockingCap.multiply(
-            constants.getLockingCapIncrementsMultiplier());
+            BigInteger.valueOf(constants.getLockingCapIncrementsMultiplier()));
         if (newCap.compareTo(maxLockingCapIncreaseAllowed) > 0) {
             logger.warn(
                 "[isValidLockingCap] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
-                newCap.value, maxLockingCapIncreaseAllowed.value);
+                newCap, maxLockingCapIncreaseAllowed);
             return false;
         }
 

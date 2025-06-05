@@ -906,10 +906,10 @@ class BridgeSupportTest {
         @Test
         void getUnionBridgeLockingCap_whenNoLockingCapIsStored_shouldReturnInitialConstantLockingCapValue() {
             // act
-            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            co.rsk.core.Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
-            Coin expectedLockingCap = unionBridgeConstants.getInitialLockingCap();
+            co.rsk.core.Coin expectedLockingCap = unionBridgeConstants.getInitialLockingCap();
             assertEquals(expectedLockingCap, actualUnionBridgeLockingCap);
         }
 
@@ -917,7 +917,8 @@ class BridgeSupportTest {
         void getUnionBridgeLockingCap_whenStoredLockingCap_shouldReturnStoredLockingCap() {
             // arrange
             UnionBridgeStorageProvider unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
-            Coin storedLockingCap = Coin.COIN.multiply(10);
+            BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+            co.rsk.core.Coin storedLockingCap = new co.rsk.core.Coin(oneEth.multiply(BigInteger.valueOf(500))); // 500 RBTC
             when(unionBridgeStorageProvider.getLockingCap()).thenReturn(Optional.of(storedLockingCap));
 
             bridgeSupport = bridgeSupportBuilder
@@ -931,7 +932,7 @@ class BridgeSupportTest {
                 .build();
 
             // act
-            Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
+            co.rsk.core.Coin actualUnionBridgeLockingCap = bridgeSupport.getUnionBridgeLockingCap();
 
             // assert
             assertEquals(storedLockingCap, actualUnionBridgeLockingCap);
@@ -950,8 +951,9 @@ class BridgeSupportTest {
                 .withUnionBridgeSupport(unionBridgeSupport)
                 .build();
 
-            Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
-            Coin newLockingCap = initialLockingCap.multiply(unionBridgeConstants.getLockingCapIncrementsMultiplier());
+            co.rsk.core.Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+            co.rsk.core.Coin newLockingCap = initialLockingCap.multiply(
+                BigInteger.valueOf(unionBridgeConstants.getLockingCapIncrementsMultiplier()));
 
             // act
             UnionResponseCode actualResult = bridgeSupport.increaseUnionBridgeLockingCap(
