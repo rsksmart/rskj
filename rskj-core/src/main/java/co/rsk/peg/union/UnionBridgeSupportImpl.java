@@ -125,7 +125,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
-        if (!isAuthorizedCaller(tx)) {
+        if (!isChangeLockingCapAuthorizedCaller(tx)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -137,6 +137,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Union Locking Cap has been increased. New value: {}",
             INCREASE_LOCKING_CAP_TAG, newCap);
         return UnionResponseCode.SUCCESS;
+    }
+
+    private boolean isChangeLockingCapAuthorizedCaller(Transaction tx) {
+        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
+        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
+        if (!isAuthorized) {
+            String baseMessage = String.format("Caller is not authorized to increase locking cap. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isChangeLockingCapAuthorizedCaller", baseMessage);
+        }
+        return isAuthorized;
     }
 
     private Coin getWeisTransferredToUnionBridge() {
