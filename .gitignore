@@ -92,3 +92,7 @@ doc/rpc/openrpc.json
 # Fuzzing
 **/.ci-fuzz-corpus/
 **/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
+
+#vscode
+.vscode/
+settings.json
