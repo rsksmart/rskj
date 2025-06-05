@@ -21,16 +21,21 @@ package co.rsk.core;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
+    public static final long BLOCK_COUNT_WINDOW = 30; // last N blocks
+    private static final double ALPHA = 0.005; // todo(fede) checkout if double is the best fit
+    private static final double BLOCK_TARGET = 20; // target time between blocks
+    private static final double UNCLE_TRESHOLD = 0.7;
+
     private final ActivationConfig activationConfig;
     private final Constants constants;
 
@@ -39,12 +44,12 @@ public class DifficultyCalculator {
         this.constants = constants;
     }
 
-    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
+    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
         long blockNumber = header.getNumber();
 
         boolean rskipPatoActive = activationConfig.isActive(ConsensusRule.RSKIP_PATO, blockNumber);
         if(rskipPatoActive) {
-            return getBlockDifficultyPato(blockNumber, header, parentHeader);
+            return getBlockDifficultyPato(blockNumber, header, parentHeader, blockWindow);
         }
 
         boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, blockNumber);
@@ -58,26 +63,25 @@ public class DifficultyCalculator {
         return getBlockDifficulty(header, parentHeader);
     }
 
-    private static final long BLOCK_COUNT_WINDOW = 30; // last N blocks
-    private static final double ALPHA = 0.005; // todo(fede) checkout if double is the best fit
-    private static final double BLOCK_TARGET = 20; // target time between blocks
-    private static final long UNCLE_TRESHOLD = 0.7;
-
-    private BlockDifficulty getBlockDifficultyPato(long blockNumber, BlockHeader blockHeader, BlockHeader parentHeader) {
+    private BlockDifficulty getBlockDifficultyPato(long blockNumber, BlockHeader blockHeader, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
         if (blockNumber % BLOCK_COUNT_WINDOW != 0) {
             return parentHeader.getDifficulty();
         }
 
-        long blockTimeAverage = averageOf(parentHeader, BLOCK_COUNT_WINDOW, block -> block.getTimestamp()); // block time average
-        long uncleRate = averageOf(parentHeader, BLOCK_COUNT_WINDOW, block -> block.getUncleCount()); // uncle rate
+        long blockTimeAverage = averageOf(blockWindow, BLOCK_COUNT_WINDOW, block -> block.getTimestamp()); // block time average
+        long uncleRate = averageOf(blockWindow, BLOCK_COUNT_WINDOW, block -> block.getUncleCount()); // uncle rate
  
-        double F; // todo(fede) checkout if double is the best fit
+        double F = 0; // todo(fede) checkout if double is the best fit
         if (uncleRate >= UNCLE_TRESHOLD) {
             F = ALPHA;
         } else if (uncleRate < UNCLE_TRESHOLD && (BLOCK_TARGET * 1.1) > blockTimeAverage) {
             F = ALPHA;
         } else if (uncleRate < UNCLE_TRESHOLD && (BLOCK_TARGET * 0.9) <= blockTimeAverage) {
             F = -ALPHA;
+        }
+
+        if(F == 0) {
+            throw new IllegalStateException("factor shouldn't be zero");
         }
 
         BigInteger newDifficulty = parentHeader.getDifficulty()
@@ -87,8 +91,18 @@ public class DifficultyCalculator {
         return new BlockDifficulty(newDifficulty);
     }
 
-    private long averageOf(BlockHeader parentHeader, long blockWindow, Function<Block, Long> func) {
-        
+    private long averageOf(List<BlockHeader> blockWindow, long blockWindowCount, Function<BlockHeader, Number> func) {
+        if (blockWindow.size() != blockWindowCount) {
+            throw new IllegalArgumentException("block window has a different size");
+        }
+
+        double avg = blockWindow.stream()
+            .map(func)
+            .mapToLong(Number::longValue)
+            .average()
+            .orElse(0.0);
+
+        return Double.valueOf(avg).longValue();
     }
 
     private BlockDifficulty getBlockDifficulty(

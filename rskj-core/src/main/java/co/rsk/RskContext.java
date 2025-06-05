@@ -359,7 +359,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             // int height = MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION; // it was like this, previously
             int height = Math.max(
                 MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION,
-                DifficultyCalculator.BLOCK_COUNT_WINDOW
+                Long.valueOf(DifficultyCalculator.BLOCK_COUNT_WINDOW).intValue()
             );
 
             miningMainchainView = new MiningMainchainViewImpl(
