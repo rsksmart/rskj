@@ -8528,11 +8528,11 @@ class BridgeSupportTest {
                 List.of(p2shP2wshFedUtxo1)
             ),
             // active fed is p2sh p2wsh and there is 1 pegout requests
-            // when there are no utxos available, the old logic should be executed and return the expected fee
+            // when there are no utxos available, it will call `calculatePegoutTxSize` and return the expected value for a segwit federation
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 34080L: 34740L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9580L: 9740L),
                 List.of(pegoutRequest1),
                 List.of()
             ),
