@@ -2,12 +2,13 @@ package co.rsk.peg.union;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import java.math.BigInteger;
 import java.util.Optional;
 import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Assertions;
@@ -21,10 +22,10 @@ class UnionBridgeStorageProviderImplTest {
         "newUnionBridgeContractAddress");
 
     private static final Coin unionBridgeLockingCap = UnionBridgeMainNetConstants.getInstance().getInitialLockingCap();
-    private static final Coin newUnionBridgeLockingCap = unionBridgeLockingCap.times(2);
+    private static final Coin newUnionBridgeLockingCap = unionBridgeLockingCap.multiply(BigInteger.TWO);
 
-    private static final co.rsk.core.Coin amountTransferredToUnionBridge = co.rsk.core.Coin.fromBitcoin(unionBridgeLockingCap.divide(2));
-    private static final co.rsk.core.Coin newAmountTransferredToUnionBridge = co.rsk.core.Coin.fromBitcoin(newUnionBridgeLockingCap.divide(2));
+    private static final Coin amountTransferredToUnionBridge = unionBridgeLockingCap.divide(BigInteger.TWO);
+    private static final Coin newAmountTransferredToUnionBridge = newUnionBridgeLockingCap.divide(BigInteger.TWO);
 
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
@@ -235,7 +236,7 @@ class UnionBridgeStorageProviderImplTest {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin);
+            unionBridgeLockingCap, BridgeSerializationUtils::serializeRskCoin);
 
         // Act
         Optional<Coin> actualLockingCap = unionBridgeStorageProvider.getLockingCap();
@@ -262,7 +263,7 @@ class UnionBridgeStorageProviderImplTest {
     private void assertNoLockingCapIsStored() {
         Coin retrievedLockingCap = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            BridgeSerializationUtils::deserializeCoin);
+            BridgeSerializationUtils::deserializeRskCoin);
         assertNull(retrievedLockingCap);
     }
 
@@ -294,7 +295,7 @@ class UnionBridgeStorageProviderImplTest {
         // To simulate, there is a locking cap already stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin
+            unionBridgeLockingCap, BridgeSerializationUtils::serializeRskCoin
         );
 
         // Act
@@ -311,7 +312,7 @@ class UnionBridgeStorageProviderImplTest {
     private void assertGivenLockingCapIsStored(Coin newUnionBridgeLockingCap) {
         Coin savedLockingCap = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            BridgeSerializationUtils::deserializeCoin);
+            BridgeSerializationUtils::deserializeRskCoin);
         assertNotNull(savedLockingCap);
         assertEquals(newUnionBridgeLockingCap, savedLockingCap);
     }
@@ -359,7 +360,7 @@ class UnionBridgeStorageProviderImplTest {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin);
+            unionBridgeLockingCap, BridgeSerializationUtils::serializeRskCoin);
 
         // Act & Assert
         // Check that locking cap is stored
@@ -373,7 +374,7 @@ class UnionBridgeStorageProviderImplTest {
         // Check the new locking cap is not stored yet but is present in the cache
         Coin originalLockingCap = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            BridgeSerializationUtils::deserializeCoin);
+            BridgeSerializationUtils::deserializeRskCoin);
         assertEquals(unionBridgeLockingCap, originalLockingCap);
         assertNotEquals(newUnionBridgeLockingCap, originalLockingCap);
 
@@ -389,7 +390,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void getWeisTransferredToUnionBridge_whenNoValueIsStoredOrSet_shouldReturnEmpty() {
         // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         // Assert
         assertTrue(actualWeisTransferredToUnionBridge.isEmpty());
@@ -403,7 +404,7 @@ class UnionBridgeStorageProviderImplTest {
             amountTransferredToUnionBridge, BridgeSerializationUtils::serializeRskCoin);
 
         // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         // Assert
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
@@ -416,7 +417,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.setWeisTransferredToUnionBridge(amountTransferredToUnionBridge);
 
         // Act
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         // Assert
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
@@ -427,7 +428,7 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void setWeisTransferredToUnionBridge_whenNegative_shouldThrowIllegalArgumentException() {
         // Arrange
-        co.rsk.core.Coin negativeAmount = co.rsk.core.Coin.valueOf(-1);
+        Coin negativeAmount = Coin.valueOf(-1);
 
         // Act
         Assertions.assertThrows(IllegalArgumentException.class,
@@ -438,13 +439,13 @@ class UnionBridgeStorageProviderImplTest {
     @Test
     void setWeisTransferredToUnionBridge_whenZero_shouldSetZero() {
         // Arrange
-        co.rsk.core.Coin zeroAmount = co.rsk.core.Coin.ZERO;
+        Coin zeroAmount = Coin.ZERO;
 
         // Act
         unionBridgeStorageProvider.setWeisTransferredToUnionBridge(zeroAmount);
 
         // Assert
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
         assertEquals(zeroAmount, actualWeisTransferredToUnionBridge.get());
 
@@ -453,7 +454,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Create a new instance of the storage provider to retrieve the value from the storage
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
-        Optional<co.rsk.core.Coin> savedWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> savedWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
 
         assertTrue(savedWeisTransferredToUnionBridge.isPresent());
         assertEquals(zeroAmount, savedWeisTransferredToUnionBridge.get());
@@ -466,7 +467,7 @@ class UnionBridgeStorageProviderImplTest {
 
         // Assert
         assertNoWeisTransferredToUnionBridgeIsStored();
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
     }
 
@@ -485,13 +486,13 @@ class UnionBridgeStorageProviderImplTest {
 
         // Assert
         // Check existing wei transferred to union bridge is still stored
-        Optional<co.rsk.core.Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
+        Optional<Coin> actualWeisTransferredToUnionBridge = unionBridgeStorageProvider.getWeisTransferredToUnionBridge();
         assertTrue(actualWeisTransferredToUnionBridge.isPresent());
         assertGivenWeisTransferredToUnionBridgeIsStored(amountTransferredToUnionBridge);
     }
 
     private void assertNoWeisTransferredToUnionBridgeIsStored() {
-        co.rsk.core.Coin retrievedWeisTransferredToUnionBridge = storageAccessor.getFromRepository(
+        Coin retrievedWeisTransferredToUnionBridge = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin);
         assertNull(retrievedWeisTransferredToUnionBridge);
@@ -508,7 +509,7 @@ class UnionBridgeStorageProviderImplTest {
         // To simulate, there is a locking cap already stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            unionBridgeLockingCap, BridgeSerializationUtils::serializeCoin
+            unionBridgeLockingCap, BridgeSerializationUtils::serializeRskCoin
         );
         // To simulate, there is WEIS_TRANSFERRED_TO_UNION_BRIDGE's value already stored
         storageAccessor.saveToRepository(
@@ -541,8 +542,8 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
-        co.rsk.core.Coin expectedTransferredToUnionBridge) {
-        co.rsk.core.Coin savedWeisTransferredToUnionBridge = storageAccessor.getFromRepository(
+        Coin expectedTransferredToUnionBridge) {
+        Coin savedWeisTransferredToUnionBridge = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin);
         assertNotNull(savedWeisTransferredToUnionBridge);

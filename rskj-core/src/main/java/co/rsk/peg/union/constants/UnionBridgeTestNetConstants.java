@@ -1,9 +1,10 @@
 package co.rsk.peg.union.constants;
 
-import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
@@ -21,7 +22,8 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         unionBridgeAddress = new RskAddress("5988645d30cd01e4b3bc2c02cb3909dec991ae31");
 
         // TODO: Replace with actual initial value and increments multiplier
-        initialLockingCap = Coin.COIN.multiply(400L); // 400 BTC
+        BigInteger oneRbtc = BigInteger.TEN.pow(18); // 1 RBTC = 1000000000000000000 wei
+        initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(400)); // 400 rbtc
         lockingCapIncrementsMultiplier = 3;
 
         // TODO: Replace with actual authorizers

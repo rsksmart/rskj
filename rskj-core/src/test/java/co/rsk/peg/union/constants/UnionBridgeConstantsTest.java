@@ -3,10 +3,11 @@ package co.rsk.peg.union.constants;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 
-import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.stream.Stream;
 
@@ -84,10 +85,11 @@ class UnionBridgeConstantsTest {
     }
 
     public static Stream<Arguments> unionLockingCapInitialValueProvider() {
+        Coin oneEth = new Coin(BigInteger.TEN.pow(18)); // 1 ETH = 1000000000000000000 wei
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), Coin.COIN.multiply(300L)),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), Coin.COIN.multiply(400L)),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), Coin.COIN.multiply(500L))
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(300L))),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(400L))),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(500L)))
         );
     }
 

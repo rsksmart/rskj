@@ -3404,9 +3404,10 @@ class BridgeTest {
 
         private static final UnionBridgeConstants unionBridgeMainNetConstants = mainNetConstants.getBridgeConstants()
             .getUnionBridgeConstants();
-        private static final Coin initialLockingCap = unionBridgeMainNetConstants.getInitialLockingCap();
+        private static final co.rsk.core.Coin initialLockingCap = unionBridgeMainNetConstants.getInitialLockingCap();
 
-        private static final Coin newLockingCap = initialLockingCap.multiply(unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier());
+        private static final co.rsk.core.Coin newLockingCap = initialLockingCap.multiply(
+            BigInteger.valueOf(unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier()));
         private UnionBridgeSupport unionBridgeSupport;
         private Repository repository;
         private BridgeEventLogger eventLogger;
@@ -3524,7 +3525,7 @@ class BridgeTest {
         void getUnionBridgeLockingCap_afterRSKIP502_shouldReturnLockingCap(Constants constants)
             throws VMException {
             // Arrange
-            Coin expectedLockingCap = constants.getBridgeConstants().getUnionBridgeConstants()
+            co.rsk.core.Coin expectedLockingCap = constants.getBridgeConstants().getUnionBridgeConstants()
                 .getInitialLockingCap();
             when(unionBridgeSupport.getLockingCap()).thenReturn(expectedLockingCap);
 
@@ -3535,7 +3536,7 @@ class BridgeTest {
 
             // Assert
             BigInteger decodedResult = (BigInteger)Bridge.GET_UNION_BRIDGE_LOCKING_CAP.decodeResult(result)[0];
-            Coin actualLockingCap = Coin.valueOf(decodedResult.longValue());
+            co.rsk.core.Coin actualLockingCap = new co.rsk.core.Coin(decodedResult);
             assertEquals(expectedLockingCap, actualLockingCap);
         }
 
@@ -3546,7 +3547,7 @@ class BridgeTest {
                 .build();
 
 
-            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.getValue());
+            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.asBigInteger());
 
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
@@ -3558,7 +3559,7 @@ class BridgeTest {
             UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(expectedResponseCode);
 
-            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.getValue());
+            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.asBigInteger());
 
             // Act
             byte[] result = bridge.execute(data);
@@ -3571,15 +3572,15 @@ class BridgeTest {
         }
 
         @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNewLockingCapSurpassingMaxIcrement_shouldReturnInvalidLockingCapCode()
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNewLockingCapSurpassingMaxIncrement_shouldReturnInvalidLockingCapCode()
             throws VMException {
             // Arrange
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
 
-            Coin lockingCapAboveMaxIncrementAllowed = newLockingCap.add(Coin.COIN);
-            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(lockingCapAboveMaxIncrementAllowed.getValue());
+            co.rsk.core.Coin lockingCapAboveMaxIncrementAllowed = newLockingCap.add(co.rsk.core.Coin.valueOf(1));
+            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(lockingCapAboveMaxIncrementAllowed.asBigInteger());
 
             // Act
             byte[] result = bridge.execute(data);
@@ -3621,7 +3622,7 @@ class BridgeTest {
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), eq(newLockingCap))).thenReturn(
                 expectedResponseCode);
 
-            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.getValue());
+            byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.asBigInteger());
 
             // Act
             byte[] result = bridge.execute(data);
@@ -3639,7 +3640,7 @@ class BridgeTest {
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
 
             // when no argument is passed, the default value assigned to the arg is a big integer of zero
-            when(bridgeSupport.increaseUnionBridgeLockingCap(any(), eq(Coin.ZERO))).thenReturn(expectedResponseCode);
+            when(bridgeSupport.increaseUnionBridgeLockingCap(any(), eq(co.rsk.core.Coin.ZERO))).thenReturn(expectedResponseCode);
 
             CallTransaction.Function function = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
             byte[] data = function.encode();

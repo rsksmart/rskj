@@ -3,7 +3,7 @@ package co.rsk.peg.union;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.StorageAccessor;
@@ -16,7 +16,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     private RskAddress unionBridgeAddress;
     private Coin unionBridgeLockingCap;
-    private co.rsk.core.Coin weisTransferredToUnionBridge;
+    private Coin weisTransferredToUnionBridge;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -36,7 +36,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             bridgeStorageAccessor.saveToRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
                 unionBridgeLockingCap,
-                BridgeSerializationUtils::serializeCoin
+                BridgeSerializationUtils::serializeRskCoin
             );
         }
 
@@ -72,7 +72,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public void setLockingCap(Coin lockingCap) {
-        if (lockingCap != null && lockingCap.isZero()) {
+        if (lockingCap != null && lockingCap.equals(Coin.ZERO)) {
             throw new IllegalArgumentException("Union Bridge Locking Cap cannot be zero");
         }
 
@@ -84,21 +84,21 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         return Optional.ofNullable(unionBridgeLockingCap).or(
             () -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-                BridgeSerializationUtils::deserializeCoin
+                BridgeSerializationUtils::deserializeRskCoin
             ))
         );
     }
 
     @Override
-    public void setWeisTransferredToUnionBridge(co.rsk.core.Coin weisTransferred) {
-        if (nonNull(weisTransferred) && weisTransferred.compareTo(co.rsk.core.Coin.ZERO) < 0) {
+    public void setWeisTransferredToUnionBridge(Coin weisTransferred) {
+        if (nonNull(weisTransferred) && weisTransferred.compareTo(Coin.ZERO) < 0) {
             throw new IllegalArgumentException("amount transferred to Union Bridge cannot be negative");
         }
         this.weisTransferredToUnionBridge = weisTransferred;
     }
 
     @Override
-    public Optional<co.rsk.core.Coin> getWeisTransferredToUnionBridge() {
+    public Optional<Coin> getWeisTransferredToUnionBridge() {
         return Optional.ofNullable(weisTransferredToUnionBridge).or(() -> Optional.ofNullable(
             bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
