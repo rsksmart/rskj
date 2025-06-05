@@ -6486,7 +6486,7 @@ class BridgeSupportTest {
     void isAlreadyBtcTxHashProcessedHeight_true() throws IOException {
         Repository repository = createRepository();
         BtcTransaction btcTransaction = new BtcTransaction(btcRegTestParams);
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), genesisActivations);
 
         provider.setHeightBtcTxhashAlreadyProcessed(btcTransaction.getHash(), 1L);
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -6509,7 +6509,7 @@ class BridgeSupportTest {
     void validationsForRegisterBtcTransaction_negative_height() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
         Repository repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, BRIDGE_ADDR, bridgeConstantsRegtest.getBtcParams(), genesisActivations);
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
