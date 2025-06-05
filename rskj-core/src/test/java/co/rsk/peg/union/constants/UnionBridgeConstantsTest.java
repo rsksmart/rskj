@@ -46,6 +46,32 @@ class UnionBridgeConstantsTest {
         assertThat(actualUnionBridgeChangeAuthorizer, samePropertyValuesAs(expectedUnionBridgeChangeAuthorizer));
     }
 
+    @ParameterizedTest
+    @MethodSource("unionBridgeChangeLockingCapAuthorizerProvider")
+    void getChangeLockingCapAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
+        AddressBasedAuthorizer expectedUnionBridgeChangeLockingCapAuthorizer) {
+        // Act
+        AddressBasedAuthorizer actualUnionBridgeChangeLockingCapAuthorizer = unionBridgeConstants.getChangeLockingCapAuthorizer();
+
+        // Assert
+        assertThat(actualUnionBridgeChangeLockingCapAuthorizer, samePropertyValuesAs(expectedUnionBridgeChangeLockingCapAuthorizer));
+    }
+
+    private static Stream<Arguments> unionBridgeChangeLockingCapAuthorizerProvider() {
+        AddressBasedAuthorizer expectedUnionBridgeChangeLockingCapAuthorizer = new AddressBasedAuthorizer(
+            Collections.singletonList(ECKey.fromPublicOnly(Hex.decode(
+                "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"
+            ))),
+            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
+
+        return Stream.of(
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), expectedUnionBridgeChangeLockingCapAuthorizer),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), expectedUnionBridgeChangeLockingCapAuthorizer),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), expectedUnionBridgeChangeLockingCapAuthorizer)
+        );
+    }
+
     public static Stream<Arguments> btcParamsProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), NetworkParameters.fromID(NetworkParameters.ID_MAINNET)),
