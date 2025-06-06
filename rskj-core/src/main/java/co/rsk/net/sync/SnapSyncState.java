@@ -353,6 +353,10 @@ public class SnapSyncState extends BaseSyncState {
         syncEventsHandler.onErrorSyncing(peer, eventType, message, arguments);
     }
 
+    public boolean hasPendingRequests() {
+        return snapRequestManager.hasPendingRequests();
+    }
+
     @VisibleForTesting
     public void setRunning() {
         isRunning = true;
