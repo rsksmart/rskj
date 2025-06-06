@@ -72,7 +72,33 @@ class UnionBridgeConstantsTest {
         );
     }
 
-    public static Stream<Arguments> btcParamsProvider() {
+    @ParameterizedTest
+    @MethodSource("unionBridgeChangeTransferPermissionsAuthorizerProvider")
+    void getChangeTransferPermissionsAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
+        AddressBasedAuthorizer expectedUnionBridgeChangeTransferPermissionsAuthorizer) {
+        // Act
+        AddressBasedAuthorizer actualUnionBridgeChangeTransferPermissionsAuthorizer = unionBridgeConstants.getChangeTransferPermissionsAuthorizer();
+
+        // Assert
+        assertThat(actualUnionBridgeChangeTransferPermissionsAuthorizer, samePropertyValuesAs(expectedUnionBridgeChangeTransferPermissionsAuthorizer));
+    }
+
+    private static Stream<Arguments> unionBridgeChangeTransferPermissionsAuthorizerProvider() {
+        AddressBasedAuthorizer expectedUnionBridgeChangeTransferPermissionsAuthorizer = new AddressBasedAuthorizer(
+            Collections.singletonList(ECKey.fromPublicOnly(Hex.decode(
+                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"
+            ))),
+            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
+
+        return Stream.of(
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), expectedUnionBridgeChangeTransferPermissionsAuthorizer),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), expectedUnionBridgeChangeTransferPermissionsAuthorizer),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), expectedUnionBridgeChangeTransferPermissionsAuthorizer)
+        );
+    }
+
+    private static Stream<Arguments> btcParamsProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), NetworkParameters.fromID(NetworkParameters.ID_MAINNET)),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), NetworkParameters.fromID(NetworkParameters.ID_TESTNET)),
@@ -91,7 +117,7 @@ class UnionBridgeConstantsTest {
         Assertions.assertEquals(expectedNetworkParameters, actualNetworkParameters);
     }
 
-    public static Stream<Arguments> unionBridgeAddressProvider() {
+    private static Stream<Arguments> unionBridgeAddressProvider() {
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31"),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31"),
@@ -110,7 +136,7 @@ class UnionBridgeConstantsTest {
         Assertions.assertEquals(expectedUnionBridgeAddress, actualUnionBridgeAddress);
     }
 
-    public static Stream<Arguments> unionLockingCapInitialValueProvider() {
+    private static Stream<Arguments> unionLockingCapInitialValueProvider() {
         Coin oneEth = new Coin(BigInteger.TEN.pow(18)); // 1 ETH = 1000000000000000000 wei
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), oneEth.multiply(BigInteger.valueOf(300L))),
