@@ -79,6 +79,10 @@ public enum BridgeEvents {
         new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
         new CallTransaction.Param(false, Fields.UTXO_OUTPOINT_VALUES, SolidityType.getType(SolidityType.BYTES))
     }),
+    UNION_RBTC_REQUESTED("union_rbtc_requested", new CallTransaction.Param[] {
+        new CallTransaction.Param(true, Fields.REQUESTER, SolidityType.getType(SolidityType.ADDRESS)),
+        new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
+    }),
     UNION_RBTC_RELEASED("union_rbtc_released", new CallTransaction.Param[] {
         new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
         new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
@@ -107,5 +111,6 @@ public enum BridgeEvents {
         private static final String RELEASE_RSK_TX_HASHES = "releaseRskTxHashes";
         private static final String SENDER = "sender";
         private static final String UTXO_OUTPOINT_VALUES = "utxoOutpointValues";
+        private static final String REQUESTER = "requester";
     }
 }

@@ -3691,7 +3691,7 @@ class BridgeTest {
             int actualUnionResponseCode = decodedResult.intValue();
             assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
             verify(unionBridgeSupport).requestUnionRbtc(rskTx, amountToRequest);
-            verify(eventLogger).logUnionRbtcReleased(unionBridgeContractAddress, amountToRequest);
+            verify(eventLogger).logUnionRbtcRequested(unionBridgeContractAddress, amountToRequest);
             verify(repository).transfer(BRIDGE_ADDR, unionBridgeContractAddress, amountToRequest);
         }
 
@@ -3719,7 +3719,7 @@ class BridgeTest {
             verify(unionBridgeSupport, times(1)).requestUnionRbtc(rskTx, amountToRequest);
             verify(repository, never()).transfer(eq(BRIDGE_ADDR), any(RskAddress.class),
                 any(co.rsk.core.Coin.class));
-            verify(eventLogger, never()).logUnionRbtcReleased(any(RskAddress.class), any(co.rsk.core.Coin.class));
+            verify(eventLogger, never()).logUnionRbtcRequested(any(RskAddress.class), any(co.rsk.core.Coin.class));
         }
 
         @Test
