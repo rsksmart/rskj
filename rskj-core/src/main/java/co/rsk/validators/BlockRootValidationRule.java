@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.validators;
 
 import co.rsk.core.bc.BlockHashesHelper;
@@ -29,13 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
-/**
- * Validate the transaction root of a block.
- * It calculates the transaction root hash given the block transaction list
- * and compares the result with the transaction root hash in block header
- *
- * @return true if the transaction root is valid, false if the transaction root is invalid
- */
 public class BlockRootValidationRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -47,6 +39,13 @@ public class BlockRootValidationRule implements BlockValidationRule {
         this.activationConfig = activationConfig;
     }
 
+    /**
+     * Validate the transaction root of a block.
+     * It calculates the transaction root hash given the block transaction list
+     * and compares the result with the transaction root hash in block header
+     *
+     * @return true if the transaction root is valid, false if the transaction root is invalid
+     */
     @Override
     public boolean isValid(Block block) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
