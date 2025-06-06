@@ -38,6 +38,11 @@ class UnionBridgeSupportImplTest {
                 "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
             .getAddress());
 
+    private static final RskAddress changeLockingCapAuthorizer = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode(
+                "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"))
+            .getAddress());
+
     private static final RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
         "newUnionBridgeContractAddress");
 
@@ -384,10 +389,13 @@ class UnionBridgeSupportImplTest {
     void increaseLockingCap_whenMeetRequirementsToIncreaseLockingCap_shouldIncreaseLockingCap(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
-        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants)
             .build();
+
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
+
+        Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
         Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(unionBridgeConstants.getLockingCapIncrementsMultiplier()));
 
         // act
@@ -417,6 +425,8 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::serializeRskCoin
         );
 
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
+
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(UnionBridgeMainNetConstants.getInstance())
             .build();
@@ -438,6 +448,7 @@ class UnionBridgeSupportImplTest {
     @MethodSource("invalidLockingCapProvider")
     void increaseLockingCap_whenInvalidLockingCap_shouldReturnInvalidValue(Coin newLockingCap) {
         // arrange
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(UnionBridgeMainNetConstants.getInstance())
             .build();
@@ -731,9 +742,13 @@ class UnionBridgeSupportImplTest {
 
         Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
         Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(unionBridgeConstants.getLockingCapIncrementsMultiplier()));
+
+        rskTx = mock(Transaction.class);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
 
+        rskTx = mock(Transaction.class);
         when(rskTx.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
         Coin amountRequested = new Coin(BigInteger.valueOf(100));
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
@@ -778,11 +793,12 @@ class UnionBridgeSupportImplTest {
     @ParameterizedTest
     @MethodSource("unionBridgeConstantsProvider")
     void save_whenLockingCapIsIncreased_shouldSave(UnionBridgeConstants unionBridgeConstants){
-        Coin newLockingCap = Coin.fromBitcoin(BridgeMainNetConstants.getInstance().getMaxRbtc());
+        when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
 
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants).build();
 
+        Coin newLockingCap = Coin.fromBitcoin(BridgeMainNetConstants.getInstance().getMaxRbtc());
         // to simulate the case where the address is already stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
