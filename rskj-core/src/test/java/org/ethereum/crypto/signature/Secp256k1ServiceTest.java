@@ -316,7 +316,7 @@ public abstract class Secp256k1ServiceTest {
 
     @Test
     void testAddition() {
-        Secp256k1AdditionTestHelper.testAddition(secp256k1);
+        Secp256k1AdditionTestHelper.executeAllAdditionTests(secp256k1);
     }
 
     @Test
