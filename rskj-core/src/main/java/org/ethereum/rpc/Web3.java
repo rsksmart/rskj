@@ -15,11 +15,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
 
 import co.rsk.config.InternalService;
-import co.rsk.rpc.*;
+import co.rsk.rpc.Web3DebugModule;
+import co.rsk.rpc.Web3EthModule;
+import co.rsk.rpc.Web3EvmModule;
+import co.rsk.rpc.Web3MnrModule;
+import co.rsk.rpc.Web3RskModule;
+import co.rsk.rpc.Web3TraceModule;
+import co.rsk.rpc.Web3TxPoolModule;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringReputationSummary;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
