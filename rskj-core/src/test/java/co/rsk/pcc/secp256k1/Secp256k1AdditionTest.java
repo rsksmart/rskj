@@ -18,18 +18,18 @@
  */
 package co.rsk.pcc.secp256k1;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.crypto.signature.Secp256k1AdditionTestHelper;
 import org.ethereum.crypto.signature.Secp256k1Service;
-import org.ethereum.vm.GasCost;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for the Secp256k1 Addition precompiled contract
- */
 class Secp256k1AdditionTest {
     private Secp256k1Addition secp256k1Addition;
     private Secp256k1Service secp256k1Service;
@@ -40,39 +40,69 @@ class Secp256k1AdditionTest {
         secp256k1Addition = new Secp256k1Addition(secp256k1Service);
     }
 
+    /* Call the testAddition method from the Secp256k1AdditionTestHelper class, which will use  
+       the implementation of the secp256k1Service to test the addition operations.
+       Doesn't make sense to add specific tests for the addition operations, since the testAddition
+       method already covers all the cases and the Secp256k1Addition uses the secp256k1Service implementation and
+       initialized to perform the addition operations.
+    */
     @Test
-    void testAdditionOperations() {
-        // Test the underlying secp256k1 addition operations
-        Secp256k1AdditionTestHelper.testAddition(secp256k1Service);
+    void testAdditionEC256Operations() {
+        Secp256k1AdditionTestHelper.executeAllAdditionTests(secp256k1Service);
     }
 
     @Test
-    void getGasForData() {
-        // Test gas calculation
-        assertEquals(GasCost.toGas(150), secp256k1Addition.getGasForData(new byte[0]));
-        assertEquals(GasCost.toGas(150), secp256k1Addition.getGasForData(new byte[64]));
-        assertEquals(GasCost.toGas(150), secp256k1Addition.getGasForData(new byte[128]));
+    void givenDifferentDataLengths_whenGetGasForDataIsCalled_thenGasCostIsCalculatedCorrectly() {
+        //given 
+        byte[] dataInput1 = new byte[0];
+        byte[] dataInput2 = TestUtils.generateBytes("secp256k1AdditionRandomInput", 64);
+        byte[] dataInput3 = TestUtils.generateBytes("secp256k1AdditionRandomInput", 128);
+        long expectedGasCost = 150;
+
+        //when the getGasForData method is called with different data lengths
+        long gasCost1 = secp256k1Addition.getGasForData(dataInput1);
+        long gasCost2 = secp256k1Addition.getGasForData(dataInput2);
+        long gasCost3 = secp256k1Addition.getGasForData(dataInput3);
+
+        //then the gas cost should be calculated correctly
+        assertEquals(expectedGasCost, gasCost1);
+        assertEquals(expectedGasCost, gasCost2);
+        assertEquals(expectedGasCost, gasCost3);
     }
 
     @Test
-    void executeOperation() {
-        // Test the precompiled contract execution
+    void givenEmptyInput_whenExecuteOperationIsCalled_thenResultIsExpected() {
         
-        // Test empty input
-        byte[] emptyResult = secp256k1Addition.executeOperation(new byte[0]);
-        assertNotNull(emptyResult);
-        assertEquals(64, emptyResult.length);
-        
-        // Test point at infinity
-        byte[] infinityInput = new byte[128]; // All zeros represents point at infinity
-        byte[] infinityResult = secp256k1Addition.executeOperation(infinityInput);
-        assertNotNull(infinityResult);
-        assertEquals(64, infinityResult.length);
-        
-        // Test invalid point
+        //given
+        byte[] emptyInput = new byte[0];
+        //when 
+        byte[] result = secp256k1Addition.executeOperation(emptyInput);
+        //then 
+        assertNotNull(result);
+        assertEquals(64, result.length);
+    }
+
+    @Test
+    void givenInvalidInput_whenExecuteOperationIsCalled_thenResultIsNull() {
+        //given
         byte[] invalidInput = new byte[128];
-        invalidInput[0] = 1; // Make it an invalid point
-        byte[] invalidResult = secp256k1Addition.executeOperation(invalidInput);
-        assertNull(invalidResult); // Should return null for invalid points
+        //when
+        byte[] result = secp256k1Addition.executeOperation(invalidInput);
+        //then
+        assertNull(result);
     }
+
+    @Test
+    void givenInfinityInput_whenExecuteOperationIsCalled_thenResultIsExpected() {
+        // given
+        byte[] infinityInput = new byte[128];
+
+        //when
+        byte[] result = secp256k1Addition.executeOperation(infinityInput);
+        
+        //then
+        assertNotNull(result);
+        assertEquals(64, result.length);
+    }
+    
 }
