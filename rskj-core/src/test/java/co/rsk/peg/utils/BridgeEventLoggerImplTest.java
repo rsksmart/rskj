@@ -34,6 +34,7 @@ import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
+import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
@@ -740,6 +741,53 @@ class BridgeEventLoggerImplTest {
             Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress(), oneRbtc),
             Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress(), twoRbtc),
             Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress(), threeRbtc)
+        );
+    }
+
+    @Test
+    void logUnionLockingCapIncreased_whenOk_shouldEmitEvent() {
+        RskAddress caller = new RskAddress(ECKey.fromPublicOnly(Hex.decode(
+                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
+            .getAddress());
+
+        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        co.rsk.core.Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        int lockingCapIncrementsMultiplier = unionBridgeConstants.getLockingCapIncrementsMultiplier();
+        co.rsk.core.Coin previousLockingCap = initialLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+        co.rsk.core.Coin newLockingCap = previousLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+
+        eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap);
+
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent(),
+            new Object[]{caller.toHexString()},
+            new Object[]{previousLockingCap.asBigInteger(), newLockingCap.asBigInteger()}
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionLockingCapIncreasedNullArgsProvider")
+    void logUnionLockingCapIncreased_whenNullArgs_shouldFail(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
+        assertThrows(IllegalArgumentException.class, () -> eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap));
+    }
+
+    private static Stream<Arguments> logUnionLockingCapIncreasedNullArgsProvider() {
+        RskAddress caller = new RskAddress(ECKey.fromPublicOnly(Hex.decode(
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
+            .getAddress());
+
+        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        co.rsk.core.Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
+        int lockingCapIncrementsMultiplier = unionBridgeConstants.getLockingCapIncrementsMultiplier();
+        co.rsk.core.Coin previousLockingCap = initialLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+        co.rsk.core.Coin newLockingCap = previousLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+
+        return Stream.of(
+            Arguments.of(null, previousLockingCap, newLockingCap),
+            Arguments.of(caller, null, newLockingCap),
+            Arguments.of(caller, previousLockingCap, null)
         );
     }
 
