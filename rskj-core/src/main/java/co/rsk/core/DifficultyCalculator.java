@@ -28,6 +28,7 @@ import org.ethereum.core.BlockHeader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.max;
@@ -40,26 +41,36 @@ public class DifficultyCalculator {
 
     private final ActivationConfig activationConfig;
     private final Constants constants;
-    private final MiningMainchainView mainchainView;
+    private ConsensusValidationMainchainView consensusValidationView;
+    private MiningMainchainView miningView;
 
-    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, MiningMainchainView mainchainView) {
+    // remove this and adapt all the tests that enables ALL the rskips (this will produce expected failures)
+    private boolean newDifficulty = false; 
+
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, Optional<MiningMainchainView> miningView, Optional<ConsensusValidationMainchainView> consensusValidationView) {
         this.activationConfig = activationConfig;
         this.constants = constants;
-
-        if (mainchainView == null) {
-            throw new IllegalArgumentException("mainchainView shouldn't be null");
-        }
-
-        this.mainchainView = mainchainView;
+        miningView.ifPresent(miningMainchainView -> this.miningView = miningMainchainView);
+        consensusValidationView.ifPresent(mainchainView -> this.consensusValidationView = mainchainView);
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
         long blockNumber = header.getNumber();
 
-        boolean rskipPatoActive = activationConfig.isActive(ConsensusRule.RSKIP_PATO, blockNumber);
-        if(rskipPatoActive) {
-            List<BlockHeader> blockWindow = mainchainView.get().subList(0, (int) BLOCK_COUNT_WINDOW);
-            return getBlockDifficultyPato(blockNumber, header, parentHeader, blockWindow);
+        boolean rskipPatoActive = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber);
+        if(rskipPatoActive && newDifficulty) {
+            if (miningView == null && consensusValidationView == null) {
+                throw new IllegalArgumentException("view shouldn't be null");
+            }
+
+            List<BlockHeader> blockWindow;
+            if (miningView != null) {
+                blockWindow = miningView.get().subList(0, (int) BLOCK_COUNT_WINDOW);
+            } else {
+                blockWindow = consensusValidationView.getFromBestBlock(BLOCK_COUNT_WINDOW);
+            }
+
+            return getBlockDifficultyRskip517(blockNumber, header, parentHeader, blockWindow);
         }
 
         boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, blockNumber);
@@ -73,7 +84,7 @@ public class DifficultyCalculator {
         return getBlockDifficulty(header, parentHeader);
     }
 
-    private BlockDifficulty getBlockDifficultyPato(long blockNumber, BlockHeader blockHeader, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
+    private BlockDifficulty getBlockDifficultyRskip517(long blockNumber, BlockHeader blockHeader, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
         if (blockNumber % BLOCK_COUNT_WINDOW != 0) {
             return parentHeader.getDifficulty();
         }
@@ -113,6 +124,16 @@ public class DifficultyCalculator {
             .orElse(0.0);
 
         return Double.valueOf(avg).longValue();
+    }
+
+    public void setMiningView(MiningMainchainView view) {
+        this.miningView = view;
+        this.consensusValidationView = null;
+    }
+
+    public void setConsensusValidationView(ConsensusValidationMainchainView view) {
+        this.consensusValidationView = view;
+        this.miningView = null;
     }
 
     private BlockDifficulty getBlockDifficulty(

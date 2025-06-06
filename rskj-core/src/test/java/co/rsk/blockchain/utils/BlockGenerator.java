@@ -69,7 +69,7 @@ public class BlockGenerator {
 
     public BlockGenerator(Constants networkConstants, ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
-        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants, null);
+        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants, Optional.empty(), Optional.empty());
         this.blockFactory = new BlockFactory(activationConfig);
     }
 

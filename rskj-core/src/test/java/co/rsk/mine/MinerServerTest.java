@@ -59,10 +59,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -100,7 +97,7 @@ public abstract class MinerServerTest {
 
     protected void setUp(TestSystemProperties config) {
         this.config = config;
-        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
+        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), Optional.empty(), Optional.empty());
         rskTestContext = new RskTestFactory(tempDir, config) {
             @Override
             protected RepositoryLocator buildRepositoryLocator() {

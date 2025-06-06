@@ -38,6 +38,7 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.jupiter.api.Assertions;
 
+import java.util.Optional;
 import java.util.concurrent.*;
 
 import static org.mockito.Mockito.mock;
@@ -136,7 +137,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
                 blockValidationRule,
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), Optional.empty(), Optional.empty()),
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class),
                 mock(EthereumListener.class)

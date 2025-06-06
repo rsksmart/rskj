@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -97,7 +98,7 @@ class LocalBasicTest {
 
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
-            BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants, null).calcDifficulty(current, parent);
+            BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants, Optional.empty(), Optional.empty()).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficulty());
             if (c > 0)
                 logger.info(" Difficulty increase test\n");

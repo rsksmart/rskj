@@ -18,13 +18,15 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.mockito.Mockito;
 
+import java.util.Optional;
+
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), null);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), Optional.empty(), Optional.empty());
 
     public static NodeMessageHandler createHandler(Blockchain blockchain) {
         final NetBlockStore store = new NetBlockStore();
