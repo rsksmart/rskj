@@ -78,4 +78,17 @@ public class ConsensusValidationMainchainViewImpl implements ConsensusValidation
 
         return headers;
     }
+
+    @Override
+    public List<BlockHeader> getFromBestBlock(long blockCount) {
+        List<BlockHeader> result = new ArrayList<>();
+        Block block = blockStore.getBestBlock();
+        for (int i = 0; i < blockCount; i++) {
+            result.add(block.getHeader());
+            Keccak256 parentHash = block.getParentHash();
+            block = blockStore.getBlockByHash(parentHash.getBytes());
+        }
+
+        return result;
+    }
 }
