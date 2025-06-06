@@ -48,7 +48,6 @@ import org.junit.jupiter.api.Test;
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.time.Clock;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -447,8 +446,8 @@ class TraceModuleImplTest {
                 world.getTransactionPool(),
                 new DifficultyCalculator(
                         rskSystemProperties.getActivationConfig(),
-                        rskSystemProperties.getNetworkConstants(),
-                        Optional.empty(), Optional.empty()),
+                        rskSystemProperties.getNetworkConstants()
+                ),
                 new GasLimitCalculator(rskSystemProperties.getNetworkConstants()),
                 new ForkDetectionDataCalculator(),
                 new DummyBlockValidationRule(),

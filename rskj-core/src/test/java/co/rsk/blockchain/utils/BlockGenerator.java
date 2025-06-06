@@ -69,7 +69,7 @@ public class BlockGenerator {
 
     public BlockGenerator(Constants networkConstants, ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
-        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants, Optional.empty(), Optional.empty());
+        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
         this.blockFactory = new BlockFactory(activationConfig);
     }
 
@@ -292,7 +292,7 @@ public class BlockGenerator {
                 .build();
 
         if (difficulty == 0) {
-            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader(), Collections.emptyList()));
         }
         else {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));

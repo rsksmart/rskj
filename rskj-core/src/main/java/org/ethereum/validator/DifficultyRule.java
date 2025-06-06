@@ -21,9 +21,13 @@ package org.ethereum.validator;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Checks block's difficulty against calculated difficulty value
@@ -36,14 +40,19 @@ public class DifficultyRule extends DependentBlockHeaderRule {
     private static final Logger logger = LoggerFactory.getLogger(DifficultyRule.class);
 
     private final DifficultyCalculator difficultyCalculator;
+    private final ConsensusValidationMainchainView consensusValidationMainchainView;
 
-    public DifficultyRule(DifficultyCalculator difficultyCalculator) {
+    public DifficultyRule(DifficultyCalculator difficultyCalculator, ConsensusValidationMainchainView mainchainView) {
         this.difficultyCalculator = difficultyCalculator;
+        this.consensusValidationMainchainView = mainchainView;
     }
 
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
-        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
+        List<BlockHeader> blockWindow = consensusValidationMainchainView
+                .getFromBestBlock(DifficultyCalculator.BLOCK_COUNT_WINDOW);
+
+        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent, blockWindow);
         BlockDifficulty difficulty = header.getDifficulty();
 
         if (!difficulty.equals(calcDifficulty)) {

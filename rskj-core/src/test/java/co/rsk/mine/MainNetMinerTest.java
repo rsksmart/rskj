@@ -51,7 +51,6 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.util.Optional;
 
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -233,7 +232,7 @@ class MainNetMinerTest {
                 repositoryLocator,
                 blockStore,
                 transactionPool,
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), Optional.empty(), Optional.empty()),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new GasLimitCalculator(config.getNetworkConstants()),
                 new ForkDetectionDataCalculator(),
                 unclesValidationRule,

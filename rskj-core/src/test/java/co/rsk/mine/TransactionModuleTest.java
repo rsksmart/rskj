@@ -86,7 +86,6 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.time.Clock;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
@@ -609,7 +608,7 @@ class TransactionModuleTest {
                         repositoryLocator,
                         blockStore,
                         transactionPool,
-                        new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), Optional.empty(), Optional.empty()),
+                        new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                         new GasLimitCalculator(config.getNetworkConstants()),
                         new ForkDetectionDataCalculator(),
                         mock(BlockUnclesValidationRule.class),

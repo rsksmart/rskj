@@ -18,8 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.core.bc.ConsensusValidationMainchainView;
-import co.rsk.core.bc.MiningMainchainView;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -28,7 +26,6 @@ import org.ethereum.core.BlockHeader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.max;
@@ -41,33 +38,23 @@ public class DifficultyCalculator {
 
     private final ActivationConfig activationConfig;
     private final Constants constants;
-    private ConsensusValidationMainchainView consensusValidationView;
-    private MiningMainchainView miningView;
 
     // remove this and adapt all the tests that enables ALL the rskips (this will produce expected failures)
-    private boolean newDifficulty = false; 
+    // there are tons of tests that will enable rskip517 by default
+    private boolean testNewDifficulty = false;
 
-    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants, Optional<MiningMainchainView> miningView, Optional<ConsensusValidationMainchainView> consensusValidationView) {
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
         this.activationConfig = activationConfig;
         this.constants = constants;
-        miningView.ifPresent(miningMainchainView -> this.miningView = miningMainchainView);
-        consensusValidationView.ifPresent(mainchainView -> this.consensusValidationView = mainchainView);
     }
 
-    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
+    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
         long blockNumber = header.getNumber();
 
-        boolean rskipPatoActive = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber);
-        if(rskipPatoActive && newDifficulty) {
-            if (miningView == null && consensusValidationView == null) {
-                throw new IllegalArgumentException("view shouldn't be null");
-            }
-
-            List<BlockHeader> blockWindow;
-            if (miningView != null) {
-                blockWindow = miningView.get().subList(0, (int) BLOCK_COUNT_WINDOW);
-            } else {
-                blockWindow = consensusValidationView.getFromBestBlock(BLOCK_COUNT_WINDOW);
+        boolean rskip517Active = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber);
+        if(rskip517Active && testNewDifficulty) {
+            if (blockWindow == null || blockWindow.isEmpty()) {
+                throw new IllegalArgumentException("block window shouldn't be null or empty");
             }
 
             return getBlockDifficultyRskip517(blockNumber, header, parentHeader, blockWindow);
@@ -89,8 +76,8 @@ public class DifficultyCalculator {
             return parentHeader.getDifficulty();
         }
 
-        long blockTimeAverage = averageOf(blockWindow, BLOCK_COUNT_WINDOW, block -> block.getTimestamp()); // block time average
-        long uncleRate = averageOf(blockWindow, BLOCK_COUNT_WINDOW, block -> block.getUncleCount()); // uncle rate
+        long blockTimeAverage = averageOf(blockWindow, BLOCK_COUNT_WINDOW, BlockHeader::getTimestamp); // block time average
+        long uncleRate = averageOf(blockWindow, BLOCK_COUNT_WINDOW, BlockHeader::getUncleCount); // uncle rate
  
         double F = 0; // todo(fede) checkout if double is the best fit
         if (uncleRate >= UNCLE_TRESHOLD) {
@@ -124,16 +111,6 @@ public class DifficultyCalculator {
             .orElse(0.0);
 
         return Double.valueOf(avg).longValue();
-    }
-
-    public void setMiningView(MiningMainchainView view) {
-        this.miningView = view;
-        this.consensusValidationView = null;
-    }
-
-    public void setConsensusValidationView(ConsensusValidationMainchainView view) {
-        this.consensusValidationView = view;
-        this.miningView = null;
     }
 
     private BlockDifficulty getBlockDifficulty(

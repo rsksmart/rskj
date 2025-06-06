@@ -44,7 +44,6 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -270,7 +269,7 @@ public class MinerManagerTest {
     private MinerServerImpl getMinerServer() {
         SimpleEthereum ethereum = new SimpleEthereum();
         ethereum.blockchain = blockchain;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants(), Optional.empty(), Optional.empty());
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(

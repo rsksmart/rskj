@@ -29,8 +29,6 @@ import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DifficultyRuleTest {
     private final ActivationConfig activationConfig = ActivationConfigsForTest.all();
     private final BlockFactory blockFactory = new BlockFactory(activationConfig);
-    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest(), Optional.empty(), Optional.empty()));
+    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest()), null);
 
     @Disabled("???")
     @Test // pass rule

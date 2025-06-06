@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.Collections;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +49,7 @@ class BlockDifficultyRuleTest {
         blockHeader = mock(BlockHeader.class);
         when(block.getHeader()).thenReturn(blockHeader);
         difficultyCalculator = mock(DifficultyCalculator.class);
-        rule = new BlockDifficultyRule(difficultyCalculator);
+        rule = new BlockDifficultyRule(difficultyCalculator, null);
     }
 
     @Test
@@ -72,7 +73,7 @@ class BlockDifficultyRuleTest {
     }
 
     private void whenCalculatedDifficulty(int difficulty) {
-        when(difficultyCalculator.calcDifficulty(blockHeader, parentHeader))
+        when(difficultyCalculator.calcDifficulty(blockHeader, parentHeader, Collections.emptyList()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(difficulty)));
     }
 }

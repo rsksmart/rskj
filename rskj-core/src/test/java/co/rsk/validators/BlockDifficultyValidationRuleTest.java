@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.Optional;
 
 /**
  * Created by sergio on 23/01/17.
@@ -62,8 +61,8 @@ class BlockDifficultyValidationRuleTest {
 
     @Test
     void testDifficulty() {
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants, Optional.empty(), Optional.empty());
-        BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
+        BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator, null);
 
         Block block = Mockito.mock(Block.class);
         Block parent= Mockito.mock(Block.class);

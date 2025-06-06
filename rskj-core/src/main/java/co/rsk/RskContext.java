@@ -355,7 +355,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (miningMainchainView == null) {
             miningMainchainView = new MiningMainchainViewImpl(
                 getBlockStore(),
-                MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+                (int) Math.max(DifficultyCalculator.BLOCK_COUNT_WINDOW, MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION)
             );
         }
 
@@ -1122,7 +1122,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                                     new PrevMinGasPriceRule(),
                                     new BlockParentNumberRule(),
                                     blockTimeStampValidationRule,
-                                    new BlockDifficultyRule(buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView()))),
+                                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
                             )
                     ),
@@ -1177,7 +1177,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
-                    new BlockDifficultyRule(buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView()))),
+                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
             );
         }
@@ -1194,7 +1194,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
-                    new BlockDifficultyRule(buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView()))),
+                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
             );
         }
@@ -1761,7 +1761,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockHeaderParentDependantValidationRule blockParentValidator = new BlockHeaderParentCompositeRule(
                     new PrevMinGasPriceRule(),
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
-                    new BlockDifficultyRule(buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView()))),
+                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                     new BlockParentNumberRule(),
                     blockTimeStampValidationRule
             );
@@ -1842,7 +1842,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockHeaderParentCompositeRule(
                             new PrevMinGasPriceRule(),
                             new BlockParentNumberRule(),
-                            new BlockDifficultyRule(buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView()))),
+                            new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                             new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
                     )
             );
@@ -1880,15 +1880,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return forkDetectionDataRule;
     }
 
-    private DifficultyCalculator buildDifficultyCalculator(Optional<MiningMainchainView> miningView,
-                                                           Optional<ConsensusValidationMainchainView> consensusValidationView) {
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        return new DifficultyCalculator(
-                rskSystemProperties.getActivationConfig(),
-                rskSystemProperties.getNetworkConstants(),
-                miningView,
-                consensusValidationView
-        );
+    private DifficultyCalculator getDifficultyCalculator() {
+        if (difficultyCalculator == null) {
+            rskSystemProperties = getRskSystemProperties();
+            difficultyCalculator = new DifficultyCalculator(
+                    rskSystemProperties.getActivationConfig(),
+                    rskSystemProperties.getNetworkConstants()
+            );
+        }
+
+        return difficultyCalculator;
     }
 
     private BlockToMineBuilder getBlockToMineBuilder() {
@@ -1899,7 +1900,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRepositoryLocator(),
                     getBlockStore(),
                     getTransactionPool(),
-                    buildDifficultyCalculator(Optional.of(getMiningMainchainView()), Optional.empty()),
+                    getDifficultyCalculator(),
                     getGasLimitCalculator(),
                     getForkDetectionDataCalculator(),
                     getMinerServerBlockValidationRule(),
@@ -2015,7 +2016,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new BlockUnclesHashValidationRule(),
                             new BlockRootValidationRule(getRskSystemProperties().getActivationConfig())
                     ),
-                    buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView())),
+                    getDifficultyCalculator(),
                     getPeersInformation(),
                     getGenesis(),
                     getCompositeEthereumListener(),
@@ -2081,7 +2082,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new PrevMinGasPriceRule(),
                             new BlockParentNumberRule(),
                             blockTimeStampValidationRule,
-                            new BlockDifficultyRule(buildDifficultyCalculator(Optional.empty(), Optional.of(getConsensusValidationMainchainView()))),
+                            new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                             new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
                     ),
                     new BlockHeaderCompositeRule(
