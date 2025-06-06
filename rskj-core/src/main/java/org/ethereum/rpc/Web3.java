@@ -15,10 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
-
-import java.util.Map;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.Web3DebugModule;
@@ -34,6 +31,8 @@ import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDurationParam;
 import org.ethereum.rpc.parameters.HexKeyParam;
+
+import java.util.Map;
 
 @java.lang.SuppressWarnings("squid:S100")
 public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3TraceModule, Web3RskModule {

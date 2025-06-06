@@ -26,9 +26,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleTransaction;
-import co.rsk.rpc.modules.eth.EthModuleWallet;
+import co.rsk.rpc.modules.eth.*;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockFactory;
@@ -62,7 +60,8 @@ public class EthModuleTestUtils {
                 null,
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                new DefaultStateOverrideApplier());
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
@@ -81,7 +80,8 @@ public class EthModuleTestUtils {
                 null,
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                null);
     }
 
     private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {
@@ -103,13 +103,13 @@ public class EthModuleTestUtils {
 
     public static class EthModuleGasEstimation extends EthModule {
         private EthModuleGasEstimation(BridgeConstants bridgeConstants, byte chainId, Blockchain blockchain,
-                                      TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
-                                      ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
-                                      EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
-                                      BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap) {
+                                       TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
+                                       ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
+                                       EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
+                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap, StateOverrideApplier stateOverrideApplier) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap, gasCap);
+                    bridgeSupportFactory, gasEstimationCap, gasCap, stateOverrideApplier);
         }
 
         private ProgramResult estimationResult;

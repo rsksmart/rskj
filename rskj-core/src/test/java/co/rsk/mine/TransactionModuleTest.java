@@ -651,7 +651,8 @@ class TransactionModuleTest {
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
                         config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                new DefaultStateOverrideApplier()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
