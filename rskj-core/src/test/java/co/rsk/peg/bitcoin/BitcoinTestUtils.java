@@ -34,6 +34,17 @@ public class BitcoinTestUtils {
         return keys;
     }
 
+    public static List<BtcECKey> getBtcEcKeys(int amount) {
+        List<BtcECKey> keys = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            String seed = "seed" + i;
+            BtcECKey key = getBtcEcKeyFromSeed(seed);
+            keys.add(key);
+        }
+
+        return keys;
+    }
+
     public static Address createP2PKHAddress(NetworkParameters networkParameters, String seed) {
         BtcECKey key = BtcECKey.fromPrivate(
             HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
@@ -142,7 +153,12 @@ public class BitcoinTestUtils {
             .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
 
         Script outputScript = createP2SHOutputScript(inputRedeemScript);
-        Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sigHash = transaction.hashForSignature(
+            inputIndex,
+            inputRedeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
 
         for (BtcECKey key : keys) {
             signTxInputWithKey(transaction, inputIndex, sigHash, key, outputScript);
