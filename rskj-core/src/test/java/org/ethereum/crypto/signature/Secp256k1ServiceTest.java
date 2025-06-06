@@ -323,7 +323,7 @@ public abstract class Secp256k1ServiceTest {
 
     @Test
     void testMultiplication() {
-        assertDoesNotThrow(() -> Secp256k1MultiplicationHelper.testMultiplication(secp256k1),
+        assertDoesNotThrow(() -> Secp256k1MultiplicationHelper.executeAllMultiplicationTests(secp256k1),
                 "Secp256k1 multiplication operations should execute without errors");
     }
 

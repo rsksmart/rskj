@@ -38,7 +38,7 @@ public class Secp256k1MultiplicationHelper {
     /**
      * Runs all point multiplication tests for the given Secp256k1Service implementation
      */
-    public static void testMultiplication(Secp256k1Service secp256k1) {
+    public static void executeAllMultiplicationTests(Secp256k1Service secp256k1) {
         testMultiplyScalarAndPoint(secp256k1);
         testIdentityWhenMultipliedByScalarValueOne(secp256k1);
         testMultiplyPointByScalar(secp256k1);
