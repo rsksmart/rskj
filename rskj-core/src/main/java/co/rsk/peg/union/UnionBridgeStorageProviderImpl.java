@@ -107,4 +107,18 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         Coin currentWeisTransferredToUnionBridge = getWeisTransferredToUnionBridge().orElse(Coin.ZERO);
         this.weisTransferredToUnionBridge = currentWeisTransferredToUnionBridge.add(amountRequested);
     }
+
+    @Override
+    public void decreaseWeisTransferredToUnionBridge(Coin amountToRelease) {
+        if (isNull(amountToRelease) || amountToRelease.compareTo(Coin.ZERO) < 0) {
+            throw new IllegalArgumentException("Amount released cannot be null or negative");
+        }
+        Coin currentWeisTransferredToUnionBridge = getWeisTransferredToUnionBridge().orElse(Coin.ZERO);
+        Coin updatedWeisTransferred = currentWeisTransferredToUnionBridge.subtract(amountToRelease);
+
+        if (updatedWeisTransferred.compareTo(Coin.ZERO) < 0) {
+            throw new IllegalArgumentException("Cannot decrease weis transferred to Union Bridge below zero");
+        }
+        this.weisTransferredToUnionBridge = updatedWeisTransferred;
+    }
 }
