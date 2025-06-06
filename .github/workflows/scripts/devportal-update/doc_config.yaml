@@ -134,7 +134,7 @@ files:
   # Docs from 03-node-operators/04-setup/04-node-runner
 
   - input: docs/03-node-operators/04-setup/04-node-runner/cli.md
-    output: transformed/03-node-operators/04-node-runner/cli.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/cli.md
     title: Running the RSKj Node using a CLI
     sidebar_label: CLI
     sidebar_position: 300
@@ -142,7 +142,7 @@ files:
     description: "How to compile and run an RSKj node from the command line interface."
 
   - input: docs/03-node-operators/04-setup/04-node-runner/linux.md
-    output: transformed/03-node-operators/04-node-runner/linux.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/linux.md
     title: How to compile and run an RSKj node on Linux
     sidebar_label: Linux
     sidebar_position: 500
@@ -150,7 +150,7 @@ files:
     description: "How to compile and run an RSKj node on Linux. Installing pre-requisites. Get source code. Ensure security chain. Get external dependencies. Compile and run. Configuring your IDE."
 
   - input: docs/03-node-operators/04-setup/04-node-runner/macos.md
-    output: transformed/03-node-operators/04-node-runner/macos.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/macos.md
     title: How to compile and run an RSKj node on Mac OS
     sidebar_label: MacOS
     sidebar_position: 400
@@ -158,7 +158,7 @@ files:
     description: "How to compile and run an RSKj node on Mac OSX. Installing pre-requisites. Get source code. Ensure security chain. Get external dependencies. Compile and run. Configuring your IDE."
 
   - input: docs/03-node-operators/04-setup/04-node-runner/windows.md
-    output: transformed/03-node-operators/04-node-runner/windows.md
+    output: transformed/03-node-operators/04-setup/04-node-runner/windows.md
     title: How to compile and run an RSKj node on Windows
     sidebar_label: Windows
     sidebar_position: 600

@@ -39,6 +39,7 @@ public class BlockResultDTO {
     private final String hash; // DATA, 32 Bytes - hash of the block. null when its pending block.
     private final String parentHash; // DATA, 32 Bytes - hash of the parent block.
     private final String mixHash; // DATA, 32 Bytes - mix hash field used for compatibility reasons.
+    private final String nonce; // QUANTITY - nonce field used for compatibility reasons.
     private final String sha3Uncles; // DATA, 32 Bytes - SHA3 of the uncles data in the block.
     private final String logsBloom; // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending block.
     private final String transactionsRoot; // DATA, 32 Bytes - the root of the transaction trie of the block.
@@ -95,6 +96,7 @@ public class BlockResultDTO {
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
         this.mixHash = mixHash != null ? mixHash.toJsonString() : null;
+        this.nonce = "0x0000000000000000"; // hardcoded for compatibility with Ethereum
         this.sha3Uncles = HexUtils.toUnformattedJsonHex(sha3Uncles);
         this.logsBloom = logsBloom != null ? HexUtils.toUnformattedJsonHex(logsBloom) : null;
         this.transactionsRoot = HexUtils.toUnformattedJsonHex(transactionsRoot);
@@ -214,6 +216,10 @@ public class BlockResultDTO {
 
     public String getMixHash() {
         return mixHash;
+    }
+
+    public String getNonce() {
+        return nonce;
     }
 
     public String getSha3Uncles() {
