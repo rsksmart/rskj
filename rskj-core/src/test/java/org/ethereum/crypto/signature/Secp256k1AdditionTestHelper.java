@@ -37,25 +37,19 @@ public class Secp256k1AdditionTestHelper {
     private static final String V1Y = "29896722852569046015560700294576055776214335159245303116488692907525646231534";
     private static final String V1BY2X = "90462569716653277674664832038037428010367175520031690655826237506178777087235";
     private static final String V1BY2Y = "30122570767565969031174451675354718271714177419582540229636601003470726681395";
-
-    /**
-     * Runs all point addition tests for the given Secp256k1Service implementation
-     */
-    public static void testAddition(Secp256k1Service secp256k1) {
-        testSecpAddTwoPoints(secp256k1);
+    
+    public static void executeAllAdditionTests(Secp256k1Service secp256k1) {
+        testSecpAddTwoIdenticalPoints(secp256k1);
         testSecpAddZeroPointsShouldBeZero(secp256k1);
         testSecpAddEmptyInputShouldBeZero(secp256k1);
         testSecpAddPointPlusInfinityIsPoint(secp256k1);
         testSecpAddInfinityPlusPointIsPoint(secp256k1);
         testSecpAddPointNotOnCurveShouldFail(secp256k1);
         testReturnInfinityOnIdenticalInputPointValuesOfX(secp256k1);
-        testReturnTrueAddAndComputeSlope(secp256k1);
+        testAddForTwoValidPointsComputeSlope(secp256k1);
     }
 
-    /**
-     * Test adding two identical points
-     */
-    private static void testSecpAddTwoPoints(Secp256k1Service secp256k1) {
+    private static void testSecpAddTwoIdenticalPoints(Secp256k1Service secp256k1) {
         // given
         final var inputStr = "0000000000000000000000000000000000000000000000000000000000000001" + 
             TestUtils.bigIntegerToHexDW(V1Y) +
@@ -75,10 +69,8 @@ public class Secp256k1AdditionTestHelper {
         Assertions.assertArrayEquals(output, result);
     }
 
-    /**
-     * Test adding two zero points should return zero
-     */
     private static void testSecpAddZeroPointsShouldBeZero(Secp256k1Service secp256k1) {
+        //given
         final var inputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
             "0000000000000000000000000000000000000000000000000000000000000000" +
             "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -90,30 +82,30 @@ public class Secp256k1AdditionTestHelper {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
+        //when
         final var result = secp256k1.add(input);
 
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
-    /**
-     * Test empty input should return zero point
-     */
     private static void testSecpAddEmptyInputShouldBeZero(Secp256k1Service secp256k1) {
+        //given
         final var input = HexUtils.stringHexToByteArray("");
         final var output = HexUtils.stringHexToByteArray(
             "0000000000000000000000000000000000000000000000000000000000000000" +
             "0000000000000000000000000000000000000000000000000000000000000000"
         );
 
+        //when
         final var result = secp256k1.add(input);
 
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
-    /**
-     * Test adding point and infinity should return the original point
-     */
     private static void testSecpAddPointPlusInfinityIsPoint(Secp256k1Service secp256k1) {
+        //given
         final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" + 
             TestUtils.bigIntegerToHexDW(V1Y);
 
@@ -124,15 +116,15 @@ public class Secp256k1AdditionTestHelper {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
+        //when
         final var result = secp256k1.add(input);
-
+        
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
-    /**
-     * Test adding infinity and point should return the original point
-     */
     private static void testSecpAddInfinityPlusPointIsPoint(Secp256k1Service secp256k1) {
+        //given
         final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" +
             TestUtils.bigIntegerToHexDW(V1Y);
 
@@ -142,15 +134,16 @@ public class Secp256k1AdditionTestHelper {
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
+        //when
         final var result = secp256k1.add(input);
 
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
-    /**
-     * Test adding point not on curve should fail
-     */
+
     private static void testSecpAddPointNotOnCurveShouldFail(Secp256k1Service secp256k1) {
+        //given
         final var inputStr =
             "1111111111111111111111111111111111111111111111111111111111111111" +
             "1111111111111111111111111111111111111111111111111111111111111111" +
@@ -158,15 +151,16 @@ public class Secp256k1AdditionTestHelper {
             "1111111111111111111111111111111111111111111111111111111111111111";
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
+
+        //when
         final var result = secp256k1.add(input);
 
+        //then
         Assertions.assertNull(result);
     }
 
-    /**
-     * Test adding points with same x coordinate but different y coordinates
-     */
     private static void testReturnInfinityOnIdenticalInputPointValuesOfX(Secp256k1Service secp256k1) {
+        //given
         final var p0x = new BigInteger("3");
         final var p0y = new BigInteger("21320899557911560362763253855565071047772010424612278905734793689199612115787");
         final var p1x = new BigInteger("3");
@@ -179,15 +173,14 @@ public class Secp256k1AdditionTestHelper {
             "0000000000000000000000000000000000000000000000000000000000000000";
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
+        //when
         final var result = secp256k1.add(input);
 
         Assertions.assertArrayEquals(output, result);
     }
 
-    /**
-     * Test adding two different valid points
-     */
-    private static void testReturnTrueAddAndComputeSlope(Secp256k1Service secp256k1) {
+    private static void testAddForTwoValidPointsComputeSlope(Secp256k1Service secp256k1) {
+        //given
         final var p0x = new BigInteger("4");
         final var p0y = new BigInteger("40508090799132825824753983223610497876805216745196355809233758402754120847507");
         final var p1x = new BigInteger("1624070059937464756887933993293429854168590106605707304006200119738501412969");
@@ -200,8 +193,10 @@ public class Secp256k1AdditionTestHelper {
         final var oy = "75549874947483386113764723043915448105868538368156141886808196158351727282824";
         final var output = buildECPointsOutput(ox, oy);
 
+        //when
         final var result = secp256k1.add(input);
 
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 }
