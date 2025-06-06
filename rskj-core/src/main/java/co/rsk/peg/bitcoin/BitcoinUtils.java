@@ -281,20 +281,49 @@ public class BitcoinUtils {
         return Sha256Hash.wrap(witnessCommitmentHash);
     }
 
-    public static void signInput(BtcTransaction btcTx, int inputIndex, TransactionSignature signature, int sigInsertionIndex, Script outputScript) {
-        if (!inputHasWitness(btcTx, inputIndex)) {
-            // put signature in script sig
-            TransactionInput input = btcTx.getInput(inputIndex);
-            Script inputScript = input.getScriptSig();
-            Script inputScriptWithSignature =
-                outputScript.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigInsertionIndex);
-            input.setScriptSig(inputScriptWithSignature);
+    public static void signInput(
+        BtcTransaction btcTx,
+        int inputIndex,
+        TransactionSignature signature,
+        int sigInsertionIndex,
+        Script outputScript
+    ) {
+        if (inputHasWitness(btcTx, inputIndex)) {
+            addSignatureToWitness(btcTx, inputIndex, signature, sigInsertionIndex, outputScript);
             return;
         }
+        addSignatureToScriptSig(btcTx, inputIndex, signature, sigInsertionIndex, outputScript);
+    }
 
-        // put signature in witness
+    private static void addSignatureToScriptSig(
+        BtcTransaction btcTx,
+        int inputIndex,
+        TransactionSignature signature,
+        int sigInsertionIndex,
+        Script outputScript
+    ) {
+        Script inputScript = btcTx.getInput(inputIndex).getScriptSig();
+        Script inputScriptWithSignature = outputScript.getScriptSigWithSignature(
+            inputScript,
+            signature.encodeToBitcoin(),
+            sigInsertionIndex
+        );
+        btcTx.getInput(inputIndex).setScriptSig(inputScriptWithSignature);
+    }
+
+    private static void addSignatureToWitness(
+        BtcTransaction btcTx,
+        int inputIndex,
+        TransactionSignature signature,
+        int sigInsertionIndex,
+        Script outputScript
+    ) {
         TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
-        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(outputScript, signature.encodeToBitcoin(), sigInsertionIndex);
+        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(
+            outputScript,
+            signature.encodeToBitcoin(),
+            sigInsertionIndex
+        );
         btcTx.setWitness(inputIndex, inputWitnessWithSignature);
     }
 }
