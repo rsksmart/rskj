@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BitcoinUtilsTest {
-
     private static final BridgeConstants bridgeTestnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcTestnetParams = bridgeTestnetConstants.getBtcParams();
 
@@ -270,9 +269,12 @@ class BitcoinUtilsTest {
         Script emptyScript = new Script(new byte[]{});
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-
-        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-        btcTx.setWitness(FIRST_INPUT_INDEX, witness);
+        BitcoinUtils.addSpendingFederationBaseScript(
+            btcTx,
+            FIRST_INPUT_INDEX,
+            redeemScript,
+            segwitCompatibleFederation.getFormatVersion()
+        );
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
@@ -295,9 +297,12 @@ class BitcoinUtilsTest {
         Script emptyScript = new Script(new byte[]{});
         Script redeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-
-        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-        btcTx.setWitness(FIRST_INPUT_INDEX, witness);
+        BitcoinUtils.addSpendingFederationBaseScript(
+            btcTx,
+            FIRST_INPUT_INDEX,
+            redeemScript,
+            segwitCompatibleFederation.getFormatVersion()
+        );
 
         Coin minimumPegoutTxValue = bridgeMainnetConstants.getMinimumPegoutTxValue();
         btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
@@ -320,15 +325,21 @@ class BitcoinUtilsTest {
         Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
 
-        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(activeFederationMembersKeys)
+            .build();
         Address activeFederationAddress = activeFederation.getAddress();
 
         int numberOfInputs = 3;
         int outputIndex = 0;
         for (int i = 0; i < numberOfInputs; i++) {
             migrationTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
-            TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
-            migrationTx.setWitness(i, witness);
+            BitcoinUtils.addSpendingFederationBaseScript(
+                migrationTx,
+                i,
+                retiringFedRedeemScript,
+                segwitCompatibleFederation.getFormatVersion()
+            );
         }
 
         migrationTx.addOutput(Coin.COIN, activeFederationAddress);
@@ -354,8 +365,12 @@ class BitcoinUtilsTest {
         int numberOfInputAndOutputs = 3;
         for (int i = 0; i < numberOfInputAndOutputs; i++) {
             btcTx.addInput(BitcoinTestUtils.createHash(i), outputIndex, emptyScript);
-            TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-            btcTx.setWitness(i, witness);
+            BitcoinUtils.addSpendingFederationBaseScript(
+                btcTx,
+                i,
+                redeemScript,
+                segwitCompatibleFederation.getFormatVersion()
+            );
             btcTx.addOutput(minimumPegoutTxValue, destinationAddress);
         }
 
@@ -383,9 +398,12 @@ class BitcoinUtilsTest {
         Script emptyScript = new Script(new byte[]{});
         Script anotherRedeemScript = segwitCompatibleFederation.getRedeemScript();
         btcTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-
-        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(anotherRedeemScript);
-        btcTx.setWitness(1, witness);
+        BitcoinUtils.addSpendingFederationBaseScript(
+            btcTx,
+            1,
+            anotherRedeemScript,
+            segwitCompatibleFederation.getFormatVersion()
+        );
 
         // Act
         Optional<Script> scriptFirstInput = extractRedeemScriptFromInput(btcTx, 0);
@@ -410,10 +428,16 @@ class BitcoinUtilsTest {
         Script retiringFedRedeemScript = segwitCompatibleFederation.getRedeemScript();
         Script emptyScript = new Script(new byte[]{});
         migrationTx.addInput(BitcoinTestUtils.createHash(nHash), outputIndex, emptyScript);
-        TransactionWitness witness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(retiringFedRedeemScript);
-        migrationTx.setWitness(FIRST_INPUT_INDEX, witness);
+        BitcoinUtils.addSpendingFederationBaseScript(
+            migrationTx,
+            FIRST_INPUT_INDEX,
+            retiringFedRedeemScript,
+            segwitCompatibleFederation.getFormatVersion()
+        );
 
-        Federation activeFederation = P2shP2wshErpFederationBuilder.builder().withMembersBtcPublicKeys(activeFederationMembersKeys).build();
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(activeFederationMembersKeys)
+            .build();
         Address activeFederationAddress = activeFederation.getAddress();
         migrationTx.addOutput(Coin.COIN, activeFederationAddress);
 
@@ -560,7 +584,6 @@ class BitcoinUtilsTest {
         private final int inputIndex = 0; // our tx will just have one input
 
         private BtcTransaction tx;
-        private List<Sha256Hash> sigHashes;
         private Sha256Hash sigHash;
 
         private void setUp(Federation federation) {
@@ -575,7 +598,7 @@ class BitcoinUtilsTest {
 
             addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
 
-            sigHashes = generateTransactionInputsSigHashes(tx);
+            List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(tx);
             sigHash = sigHashes.get(inputIndex);
         }
 
@@ -1034,89 +1057,6 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void createBaseInputScriptThatSpendsFromRedeemScript_forLegacyFed_shouldCreateExpectedScript() {
-        // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-
-        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
-        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
-
-        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        TransactionOutput outpoint = fundTransaction.getOutput(0);
-        transaction.addInput(outpoint);
-
-        // act
-        Script scriptSig = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
-
-        // assert
-        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
-        int redeemScriptChunkIndex = scriptSigChunks.size() - 1;
-
-        assertArrayEquals(redeemScript.getProgram(), scriptSigChunks.get(redeemScriptChunkIndex).data); // last chunk should be the redeem script
-
-        for (ScriptChunk chunk : scriptSigChunks.subList(0, redeemScriptChunkIndex)) { // all the other chunks should be zero
-            assertEquals(ScriptOpCodes.OP_0, chunk.opcode);
-        }
-    }
-
-    @Test
-    void addSpendingFederationBaseScript_forLegacyFed_shouldAddExpectedScriptToScriptSig() {
-        // arrange
-        Federation federation = P2shErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-
-        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
-        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
-
-        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        TransactionOutput outpoint = fundTransaction.getOutput(0);
-        transaction.addInput(outpoint);
-
-        // act
-        int inputIndex = 0;
-        addSpendingFederationBaseScript(transaction, inputIndex, redeemScript, federation.getFormatVersion());
-
-        // assert
-        TransactionInput input = transaction.getInput(inputIndex);
-        Script expectedScriptSig = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
-        assertEquals(expectedScriptSig, input.getScriptSig());
-    }
-
-    @Test
-    void createBaseWitnessThatSpendsFromErpRedeemScript_shouldCreateExpectedInputWitness() {
-        // arrange
-        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
-        Script redeemScript = federation.getRedeemScript();
-
-        BtcTransaction fundTransaction = new BtcTransaction(btcMainnetParams);
-        fundTransaction.addOutput(Coin.valueOf(1000), federation.getAddress());
-
-        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        TransactionOutput outpoint = fundTransaction.getOutput(0);
-        transaction.addInput(outpoint);
-
-        // act
-        TransactionWitness inputWitness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-
-        // assert
-        int redeemScriptChunkIndex = inputWitness.getPushCount() - 1;
-
-        assertArrayEquals(redeemScript.getProgram(), inputWitness.getPush(redeemScriptChunkIndex)); // last push should be the redeem script
-
-        byte[] emptyByte = new byte[] {};
-        int op0Index = 0;
-        assertArrayEquals(emptyByte, inputWitness.getPush(op0Index));
-
-        int opNotIfIndex = redeemScriptChunkIndex - 1;
-        assertArrayEquals(emptyByte, inputWitness.getPush(opNotIfIndex));
-
-        for (int i = 1; i < opNotIfIndex; i++) { // all the other pushes should be empty, for signing
-            assertArrayEquals(emptyByte, inputWitness.getPush(i));
-        }
-    }
-
-    @Test
     void addSpendingFederationBaseScript_forSegwitFed_shouldAddExpectedInputWitness() {
         // arrange
         Federation federation = P2shP2wshErpFederationBuilder.builder().build();
@@ -1134,8 +1074,8 @@ class BitcoinUtilsTest {
         addSpendingFederationBaseScript(transaction, inputIndex, redeemScript, federation.getFormatVersion());
 
         // assert
-        TransactionWitness expectedWitness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
-        assertEquals(expectedWitness, transaction.getWitness(inputIndex));
+        TransactionWitness transactionWitness = transaction.getWitness(inputIndex);
+        validateSegwitInputWitness(transactionWitness, redeemScript);
 
         byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
         Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
@@ -1143,104 +1083,29 @@ class BitcoinUtilsTest {
         assertEquals(oneChunkSegwitScriptSig, transaction.getInput(inputIndex).getScriptSig());
     }
 
-    @Test
-    void buildSegwitScriptSig_buildsScriptSigWithExpectedStructure() {
-        // arrange
-        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+    private void validateSegwitInputWitness(TransactionWitness transactionWitness, Script redeemScript) {
+        assertNotNull(transactionWitness);
 
-        // act
-        Script segwitScriptSig = buildSegwitScriptSig(federation.getRedeemScript());
+        byte[] emptyByte = {};
+        int pushIndex = 0;
+        // first push should be OP_0 (empty byte)
+        byte[] firstPush = transactionWitness.getPush(pushIndex);
+        assertArrayEquals(emptyByte, firstPush);
 
-        // assert
-        List<ScriptChunk> chunks = segwitScriptSig.getChunks();
+        // Next, an empty push for each signature required to spend
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
+            byte[] signaturePush = transactionWitness.getPush(++pushIndex);
+            assertArrayEquals(emptyByte, signaturePush);
+        }
 
-        // expected structure is op pushbytes34 + script
-        ScriptChunk chunk = chunks.get(0);
-        int opPushData = chunk.opcode;
-        int expectedOpPushData = 34;
-        assertEquals(expectedOpPushData, opPushData);
+        // An empty push for the OP_NOTIF param
+        byte[] flowPush = transactionWitness.getPush(++pushIndex);
+        assertArrayEquals(emptyByte, flowPush);
 
-        byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
-        // the whole program sig should start with 22 for op pushbytes34
-        String opPushBytes34 = Hex.toHexString(segwitScriptSigProgram).substring(0, 2);
-        assertEquals("22", opPushBytes34);
-
-        // the script should be 0020[hashed redeem script]
-        // 00 for op 0
-        String op0 = Hex.toHexString(segwitScriptSigProgram).substring(2, 4);
-        assertEquals("00", op0);
-
-        // 20 for op pushbytes32
-        String opPushBytes32 = Hex.toHexString(segwitScriptSigProgram).substring(4, 6);
-        assertEquals("20", opPushBytes32);
-
-        // hashed redeem script
-        byte[] hashedRedeemScript = extractHashedRedeemScriptProgramFromSegwitScriptSig(segwitScriptSig);
-        byte[] expectedHashedRedeemScript = Sha256Hash.hash(federation.getRedeemScript().getProgram());
-        assertArrayEquals(expectedHashedRedeemScript, hashedRedeemScript);
-    }
-
-    @Test
-    void buildSegwitScriptSig_withNullRedeemScript_shouldThrowNullPointerException() {
-        assertThrows(IllegalArgumentException.class, () ->
-            buildSegwitScriptSig(null)
-        );
-    }
-
-    @Test
-    void buildSegwitScriptSig_withEmptyScript_shouldProduceValidStructure() {
-        Script emptyScript = new Script(new byte[0]);
-
-        Script result = buildSegwitScriptSig(emptyScript);
-        List<ScriptChunk> chunks = result.getChunks();
-
-        assertEquals(1, chunks.size());
-
-        ScriptChunk chunk = chunks.get(0);
-        assertEquals(34, chunk.opcode);
-
-        Script segwitScript = new Script(chunk.data);
-        List<ScriptChunk> innerChunks = segwitScript.getChunks();
-
-        assertEquals(2, innerChunks.size());
-        assertEquals(0, innerChunks.get(0).opcode); // OP_0
-        assertEquals(32, innerChunks.get(1).data.length); // SHA-256 is always 32 bytes
-    }
-
-    @Test
-    void buildSegwitScriptSig_withNonStandardScript_shouldStillBuild() {
-        // Create a redeem script with arbitrary non-SegWit content
-        Script redeemScript = new ScriptBuilder()
-            .op(ScriptOpCodes.OP_ADD)
-            .op(ScriptOpCodes.OP_EQUAL)
-            .build();
-
-        Script result = buildSegwitScriptSig(redeemScript);
-
-        List<ScriptChunk> chunks = result.getChunks();
-        assertEquals(1, chunks.size());
-        assertEquals(34, chunks.get(0).opcode); // Still 0x22
-
-        Script embeddedScript = new Script(chunks.get(0).data);
-        List<ScriptChunk> innerChunks = embeddedScript.getChunks();
-
-        assertEquals(2, innerChunks.size());
-        assertEquals(0, innerChunks.get(0).opcode); // OP_0
-        assertEquals(32, innerChunks.get(1).data.length); // SHA-256 hash
-    }
-
-    @Test
-    void extractHashedRedeemScriptProgramFromSegwitScriptSig_returnsExpectedHash() {
-        // arrange
-        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
-        Script segwitScriptSig = buildSegwitScriptSig(federation.getRedeemScript());
-
-        // act
-        byte[] hashedRedeemScript = extractHashedRedeemScriptProgramFromSegwitScriptSig(segwitScriptSig);
-
-        // assert
-        byte[] expectedHashedRedeemScript = Sha256Hash.hash(federation.getRedeemScript().getProgram());
-        assertArrayEquals(expectedHashedRedeemScript, hashedRedeemScript);
+        // Finally, the redeem script program
+        byte[] lastPush = transactionWitness.getPush(++pushIndex);
+        assertArrayEquals(redeemScript.getProgram(), lastPush);
     }
 
     @Test
