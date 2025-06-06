@@ -33,7 +33,7 @@ class UnionBridgeSupportImplTest {
 
     private static final UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
 
-    private static final RskAddress authorizerRskAddress = new RskAddress(
+    private static final RskAddress changeUnionAddressAuthorizer = new RskAddress(
         ECKey.fromPublicOnly(Hex.decode(
                 "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
             .getAddress());
@@ -67,7 +67,7 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder.build();
 
         rskTx = mock(Transaction.class);
-        when(rskTx.getSender(signatureCache)).thenReturn(authorizerRskAddress);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeUnionAddressAuthorizer);
     }
 
     private static Stream<Arguments> testnetAndRegtestConstantsProvider() {

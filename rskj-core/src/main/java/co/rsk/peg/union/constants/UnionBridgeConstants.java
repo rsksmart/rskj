@@ -10,7 +10,7 @@ public class UnionBridgeConstants {
     protected RskAddress unionBridgeAddress;
     protected Coin initialLockingCap;
     protected int lockingCapIncrementsMultiplier;
-    protected AddressBasedAuthorizer changeAuthorizer;
+    protected AddressBasedAuthorizer changeUnionBridgeContractAddressAuthorizer;
     protected AddressBasedAuthorizer changeLockingCapAuthorizer;
     protected AddressBasedAuthorizer changeTransferPermissionsAuthorizer;
 
@@ -30,8 +30,8 @@ public class UnionBridgeConstants {
         return lockingCapIncrementsMultiplier;
     }
 
-    public AddressBasedAuthorizer getChangeAuthorizer() {
-        return changeAuthorizer;
+    public AddressBasedAuthorizer getChangeUnionBridgeContractAddressAuthorizer() {
+        return changeUnionBridgeContractAddressAuthorizer;
     }
 
     public AddressBasedAuthorizer getChangeLockingCapAuthorizer() {

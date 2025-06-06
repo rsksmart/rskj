@@ -58,7 +58,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
-        if (!isAuthorizedCaller(tx)) {
+        if (!isChangeUnionAddressAuthorizedCaller(tx)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -87,12 +87,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isTestnetOrRegtest;
     }
 
-    private boolean isAuthorizedCaller(Transaction tx) {
-        AddressBasedAuthorizer authorizer = constants.getChangeAuthorizer();
+    private boolean isChangeUnionAddressAuthorizedCaller(Transaction tx) {
+        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
         boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
         if (!isAuthorized) {
-            String baseMessage = String.format("Caller is not authorized to execute this method. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isAuthorizedCaller", baseMessage);
+            String baseMessage = String.format("Caller is not authorized to change union bridge contract address. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isChangeUnionAddressAuthorizedCaller", baseMessage);
         }
         return isAuthorized;
     }
