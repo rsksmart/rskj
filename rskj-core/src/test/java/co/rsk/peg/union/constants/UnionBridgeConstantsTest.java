@@ -20,7 +20,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionBridgeConstantsTest {
 
-    private static Stream<Arguments> unionBridgeChangeAuthorizerProvider() {
+    private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
         AddressBasedAuthorizer expectedUnionBridgeChangeAuthorizer = new AddressBasedAuthorizer(
             Collections.singletonList(ECKey.fromPublicOnly(Hex.decode(
                 "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
@@ -36,11 +36,11 @@ class UnionBridgeConstantsTest {
     }
 
     @ParameterizedTest
-    @MethodSource("unionBridgeChangeAuthorizerProvider")
-    void getChangeAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
+    @MethodSource("changeUnionAddressAuthorizerProvider")
+    void getChangeUnionBridgeContractAddressAuthorizer_ok(UnionBridgeConstants unionBridgeConstants,
                                             AddressBasedAuthorizer expectedUnionBridgeChangeAuthorizer) {
         // Act
-        AddressBasedAuthorizer actualUnionBridgeChangeAuthorizer = unionBridgeConstants.getChangeAuthorizer();
+        AddressBasedAuthorizer actualUnionBridgeChangeAuthorizer = unionBridgeConstants.getChangeUnionBridgeContractAddressAuthorizer();
 
         // Assert
         assertThat(actualUnionBridgeChangeAuthorizer, samePropertyValuesAs(expectedUnionBridgeChangeAuthorizer));
