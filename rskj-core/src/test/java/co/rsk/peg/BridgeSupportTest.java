@@ -988,7 +988,7 @@ class BridgeSupportTest {
                 any(RskAddress.class),
                 any(co.rsk.core.Coin.class)
             );
-            verify(bridgeEventLogger, never()).logUnionRbtcReleased(
+            verify(bridgeEventLogger, never()).logUnionRbtcRequested(
                 any(RskAddress.class),
                 any(co.rsk.core.Coin.class)
             );
@@ -1026,7 +1026,7 @@ class BridgeSupportTest {
                 unionBridgeContractAddress,
                 amountRequested
             );
-            verify(bridgeEventLogger, times(1)).logUnionRbtcReleased(
+            verify(bridgeEventLogger, times(1)).logUnionRbtcRequested(
                 unionBridgeContractAddress,
                 amountRequested
             );

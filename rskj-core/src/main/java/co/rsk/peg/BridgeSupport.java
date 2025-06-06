@@ -2902,7 +2902,7 @@ public class BridgeSupport {
         if (responseCode == UnionResponseCode.SUCCESS) {
             RskAddress unionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
             transferTo(unionBridgeContractAddress, amountRequested);
-            eventLogger.logUnionRbtcReleased(unionBridgeContractAddress, amountRequested);
+            eventLogger.logUnionRbtcRequested(unionBridgeContractAddress, amountRequested);
         }
         return responseCode;
     }

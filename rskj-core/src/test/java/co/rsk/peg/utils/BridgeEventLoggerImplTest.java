@@ -647,22 +647,22 @@ class BridgeEventLoggerImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("logUnionRbtcReleasedArgProvider")
-    void logUnionRbtcReleased(RskAddress rskAddress, co.rsk.core.Coin amount) {
+    @MethodSource("logUnionRbtcRequestedArgProvider")
+    void logUnionRbtcRequested_whenOk_shouldEmitEvent(RskAddress requester, co.rsk.core.Coin amount) {
         // Act
-        eventLogger.logUnionRbtcReleased(rskAddress, amount);
+        eventLogger.logUnionRbtcRequested(requester, amount);
 
         // Assert
         commonAssertLogs();
         assertTopics(2);
         assertEvent(
-            BridgeEvents.UNION_RBTC_RELEASED.getEvent(),
-            new Object[]{rskAddress.toHexString()},
+            BridgeEvents.UNION_RBTC_REQUESTED.getEvent(),
+            new Object[]{requester.toHexString()},
             new Object[]{amount.asBigInteger()}
         );
     }
 
-    private static Stream<Arguments> logUnionRbtcReleasedArgProvider() {
+    private static Stream<Arguments> logUnionRbtcRequestedArgProvider() {
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         co.rsk.core.Coin oneEther = new co.rsk.core.Coin(oneEth);
         co.rsk.core.Coin twoEther = new co.rsk.core.Coin(oneEth.multiply(BigInteger.valueOf(2L)));
@@ -676,15 +676,15 @@ class BridgeEventLoggerImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("logUnionRbtcReleasedInvalidArgProvider")
-    void logUnionRbtcReleased_whenInvalidArg_shouldFail(RskAddress rskAddress,
+    @MethodSource("logUnionRbtcRequestedInvalidArgProvider")
+    void logUnionRbtcRequested_whenInvalidArg_shouldFail(RskAddress requester,
         co.rsk.core.Coin amount) {
         assertThrows(IllegalArgumentException.class,
-            () -> eventLogger.logUnionRbtcReleased(rskAddress, amount),
+            () -> eventLogger.logUnionRbtcRequested(requester, amount),
             "Receiver and amount cannot be null");
     }
 
-    private static Stream<Arguments> logUnionRbtcReleasedInvalidArgProvider() {
+    private static Stream<Arguments> logUnionRbtcRequestedInvalidArgProvider() {
         RskAddress unionBridgeContractAddress = UnionBridgeMainNetConstants.getInstance().getAddress();
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
 
