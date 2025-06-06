@@ -317,6 +317,22 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
+    public void logUnionRbtcRequested(RskAddress requester, co.rsk.core.Coin amount) {
+        if (requester == null || amount == null) {
+            throw new IllegalArgumentException("Requester and amount cannot be null");
+        }
+
+        CallTransaction.Function event = BridgeEvents.UNION_RBTC_REQUESTED.getEvent();
+
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(requester.toHexString());
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
+        byte[] encodedData = event.encodeEventData(amount.asBigInteger());
+
+        addLog(encodedTopics, encodedData);
+    }
+
+    @Override
     public void logUnionRbtcReleased(RskAddress receiver, co.rsk.core.Coin amount) {
         if (receiver == null || amount == null) {
             throw new IllegalArgumentException("Receiver and amount cannot be null");
