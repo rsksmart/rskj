@@ -45,10 +45,14 @@ public class HexNumberParam implements Serializable {
 
         boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
         if (!HexUtils.isHex(hexNumber.toLowerCase(), hasPrefix ? 2 : 0)) {
+            BigInteger number;
             try {
-                new BigInteger(hexNumber);
+                number = new BigInteger(hexNumber);
             } catch(Exception e) {
                 throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": value must be a valid hex or string number.", e);
+            }
+            if (number.signum() == -1) {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": only positive numbers are allowed.");
             }
         }
 
