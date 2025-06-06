@@ -46,6 +46,16 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
             changeLockingCapAuthorizers,
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
+
+        // TODO: Replace with actual authorizers
+        List<ECKey> changeTransferPermissionsAuthorizers = Collections.singletonList(
+            // seed: changeTransferPermissionsAuthorizer
+            ECKey.fromPublicOnly(Hex.decode("04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))
+        );
+        changeTransferPermissionsAuthorizer = new AddressBasedAuthorizer(
+            changeTransferPermissionsAuthorizers,
+            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
     }
 
     public static UnionBridgeConstants getInstance() {
