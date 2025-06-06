@@ -194,4 +194,8 @@ public class SnapSyncRequestManager {
             super(message);
         }
     }
+
+    public boolean hasPendingRequests() {
+        return !pendingRequests.isEmpty();
+    }
 }
