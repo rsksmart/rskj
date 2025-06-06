@@ -42,6 +42,7 @@ import java.security.SignatureException;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -316,12 +317,14 @@ public abstract class Secp256k1ServiceTest {
 
     @Test
     void testAddition() {
-        Secp256k1AdditionTestHelper.executeAllAdditionTests(secp256k1);
+        assertDoesNotThrow(() -> Secp256k1AdditionTestHelper.executeAllAdditionTests(secp256k1),
+                "Secp256k1 addition operations should execute without errors");
     }
 
     @Test
     void testMultiplication() {
-        Secp256k1MultiplicationHelper.testMultiplication(secp256k1);
+        assertDoesNotThrow(() -> Secp256k1MultiplicationHelper.testMultiplication(secp256k1),
+                "Secp256k1 multiplication operations should execute without errors");
     }
 
     public static void encodeECPointsInput(byte[] input, BigInteger x, BigInteger y, BigInteger multiplier) {

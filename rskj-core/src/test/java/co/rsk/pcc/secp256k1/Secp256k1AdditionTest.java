@@ -21,6 +21,8 @@ package co.rsk.pcc.secp256k1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.signature.Secp256k1;
@@ -29,6 +31,7 @@ import org.ethereum.crypto.signature.Secp256k1Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 
 class Secp256k1AdditionTest {
     private Secp256k1Addition secp256k1Addition;
@@ -40,15 +43,16 @@ class Secp256k1AdditionTest {
         secp256k1Addition = new Secp256k1Addition(secp256k1Service);
     }
 
-    /* Call the testAddition method from the Secp256k1AdditionTestHelper class, which will use  
+    /* Call the executeAllAdditionTests method from the Secp256k1AdditionTestHelper class, which will use
        the implementation of the secp256k1Service to test the addition operations.
-       Doesn't make sense to add specific tests for the addition operations, since the testAddition
+       Doesn't make sense to add specific tests for the addition operations, since the executeAllAdditionTests
        method already covers all the cases and the Secp256k1Addition uses the secp256k1Service implementation and
        initialized to perform the addition operations.
     */
     @Test
     void testAdditionEC256Operations() {
-        Secp256k1AdditionTestHelper.executeAllAdditionTests(secp256k1Service);
+        assertDoesNotThrow(() -> Secp256k1AdditionTestHelper.executeAllAdditionTests(secp256k1Service),
+            "Secp256k1 addition operations should execute without errors");
     }
 
     @Test
