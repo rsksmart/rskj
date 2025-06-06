@@ -28,13 +28,13 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         lockingCapIncrementsMultiplier = 2;
 
         // TODO: Replace with actual authorizers
-        List<ECKey> authorizers = Collections.singletonList(
+        List<ECKey> changeUnionBridgeContractAddressAuthorizers = Collections.singletonList(
             // seed: unionBridgeAuthorizer
             ECKey.fromPublicOnly(Hex.decode("041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))
         );
 
-        changeAuthorizer = new AddressBasedAuthorizer(
-            authorizers,
+        changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
+            changeUnionBridgeContractAddressAuthorizers,
             AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
