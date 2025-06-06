@@ -86,6 +86,7 @@ class Secp256k1AdditionTest {
     void givenInvalidInput_whenExecuteOperationIsCalled_thenResultIsNull() {
         //given
         byte[] invalidInput = new byte[128];
+        invalidInput[0] = 1;  // Make it an invalid point
         //when
         byte[] result = secp256k1Addition.executeOperation(invalidInput);
         //then
