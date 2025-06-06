@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -25,8 +26,8 @@ import org.ethereum.core.BlockHeader;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.List;
-import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.max;
 
@@ -57,7 +58,7 @@ public class DifficultyCalculator {
                 throw new IllegalArgumentException("block window shouldn't be null or empty");
             }
 
-            return getBlockDifficultyRskip517(blockNumber, header, parentHeader, blockWindow);
+            return getBlockDifficultyRskip517(header, parentHeader, blockWindow);
         }
 
         boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, blockNumber);
@@ -71,20 +72,20 @@ public class DifficultyCalculator {
         return getBlockDifficulty(header, parentHeader);
     }
 
-    private BlockDifficulty getBlockDifficultyRskip517(long blockNumber, BlockHeader blockHeader, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
-        if (blockNumber % BLOCK_COUNT_WINDOW != 0) {
-            return parentHeader.getDifficulty();
+    private BlockDifficulty getBlockDifficultyRskip517(BlockHeader header, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
+        if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
+            throw new IllegalStateException("block window should match the expected size");
         }
 
-        long blockTimeAverage = averageOf(blockWindow, BLOCK_COUNT_WINDOW, BlockHeader::getTimestamp); // block time average
-        long uncleRate = averageOf(blockWindow, BLOCK_COUNT_WINDOW, BlockHeader::getUncleCount); // uncle rate
- 
-        double F = 0; // todo(fede) checkout if double is the best fit
-        if (uncleRate >= UNCLE_TRESHOLD) {
+        long blockTimeAverage = calcBlockTimeAverage(blockWindow);
+        double uncleRate = calcUncleRate(blockWindow);
+
+        double F = 0;
+        if (uncleRate >= UNCLE_TRESHOLD || blockTimeAverage > BLOCK_TARGET * 1.1) {
+            // According to RSKIP517: Increase difficulty when uncle rate > C OR block time > T*1.1
             F = ALPHA;
-        } else if (uncleRate < UNCLE_TRESHOLD && (BLOCK_TARGET * 1.1) > blockTimeAverage) {
-            F = ALPHA;
-        } else if (uncleRate < UNCLE_TRESHOLD && (BLOCK_TARGET * 0.9) <= blockTimeAverage) {
+        } else if (uncleRate < UNCLE_TRESHOLD && blockTimeAverage < BLOCK_TARGET * 0.9) {
+            // According to RSKIP517: Decrease difficulty when uncle rate < C AND block time < T*0.9
             F = -ALPHA;
         }
 
@@ -92,25 +93,45 @@ public class DifficultyCalculator {
             throw new IllegalStateException("factor shouldn't be zero");
         }
 
-        BigInteger newDifficulty = parentHeader.getDifficulty()
-            .asBigInteger()
-            .multiply(BigDecimal.valueOf(1 + F).toBigIntegerExact());
+        // Use BigDecimal for the entire calculation to avoid truncation
+        BigDecimal parentDifficulty = new BigDecimal(parentHeader.getDifficulty().asBigInteger());
+        BigDecimal factor = BigDecimal.ONE.add(BigDecimal.valueOf(F));
+        BigDecimal newDifficulty = parentDifficulty.multiply(factor)
+                .setScale(0, RoundingMode.DOWN);
 
-        return new BlockDifficulty(newDifficulty);
+        BigInteger minDifficulty = constants.getMinimumDifficulty(header.getNumber()).asBigInteger();
+
+
+
+        return new BlockDifficulty(minDifficulty.max(newDifficulty.toBigInteger()));
     }
 
-    private long averageOf(List<BlockHeader> blockWindow, long blockWindowCount, Function<BlockHeader, Number> func) {
-        if (blockWindow.size() != blockWindowCount) {
+    private long calcBlockTimeAverage(List<BlockHeader> blockWindow) {
+        if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
             throw new IllegalArgumentException("block window has a different size");
         }
 
-        double avg = blockWindow.stream()
-            .map(func)
-            .mapToLong(Number::longValue)
-            .average()
-            .orElse(0.0);
+        long firstBlockTimestamp = blockWindow.get(0).getTimestamp();
+        long lastBlockTimestamp = blockWindow.get(blockWindow.size() - 1).getTimestamp();
 
-        return Double.valueOf(avg).longValue();
+        return (lastBlockTimestamp - firstBlockTimestamp) / BLOCK_COUNT_WINDOW;
+    }
+
+    private double calcUncleRate(List<BlockHeader> blockWindow) {
+        if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
+            throw new IllegalArgumentException("block window has a different size");
+        }
+
+        return blockWindow.stream()
+                .map(BlockHeader::getUncleCount)
+                .mapToDouble(Integer::doubleValue)
+                .average()
+                .orElse(0.0);
+    }
+
+    @VisibleForTesting
+    public void enableTesting() {
+        this.testNewDifficulty = true;
     }
 
     private BlockDifficulty getBlockDifficulty(
