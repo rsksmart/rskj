@@ -45,6 +45,56 @@ public class HexNumberParamTest {
     }
 
     @Test
+    public void testValidDecimalNumberZeroAsParam_workAsExpected() {
+        String validDecimalNumberZeroAsParam = "0";
+        HexNumberParam hexNumberParam = new HexNumberParam(validDecimalNumberZeroAsParam);
+
+        assertNotNull(hexNumberParam);
+        assertEquals(validDecimalNumberZeroAsParam, hexNumberParam.getHexNumber());
+    }
+
+    @Test
+    public void testValidHexNumberZeroAsParam_workAsExpected() {
+        String validDecimalNumberZeroAsParam = "0x00";
+        HexNumberParam hexNumberParam = new HexNumberParam(validDecimalNumberZeroAsParam);
+
+        assertNotNull(hexNumberParam);
+        assertEquals(validDecimalNumberZeroAsParam, hexNumberParam.getHexNumber());
+    }
+
+    @Test
+    public void testValidHexNumberAsParam_understandsTheNumberAsPositive() {
+        // 0xFFF6 is 65526 in decimal, but -10 in Decimal from signed 2's complement
+        String validDecimalNumberZeroAsParam = "0xFFF6";
+        HexNumberParam hexNumberParam = new HexNumberParam(validDecimalNumberZeroAsParam);
+
+        assertNotNull(hexNumberParam);
+        assertEquals(validDecimalNumberZeroAsParam, hexNumberParam.getHexNumber());
+    }
+
+    @Test
+    public void testNegativeDecimalNumber_shouldThrowException() {
+        String negativeDecimalNumber = "-1000";
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(negativeDecimalNumber));
+        assertEquals("Invalid param " + negativeDecimalNumber + ": only positive numbers are allowed.", ex.getMessage());
+    }
+
+    @Test
+    public void testNegativeHexWithPrefixParam_shouldThrowException() {
+        String invalidHexNumber = "0x-A";
+
+        assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
+    }
+
+    @Test
+    public void testNegativeHexWithoutPrefixParam_shouldThrowException() {
+        String invalidHexNumber = "-A";
+
+        assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
+    }
+
+    @Test
     public void testInvalidHexNumberParam() {
         String invalidHexNumber = "0x76ty";
 
