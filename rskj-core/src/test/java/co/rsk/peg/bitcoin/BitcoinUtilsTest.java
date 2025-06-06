@@ -972,7 +972,7 @@ class BitcoinUtilsTest {
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction);
+        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
 
         // assert
         assertEquals(transactionBeforeSigning, transaction);
@@ -994,7 +994,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromTransactionWithP2shMultiSigInputs_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
+    void removeSignaturesFromMultiSigInputScript_shouldThrowIAE() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
 
@@ -1019,7 +1019,7 @@ class BitcoinUtilsTest {
         BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
     }
 
     @Test
@@ -1030,7 +1030,7 @@ class BitcoinUtilsTest {
         BtcTransaction transaction = new BtcTransaction(btcTestnetParams, rawTx);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
     }
 
     @Test
