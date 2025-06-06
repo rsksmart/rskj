@@ -20,12 +20,11 @@ public class FederationTestNetConstants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         genesisFederationPublicKeys = Stream.of(
-            "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9",
-            "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
-            "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
-            "034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"
+            "026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e",
+            "02b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404",
+            "031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
-        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T19:29:27.600Z").toInstant();
+        genesisFederationCreationTime = ZonedDateTime.parse("2025-06-03T12:00:00.000Z").toInstant();
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
@@ -35,14 +34,14 @@ public class FederationTestNetConstants extends FederationConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 2000L;
+        validationPeriodDurationInBlocks = 300L;
 
         federationActivationAgeLegacy = 60L;
         preLovellActivationAge = 120L;
-        federationActivationAge = 2400L;
+        federationActivationAge = 360L;
 
-        fundsMigrationAgeSinceActivationBegin = 60L;
-        fundsMigrationAgeSinceActivationEnd = 900L;
+        fundsMigrationAgeSinceActivationBegin = 0L;
+        fundsMigrationAgeSinceActivationEnd = 150L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 900L;
 
         erpFedPubKeysList = Stream.of(
