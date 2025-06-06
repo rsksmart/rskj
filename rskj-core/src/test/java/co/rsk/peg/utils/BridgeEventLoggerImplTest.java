@@ -647,41 +647,60 @@ class BridgeEventLoggerImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("logUnionRbtcReleasedArgProvider")
-    void logUnionRbtcReleased(RskAddress rskAddress, co.rsk.core.Coin amount) {
+    @MethodSource("logUnionRbtcRequestedArgProvider")
+    void logUnionRbtcRequested_whenOk_shouldEmitEvent(RskAddress requester, co.rsk.core.Coin amount) {
         // Act
-        eventLogger.logUnionRbtcReleased(rskAddress, amount);
+        eventLogger.logUnionRbtcRequested(requester, amount);
 
         // Assert
         commonAssertLogs();
         assertTopics(2);
         assertEvent(
-            BridgeEvents.UNION_RBTC_RELEASED.getEvent(),
-            new Object[]{rskAddress.toHexString()},
+            BridgeEvents.UNION_RBTC_REQUESTED.getEvent(),
+            new Object[]{requester.toHexString()},
             new Object[]{amount.asBigInteger()}
         );
     }
 
-    private static Stream<Arguments> logUnionRbtcReleasedArgProvider() {
-        BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
-        co.rsk.core.Coin oneEther = new co.rsk.core.Coin(oneEth);
-        co.rsk.core.Coin twoEther = new co.rsk.core.Coin(oneEth.multiply(BigInteger.valueOf(2L)));
-        co.rsk.core.Coin threeEther = new co.rsk.core.Coin(oneEth.multiply(BigInteger.valueOf(3L)));
+    private static Stream<Arguments> logUnionRbtcRequestedArgProvider() {
+        BigInteger oneRbtcInWeis = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        co.rsk.core.Coin oneRbtc = new co.rsk.core.Coin(oneRbtcInWeis);
+        co.rsk.core.Coin twoRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(2L)));
+        co.rsk.core.Coin threeRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(3L)));
 
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress(), oneEther),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress(), twoEther),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress(), threeEther)
+            Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress(), oneRbtc),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress(), twoRbtc),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress(), threeRbtc)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionRbtcRequestedInvalidArgProvider")
+    void logUnionRbtcRequested_whenInvalidArg_shouldFail(RskAddress requester,
+        co.rsk.core.Coin amount) {
+        assertThrows(IllegalArgumentException.class,
+            () -> eventLogger.logUnionRbtcRequested(requester, amount),
+            "Requester or amount cannot be null");
+    }
+
+    private static Stream<Arguments> logUnionRbtcRequestedInvalidArgProvider() {
+        RskAddress unionBridgeContractAddress = UnionBridgeMainNetConstants.getInstance().getAddress();
+        BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+
+        return Stream.of(
+            Arguments.of(unionBridgeContractAddress, null),
+            Arguments.of(null, new co.rsk.core.Coin(oneEth)),
+            Arguments.of(null, null)
         );
     }
 
     @ParameterizedTest
     @MethodSource("logUnionRbtcReleasedInvalidArgProvider")
-    void logUnionRbtcReleased_whenInvalidArg_shouldFail(RskAddress rskAddress,
-        co.rsk.core.Coin amount) {
+    void logUnionRbtcReleased_whenInvalidArg_shouldFail(RskAddress receiver, co.rsk.core.Coin amount) {
         assertThrows(IllegalArgumentException.class,
-            () -> eventLogger.logUnionRbtcReleased(rskAddress, amount),
-            "Receiver and amount cannot be null");
+            () -> eventLogger.logUnionRbtcReleased(receiver, amount),
+            "Receiver or amount cannot be null");
     }
 
     private static Stream<Arguments> logUnionRbtcReleasedInvalidArgProvider() {
@@ -692,6 +711,35 @@ class BridgeEventLoggerImplTest {
             Arguments.of(unionBridgeContractAddress, null),
             Arguments.of(null, new co.rsk.core.Coin(oneEth)),
             Arguments.of(null, null)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionRbtcReleasedArgProvider")
+    void logUnionRbtcReleased_whenOk_shouldEmitEvent(RskAddress receiver, co.rsk.core.Coin amount) {
+        // Act
+        eventLogger.logUnionRbtcReleased(receiver, amount);
+
+        // Assert
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_RBTC_RELEASED.getEvent(),
+            new Object[]{receiver.toHexString()},
+            new Object[]{amount.asBigInteger()}
+        );
+    }
+
+    private static Stream<Arguments> logUnionRbtcReleasedArgProvider() {
+        BigInteger oneRbtcInWeis = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        co.rsk.core.Coin oneRbtc = new co.rsk.core.Coin(oneRbtcInWeis);
+        co.rsk.core.Coin twoRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(2L)));
+        co.rsk.core.Coin threeRbtc = new co.rsk.core.Coin(oneRbtcInWeis.multiply(BigInteger.valueOf(3L)));
+
+        return Stream.of(
+            Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress(), oneRbtc),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress(), twoRbtc),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress(), threeRbtc)
         );
     }
 
