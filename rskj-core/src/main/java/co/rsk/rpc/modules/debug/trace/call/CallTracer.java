@@ -88,7 +88,7 @@ public class CallTracer implements DebugTracer {
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
         BlockResult blockResult = this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
-        if(blockResult == null || blockResult.getExecutedTransactions() != null && blockResult.getExecutedTransactions().isEmpty()) {
+        if (blockResult == null || blockResult.getExecutedTransactions() == null || blockResult.getExecutedTransactions().isEmpty()) {
             logger.error("Unsuccessful block execution for transaction: {}", transactionHash);
             return null;
         }
