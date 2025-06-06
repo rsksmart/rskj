@@ -22,6 +22,7 @@ import co.rsk.config.InternalService;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.SnapStateChunkResponseMessageStore;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
@@ -49,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -97,6 +99,7 @@ public class SnapshotProcessor implements InternalService {
 
     private volatile Boolean isRunning;
     private final Thread thread;
+    private final SnapStateChunkResponseMessageStore snapStateChunkResponseMessageStore;
 
     public SnapshotProcessor(Blockchain blockchain,
                              TrieStore trieStore,
@@ -111,10 +114,11 @@ public class SnapshotProcessor implements InternalService {
                              int checkpointDistance,
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
-                             boolean isParallelEnabled) {
+                             boolean isParallelEnabled,
+                             SnapStateChunkResponseMessageStore snapStateChunkResponseMessageStore) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, snapStateChunkResponseMessageStore);
     }
 
     @VisibleForTesting
@@ -132,7 +136,8 @@ public class SnapshotProcessor implements InternalService {
                       int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
-                      @Nullable SyncMessageHandler.Listener listener) {
+                      @Nullable SyncMessageHandler.Listener listener,
+                      SnapStateChunkResponseMessageStore snapStateChunkResponseMessageStore) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
@@ -141,6 +146,7 @@ public class SnapshotProcessor implements InternalService {
         this.maxSenderRequests = maxSenderRequests;
         this.blockStore = blockStore;
         this.transactionPool = transactionPool;
+        this.snapStateChunkResponseMessageStore = snapStateChunkResponseMessageStore;
 
         this.blockParentValidator = blockParentValidator;
         this.blockValidator = blockValidator;
@@ -583,29 +589,49 @@ public class SnapshotProcessor implements InternalService {
 
         logger.debug("State chunk received chunkNumber {}. From {} to {} of total size {}", responseMessage.getFrom() / CHUNK_ITEM_SIZE, responseMessage.getFrom(), responseMessage.getTo(), state.getRemoteTrieSize());
 
-        PriorityQueue<SnapStateChunkResponseMessage> queue = state.getSnapStateChunkQueue();
-        queue.add(responseMessage);
+        try {
+            final var snapStateChunkResponseMessageWriter = snapStateChunkResponseMessageStore.startWriting(peer);
 
-        while (!queue.isEmpty()) {
-            SnapStateChunkResponseMessage nextMessage = queue.peek();
-            long nextExpectedFrom = state.getNextExpectedFrom();
-            logger.debug("State chunk dequeued from: {} - expected: {}", nextMessage.getFrom(), nextExpectedFrom);
-            if (nextMessage.getFrom() == nextExpectedFrom) {
-                try {
-                    processOrderedStateChunkResponse(state, peer, queue.poll());
-                    state.setNextExpectedFrom(nextExpectedFrom + chunkSize * CHUNK_ITEM_SIZE);
-                } catch (Exception e) {
-                    logger.error("Error while processing chunk response. {}", e.getMessage(), e);
-                    onStateChunkResponseError(state, peer, nextMessage);
-                }
-            } else {
-                break;
-            }
+            snapStateChunkResponseMessageWriter.write(responseMessage);
+
+            snapStateChunkResponseMessageWriter.close();
+        } catch (IOException e) {
+            logger.error("Error while writing chunk responses. {}", e.getMessage(), e);
+            onStateChunkResponseError(state, peer, responseMessage);
+            throw new RuntimeException(e);
         }
 
-        if (!responseMessage.isComplete()) {
-            logger.debug("State chunk response not complete. Requesting next chunk.");
-            executeNextChunkRequestTask(state, peer);
+        final var nextExpectedFrom = state.getNextExpectedFrom();
+
+        try {
+            final var snapStateChunkResponseMessageReader = snapStateChunkResponseMessageStore.startReading(peer, (nextMessage) -> {
+                logger.debug("State chunk dequeued from: {} - expected: {}", nextMessage.getFrom(), nextExpectedFrom);
+
+                if (nextMessage.getFrom() == nextExpectedFrom) {
+                    try {
+                        processOrderedStateChunkResponse(state, peer, nextMessage);
+                        state.setNextExpectedFrom(nextExpectedFrom + chunkSize * CHUNK_ITEM_SIZE);
+                    } catch (Exception e) {
+                        logger.error("Error while processing chunk response. {}", e.getMessage(), e);
+                        onStateChunkResponseError(state, peer, nextMessage);
+                    }
+
+                    return;
+                }
+
+                if (!nextMessage.isComplete()) {
+                    logger.debug("State chunk response not complete. Requesting next chunk.");
+                    executeNextChunkRequestTask(state, peer);
+                }
+            });
+
+            snapStateChunkResponseMessageReader.read(nextExpectedFrom);
+
+            snapStateChunkResponseMessageReader.close();
+        } catch (IOException e) {
+            logger.error("Error while reading chunk responses. {}", e.getMessage(), e);
+            onStateChunkResponseError(state, peer, responseMessage);
+            throw new RuntimeException(e);
         }
     }
 
