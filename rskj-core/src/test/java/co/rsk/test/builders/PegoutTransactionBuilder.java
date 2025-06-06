@@ -5,22 +5,31 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.bitcoin.*;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class PegoutTransactionBuilder {
     private NetworkParameters networkParameters;
+    private List<BtcECKey> signingKeys;
     private Federation activeFederation;
 
     private final List<TransactionInput> inputs;
     private final List<TransactionOutput> outputs;
 
     private Coin changeAmount;
+    private boolean signTransaction;
 
     private PegoutTransactionBuilder() {
+        List<BtcECKey> defaultKeys = getDefaultFederationBtcKeys();
+        this.activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultKeys)
+            .build();
+
+        int signersRequired = activeFederation.getNumberOfSignaturesRequired();
+        this.signingKeys = new ArrayList<>(defaultKeys.subList(0, signersRequired));
+
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-        this.activeFederation = P2shP2wshErpFederationBuilder.builder().build();
         this.changeAmount = Coin.COIN.div(2);
+        this.signTransaction = false;
 
         this.inputs = new ArrayList<>();
         this.outputs = new ArrayList<>();
@@ -63,6 +72,17 @@ public class PegoutTransactionBuilder {
         return this;
     }
 
+    public PegoutTransactionBuilder withSignatures() {
+        signTransaction = true;
+        return this;
+    }
+
+    public PegoutTransactionBuilder withSignatures(List<BtcECKey> signingKeys) {
+        signTransaction = true;
+        this.signingKeys = signingKeys;
+        return this;
+    }
+
     public BtcTransaction build() {
         BtcTransaction pegoutTransaction = new BtcTransaction(networkParameters);
 
@@ -89,6 +109,10 @@ public class PegoutTransactionBuilder {
                 activeFederation.getRedeemScript(),
                 activeFederation.getFormatVersion()
             );
+
+            if (signTransaction) {
+                BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, inputIndex, signingKeys);
+            }
 
             inputIndex++;
         }
@@ -130,5 +154,12 @@ public class PegoutTransactionBuilder {
         Address changeAddress = activeFederation.getAddress();
         TransactionOutput changeOutput = new TransactionOutput(networkParameters, null, changeAmount, changeAddress);
         transaction.addOutput(changeOutput);
+    }
+
+    private List<BtcECKey> getDefaultFederationBtcKeys() {
+        for (int i=0; i<20; i++) {
+            signingKeys.add(BitcoinTestUtils.getBtcEcKeyFromSeed("signer" + i));
+        }
+        return signingKeys;
     }
 }
