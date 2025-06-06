@@ -117,7 +117,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.blockFactory = blockFactory;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
         this.blockValidationRule = syncBlockValidatorRule;
-        this.difficultyRule = new DifficultyRule(difficultyCalculator);
+        this.difficultyRule = new DifficultyRule(difficultyCalculator, consensusValidationMainchainView);
         this.genesis = genesis;
         this.ethereumListener = ethereumListener;
         this.pendingMessages = Collections.synchronizedMap(new LinkedHashMap<>() {

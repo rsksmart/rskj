@@ -18,35 +18,127 @@
 
 package co.rsk.core;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.util.List;
 
 import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
+    public static final long BLOCK_COUNT_WINDOW = 30; // last N blocks
+    private static final double ALPHA = 0.005;
+    private static final double BLOCK_TARGET = 20; // target time between blocks
+    private static final double UNCLE_TRESHOLD = 0.7;
+
     private final ActivationConfig activationConfig;
     private final Constants constants;
+
+    // todo(fede) there are tons of NON RELATED tests that should be modified to add the new difficulty algorithm
+    //   they will be tackled when we move to the next stage
+    public static boolean TEST_NEW_DIFFICULTY = false;
+    @VisibleForTesting
+    public static void enableTesting() {
+        TEST_NEW_DIFFICULTY = true;
+    }
+
+    @VisibleForTesting
+    public static void disableTesting() {
+        TEST_NEW_DIFFICULTY = false;
+    }
 
     public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
         this.activationConfig = activationConfig;
         this.constants = constants;
     }
 
-    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
-        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
+    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
+        long blockNumber = header.getNumber();
+
+        boolean rskip517Active = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber);
+        if(rskip517Active && TEST_NEW_DIFFICULTY) {
+            if (blockWindow == null || blockWindow.isEmpty()) {
+                throw new IllegalArgumentException("block window shouldn't be null or empty");
+            }
+
+            return getBlockDifficultyRskip517(header, parentHeader, blockWindow);
+        }
+
+        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, blockNumber);
         if (!rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
             if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {
-                return constants.getMinimumDifficulty(header.getNumber());
+                return constants.getMinimumDifficulty(blockNumber);
             }
         }
 
         return getBlockDifficulty(header, parentHeader);
     }
+
+    private BlockDifficulty getBlockDifficultyRskip517(BlockHeader header, BlockHeader parentHeader, List<BlockHeader> blockWindow) {
+        if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
+            throw new IllegalStateException("block window should match the expected size");
+        }
+
+        long blockTimeAverage = calcBlockTimeAverage(blockWindow);
+        double uncleRate = calcUncleRate(blockWindow);
+
+        double F = 0;
+        if (uncleRate >= UNCLE_TRESHOLD || blockTimeAverage > BLOCK_TARGET * 1.1) {
+            // According to RSKIP517: Increase difficulty when uncle rate > C OR block time > T*1.1
+            F = ALPHA;
+        } else if (uncleRate < UNCLE_TRESHOLD && blockTimeAverage < BLOCK_TARGET * 0.9) {
+            // According to RSKIP517: Decrease difficulty when uncle rate < C AND block time < T*0.9
+            F = -ALPHA;
+        }
+
+        if(F == 0) {
+            throw new IllegalStateException("factor shouldn't be zero");
+        }
+
+        // Use BigDecimal for the entire calculation to avoid truncation
+        BigDecimal parentDifficulty = new BigDecimal(parentHeader.getDifficulty().asBigInteger());
+        BigDecimal factor = BigDecimal.ONE.add(BigDecimal.valueOf(F));
+        BigDecimal newDifficulty = parentDifficulty.multiply(factor)
+                .setScale(0, RoundingMode.DOWN);
+
+        BigInteger minDifficulty = constants.getMinimumDifficulty(header.getNumber()).asBigInteger();
+
+
+
+        return new BlockDifficulty(minDifficulty.max(newDifficulty.toBigInteger()));
+    }
+
+    private long calcBlockTimeAverage(List<BlockHeader> blockWindow) {
+        if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
+            throw new IllegalArgumentException("block window has a different size");
+        }
+
+        long firstBlockTimestamp = blockWindow.get(0).getTimestamp();
+        long lastBlockTimestamp = blockWindow.get(blockWindow.size() - 1).getTimestamp();
+
+        return (lastBlockTimestamp - firstBlockTimestamp) / BLOCK_COUNT_WINDOW;
+    }
+
+    private double calcUncleRate(List<BlockHeader> blockWindow) {
+        if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
+            throw new IllegalArgumentException("block window has a different size");
+        }
+
+        return blockWindow.stream()
+                .map(BlockHeader::getUncleCount)
+                .mapToDouble(Integer::doubleValue)
+                .average()
+                .orElse(0.0);
+    }
+
+
 
     private BlockDifficulty getBlockDifficulty(
             BlockHeader curBlockHeader,

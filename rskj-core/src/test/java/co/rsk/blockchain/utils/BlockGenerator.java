@@ -291,7 +291,7 @@ public class BlockGenerator {
                 .build();
 
         if (difficulty == 0) {
-            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader(), Collections.emptyList()));
         }
         else {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));

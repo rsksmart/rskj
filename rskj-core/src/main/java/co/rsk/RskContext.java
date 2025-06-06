@@ -354,8 +354,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         getBlockchain();
         if (miningMainchainView == null) {
             miningMainchainView = new MiningMainchainViewImpl(
-                    getBlockStore(),
-                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+                getBlockStore(),
+                (int) Math.max(DifficultyCalculator.BLOCK_COUNT_WINDOW, MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION)
             );
         }
 
@@ -1122,7 +1122,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                                     new PrevMinGasPriceRule(),
                                     new BlockParentNumberRule(),
                                     blockTimeStampValidationRule,
-                                    new BlockDifficultyRule(getDifficultyCalculator()),
+                                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
                             )
                     ),
@@ -1177,7 +1177,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
-                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
             );
         }
@@ -1194,7 +1194,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
-                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
             );
         }
@@ -1761,7 +1761,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final BlockHeaderParentDependantValidationRule blockParentValidator = new BlockHeaderParentCompositeRule(
                     new PrevMinGasPriceRule(),
                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
-                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                     new BlockParentNumberRule(),
                     blockTimeStampValidationRule
             );
@@ -1842,7 +1842,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new BlockHeaderParentCompositeRule(
                             new PrevMinGasPriceRule(),
                             new BlockParentNumberRule(),
-                            new BlockDifficultyRule(getDifficultyCalculator()),
+                            new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                             new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
                     )
             );
@@ -1882,7 +1882,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private DifficultyCalculator getDifficultyCalculator() {
         if (difficultyCalculator == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            rskSystemProperties = getRskSystemProperties();
             difficultyCalculator = new DifficultyCalculator(
                     rskSystemProperties.getActivationConfig(),
                     rskSystemProperties.getNetworkConstants()
@@ -2082,7 +2082,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new PrevMinGasPriceRule(),
                             new BlockParentNumberRule(),
                             blockTimeStampValidationRule,
-                            new BlockDifficultyRule(getDifficultyCalculator()),
+                            new BlockDifficultyRule(getDifficultyCalculator(), getConsensusValidationMainchainView()),
                             new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
                     ),
                     new BlockHeaderCompositeRule(
