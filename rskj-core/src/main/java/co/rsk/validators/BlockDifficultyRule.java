@@ -27,6 +27,7 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,7 +54,9 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule, 
             logger.warn("BlockDifficultyRule - block or parent are null");
             return false;
         }
-        List<BlockHeader> blockWindow = mainchainView.getFromBestBlock(DifficultyCalculator.BLOCK_COUNT_WINDOW);
+        // todo(fede) this is not production ready
+        List<BlockHeader> blockWindow = DifficultyCalculator.TEST_NEW_DIFFICULTY ?
+                mainchainView.getFromBestBlock(DifficultyCalculator.BLOCK_COUNT_WINDOW) : Collections.emptyList();
         BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent, blockWindow);
         BlockDifficulty difficulty = header.getDifficulty();
 

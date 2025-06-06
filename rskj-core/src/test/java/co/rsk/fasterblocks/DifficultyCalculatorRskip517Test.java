@@ -6,6 +6,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -51,7 +52,7 @@ public class DifficultyCalculatorRskip517Test {
         
         // Enable RSKIP517 for testing
         when(activationConfig.isActive(ConsensusRule.RSKIP517, BLOCK_NUMBER)).thenReturn(true);
-        calculator.enableTesting();
+        DifficultyCalculator.enableTesting();
         
         // Setup block header mocks
         when(blockHeader.getNumber()).thenReturn(BLOCK_NUMBER);
@@ -70,16 +71,22 @@ public class DifficultyCalculatorRskip517Test {
             BlockHeader header = mock(BlockHeader.class);
             // Block numbers should be 1-30 to match the window
             when(header.getNumber()).thenReturn((long) (i + 1));
-            // Each block is 17 seconds after the previous one to ensure average < 18s (T*0.9)
+            // Each block is 17 seconds after the previous one to ensure decrease
             when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 17L);
             when(header.getUncleCount()).thenReturn(0);
             blockWindow.add(header);
         }
     }
 
+    @AfterAll
+    public static void after() {
+        DifficultyCalculator.disableTesting();
+    }
+
     @Test
     public void testDifficultyCalculationOnWindowBlock() {
         // Test case: Normal difficulty calculation on a block window
+        // Using 17s intervals to ensure decrease (avoiding 18-22s range)
         BlockDifficulty result = calculator.calcDifficulty(blockHeader, parentHeader, blockWindow);
         
         // According to RSKIP:
@@ -108,16 +115,17 @@ public class DifficultyCalculatorRskip517Test {
     @Test
     public void testFastBlockTime() {
         // Test case: Fast block time should decrease difficulty
+        // Using 17s intervals (below 18s = BLOCK_TARGET * 0.9) to trigger decrease
         for (int i = 0; i < blockWindow.size(); i++) {
             BlockHeader header = blockWindow.get(i);
-            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 15L); // 15 second intervals
+            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 17L);
         }
         
         BlockDifficulty result = calculator.calcDifficulty(blockHeader, parentHeader, blockWindow);
         
         // According to RSKIP:
         // - Uncle rate is 0 (< 0.7 threshold)
-        // - Block time average is 15s (< 18s = BLOCK_TARGET * 0.9)
+        // - Block time average is 17s (< 18s = BLOCK_TARGET * 0.9)
         // Therefore F = -ALPHA (-0.005) and difficulty should decrease
         BigInteger expectedDifficulty = INITIAL_DIFFICULTY.multiply(BigInteger.valueOf(995)).divide(BigInteger.valueOf(1000));
         assertEquals(new BlockDifficulty(expectedDifficulty), result, 
@@ -147,11 +155,10 @@ public class DifficultyCalculatorRskip517Test {
         BlockDifficulty minDifficulty = new BlockDifficulty(BigInteger.valueOf(1000));
         when(constants.getMinimumDifficulty(BLOCK_NUMBER)).thenReturn(minDifficulty);
         
-        // Set up conditions that would try to decrease difficulty significantly
-        // Using 15 second intervals to ensure average < 18s (BLOCK_TARGET * 0.9)
+        // Using 17s intervals to trigger difficulty decrease
         for (int i = 0; i < blockWindow.size(); i++) {
             BlockHeader header = blockWindow.get(i);
-            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 15L); // 15 second intervals
+            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 17L);
         }
         
         // Set initial difficulty to 1005, which when decreased by 0.5% would be 1000.5
@@ -169,9 +176,10 @@ public class DifficultyCalculatorRskip517Test {
     @Test
     public void testSlowBlockTime() {
         // Test case: Slow block time should increase difficulty
+        // Using 25s intervals (well above 22s = BLOCK_TARGET * 1.1) to ensure increase
         for (int i = 0; i < blockWindow.size(); i++) {
             BlockHeader header = blockWindow.get(i);
-            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 25L); // 25 second intervals
+            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 25L);
         }
         
         BlockDifficulty result = calculator.calcDifficulty(blockHeader, parentHeader, blockWindow);
@@ -182,7 +190,7 @@ public class DifficultyCalculatorRskip517Test {
         // Therefore F = ALPHA (0.005) and difficulty should increase
         BigInteger expectedDifficulty = INITIAL_DIFFICULTY.multiply(BigInteger.valueOf(1005)).divide(BigInteger.valueOf(1000));
         assertEquals(new BlockDifficulty(expectedDifficulty), result, 
-            "Difficulty should increase by 0.005% when block time average > 22s");
+            "Difficulty should increase by 0.5% when block time average > 22s");
     }
 
     @Test
@@ -222,19 +230,22 @@ public class DifficultyCalculatorRskip517Test {
     @Test
     public void testSlowBlockTimeWithUncleRate() {
         // Test case: Slow block time should increase difficulty regardless of uncle rate
+        // Using 23s intervals (above 22s = BLOCK_TARGET * 1.1) to trigger increase
         for (int i = 0; i < blockWindow.size(); i++) {
             BlockHeader header = blockWindow.get(i);
-            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (30 - i) * 25L); // 25 second intervals
+            when(header.getTimestamp()).thenReturn(BLOCK_TIMESTAMP - (29 - i) * 23L);
+            // Add uncles to ensure uncle rate is above threshold (0.7)
+            when(header.getUncleCount()).thenReturn(i < 22 ? 1 : 0); // ~73% uncle rate
         }
         
         BlockDifficulty result = calculator.calcDifficulty(blockHeader, parentHeader, blockWindow);
         
         // According to RSKIP:
-        // - Uncle rate is 0 (< 0.7 threshold)
-        // - Block time average is 25s (> 22s = BLOCK_TARGET * 1.1)
+        // - Uncle rate is ~0.73 (> 0.7 threshold)
+        // - Block time average is 23s (> 22s = BLOCK_TARGET * 1.1)
         // Therefore F = ALPHA (0.005) and difficulty should increase
         BigInteger expectedDifficulty = INITIAL_DIFFICULTY.multiply(BigInteger.valueOf(1005)).divide(BigInteger.valueOf(1000));
         assertEquals(new BlockDifficulty(expectedDifficulty), result, 
-            "Difficulty should increase by 0.5% when block time average > 22s, regardless of uncle rate");
+            "Difficulty should increase by 0.5% when uncle rate > 0.7 or block time average > 22s");
     }
 } 

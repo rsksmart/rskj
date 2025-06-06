@@ -99,6 +99,7 @@ class MainNetMinerTest {
         blockExecutor = factory.getBlockExecutor();
     }
 
+    // todo(fede) this is not production ready
     /*
      * This test is probabilistic, but it has a really high chance to pass. We will generate
      * a random block that it is unlikely to pass the Long.MAX_VALUE difficulty, though

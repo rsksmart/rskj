@@ -33,16 +33,25 @@ import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
     public static final long BLOCK_COUNT_WINDOW = 30; // last N blocks
-    private static final double ALPHA = 0.005; // todo(fede) checkout if double is the best fit
+    private static final double ALPHA = 0.005;
     private static final double BLOCK_TARGET = 20; // target time between blocks
     private static final double UNCLE_TRESHOLD = 0.7;
 
     private final ActivationConfig activationConfig;
     private final Constants constants;
 
-    // remove this and adapt all the tests that enables ALL the rskips (this will produce expected failures)
-    // there are tons of tests that will enable rskip517 by default
-    private boolean testNewDifficulty = false;
+    // todo(fede) there are tons of NON RELATED tests that should be modified to add the new difficulty algorithm
+    //   they will be tackled when we move to the next stage
+    public static boolean TEST_NEW_DIFFICULTY = false;
+    @VisibleForTesting
+    public static void enableTesting() {
+        TEST_NEW_DIFFICULTY = true;
+    }
+
+    @VisibleForTesting
+    public static void disableTesting() {
+        TEST_NEW_DIFFICULTY = false;
+    }
 
     public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
         this.activationConfig = activationConfig;
@@ -53,7 +62,7 @@ public class DifficultyCalculator {
         long blockNumber = header.getNumber();
 
         boolean rskip517Active = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber);
-        if(rskip517Active && testNewDifficulty) {
+        if(rskip517Active && TEST_NEW_DIFFICULTY) {
             if (blockWindow == null || blockWindow.isEmpty()) {
                 throw new IllegalArgumentException("block window shouldn't be null or empty");
             }
@@ -129,10 +138,7 @@ public class DifficultyCalculator {
                 .orElse(0.0);
     }
 
-    @VisibleForTesting
-    public void enableTesting() {
-        this.testNewDifficulty = true;
-    }
+
 
     private BlockDifficulty getBlockDifficulty(
             BlockHeader curBlockHeader,

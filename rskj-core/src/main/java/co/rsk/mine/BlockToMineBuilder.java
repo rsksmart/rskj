@@ -46,6 +46,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static co.rsk.core.DifficultyCalculator.BLOCK_COUNT_WINDOW;
+import static co.rsk.core.DifficultyCalculator.TEST_NEW_DIFFICULTY;
 
 /**
  * This component helps build a new block to mine.
@@ -254,7 +255,8 @@ public class BlockToMineBuilder {
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
 
-        List<BlockHeader> blockWindow = mainchainHeaders.subList(0, (int) BLOCK_COUNT_WINDOW);
+        List<BlockHeader> blockWindow = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber) && TEST_NEW_DIFFICULTY ?
+                mainchainHeaders.subList(0, (int) BLOCK_COUNT_WINDOW) : Collections.emptyList();
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader, blockWindow));
         return newHeader;
     }

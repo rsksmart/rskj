@@ -104,7 +104,7 @@ class BlockToMineBuilderTest {
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);
         when(miningConfig.getUncleListLimit()).thenReturn(10);
         when(miningConfig.getCoinbaseAddress()).thenReturn(TestUtils.generateAddress("coinbaseAddress"));
-        when(difficultyCalculator.calcDifficulty(any(), any(), Collections.emptyList())).thenReturn(blockDifficulty);
+        when(difficultyCalculator.calcDifficulty(any(), any(), any())).thenReturn(blockDifficulty);
     }
 
     @Test

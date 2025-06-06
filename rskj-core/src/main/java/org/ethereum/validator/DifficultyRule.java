@@ -49,8 +49,9 @@ public class DifficultyRule extends DependentBlockHeaderRule {
 
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
-        List<BlockHeader> blockWindow = consensusValidationMainchainView
-                .getFromBestBlock(DifficultyCalculator.BLOCK_COUNT_WINDOW);
+        // todo(fede) this is not production ready
+        List<BlockHeader> blockWindow = consensusValidationMainchainView != null ? consensusValidationMainchainView
+                .getFromBestBlock(DifficultyCalculator.BLOCK_COUNT_WINDOW) : Collections.emptyList();
 
         BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent, blockWindow);
         BlockDifficulty difficulty = header.getDifficulty();
