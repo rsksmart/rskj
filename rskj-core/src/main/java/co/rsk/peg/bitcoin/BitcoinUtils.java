@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BitcoinUtils {
-    protected static final byte[]  WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
+    protected static final byte[] WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
     private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra byte for OP_RETURN and another one for data length
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
@@ -107,20 +107,14 @@ public class BitcoinUtils {
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
         if (!transaction.hasWitness()) {
             BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
+            BitcoinUtils.removeSignaturesFromMultiSigTransaction(transactionCopyWithoutSignatures);
             return transactionCopyWithoutSignatures.getHash();
         }
 
         return transaction.getHash();
     }
 
-    public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
-        if (transaction.hasWitness()) {
-            String message = "Removing signatures from SegWit transactions is not allowed.";
-            logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
-            throw new IllegalArgumentException(message);
-        }
-
+    public static void removeSignaturesFromMultiSigTransaction(BtcTransaction transaction) {
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
             TransactionInput input = inputs.get(inputIndex);
@@ -128,13 +122,18 @@ public class BitcoinUtils {
                 .orElseThrow(
                     () -> {
                         String message = "Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.";
-                        logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
+                        logger.error("[removeSignaturesFromMultiSigTransaction] {}", message);
                         return new IllegalArgumentException(message);
                     }
                 );
-            Script p2shScript = ScriptBuilder.createP2SHOutputScript(inputRedeemScript);
-            Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
-            input.setScriptSig(emptyInputScript);
+            boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
+            if (inputHasWitness) {
+                TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(inputRedeemScript);
+                transaction.setWitness(inputIndex, witnessScript);
+            } else {
+                Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(inputRedeemScript);
+                input.setScriptSig(inputScript);
+            }
         }
     }
 
