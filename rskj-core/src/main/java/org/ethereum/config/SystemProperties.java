@@ -79,6 +79,8 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
     public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
+    public static final String PROPERTY_DB_SNAP_STATE_CHUNK_RESPONSE_MESSAGE_DIR = "database.snapSync.snapStateChunkResponseMessage.dir";
+    public static final String PROPERTY_DB_SNAP_STATE_CHUNK_RESPONSE_MESSAGE_NAME = "database.snapSync.snapStateChunkResponseMessage.name";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
     public static final String PROPERTY_RPC_HTTP_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.http.max_aggregated_frame_size";
@@ -253,6 +255,14 @@ public abstract class SystemProperties {
 
     public List<String> importTrustedKeys() {
         return configFromFiles.getStringList("database.import.trusted-keys");
+    }
+
+    public String snapStateChunkResponseMessageDir() {
+        return configFromFiles.getString(PROPERTY_DB_SNAP_STATE_CHUNK_RESPONSE_MESSAGE_DIR);
+    }
+
+    public String snapStateChunkResponseMessageName() {
+        return configFromFiles.getString(PROPERTY_DB_SNAP_STATE_CHUNK_RESPONSE_MESSAGE_NAME);
     }
 
     public List<Node> peerActive() {
