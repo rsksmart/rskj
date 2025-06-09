@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
 import javax.annotation.Nonnull;
@@ -22,15 +23,18 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
     private final SignatureCache signatureCache;
+    private final BridgeEventLogger eventLogger;
 
     public UnionBridgeSupportImpl(
         UnionBridgeConstants constants,
         UnionBridgeStorageProvider storageProvider,
-        SignatureCache signatureCache
+        SignatureCache signatureCache,
+        BridgeEventLogger eventLogger
     ) {
         this.constants = constants;
         this.storageProvider = storageProvider;
         this.signatureCache = signatureCache;
+        this.eventLogger = eventLogger;
     }
 
     @Override
@@ -133,9 +137,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.INVALID_VALUE;
         }
 
+        Coin lockingCapBeforeUpdate = getLockingCap();
         storageProvider.setLockingCap(newCap);
-        logger.info("[{}] Union Locking Cap has been increased. New value: {}",
-            INCREASE_LOCKING_CAP_TAG, newCap);
+        RskAddress caller = tx.getSender(signatureCache);
+        eventLogger.logUnionLockingCapIncreased(caller, lockingCapBeforeUpdate, newCap);
+
+        logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
+            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newCap);
         return UnionResponseCode.SUCCESS;
     }
 

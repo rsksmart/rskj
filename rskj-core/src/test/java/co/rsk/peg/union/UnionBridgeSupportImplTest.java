@@ -1,6 +1,9 @@
 package co.rsk.peg.union;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import co.rsk.core.Coin;
@@ -13,6 +16,7 @@ import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import java.math.BigInteger;
 import java.util.Optional;
@@ -55,15 +59,18 @@ class UnionBridgeSupportImplTest {
     private UnionBridgeStorageProvider unionBridgeStorageProvider;
     private SignatureCache signatureCache;
     private Transaction rskTx;
+    private BridgeEventLogger eventLogger;
 
     @BeforeEach
     void setUp() {
         storageAccessor = new InMemoryStorage();
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
         signatureCache = mock(SignatureCache.class);
+        eventLogger = mock(BridgeEventLogger.class);
         unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder()
             .withStorageProvider(unionBridgeStorageProvider)
-            .withSignatureCache(signatureCache);
+            .withSignatureCache(signatureCache)
+            .withEventLogger(eventLogger);
         unionBridgeSupport = unionBridgeSupportBuilder.build();
 
         rskTx = mock(Transaction.class);
@@ -405,6 +412,7 @@ class UnionBridgeSupportImplTest {
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(newLockingCap);
         assertNewLockingCapWasNotStored(newLockingCap);
+        verify(eventLogger).logUnionLockingCapIncreased(changeLockingCapAuthorizer, initialLockingCap, newLockingCap);
 
         // call save and assert that the new locking cap is stored
         unionBridgeSupport.save();
@@ -419,9 +427,10 @@ class UnionBridgeSupportImplTest {
             BridgeMainNetConstants.getInstance().getMaxRbtc()).add(new Coin(oneEth));
 
         // Stored a locking cap in the storage to demonstrate that the new locking cap is valid
+        Coin storedLockingCap = moreThanMaxRbtc.divide(BigInteger.valueOf(2L));
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            moreThanMaxRbtc.divide(BigInteger.valueOf(2L)),
+            storedLockingCap,
             BridgeSerializationUtils::serializeRskCoin
         );
 
@@ -438,6 +447,7 @@ class UnionBridgeSupportImplTest {
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(moreThanMaxRbtc);
         assertNewLockingCapWasNotStored(moreThanMaxRbtc);
+        verify(eventLogger).logUnionLockingCapIncreased(changeLockingCapAuthorizer, storedLockingCap, moreThanMaxRbtc);
 
         // call save and assert that the new locking cap is stored
         unionBridgeSupport.save();
@@ -449,8 +459,9 @@ class UnionBridgeSupportImplTest {
     void increaseLockingCap_whenInvalidLockingCap_shouldReturnInvalidValue(Coin newLockingCap) {
         // arrange
         when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
+
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(UnionBridgeMainNetConstants.getInstance())
+            .withConstants(unionBridgeConstants)
             .build();
 
         // act
@@ -459,6 +470,7 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
         assertNoLockingCapIsStored();
+        verify(eventLogger, never()).logUnionLockingCapIncreased(any(), any(), any());
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -517,6 +529,7 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
         assertNoLockingCapIsStored();
+        verify(eventLogger, never()).logUnionLockingCapIncreased(any(), any(), any());
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -800,14 +813,17 @@ class UnionBridgeSupportImplTest {
 
         Coin newLockingCap = Coin.fromBitcoin(BridgeMainNetConstants.getInstance().getMaxRbtc());
         // to simulate the case where the address is already stored
+
+        Coin storedLockingCap = newLockingCap.divide(BigInteger.TWO);
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            newLockingCap.divide(BigInteger.TWO),
+            storedLockingCap,
             BridgeSerializationUtils::serializeRskCoin
         );
 
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
+        verify(eventLogger).logUnionLockingCapIncreased(changeLockingCapAuthorizer, storedLockingCap, newLockingCap);
 
         // act
         unionBridgeSupport.save();

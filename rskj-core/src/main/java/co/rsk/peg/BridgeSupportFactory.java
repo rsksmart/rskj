@@ -95,10 +95,6 @@ public class BridgeSupportFactory {
         );
         LockingCapSupport lockingCapSupport = getLockingCapSupportInstance(bridgeStorageAccessor, activations);
 
-        UnionBridgeSupport unionBridgeSupport = getUnionBridgeSupportInstance(
-            bridgeStorageAccessor
-        );
-
         BridgeEventLogger eventLogger = null;
         if (logs != null) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
@@ -107,6 +103,8 @@ public class BridgeSupportFactory {
                 eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstants, activations, logs);
             }
         }
+
+        UnionBridgeSupport unionBridgeSupport = getUnionBridgeSupportInstance(bridgeStorageAccessor, eventLogger);
 
         BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
         PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
@@ -131,13 +129,14 @@ public class BridgeSupportFactory {
         );
     }
 
-    private UnionBridgeSupport getUnionBridgeSupportInstance(StorageAccessor bridgeStorageAccessor) {
+    private UnionBridgeSupport getUnionBridgeSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeEventLogger eventLogger) {
         UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
 
         return new UnionBridgeSupportImpl(
             bridgeConstants.getUnionBridgeConstants(),
             unionBridgeStorageProvider,
-            signatureCache
+            signatureCache,
+            eventLogger
         );
     }
 
