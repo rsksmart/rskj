@@ -2894,7 +2894,8 @@ public class BridgeSupport {
     }
 
     public UnionResponseCode increaseUnionBridgeLockingCap(Transaction tx, co.rsk.core.Coin newLockingCap) {
-        return unionBridgeSupport.increaseLockingCap(tx, newLockingCap);
+        return unionBridgeSupport.increaseLockingCap(tx,
+            newLockingCap);
     }
 
     public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amountRequested) {
