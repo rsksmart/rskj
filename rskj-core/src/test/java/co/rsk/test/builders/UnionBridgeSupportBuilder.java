@@ -6,17 +6,20 @@ import co.rsk.peg.union.UnionBridgeStorageProvider;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.core.SignatureCache;
 
 public class UnionBridgeSupportBuilder {
     private UnionBridgeConstants constants;
     private UnionBridgeStorageProvider storageProvider;
     private SignatureCache signatureCache;
+    private BridgeEventLogger eventLogger;
 
     private UnionBridgeSupportBuilder() {
         this.constants = mock(UnionBridgeConstants.class);
         this.storageProvider = mock(UnionBridgeStorageProvider.class);
         this.signatureCache = mock(SignatureCache.class);
+        this.eventLogger = mock(BridgeEventLogger.class);
     }
 
     public static UnionBridgeSupportBuilder builder() {
@@ -38,11 +41,17 @@ public class UnionBridgeSupportBuilder {
         return this;
     }
 
+public UnionBridgeSupportBuilder withEventLogger(BridgeEventLogger eventLogger) {
+        this.eventLogger = eventLogger;
+        return this;
+    }
+
     public UnionBridgeSupport build() {
         return new UnionBridgeSupportImpl(
             constants,
             storageProvider,
-            signatureCache
+            signatureCache,
+            eventLogger
         );
     }
 }
