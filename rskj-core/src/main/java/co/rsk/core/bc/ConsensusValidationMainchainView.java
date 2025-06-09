@@ -28,5 +28,7 @@ public interface ConsensusValidationMainchainView {
 
     List<BlockHeader> get(Keccak256 startingHashToGetMainchainFrom, int height);
 
+    List<BlockHeader> getFromBestBlock(long blockCount);
+
     void setPendingHeaders(Map<Keccak256, BlockHeader> pendingHeadersByHash);
 }
