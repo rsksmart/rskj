@@ -18,7 +18,6 @@
 package org.ethereum.rpc.parameters;
 
 import co.rsk.util.HexUtils;
-import co.rsk.util.StringUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,11 +25,13 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
-import java.math.BigInteger;
 
 @JsonDeserialize(using = HexNumberParam.Deserializer.class)
 public class HexNumberParam implements Serializable {
+
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final int HEX_NUM_BYTE_LENGTH = 32;
@@ -39,21 +40,12 @@ public class HexNumberParam implements Serializable {
     private final String hexNumber;
 
     public HexNumberParam(String hexNumber) {
-        if (!isHexNumberLengthValid(hexNumber)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid param: " + StringUtils.trim(hexNumber));
+        if (!HexUtils.isHexWithPrefix(hexNumber)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid param: invalid hex string.");
         }
 
-        boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
-        if (!HexUtils.isHex(hexNumber.toLowerCase(), hasPrefix ? 2 : 0)) {
-            BigInteger number;
-            try {
-                number = new BigInteger(hexNumber);
-            } catch(Exception e) {
-                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": value must be a valid hex or string number.", e);
-            }
-            if (number.signum() == -1) {
-                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": only positive numbers are allowed.");
-            }
+        if (!isHexNumberLengthValid(hexNumber)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid param: invalid hex length.");
         }
 
         this.hexNumber = hexNumber;
@@ -73,6 +65,8 @@ public class HexNumberParam implements Serializable {
     }
 
     public static class Deserializer extends StdDeserializer<HexNumberParam> {
+
+        @Serial
         private static final long serialVersionUID = 1L;
 
         public Deserializer() { this(null); }

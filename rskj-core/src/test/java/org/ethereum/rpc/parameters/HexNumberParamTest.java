@@ -27,77 +27,96 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class HexNumberParamTest {
 
     @Test
-    public void testValidHexNumberParam() {
-        String validHexNumber = "0x76c0";
-        HexNumberParam hexNumberParam = new HexNumberParam(validHexNumber);
+    public void testValidHexStringInput_executesAsExpected() {
+        String validHexStringInput = "0x76c0";
+        HexNumberParam hexNumberParam = new HexNumberParam(validHexStringInput);
 
         assertNotNull(hexNumberParam);
-        assertEquals(validHexNumber, hexNumberParam.getHexNumber());
+        assertEquals(validHexStringInput, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testValidHexNumberParamAsStringNumber() {
-        String validStringNumber = "1500";
-        HexNumberParam hexNumberParam = new HexNumberParam(validStringNumber);
+    public void testMaxLengthHexStringInput_executesAsExpected() {
+        // Length 0x + 64 characters
+        String maxLengthInput = "0xA1A2A3A4A5A6A7A8A91011121314151617181920212223242526272829303132";
+        HexNumberParam hexNumberParam = new HexNumberParam(maxLengthInput);
 
         assertNotNull(hexNumberParam);
-        assertEquals(validStringNumber, hexNumberParam.getHexNumber());
+        assertEquals(maxLengthInput, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testValidDecimalNumberZeroAsParam_workAsExpected() {
-        String validDecimalNumberZeroAsParam = "0";
-        HexNumberParam hexNumberParam = new HexNumberParam(validDecimalNumberZeroAsParam);
+    public void testBiggestNumberHexStringInput_executesAsExpected() {
+        // Length 0x + 64 characters
+        String biggestNumber = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        HexNumberParam hexNumberParam = new HexNumberParam(biggestNumber);
 
         assertNotNull(hexNumberParam);
-        assertEquals(validDecimalNumberZeroAsParam, hexNumberParam.getHexNumber());
+        assertEquals(biggestNumber, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testValidHexNumberZeroAsParam_workAsExpected() {
-        String validDecimalNumberZeroAsParam = "0x00";
-        HexNumberParam hexNumberParam = new HexNumberParam(validDecimalNumberZeroAsParam);
+    public void testLowestNumberHexStringInput_executesAsExpected() {
+        String lowestNumber = "0x00";
+        HexNumberParam hexNumberParam = new HexNumberParam(lowestNumber);
 
         assertNotNull(hexNumberParam);
-        assertEquals(validDecimalNumberZeroAsParam, hexNumberParam.getHexNumber());
+        assertEquals(lowestNumber, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testValidHexNumberAsParam_understandsTheNumberAsPositive() {
-        // 0xFFF6 is 65526 in decimal, but -10 in Decimal from signed 2's complement
-        String validDecimalNumberZeroAsParam = "0xFFF6";
-        HexNumberParam hexNumberParam = new HexNumberParam(validDecimalNumberZeroAsParam);
+    public void testNoLeadingZeroSingleByteHexStringInput_executesAsExpected() {
+        String noLeadingZeroSingleByte = "0x1";
+        HexNumberParam hexNumberParam = new HexNumberParam(noLeadingZeroSingleByte);
 
         assertNotNull(hexNumberParam);
-        assertEquals(validDecimalNumberZeroAsParam, hexNumberParam.getHexNumber());
+        assertEquals(noLeadingZeroSingleByte, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testNegativeDecimalNumber_shouldThrowException() {
-        String negativeDecimalNumber = "-1000";
+    public void testSingleByteHexStringInput_executesAsExpected() {
+        String leadingZeroSingleByte = "0x01";
+        HexNumberParam hexNumberParam = new HexNumberParam(leadingZeroSingleByte);
 
-        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(negativeDecimalNumber));
-        assertEquals("Invalid param " + negativeDecimalNumber + ": only positive numbers are allowed.", ex.getMessage());
+        assertNotNull(hexNumberParam);
+        assertEquals(leadingZeroSingleByte, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testNegativeHexWithPrefixParam_shouldThrowException() {
-        String invalidHexNumber = "0x-A";
+    public void testInvalidCharactersHexStringInput_throwsExceptionAsExpected() {
+        String invalidCharactersHexNumber = "0x76ty";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidCharactersHexNumber));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
     }
 
     @Test
-    public void testNegativeHexWithoutPrefixParam_shouldThrowException() {
-        String invalidHexNumber = "-A";
+    public void testHexStringWithoutPrefixInput_throwsExceptionAsExpected() {
+        String hexStringWithoutPrefix = "AABB";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(hexStringWithoutPrefix));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
     }
 
     @Test
-    public void testInvalidHexNumberParam() {
-        String invalidHexNumber = "0x76ty";
-
-        assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
+    public void testEmptyStringInput_throwsExceptionAsExpected() {
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(""));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
     }
+
+    @Test
+    public void testNullStringInput_throwsExceptionAsExpected() {
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(null));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
+    }
+
+    @Test
+    public void testLongerThanMaxHexStringInput_executesAsExpected() {
+        // Length 0x + 65 characters (maximum length 0x + 64 characters)
+        String longerThanMaximum = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0";
+
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(longerThanMaximum));
+        assertEquals("Invalid param: invalid hex length.", ex.getMessage());
+    }
+
 }
