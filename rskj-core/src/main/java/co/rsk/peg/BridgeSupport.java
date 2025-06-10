@@ -2894,6 +2894,10 @@ public class BridgeSupport {
         return unionBridgeSupport.setUnionBridgeContractAddressForTestnet(tx, unionBridgeContractAddress);
     }
 
+    public RskAddress getUnionBridgeContractAddress() {
+        return unionBridgeSupport.getUnionBridgeContractAddress();
+    }
+
     public co.rsk.core.Coin getUnionBridgeLockingCap() {
         return unionBridgeSupport.getLockingCap();
     }
