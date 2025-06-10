@@ -578,7 +578,13 @@ public class BlockExecutor {
         totalGasUsed += txListExecutor.getTotalGas();
 
         saveOrCommitTrackState(saveState, track);
-        List<TransactionReceipt> receiptList = updateReceipts(new LinkedList<>(receipts.values()));
+
+        // get a correctly ordered list of receipts and update log indices
+        List<TransactionReceipt> receiptList = updateReceipts(receipts.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .toList()
+        );
 
         BlockResult result = new BlockResult(
                 block,

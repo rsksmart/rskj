@@ -154,27 +154,25 @@ class Web3ImplLogsTest {
          0   -> contract creation
          1-2 -> contract calls generating 2 logs each
          */
-        List<Transaction> generatedTx = generateSimpleLogsTx();
-        assertEquals(3, generatedTx.size(), "There should be 3 transactions");
+        List<Transaction> generatedTxs = generateSimpleLogsTx();
+        assertEquals(3, generatedTxs.size(), "There should be 3 transactions");
         Object[] logs = getLogsFromEarliestFilter();
 
         assertNotNull(logs);
         assertTrue(logs.length > 0, "Logs should not be empty");
 
         //Two logs should be emitted per TX
-        Transaction tx1 = generatedTx.get(1);
+        Transaction tx1 = generatedTxs.get(1);
         TxHashParam tx1HashParam = new TxHashParam(tx1.getHash().toHexString());
         TransactionReceiptDTO receiptDTO = web3.eth_getTransactionReceipt(tx1HashParam);
         assertEquals("0x0", receiptDTO.getLogs()[0].logIndex);
 
-        Transaction tx2 = generatedTx.get(2);
+        Transaction tx2 = generatedTxs.get(2);
         TxHashParam tx2HashParam = new TxHashParam(tx2.getHash().toHexString());
         TransactionReceiptDTO receiptDTO3 = web3.eth_getTransactionReceipt(tx2HashParam);
         assertEquals(2, receiptDTO3.getLogs().length);
         assertEquals("0x2", receiptDTO3.getLogs()[0].logIndex);
-
     }
-
 
     @Test
     void newFilterInEmptyBlockchain() throws Exception {
