@@ -34,6 +34,9 @@ import co.rsk.db.importer.provider.BootstrapFileHandler;
 import co.rsk.db.importer.provider.Unzipper;
 import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
 import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
+import co.rsk.db.sql.LiquibaseImpl;
+import co.rsk.db.sql.SnapStateChunkResponseMessageRepository;
+import co.rsk.db.sql.h2.impl.SnapStateChunkResponseMessageRepositoryImpl;
 import co.rsk.logfilter.BlocksBloomService;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.BlockHeaderElement;
@@ -146,6 +149,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -265,6 +271,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private BlockChainFlusher blockChainFlusher;
     private MinGasPriceProvider minGasPriceProvider;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
+    private SnapStateChunkResponseMessageRepository snapStateChunkResponseMessageRepository;
+    private LiquibaseImpl liquibaseImpl;
+    private Connection sqlConnection;
 
     private volatile boolean closed;
 
@@ -1315,6 +1324,26 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("wallet closed.");
         }
 
+        if(snapStateChunkResponseMessageRepository != null) {
+            logger.trace("closing snapStateChunkResponseMessageRepository.");
+            try {
+                snapStateChunkResponseMessageRepository.close();
+                logger.trace("snapStateChunkResponseMessageRepository closed.");
+            } catch (IOException e) {
+                logger.error("Error occurred while closing snapStateChunkResponseMessageRepository. {}", e.getMessage(), e);
+            }
+        }
+
+        if(liquibaseImpl != null) {
+            logger.trace("closing liquibaseImpl.");
+            try {
+                liquibaseImpl.close();
+                logger.trace("liquibaseImpl closed.");
+            } catch (IOException e) {
+                logger.error("Error occurred while closing liquibaseImpl. {}", e.getMessage(), e);
+            }
+        }
+
         final long endTime = System.currentTimeMillis();
         logger.info("RSK context closed (after {} ms)", endTime - startTime);
     }
@@ -2094,10 +2123,68 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     checkpointDistance,
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
-                    getRskSystemProperties().isSnapshotParallelEnabled()
+                    getRskSystemProperties().isSnapshotParallelEnabled(),
+                    getSnapStateChunkResponseMessageRepository()
             );
+
+            if (getRskSystemProperties().isClientSnapshotSyncEnabled()) {
+                try {
+                    getLiquibaseImpl().runMigrations("snapSync");
+                } catch (Exception e) {
+                    logger.error("liquibaseImpl: error running snapSync migrations. {}", e.getMessage(), e);
+                }
+            }
         }
         return snapshotProcessor;
+    }
+
+    public synchronized SnapStateChunkResponseMessageRepository getSnapStateChunkResponseMessageRepository() {
+        checkIfNotClosed();
+
+        if (snapStateChunkResponseMessageRepository == null) {
+            try {
+                snapStateChunkResponseMessageRepository = new SnapStateChunkResponseMessageRepositoryImpl(getSqlConnection());
+            } catch (SQLException e) {
+                logger.error("snapStateChunkResponseMessageRepository: error connecting to sql db. {}", e.getMessage(), e);
+            }
+        }
+
+        return snapStateChunkResponseMessageRepository;
+    }
+
+    public synchronized LiquibaseImpl getLiquibaseImpl() {
+        checkIfNotClosed();
+
+        if (liquibaseImpl == null) {
+            try {
+                liquibaseImpl = new LiquibaseImpl(getSqlConnection());
+            } catch (SQLException e) {
+                logger.error("liquibaseImpl: error connecting to sql db. {}", e.getMessage(), e);
+            }
+        }
+
+        return liquibaseImpl;
+    }
+
+    public synchronized Connection getSqlConnection() {
+        checkIfNotClosed();
+
+        final var rskSystemProperties = getRskSystemProperties();
+
+        if (!rskSystemProperties.sqlEnabled()) {
+            logger.error("Sql database is not enabled");
+            return null;
+        }
+
+        if (sqlConnection == null) {
+            try {
+                this.sqlConnection = DriverManager.getConnection(rskSystemProperties.sqlJdbcUrl(), rskSystemProperties.sqlUsername(), rskSystemProperties.sqlPassword());
+            } catch (SQLException e) {
+                logger.error("sqlConnection: error connecting to sql db. {}", e.getMessage(), e);
+            }
+        }
+
+        return sqlConnection;
     }
 
     private Web3 getWeb3() {

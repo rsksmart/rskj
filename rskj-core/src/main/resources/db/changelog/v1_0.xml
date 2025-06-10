@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+
+    <changeSet id="1.0.0.rmoreliovlabs" author="reynold_morel" context="snapSync">
+        <comment>
+            Add snap sync message table
+        </comment>
+        <sql>
+            CREATE TABLE snap_state_chunk_response_messages (
+                id BIGINT PRIMARY KEY,
+                to BIGINT,
+                from BIGINT,
+                complete BOOLEAN,
+                block_number BIGINT,
+                chunk_of_trie_key_value BINARY,
+                processed BOOLEAN DEFAULT 0
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
