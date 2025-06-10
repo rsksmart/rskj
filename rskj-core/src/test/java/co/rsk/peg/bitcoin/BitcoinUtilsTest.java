@@ -1,5 +1,6 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -1088,6 +1089,95 @@ class BitcoinUtilsTest {
     }
 
     @Test
+    void removeSignaturesFromMultiSigTransaction_withLegacyAndSegwitInputs_shouldReturnExpectedTx() {
+        // arrange
+        List<BtcECKey> p2shFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(9);
+        Federation p2shFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(p2shFederationBtcKeys)
+            .build();
+
+        List<BtcECKey> p2wshFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20);
+        Federation p2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(p2wshFederationBtcKeys)
+            .build();
+
+        BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
+        TransactionInput legacyInput = new TransactionInput(
+            btcMainnetParams,
+            null,
+            new byte[]{},
+            new TransactionOutPoint(btcMainnetParams, 0, BitcoinTestUtils.createHash(3)),
+            Coin.COIN
+        );
+        TransactionInput segwitInput = new TransactionInput(
+            btcMainnetParams,
+            null,
+            new byte[]{},
+            new TransactionOutPoint(btcMainnetParams, 1, BitcoinTestUtils.createHash(6)),
+            Coin.COIN.multiply(2)
+        );
+        transaction.addInput(legacyInput);
+        transaction.addInput(segwitInput);
+
+        TransactionOutput output = new TransactionOutput(
+            btcMainnetParams,
+            null,
+            Coin.COIN.multiply(3),
+            destinationAddress
+        );
+        transaction.addOutput(output);
+
+        BitcoinUtils.addSpendingFederationBaseScript(
+            transaction,
+            0,
+            p2shFederation.getRedeemScript(),
+            p2shFederation.getFormatVersion()
+        );
+        BitcoinUtils.addSpendingFederationBaseScript(
+            transaction,
+            1,
+            p2wshFederation.getRedeemScript(),
+            p2wshFederation.getFormatVersion()
+        );
+
+        BtcTransaction transactionBeforeSigning = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+
+        // sign legacy input
+        BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(
+            transaction,
+            0,
+            p2shFederationBtcKeys
+        );
+
+        // sign witness input
+        TransactionInput secondInput = transaction.getInput(1);
+        Coin inputValue = secondInput.getValue();
+        BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+            transaction,
+            1,
+            inputValue,
+            p2wshFederationBtcKeys
+        );
+
+        // act
+        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+
+        // assert
+        assertEquals(transactionBeforeSigning, transaction);
+
+        // Check first input (legacy), does not have signatures
+        assertScriptSigWithoutSignaturesHasProperFormat(
+            transaction.getInput(0).getScriptSig(),
+            p2shFederation.getRedeemScript()
+        );
+
+        // Check second input (segwit), does not have signatures
+        TransactionWitness witness = transaction.getWitness(1);
+        assertWitnessScriptWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
+        assertSegwitScriptSigContainsHashedRedeemScript(transaction.getInput(1).getScriptSig(), p2wshFederation.getRedeemScript());
+    }
+
+    @Test
     void createBaseInputScriptThatSpendsFromRedeemScript_forLegacyFed_shouldCreateExpectedScript() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
@@ -1720,6 +1810,36 @@ class BitcoinUtilsTest {
         byte[] hashedRedeemScript = extractHashedRedeemScriptProgramFromSegwitScriptSig(segwitScriptSig);
         byte[] expectedHashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
         assertArrayEquals(expectedHashedRedeemScript, hashedRedeemScript);
+    }
+
+    private void assertScriptSigWithoutSignaturesHasProperFormat(Script scriptSig, Script redeemScript) {
+        List<ScriptChunk> scriptSigChunks = scriptSig.getChunks();
+
+        // Check size first
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int expectedChunksCount = numberOfSignaturesRequiredToSpend + 3; // OP_0, OP_NOTIF param, redeem script
+        assertEquals(expectedChunksCount, scriptSigChunks.size());
+
+        // Check each chunk
+        int chunkIndex = 0;
+
+        // first chunk should be OP_0
+        ScriptChunk firstChunk = scriptSigChunks.get(chunkIndex);
+        assertEquals(OP_0, firstChunk.opcode);
+
+        // Next, an empty chunk for each signature required to spend
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
+            ScriptChunk signatureChunk = scriptSigChunks.get(++chunkIndex);
+            assertEquals(OP_0, signatureChunk.opcode);
+        }
+
+        // An empty chunk for the OP_NOTIF param
+        ScriptChunk flowChunk = scriptSigChunks.get(++chunkIndex);
+        assertEquals(OP_0, flowChunk.opcode);
+
+        // Finally, the redeem script program
+        ScriptChunk redeemScriptChunk = scriptSigChunks.get(++chunkIndex);
+        assertArrayEquals(redeemScript.getProgram(), redeemScriptChunk.data);
     }
 
     private void assertWitnessScriptWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
