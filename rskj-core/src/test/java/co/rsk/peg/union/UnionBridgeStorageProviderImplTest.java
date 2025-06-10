@@ -630,7 +630,7 @@ class UnionBridgeStorageProviderImplTest {
         unionBridgeStorageProvider.save();
 
         // Check that the value is stored
-        assertGivenWeisTransferredToUnionBridgeIsStored(expectedWeisTransferred);
+        assertGivenWeisTransferredToUnionBridgeIsStored(actualWeisTransferred.get());
     }
 
     @Test
