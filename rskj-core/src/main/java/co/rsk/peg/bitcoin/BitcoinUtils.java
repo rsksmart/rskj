@@ -126,10 +126,11 @@ public class BitcoinUtils {
                     }
                 );
             boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
-            int federationFormatVersion = inputHasWitness ?
-                FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion() :
-                FederationFormatVersion.P2SH_ERP_FEDERATION.getFormatVersion();
-            addSpendingFederationBaseScript(transaction, inputIndex, inputRedeemScript, federationFormatVersion);
+            if (inputHasWitness) {
+                setSpendingBaseScriptSegwit(transaction, inputIndex, inputRedeemScript);
+            } else {
+                setSpendingBaseScriptLegacy(transaction, inputIndex, inputRedeemScript);
+            }
         }
     }
 
@@ -159,16 +160,24 @@ public class BitcoinUtils {
     }
 
     public static void addSpendingFederationBaseScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
-        TransactionInput input = btcTx.getInput(inputIndex);
-
         if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
-            Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
-            input.setScriptSig(inputScript);
+            setSpendingBaseScriptLegacy(btcTx, inputIndex, redeemScript);
             return;
         }
+        setSpendingBaseScriptSegwit(btcTx, inputIndex, redeemScript);
+    }
 
+    private static void setSpendingBaseScriptLegacy(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+        TransactionInput input = btcTx.getInput(inputIndex);
+        Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
+        input.setScriptSig(inputScript);
+    }
+
+    private static void setSpendingBaseScriptSegwit(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+        TransactionInput input = btcTx.getInput(inputIndex);
         TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(inputIndex, witnessScript);
+
         Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
         input.setScriptSig(segwitScriptSig);
     }
