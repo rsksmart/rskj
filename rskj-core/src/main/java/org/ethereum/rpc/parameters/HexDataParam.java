@@ -32,10 +32,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
-public class HexDataParam implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class HexDataParam  {
 
     private final byte[] rawDataBytes;
 
@@ -60,9 +57,6 @@ public class HexDataParam implements Serializable {
     }
 
     public static class Deserializer extends StdDeserializer<HexDataParam> {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         public Deserializer() { this(null); }
 

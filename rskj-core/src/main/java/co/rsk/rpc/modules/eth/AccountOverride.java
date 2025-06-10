@@ -18,10 +18,14 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
+import org.ethereum.rpc.parameters.AccountOverrideParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -87,6 +91,42 @@ public class AccountOverride {
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
         throw new UnsupportedOperationException("Move precompile to address is not supported yet");
+    }
+
+    public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
+
+        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
+            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
+        }
+
+        if (accountOverrideParam.getBalance() != null) {
+            this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
+        }
+
+        if (accountOverrideParam.getNonce() != null) {
+            this.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.getNonce().getHexNumber()));
+        }
+
+        if (accountOverrideParam.getCode() != null) {
+            this.setCode(accountOverrideParam.getCode().getRawDataBytes());
+        }
+
+        if (accountOverrideParam.getState() != null) {
+            Map<DataWord, DataWord> state = new HashMap<>();
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
+                state.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
+            }
+            this.setState(state);
+        }
+
+        if (accountOverrideParam.getStateDiff() != null) {
+            Map<DataWord, DataWord> stateDiff = new HashMap<>();
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
+                stateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
+            }
+            this.setStateDiff(stateDiff);
+        }
+        return this;
     }
 
     @Override

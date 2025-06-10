@@ -417,48 +417,11 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam) {
         List<AccountOverride> accountOverrideList = accParam.entrySet().stream()
-                .map(entry -> getAccountOverride(entry.getKey(), entry.getValue())).toList();
+                .map(entry -> new AccountOverride(entry.getKey().getAddress()).fromAccountOverrideParam(entry.getValue())).toList();
         if (blockRefParam.getIdentifier() != null) {
             return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()), accountOverrideList);
         }
         return eth_call(args, blockRefParam.getInputs(), accountOverrideList);
-    }
-
-    private AccountOverride getAccountOverride(HexAddressParam hexAddressParam, AccountOverrideParam accountOverrideParam) {
-        AccountOverride accountOverride = new AccountOverride(hexAddressParam.getAddress());
-
-        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
-            accountOverride.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
-        }
-
-        if (accountOverrideParam.getBalance() != null) {
-            accountOverride.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
-        }
-
-        if (accountOverrideParam.getNonce() != null) {
-            accountOverride.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.getNonce().getHexNumber()));
-        }
-
-        if (accountOverrideParam.getCode() != null) {
-            accountOverride.setCode(accountOverrideParam.getCode().getRawDataBytes());
-        }
-
-        if (accountOverrideParam.getState() != null) {
-            Map<DataWord, DataWord> state = new HashMap<>();
-            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
-                state.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
-            }
-            accountOverride.setState(state);
-        }
-
-        if (accountOverrideParam.getStateDiff() != null) {
-            Map<DataWord, DataWord> stateDiff = new HashMap<>();
-            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
-                stateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
-            }
-            accountOverride.setStateDiff(stateDiff);
-        }
-        return accountOverride;
     }
 
     @Override

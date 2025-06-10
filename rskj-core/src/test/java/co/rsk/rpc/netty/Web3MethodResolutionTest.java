@@ -143,6 +143,7 @@ class Web3MethodResolutionTest {
 
     @Test
     void eth_call_withOverridesAndBlockRef_callsExpectedMethodAndParameters() throws Exception {
+        // given
         String fromAddress = "0x1234567890123456789012345678901234567bbb";
         String toAddress = "0x1234567890123456789012345678901234567890";
         String data = "0xabcdef01";
@@ -182,6 +183,7 @@ class Web3MethodResolutionTest {
 
         when(web3Impl.eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class), anyMap())).thenReturn("ok");
 
+        // when
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
 
