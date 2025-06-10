@@ -155,7 +155,8 @@ public class BitcoinTestUtils {
             false
         );
 
-        for (BtcECKey key : keys) {
+        List<BtcECKey> requiredKeys = getRequiredKeysToSign(keys, inputRedeemScript);
+        for (BtcECKey key : requiredKeys) {
             signTxInputWithKey(transaction, inputIndex, sigHash, key, outputScript);
         }
     }
@@ -178,11 +179,17 @@ public class BitcoinTestUtils {
             false
         );
 
-        int requiredSignatures = inputRedeemScript.getNumberOfSignaturesRequiredToSpend();
-        List<BtcECKey> requiredKeys = new ArrayList<>(keys.subList(0, requiredSignatures));
+        List<BtcECKey> requiredKeys = getRequiredKeysToSign(keys, inputRedeemScript);
         for (BtcECKey key : requiredKeys) {
             signTxInputWithKey(transaction, inputIndex, sigHash, key, outputScript);
         }
+    }
+
+    private static List<BtcECKey> getRequiredKeysToSign(List<BtcECKey> allKeys, Script redeemScript) {
+        int requiredSignatures = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int keysToSign = Math.min(requiredSignatures, allKeys.size());
+
+        return new ArrayList<>(allKeys.subList(0, keysToSign));
     }
 
     public static void signTxInputWithKey(
