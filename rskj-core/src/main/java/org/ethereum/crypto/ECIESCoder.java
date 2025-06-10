@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.crypto;
 
 import com.google.common.base.Throwables;
@@ -107,13 +106,13 @@ public class ECIESCoder {
     }
 
     /**
-     *  Encryption equivalent to the Crypto++ default ECIES<ECP> settings:
+     *  Encryption equivalent to the Crypto++ default ECIES&lt;ECP&gt; settings:
      *
-     *  DL_KeyAgreementAlgorithm:        DL_KeyAgreementAlgorithm_DH<struct ECPPoint,struct EnumToType<enum CofactorMultiplicationOption,0> >
-     *  DL_KeyDerivationAlgorithm:       DL_KeyDerivationAlgorithm_P1363<struct ECPPoint,0,class P1363_KDF2<class SHA1> >
-     *  DL_SymmetricEncryptionAlgorithm: DL_EncryptionAlgorithm_Xor<class HMAC<class SHA1>,0>
-     *  DL_PrivateKey:                   DL_Key<ECPPoint>
-     *  DL_PrivateKey_EC<class ECP>
+     *  DL_KeyAgreementAlgorithm:        DL_KeyAgreementAlgorithm_DH&lt;struct ECPPoint,struct EnumToType&lt;enum CofactorMultiplicationOption,0&gt;&gt;
+     *  DL_KeyDerivationAlgorithm:       DL_KeyDerivationAlgorithm_P1363&lt;struct ECPPoint,0,class P1363_KDF2&lt;class SHA1&gt;&gt;
+     *  DL_SymmetricEncryptionAlgorithm: DL_EncryptionAlgorithm_Xor&lt;class HMAC&lt;class SHA1&gt;,0&gt;
+     *  DL_PrivateKey:                   DL_Key&lt;ECPPoint&gt;
+     *  DL_PrivateKey_EC&lt;class ECP&gt;
      *
      *  Used for Whisper V3
      */
