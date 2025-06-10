@@ -117,7 +117,6 @@ public class BitcoinUtils {
     public static void removeSignaturesFromMultiSigTransaction(BtcTransaction transaction) {
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            TransactionInput input = inputs.get(inputIndex);
             Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .orElseThrow(
                     () -> {
@@ -127,13 +126,10 @@ public class BitcoinUtils {
                     }
                 );
             boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
-            if (inputHasWitness) {
-                TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(inputRedeemScript);
-                transaction.setWitness(inputIndex, witnessScript);
-            } else {
-                Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(inputRedeemScript);
-                input.setScriptSig(inputScript);
-            }
+            int federationFormatVersion = inputHasWitness ?
+                FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion() :
+                FederationFormatVersion.P2SH_ERP_FEDERATION.getFormatVersion();
+            addSpendingFederationBaseScript(transaction, inputIndex, inputRedeemScript, federationFormatVersion);
         }
     }
 
