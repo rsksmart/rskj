@@ -1,5 +1,7 @@
 package co.rsk.test.builders;
 
+import static co.rsk.peg.federation.FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.peg.bitcoin.*;
@@ -19,13 +21,11 @@ public class PegoutTransactionBuilder {
     private boolean signTransaction;
 
     private PegoutTransactionBuilder() {
-        List<BtcECKey> defaultKeys = getDefaultFederationBtcKeys();
+        List<BtcECKey> defaultKeys = BitcoinTestUtils.getBtcEcKeys(20);
         this.activeFederation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(defaultKeys)
             .build();
-
-        int signersRequired = activeFederation.getNumberOfSignaturesRequired();
-        this.signingKeys = new ArrayList<>(defaultKeys.subList(0, signersRequired));
+        this.signingKeys = defaultKeys;
 
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
         this.changeAmount = Coin.COIN.div(2);
@@ -49,12 +49,13 @@ public class PegoutTransactionBuilder {
         return this;
     }
 
-    public PegoutTransactionBuilder withInput(Sha256Hash spendTxHash, int outputIndex) {
+    public PegoutTransactionBuilder withInput(Sha256Hash spendTxHash, int outputIndex, Coin value) {
         TransactionInput input = new TransactionInput(
             networkParameters,
             null,
             new byte[]{},
-            new TransactionOutPoint(networkParameters, outputIndex, spendTxHash)
+            new TransactionOutPoint(networkParameters, outputIndex, spendTxHash),
+            value
         );
 
         inputs.add(input);
@@ -111,7 +112,7 @@ public class PegoutTransactionBuilder {
             );
 
             if (signTransaction) {
-                BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, inputIndex, signingKeys);
+                signInput(transaction, inputIndex);
             }
 
             inputIndex++;
@@ -122,13 +123,29 @@ public class PegoutTransactionBuilder {
         Script activeFederationRedeemScript = activeFederation.getRedeemScript();
         int outputIndex = 0;
         Sha256Hash spendTxHash = BitcoinTestUtils.createHash(10);
+        Coin value = Coin.COIN;
 
         return new TransactionInput(
             networkParameters,
             null,
             activeFederationRedeemScript.getProgram(),
-            new TransactionOutPoint(networkParameters, outputIndex, spendTxHash)
+            new TransactionOutPoint(networkParameters, outputIndex, spendTxHash),
+            value
         );
+    }
+
+    private void signInput(BtcTransaction transaction, int inputIndex) {
+        if (activeFederation.getFormatVersion() == P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            Coin inputValue = inputs.get(inputIndex).getValue();
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+                transaction,
+                inputIndex,
+                inputValue,
+                signingKeys
+            );
+        } else {
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, inputIndex, signingKeys);
+        }
     }
 
     private void addOutputsToTransaction(BtcTransaction transaction) {
@@ -154,12 +171,5 @@ public class PegoutTransactionBuilder {
         Address changeAddress = activeFederation.getAddress();
         TransactionOutput changeOutput = new TransactionOutput(networkParameters, null, changeAmount, changeAddress);
         transaction.addOutput(changeOutput);
-    }
-
-    private List<BtcECKey> getDefaultFederationBtcKeys() {
-        for (int i=0; i<20; i++) {
-            signingKeys.add(BitcoinTestUtils.getBtcEcKeyFromSeed("signer" + i));
-        }
-        return signingKeys;
     }
 }
