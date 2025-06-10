@@ -326,52 +326,6 @@ public abstract class Secp256k1ServiceTest {
         sign_signatureToKey_assert(privateKey, publicKey);
     }
 
-    public static void encodeECPointsInput(byte[] input, BigInteger x, BigInteger y, BigInteger multiplier) {
-        final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
-        final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
-        final var scalarBytes = ByteUtil.stripLeadingZeroes(multiplier.toByteArray());
-
-        Bytes.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
-        Bytes.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
-        Bytes.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
-    }
-
-    public static void encodeECPointsInput(byte[] input, BigInteger p0x, BigInteger p0y, BigInteger p1x, BigInteger p1y) {
-        final var x1Bytes = ByteUtil.stripLeadingZeroes(p0x.toByteArray());
-        final var y1Bytes = ByteUtil.stripLeadingZeroes(p0y.toByteArray());
-        final var x2Bytes = ByteUtil.stripLeadingZeroes(p1x.toByteArray());
-        final var y2Bytes = ByteUtil.stripLeadingZeroes(p1y.toByteArray());
-
-        Bytes.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
-        Bytes.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
-        Bytes.arraycopy(x2Bytes, 0, input, 96 - x2Bytes.length, x2Bytes.length);
-        Bytes.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
-    }
-
-    public static byte [] buildECPointsOutput(String strOx, String strOy) {
-        final var ox = new BigInteger(strOx);
-        final var oy = new BigInteger(strOy);
-        final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
-
-        return HexUtils.stringHexToByteArray(outputStr);
-    }
-
-    private void sign_signatureToKey_assert(ECKey privateKey, ECKey publicKey) {
-        String message = "Hello World!";
-        byte[] hash = HashUtil.sha256(message.getBytes());
-        ECDSASignature sig = ECDSASignature.fromSignature(privateKey.doSign(hash));
-        boolean found = false;
-        for (int i = 0; i < 4; i++) {
-            ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
-            checkNotNull(key2);
-            if (publicKey.equals(key2)) {
-                found = true;
-                break;
-            }
-        }
-        assertTrue(found);
-    }
-
     @Test
     void testSecpAddTwoIdenticalPoints() {
         // given
@@ -637,6 +591,53 @@ public abstract class Secp256k1ServiceTest {
 
         // then
         Assertions.assertArrayEquals(output, result);
+    }
+
+
+    private void encodeECPointsInput(byte[] input, BigInteger x, BigInteger y, BigInteger multiplier) {
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
+        final var scalarBytes = ByteUtil.stripLeadingZeroes(multiplier.toByteArray());
+
+        Bytes.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        Bytes.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        Bytes.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
+    }
+
+    private void encodeECPointsInput(byte[] input, BigInteger p0x, BigInteger p0y, BigInteger p1x, BigInteger p1y) {
+        final var x1Bytes = ByteUtil.stripLeadingZeroes(p0x.toByteArray());
+        final var y1Bytes = ByteUtil.stripLeadingZeroes(p0y.toByteArray());
+        final var x2Bytes = ByteUtil.stripLeadingZeroes(p1x.toByteArray());
+        final var y2Bytes = ByteUtil.stripLeadingZeroes(p1y.toByteArray());
+
+        Bytes.arraycopy(x1Bytes, 0, input, 32 - x1Bytes.length, x1Bytes.length);
+        Bytes.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
+        Bytes.arraycopy(x2Bytes, 0, input, 96 - x2Bytes.length, x2Bytes.length);
+        Bytes.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
+    }
+
+    private byte [] buildECPointsOutput(String strOx, String strOy) {
+        final var ox = new BigInteger(strOx);
+        final var oy = new BigInteger(strOy);
+        final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
+
+        return HexUtils.stringHexToByteArray(outputStr);
+    }
+
+    private void sign_signatureToKey_assert(ECKey privateKey, ECKey publicKey) {
+        String message = "Hello World!";
+        byte[] hash = HashUtil.sha256(message.getBytes());
+        ECDSASignature sig = ECDSASignature.fromSignature(privateKey.doSign(hash));
+        boolean found = false;
+        for (int i = 0; i < 4; i++) {
+            ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
+            checkNotNull(key2);
+            if (publicKey.equals(key2)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
     }
 
 }
