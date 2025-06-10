@@ -1,6 +1,5 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
@@ -16,6 +15,7 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.federation.*;
 
+import co.rsk.test.builders.PegoutTransactionBuilder;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class BitcoinUtilsTest {
-
     private static final BridgeConstants bridgeTestnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcTestnetParams = bridgeTestnetConstants.getBtcParams();
 
@@ -560,7 +559,6 @@ class BitcoinUtilsTest {
         private final int inputIndex = 0; // our tx will just have one input
 
         private BtcTransaction tx;
-        private List<Sha256Hash> sigHashes;
         private Sha256Hash sigHash;
 
         private void setUp(Federation federation) {
@@ -575,7 +573,7 @@ class BitcoinUtilsTest {
 
             addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
 
-            sigHashes = generateTransactionInputsSigHashes(tx);
+            List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(tx);
             sigHash = sigHashes.get(inputIndex);
         }
 
@@ -912,7 +910,7 @@ class BitcoinUtilsTest {
         }, true); // using private keys from federation declared above
         List<TransactionInput> inputs = transaction.getInputs();
         for (TransactionInput input : inputs) {
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(
                 transaction,
                 inputs.indexOf(input),
                 keysToSign
@@ -943,7 +941,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromTransactionWithP2shMultiSigInputs_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTx() {
+    void removeSignaturesFromMultiSigTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTx() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script federationRedeemScript = federation.getRedeemScript();
@@ -964,7 +962,7 @@ class BitcoinUtilsTest {
         }, true); // using private keys from federation declared above
         List<TransactionInput> inputs = transaction.getInputs();
         for (TransactionInput input : inputs) {
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(
                 transaction,
                 inputs.indexOf(input),
                 keysToSign
@@ -972,7 +970,7 @@ class BitcoinUtilsTest {
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction);
+        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
 
         // assert
         assertEquals(transactionBeforeSigning, transaction);
@@ -994,7 +992,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromTransactionWithP2shMultiSigInputs_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
+    void removeSignaturesFromMultiSigTransaction_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
 
@@ -1016,21 +1014,77 @@ class BitcoinUtilsTest {
             "member05"
         }, true); // using private keys from federation declared above
         // we can only sign first input since the other input script sig will be empty
-        BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
+        BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
     }
 
     @Test
-    void removeSignaturesFromTransactionWithP2shMultiSigInputs_whenTransactionHasWitness_shouldThrowIAE() {
+    void removeSignaturesFromMultiSigTransaction_realTransactionWithWitness_shouldRemoveSignatures() {
         // arrange
         // data from tx https://mempool.space/testnet/tx/1744459aeaf7369aadc9fc40de9ab2bf575b14e35029b35a7ee4bbd3de65af7f
         byte[] rawTx = Hex.decode("02000000000101d654c3944d02808dda61dc0269cb8211da06035dab73c0a332e21a5e27d5c6c6000000002322002054ff1b72e598122f983989e6df42dc75736650c2409a08a237d3c3a6220b1c87fdffffff010ca00700000000001976a914af0c6784340fca71dc85be74e48c06f7850be1da88ac040047304402201f35f5f48ac56ebac8b656279c33886f0776f2e99e445ad653fdb376a05f964002200dbba1180d880e690c3d5d80295d358a1e0e58eb7ade5788c6f5e41c36b75516014830450221008608b2760b3f376a25a745433e5e562800bacf342a4fd0266c0944ff036a4035022050ebec91481289c8266038fc9eaf63e9c9b133934ceb8752901d8bc35d0b7c4801695221027de2af71862e0c64bf0ec5a66e3abc3b01fc57877802e6a6a81f6ea1d35610072102d9c67fef9f8d0707cbcca195eb5f26c6a65da6ca2d6130645c434bb924063856210346f033b8652a17d319d3ecbbbf20fd2cd663a6548173b9419d8228eef095012e53ae57472500");
         BtcTransaction transaction = new BtcTransaction(btcTestnetParams, rawTx);
 
-        // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transaction));
+        // act
+        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+
+        // assert
+        for (int inputIndex = 0; inputIndex < transaction.getInputs().size(); inputIndex++) {
+            final int inputIndexFinal = inputIndex; // using final variable for lambda
+            Script redeemScript = BitcoinUtils.extractRedeemScriptFromInput(transaction, inputIndex).orElseThrow(
+                () -> (RuntimeException) fail("Could not get redeem script from input " + inputIndexFinal)
+            );
+            assertSegwitScriptSigContainsHashedRedeemScript(
+                transaction.getInput(inputIndex).getScriptSig(),
+                redeemScript
+            );
+            assertWitnessScriptWithoutSignaturesHasProperFormat(
+                transaction.getWitness(inputIndex),
+                redeemScript
+            );
+        }
+    }
+
+    @Test
+    void removeSignaturesFromMultiSigTransaction_whenTransactionIsSegwit_shouldReturnExpectedTx() {
+        // arrange
+        List<BtcECKey> federationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20);
+        Federation federation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(federationBtcKeys)
+            .build();
+
+        BtcTransaction transaction = PegoutTransactionBuilder.builder()
+            .withActiveFederation(federation)
+            .build();
+        BtcTransaction transactionBeforeSigning = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+
+        List<TransactionInput> inputs = transaction.getInputs();
+        for (TransactionInput input : inputs) {
+            Coin inputValue = input.getValue();
+            BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
+                transaction,
+                inputs.indexOf(input),
+                inputValue,
+                federationBtcKeys
+            );
+        }
+
+        // act
+        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+
+        // assert
+        assertEquals(transactionBeforeSigning, transaction);
+
+        Script federationRedeemScript = federation.getRedeemScript();
+        for (TransactionInput input : transaction.getInputs()) {
+            int inputIndex = transaction.getInputs().indexOf(input);
+            TransactionWitness witness = transaction.getWitness(inputIndex);
+
+            assertWitnessScriptWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
+            assertSegwitScriptSigContainsHashedRedeemScript(input.getScriptSig(), federationRedeemScript);
+        }
     }
 
     @Test
@@ -1137,10 +1191,10 @@ class BitcoinUtilsTest {
         TransactionWitness expectedWitness = BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         assertEquals(expectedWitness, transaction.getWitness(inputIndex));
 
-        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
-        Script segwitScriptSig = new ScriptBuilder().number(OP_0).data(hashedRedeemScript).build();
-        Script oneChunkSegwitScriptSig = new ScriptBuilder().data(segwitScriptSig.getProgram()).build();
-        assertEquals(oneChunkSegwitScriptSig, transaction.getInput(inputIndex).getScriptSig());
+        assertSegwitScriptSigContainsHashedRedeemScript(
+            transaction.getInput(0).getScriptSig(),
+            redeemScript
+        );
     }
 
     @Test
@@ -1644,5 +1698,58 @@ class BitcoinUtilsTest {
                     "4f434b3a8bc552daa25a7a473ac4640ba2b9d621c95652c61488143ca02bbf1b"))
             );
         }
+    }
+
+    private void assertSegwitScriptSigContainsHashedRedeemScript(Script segwitScriptSig, Script redeemScript) {
+        List<ScriptChunk> chunks = segwitScriptSig.getChunks();
+        assertEquals(1, chunks.size());
+
+        ScriptChunk chunk = chunks.get(0);
+        assertEquals(34, chunk.opcode); // OP_PUSHBYTES_34, 32 bytes from the redeem script hash + 2 for OP_0 and OP_PUSHBYTES_32
+
+        byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
+        assertEquals(35, segwitScriptSigProgram.length); // OP_PUSHBYTES_34 + the 34 bytes
+
+        // Check the first byte is OP_PUSHBYTES_34
+        assertEquals(34, segwitScriptSigProgram[0]);
+
+        // Check the second byte is OP_0
+        assertEquals(0, segwitScriptSigProgram[1]); // OP_0
+
+        // Check the hashed redeem script
+        byte[] hashedRedeemScript = extractHashedRedeemScriptProgramFromSegwitScriptSig(segwitScriptSig);
+        byte[] expectedHashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
+        assertArrayEquals(expectedHashedRedeemScript, hashedRedeemScript);
+    }
+
+    private void assertWitnessScriptWithoutSignaturesHasProperFormat(TransactionWitness witness, Script redeemScript) {
+        assertNotNull(witness);
+
+        // Check size first
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int expectedPushCount = numberOfSignaturesRequiredToSpend + 3; // OP_0, OP_NOTIF param, redeem script
+        assertEquals(expectedPushCount, witness.getPushCount());
+
+        // Check each push element
+        byte[] emptyByte = {};
+        int pushIndex = 0;
+
+        // first push should be OP_0 (empty byte)
+        byte[] firstPush = witness.getPush(pushIndex);
+        assertArrayEquals(emptyByte, firstPush);
+
+        // Next, an empty push for each signature required to spend
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
+            byte[] signaturePush = witness.getPush(++pushIndex);
+            assertArrayEquals(emptyByte, signaturePush);
+        }
+
+        // An empty push for the OP_NOTIF param
+        byte[] flowPush = witness.getPush(++pushIndex);
+        assertArrayEquals(emptyByte, flowPush);
+
+        // Finally, the redeem script program
+        byte[] lastPush = witness.getPush(++pushIndex);
+        assertArrayEquals(redeemScript.getProgram(), lastPush);
     }
 }
