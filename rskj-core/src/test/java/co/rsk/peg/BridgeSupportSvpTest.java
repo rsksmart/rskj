@@ -1659,7 +1659,7 @@ class BridgeSupportSvpTest {
             BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"member01", "member02", "member03", "member04", "member05"}, true);
         List<TransactionInput> inputs = transaction.getInputs();
         IntStream.range(0, inputs.size()).forEach(i ->
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
         );
     }
 
