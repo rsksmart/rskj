@@ -593,7 +593,6 @@ public abstract class Secp256k1ServiceTest {
         Assertions.assertArrayEquals(output, result);
     }
 
-
     private void encodeECPointsInput(byte[] input, BigInteger x, BigInteger y, BigInteger multiplier) {
         final var x1Bytes = ByteUtil.stripLeadingZeroes(x.toByteArray());
         final var y1Bytes = ByteUtil.stripLeadingZeroes(y.toByteArray());
@@ -639,5 +638,4 @@ public abstract class Secp256k1ServiceTest {
         }
         assertTrue(found);
     }
-
 }
