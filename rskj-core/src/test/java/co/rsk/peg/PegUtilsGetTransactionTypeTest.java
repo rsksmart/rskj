@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,7 +18,6 @@ import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
-import co.rsk.test.builders.BridgeSupportBuilder;
 import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
@@ -1697,16 +1697,12 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withActivations(activations)
-            .build();
-
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -1763,16 +1759,12 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withActivations(activations)
-            .build();
-
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -1843,16 +1835,12 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withActivations(activations)
-            .build();
-
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -1872,9 +1860,9 @@ class PegUtilsGetTransactionTypeTest {
         migrationTx.addInput(fundingTx.getOutput(FIRST_OUTPUT_INDEX)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         migrationTx.addOutput(Coin.COIN, activeFederation.getAddress());
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{ 0x1 });
-        migrationTx.setWitness(0, txWitness);
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
+        migrationTx.setWitness(FIRST_INPUT_INDEX, txWitness);
+
 
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
 
@@ -1920,16 +1908,12 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withActivations(activations)
-            .build();
-
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -1956,9 +1940,8 @@ class PegUtilsGetTransactionTypeTest {
             migrationTx.addInput(btcTx.getOutput(0)).setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(retiringFederation));
         }
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{ 0x1 });
-        migrationTx.setWitness(0, txWitness);
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
+        migrationTx.setWitness(FIRST_INPUT_INDEX, txWitness);
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, migrationTx);
 
         Sha256Hash firstInputSigHash = migrationTx.hashForSignature(
@@ -2003,16 +1986,12 @@ class PegUtilsGetTransactionTypeTest {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
-        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withActivations(activations)
-            .build();
-
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address flyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2040,9 +2019,9 @@ class PegUtilsGetTransactionTypeTest {
             btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         }
 
-        TransactionWitness txWitness = new TransactionWitness(1);
-        txWitness.setPush(0, new byte[]{ 0x1 });
-        btcTransaction.setWitness(0, txWitness);
+        TransactionWitness txWitness = createBaseWitnessThatSpendsFromErpRedeemScript(retiringFederation.getRedeemScript());
+        btcTransaction.setWitness(FIRST_INPUT_INDEX, txWitness);
+
         FederationTestUtils.addSignatures(retiringFederation, retiringFedSigners, btcTransaction);
 
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
