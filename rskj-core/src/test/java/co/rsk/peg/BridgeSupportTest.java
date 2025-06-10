@@ -66,6 +66,8 @@ import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
+import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.peg.vote.ABICallSpec;
@@ -897,6 +899,38 @@ class BridgeSupportTest {
                 Arguments.of(UnionResponseCode.GENERIC_ERROR)
             );
         }
+
+        @ParameterizedTest
+        @MethodSource("expectedUnionBridgeContractAddressProvider")
+        void getUnionBridgeContractAddress_shouldReturnUnionBridgeContractAddress(RskAddress expectedUnionBridgeContractAddress) {
+            // act
+            RskAddress actualUnionBridgeContractAddress = bridgeSupport.getUnionBridgeContractAddress();
+
+            // assert
+            assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
+        }
+
+        private static Stream<Arguments> expectedUnionBridgeContractAddressProvider() {
+            return Stream.of(
+                Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress()),
+                Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress()),
+                Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress())
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("expectedUnionBridgeContractAddressProvider")
+        void getUnionBridgeContractAddress_whenStoredAddress_shouldReturnUnionBridgeContractAddress(RskAddress expectedUnionBridgeContractAddress) {
+            // arrange
+            when(unionBridgeStorageProvider.getAddress()).thenReturn(Optional.of(unionBridgeContractAddress));
+
+            // act
+            RskAddress actualUnionBridgeContractAddress = bridgeSupport.getUnionBridgeContractAddress();
+
+            // assert
+            assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
+        }
+
 
         @Test
         void getUnionBridgeLockingCap_whenNoLockingCapIsStored_shouldReturnInitialConstantLockingCapValue() {
