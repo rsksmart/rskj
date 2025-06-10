@@ -836,7 +836,7 @@ class FederationChangeIT {
     private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
         List<TransactionInput> inputs = transaction.getInputs();
         IntStream.range(0, inputs.size()).forEach(i ->
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
         );
     }
     
