@@ -751,9 +751,8 @@ class BridgeEventLoggerImplTest {
             .getAddress());
 
         UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        co.rsk.core.Coin initialLockingCap = unionBridgeConstants.getInitialLockingCap();
         int lockingCapIncrementsMultiplier = unionBridgeConstants.getLockingCapIncrementsMultiplier();
-        co.rsk.core.Coin previousLockingCap = initialLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
+        co.rsk.core.Coin previousLockingCap = unionBridgeConstants.getInitialLockingCap().multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
         co.rsk.core.Coin newLockingCap = previousLockingCap.multiply(BigInteger.valueOf(lockingCapIncrementsMultiplier));
 
         eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap);
