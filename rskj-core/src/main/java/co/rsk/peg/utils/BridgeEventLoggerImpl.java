@@ -319,7 +319,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     @Override
     public void logUnionLockingCapIncreased(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
         if (caller == null || previousLockingCap == null || newLockingCap == null) {
-            throw new IllegalArgumentException("Caller and previous/new locking cap cannot be null");
+            throw new IllegalArgumentException("Caller, previous and new locking cap cannot be null");
         }
 
         CallTransaction.Function event = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
