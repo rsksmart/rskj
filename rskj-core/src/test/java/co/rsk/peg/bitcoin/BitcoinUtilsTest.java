@@ -1072,6 +1072,9 @@ class BitcoinUtilsTest {
             );
         }
 
+        // Make sure the transaction has signatures
+        assertNotEquals(transactionBeforeSigning, transaction);
+
         // act
         BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
 
@@ -1079,8 +1082,9 @@ class BitcoinUtilsTest {
         assertEquals(transactionBeforeSigning, transaction);
 
         Script federationRedeemScript = federation.getRedeemScript();
-        for (TransactionInput input : transaction.getInputs()) {
-            int inputIndex = transaction.getInputs().indexOf(input);
+        List<TransactionInput> transactionInputs = transaction.getInputs();
+        for (TransactionInput input : transactionInputs) {
+            int inputIndex = transactionInputs.indexOf(input);
             TransactionWitness witness = transaction.getWitness(inputIndex);
 
             assertWitnessScriptWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
@@ -1158,6 +1162,9 @@ class BitcoinUtilsTest {
             inputValue,
             p2wshFederationBtcKeys
         );
+
+        // Make sure the transaction has signatures
+        assertNotEquals(transactionBeforeSigning, transaction);
 
         // act
         BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
