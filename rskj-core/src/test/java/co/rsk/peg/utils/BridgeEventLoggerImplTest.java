@@ -790,6 +790,48 @@ class BridgeEventLoggerImplTest {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource("logUnionBridgeTransferPermissionsUpdatedArgProvider")
+    void logUnionBridgeTransferPermissionsUpdated_whenOk_shouldEmitEvent(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, enablePowPegToUnionBridge, enableUnionBridgeToPowPeg);
+
+        commonAssertLogs();
+        assertTopics(2);
+        assertEvent(
+            BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent(),
+            new Object[]{caller.toHexString()},
+            new Object[]{enablePowPegToUnionBridge, enableUnionBridgeToPowPeg}
+        );
+    }
+
+    private static Stream<Arguments> logUnionBridgeTransferPermissionsUpdatedArgProvider() {
+        RskAddress caller = new RskAddress(ECKey.fromPublicOnly(Hex.decode(
+                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))
+            .getAddress());
+
+        return Stream.of(
+            Arguments.of(caller, true, true),
+            Arguments.of(caller, false, true),
+            Arguments.of(caller, true, false),
+            Arguments.of(caller, false, false)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("logUnionBridgeTransferPermissionsUpdatedInvalidArgProvider")
+    void logUnionBridgeTransferPermissionsUpdated_whenInvalidArg_shouldFail(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        assertThrows(IllegalArgumentException.class,
+            () -> eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, enablePowPegToUnionBridge, enableUnionBridgeToPowPeg),
+            "Caller cannot be null");
+    }
+
+    private static Stream<Arguments> logUnionBridgeTransferPermissionsUpdatedInvalidArgProvider() {
+        return Stream.of(
+            Arguments.of(null, true, true),
+            Arguments.of(null, false, false)
+        );
+    }
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
