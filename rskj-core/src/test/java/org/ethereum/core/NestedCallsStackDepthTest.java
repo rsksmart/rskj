@@ -43,7 +43,6 @@ import java.io.FileNotFoundException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-
 public class NestedCallsStackDepthTest {
 
     private static final CallTransaction.Function CALL_GCSD_FUNCTION = CallTransaction.Function.fromSignature("callGetCallStackDepth");
@@ -123,9 +122,9 @@ public class NestedCallsStackDepthTest {
         final CallArguments args = new CallArguments();
         args.setTo(toAddress);
         args.setData("0x" + data); // call to contract
-        args.setValue("0");
-        args.setNonce("1");
-        args.setGas("10000000");
+        args.setValue("0x0");
+        args.setNonce("0x1");
+        args.setGas("0x989680");
         return args;
     }
 

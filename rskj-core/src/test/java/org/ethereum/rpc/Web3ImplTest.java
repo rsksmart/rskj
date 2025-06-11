@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
 
 import co.rsk.Flusher;
@@ -2380,8 +2379,8 @@ class Web3ImplTest {
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
-        args.setValue(value.toString());
-        args.setNonce(nonce.toString());
+        args.setValue(HexUtils.toQuantityJsonHex(value));
+        args.setNonce(HexUtils.toQuantityJsonHex(nonce));
         args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
 
         CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
@@ -2433,8 +2432,8 @@ class Web3ImplTest {
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
-        args.setValue(value.toString());
-        args.setNonce(nonce.toString());
+        args.setValue(HexUtils.toQuantityJsonHex(value));
+        args.setNonce(HexUtils.toQuantityJsonHex(nonce));
 
         CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -2595,8 +2594,8 @@ class Web3ImplTest {
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
-        args.setValue(value.toString());
-        args.setNonce(nonce.toString());
+        args.setValue(HexUtils.toQuantityJsonHex(value));
+        args.setNonce(HexUtils.toQuantityJsonHex(nonce));
         if (chainId != null) {
             args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
         }

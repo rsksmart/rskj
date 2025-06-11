@@ -16,7 +16,6 @@ package org.ethereum.vm.program;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
@@ -51,13 +50,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
- *
+ * <p>
  * The aim of this class is to test how it behaves when calling nested contracts through different ways.
  * 1 - Call contract through the interface: ContractA(addressA).buy(amount)
  * 2 - Call contract encoding abi call: addressA.call(abi.encodeWithSignature("buy(uint256)", amount))
- *
+ * <p>
  * In (1) it should revert all the calls, since Solidity add "iszero" checks to all the calls. While in (2) it should not
- * revert, because we are taking care of the call, and the result its not handled.
+ * revert, because we are taking care of the call, and the result is not handled.
  *
  */
 class NestedContractsTest {
@@ -190,9 +189,9 @@ class NestedContractsTest {
         final CallArguments args = new CallArguments();
         args.setTo(toAddress);
         args.setData("0x" + data); // call to contract
-        args.setValue("0");
-        args.setNonce("1");
-        args.setGas("10000000");
+        args.setValue("0x0");
+        args.setNonce("0x1");
+        args.setGas("0x989680");
         return args;
     }
 
