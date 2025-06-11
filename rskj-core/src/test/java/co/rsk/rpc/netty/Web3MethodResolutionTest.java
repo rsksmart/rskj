@@ -31,6 +31,7 @@ class Web3MethodResolutionTest {
 
     @Test
     void eth_call_withBlockRef_callsExpectedMethod() throws Exception {
+        // Given
         String requestBody = """
                 {
                   "jsonrpc": "2.0",
@@ -47,15 +48,18 @@ class Web3MethodResolutionTest {
                 """;
         when(web3Impl.eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class))).thenReturn("ok");
 
+        // When
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
 
+        // Then
         verify(web3Impl, times(1)).eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class));
         assertNotNull(response);
     }
 
     @Test
     void eth_call_byInputMap_isCallingRightMethod() throws Exception {
+        // Given
         String requestBody = """
                 {
                     "jsonrpc": "2.0",
@@ -74,14 +78,19 @@ class Web3MethodResolutionTest {
                 }
                 """;
         when(web3Impl.eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class))).thenReturn("ok");
+
+        // When
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
+
+        // Then
         verify(web3Impl, times(1)).eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class));
         assertNotNull(response);
     }
 
     @Test
     void eth_call_withOverridesAndBlockRef_callsExpectedMethod() throws Exception {
+        // Given
         String requestBody = """
                 {
                     "jsonrpc": "2.0",
@@ -105,8 +114,12 @@ class Web3MethodResolutionTest {
                 }
                 """;
         when(web3Impl.eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class))).thenReturn("ok");
+
+        // When
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
+
+        // Then
         verify(web3Impl, times(1)).eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class), anyMap());
         assertNotNull(response);
     }
@@ -114,6 +127,7 @@ class Web3MethodResolutionTest {
 
     @Test
     void eth_call_withOverridesAndBlockNumber_callsExpectedMethod() throws Exception {
+        // Given
         String requestBody = """
                 {
                     "jsonrpc": "2.0",
@@ -134,8 +148,12 @@ class Web3MethodResolutionTest {
                 }
                 """;
         when(web3Impl.eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class))).thenReturn("ok");
+
+        // When
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
+
+        // Then
         verify(web3Impl, times(1)).eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class), anyMap());
         assertNotNull(response);
     }
@@ -143,7 +161,7 @@ class Web3MethodResolutionTest {
 
     @Test
     void eth_call_withOverridesAndBlockRef_callsExpectedMethodAndParameters() throws Exception {
-        // given
+        // Given
         String fromAddress = "0x1234567890123456789012345678901234567bbb";
         String toAddress = "0x1234567890123456789012345678901234567890";
         String data = "0xabcdef01";
@@ -183,11 +201,11 @@ class Web3MethodResolutionTest {
 
         when(web3Impl.eth_call(any(CallArgumentsParam.class), any(BlockRefParam.class), anyMap())).thenReturn("ok");
 
-        // when
+        // When
         JsonNode request = objectMapper.readTree(requestBody);
         JsonResponse response = jsonRpcServer.handleJsonNodeRequest(request);
 
-        // then
+        // Then
         ArgumentCaptor<CallArgumentsParam> argsCaptor = ArgumentCaptor.forClass(CallArgumentsParam.class);
         ArgumentCaptor<BlockRefParam> blockCaptor = ArgumentCaptor.forClass(BlockRefParam.class);
         ArgumentCaptor<Map<HexAddressParam, AccountOverrideParam>> overrideCaptor = ArgumentCaptor.forClass(Map.class);
@@ -208,6 +226,7 @@ class Web3MethodResolutionTest {
                 .findAny()
                 .orElse(null);
 
+        assertNotNull(override);
         assertEquals(code, override.getCode().getAsHexString());
         assertEquals(balance, override.getBalance().getHexNumber());
         assertEquals(nonce, override.getNonce().getHexNumber());

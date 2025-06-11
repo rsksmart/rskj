@@ -398,19 +398,21 @@ class Web3ImplUnitTest {
 
     @Test
     void when_eth_CallWithAccountOverride_ethModule_receives_correct_params() {
+        // Given
         CallArgumentsParam callArgumentsParam = getValidCallArgumentsParam();
         BlockRefParam blockRefParam = new BlockRefParam("latest");
         AccountOverrideParam overrideParam = getValidAccountOverrideParam();
         HexAddressParam hexAddressParam = new HexAddressParam("0xaaa4567890123456789012345678901234567890");
         when(ethModule.call(any(), any(), any())).thenReturn("OK");
 
-
-        target.eth_call(callArgumentsParam, blockRefParam, Map.of(hexAddressParam, overrideParam));
-
         ArgumentCaptor<CallArgumentsParam> callArgumentsParamArgumentCaptor = ArgumentCaptor.forClass(CallArgumentsParam.class);
         ArgumentCaptor<BlockIdentifierParam> blockIdentifierParamArgumentCaptor = ArgumentCaptor.forClass(BlockIdentifierParam.class);
         ArgumentCaptor<List<AccountOverride>> accountOverrideParamArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
+        // When
+        target.eth_call(callArgumentsParam, blockRefParam, Map.of(hexAddressParam, overrideParam));
+
+        // Then
         verify(ethModule, times(1)).call(callArgumentsParamArgumentCaptor.capture(), blockIdentifierParamArgumentCaptor.capture(), accountOverrideParamArgumentCaptor.capture());
 
         CallArgumentsParam receivedCallArgs = callArgumentsParamArgumentCaptor.getValue();
@@ -428,7 +430,6 @@ class Web3ImplUnitTest {
         assertEquals(HexUtils.jsonHexToLong(overrideParam.getNonce().getHexNumber()), receivedOverride.getNonce());
         assertEquals(overrideParam.getCode().getRawDataBytes(), receivedOverride.getCode());
     }
-
 
     private AccountOverrideParam getValidAccountOverrideParam() {
         HexNumberParam balance = new HexNumberParam("0x02");

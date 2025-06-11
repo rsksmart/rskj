@@ -27,27 +27,126 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class HexNumberParamTest {
 
     @Test
-    public void testValidHexNumberParam() {
-        String validHexNumber = "0x76c0";
-        HexNumberParam hexNumberParam = new HexNumberParam(validHexNumber);
+    public void testValidHexStringInput_executesAsExpected() {
+        // Given
+        String validHexStringInput = "0x76c0";
 
+        // When
+        HexNumberParam hexNumberParam = new HexNumberParam(validHexStringInput);
+
+        // Then
         assertNotNull(hexNumberParam);
-        assertEquals(validHexNumber, hexNumberParam.getHexNumber());
+        assertEquals(validHexStringInput, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testValidHexNumberParamAsStringNumber() {
-        String validStringNumber = "1500";
-        HexNumberParam hexNumberParam = new HexNumberParam(validStringNumber);
+    public void testMaxLengthHexStringInput_executesAsExpected() {
+        // Given
+        // Length 0x + 64 characters
+        String maxLengthInput = "0xA1A2A3A4A5A6A7A8A91011121314151617181920212223242526272829303132";
 
+        // When
+        HexNumberParam hexNumberParam = new HexNumberParam(maxLengthInput);
+
+        // Then
         assertNotNull(hexNumberParam);
-        assertEquals(validStringNumber, hexNumberParam.getHexNumber());
+        assertEquals(maxLengthInput, hexNumberParam.getHexNumber());
     }
 
     @Test
-    public void testInvalidHexNumberParam() {
-        String invalidHexNumber = "0x76ty";
+    public void testBiggestNumberHexStringInput_executesAsExpected() {
+        // Given
+        // Length 0x + 64 characters
+        String biggestNumber = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
-        assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
+        // When
+        HexNumberParam hexNumberParam = new HexNumberParam(biggestNumber);
+
+        // Then
+        assertNotNull(hexNumberParam);
+        assertEquals(biggestNumber, hexNumberParam.getHexNumber());
     }
+
+    @Test
+    public void testLowestNumberHexStringInput_executesAsExpected() {
+        // Given
+        String lowestNumber = "0x00";
+
+        // When
+        HexNumberParam hexNumberParam = new HexNumberParam(lowestNumber);
+
+        // Then
+        assertNotNull(hexNumberParam);
+        assertEquals(lowestNumber, hexNumberParam.getHexNumber());
+    }
+
+    @Test
+    public void testNoLeadingZeroSingleByteHexStringInput_executesAsExpected() {
+        // Given
+        String noLeadingZeroSingleByte = "0x1";
+
+        // When
+        HexNumberParam hexNumberParam = new HexNumberParam(noLeadingZeroSingleByte);
+
+        // Then
+        assertNotNull(hexNumberParam);
+        assertEquals(noLeadingZeroSingleByte, hexNumberParam.getHexNumber());
+    }
+
+    @Test
+    public void testSingleByteHexStringInput_executesAsExpected() {
+        // Given
+        String leadingZeroSingleByte = "0x01";
+
+        // When
+        HexNumberParam hexNumberParam = new HexNumberParam(leadingZeroSingleByte);
+
+        // Then
+        assertNotNull(hexNumberParam);
+        assertEquals(leadingZeroSingleByte, hexNumberParam.getHexNumber());
+    }
+
+    @Test
+    public void testInvalidCharactersHexStringInput_throwsExceptionAsExpected() {
+        // Given
+        String invalidCharactersHexNumber = "0x76ty";
+
+        // Then
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidCharactersHexNumber));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
+    }
+
+    @Test
+    public void testHexStringWithoutPrefixInput_throwsExceptionAsExpected() {
+        // Given
+        String hexStringWithoutPrefix = "AABB";
+
+        // Then
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(hexStringWithoutPrefix));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
+    }
+
+    @Test
+    public void testEmptyStringInput_throwsExceptionAsExpected() {
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(""));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
+    }
+
+    @Test
+    public void testNullStringInput_throwsExceptionAsExpected() {
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(null));
+        assertEquals("Invalid param: invalid hex string.", ex.getMessage());
+    }
+
+    @Test
+    public void testLongerThanMaxHexStringInput_executesAsExpected() {
+        // Given
+        // Length 0x + 65 characters (maximum length 0x + 64 characters)
+        String longerThanMaximum = "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0";
+
+        // Then
+        RskJsonRpcRequestException ex = assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(longerThanMaximum));
+        assertEquals("Invalid param: invalid hex length.", ex.getMessage());
+    }
+
 }
