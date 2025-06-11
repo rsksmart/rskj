@@ -27,8 +27,6 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Arrays;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
@@ -80,4 +78,5 @@ public class HexDataParam  {
     public int hashCode() {
         return Arrays.hashCode(rawDataBytes);
     }
+
 }
