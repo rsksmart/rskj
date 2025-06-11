@@ -31,7 +31,6 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeMethods.BridgeMethodExecutor;
 import co.rsk.peg.feeperkb.FeePerKbResponseCode;
 import co.rsk.peg.lockingcap.LockingCapIllegalArgumentException;
-import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.federation.Federation;
@@ -227,6 +226,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     // Union Bridge Contract functions
     public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+    public static final CallTransaction.Function GET_UNION_BRIDGE_CONTRACT_ADDRESS = BridgeMethods.GET_UNION_BRIDGE_CONTRACT_ADDRESS.getFunction();
     public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function INCREASE_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function REQUEST_UNION_RBTC = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
@@ -1494,6 +1494,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
         RskAddress unionBridgeContractAddress = new RskAddress((DataWord) args[0]);
         return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress).getCode();
+    }
+
+    public String getUnionBridgeContractAddress(Object[] args) {
+        logger.trace("getUnionBridgeContractAddress");
+        return bridgeSupport.getUnionBridgeContractAddress().toHexString();
     }
 
     public BigInteger getUnionBridgeLockingCap(Object[] args) {
