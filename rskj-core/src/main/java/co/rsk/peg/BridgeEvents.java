@@ -92,6 +92,11 @@ public enum BridgeEvents {
         new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
         new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
     }),
+    UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED("union_bridge_transfer_permissions_updated", new CallTransaction.Param[] {
+        new CallTransaction.Param(true, Fields.CALLER, SolidityType.getType(SolidityType.ADDRESS)),
+        new CallTransaction.Param(false, "enablePowPegToUnionBridge", SolidityType.getType(SolidityType.BOOL)),
+        new CallTransaction.Param(false, "enableUnionBridgeToPowPeg", SolidityType.getType(SolidityType.BOOL))
+    })
     ;
 
     private final String eventName;
