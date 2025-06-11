@@ -56,7 +56,7 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule, 
         }
         // todo(fede) this is not production ready
         List<BlockHeader> blockWindow = DifficultyCalculator.TEST_NEW_DIFFICULTY ?
-                mainchainView.getFromBestBlock(DifficultyCalculator.BLOCK_COUNT_WINDOW) : Collections.emptyList();
+                mainchainView.getFromBestBlock((long)DifficultyCalculator.BLOCK_COUNT_WINDOW) : Collections.emptyList();
         BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent, blockWindow);
         BlockDifficulty difficulty = header.getDifficulty();
 

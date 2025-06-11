@@ -355,7 +355,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (miningMainchainView == null) {
             miningMainchainView = new MiningMainchainViewImpl(
                 getBlockStore(),
-                (int) Math.max(DifficultyCalculator.BLOCK_COUNT_WINDOW, MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION)
+              (int) Math.max((long) DifficultyCalculator.BLOCK_COUNT_WINDOW, MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION)
             );
         }
 

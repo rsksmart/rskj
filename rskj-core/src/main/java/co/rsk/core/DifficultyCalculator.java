@@ -32,11 +32,14 @@ import java.util.List;
 import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
-    public static final long BLOCK_COUNT_WINDOW = 30; // last N blocks
-    private static final double ALPHA = 0.005;
-    private static final double BLOCK_TARGET = 20; // target time between blocks
-    private static final double UNCLE_TRESHOLD = 0.7;
+    public static final double BLOCK_COUNT_WINDOW = 30.0; // last N blocks
+ 
+    private static final double BLOCK_TARGET = 20.0; // target time between blocks
+    private static final double UNCLE_TRESHOLD = 0.7; // 70 %
 
+    private static final BigDecimal ALPHA_POS = BigDecimal.valueOf(1.005); // 1 + 0.005
+    private static final BigDecimal ALPHA_NEG = BigDecimal.valueOf(0.995);  // 1 - 0.005
+ 
     private final ActivationConfig activationConfig;
     private final Constants constants;
 
@@ -86,36 +89,28 @@ public class DifficultyCalculator {
             throw new IllegalStateException("block window should match the expected size");
         }
 
-        long blockTimeAverage = calcBlockTimeAverage(blockWindow);
+        double blockTimeAverage = calcBlockTimeAverage(blockWindow);
         double uncleRate = calcUncleRate(blockWindow);
 
-        double F = 0;
-        if (uncleRate >= UNCLE_TRESHOLD || blockTimeAverage > BLOCK_TARGET * 1.1) {
-            // According to RSKIP517: Increase difficulty when uncle rate > C OR block time > T*1.1
-            F = ALPHA;
-        } else if (uncleRate < UNCLE_TRESHOLD && blockTimeAverage < BLOCK_TARGET * 0.9) {
-            // According to RSKIP517: Decrease difficulty when uncle rate < C AND block time < T*0.9
-            F = -ALPHA;
+        BigDecimal factor;
+        if (uncleRate >= UNCLE_TRESHOLD || blockTimeAverage > (BLOCK_TARGET * 1.1)) {
+            factor = ALPHA_POS;
+        } else if (uncleRate < UNCLE_TRESHOLD && blockTimeAverage < (BLOCK_TARGET * 0.9)) {
+            factor = ALPHA_NEG;
+        } else {
+            throw new IllegalStateException("this shouldn't happen");
         }
 
-        if(F == 0) {
-            throw new IllegalStateException("factor shouldn't be zero");
-        }
-
-        // Use BigDecimal for the entire calculation to avoid truncation
-        BigDecimal parentDifficulty = new BigDecimal(parentHeader.getDifficulty().asBigInteger());
-        BigDecimal factor = BigDecimal.ONE.add(BigDecimal.valueOf(F));
-        BigDecimal newDifficulty = parentDifficulty.multiply(factor)
-                .setScale(0, RoundingMode.DOWN);
-
+        BigInteger newDifficulty = new BigDecimal(parentHeader.getDifficulty().asBigInteger())
+            .multiply(factor)
+            .setScale(0, RoundingMode.DOWN)
+            .toBigInteger();
         BigInteger minDifficulty = constants.getMinimumDifficulty(header.getNumber()).asBigInteger();
 
-
-
-        return new BlockDifficulty(minDifficulty.max(newDifficulty.toBigInteger()));
+        return new BlockDifficulty(minDifficulty.max(newDifficulty));
     }
 
-    private long calcBlockTimeAverage(List<BlockHeader> blockWindow) {
+    public double calcBlockTimeAverage(List<BlockHeader> blockWindow) {
         if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
             throw new IllegalArgumentException("block window has a different size");
         }
@@ -123,22 +118,25 @@ public class DifficultyCalculator {
         long firstBlockTimestamp = blockWindow.get(0).getTimestamp();
         long lastBlockTimestamp = blockWindow.get(blockWindow.size() - 1).getTimestamp();
 
+        if (firstBlockTimestamp > lastBlockTimestamp) {
+            throw new IllegalArgumentException("first block should have a lower timestamp");
+        }
+
         return (lastBlockTimestamp - firstBlockTimestamp) / BLOCK_COUNT_WINDOW;
     }
 
-    private double calcUncleRate(List<BlockHeader> blockWindow) {
+    public double calcUncleRate(List<BlockHeader> blockWindow) {
         if (blockWindow.size() != BLOCK_COUNT_WINDOW) {
             throw new IllegalArgumentException("block window has a different size");
         }
 
-        return blockWindow.stream()
-                .map(BlockHeader::getUncleCount)
-                .mapToDouble(Integer::doubleValue)
-                .average()
-                .orElse(0.0);
+        double totalUncles = 0;
+        for(BlockHeader header : blockWindow) {
+            totalUncles += header.getUncleCount();
+        }
+
+        return totalUncles / blockWindow.size();
     }
-
-
 
     private BlockDifficulty getBlockDifficulty(
             BlockHeader curBlockHeader,

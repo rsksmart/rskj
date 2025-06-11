@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -248,4 +249,94 @@ public class DifficultyCalculatorRskip517Test {
         assertEquals(new BlockDifficulty(expectedDifficulty), result, 
             "Difficulty should increase by 0.5% when uncle rate > 0.7 or block time average > 22s");
     }
-} 
+
+    // this test verifies that we can compute difficulty using fixed point arithemetic
+    @Test
+    void computeUsingFixedPointTest() {
+        final BigInteger ALPHA_POS = BigInteger.valueOf(1005); // 1 + 0.005
+        final BigInteger SCALE = BigInteger.valueOf(1000);
+
+        BigInteger bigInteger = new BigInteger("d2a47da04a3b12c8", 16);
+        BigDecimal bigDecimal = new BigDecimal("15178394771539038920");
+
+        assertEquals(bigInteger, bigDecimal.toBigInteger());
+
+        long start = System.nanoTime();
+        BigInteger newDifficulty = bigInteger.multiply(ALPHA_POS).divide(SCALE);
+        long end = System.nanoTime();
+        System.out.printf("BigInteger %d ns\n", end-start);
+        System.out.printf("%s\n", newDifficulty.toString());
+        start = System.nanoTime();
+        BigDecimal newDifficulty2 = bigDecimal.multiply(BigDecimal.valueOf(1.005));
+        end = System.nanoTime();
+        System.out.printf("BigDecimal %d ns\n", end-start);
+        System.out.printf("%s\n", newDifficulty2.toString());
+
+        assertEquals(newDifficulty, newDifficulty2.toBigInteger());
+    }
+
+
+    // this is a "benchmark" to show how fixed point computing
+    // (using a power of 2 as scale) is more efficient
+    // than BigDecimal but loses precision.
+    // in the output we can observe that there are scales
+    // makes fixed point computing more efficient than BigDecimal
+    // but using those scales loses precision, making it unsuitable
+    // for precise and efficient difficulty calculation
+    @Test
+    public void powerOfTwoLacksPrecisionTest() {
+        BigInteger original = new BigInteger("d2a47da04a3b12c8", 16); // 15178394771539038920
+        BigDecimal bigDecimal = new BigDecimal("15178394771539038920");
+
+        for (int exp = 2; exp <= 30; exp++) {
+            BigInteger SCALE = BigInteger.valueOf(1L << exp);
+            BigInteger ALPHA_POS = SCALE
+                .multiply(BigDecimal.valueOf(1.005).movePointRight(exp).toBigInteger())
+                .divide(SCALE);
+
+            long start = System.nanoTime();
+            BigInteger resultInt = original.multiply(ALPHA_POS).divide(SCALE);
+            long end = System.nanoTime();
+            long bigIntTime = end - start;
+
+            start = System.nanoTime();
+            BigDecimal resultDec = bigDecimal.multiply(BigDecimal.valueOf(1.005));
+            end = System.nanoTime();
+            long bigDecTime = end - start;
+
+            System.out.printf("Scale: 2^%d (%d) → BigInt: %d ns, BigDec: %d ns, Equal: %s\n",
+                exp, SCALE, bigIntTime, bigDecTime, resultInt.equals(resultDec.toBigInteger()));
+        }
+    }
+
+
+    // this is a "benchmark" to show how fixed point computing
+    // (using a power of 10 as scale) is unefficient.
+    // in the output we can observe that using a power of 10 scale
+    // guarantees enoguh precision but on those cases BigDecimal
+    // has a better perfromance
+    @Test
+    public void powerOfTenUnefficientTest() {
+        BigInteger original = new BigInteger("d2a47da04a3b12c8", 16); // 15178394771539038920
+        BigDecimal bigDecimal = new BigDecimal("15178394771539038920");
+        BigDecimal alpha = BigDecimal.valueOf(1.005);
+
+        for (int exp = 1; exp <= 20; exp++) {
+            BigInteger SCALE = BigInteger.TEN.pow(exp);
+            BigInteger ALPHA_POS = alpha.multiply(new BigDecimal(SCALE)).toBigInteger();
+
+            long start = System.nanoTime();
+            BigInteger resultInt = original.multiply(ALPHA_POS).divide(SCALE);
+            long end = System.nanoTime();
+            long bigIntTime = end - start;
+
+            start = System.nanoTime();
+            BigDecimal resultDec = bigDecimal.multiply(alpha);
+            end = System.nanoTime();
+            long bigDecTime = end - start;
+
+            System.out.printf("Scale: 10^%d (%s) → BigInt: %d ns, BigDec: %d ns, Equal: %s\n",
+                exp, SCALE.toString(), bigIntTime, bigDecTime, resultInt.equals(resultDec.toBigInteger()));
+        }
+    }
+}
