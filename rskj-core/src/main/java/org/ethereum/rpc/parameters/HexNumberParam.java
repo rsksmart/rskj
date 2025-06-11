@@ -26,10 +26,12 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 
 @JsonDeserialize(using = HexNumberParam.Deserializer.class)
-public class HexNumberParam  {
+public class HexNumberParam implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public static final int HEX_NUM_BYTE_LENGTH = 32;
     public static final int MAX_HEX_NUM_LEN = 2 + 2 * HEX_NUM_BYTE_LENGTH; // 2 bytes for 0x prefix; 2 hex characters per byte
@@ -67,6 +69,7 @@ public class HexNumberParam  {
     }
 
     public static class Deserializer extends StdDeserializer<HexNumberParam> {
+        private static final long serialVersionUID = 1L;
 
         public Deserializer() { this(null); }
 
