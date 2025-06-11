@@ -364,6 +364,22 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         addLog(encodedTopics, encodedData);
     }
 
+    @Override
+    public void logUnionBridgeTransferPermissionsUpdated(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        if (caller == null) {
+            throw new IllegalArgumentException("Caller cannot be null");
+        }
+
+        CallTransaction.Function event = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
+
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(caller.toHexString());
+        List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
+
+        byte[] encodedData = event.encodeEventData(enablePowPegToUnionBridge, enableUnionBridgeToPowPeg);
+
+        addLog(encodedTopics, encodedData);
+    }
+
     private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
         List<byte[]> pubKeys = keys.stream()
                 .map(parser)
