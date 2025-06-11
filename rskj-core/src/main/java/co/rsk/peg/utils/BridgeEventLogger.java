@@ -84,6 +84,10 @@ public interface BridgeEventLogger {
         throw new UnsupportedOperationException();
     }
 
+    default void logUnionRbtcRequested(RskAddress requester, co.rsk.core.Coin amount) {
+        throw new UnsupportedOperationException();
+    }
+
     default void logUnionRbtcReleased(RskAddress receiver, co.rsk.core.Coin amount) {
         throw new UnsupportedOperationException();
     }
