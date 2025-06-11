@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigInteger;
 
 @JsonDeserialize(using = HexNumberParam.Deserializer.class)
