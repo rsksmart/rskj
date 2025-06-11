@@ -36,6 +36,6 @@ public class Secp256k1Multiplication extends Secp256k1PrecompiledContract {
 
     @Override
     protected byte[] executeOperation(byte[] data) {
-        return secp256k1Service.add(data);
+        return secp256k1Service.mul(data);
     }
 }
