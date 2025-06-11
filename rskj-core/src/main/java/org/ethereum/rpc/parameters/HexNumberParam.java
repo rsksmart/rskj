@@ -18,7 +18,6 @@
 package org.ethereum.rpc.parameters;
 
 import co.rsk.util.HexUtils;
-import co.rsk.util.StringUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -26,12 +25,9 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigInteger;
 
 @JsonDeserialize(using = HexNumberParam.Deserializer.class)
-public class HexNumberParam implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class HexNumberParam {
 
     public static final int HEX_NUM_BYTE_LENGTH = 32;
     public static final int MAX_HEX_NUM_LEN = 2 + 2 * HEX_NUM_BYTE_LENGTH; // 2 bytes for 0x prefix; 2 hex characters per byte
@@ -39,17 +35,12 @@ public class HexNumberParam implements Serializable {
     private final String hexNumber;
 
     public HexNumberParam(String hexNumber) {
-        if (!isHexNumberLengthValid(hexNumber)) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid param: " + StringUtils.trim(hexNumber));
+        if (!HexUtils.isHexWithPrefix(hexNumber)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid param: invalid hex string.");
         }
 
-        boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
-        if (!HexUtils.isHex(hexNumber.toLowerCase(), hasPrefix ? 2 : 0)) {
-            try {
-                new BigInteger(hexNumber);
-            } catch(Exception e) {
-                throw RskJsonRpcRequestException.invalidParamError("Invalid param " + hexNumber + ": value must be a valid hex or string number.", e);
-            }
+        if (!isHexNumberLengthValid(hexNumber)) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid param: invalid hex length.");
         }
 
         this.hexNumber = hexNumber;
@@ -69,7 +60,6 @@ public class HexNumberParam implements Serializable {
     }
 
     public static class Deserializer extends StdDeserializer<HexNumberParam> {
-        private static final long serialVersionUID = 1L;
 
         public Deserializer() { this(null); }
 
@@ -80,5 +70,6 @@ public class HexNumberParam implements Serializable {
             String hexNumber = jp.getText();
             return new HexNumberParam(hexNumber);
         }
+
     }
 }

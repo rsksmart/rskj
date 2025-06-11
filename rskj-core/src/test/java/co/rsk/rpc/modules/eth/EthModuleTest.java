@@ -296,7 +296,7 @@ class EthModuleTest {
 
         // Hash of the expected transaction
         CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-        args.setChainId("" + ((int) constants.getChainId() - 2));
+        args.setChainId(HexUtils.toQuantityJsonHex((int) constants.getChainId() - 2)); // Invalid ChainID
 
         TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
         when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
