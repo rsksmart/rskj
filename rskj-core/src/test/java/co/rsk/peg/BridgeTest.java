@@ -39,6 +39,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
@@ -3501,13 +3502,13 @@ class BridgeTest {
         }
 
         @Test
-        void getUnionBridgeLockingCap_beforeRSKIP502_shouldFail() {
+        void getUnionBridgeContractAddress_beforeRSKIP502_shouldFail() {
             bridge = bridgeBuilder
                 .activationConfig(ActivationConfigsForTest.lovell700())
                 .build();
 
-            CallTransaction.Function getUnionBridgeLockingCapFunction = Bridge.GET_UNION_BRIDGE_LOCKING_CAP;
-            byte[] data = getUnionBridgeLockingCapFunction.encode();
+            CallTransaction.Function getUnionBridgeContractAddressFunction = Bridge.GET_UNION_BRIDGE_CONTRACT_ADDRESS;
+            byte[] data = getUnionBridgeContractAddressFunction.encode();
 
             assertThrows(VMException.class, () -> bridge.execute(data));
         }
@@ -3518,6 +3519,35 @@ class BridgeTest {
                 Arguments.of(Constants.testnet2(ActivationConfigsForTest.all())),
                 Arguments.of(Constants.mainnet())
             );
+        }
+
+        @ParameterizedTest()
+        @MethodSource("constantsProvider")
+        void getUnionBridgeContractAddress_afterRSKIP502_shouldReturnAddress(Constants constants) throws VMException {
+            // Arrange
+            RskAddress expectedAddress = constants.getBridgeConstants().getUnionBridgeConstants().getAddress();
+            when(unionBridgeSupport.getUnionBridgeContractAddress()).thenReturn(expectedAddress);
+
+            byte[] data = Bridge.GET_UNION_BRIDGE_CONTRACT_ADDRESS.encode();
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            RskAddress actualAddress = new RskAddress((DataWord) Bridge.GET_UNION_BRIDGE_CONTRACT_ADDRESS.decodeResult(result)[0]);
+            assertEquals(expectedAddress, actualAddress);
+        }
+
+        @Test
+        void getUnionBridgeLockingCap_beforeRSKIP502_shouldFail() {
+            bridge = bridgeBuilder
+                .activationConfig(ActivationConfigsForTest.lovell700())
+                .build();
+
+            CallTransaction.Function getUnionBridgeLockingCapFunction = Bridge.GET_UNION_BRIDGE_LOCKING_CAP;
+            byte[] data = getUnionBridgeLockingCapFunction.encode();
+
+            assertThrows(VMException.class, () -> bridge.execute(data));
         }
 
         @ParameterizedTest()
