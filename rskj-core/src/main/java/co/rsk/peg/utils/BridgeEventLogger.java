@@ -95,4 +95,8 @@ public interface BridgeEventLogger {
     default void logUnionRbtcReleased(RskAddress receiver, co.rsk.core.Coin amount) {
         throw new UnsupportedOperationException();
     }
+
+    default void logUnionBridgeTransferPermissionsUpdated(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        throw new UnsupportedOperationException();
+    }
 }
