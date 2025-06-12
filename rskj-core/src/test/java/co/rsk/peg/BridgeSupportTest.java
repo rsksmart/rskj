@@ -1069,6 +1069,38 @@ class BridgeSupportTest {
         }
 
         @Test
+        void setTransferPermissions_whenUnauthorizedCaller_shouldReturnUnauthorizedResponseCode() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(), anyBoolean()))
+                .thenReturn(UnionResponseCode.UNAUTHORIZED_CALLER);
+            bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
+
+            // act
+            UnionResponseCode responseCode = bridgeSupport.setUnionBridgeTransferPermissions(transaction, true, false);
+
+            // assert
+            assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, responseCode);
+            verify(unionBridgeSupport, times(1)).setTransferPermissions(transaction, true, false);
+        }
+
+        @Test
+        void setTransferPermissions_whenSuccess_shouldReturnSuccessResponseCode() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(), anyBoolean()))
+                .thenReturn(UnionResponseCode.SUCCESS);
+            bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
+
+            // act
+            UnionResponseCode responseCode = bridgeSupport.setUnionBridgeTransferPermissions(transaction, true, false);
+
+            // assert
+            assertEquals(UnionResponseCode.SUCCESS, responseCode);
+            verify(unionBridgeSupport, times(1)).setTransferPermissions(transaction, true, false);
+        }
+
+        @Test
         void save() {
             // arrange
             unionBridgeSupport = mock(UnionBridgeSupport.class);
