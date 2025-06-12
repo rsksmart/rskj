@@ -24,13 +24,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.Arrays;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
-public class HexDataParam implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class HexDataParam  {
 
     private final byte[] rawDataBytes;
 
@@ -50,8 +50,11 @@ public class HexDataParam implements Serializable {
         return "0x" + ByteUtil.toHexString(rawDataBytes);
     }
 
+    public DataWord getAsDataWord() {
+        return DataWord.valueOf(rawDataBytes);
+    }
+
     public static class Deserializer extends StdDeserializer<HexDataParam> {
-        private static final long serialVersionUID = 1L;
 
         public Deserializer() { this(null); }
 
@@ -63,4 +66,17 @@ public class HexDataParam implements Serializable {
             return new HexDataParam(hexRawData);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        HexDataParam that = (HexDataParam) o;
+        return Arrays.equals(rawDataBytes, that.rawDataBytes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(rawDataBytes);
+    }
+
 }
