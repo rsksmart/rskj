@@ -17,17 +17,17 @@
  */
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Repository;
+import co.rsk.util.HexUtils;
+import org.ethereum.rpc.parameters.AccountOverrideParam;
+import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 public class AccountOverride {
     private BigInteger balance;
@@ -94,43 +94,40 @@ public class AccountOverride {
         throw new UnsupportedOperationException("Move precompile to address is not supported yet");
     }
 
-    public Repository applyToRepository(Repository repository) {
-        if (address == null) {
-            throw new IllegalStateException("AccountOverride.address must be set before applying override");
+    public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
+
+        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
+            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
         }
 
-        if (balance != null) {
-            Coin storedValue = Optional.ofNullable(repository.getBalance(address)).orElse(Coin.ZERO);
-            repository.addBalance(address, new Coin(balance).subtract(storedValue));
+        if (accountOverrideParam.getBalance() != null) {
+            this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
         }
 
-        if (nonce != null) {
-            repository.setNonce(address, BigInteger.valueOf(nonce));
+        if (accountOverrideParam.getNonce() != null) {
+            this.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.getNonce().getHexNumber()));
         }
 
-        if (code != null) {
-            repository.saveCode(address, code);
+        if (accountOverrideParam.getCode() != null) {
+            this.setCode(accountOverrideParam.getCode().getRawDataBytes());
         }
-        if(stateDiff != null && state != null) {
-            throw new IllegalStateException("AccountOverride.stateDiff and AccountOverride.state cannot be set at the same time");
-        }
-        if (state != null) {
-            Iterator<DataWord> keys = repository.getStorageKeys(address);
-            while (keys.hasNext()) {
-                repository.addStorageRow(address, keys.next(), DataWord.ZERO);
+
+        if (accountOverrideParam.getState() != null) {
+            Map<DataWord, DataWord> state = new HashMap<>();
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
+                state.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
-            for (Map.Entry<DataWord, DataWord> entry : state.entrySet()) {
-                repository.addStorageRow(address, entry.getKey(), entry.getValue());
-            }
+            this.setState(state);
         }
 
-        if (stateDiff != null) {
-            for (Map.Entry<DataWord, DataWord> entry : stateDiff.entrySet()) {
-                repository.addStorageRow(address, entry.getKey(), entry.getValue());
+        if (accountOverrideParam.getStateDiff() != null) {
+            Map<DataWord, DataWord> stateDiff = new HashMap<>();
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
+                stateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
+            this.setStateDiff(stateDiff);
         }
-
-        return repository;
+        return this;
     }
 
     @Override

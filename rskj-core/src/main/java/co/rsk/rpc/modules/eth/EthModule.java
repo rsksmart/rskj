@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -87,7 +86,7 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
-    private final StateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
+    private final StateOverrideApplier stateOverrideApplier;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -101,7 +100,8 @@ public class EthModule
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory,
             long gasEstimationCap,
-            long gasCallCap) {
+            long gasCallCap,
+            StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -114,6 +114,7 @@ public class EthModule
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
+        this.stateOverrideApplier = stateOverrideApplier;
     }
 
     @Override
@@ -147,12 +148,17 @@ public class EthModule
 
         if (result.getFinalState() != null) {
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
-        } else if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
-            mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
-            for(AccountOverride accountOverride : accountOverrideList) {
-               stateOverrideApplier.applyToRepository(mutableRepository,accountOverride);
+        }
+
+        if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
+            if (mutableRepository == null) {
+                mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
+            }
+            for (AccountOverride accountOverride : accountOverrideList) {
+                stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
             }
         }
+
         CallArguments callArgs = argsParam.toCallArguments();
 
         String hReturn = null;
