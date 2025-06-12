@@ -13,5 +13,7 @@ public interface UnionBridgeStorageProvider {
     void increaseWeisTransferredToUnionBridge(Coin amountRequested);
     void setUnionBridgeRequestEnabled(boolean enabled);
     Optional<Boolean> isUnionBridgeRequestEnabled();
+    void setUnionBridgeReleaseEnabled(boolean enabled);
+    Optional<Boolean> isUnionBridgeReleaseEnabled();
     void save();
 }
