@@ -23,6 +23,7 @@ public class FederationMainNetConstants extends FederationConstants {
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("2025-06-03T12:00:00.000Z").toInstant();
 
+        // same as testnet
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
             "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
             "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
