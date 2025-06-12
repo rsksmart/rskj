@@ -879,6 +879,17 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
+    SET_UNION_BRIDGE_TRANSFER_PERMISSIONS(
+        CallTransaction.Function.fromSignature(
+            "setUnionBridgeTransferPermissions",
+            new String[]{"bool", "bool"},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
     ;
 
     private static class CallTypeHelper {
