@@ -1093,6 +1093,10 @@ class BitcoinUtilsTest {
 
         // assert
         assertEquals(transactionBeforeSigning, transaction);
+        assertEquals(
+            transactionBeforeSigning.getHash(true),
+            transaction.getHash(true)
+        );
 
         // Get inputs again after removing signatures
         transactionInputs = transaction.getInputs();
@@ -1144,27 +1148,28 @@ class BitcoinUtilsTest {
         );
         transaction.addOutput(output);
 
+        int legacyInputIndex = 0;
+        int segwitInputIndex = 1;
+
         BitcoinUtils.addSpendingFederationBaseScript(
             transaction,
-            0,
+            legacyInputIndex,
             p2shFederation.getRedeemScript(),
             p2shFederation.getFormatVersion()
         );
         BitcoinUtils.addSpendingFederationBaseScript(
             transaction,
-            1,
+            segwitInputIndex,
             p2wshFederation.getRedeemScript(),
             p2wshFederation.getFormatVersion()
         );
 
         BtcTransaction transactionBeforeSigning = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
-        int legacyInputIndex = 0;
-        int segwitInputIndex = 1;
 
         // sign legacy input
         BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(
             transaction,
-            0,
+            legacyInputIndex,
             p2shFederationBtcKeys
         );
 
@@ -1173,7 +1178,7 @@ class BitcoinUtilsTest {
         Coin inputValue = secondInput.getValue();
         BitcoinTestUtils.signWitnessTransactionInputFromP2shMultiSig(
             transaction,
-            1,
+            segwitInputIndex,
             inputValue,
             p2wshFederationBtcKeys
         );
@@ -1194,17 +1199,24 @@ class BitcoinUtilsTest {
 
         // assert
         assertEquals(transactionBeforeSigning, transaction);
+        assertEquals(
+            transactionBeforeSigning.getHash(true),
+            transaction.getHash(true)
+        );
 
         // Check first input (legacy), does not have signatures
         assertScriptSigWithoutSignaturesHasProperFormat(
-            transaction.getInput(0).getScriptSig(),
+            transaction.getInput(legacyInputIndex).getScriptSig(),
             p2shFederation.getRedeemScript()
         );
 
         // Check second input (segwit), does not have signatures
-        TransactionWitness witness = transaction.getWitness(1);
+        TransactionWitness witness = transaction.getWitness(segwitInputIndex);
         assertWitnessScriptWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
-        assertSegwitScriptSigContainsHashedRedeemScript(transaction.getInput(1).getScriptSig(), p2wshFederation.getRedeemScript());
+        assertSegwitScriptSigContainsHashedRedeemScript(
+            transaction.getInput(segwitInputIndex).getScriptSig(),
+            p2wshFederation.getRedeemScript()
+        );
     }
 
     @Test
@@ -1834,7 +1846,7 @@ class BitcoinUtilsTest {
         assertEquals(34, segwitScriptSigProgram[0]);
 
         // Check the second byte is OP_0
-        assertEquals(0, segwitScriptSigProgram[1]); // OP_0
+        assertEquals(0, segwitScriptSigProgram[1]);
 
         // Check the hashed redeem script
         byte[] hashedRedeemScript = extractHashedRedeemScriptProgramFromSegwitScriptSig(segwitScriptSig);
@@ -1863,7 +1875,7 @@ class BitcoinUtilsTest {
         int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
         int startIndex = 1; // First push is OP_0, next come the signatures
 
-        // An empty chunk for each signature required to spend
+        // A non-empty chunk for each signature required to spend
         for (int i = startIndex; i < numberOfSignaturesRequiredToSpend; i++) {
             ScriptChunk signatureChunk = scriptSigChunks.get(i);
             int signatureLength = signatureChunk.data.length;
