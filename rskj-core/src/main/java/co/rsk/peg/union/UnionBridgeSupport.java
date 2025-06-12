@@ -18,5 +18,7 @@ public interface UnionBridgeSupport {
 
     UnionResponseCode requestUnionRbtc(Transaction tx, Coin amount);
 
+    UnionResponseCode setTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled);
+
     void save();
 }
