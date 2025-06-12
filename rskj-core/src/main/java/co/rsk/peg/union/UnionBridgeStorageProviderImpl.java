@@ -18,6 +18,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private Coin unionBridgeLockingCap;
     private Coin weisTransferredToUnionBridge;
     private Boolean unionBridgeRequestEnabled;
+    private Boolean unionBridgeReleaseEnabled;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -52,6 +53,13 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             bridgeStorageAccessor.saveToRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
                 unionBridgeRequestEnabled? 1L : 0L,
+                BridgeSerializationUtils::serializeLong
+            );
+        }
+        if (nonNull(unionBridgeReleaseEnabled)) {
+            bridgeStorageAccessor.saveToRepository(
+                UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+                unionBridgeReleaseEnabled? 1L : 0L,
                 BridgeSerializationUtils::serializeLong
             );
         }
@@ -138,6 +146,17 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         return Optional.ofNullable(unionBridgeRequestEnabled)
             .or(() -> bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+                BridgeSerializationUtils::deserializeOptionalLong).map(value -> value == 1L));
+    }
+
+    public void setUnionBridgeReleaseEnabled(boolean enabled) {
+        this.unionBridgeReleaseEnabled = enabled;
+    }
+
+    public Optional<Boolean> isUnionBridgeReleaseEnabled() {
+        return Optional.ofNullable(unionBridgeReleaseEnabled)
+            .or(() -> bridgeStorageAccessor.getFromRepository(
+                UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
                 BridgeSerializationUtils::deserializeOptionalLong).map(value -> value == 1L));
     }
 }
