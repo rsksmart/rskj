@@ -368,21 +368,6 @@ public class EthModule
         return Pair.of((String) decode[0], bytes);
     }
 
-    private ProgramResult callConstantWithState(CallArguments args, Block executionBlock, Trie state) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                new MutableRepository(new TrieStoreImpl(new HashMapDB()), state),
-                executionBlock,
-                executionBlock.getCoinbase(),
-                hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
-    }
-
     private void handleTransactionRevertIfHappens(ProgramResult res) {
         if (res.isRevert()) {
             Pair<String, byte[]> programRevert = decodeProgramRevert(res);

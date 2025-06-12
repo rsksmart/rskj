@@ -27,14 +27,15 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
-public class HexDataParam  {
+public class HexDataParam {
 
     private final byte[] rawDataBytes;
 
-    public HexDataParam(String rawData){
+    public HexDataParam(String rawData) {
         try {
             this.rawDataBytes = HexUtils.stringHexToByteArray(rawData);
         } catch (Exception e) {
@@ -56,6 +57,9 @@ public class HexDataParam  {
 
     public static class Deserializer extends StdDeserializer<HexDataParam> {
 
+        @Serial
+        private static final long serialVersionUID = 1;
+
         public Deserializer() { this(null); }
 
         public Deserializer(Class<?> vc) { super(vc); }
@@ -69,7 +73,10 @@ public class HexDataParam  {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         HexDataParam that = (HexDataParam) o;
         return Arrays.equals(rawDataBytes, that.rawDataBytes);
     }
