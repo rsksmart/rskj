@@ -27,14 +27,19 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Arrays;
 
 @JsonDeserialize(using = HexDataParam.Deserializer.class)
-public class HexDataParam  {
+public class HexDataParam implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1;
 
     private final byte[] rawDataBytes;
 
-    public HexDataParam(String rawData){
+    public HexDataParam(String rawData) {
         try {
             this.rawDataBytes = HexUtils.stringHexToByteArray(rawData);
         } catch (Exception e) {
