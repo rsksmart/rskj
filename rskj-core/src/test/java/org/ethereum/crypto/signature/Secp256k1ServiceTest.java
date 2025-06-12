@@ -19,8 +19,18 @@
 
 package org.ethereum.crypto.signature;
 
-import co.rsk.core.types.bytes.Bytes;
-import co.rsk.util.HexUtils;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.math.BigInteger;
+import java.security.SignatureException;
+
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -30,18 +40,14 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.security.SignatureException;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.*;
+import co.rsk.core.types.bytes.Bytes;
+import co.rsk.util.HexUtils;
 
 @Disabled
 public abstract class Secp256k1ServiceTest {
@@ -61,19 +67,18 @@ public abstract class Secp256k1ServiceTest {
     private final BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
     private final byte v = 28;
 
-    // Elliptic Curvev Coordinates for testing
-    // y-coordinate of a point
-    private final String v1y = "29896722852569046015560700294576055776214335159245303116488692907525646231534";
-    // x-coordinate of a point that is half of some point v
-    private final String v1by2x = "90462569716653277674664832038037428010367175520031690655826237506178777087235";
-    // y-coordinate of a point that is half of some point v
-    private final String v1by2y = "30122570767565969031174451675354718271714177419582540229636601003470726681395";
-    // x-coordinate of a point that is 9 times lower of some point v
-    private final String v1by9x = "46171929588085016379679198610744759757996296651373714437564035753833216770329";
-    // y-coordinate of a point that is 9 times lower of some point v
-    private final String v1by9y = "4076329532618667641907419885981677362511359868272295070859229146922980867493";
+    private final Secp256k1Service secp256k1;
 
-    private Secp256k1Service secp256k1;
+    // Constants for secp256k1 point addition tests
+    private static final String V1Y = "29896722852569046015560700294576055776214335159245303116488692907525646231534";
+    private static final String V1BY2X = "90462569716653277674664832038037428010367175520031690655826237506178777087235";
+    private static final String V1BY2Y = "30122570767565969031174451675354718271714177419582540229636601003470726681395";
+    private static final String ZERO_POINT = "0000000000000000000000000000000000000000000000000000000000000000";
+    private static final String POINT_NOT_ON_CURVE = "1111111111111111111111111111111111111111111111111111111111111111";
+
+    // Constants for secp256k1 point multiplication tests
+    private static final String V1BY9X = "46171929588085016379679198610744759757996296651373714437564035753833216770329";
+    private static final String V1BY9Y = "4076329532618667641907419885981677362511359868272295070859229146922980867493";
 
     protected Secp256k1ServiceTest(Secp256k1Service secp256k1) {
         this.secp256k1 = secp256k1;
@@ -233,7 +238,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void testRecoverFromSignature_fixed_values_garbage() throws SignatureException {
+    void testRecoverFromSignature_fixed_values_garbage()  {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
         byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
@@ -245,9 +250,9 @@ public abstract class Secp256k1ServiceTest {
     @Test
     void testRecoverFromSignature_invalid_params() {
 
-        BigInteger validBigInt = BigInteger.valueOf(0l);
+        BigInteger validBigInt = BigInteger.valueOf(0L);
         byte[] validBytes = validBigInt.toByteArray();
-        BigInteger invalidBigInt = BigInteger.valueOf(-1l);
+        BigInteger invalidBigInt = BigInteger.valueOf(-1L);
         byte[] invalidNullBytes = null;
         boolean validBoolean = false;
         int validRecId = 0;
@@ -322,23 +327,20 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void testSecpAddTwoPoints() {
-        /*
-         Test should return correct result (taken from parity impl)
-         */
-
+    void testSecpAddTwoIdenticalPoints() {
         // given
-        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000001" + TestUtils.bigIntegerToHexDW(v1y) +
-                "0000000000000000000000000000000000000000000000000000000000000001" + TestUtils.bigIntegerToHexDW(v1y);
+        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000001" + 
+            TestUtils.bigIntegerToHexDW(V1Y) +
+            "0000000000000000000000000000000000000000000000000000000000000001" + 
+            TestUtils.bigIntegerToHexDW(V1Y);
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
-        final var ox = new BigInteger(v1by2x);
-        final var oy = new BigInteger(v1by2y);
+        final var ox = new BigInteger(V1BY2X);
+        final var oy = new BigInteger(V1BY2Y);
         final var outputStr = TestUtils.bigIntegerToHex(ox) + TestUtils.bigIntegerToHex(oy);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
         // when
-        
         final var result = secp256k1.add(input);
 
         // then
@@ -347,122 +349,87 @@ public abstract class Secp256k1ServiceTest {
 
     @Test
     void testSecpAddZeroPointsShouldBeZero() {
-        /*
-         Test should return zero
-         */
-
-        // given
-        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000";
-
-        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000";
+        //given
+        final var inputStr = ZERO_POINT + ZERO_POINT + ZERO_POINT + ZERO_POINT;
+        final var outputStr = ZERO_POINT + ZERO_POINT;
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        // when
+        //when
         final var result = secp256k1.add(input);
 
-        // then
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
     @Test
     void testSecpAddEmptyInputShouldBeZero() {
-        /*
-         Test should return zero
-         */
+        //given
+        final var input = HexUtils.stringHexToByteArray("");
+        final var output = HexUtils.stringHexToByteArray(ZERO_POINT + ZERO_POINT);
 
-        // given
-        final var inputStr = "";
-
-        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000";
-
-        final var input = HexUtils.stringHexToByteArray(inputStr);
-        final var output = HexUtils.stringHexToByteArray(outputStr);
-
-        // when
+        //when
         final var result = secp256k1.add(input);
 
-        // then
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
     @Test
     void testSecpAddPointPlusInfinityIsPoint() {
-        /*
-         Test should return same point
-         */
+        //given
+        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" + 
+            TestUtils.bigIntegerToHexDW(V1Y);
 
-        // given
-        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" + TestUtils.bigIntegerToHexDW(v1y);
-
-        final var inputStr = outputStr +
-                "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000";
+        final var inputStr = outputStr + ZERO_POINT + ZERO_POINT;
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        // when
+        //when
         final var result = secp256k1.add(input);
-
-        // then
+        
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
     @Test
     void testSecpAddInfinityPlusPointIsPoint() {
-        /*
-         Test should return same point
-         */
-
-        // given
+        //given
         final var outputStr = "0000000000000000000000000000000000000000000000000000000000000001" +
-                TestUtils.bigIntegerToHexDW(v1y);
+            TestUtils.bigIntegerToHexDW(V1Y);
 
-        final var inputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000" + outputStr;
+        final var inputStr = ZERO_POINT + ZERO_POINT + outputStr;
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        // when
+        //when
         final var result = secp256k1.add(input);
 
-        // then
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
     @Test
     void testSecpAddPointNotOnCurveShouldFail() {
-        /*
-         Test should return empty byte array because point is not on curve
-         */
-
-        // given
-        final var inputStr =
-                "1111111111111111111111111111111111111111111111111111111111111111" +
-                        "1111111111111111111111111111111111111111111111111111111111111111" +
-                        "1111111111111111111111111111111111111111111111111111111111111111" +
-                        "1111111111111111111111111111111111111111111111111111111111111111";
+        //given
+        final var inputStr = POINT_NOT_ON_CURVE + POINT_NOT_ON_CURVE + 
+            POINT_NOT_ON_CURVE + POINT_NOT_ON_CURVE;
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
 
-        // when
+        //when
         final var result = secp256k1.add(input);
 
-        // then
+        //then
         Assertions.assertNull(result);
     }
 
     @Test
-    void shouldReturnInfinityOnIdenticalInputPointValuesOfX() {
-        // given
+    void testReturnInfinityOnIdenticalInputPointValuesOfX() {
+        //given
         final var p0x = new BigInteger("3");
         final var p0y = new BigInteger("21320899557911560362763253855565071047772010424612278905734793689199612115787");
         final var p1x = new BigInteger("3");
@@ -472,19 +439,19 @@ public abstract class Secp256k1ServiceTest {
         encodeECPointsInput(input, p0x, p0y, p1x, p1y);
 
         final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000";
+            "0000000000000000000000000000000000000000000000000000000000000000";
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
-        // when
+        //when
         final var result = secp256k1.add(input);
 
-        // then
+        //then
         Assertions.assertArrayEquals(output, result);
     }
 
     @Test
-    void shouldReturnTrueAddAndComputeSlope()  {
-        // given
+    void testAddForTwoValidPointsComputeSlope() {
+        //given
         final var p0x = new BigInteger("4");
         final var p0y = new BigInteger("40508090799132825824753983223610497876805216745196355809233758402754120847507");
         final var p1x = new BigInteger("1624070059937464756887933993293429854168590106605707304006200119738501412969");
@@ -497,19 +464,18 @@ public abstract class Secp256k1ServiceTest {
         final var oy = "75549874947483386113764723043915448105868538368156141886808196158351727282824";
         final var output = buildECPointsOutput(ox, oy);
 
-        // when
+        //when
         final var result = secp256k1.add(input);
 
-        // then
+        //then
         Assertions.assertArrayEquals(output, result);
-
     }
 
     @Test
-    void shouldReturnTrueMultiplyScalarAndPoint() {
+    void testMultiplyScalarAndPoint() {
         // given
         final var x = BigInteger.valueOf(1);
-        final var y = new BigInteger(v1y);
+        final var y = new BigInteger(V1Y);
         final var multiplier = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
         final var input = new byte[96];
 
@@ -527,16 +493,16 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void shouldReturnIdentityWhenMultipliedByScalarValueOne() {
+    void testIdentityWhenMultipliedByScalarValueOne() {
         // given
         final var x = new BigInteger("1");
-        final var y = new BigInteger(v1y);
+        final var y = new BigInteger(V1Y);
         final var multiplier = BigInteger.valueOf(1);
         final var input = new byte[96];
 
         encodeECPointsInput(input, x, y, multiplier);
 
-        final var outputStr = TestUtils.bigIntegerToHexDW("1") + TestUtils.bigIntegerToHexDW(v1y);
+        final var outputStr = TestUtils.bigIntegerToHexDW("1") + TestUtils.bigIntegerToHexDW(V1Y);
         final var output = HexUtils.stringHexToByteArray(outputStr);
 
         // when
@@ -547,16 +513,16 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void shouldReturnTrueMultiplyPointByScalar() {
+    void testMultiplyPointByScalar() {
         // given
         final var x = BigInteger.valueOf(1);
-        final var y = new BigInteger(v1y);
+        final var y = new BigInteger(V1Y);
         final var multiplier = BigInteger.valueOf(9);
         final var input = new byte[96];
 
         encodeECPointsInput(input, x, y, multiplier);
 
-        final var output = buildECPointsOutput(v1by9x, v1by9y);
+        final var output = buildECPointsOutput(V1BY9X, V1BY9Y);
 
         // when
         final var result = secp256k1.mul(input);
@@ -566,16 +532,16 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void shouldReturnSumMultiplyPointByScalar() {
+    void testSumMultiplyPointByScalar() {
         // given
         final var x = new BigInteger("1");
-        final var y = new BigInteger(v1y);
+        final var y = new BigInteger(V1Y);
         final var multiplier = BigInteger.valueOf(2);
         final var input = new byte[96];
 
         encodeECPointsInput(input, x, y, multiplier);
 
-        final var output = buildECPointsOutput(v1by2x, v1by2y);
+        final var output = buildECPointsOutput(V1BY2X, V1BY2Y);
 
         // when
         final var result = secp256k1.mul(input);
@@ -585,11 +551,9 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void shouldFailForPointNotOnCurve() {
+    void testFailForPointNotOnCurve() {
         // given
-        String inputStr = "1111111111111111111111111111111111111111111111111111111111111111" +
-                "1111111111111111111111111111111111111111111111111111111111111111" +
-                "1111111111111111111111111111111111111111111111111111111111111111";
+        String inputStr = POINT_NOT_ON_CURVE + POINT_NOT_ON_CURVE + POINT_NOT_ON_CURVE;
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
 
@@ -601,10 +565,9 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void mulShouldFailForNotEnoughParams() {
+    void testFailForNotEnoughParams() {
         // given
-        String inputStr = "1111111111111111111111111111111111111111111111111111111111111111" +
-                "1111111111111111111111111111111111111111111111111111111111111111";
+        String inputStr = POINT_NOT_ON_CURVE + POINT_NOT_ON_CURVE;
 
         final var input = HexUtils.stringHexToByteArray(inputStr);
 
@@ -616,18 +579,12 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    void mulShouldFailEmptyParams() {
-        /*
-         * Behaviour on empty params establishes that correct output is zero byte array
-         */
-
+    void testFailEmptyParams() {
         // given
-        final var inputStr = "";
-        final var outputStr = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000";
-
-        final var input = HexUtils.stringHexToByteArray(inputStr);
-        final var output = HexUtils.stringHexToByteArray(outputStr);
+        final var input = HexUtils.stringHexToByteArray("");
+        final var output = HexUtils.stringHexToByteArray(
+            ZERO_POINT + ZERO_POINT
+        );
 
         // when
         final var result = secp256k1.mul(input);
@@ -681,5 +638,4 @@ public abstract class Secp256k1ServiceTest {
         }
         assertTrue(found);
     }
-
 }
