@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -59,6 +58,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +86,7 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
+    private final StateOverrideApplier stateOverrideApplier;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -99,7 +100,8 @@ public class EthModule
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory,
             long gasEstimationCap,
-            long gasCallCap) {
+            long gasCallCap,
+            StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -112,6 +114,7 @@ public class EthModule
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
+        this.stateOverrideApplier = stateOverrideApplier;
     }
 
     @Override
@@ -134,27 +137,44 @@ public class EthModule
     }
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
-        String hReturn = null;
-        CallArguments args = argsParam.toCallArguments();
-        try {
-            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
-            Block block = result.getBlock();
-            Trie finalState = result.getFinalState();
-            ProgramResult res;
-            if (finalState != null) {
-                res = callConstantWithState(args, block, finalState);
-            } else {
-                res = callConstant(args, block);
-            }
-            handleTransactionRevertIfHappens(res);
-            hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
+        return call(argsParam, bnOrId, Collections.emptyList());
+    }
 
-            return hReturn;
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
+
+        MutableRepository mutableRepository = null;
+        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
+        Block block = result.getBlock();
+
+        if (result.getFinalState() != null) {
+            mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
         }
-        finally {
+
+        if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
+            if (mutableRepository == null) {
+                mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
+            }
+            for (AccountOverride accountOverride : accountOverrideList) {
+                stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
+            }
+        }
+
+        CallArguments callArgs = argsParam.toCallArguments();
+
+        String hReturn = null;
+        try {
+            ProgramResult programResult = mutableRepository != null ?
+                    callConstant(callArgs, block, mutableRepository) :
+                    callConstant(callArgs, block);
+
+            handleTransactionRevertIfHappens(programResult);
+            hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
+            return hReturn;
+        } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
         }
     }
+
 
     public String estimateGas(CallArgumentsParam args, @Nonnull BlockIdentifierParam bnOrId) {
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
@@ -299,6 +319,21 @@ public class EthModule
         );
     }
 
+    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        return reversibleTransactionExecutor.executeTransaction(
+                snapshot,
+                executionBlock,
+                executionBlock.getCoinbase(),
+                hexArgs.getGasPrice(),
+                hexArgs.gasLimitForCall(this.gasCallCap),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
+    }
+
     /**
      * Look for { Error("msg") } function, if it matches decode the "msg" param.
      * The 4 first bytes are the function signature.
@@ -331,21 +366,6 @@ public class EthModule
         }
 
         return Pair.of((String) decode[0], bytes);
-    }
-
-    private ProgramResult callConstantWithState(CallArguments args, Block executionBlock, Trie state) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                new MutableRepository(new TrieStoreImpl(new HashMapDB()), state),
-                executionBlock,
-                executionBlock.getCoinbase(),
-                hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
     }
 
     private void handleTransactionRevertIfHappens(ProgramResult res) {
