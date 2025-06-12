@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BitcoinUtils {
-    protected static final byte[]  WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
+    protected static final byte[] WITNESS_COMMITMENT_HEADER = Hex.decode("aa21a9ed");
     protected static final int WITNESS_COMMITMENT_LENGTH = WITNESS_COMMITMENT_HEADER.length + Sha256Hash.LENGTH;
     private static final int MINIMUM_WITNESS_COMMITMENT_SIZE = WITNESS_COMMITMENT_LENGTH + 2; // 1 extra byte for OP_RETURN and another one for data length
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtils.class);
@@ -107,34 +107,30 @@ public class BitcoinUtils {
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
         if (!transaction.hasWitness()) {
             BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-            BitcoinUtils.removeSignaturesFromTransactionWithP2shMultiSigInputs(transactionCopyWithoutSignatures);
+            BitcoinUtils.removeSignaturesFromMultiSigTransaction(transactionCopyWithoutSignatures);
             return transactionCopyWithoutSignatures.getHash();
         }
 
         return transaction.getHash();
     }
 
-    public static void removeSignaturesFromTransactionWithP2shMultiSigInputs(BtcTransaction transaction) {
-        if (transaction.hasWitness()) {
-            String message = "Removing signatures from SegWit transactions is not allowed.";
-            logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
-            throw new IllegalArgumentException(message);
-        }
-
+    public static void removeSignaturesFromMultiSigTransaction(BtcTransaction transaction) {
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            TransactionInput input = inputs.get(inputIndex);
             Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .orElseThrow(
                     () -> {
                         String message = "Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.";
-                        logger.error("[removeSignaturesFromTransactionWithP2shMultiSigInputs] {}", message);
+                        logger.error("[removeSignaturesFromMultiSigTransaction] {}", message);
                         return new IllegalArgumentException(message);
                     }
                 );
-            Script p2shScript = ScriptBuilder.createP2SHOutputScript(inputRedeemScript);
-            Script emptyInputScript = p2shScript.createEmptyInputScript(null, inputRedeemScript);
-            input.setScriptSig(emptyInputScript);
+            boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
+            if (inputHasWitness) {
+                setSpendingBaseScriptSegwit(transaction, inputIndex, inputRedeemScript);
+            } else {
+                setSpendingBaseScriptLegacy(transaction, inputIndex, inputRedeemScript);
+            }
         }
     }
 
@@ -164,16 +160,24 @@ public class BitcoinUtils {
     }
 
     public static void addSpendingFederationBaseScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
-        TransactionInput input = btcTx.getInput(inputIndex);
-
         if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
-            Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
-            input.setScriptSig(inputScript);
+            setSpendingBaseScriptLegacy(btcTx, inputIndex, redeemScript);
             return;
         }
+        setSpendingBaseScriptSegwit(btcTx, inputIndex, redeemScript);
+    }
 
+    private static void setSpendingBaseScriptLegacy(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+        TransactionInput input = btcTx.getInput(inputIndex);
+        Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
+        input.setScriptSig(inputScript);
+    }
+
+    private static void setSpendingBaseScriptSegwit(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+        TransactionInput input = btcTx.getInput(inputIndex);
         TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(inputIndex, witnessScript);
+
         Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
         input.setScriptSig(segwitScriptSig);
     }
@@ -282,20 +286,49 @@ public class BitcoinUtils {
         return Sha256Hash.wrap(witnessCommitmentHash);
     }
 
-    public static void signInput(BtcTransaction btcTx, int inputIndex, TransactionSignature signature, int sigInsertionIndex, Script outputScript) {
-        if (!inputHasWitness(btcTx, inputIndex)) {
-            // put signature in script sig
-            TransactionInput input = btcTx.getInput(inputIndex);
-            Script inputScript = input.getScriptSig();
-            Script inputScriptWithSignature =
-                outputScript.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigInsertionIndex);
-            input.setScriptSig(inputScriptWithSignature);
+    public static void signInput(
+        BtcTransaction btcTx,
+        int inputIndex,
+        TransactionSignature signature,
+        int sigInsertionIndex,
+        Script outputScript
+    ) {
+        if (inputHasWitness(btcTx, inputIndex)) {
+            addSignatureToWitness(btcTx, inputIndex, signature, sigInsertionIndex, outputScript);
             return;
         }
+        addSignatureToScriptSig(btcTx, inputIndex, signature, sigInsertionIndex, outputScript);
+    }
 
-        // put signature in witness
+    private static void addSignatureToScriptSig(
+        BtcTransaction btcTx,
+        int inputIndex,
+        TransactionSignature signature,
+        int sigInsertionIndex,
+        Script outputScript
+    ) {
+        Script inputScript = btcTx.getInput(inputIndex).getScriptSig();
+        Script inputScriptWithSignature = outputScript.getScriptSigWithSignature(
+            inputScript,
+            signature.encodeToBitcoin(),
+            sigInsertionIndex
+        );
+        btcTx.getInput(inputIndex).setScriptSig(inputScriptWithSignature);
+    }
+
+    private static void addSignatureToWitness(
+        BtcTransaction btcTx,
+        int inputIndex,
+        TransactionSignature signature,
+        int sigInsertionIndex,
+        Script outputScript
+    ) {
         TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
-        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(outputScript, signature.encodeToBitcoin(), sigInsertionIndex);
+        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(
+            outputScript,
+            signature.encodeToBitcoin(),
+            sigInsertionIndex
+        );
         btcTx.setWitness(inputIndex, inputWitnessWithSignature);
     }
 }
