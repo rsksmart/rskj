@@ -3771,6 +3771,85 @@ class BridgeTest {
             int actualUnionResponseCode = decodedResult.intValue();
             assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
+        
+        @Test
+        void setUnionBridgeTransferPermissions_beforeRSKIP502_shouldFail() {
+            bridge = bridgeBuilder
+                .activationConfig(ActivationConfigsForTest.lovell700())
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
+            byte[] data = function.encode(true, true);
+
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+        
+        @Test
+        void setUnionBridgeTransferPermissions_whenValidArgs_shouldSetTransferPermissions() throws VMException {
+            // Arrange
+            RskAddress expectedChangeTransferPermissionsAddress = mainNetConstants.getBridgeConstants()
+                .getUnionBridgeConstants().getAddress();
+            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+            when(rskTx.getSender(any())).thenReturn(expectedChangeTransferPermissionsAddress);
+            when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(),
+                anyBoolean())).thenReturn(expectedResponseCode);
+            CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
+            byte[] data = function.encode(true, false);
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.decodeResult(
+                result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+            verify(unionBridgeSupport, times(1)).setTransferPermissions(any(Transaction.class), eq(true), eq(false));
+        }
+
+        @Test
+        void setUnionBridgeTransferPermissions_whenEmptyArguments_shouldAssumeArgAsFalseAndProcessed() throws VMException {
+            // Arrange
+            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+            // when no argument is passed, the default value assigned to the arg is false
+            when(unionBridgeSupport.setTransferPermissions(any(), eq(false), eq(false))).thenReturn(expectedResponseCode);
+
+            CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.decodeResult(result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+
+            verify(unionBridgeSupport, times(1)).setTransferPermissions(any(Transaction.class), eq(false), eq(false));
+        }
+
+        @Test
+        void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode()
+            throws VMException {
+            // Arrange
+            UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
+            when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(), anyBoolean())).thenReturn(
+                expectedResponseCode);
+
+            CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
+            byte[] data = function.encode(true, true);
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.decodeResult(
+                result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+
+            verify(unionBridgeSupport, times(1)).setTransferPermissions(any(Transaction.class), eq(true), eq(true));
+        }
     }
 
     private static Stream<Arguments> msgTypesAndActivations() {
