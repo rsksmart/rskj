@@ -36,6 +36,9 @@ class UnionBridgeStorageProviderImplTest {
     private static final boolean unionBridgeRequestEnabled = true;
     private static final boolean newUnionBridgeRequestEnabled = false;
 
+    private static final boolean unionBridgeReleaseEnabled = true;
+    private static final boolean newUnionBridgeReleaseEnabled = false;
+
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
 
@@ -777,120 +780,119 @@ class UnionBridgeStorageProviderImplTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void setUnionBridgeRequestEnabled_whenNoValueStored_shouldSetValue(boolean enabled) {
+    void setUnionBridgeReleaseEnabled_whenNoValueStored_shouldSetValue(boolean enabled) {
         // Act
-        unionBridgeStorageProvider.setUnionBridgeRequestEnabled(enabled);
+        unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(enabled);
 
         // Assert
-        Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
-        assertTrue(isUnionBridgeRequestEnabled.isPresent());
-        assertEquals(enabled, isUnionBridgeRequestEnabled.get());
+        Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
+        assertTrue(isUnionBridgeReleaseEnabled.isPresent());
+        assertEquals(enabled, isUnionBridgeReleaseEnabled.get());
 
-        // Check that the new value is not stored yet
-        assertNoUnionBridgeRequestEnabledIsStored();
+        // Check that the value is not stored yet
+        assertNoUnionBridgeReleaseEnabledIsStored();
 
         // Call save to persist the value
         unionBridgeStorageProvider.save();
         // Check that the value is stored
-        assertGivenUnionBridgeRequestEnabledIsStored(enabled);
+        assertGivenUnionBridgeReleaseEnabledIsStored(enabled);
+    }
+
+    private void assertNoUnionBridgeReleaseEnabledIsStored() {
+        Optional<Long> retrievedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeOptionalLong);
+        assertTrue(retrievedUnionBridgeReleaseEnabled.isEmpty());
+    }
+
+    private void assertGivenUnionBridgeReleaseEnabledIsStored(boolean expectedValue) {
+        Optional<Long> savedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeOptionalLong);
+
+        assertTrue(savedUnionBridgeReleaseEnabled.isPresent());
+        assertEquals(expectedValue ? 1L : 0L, savedUnionBridgeReleaseEnabled.get());
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void setUnionBridgeRequestEnabled_whenValueStored_shouldOverrideWithTheNewOne(boolean enabled) {
+    void setUnionBridgeReleaseEnabled_whenValueStored_shouldOverrideWithTheNewOne(boolean enabled) {
         // Arrange
         boolean storedValue = !enabled;
         storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
             storedValue ? 1L : 0L, BridgeSerializationUtils::serializeLong);
 
-
         // Act
-        unionBridgeStorageProvider.setUnionBridgeRequestEnabled(enabled);
+        unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(enabled);
 
         // Assert
-        Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
-        assertTrue(isUnionBridgeRequestEnabled.isPresent());
-        assertEquals(enabled, isUnionBridgeRequestEnabled.get());
+        Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
+        assertTrue(isUnionBridgeReleaseEnabled.isPresent());
+        assertEquals(enabled, isUnionBridgeReleaseEnabled.get());
 
         // Check that the new value is not stored yet
-        assertGivenUnionBridgeRequestEnabledIsStored(storedValue);
+        assertGivenUnionBridgeReleaseEnabledIsStored(storedValue);
 
         // Call save to persist the value
         unionBridgeStorageProvider.save();
         // Check that the value is stored
-        assertGivenUnionBridgeRequestEnabledIsStored(enabled);
-    }
-
-    private void assertNoUnionBridgeRequestEnabledIsStored() {
-        Optional<Long> retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            BridgeSerializationUtils::deserializeOptionalLong);
-        assertTrue(retrievedUnionBridgeRequestEnabled.isEmpty());
-    }
-
-    private void assertGivenUnionBridgeRequestEnabledIsStored(boolean expectedValue) {
-        Optional<Long> savedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            BridgeSerializationUtils::deserializeOptionalLong);
-
-        assertTrue(savedUnionBridgeRequestEnabled.isPresent());
-        assertEquals(expectedValue ? 1L : 0L, savedUnionBridgeRequestEnabled.get());
+        assertGivenUnionBridgeReleaseEnabledIsStored(enabled);
     }
 
     @Test
-    void isUnionBridgeRequestEnabled_whenNoValueStored_shouldReturnEmpty() {
+    void isUnionBridgeReleaseEnabled_whenNoValueStored_shouldReturnEmpty() {
         // Act
-        Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
+        Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
 
         // Assert
-        assertTrue(isUnionBridgeRequestEnabled.isEmpty());
+        assertTrue(isUnionBridgeReleaseEnabled.isEmpty());
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void isUnionBridgeRequestEnabled_whenValueStored_shouldReturnStoredValue(boolean requestEnabled) {
+    void isUnionBridgeReleaseEnabled_whenValueStored_shouldReturnStoredValue(boolean releaseEnabled) {
         // Arrange
         storageAccessor.saveToRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-             requestEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong);
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+             releaseEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong);
 
         // Act
-        Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
+        Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
 
         // Assert
-        assertTrue(isUnionBridgeRequestEnabled.isPresent());
-        assertEquals( requestEnabled, isUnionBridgeRequestEnabled.get());
+        assertTrue(isUnionBridgeReleaseEnabled.isPresent());
+        assertEquals(releaseEnabled, isUnionBridgeReleaseEnabled.get());
     }
 
     @Test
-    void isUnionBridgeRequestEnabled_whenValueSet_shouldReturnCachedValue() {
+    void isUnionBridgeReleaseEnabled_whenValueSet_shouldReturnCachedValue() {
         // Arrange
-        boolean requestEnabled = true;
-        unionBridgeStorageProvider.setUnionBridgeRequestEnabled(requestEnabled);
+        boolean releaseEnabled = true;
+        unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
 
         // Act
-        Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
+        Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
 
         // Assert
-        assertTrue(isUnionBridgeRequestEnabled.isPresent());
-        assertEquals(requestEnabled, isUnionBridgeRequestEnabled.get());
-        assertNoUnionBridgeRequestEnabledIsStored();
+        assertTrue(isUnionBridgeReleaseEnabled.isPresent());
+        assertEquals(releaseEnabled, isUnionBridgeReleaseEnabled.get());
+        assertNoUnionBridgeReleaseEnabledIsStored();
     }
 
     @Test
-    void isUnionBridgeRequestEnabled_whenValueSetAndSaved_shouldReturnStoredValue() {
+    void isUnionBridgeReleaseEnabled_whenValueSetAndSaved_shouldReturnStoredValue() {
         // Arrange
-        boolean requestEnabled = true;
-        unionBridgeStorageProvider.setUnionBridgeRequestEnabled(requestEnabled);
+        boolean releaseEnabled = true;
+        unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
         unionBridgeStorageProvider.save();
 
         // Act
-        Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
+        Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
 
         // Assert
-        assertTrue(isUnionBridgeRequestEnabled.isPresent());
-        assertEquals(requestEnabled, isUnionBridgeRequestEnabled.get());
+        assertTrue(isUnionBridgeReleaseEnabled.isPresent());
+        assertEquals(releaseEnabled, isUnionBridgeReleaseEnabled.get());
     }
 
     @ParameterizedTest
@@ -978,6 +980,27 @@ class UnionBridgeStorageProviderImplTest {
         assertNoWeisTransferredToUnionBridgeIsStored();
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void save_whenUnionBridgeReleaseEnabledIsSet_shouldStoreValue(boolean unionBridgeReleaseEnabled) {
+        // Arrange
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            unionBridgeReleaseEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
+        );
+
+        // Act
+        unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(newUnionBridgeReleaseEnabled);
+        unionBridgeStorageProvider.save();
+
+        // Assert
+        assertGivenUnionBridgeReleaseEnabledIsStored(newUnionBridgeReleaseEnabled);
+
+        assertNoAddressIsStored();
+        assertNoLockingCapIsStored();
+        assertNoWeisTransferredToUnionBridgeIsStored();
+    }
+
     @Test
     void save_whenValuesAreSet_shouldStoreEachValue() {
         // Arrange
@@ -1001,12 +1024,18 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
             unionBridgeRequestEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
         );
+        // Simulate there is UNION_BRIDGE_RELEASE_ENABLED's value already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            unionBridgeReleaseEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
+        );
 
         // Set the new values
         unionBridgeStorageProvider.setAddress(newUnionBridgeContractAddress);
         unionBridgeStorageProvider.setLockingCap(newUnionBridgeLockingCap);
         unionBridgeStorageProvider.increaseWeisTransferredToUnionBridge(newAmountTransferredToUnionBridge);
         unionBridgeStorageProvider.setUnionBridgeRequestEnabled(newUnionBridgeRequestEnabled);
+        unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(newUnionBridgeReleaseEnabled);
 
         // Act
         unionBridgeStorageProvider.save();
@@ -1018,6 +1047,7 @@ class UnionBridgeStorageProviderImplTest {
             amountTransferredToUnionBridge);
         assertGivenWeisTransferredToUnionBridgeIsStored(expectedAmountTransferredToUnionBridge);
         assertGivenUnionBridgeRequestEnabledIsStored(newUnionBridgeRequestEnabled);
+        assertGivenUnionBridgeReleaseEnabledIsStored(newUnionBridgeReleaseEnabled);
     }
 
     @Test
@@ -1030,6 +1060,7 @@ class UnionBridgeStorageProviderImplTest {
         assertNoLockingCapIsStored();
         assertNoWeisTransferredToUnionBridgeIsStored();
         assertNoUnionBridgeRequestEnabledIsStored();
+        assertNoUnionBridgeReleaseEnabledIsStored();
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
