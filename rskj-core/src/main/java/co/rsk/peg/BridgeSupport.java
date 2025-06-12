@@ -2912,6 +2912,10 @@ public class BridgeSupport {
         return responseCode;
     }
 
+    public UnionResponseCode setUnionBridgeTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled) {
+        return unionBridgeSupport.setTransferPermissions(tx, requestEnabled, releaseEnabled);
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }
