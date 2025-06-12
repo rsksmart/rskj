@@ -44,7 +44,7 @@ public class HexDataParam {
     }
 
     public byte[] getRawDataBytes() {
-        return rawDataBytes.clone();
+        return rawDataBytes;
     }
 
     public String getAsHexString() {
