@@ -96,7 +96,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Script p2SHScript = standardMultisigFederation.getP2SHScript();
-        List<UTXO> utxos = getUtxos(p2SHScript);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(networkParameters),
@@ -144,7 +144,7 @@ class ReleaseTransactionBuilderTest {
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
 
         Script p2SHScript = activeFederation.getP2SHScript();
-        List<UTXO> utxos = getUtxos(p2SHScript);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
             activeFederation,
@@ -196,10 +196,11 @@ class ReleaseTransactionBuilderTest {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Federation activeFederation = P2shErpFederationBuilder.builder().build();
 
+        List<UTXO> emptyUtxos = Collections.emptyList();
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
             activeFederation,
-            Collections.emptyList(),
+            emptyUtxos,
             false,
             mock(BridgeStorageProvider.class)
         );
@@ -242,21 +243,8 @@ class ReleaseTransactionBuilderTest {
         Federation activeFederation = P2shErpFederationBuilder.builder().build();
         Script p2SHScript = activeFederation.getP2SHScript();
 
-        List<UTXO> utxos = List.of(new UTXO(
-                Sha256Hash.of(new byte[]{1}),
-                0,
-                Coin.COIN.add(Coin.SATOSHI),
-                0,
-                false,
-                p2SHScript
-            ), new UTXO(
-                Sha256Hash.of(new byte[]{2}),
-                0,
-                Coin.COIN.add(Coin.SATOSHI),
-                0,
-                false,
-                p2SHScript
-            ));
+        Coin value = Coin.COIN.add(Coin.SATOSHI);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
@@ -319,7 +307,7 @@ class ReleaseTransactionBuilderTest {
             bridgeConstants.getFederationConstants().getErpFedActivationDelay(), activationsForBlock);
 
         Script p2SHScript = nonStandardErpFederation.getP2SHScript();
-        List<UTXO> utxos = getUtxos(p2SHScript);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             new Context(bridgeConstants.getBtcParams()),
@@ -348,25 +336,19 @@ class ReleaseTransactionBuilderTest {
         assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
     }
 
-    private static List<UTXO> getUtxos(Script outputScript) {
-        List<UTXO> utxos = Arrays.asList(
-            new UTXO(
+    private static List<UTXO> getUtxos(Script outputScript, int numberOfUtxos, Coin value) {
+        ArrayList<UTXO> utxos = new ArrayList<>(numberOfUtxos);
+        for (int i = 0; i < numberOfUtxos; i++) {
+            UTXO utxo = new UTXO(
                 Sha256Hash.of(new byte[]{1}),
                 0,
-                Coin.COIN,
+                value,
                 0,
                 false,
                 outputScript
-            ),
-            new UTXO(
-                Sha256Hash.of(new byte[]{1}),
-                0,
-                Coin.COIN,
-                0,
-                false,
-                outputScript
-            )
-        );
+            );
+            utxos.add(utxo);
+        }
         return utxos;
     }
 
