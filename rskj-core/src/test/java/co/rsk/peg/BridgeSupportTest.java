@@ -902,7 +902,7 @@ class BridgeSupportTest {
 
         @ParameterizedTest
         @MethodSource("expectedUnionBridgeContractAddressProvider")
-        void getUnionBridgeContractAddress_shouldReturnUnionBridgeContractAddress(RskAddress expectedUnionBridgeContractAddress) {
+        void getUnionBridgeContractAddress_shouldReturnInitialUnionBridgeContractAddress(RskAddress expectedUnionBridgeContractAddress) {
             // act
             RskAddress actualUnionBridgeContractAddress = bridgeSupport.getUnionBridgeContractAddress();
 
