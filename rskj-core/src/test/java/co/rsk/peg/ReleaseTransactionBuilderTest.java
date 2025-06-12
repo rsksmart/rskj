@@ -56,6 +56,7 @@ class ReleaseTransactionBuilderTest {
     private ActivationConfig.ForBlock activations;
     private NetworkParameters networkParameters;
     private Federation federation;
+    private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
 
     @BeforeEach
     void setup() {
@@ -70,7 +71,7 @@ class ReleaseTransactionBuilderTest {
             wallet,
             federation.getFormatVersion(),
             changeAddress,
-            Coin.MILLICOIN.multiply(2),
+            feePerKb,
             activations
         );
         new Context(networkParameters);
@@ -140,7 +141,6 @@ class ReleaseTransactionBuilderTest {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Federation activeFederation = P2shErpFederationBuilder.builder().build();
-        Coin feePerKb = Coin.COIN;
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
 
         Script p2SHScript = activeFederation.getP2SHScript();
@@ -205,7 +205,6 @@ class ReleaseTransactionBuilderTest {
             mock(BridgeStorageProvider.class)
         );
 
-        Coin feePerKb = Coin.COIN;
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcParams,
@@ -254,7 +253,6 @@ class ReleaseTransactionBuilderTest {
             mock(BridgeStorageProvider.class)
         );
 
-        Coin feePerKb = Coin.COIN;
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcParams,
