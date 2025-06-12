@@ -39,6 +39,10 @@ public class DifficultyCalculator {
 
     private static final BigDecimal ALPHA_POS = BigDecimal.valueOf(1.005); // 1 + 0.005
     private static final BigDecimal ALPHA_NEG = BigDecimal.valueOf(0.995);  // 1 - 0.005
+
+    // private static final BigInteger ALPHA_POS = BigInteger.valueOf(1029); // 1 + 0.005 == 1029/(2^10)
+    // private static final BigInteger ALPHA_NEG = BigInteger.valueOf(1019); // 1 - 0.005 == 1019/(2^10)
+    // private static final BigInteger SCALE = BigInteger.valueOf(2<<10);
  
     private final ActivationConfig activationConfig;
     private final Constants constants;
@@ -93,9 +97,11 @@ public class DifficultyCalculator {
         double uncleRate = calcUncleRate(blockWindow);
 
         BigDecimal factor;
-        if (uncleRate >= UNCLE_TRESHOLD || blockTimeAverage > (BLOCK_TARGET * 1.1)) {
+        if (uncleRate > UNCLE_TRESHOLD) {
             factor = ALPHA_POS;
-        } else if (uncleRate < UNCLE_TRESHOLD && blockTimeAverage < (BLOCK_TARGET * 0.9)) {
+        } else if (uncleRate <= UNCLE_TRESHOLD && blockTimeAverage > (BLOCK_TARGET * 1.1)) {
+            factor = ALPHA_POS;
+        } else if (uncleRate <= UNCLE_TRESHOLD && blockTimeAverage < (BLOCK_TARGET * 0.9)) {
             factor = ALPHA_NEG;
         } else {
             throw new IllegalStateException("this shouldn't happen");
