@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionBridgeSupportImplTest {
@@ -56,6 +57,11 @@ class UnionBridgeSupportImplTest {
     private static final RskAddress changeLockingCapAuthorizer = new RskAddress(
         ECKey.fromPublicOnly(Hex.decode(
                 "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"))
+            .getAddress());
+
+    private static final RskAddress changeTransferPermissionsAuthorizer = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode(
+                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))
             .getAddress());
 
     private static final RskAddress unionBridgeContractAddress = TestUtils.generateAddress(
@@ -764,6 +770,102 @@ class UnionBridgeSupportImplTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+        "true, true",
+        "true, false",
+        "false, true",
+        "false, false"
+    })
+    void setTransferPermissions_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode(boolean requestEnabled, boolean releaseEnabled) {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(
+            TestUtils.generateAddress("notAuthorizedAddress"));
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+        assertNoEventWasEmitted();
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
+        assertNoTransferPermissionsWereStored();
+    }
+
+    private void assertNoTransferPermissionsWereStored() {
+        Optional<Long> retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeOptionalLong
+        );
+        Optional<Long> retrievedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeOptionalLong
+        );
+
+        Assertions.assertTrue(retrievedUnionBridgeRequestEnabled.isEmpty());
+        Assertions.assertTrue(retrievedUnionBridgeReleaseEnabled.isEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "true, true",
+        "true, false",
+        "false, true",
+        "false, false"
+    })
+    void setTransferPermissions_whenCallerIsAuthorized_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+
+        // call save and assert that the permissions are stored
+        unionBridgeSupport.save();
+
+        assertTransferPermissionsWereStored(requestEnabled, releaseEnabled);
+    }
+
+    private void assertTransferPermissionsWereStored(boolean requestEnabled,
+        boolean releaseEnabled) {
+        Optional<Long> retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeOptionalLong
+        );
+        Optional<Long> retrievedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeOptionalLong
+        );
+
+        Assertions.assertTrue(retrievedUnionBridgeRequestEnabled.isPresent());
+        Assertions.assertEquals(requestEnabled ? 1L : 0L, retrievedUnionBridgeRequestEnabled.get());
+
+        Assertions.assertTrue(retrievedUnionBridgeReleaseEnabled.isPresent());
+        Assertions.assertEquals(releaseEnabled ? 1L : 0L, retrievedUnionBridgeReleaseEnabled.get());
+    }
+
+
+    private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled) {
+        CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
+        byte[][] encodedTopicsSerialized = transferPermissionsEvent.encodeEventTopics(changeTransferPermissionsAuthorizer.toHexString());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
+        byte[] encodedData = transferPermissionsEvent.encodeEventData(requestEnabled, releaseEnabled);
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
     void save_shouldSave(UnionBridgeConstants unionBridgeConstants) {
         // arrange
@@ -788,6 +890,11 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualRequestUnionRbtcResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
         Assertions.assertEquals(UnionResponseCode.SUCCESS,  actualRequestUnionRbtcResponseCode);
 
+        rskTx = mock(Transaction.class);
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
+        UnionResponseCode actualSetTransferPermissionsResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualSetTransferPermissionsResponseCode);
+
         // act
         unionBridgeSupport.save();
 
@@ -796,6 +903,7 @@ class UnionBridgeSupportImplTest {
         assertAddressWasStored(unionBridgeContractAddress);
         assertLockingCapWasStored(newLockingCap);
         assertUnionRbtcWasStored(amountRequested);
+        assertTransferPermissionsWereStored(true, false);
     }
 
     @ParameterizedTest
@@ -822,6 +930,7 @@ class UnionBridgeSupportImplTest {
         assertAddressWasStored(newUnionBridgeContractAddress);
         assertNoLockingCapIsStored();
         assertNoUnionRbtcIsStored();
+        assertNoTransferPermissionsWereStored();
     }
 
     @ParameterizedTest
@@ -853,6 +962,7 @@ class UnionBridgeSupportImplTest {
         assertLockingCapWasStored(newLockingCap);
         assertNoAddressIsStored();
         assertNoUnionRbtcIsStored();
+        assertNoTransferPermissionsWereStored();
     }
 
     @ParameterizedTest
@@ -883,6 +993,27 @@ class UnionBridgeSupportImplTest {
         assertUnionRbtcWasStored(expectedAmountTransferred);
         assertNoAddressIsStored();
         assertNoLockingCapIsStored();
+        assertNoTransferPermissionsWereStored();
+    }
+
+    @Test
+    void save_whenTransferPermissionsAreSet_shouldSave() {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, true, false);
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+
+        // call save and assert that the permissions are stored
+        unionBridgeSupport.save();
+        assertTransferPermissionsWereStored(true, false);
+        assertNoAddressIsStored();
+        assertNoLockingCapIsStored();
+        assertNoUnionRbtcIsStored();
     }
 
     private void assertAddressWasStored(RskAddress newUnionBridgeContractAddress) {

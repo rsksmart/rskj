@@ -236,6 +236,35 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
+    public UnionResponseCode setTransferPermissions(Transaction tx, boolean requestEnabled,
+        boolean releaseEnabled) {
+        final String SET_TRANSFER_PERMISSIONS_TAG = "setTransferPermissions";
+
+        if (!isChangeTransferPermissionsAuthorizedCaller(tx)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
+        }
+
+        storageProvider.setUnionBridgeRequestEnabled(requestEnabled);
+        storageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
+
+        RskAddress caller = tx.getSender(signatureCache);
+        eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, requestEnabled, releaseEnabled);
+        logger.info("[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
+            SET_TRANSFER_PERMISSIONS_TAG, requestEnabled, releaseEnabled);
+        return UnionResponseCode.SUCCESS;
+    }
+
+    private boolean isChangeTransferPermissionsAuthorizedCaller(Transaction tx) {
+        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
+        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
+        if (!isAuthorized) {
+            String baseMessage = String.format("Caller is not authorized to change transfer permissions. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isChangeTransferPermissionsAuthorizedCaller", baseMessage);
+        }
+        return isAuthorized;
+    }
+
+    @Override
     public void save() {
         storageProvider.save();
     }
