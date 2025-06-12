@@ -1,11 +1,15 @@
 package co.rsk.peg.union;
 
+import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
+import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
@@ -13,15 +17,24 @@ import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
 import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +44,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class UnionBridgeSupportImplTest {
 
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private static final BridgeConstants mainnetConstants = BridgeMainNetConstants.getInstance();
     private static final UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
 
     private static final RskAddress changeUnionAddressAuthorizer = new RskAddress(
@@ -55,15 +70,24 @@ class UnionBridgeSupportImplTest {
     private UnionBridgeStorageProvider unionBridgeStorageProvider;
     private SignatureCache signatureCache;
     private Transaction rskTx;
+    private List<LogInfo> logs;
 
     @BeforeEach
     void setUp() {
         storageAccessor = new InMemoryStorage();
         unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
         signatureCache = mock(SignatureCache.class);
+
+        logs = new ArrayList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(
+            mainnetConstants,
+            allActivations,
+            logs
+        );
         unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder()
             .withStorageProvider(unionBridgeStorageProvider)
-            .withSignatureCache(signatureCache);
+            .withSignatureCache(signatureCache)
+            .withEventLogger(eventLogger);
         unionBridgeSupport = unionBridgeSupportBuilder.build();
 
         rskTx = mock(Transaction.class);
@@ -405,6 +429,7 @@ class UnionBridgeSupportImplTest {
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(newLockingCap);
         assertNewLockingCapWasNotStored(newLockingCap);
+        assertLogUnionLockingCapIncreased(initialLockingCap, newLockingCap);
 
         // call save and assert that the new locking cap is stored
         unionBridgeSupport.save();
@@ -418,10 +443,13 @@ class UnionBridgeSupportImplTest {
         Coin moreThanMaxRbtc = Coin.fromBitcoin(
             BridgeMainNetConstants.getInstance().getMaxRbtc()).add(new Coin(oneEth));
 
-        // Stored a locking cap in the storage to demonstrate that the new locking cap is valid
+        int lockingCapIncrementsMultiplier = UnionBridgeMainNetConstants.getInstance()
+            .getLockingCapIncrementsMultiplier();
+        // Stored the half of [maxRbtc + 1]. Then the max locking cap allowed to increase is: = (maxRbtc + 1) * lockingCapIncrementsMultiplier
+        Coin storedLockingCap = moreThanMaxRbtc.divide(BigInteger.valueOf(lockingCapIncrementsMultiplier));
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            moreThanMaxRbtc.divide(BigInteger.valueOf(2L)),
+            storedLockingCap,
             BridgeSerializationUtils::serializeRskCoin
         );
 
@@ -434,10 +462,13 @@ class UnionBridgeSupportImplTest {
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, moreThanMaxRbtc);
 
-        // assert
+        // assert that new_locking_cap is allowed.
+        // new locking cap surpassing the maxRbtc is allowed because it meets the condition:
+        // current_locking_cap <= new_locking_cap <= current_locking_cap * increment_multiplier
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         assertLockingCapWasSet(moreThanMaxRbtc);
         assertNewLockingCapWasNotStored(moreThanMaxRbtc);
+        assertLogUnionLockingCapIncreased(storedLockingCap, moreThanMaxRbtc);
 
         // call save and assert that the new locking cap is stored
         unionBridgeSupport.save();
@@ -449,8 +480,9 @@ class UnionBridgeSupportImplTest {
     void increaseLockingCap_whenInvalidLockingCap_shouldReturnInvalidValue(Coin newLockingCap) {
         // arrange
         when(rskTx.getSender(signatureCache)).thenReturn(changeLockingCapAuthorizer);
+
         unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(UnionBridgeMainNetConstants.getInstance())
+            .withConstants(unionBridgeConstants)
             .build();
 
         // act
@@ -459,6 +491,7 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
         assertNoLockingCapIsStored();
+        assertNoEventWasEmitted();
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -517,6 +550,7 @@ class UnionBridgeSupportImplTest {
         // assert
         Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
         assertNoLockingCapIsStored();
+        assertNoEventWasEmitted();
 
         // call save and assert that nothing is stored
         unionBridgeSupport.save();
@@ -800,14 +834,17 @@ class UnionBridgeSupportImplTest {
 
         Coin newLockingCap = Coin.fromBitcoin(BridgeMainNetConstants.getInstance().getMaxRbtc());
         // to simulate the case where the address is already stored
+
+        Coin storedLockingCap = newLockingCap.divide(BigInteger.TWO);
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-            newLockingCap.divide(BigInteger.TWO),
+            storedLockingCap,
             BridgeSerializationUtils::serializeRskCoin
         );
 
         UnionResponseCode actualLockingCapResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualLockingCapResponseCode);
+        assertLogUnionLockingCapIncreased(storedLockingCap, newLockingCap);
 
         // act
         unionBridgeSupport.save();
@@ -870,5 +907,19 @@ class UnionBridgeSupportImplTest {
             BridgeSerializationUtils::deserializeRskCoin
         );
         Assertions.assertEquals(amountRequested, actualAmountTransferred);
+    }
+
+    private void assertNoEventWasEmitted() {
+        Assertions.assertTrue(logs.isEmpty(), "No events should have been emitted");
+    }
+
+    private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
+        CallTransaction.Function unionLockingCapIncreasedEvent = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
+        byte[][] encodedTopicsSerialized = unionLockingCapIncreasedEvent.encodeEventTopics(
+            UnionBridgeSupportImplTest.changeLockingCapAuthorizer.toHexString());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
+        byte[] encodedData = unionLockingCapIncreasedEvent.encodeEventData(previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 }
