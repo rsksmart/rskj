@@ -94,9 +94,9 @@ public class ReleaseTransactionBuilder {
      * @param params                        network params
      * @param wallet                        wallet to be used to build the release tx
      * @param federationFormatVersion       needed to correctly set the redeem input data (script sig for legacy fed, witness for segwit fed)
+     * @param changeAddress                 address to send change to
      * @param feePerKb                      fee per kb
      * @param activations                   activations
-     * @return federation member's public key
      */
     public ReleaseTransactionBuilder(
         NetworkParameters params,
