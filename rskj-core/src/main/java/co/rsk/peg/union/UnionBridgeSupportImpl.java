@@ -152,6 +152,10 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode requestUnionRbtc(Transaction tx, Coin amount) {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
+        if (!isRequestEnabled()) {
+            return UnionResponseCode.REQUEST_DISABLED;
+        }
+
         if (!isCallerUnionBridgeContractAddress(tx)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
@@ -163,6 +167,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         storageProvider.increaseWeisTransferredToUnionBridge(amount);
         logger.info("[{}] Amount requested by the union bridge has been transferred. Amount Requested: {}.", REQUEST_UNION_RBTC_TAG, amount);
         return UnionResponseCode.SUCCESS;
+    }
+
+    private boolean isRequestEnabled() {
+        // By default, the request is enabled if the storage provider does not have a specific value set.
+        Boolean isRequestEnabled = storageProvider.isUnionBridgeRequestEnabled().orElse(true);
+        if (!isRequestEnabled) {
+            logger.warn("[{isRequestEnabled}] Union Bridge Request is not enabled.");
+        }
+        return isRequestEnabled;
     }
 
     private boolean isCallerUnionBridgeContractAddress(Transaction tx) {
