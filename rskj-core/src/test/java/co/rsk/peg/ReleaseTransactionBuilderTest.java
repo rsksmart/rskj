@@ -202,20 +202,20 @@ class ReleaseTransactionBuilderTest {
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
         Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
-        ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
+        ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = releaseTransactionBuilder.buildSvpFundTransaction(
             proposedFederation,
             proposedFlyoverPrefix,
             svpFundTxOutputsValue
         );
 
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
-        ReleaseTransactionBuilder.Response actualResponseCode = buildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        List<UTXO> selectedUTXOs = buildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.getSelectedUTXOs();
         assertNull(selectedUTXOs);
 
-        BtcTransaction btcTx = buildResult.getBtcTx();
+        BtcTransaction btcTx = svpFundTransactionUnsignedBuildResult.getBtcTx();
         assertNull(btcTx);
     }
 
