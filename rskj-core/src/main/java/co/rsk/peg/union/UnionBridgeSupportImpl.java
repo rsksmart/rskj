@@ -71,9 +71,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
-        if (isAddressAlreadyStored(currentUnionBridgeAddress, unionBridgeContractAddress)) {
-            return UnionResponseCode.INVALID_VALUE;
-        }
 
         storageProvider.setAddress(unionBridgeContractAddress);
         logger.info("[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, currentUnionBridgeAddress, unionBridgeContractAddress);
@@ -108,16 +105,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             logger.warn(LOG_PATTERN, "isValidAddress", baseMessage);
         }
         return isValidAddress;
-    }
-
-    private boolean isAddressAlreadyStored(RskAddress currentUnionBridgeContractAddress, RskAddress newUnionBridgeContractAddress) {
-        // Check if the address is already set
-        boolean isAddressAlreadyStored = currentUnionBridgeContractAddress.equals(newUnionBridgeContractAddress);
-        if (isAddressAlreadyStored) {
-            String baseMessage = String.format("The given union bridge contract address is already the current address. Current address: %s", currentUnionBridgeContractAddress);
-            logger.warn(LOG_PATTERN, "isAddressAlreadyStored", baseMessage);
-        }
-        return isAddressAlreadyStored;
     }
 
     @Override
