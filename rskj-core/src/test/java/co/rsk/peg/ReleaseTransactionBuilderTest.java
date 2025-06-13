@@ -27,6 +27,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.RedeemScriptCreationException;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeRegTestConstants;
@@ -51,30 +52,33 @@ import org.mockito.invocation.InvocationOnMock;
 
 class ReleaseTransactionBuilderTest {
     private Wallet wallet;
-    private Address changeAddress;
+
     private ReleaseTransactionBuilder builder;
     private ActivationConfig.ForBlock activations;
-    private NetworkParameters networkParameters;
     private Federation federation;
+    private final Address changeAddress =  mockAddress(1000);;
+    private final NetworkParameters regtestParameters =  new BridgeRegTestConstants().getBtcParams();
     private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
+    private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+    private final NetworkParameters btcMainNetParams = bridgeMainNetConstants.getBtcParams();
+    private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
+    private final Script p2SHScript = activeP2shErpFederation.getP2SHScript();
 
     @BeforeEach
     void setup() {
         wallet = mock(Wallet.class);
-        changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
         BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
-        networkParameters = bridgeRegTestConstants.getBtcParams();
         federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         builder = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             wallet,
             federation.getFormatVersion(),
             changeAddress,
             feePerKb,
             activations
         );
-        new Context(networkParameters);
+        new Context(regtestParameters);
     }
 
     @Test
@@ -90,7 +94,7 @@ class ReleaseTransactionBuilderTest {
             members,
             Instant.now(),
             0,
-            networkParameters
+            regtestParameters
         );
         Federation standardMultisigFederation = FederationFactory.buildStandardMultiSigFederation(
             federationArgs
@@ -100,7 +104,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(networkParameters),
+            new Context(regtestParameters),
             standardMultisigFederation,
             utxos,
             false,
@@ -108,7 +112,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             standardMultisigFederation.getAddress(),
@@ -130,7 +134,7 @@ class ReleaseTransactionBuilderTest {
         TransactionOutput changeOutput = result.getBtcTx().getOutput(1);
 
         // Second output should be the change output to the Federation
-        assertEquals(standardMultisigFederation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
+        assertEquals(standardMultisigFederation.getAddress(), changeOutput.getAddressFromP2SH(regtestParameters));
         // And if its value is the spent UTXOs summatory minus the requested pegout amount
         // we can ensure the Federation is not paying fees for pegouts
         assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
@@ -138,15 +142,13 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectReleaseTx() {
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Federation activeFederation = P2shErpFederationBuilder.builder().build();
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
 
         Script p2SHScript = activeFederation.getP2SHScript();
         List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeConstants.getBtcParams()),
+            new Context(bridgeMainNetConstants.getBtcParams()),
             activeFederation,
             utxos,
             false,
@@ -154,7 +156,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            btcParams,
+            btcMainNetParams,
             thisWallet,
             activeFederation.getFormatVersion(),
             activeFederation.getAddress(),
@@ -163,8 +165,8 @@ class ReleaseTransactionBuilderTest {
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Coin svpFundTxOutputsValue = bridgeConstants.getSvpFundTxOutputsValue();
-        Keccak256 proposedFlyoverPrefix = bridgeConstants.getProposedFederationFlyoverPrefix();
+        Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
+        Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
         ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = releaseTransactionBuilder.buildSvpFundTransaction(
             proposedFederation,
             proposedFlyoverPrefix,
@@ -180,13 +182,13 @@ class ReleaseTransactionBuilderTest {
         assertEquals(numberOfOutputs, svpFundTransactionUnsigned.getOutputs().size());
         TransactionOutput actualFirstOutput = svpFundTransactionUnsigned.getOutput(0);
         assertEquals(svpFundTxOutputsValue, actualFirstOutput.getValue());
-        assertEquals(proposedFederation.getAddress(), actualFirstOutput.getAddressFromP2SH(btcParams));
+        assertEquals(proposedFederation.getAddress(), actualFirstOutput.getAddressFromP2SH(btcMainNetParams));
 
         TransactionOutput actualSecondOutput = svpFundTransactionUnsigned.getOutput(1);
         assertEquals(svpFundTxOutputsValue, actualSecondOutput.getValue());
 
-        Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcParams, proposedFlyoverPrefix, proposedFederation);
-        assertEquals(flyoverFederationAddress, actualSecondOutput.getAddressFromP2SH(btcParams));
+        Address flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcMainNetParams, proposedFlyoverPrefix, proposedFederation);
+        assertEquals(flyoverFederationAddress, actualSecondOutput.getAddressFromP2SH(btcMainNetParams));
 
         List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.getSelectedUTXOs();
         assertEquals(utxos, selectedUTXOs);
@@ -194,13 +196,11 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void buildSvpFundTransaction_withAFederationWithoutUTXOs_shouldThrowInsufficientMoneyResponseCode() {
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Federation activeFederation = P2shErpFederationBuilder.builder().build();
 
         List<UTXO> emptyUtxos = Collections.emptyList();
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeConstants.getBtcParams()),
+            new Context(bridgeMainNetConstants.getBtcParams()),
             activeFederation,
             emptyUtxos,
             false,
@@ -209,7 +209,7 @@ class ReleaseTransactionBuilderTest {
 
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            btcParams,
+            btcMainNetParams,
             thisWallet,
             activeFederation.getFormatVersion(),
             activeFederation.getAddress(),
@@ -218,8 +218,8 @@ class ReleaseTransactionBuilderTest {
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Coin svpFundTxOutputsValue = bridgeConstants.getSvpFundTxOutputsValue();
-        Keccak256 proposedFlyoverPrefix = bridgeConstants.getProposedFederationFlyoverPrefix();
+        Coin svpFundTxOutputsValue = bridgeMainNetConstants.getSvpFundTxOutputsValue();
+        Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
         ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
             proposedFederation,
             proposedFlyoverPrefix,
@@ -239,8 +239,6 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void buildSvpFundTransaction_withDustValueAsSvpFundTxOutputsValue_shouldReturnDustySendRequestResponseCode() {
-        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Federation activeFederation = P2shErpFederationBuilder.builder().build();
         Script p2SHScript = activeFederation.getP2SHScript();
 
@@ -248,7 +246,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(p2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeConstants.getBtcParams()),
+            new Context(bridgeMainNetConstants.getBtcParams()),
             activeFederation,
             utxos,
             false,
@@ -257,7 +255,7 @@ class ReleaseTransactionBuilderTest {
 
         ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            btcParams,
+            btcMainNetParams,
             thisWallet,
             activeFederation.getFormatVersion(),
             activeFederation.getAddress(),
@@ -266,11 +264,12 @@ class ReleaseTransactionBuilderTest {
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
-        Keccak256 proposedFlyoverPrefix = bridgeConstants.getProposedFederationFlyoverPrefix();
+        Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
+        Coin svpFundTxOutputsValue = Coin.SATOSHI;
         ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
             proposedFederation,
             proposedFlyoverPrefix,
-            Coin.SATOSHI
+            svpFundTxOutputsValue
         );
 
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
@@ -282,6 +281,144 @@ class ReleaseTransactionBuilderTest {
 
         BtcTransaction btcTx = buildResult.getBtcTx();
         assertNull(btcTx);
+    }
+
+    @Test
+    void buildSvpFundTransaction_withNullProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
+        Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        Script p2SHScript = activeFederation.getP2SHScript();
+
+        Coin value = Coin.COIN.add(Coin.SATOSHI);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, value);
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeFederation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeFederation.getFormatVersion(),
+            activeFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Coin svpFundTxOutputsValue = Coin.SATOSHI;
+        assertThrows(RedeemScriptCreationException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
+            proposedFederation,
+            null,
+            svpFundTxOutputsValue
+        ));
+    }
+
+    @Test
+    void buildSvpFundTransaction_withInvalidProposedFlyoverPrefix_shouldThrowRedeemScriptCreationException() {
+        Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        Script p2SHScript = activeFederation.getP2SHScript();
+
+        Coin value = Coin.COIN.add(Coin.SATOSHI);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, value);
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeFederation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeFederation.getFormatVersion(),
+            activeFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Keccak256 proposedFlyoverPrefix = Keccak256.ZERO_HASH;
+        Coin svpFundTxOutputsValue = Coin.SATOSHI;
+        assertThrows(RedeemScriptCreationException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
+            proposedFederation,
+            proposedFlyoverPrefix,
+            svpFundTxOutputsValue
+        ));
+    }
+
+    @Test
+    void buildSvpFundTransaction_withNullProposedFederation_shouldReturnNullPointerException() {
+        Federation activeFederation = P2shErpFederationBuilder.builder().build();
+        Script p2SHScript = activeFederation.getP2SHScript();
+
+        Coin value = Coin.COIN.add(Coin.SATOSHI);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, value);
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeFederation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeFederation.getFormatVersion(),
+            activeFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
+        Coin svpFundTxOutputsValue = Coin.SATOSHI;
+        assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
+            null,
+            proposedFlyoverPrefix,
+            svpFundTxOutputsValue
+        ));
+    }
+
+    @Test
+    void buildSvpFundTransaction_withNullAsValueTransferred_shouldXXX() {
+        Coin value = Coin.COIN.add(Coin.SATOSHI);
+        List<UTXO> utxos = getUtxos(p2SHScript, 2, value);
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
+            proposedFederation,
+            proposedFlyoverPrefix,
+            null
+        ));
     }
 
     @Test
@@ -634,7 +771,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -642,7 +779,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -664,9 +801,9 @@ class ReleaseTransactionBuilderTest {
         Address firstOutputAddress = testEntry1.getDestination();
         Address secondOutputAddress = testEntry2.getDestination();
         Address thirdOutputAddress = testEntry3.getDestination();
-        assertEquals(firstOutputAddress, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
-        assertEquals(secondOutputAddress, tx.getOutput(1).getAddressFromP2PKHScript(networkParameters));
-        assertEquals(thirdOutputAddress, tx.getOutput(2).getAddressFromP2PKHScript(networkParameters));
+        assertEquals(firstOutputAddress, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
+        assertEquals(secondOutputAddress, tx.getOutput(1).getAddressFromP2PKHScript(regtestParameters));
+        assertEquals(thirdOutputAddress, tx.getOutput(2).getAddressFromP2PKHScript(regtestParameters));
 
         Sha256Hash firstUtxoHash = utxos.get(0).getHash();
         Sha256Hash thirdUtxoHash = utxos.get(2).getHash();
@@ -682,12 +819,12 @@ class ReleaseTransactionBuilderTest {
 
         List<BtcECKey> keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"k1", "k2", "k3"}, true);
         ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(
-            BitcoinTestUtils.createP2SHMultisigAddress(networkParameters, keys),
+            BitcoinTestUtils.createP2SHMultisigAddress(regtestParameters, keys),
             Coin.COIN
         );
         keys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"k4", "k5", "k6"}, true);
         ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(
-            BitcoinTestUtils.createP2SHMultisigAddress(networkParameters, keys),
+            BitcoinTestUtils.createP2SHMultisigAddress(regtestParameters, keys),
             Coin.COIN
         );
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
@@ -699,7 +836,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -707,7 +844,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -729,9 +866,9 @@ class ReleaseTransactionBuilderTest {
         Address firstOutputAddress = testEntry1.getDestination();
         Address secondOutputAddress = testEntry2.getDestination();
         Address thirdOutputAddress = testEntry3.getDestination();
-        assertEquals(firstOutputAddress, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
-        assertEquals(secondOutputAddress, tx.getOutput(1).getAddressFromP2SH(networkParameters));
-        assertEquals(thirdOutputAddress, tx.getOutput(2).getAddressFromP2SH(networkParameters));
+        assertEquals(firstOutputAddress, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
+        assertEquals(secondOutputAddress, tx.getOutput(1).getAddressFromP2SH(regtestParameters));
+        assertEquals(thirdOutputAddress, tx.getOutput(2).getAddressFromP2SH(regtestParameters));
 
         Sha256Hash firstUtxoHash = utxos.get(0).getHash();
         Sha256Hash secondUtxoHash = utxos.get(1).getHash();
@@ -756,7 +893,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -764,7 +901,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -792,7 +929,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -800,7 +937,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -820,7 +957,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet newWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             newUtxos,
             false,
@@ -828,7 +965,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             newWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -849,7 +986,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = PegTestUtils.createUTXOs(600, federation.getAddress());
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -857,7 +994,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -915,7 +1052,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -923,7 +1060,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -956,7 +1093,7 @@ class ReleaseTransactionBuilderTest {
         TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
 
         // Last output should be the change output to the Federation
-        assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
+        assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(regtestParameters));
         assertEquals(inputsValue.minus(totalPegoutAmount), changeOutput.getValue());
     }
 
@@ -968,7 +1105,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            Context.getOrCreate(regtestParameters),
             federation,
             utxos,
             false,
@@ -976,7 +1113,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            networkParameters,
+            regtestParameters,
             thisWallet,
             federation.getFormatVersion(),
             federation.getAddress(),
@@ -1013,7 +1150,7 @@ class ReleaseTransactionBuilderTest {
         TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
 
         // Last output should be the change output to the Federation
-        assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
+        assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(regtestParameters));
         assertEquals(inputsValue.minus(totalPegoutAmount), changeOutput.getValue());
     }
 
@@ -1052,7 +1189,7 @@ class ReleaseTransactionBuilderTest {
 
             assertEquals(1, tx.getOutputs().size());
             assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
-            assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
+            assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
             tx.addInput(mockUTXOHash("one"), 0, mock(Script.class));
             tx.addInput(mockUTXOHash("two"), 2, mock(Script.class));
@@ -1072,7 +1209,7 @@ class ReleaseTransactionBuilderTest {
 
         assertEquals(1, tx.getOutputs().size());
         assertEquals(Coin.FIFTY_COINS, tx.getOutput(0).getValue());
-        assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
+        assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
         assertEquals(4, tx.getInputs().size());
         assertEquals(mockUTXOHash("one"), tx.getInput(0).getOutpoint().getHash());
@@ -1111,7 +1248,7 @@ class ReleaseTransactionBuilderTest {
 
             assertEquals(1, tx.getOutputs().size());
             assertEquals(expectedAmount, tx.getOutput(0).getValue());
-            assertEquals(expectedAddress, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
+            assertEquals(expectedAddress, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
             throw t;
         }).when(wallet).completeTx(any(SendRequest.class));
@@ -1132,7 +1269,7 @@ class ReleaseTransactionBuilderTest {
 
             assertEquals(1, tx.getOutputs().size());
             assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
-            assertEquals(expectedAddress, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
+            assertEquals(expectedAddress, tx.getOutput(0).getAddressFromP2PKHScript(regtestParameters));
 
             throw t;
         }).when(wallet).completeTx(any(SendRequest.class));
