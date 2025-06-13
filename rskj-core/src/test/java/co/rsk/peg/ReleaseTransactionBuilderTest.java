@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -245,20 +246,20 @@ class ReleaseTransactionBuilderTest {
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
         Coin svpFundTxOutputsValue = Coin.SATOSHI;
-        ReleaseTransactionBuilder.BuildResult buildResult = releaseTransactionBuilder.buildSvpFundTransaction(
+        ReleaseTransactionBuilder.BuildResult svpFundTransactionUnsignedBuildResult = releaseTransactionBuilder.buildSvpFundTransaction(
             proposedFederation,
             proposedFlyoverPrefix,
             svpFundTxOutputsValue
         );
 
         ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
-        ReleaseTransactionBuilder.Response actualResponseCode = buildResult.getResponseCode();
+        ReleaseTransactionBuilder.Response actualResponseCode = svpFundTransactionUnsignedBuildResult.getResponseCode();
         assertEquals(expectedResponseCode, actualResponseCode);
 
-        List<UTXO> selectedUTXOs = buildResult.getSelectedUTXOs();
+        List<UTXO> selectedUTXOs = svpFundTransactionUnsignedBuildResult.getSelectedUTXOs();
         assertNull(selectedUTXOs);
 
-        BtcTransaction btcTx = buildResult.getBtcTx();
+        BtcTransaction btcTx = svpFundTransactionUnsignedBuildResult.getBtcTx();
         assertNull(btcTx);
     }
 
@@ -387,6 +388,228 @@ class ReleaseTransactionBuilderTest {
         assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildSvpFundTransaction(
             proposedFederation,
             proposedFlyoverPrefix,
+            null
+        ));
+    }
+
+    @Test
+    void buildMigrationTransaction_withAFederationWithEnoughUTXOs_beforeRSKIP376_shouldReturnACorrectMigrationTx() {
+        List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            bridgeStorageProviderMock
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.fingerroot500().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Coin migrationTxOutputsValue = thisWallet.getBalance();
+        ReleaseTransactionBuilder.BuildResult migrationTransactionUnsignedBuildResult = releaseTransactionBuilder.buildMigrationTransaction(
+            migrationTxOutputsValue,
+            proposedFederation.getAddress()
+        );
+
+        ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.SUCCESS;
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        assertEquals(expectedResponseCode, actualResponseCode);
+
+        BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.getBtcTx();
+        int numberOfOutputs = 1; // 1 for the new federation
+        assertEquals(numberOfOutputs, migrationTransactionUnsigned.getOutputs().size());
+
+        TransactionOutput actualFirstOutput = migrationTransactionUnsigned.getOutput(0);
+        Coin valuePlusFee = actualFirstOutput.getValue().add(migrationTransactionUnsigned.getFee());
+        assertEquals(migrationTxOutputsValue, valuePlusFee);
+        assertEquals(proposedFederation.getAddress(), actualFirstOutput.getAddressFromP2SH(btcMainNetParams));
+
+        assertEquals(1, migrationTransactionUnsigned.getVersion());
+    }
+
+    @Test
+    void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx() {
+        List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            bridgeStorageProviderMock
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Coin migrationTxOutputsValue = thisWallet.getBalance();
+        ReleaseTransactionBuilder.BuildResult migrationTransactionUnsignedBuildResult = releaseTransactionBuilder.buildMigrationTransaction(
+            migrationTxOutputsValue,
+            proposedFederation.getAddress()
+        );
+
+        ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.SUCCESS;
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        assertEquals(expectedResponseCode, actualResponseCode);
+
+        BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.getBtcTx();
+        int numberOfOutputs = 1; // 1 for the new federation
+        assertEquals(numberOfOutputs, migrationTransactionUnsigned.getOutputs().size());
+
+        TransactionOutput actualFirstOutput = migrationTransactionUnsigned.getOutput(0);
+        Coin valuePlusFee = actualFirstOutput.getValue().add(migrationTransactionUnsigned.getFee());
+        assertEquals(migrationTxOutputsValue, valuePlusFee);
+        assertEquals(proposedFederation.getAddress(), actualFirstOutput.getAddressFromP2SH(btcMainNetParams));
+
+        assertEquals(BTC_TX_VERSION_2, migrationTransactionUnsigned.getVersion());
+    }
+
+    @Test
+    void buildMigrationTransaction_transferringABalance_withAFederationWithoutUTXOs_shouldReturnInsufficientBalance() {
+        List<UTXO> utxos = Collections.emptyList();
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            bridgeStorageProviderMock
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Coin migrationTxOutputsValue = Coin.COIN;
+        ReleaseTransactionBuilder.BuildResult migrationTransactionUnsignedBuildResult = releaseTransactionBuilder.buildMigrationTransaction(
+            migrationTxOutputsValue,
+            proposedFederation.getAddress()
+        );
+
+        ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY;
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        assertEquals(expectedResponseCode, actualResponseCode);
+
+        List<UTXO> selectedUTXOs = migrationTransactionUnsignedBuildResult.getSelectedUTXOs();
+        assertNull(selectedUTXOs);
+
+        BtcTransaction btcTx = migrationTransactionUnsignedBuildResult.getBtcTx();
+        assertNull(btcTx);
+    }
+
+    @Test
+    void buildMigrationTransaction_transferringZeroBalance_withAFederationWithoutUTXOs_shouldReturnDustySendRequestedResponseCode() {
+        List<UTXO> utxos = Collections.emptyList();
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            bridgeStorageProviderMock
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Coin migrationTxOutputsValue = thisWallet.getBalance(); // ZERO
+        ReleaseTransactionBuilder.BuildResult migrationTransactionUnsignedBuildResult = releaseTransactionBuilder.buildMigrationTransaction(
+            migrationTxOutputsValue,
+            proposedFederation.getAddress()
+        );
+
+        ReleaseTransactionBuilder.Response expectedResponseCode = ReleaseTransactionBuilder.Response.DUSTY_SEND_REQUESTED;
+        ReleaseTransactionBuilder.Response actualResponseCode = migrationTransactionUnsignedBuildResult.getResponseCode();
+        assertEquals(expectedResponseCode, actualResponseCode);
+
+        List<UTXO> selectedUTXOs = migrationTransactionUnsignedBuildResult.getSelectedUTXOs();
+        assertNull(selectedUTXOs);
+
+        BtcTransaction btcTx = migrationTransactionUnsignedBuildResult.getBtcTx();
+        assertNull(btcTx);
+    }
+
+    @Test
+    void buildMigrationTransaction_withNullMigrationValue_shouldThrowNullPointerException() {
+        List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            bridgeStorageProviderMock
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildMigrationTransaction(
+            null,
+            proposedFederation.getAddress()
+        ));
+    }
+
+    @Test
+    void buildMigrationTransaction_withNullDestinationAddress_shouldThrowNullPointerException() {
+        List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            new Context(bridgeMainNetConstants.getBtcParams()),
+            activeP2shErpFederation,
+            utxos,
+            false,
+            bridgeStorageProviderMock
+        );
+
+        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            btcMainNetParams,
+            thisWallet,
+            activeP2shErpFederation.getFormatVersion(),
+            activeP2shErpFederation.getAddress(),
+            feePerKb,
+            thisActivations
+        );
+
+        Coin migrationTxOutputsValue = thisWallet.getBalance();
+        assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildMigrationTransaction(
+            migrationTxOutputsValue,
             null
         ));
     }
