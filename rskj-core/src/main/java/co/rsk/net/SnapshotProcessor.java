@@ -49,7 +49,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -74,8 +82,11 @@ public class SnapshotProcessor implements InternalService {
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
+    public static final String TMP_DIR_NAME = "snapSyncTmpTrie";
     private final Blockchain blockchain;
     private final TrieStore trieStore;
+    private final TrieStore tmpTrieStore;
+    private final String databaseDir;
     private final BlockStore blockStore;
     private final int chunkSize;
     private final int checkpointDistance;
@@ -111,10 +122,12 @@ public class SnapshotProcessor implements InternalService {
                              int checkpointDistance,
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
-                             boolean isParallelEnabled) {
+                             boolean isParallelEnabled,
+                             TrieStore tmpTrieStore,
+                             String databaseDir) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, tmpTrieStore, databaseDir);
     }
 
     @VisibleForTesting
@@ -132,9 +145,13 @@ public class SnapshotProcessor implements InternalService {
                       int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
-                      @Nullable SyncMessageHandler.Listener listener) {
+                      @Nullable SyncMessageHandler.Listener listener,
+                      TrieStore tmpTrieStore,
+                      String databaseDir) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
+        this.tmpTrieStore = tmpTrieStore;
+        this.databaseDir = databaseDir;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.checkpointDistance = checkpointDistance;
@@ -667,7 +684,8 @@ public class SnapshotProcessor implements InternalService {
         }
 
         if (TrieDTOInOrderRecoverer.verifyChunk(state.getRemoteRootHash(), preRootNodes, nodes, postRootNodes)) {
-            state.getAllNodes().addAll(nodes);
+            nodes.forEach(tmpTrieStore::saveDTO);
+
             state.setStateSize(state.getStateSize().add(BigInteger.valueOf(trieElements.size())));
             state.setStateChunkSize(state.getStateChunkSize().add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length)));
             if (message.isComplete()) {
@@ -688,16 +706,94 @@ public class SnapshotProcessor implements InternalService {
         return lastVerifiedBlockHeader != null && blockStore.isBlockExist(lastVerifiedBlockHeader.getParentHash().getBytes());
     }
 
+    private void moveTmpTrieContentToTrie () {
+        logger.info("Migrating temporary trie database to project's trie database...");
+
+        final var sourceDir = Paths.get(databaseDir).resolve(TMP_DIR_NAME);
+        final var targetDir = Paths.get(databaseDir);
+
+        try {
+            Files.walkFileTree(sourceDir, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Path targetFile = targetDir.resolve(sourceDir.relativize(file));
+                    Files.createDirectories(targetFile.getParent()); // Ensure parent folders exist
+                    Files.move(file, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (!dir.equals(sourceDir)) {
+                        Files.delete(dir); // Delete empty directories after move
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+            Files.delete(sourceDir); // Delete empty directories after move
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        logger.info("Finished migrating temporary trie database to project's trie database...");
+    }
+
+    private boolean validateTrie(TrieDTO node) {
+        if (Optional.ofNullable(node.getLeftHash()).isPresent()) {
+            var leftNode = node.getLeftNode();
+
+            if (Optional.ofNullable(leftNode).isEmpty()) {
+                final var leftNodeOptional = tmpTrieStore.retrieveDTO(node.getLeftHash());
+
+                if (leftNodeOptional.isEmpty()) {
+                    return false;
+                }
+
+                leftNode = leftNodeOptional.get();
+            }
+
+            if (!Arrays.equals(node.getLeftHash(), leftNode.calculateHash())) {
+                return false;
+            }
+
+            return validateTrie(leftNode);
+        }
+
+        if (Optional.ofNullable(node.getRightHash()).isPresent()) {
+            var rightNode = node.getRightNode();
+
+            if (Optional.ofNullable(rightNode).isEmpty()) {
+                final var rightNodeOptional = tmpTrieStore.retrieveDTO(node.getRightHash());
+
+                if (rightNodeOptional.isEmpty()) {
+                    return false;
+                }
+
+                rightNode = rightNodeOptional.get();
+            }
+
+            if (!Arrays.equals(node.getRightHash(), rightNode.calculateHash())) {
+                return false;
+            }
+
+            return validateTrie(rightNode);
+        }
+
+        return true;
+    }
+
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
     private boolean rebuildStateAndSave(SnapSyncState state) {
         logger.info("Recovering trie...");
-        final TrieDTO[] nodeArray = state.getAllNodes().toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
+        Optional<TrieDTO> result = tmpTrieStore.retrieveDTO(state.getRemoteRootHash());
 
-        if (result.isPresent() && Arrays.equals(state.getRemoteRootHash(), result.get().calculateHash())) {
+        if (result.isPresent() && validateTrie(result.get())) {
             logger.info("State final validation OK!");
+
+            moveTmpTrieContentToTrie();
 
             this.blockchain.removeBlocksByNumber(0);
             //genesis is removed so backwards sync will always start.
