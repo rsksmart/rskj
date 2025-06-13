@@ -219,18 +219,24 @@ class UnionBridgeSupportImplTest {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants).build();
+        RskAddress newUnionBridgeAddress = unionBridgeConstants.getAddress();
 
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
-            unionBridgeConstants.getAddress());
+            newUnionBridgeAddress);
 
         // assert
         Assertions.assertEquals(
-            UnionResponseCode.INVALID_VALUE,
+            UnionResponseCode.SUCCESS,
             actualResponseCode
         );
-        assertAddressWasNotSet();
-        assertNoAddressIsStored();
+        assertAddressWasSet(newUnionBridgeAddress);
+
+        // call save and assert that the address is stored
+        unionBridgeSupport.save();
+
+        // assert that the address was stored
+        assertAddressWasStored(newUnionBridgeAddress);
     }
 
     private void assertAddressWasNotSet() {
