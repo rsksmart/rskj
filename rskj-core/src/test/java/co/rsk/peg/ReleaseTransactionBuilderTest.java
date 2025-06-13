@@ -176,6 +176,8 @@ class ReleaseTransactionBuilderTest {
         assertEquals(expectedResponseCode, actualResponseCode);
 
         BtcTransaction svpFundTransactionUnsigned = svpFundTransactionUnsignedBuildResult.getBtcTx();
+        int numberOfOutputs = 3; // 1 for the federation, 1 for the flyover federation, and 1 for the change
+        assertEquals(numberOfOutputs, svpFundTransactionUnsigned.getOutputs().size());
         TransactionOutput actualFirstOutput = svpFundTransactionUnsigned.getOutput(0);
         assertEquals(svpFundTxOutputsValue, actualFirstOutput.getValue());
         assertEquals(proposedFederation.getAddress(), actualFirstOutput.getAddressFromP2SH(btcParams));
