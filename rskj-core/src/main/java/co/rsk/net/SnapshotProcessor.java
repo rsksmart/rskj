@@ -240,18 +240,13 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
             return;
         }
 
-        // Check if cached data can be used
-        CachedSnapStatusData snapStatusCache = this.lastSnapStatusCache;
-        if (snapStatusCache != null
-                && snapStatusCache.getBlockHash().equals(checkpointBlock.getHash())) {
-            logger.debug("Using cached snap status data for block hash: {}", snapStatusCache.getBlockHash());
-            SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(
-                    requestMessage.getId(),
-                    snapStatusCache.getBlocks(),
-                    snapStatusCache.getDifficulties(),
-                    snapStatusCache.getTrieSize()
-            );
-            sender.sendMessage(responseMessage);
+        Optional<SnapStatusResponseMessage> cachedResponse = getFromCache(
+            this.lastSnapStatusCache,
+            checkpointBlock,
+            requestMessage.getId()
+        );
+        if (cachedResponse.isPresent()) {
+            sender.sendMessage(cachedResponse.get());
             return;
         }
 
@@ -275,6 +270,23 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
         SnapStatusResponseMessage responseMessage = new SnapStatusResponseMessage(requestMessage.getId(), blocks, difficulties, trieSize);
         sender.sendMessage(responseMessage);
+    }
+
+    private Optional<SnapStatusResponseMessage> getFromCache(
+        CachedSnapStatusData cache,
+        Block checkpointBlock,
+        long requestId
+    ) {
+        if (cache != null && cache.blockHash().equals(checkpointBlock.getHash())) {
+            logger.debug("Using cached snap status data for block hash: {}", cache.blockHash());
+            return Optional.of(new SnapStatusResponseMessage(
+                requestId,
+                cache.blocks(),
+                cache.difficulties(),
+                cache.trieSize()
+            ));
+        }
+        return Optional.empty();
     }
 
     public void processSnapStatusResponse(SnapSyncState state, Peer sender, SnapStatusResponseMessage responseMessage) {
@@ -818,38 +830,5 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
     @VisibleForTesting
     CachedSnapStatusData getLastSnapStatusCache() {
         return lastSnapStatusCache;
-    }
-
-    /**
-     * Holds cached data for SnapStatus requests.
-     */
-    static class CachedSnapStatusData {
-        private final Keccak256 blockHash;
-        private final LinkedList<Block> blocks;
-        private final LinkedList<BlockDifficulty> difficulties;
-        private final long trieSize;
-
-        public CachedSnapStatusData(Keccak256 blockHash, LinkedList<Block> blocks, LinkedList<BlockDifficulty> difficulties, long trieSize) {
-            this.blockHash = blockHash;
-            this.blocks = blocks;
-            this.difficulties = difficulties;
-            this.trieSize = trieSize;
-        }
-
-        public Keccak256 getBlockHash() {
-            return blockHash;
-        }
-
-        public LinkedList<Block> getBlocks() {
-            return blocks;
-        }
-
-        public LinkedList<BlockDifficulty> getDifficulties() {
-            return difficulties;
-        }
-
-        public long getTrieSize() {
-            return trieSize;
-        }
     }
 }
