@@ -48,7 +48,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class BridgeTest {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[]{};
@@ -3725,11 +3727,11 @@ class BridgeTest {
             verify(repository).transfer(BRIDGE_ADDR, unionBridgeContractAddress, amountToRequest);
         }
 
-        @Test
-        void requestUnionRbtc_afterRSKIP502_notAuthorized_shouldReturnUnauthorizedCode()
+        @ParameterizedTest
+        @EnumSource(value = UnionResponseCode.class, names = {"INVALID_VALUE", "REQUEST_DISABLED", "UNAUTHORIZED_CALLER"})
+        void requestUnionRbtc_afterRSKIP502_whenFail_shouldReturnErrorResponseCode(UnionResponseCode expectedResponseCode)
             throws VMException {
             // Arrange
-            UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
             when(unionBridgeSupport.requestUnionRbtc(any(), any())).thenReturn(
                 expectedResponseCode);
 

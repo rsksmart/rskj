@@ -1032,9 +1032,10 @@ class BridgeSupportTest {
 
         private static Stream<Arguments> requestUnionRbtcFailingResponseCodes() {
             return Stream.of(
-                Arguments.of(UnionResponseCode.GENERIC_ERROR),
+                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
                 Arguments.of(UnionResponseCode.INVALID_VALUE),
-                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER)
+                Arguments.of(UnionResponseCode.REQUEST_DISABLED),
+                Arguments.of(UnionResponseCode.GENERIC_ERROR)
             );
         }
 
