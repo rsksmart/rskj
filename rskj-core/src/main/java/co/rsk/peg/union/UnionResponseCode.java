@@ -8,9 +8,9 @@ public enum UnionResponseCode {
     // 2. The returned amount exceeds the total amount of RBTC previously transferred.
     // 3. The new cap value is less than the current cap or excessive.
     INVALID_VALUE(-2),
-    // Response codes when enabling already enabled or disabling already disabled union bridge operations
-    ALREADY_PAUSED(-3),
-    ALREADY_UNPAUSED(-4),
+    // Response codes when request or release is disabled:
+    REQUEST_DISABLED(-3),
+    RELEASE_DISABLED(-4),
     // Environment restriction for preventing union bridge address being updated on production
     ENVIRONMENT_DISABLED(-5),
     GENERIC_ERROR(-10)
