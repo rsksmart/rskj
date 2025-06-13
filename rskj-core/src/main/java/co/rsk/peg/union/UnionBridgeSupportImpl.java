@@ -71,9 +71,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
-        if (isAddressAlreadyStored(currentUnionBridgeAddress, unionBridgeContractAddress)) {
-            return UnionResponseCode.INVALID_VALUE;
-        }
 
         storageProvider.setAddress(unionBridgeContractAddress);
         logger.info("[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, currentUnionBridgeAddress, unionBridgeContractAddress);
