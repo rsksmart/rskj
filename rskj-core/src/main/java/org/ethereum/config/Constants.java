@@ -262,7 +262,7 @@ public class Constants {
                 MAINNET_CHAIN_ID,
                 false,
                 TESTNET_AND_DEVNET_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY / 2)),
+                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
                 new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
                 DIFFICULTY_BOUND_DIVISOR,
                 60,

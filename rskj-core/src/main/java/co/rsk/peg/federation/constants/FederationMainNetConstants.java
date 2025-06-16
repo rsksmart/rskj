@@ -17,38 +17,27 @@ public class FederationMainNetConstants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
         genesisFederationPublicKeys = Stream.of(
-            "03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2",
-            "027319afb15481dbeb3c426bcc37f9a30e7f51ceff586936d85548d9395bcc2344",
-            "0355a2e9bf100c00fc0a214afd1bf272647c7824eb9cb055480962f0c382596a70",
-            "02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7",
-            "0294c817150f78607566e961b3c71df53a22022a80acbb982f83c0c8baac040adc",
-            "0372cd46831f3b6afd4c044d160b7667e8ebf659d6cb51a825a3104df6ee0638c6",
-            "0340df69f28d69eef60845da7d81ff60a9060d4da35c767f017b0dd4e20448fb44",
-            "02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb",
-            "031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26",
-            "0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea",
-            "02550cc87fa9061162b1dd395a16662529c9d8094c0feca17905a3244713d65fe8",
-            "02481f02b7140acbf3fcdd9f72cf9a7d9484d8125e6df7c9451cfa55ba3b077265",
-            "03f909ae15558c70cc751aff9b1f495199c325b13a9e5b934fd6299cd30ec50be8",
-            "02c6018fcbd3e89f3cf9c7f48b3232ea3638eb8bf217e59ee290f5f0cfb2fb9259",
-            "03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"
+            "026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e",
+            "02b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404",
+            "031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
-        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T12:49:08.400Z").toInstant();
+        genesisFederationCreationTime = ZonedDateTime.parse("2025-10-30T12:00:00.000Z").toInstant();
 
+        // same as testnet
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
-            "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
-            "045e7f2563e73d44d149c19cffca36e1898597dc759d76166b8104103c0d3f351a8a48e3a224544e9a649ad8ebcfdbd6c39744ddb85925f19c7e3fd48f07fc1c06",
-            "0441945e4e272936106f6200b36162f3510e8083535c15e175ac82deaf828da955b85fd72b7534f2a34cedfb45fa63b728cc696a2bd3c5d39ec799ec2618e9aa9f"
+            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
+            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
+            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 20_000L;
+        validationPeriodDurationInBlocks = 500L;
 
         federationActivationAgeLegacy = 18_500L;
-        federationActivationAge = 40_320L;
+        federationActivationAge = 600L;
 
         fundsMigrationAgeSinceActivationBegin = 0L;
-        fundsMigrationAgeSinceActivationEnd = 10_585L;
+        fundsMigrationAgeSinceActivationEnd = 150L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 172_800L; // 60 days, considering 1 block every 30 seconds
 
         erpFedPubKeysList = Stream.of(
