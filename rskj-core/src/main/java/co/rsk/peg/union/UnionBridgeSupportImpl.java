@@ -237,27 +237,29 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     @Override
-    public UnionResponseCode releaseUnionRbtc(Transaction tx, Coin amount) {
+    public UnionResponseCode releaseUnionRbtc(Transaction tx) {
         final String RELEASE_UNION_RBTC_TAG = "releaseUnionRbtc";
+
+        final RskAddress unionBridgeAddress = tx.getSender(signatureCache);
+        final Coin releaseUnionRbtcValueInWeis = tx.getValue();
 
         if (!isReleaseEnabled()) {
             return UnionResponseCode.RELEASE_DISABLED;
         }
 
-        RskAddress unionBridgeAddress = tx.getSender(signatureCache);
         if (!isCallerUnionBridgeContractAddress(unionBridgeAddress)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
-        if (isAmountToReleaseValid(amount)) {
+        if (isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
 
         Coin weisTransferredToUnionBridge = getWeisTransferredToUnionBridge();
 
-        if (weisTransferredToUnionBridge.compareTo(amount) < 0) {
-            logger.error("[{}] Amount to be released is greater than current amount transferred to the Union Bridge. Amount to release: {}. Current amount Transferred: {}.", RELEASE_UNION_RBTC_TAG, amount, weisTransferredToUnionBridge);
+        if (weisTransferredToUnionBridge.compareTo(releaseUnionRbtcValueInWeis) < 0) {
+            logger.error("[{}] Amount to be released is greater than current amount transferred to the Union Bridge. Amount to release: {}. Current amount Transferred: {}.", RELEASE_UNION_RBTC_TAG, releaseUnionRbtcValueInWeis, weisTransferredToUnionBridge);
 
             storageProvider.setUnionBridgeRequestEnabled(false);
             storageProvider.setUnionBridgeReleaseEnabled(false);
@@ -268,9 +270,9 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.INVALID_VALUE;
         }
 
-        storageProvider.decreaseWeisTransferredToUnionBridge(amount);
-        eventLogger.logUnionRbtcReleased(unionBridgeAddress, amount);
-        logger.info("[{}] Amount released by the union bridge has been transferred. Amount Released: {}.", RELEASE_UNION_RBTC_TAG, amount);
+        storageProvider.decreaseWeisTransferredToUnionBridge(releaseUnionRbtcValueInWeis);
+        eventLogger.logUnionRbtcReleased(unionBridgeAddress, releaseUnionRbtcValueInWeis);
+        logger.info("[{}] Amount released by the union bridge has been transferred. Amount Released: {}.", RELEASE_UNION_RBTC_TAG, releaseUnionRbtcValueInWeis);
         return UnionResponseCode.SUCCESS;
     }
 

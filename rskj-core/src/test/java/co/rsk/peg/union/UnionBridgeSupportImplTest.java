@@ -883,6 +883,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(mainnetUnionBridgeConstants).build();
+
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         setupTransferPermissions(requestEnabled, releaseEnabled);
@@ -890,6 +891,7 @@ class UnionBridgeSupportImplTest {
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         Coin weisTransferredToUnionBridge = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
         Coin amountToRelease = new Coin(oneEth); // 1 RBTC
+        when(rskTx.getValue()).thenReturn(amountToRelease);
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -898,7 +900,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.RELEASE_DISABLED, actualResponseCode);
@@ -918,6 +920,7 @@ class UnionBridgeSupportImplTest {
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         Coin weisTransferredToUnionBridge = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
         Coin amountToRelease = new Coin(oneEth); // 1 RBTC
+        when(rskTx.getValue()).thenReturn(amountToRelease);
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -926,7 +929,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -952,6 +955,7 @@ class UnionBridgeSupportImplTest {
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         Coin weisTransferredToUnionBridge = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
         Coin amountToRelease = new Coin(oneEth.divide(BigInteger.TWO)); // 0.5 RBTC
+        when(rskTx.getValue()).thenReturn(amountToRelease);
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -960,7 +964,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -981,6 +985,7 @@ class UnionBridgeSupportImplTest {
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         Coin weisTransferredToUnionBridge = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
         Coin amountToRelease = new Coin(oneEth); // 1 RBTC
+        when(rskTx.getValue()).thenReturn(amountToRelease);
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -989,7 +994,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
@@ -1005,9 +1010,10 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
+        when(rskTx.getValue()).thenReturn(null);
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, null);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
@@ -1024,6 +1030,8 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
+
+        when(rskTx.getValue()).thenReturn(amountToRelease);
 
         // To simulate the case where a locking cap is store
         Coin lockingCap = mainnetUnionBridgeConstants.getInitialLockingCap()
@@ -1043,7 +1051,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
@@ -1064,6 +1072,8 @@ class UnionBridgeSupportImplTest {
             .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
+        when(rskTx.getValue()).thenReturn(amountToRelease);
+
         // To simulate the case where a locking cap is store
         Coin lockingCap = mainnetUnionBridgeConstants.getInitialLockingCap()
             .multiply(BigInteger.valueOf(
@@ -1082,7 +1092,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -1104,6 +1114,7 @@ class UnionBridgeSupportImplTest {
 
         Coin minimumPeginTxValue = Coin.fromBitcoin(mainnetConstants.getMinimumPeginTxValue(
             allActivations));
+        when(rskTx.getValue()).thenReturn(minimumPeginTxValue);
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -1112,7 +1123,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, minimumPeginTxValue);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -1134,6 +1145,7 @@ class UnionBridgeSupportImplTest {
 
         Coin minimumPeginTxValue = Coin.fromBitcoin(mainnetConstants.getMinimumPeginTxValue(
             allActivations));
+        when(rskTx.getValue()).thenReturn(minimumPeginTxValue.add(Coin.valueOf(1)));
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
@@ -1142,7 +1154,7 @@ class UnionBridgeSupportImplTest {
         );
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, minimumPeginTxValue.add(Coin.valueOf(1)));
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
@@ -1173,9 +1185,11 @@ class UnionBridgeSupportImplTest {
         UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountToRequest);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
 
-        // act
         Coin amountToRelease = new Coin(oneEth.multiply(BigInteger.TWO)); // 2 RBTC
-        actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        when(rskTx.getValue()).thenReturn(amountToRelease);
+
+        // act
+        actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
@@ -1329,7 +1343,8 @@ class UnionBridgeSupportImplTest {
 
         // release union rbtc
         Coin amountToRelease = new Coin(BigInteger.valueOf(50));
-        UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        when(rskTx.getValue()).thenReturn(amountToRelease);
+        UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualReleaseUnionRbtcResponseCode);
 
         // set transfer permissions
@@ -1460,7 +1475,8 @@ class UnionBridgeSupportImplTest {
         );
 
         Coin amountToRelease = new Coin(oneEth.divide(BigInteger.TEN)); // 0.1 RBTC
-        UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx, amountToRelease);
+        when(rskTx.getValue()).thenReturn(amountToRelease);
+        UnionResponseCode actualReleaseUnionRbtcResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
         Assertions.assertEquals(UnionResponseCode.SUCCESS,  actualReleaseUnionRbtcResponseCode);
 
         // act
