@@ -2912,6 +2912,21 @@ public class BridgeSupport {
         return responseCode;
     }
 
+    public UnionResponseCode releaseUnionBridgeRbtc(Transaction tx) {
+        final RskAddress txSender = tx.getSender(signatureCache);
+        final co.rsk.core.Coin amountToRelease = tx.getValue();
+
+        UnionResponseCode responseCode = unionBridgeSupport.releaseUnionRbtc(tx);
+
+        // If the response code is not SUCCESS, it means that the transaction was not processed
+        // successfully, so we need to transfer the amount back to the sender.
+        boolean isAmountValid = amountToRelease.compareTo(co.rsk.core.Coin.ZERO) > 0;
+        if (responseCode != UnionResponseCode.SUCCESS && isAmountValid) {
+            transferTo(txSender, amountToRelease);
+        }
+        return responseCode;
+    }
+
     public UnionResponseCode setUnionBridgeTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled) {
         return unionBridgeSupport.setTransferPermissions(tx, requestEnabled, releaseEnabled);
     }
