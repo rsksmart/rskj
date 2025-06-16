@@ -1070,6 +1070,77 @@ class BridgeSupportTest {
             assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
         }
 
+        @ParameterizedTest
+        @MethodSource("releaseUnionRbtcFailingResponseCodes")
+        void releaseUnionRbtc_whenFail_shouldReturnFailingResponseCode(UnionResponseCode expectedUnionResponseCode) {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            when(unionBridgeSupport.releaseUnionRbtc(any())).thenReturn(expectedUnionResponseCode);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport).build();
+
+            BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+            co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(weiPerEther.multiply(BigInteger.TEN)); // 10 RBTC
+            when(transaction.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
+            when(transaction.getValue()).thenReturn(amountToRelease);
+
+            // act
+            UnionResponseCode actualResponseCode = bridgeSupport.releaseUnionBridgeRbtc(transaction);
+
+            // assert
+            verify(unionBridgeSupport, times(1)).releaseUnionRbtc(transaction);
+
+            verify(repository, times(1)).transfer(
+                BRIDGE_ADDR,
+                unionBridgeContractAddress,
+                amountToRelease
+            );
+            verify(bridgeEventLogger, never()).logUnionRbtcReleased(
+                any(RskAddress.class),
+                any(co.rsk.core.Coin.class)
+            );
+
+            assertEquals(expectedUnionResponseCode, actualResponseCode);
+        }
+
+        private static Stream<Arguments> releaseUnionRbtcFailingResponseCodes() {
+            return Stream.of(
+                Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
+                Arguments.of(UnionResponseCode.RELEASE_DISABLED),
+                Arguments.of(UnionResponseCode.INVALID_VALUE),
+                Arguments.of(UnionResponseCode.GENERIC_ERROR)
+            );
+        }
+
+        @Test
+        void releaseUnionRbtc_whenSuccess_shouldReturnSuccessResponseCode() {
+            // arrange
+            unionBridgeSupport = mock(UnionBridgeSupport.class);
+            when(unionBridgeSupport.releaseUnionRbtc(any())).thenReturn(UnionResponseCode.SUCCESS);
+            bridgeSupport = bridgeSupportBuilder
+                .withSignatureCache(signatureCache)
+                .withUnionBridgeSupport(unionBridgeSupport).build();
+
+            BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+            co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(weiPerEther.multiply(BigInteger.TEN)); // 10 RBTC
+            when(transaction.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
+            when(transaction.getValue()).thenReturn(amountToRelease);
+
+            // act
+            UnionResponseCode actualResponseCode = bridgeSupport.releaseUnionBridgeRbtc(transaction);
+
+            // assert
+            verify(unionBridgeSupport, times(1)).releaseUnionRbtc(transaction);
+            verify(repository, never()).transfer(
+                any(),
+                any(),
+                any()
+            );
+
+            assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        }
+
         @Test
         void setTransferPermissions_whenUnauthorizedCaller_shouldReturnUnauthorizedResponseCode() {
             // arrange
