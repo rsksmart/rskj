@@ -130,7 +130,7 @@ class ReleaseTransactionBuilderTest {
     void buildSvpFundTransaction_withAFederationWithEnoughUTXOsForTheSvpFundTransaction_shouldReturnACorrectSvpFundTx() {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -180,7 +180,7 @@ class ReleaseTransactionBuilderTest {
     void buildSvpFundTransaction_withAFederationWithoutUTXOs_shouldThrowInsufficientMoneyResponseCode() {
         List<UTXO> emptyUtxos = Collections.emptyList();
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             emptyUtxos,
             false,
@@ -222,7 +222,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -264,7 +264,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -295,7 +295,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -327,7 +327,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -358,7 +358,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, value);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -387,7 +387,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_beforeRSKIP376_shouldReturnACorrectMigrationTx() {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -431,7 +431,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx() {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -474,7 +474,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_transferringABalance_withAFederationWithoutUTXOs_shouldReturnInsufficientBalance() {
         List<UTXO> utxos = Collections.emptyList();
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -512,7 +512,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_transferringZeroBalance_withAFederationWithoutUTXOs_shouldReturnDustySendRequestedResponseCode() {
         List<UTXO> utxos = Collections.emptyList();
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -550,7 +550,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withNullMigrationValue_shouldThrowNullPointerException() {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -577,7 +577,7 @@ class ReleaseTransactionBuilderTest {
     void buildMigrationTransaction_withNullDestinationAddress_shouldThrowNullPointerException() {
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript, 2, Coin.COIN);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             activeP2shErpFederation,
             utxos,
             false,
@@ -610,7 +610,7 @@ class ReleaseTransactionBuilderTest {
                 new BtcECKey()
             )
         );
-        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, bridgeMainNetConstants.getBtcParams());
+        FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, btcMainNetParams);
 
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs,
             bridgeMainNetConstants.getFederationConstants().getErpFedPubKeysList(),
@@ -620,7 +620,7 @@ class ReleaseTransactionBuilderTest {
         List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(bridgeMainNetConstants.getBtcParams()),
+            new Context(btcMainNetParams),
             nonStandardErpFederation,
             utxos,
             false,
@@ -628,7 +628,7 @@ class ReleaseTransactionBuilderTest {
         );
 
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
-            bridgeMainNetConstants.getBtcParams(),
+            btcMainNetParams,
             thisWallet,
             nonStandardErpFederation.getFormatVersion(),
             nonStandardErpFederation.getAddress(),
