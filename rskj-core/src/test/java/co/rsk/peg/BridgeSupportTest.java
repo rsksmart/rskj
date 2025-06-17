@@ -1002,8 +1002,8 @@ class BridgeSupportTest {
         }
 
         @ParameterizedTest
-        @MethodSource("requestUnionRbtcFailingResponseCodes")
-        void requestUnionRbtc_whenFail_shouldReturnFailingResponseCode(UnionResponseCode expectedUnionResponseCode) {
+        @MethodSource("requestUnionBridgeRbtcFailingResponseCodes")
+        void requestUnionBridgeRbtc_whenFail_shouldReturnFailingResponseCode(UnionResponseCode expectedUnionResponseCode) {
             // arrange
             BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(oneEth);
@@ -1012,7 +1012,7 @@ class BridgeSupportTest {
             bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionRbtc(transaction, amountRequested);
+            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionBridgeRbtc(transaction, amountRequested);
 
             // assert
             verify(unionBridgeSupport, times(1)).requestUnionRbtc(transaction, amountRequested);
@@ -1030,7 +1030,7 @@ class BridgeSupportTest {
             assertEquals(expectedUnionResponseCode, actualResponseCode);
         }
 
-        private static Stream<Arguments> requestUnionRbtcFailingResponseCodes() {
+        private static Stream<Arguments> requestUnionBridgeRbtcFailingResponseCodes() {
             return Stream.of(
                 Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
                 Arguments.of(UnionResponseCode.INVALID_VALUE),
@@ -1040,7 +1040,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void requestUnionRbtc_whenSuccess_shouldReturnSuccessResponseCode() {
+        void requestUnionBridgeRbtc_whenSuccess_shouldReturnSuccessResponseCode() {
             // arrange
             BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(weiPerEther);
@@ -1051,7 +1051,7 @@ class BridgeSupportTest {
             bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionRbtc(transaction, amountRequested);
+            UnionResponseCode actualResponseCode = bridgeSupport.requestUnionBridgeRbtc(transaction, amountRequested);
 
             // assert
             verify(unionBridgeSupport, times(1)).requestUnionRbtc(transaction, amountRequested);
@@ -1070,8 +1070,8 @@ class BridgeSupportTest {
         }
 
         @ParameterizedTest
-        @MethodSource("releaseUnionRbtcFailingResponseCodes")
-        void releaseUnionRbtc_whenFail_shouldReturnFailingResponseCode(UnionResponseCode expectedUnionResponseCode) {
+        @MethodSource("releaseUnionBridgeRbtcFailingResponseCodes")
+        void releaseUnionBridgeRbtc_whenFail_shouldReturnFailingResponseCode(UnionResponseCode expectedUnionResponseCode) {
             // arrange
             unionBridgeSupport = mock(UnionBridgeSupport.class);
             when(unionBridgeSupport.releaseUnionRbtc(any())).thenReturn(expectedUnionResponseCode);
@@ -1103,7 +1103,7 @@ class BridgeSupportTest {
             assertEquals(expectedUnionResponseCode, actualResponseCode);
         }
 
-        private static Stream<Arguments> releaseUnionRbtcFailingResponseCodes() {
+        private static Stream<Arguments> releaseUnionBridgeRbtcFailingResponseCodes() {
             return Stream.of(
                 Arguments.of(UnionResponseCode.UNAUTHORIZED_CALLER),
                 Arguments.of(UnionResponseCode.RELEASE_DISABLED),
@@ -1113,7 +1113,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void releaseUnionRbtc_whenSuccess_shouldReturnSuccessResponseCode() {
+        void releaseUnionBridgeRbtc_whenSuccess_shouldReturnSuccessResponseCode() {
             // arrange
             unionBridgeSupport = mock(UnionBridgeSupport.class);
             when(unionBridgeSupport.releaseUnionRbtc(any())).thenReturn(UnionResponseCode.SUCCESS);
