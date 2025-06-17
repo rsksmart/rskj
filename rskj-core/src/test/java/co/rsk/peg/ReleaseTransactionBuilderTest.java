@@ -51,10 +51,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 
 class ReleaseTransactionBuilderTest {
-    private Wallet wallet;
-    private ReleaseTransactionBuilder builder;
-    private Federation federation;
-    private BridgeStorageProvider bridgeStorageProviderMock;
     private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
     private final Address changeAddress =  mockAddress(1000);
     private final NetworkParameters regtestParameters =  new BridgeRegTestConstants().getBtcParams();
@@ -64,6 +60,10 @@ class ReleaseTransactionBuilderTest {
     private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
     private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
     private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+    private Wallet wallet;
+    private ReleaseTransactionBuilder builder;
+    private Federation federation;
+    private BridgeStorageProvider bridgeStorageProviderMock;
 
     @BeforeEach
     void setup() {
