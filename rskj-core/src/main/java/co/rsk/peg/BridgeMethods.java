@@ -879,6 +879,17 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
+    RELEASE_UNION_BRIDGE_RBTC(
+        CallTransaction.Function.fromSignature(
+            "releaseUnionBridgeRbtc",
+            new String[]{},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::releaseUnionBridgeRbtc,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
     SET_UNION_BRIDGE_TRANSFER_PERMISSIONS(
         CallTransaction.Function.fromSignature(
             "setUnionBridgeTransferPermissions",
