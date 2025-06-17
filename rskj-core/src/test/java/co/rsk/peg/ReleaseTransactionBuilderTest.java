@@ -567,9 +567,10 @@ class ReleaseTransactionBuilderTest {
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
+        Address proposedFederationAddress = proposedFederation.getAddress();
         assertThrows(NullPointerException.class, () -> releaseTransactionBuilder.buildMigrationTransaction(
             null,
-            proposedFederation.getAddress()
+            proposedFederationAddress
         ));
     }
 
