@@ -44,7 +44,6 @@ import java.util.List;
 import co.rsk.peg.federation.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,9 +53,9 @@ import org.mockito.invocation.InvocationOnMock;
 class ReleaseTransactionBuilderTest {
     private Wallet wallet;
     private ReleaseTransactionBuilder builder;
-    private ActivationConfig.ForBlock activations;
     private Federation federation;
     private BridgeStorageProvider bridgeStorageProviderMock;
+    private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
     private final Address changeAddress =  mockAddress(1000);
     private final NetworkParameters regtestParameters =  new BridgeRegTestConstants().getBtcParams();
     private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
@@ -69,7 +68,6 @@ class ReleaseTransactionBuilderTest {
     void setup() {
         wallet = mock(Wallet.class);
         bridgeStorageProviderMock = mock(BridgeStorageProvider.class);
-        activations = mock(ActivationConfig.ForBlock.class);
         BridgeConstants bridgeRegTestConstants = new BridgeRegTestConstants();
         federation = FederationTestUtils.getGenesisFederation(bridgeRegTestConstants.getFederationConstants());
         builder = new ReleaseTransactionBuilder(
@@ -139,14 +137,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -190,14 +187,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -233,14 +229,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -276,14 +271,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -308,14 +302,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -341,14 +334,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
@@ -373,14 +365,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Keccak256 proposedFlyoverPrefix = bridgeMainNetConstants.getProposedFederationFlyoverPrefix();
@@ -447,14 +438,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -491,14 +481,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -530,14 +519,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -569,14 +557,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Federation proposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -597,14 +584,13 @@ class ReleaseTransactionBuilderTest {
             bridgeStorageProviderMock
         );
 
-        ActivationConfig.ForBlock thisActivations = ActivationConfigsForTest.all().forBlock(0);
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             btcMainNetParams,
             thisWallet,
             activeP2shErpFederation.getFormatVersion(),
             activeP2shErpFederation.getAddress(),
             feePerKb,
-            thisActivations
+            activations
         );
 
         Coin migrationTxOutputsValue = thisWallet.getBalance();
@@ -616,10 +602,6 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void build_pegout_tx_from_non_standard_erp_federation() {
-        ActivationConfig.ForBlock activationsForBlock = mock(ActivationConfig.ForBlock.class);
-        when(activationsForBlock.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-        when(activationsForBlock.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         // Use mainnet constants to test a real situation
         List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
             Arrays.asList(
@@ -632,7 +614,7 @@ class ReleaseTransactionBuilderTest {
 
         ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs,
             bridgeMainNetConstants.getFederationConstants().getErpFedPubKeysList(),
-            bridgeMainNetConstants.getFederationConstants().getErpFedActivationDelay(), activationsForBlock);
+            bridgeMainNetConstants.getFederationConstants().getErpFedActivationDelay(), activations);
 
         Script p2SHScript = nonStandardErpFederation.getP2SHScript();
         List<UTXO> utxos = getUtxos(p2SHScript, 2, Coin.COIN);
@@ -651,7 +633,7 @@ class ReleaseTransactionBuilderTest {
             nonStandardErpFederation.getFormatVersion(),
             nonStandardErpFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
-            activationsForBlock
+            activations
         );
 
         Address pegoutRecipient = mockAddress(123);
@@ -856,15 +838,24 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void buildEmptyWalletTo_ok_before_RSKIP_199_activation() throws
+    void buildEmptyWalletTo_ok_before_RSKIP_201_activation() throws
         InsufficientMoneyException, UTXOProviderException {
-        test_buildEmptyWalletTo_ok(false, 1);
+        ActivationConfig.ForBlock activationConfig = ActivationConfigsForTest.papyrus200().forBlock(0);
+        ReleaseTransactionBuilder thisBuilder = new ReleaseTransactionBuilder(
+            regtestParameters,
+            wallet,
+            federation.getFormatVersion(),
+            changeAddress,
+            feePerKb,
+            activationConfig
+        );
+        test_buildEmptyWalletTo_ok(thisBuilder, 1);
     }
 
     @Test
-    void buildEmptyWalletTo_ok_after_RSKIP_199_activation()
+    void buildEmptyWalletTo_ok_after_RSKIP_201_activation()
         throws InsufficientMoneyException, UTXOProviderException {
-        test_buildEmptyWalletTo_ok(true, 2);
+        test_buildEmptyWalletTo_ok(builder, 2);
     }
 
     @Test
@@ -1345,9 +1336,8 @@ class ReleaseTransactionBuilderTest {
         assertEquals(inputsValue.minus(totalPegoutAmount), changeOutput.getValue());
     }
 
-    private void test_buildEmptyWalletTo_ok(boolean isRSKIPActive, int expectedTxVersion)
+    private void test_buildEmptyWalletTo_ok(ReleaseTransactionBuilder thisBuilder, int expectedTxVersion)
         throws InsufficientMoneyException, UTXOProviderException {
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(isRSKIPActive);
         Address to = mockAddress(123);
 
         List<UTXO> availableUTXOs = Arrays.asList(
@@ -1391,7 +1381,7 @@ class ReleaseTransactionBuilderTest {
             return null;
         }).when(wallet).completeTx(any(SendRequest.class));
 
-        ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
+        ReleaseTransactionBuilder.BuildResult result = thisBuilder.buildEmptyWalletTo(to);
 
         assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
