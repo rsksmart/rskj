@@ -3772,6 +3772,75 @@ class BridgeTest {
             int actualUnionResponseCode = decodedResult.intValue();
             assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
         }
+
+        @Test
+        void releaseUnionBridgeRbtc_beforeRSKIP502_shouldFail() {
+            bridge = bridgeBuilder
+                .activationConfig(ActivationConfigsForTest.lovell700())
+                .build();
+
+            CallTransaction.Function function = BridgeMethods.RELEASE_UNION_BRIDGE_RBTC.getFunction();
+            byte[] data = function.encode();
+
+            assertThrows(VMException.class, () -> bridge.execute(data));
+        }
+
+        @Test
+        void releaseUnionBridgeRbtc_afterRSKIP502_shouldReleaseRbtc() throws VMException {
+            // Arrange
+            UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+            when(unionBridgeSupport.releaseUnionRbtc(any())).thenReturn(expectedResponseCode);
+
+            when(rskTx.getSender(any())).thenReturn(unionBridgeMainNetConstants.getAddress());
+
+            BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1_000_000_000_000_000_000 wei
+            co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(oneEth.multiply(BigInteger.TEN));
+            when(rskTx.getValue()).thenReturn(amountToRelease);
+
+            CallTransaction.Function function = BridgeMethods.RELEASE_UNION_BRIDGE_RBTC.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.RELEASE_UNION_BRIDGE_RBTC.decodeResult(
+                result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+            verify(unionBridgeSupport, times(1)).releaseUnionRbtc(rskTx);
+            verify(repository, never()).transfer(any(), any(), any());
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = UnionResponseCode.class, names = {"INVALID_VALUE", "UNAUTHORIZED_CALLER", "RELEASE_DISABLED"})
+        void releaseUnionBridgeRbtc_afterRSKIP502_whenFail_shouldReturnErrorResponseCode(UnionResponseCode expectedResponseCode)
+            throws VMException {
+            // Arrange
+            when(unionBridgeSupport.releaseUnionRbtc(any())).thenReturn(expectedResponseCode);
+
+            RskAddress unionBridgeMainNetConstantsAddress = unionBridgeMainNetConstants.getAddress();
+            when(rskTx.getSender(any())).thenReturn(unionBridgeMainNetConstantsAddress);
+
+            BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1_000_000_000_000_000_000 wei
+            co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(oneEth.multiply(BigInteger.TEN));
+            when(rskTx.getValue()).thenReturn(amountToRelease);
+
+            CallTransaction.Function function = BridgeMethods.RELEASE_UNION_BRIDGE_RBTC.getFunction();
+            byte[] data = function.encode();
+
+            // Act
+            byte[] result = bridge.execute(data);
+
+            // Assert
+            BigInteger decodedResult = (BigInteger) Bridge.RELEASE_UNION_BRIDGE_RBTC.decodeResult(
+                result)[0];
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+
+            verify(unionBridgeSupport, times(1)).releaseUnionRbtc(rskTx);
+            verify(repository, times(1)).transfer(BRIDGE_ADDR, unionBridgeMainNetConstantsAddress, amountToRelease);
+        }
         
         @Test
         void setUnionBridgeTransferPermissions_beforeRSKIP502_shouldFail() {
