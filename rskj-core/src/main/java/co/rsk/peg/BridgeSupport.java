@@ -2907,7 +2907,7 @@ public class BridgeSupport {
             newLockingCap);
     }
 
-    public UnionResponseCode requestUnionRbtc(Transaction tx, co.rsk.core.Coin amountRequested) {
+    public UnionResponseCode requestUnionBridgeRbtc(Transaction tx, co.rsk.core.Coin amountRequested) {
         UnionResponseCode responseCode = unionBridgeSupport.requestUnionRbtc(tx, amountRequested);
         if (responseCode == UnionResponseCode.SUCCESS) {
             RskAddress unionBridgeContractAddress = unionBridgeSupport.getUnionBridgeContractAddress();
