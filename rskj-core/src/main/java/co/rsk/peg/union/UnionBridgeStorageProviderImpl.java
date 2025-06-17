@@ -17,6 +17,7 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private RskAddress unionBridgeAddress;
     private Coin unionBridgeLockingCap;
     private Coin weisTransferredToUnionBridge;
+    private Boolean unionBridgeRequestEnabled;
 
     public UnionBridgeStorageProviderImpl(StorageAccessor bridgeStorageAccessor) {
         this.bridgeStorageAccessor = bridgeStorageAccessor;
@@ -45,6 +46,13 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
                 weisTransferredToUnionBridge,
                 BridgeSerializationUtils::serializeRskCoin
+            );
+        }
+        if (nonNull(unionBridgeRequestEnabled)) {
+            bridgeStorageAccessor.saveToRepository(
+                UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+                unionBridgeRequestEnabled? 1L : 0L,
+                BridgeSerializationUtils::serializeLong
             );
         }
     }
@@ -120,5 +128,16 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             throw new IllegalArgumentException("Cannot decrease weis transferred to Union Bridge below zero");
         }
         this.weisTransferredToUnionBridge = updatedWeisTransferred;
+    }
+
+    public void setUnionBridgeRequestEnabled(boolean enabled) {
+        this.unionBridgeRequestEnabled = enabled;
+    }
+
+    public Optional<Boolean> isUnionBridgeRequestEnabled() {
+        return Optional.ofNullable(unionBridgeRequestEnabled)
+            .or(() -> bridgeStorageAccessor.getFromRepository(
+                UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+                BridgeSerializationUtils::deserializeOptionalLong).map(value -> value == 1L));
     }
 }
