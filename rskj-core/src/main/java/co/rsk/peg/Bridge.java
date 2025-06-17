@@ -229,7 +229,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_UNION_BRIDGE_CONTRACT_ADDRESS = BridgeMethods.GET_UNION_BRIDGE_CONTRACT_ADDRESS.getFunction();
     public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function INCREASE_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
-    public static final CallTransaction.Function REQUEST_UNION_RBTC = BridgeMethods.REQUEST_UNION_RBTC.getFunction();
+    public static final CallTransaction.Function REQUEST_UNION_BRIDGE_RBTC = BridgeMethods.REQUEST_UNION_BRIDGE_RBTC.getFunction();
     public static final CallTransaction.Function RELEASE_UNION_BRIDGE_RBTC = BridgeMethods.RELEASE_UNION_BRIDGE_RBTC.getFunction();
     public static final CallTransaction.Function SET_UNION_BRIDGE_TRANSFER_PERMISSIONS = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
 
@@ -1514,10 +1514,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
     }
 
-    public int requestUnionRbtc(Object[] args) {
-        logger.trace("requestUnionRbtc");
+    public int requestUnionBridgeRbtc(Object[] args) {
+        logger.trace("requestUnionBridgeRbtc");
         co.rsk.core.Coin amountRequested = new co.rsk.core.Coin((BigInteger) args[0]);
-        return bridgeSupport.requestUnionRbtc(rskTx, amountRequested).getCode();
+        return bridgeSupport.requestUnionBridgeRbtc(rskTx, amountRequested).getCode();
     }
 
     public int releaseUnionBridgeRbtc(Object[] args) {
