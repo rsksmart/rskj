@@ -156,11 +156,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.REQUEST_DISABLED;
         }
 
-        if (!isCallerUnionBridgeContractAddress(tx)) {
+        RskAddress caller = tx.getSender(signatureCache);
+        if (!isCallerUnionBridgeContractAddress(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
-        if (!isValidAmount(amount)) {
+        if (!isAmountRequestedValid(amount)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
@@ -178,18 +179,18 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isRequestEnabled;
     }
 
-    private boolean isCallerUnionBridgeContractAddress(Transaction tx) {
+    private boolean isCallerUnionBridgeContractAddress(RskAddress callerAddress) {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
-        boolean isCallerUnionBridgeContractAddress = tx.getSender(signatureCache).equals(unionBridgeContractAddress);
+        boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
         if (!isCallerUnionBridgeContractAddress) {
-            String baseMessage = String.format("Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s", tx.getSender(), unionBridgeContractAddress);
+            String baseMessage = String.format("Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s", callerAddress, unionBridgeContractAddress);
             logger.warn(LOG_PATTERN, "isCallerUnionBridgeContractAddress", baseMessage);
         }
         return isCallerUnionBridgeContractAddress;
     }
 
-    private boolean isValidAmount(Coin amountRequested) {
-        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(Coin.ZERO) < 1;
+    private boolean isAmountRequestedValid(Coin amountRequested) {
+        boolean isAmountNullOrLessThanOne = isAmountToReleaseValid(amountRequested);
         if (isAmountNullOrLessThanOne) {
             logger.warn(
                 "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}", amountRequested);
@@ -233,6 +234,63 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         return true;
+    }
+
+    @Override
+    public UnionResponseCode releaseUnionRbtc(Transaction tx) {
+        final String RELEASE_UNION_RBTC_TAG = "releaseUnionRbtc";
+
+        final RskAddress unionBridgeAddress = tx.getSender(signatureCache);
+        final Coin releaseUnionRbtcValueInWeis = tx.getValue();
+
+        if (!isReleaseEnabled()) {
+            return UnionResponseCode.RELEASE_DISABLED;
+        }
+
+        if (!isCallerUnionBridgeContractAddress(unionBridgeAddress)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
+        }
+
+        if (isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
+            return UnionResponseCode.INVALID_VALUE;
+        }
+
+
+        Coin weisTransferredToUnionBridge = getWeisTransferredToUnionBridge();
+
+        if (weisTransferredToUnionBridge.compareTo(releaseUnionRbtcValueInWeis) < 0) {
+            logger.error("[{}] Amount to be released is greater than current amount transferred to the Union Bridge. Amount to release: {}. Current amount Transferred: {}.", RELEASE_UNION_RBTC_TAG, releaseUnionRbtcValueInWeis, weisTransferredToUnionBridge);
+
+            storageProvider.setUnionBridgeRequestEnabled(false);
+            storageProvider.setUnionBridgeReleaseEnabled(false);
+
+            eventLogger.logUnionBridgeTransferPermissionsUpdated(unionBridgeAddress, false, false);
+
+            logger.warn("[{}] Union Bridge transfer permissions have been disabled due to an invalid amount to release.", RELEASE_UNION_RBTC_TAG);
+            return UnionResponseCode.INVALID_VALUE;
+        }
+
+        storageProvider.decreaseWeisTransferredToUnionBridge(releaseUnionRbtcValueInWeis);
+        eventLogger.logUnionRbtcReleased(unionBridgeAddress, releaseUnionRbtcValueInWeis);
+        logger.info("[{}] Amount released by the union bridge has been transferred. Amount Released: {}.", RELEASE_UNION_RBTC_TAG, releaseUnionRbtcValueInWeis);
+        return UnionResponseCode.SUCCESS;
+    }
+
+    private static boolean isAmountToReleaseValid(Coin amountToRelease) {
+        boolean isAmountValid = amountToRelease == null || amountToRelease.compareTo(Coin.ZERO) < 1;
+        if (!isAmountValid) {
+            logger.warn("[{isAmountToReleaseValid}] Amount to be released cannot be null or less than one. Amount to release: {}", amountToRelease);
+        }
+        return isAmountValid;
+    }
+
+    private boolean isReleaseEnabled() {
+        // By default, the release is enabled if the storage provider does not have a specific value set.
+        Boolean isReleaseEnabled = storageProvider.isUnionBridgeReleaseEnabled().orElse(true);
+        if (!isReleaseEnabled) {
+            logger.warn("[isReleaseEnabled] Union Bridge Release is not enabled.");
+        }
+        return isReleaseEnabled;
     }
 
     @Override
