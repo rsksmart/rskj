@@ -29,9 +29,13 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -1034,8 +1038,7 @@ public class BlockExecutorTest {
                 .build();
         tx1.sign(account.getEcKey().getPrivKeyBytes());
         Transaction tx = tx1;
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
+        List<Transaction> txs = Collections.singletonList(tx);
 
         List<BlockHeader> uncles = new ArrayList<>();
 
@@ -1483,13 +1486,12 @@ public class BlockExecutorTest {
     }
 
     public static class TestObjects {
-        private TrieStore trieStore;
-        private Block block;
-        private Block parent;
-        private Transaction transaction;
-        private Account account;
+        private final TrieStore trieStore;
+        private final Block block;
+        private final Block parent;
+        private final Transaction transaction;
+        private final Account account;
         byte[] rootPriorExecution;
-
 
         public TestObjects(TrieStore trieStore, Block block, Block parent, Transaction transaction, Account account) {
             this.trieStore = trieStore;
@@ -1615,5 +1617,120 @@ public class BlockExecutorTest {
         public void onLongSyncStarted() {
 
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeBlockWithContractEmittingLogsUsingDsl(boolean isRSKIP144Activated) throws Exception {
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(isRSKIP144Activated ? 1 : -1))
+        );
+        
+        // Use DSL to set up the blockchain with log-emitting contract
+        DslParser parser = DslParser.fromResource("dsl/log_indexes_pte.txt");
+        World world = new World(config);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // Get the blocks created by DSL
+        Block deployBlock = world.getBlockByName("b01");
+        Block callBlock = world.getBlockByName("b02");  // Now contains all three transactions
+        
+        Assertions.assertNotNull(deployBlock);
+        Assertions.assertNotNull(callBlock);
+        
+        // Verify the deployment transaction was successful
+        TransactionReceipt deployReceipt = world.getTransactionReceiptByName("txDeploy");
+        Assertions.assertNotNull(deployReceipt);
+        Assertions.assertTrue(deployReceipt.isSuccessful());
+        
+        // Verify all three transactions are in the same block
+        Assertions.assertEquals(3, callBlock.getTransactionsList().size(), "Block b02 should contain 3 transactions");
+        
+        // Verify the first function call transaction and its logs
+        TransactionReceipt callReceipt = world.getTransactionReceiptByName("txCallEmit");
+        Assertions.assertNotNull(callReceipt);
+        Assertions.assertTrue(callReceipt.isSuccessful());
+        
+        // Most importantly: verify that logs were emitted
+        Assertions.assertNotNull(callReceipt.getLogInfoList());
+        Assertions.assertFalse(callReceipt.getLogInfoList().isEmpty());
+        Assertions.assertEquals(2, callReceipt.getLogInfoList().size(), "Should emit exactly 2 logs");
+        
+        // Verify the second function call transaction and its logs
+        TransactionReceipt callReceipt2 = world.getTransactionReceiptByName("txCallEmit2");
+        Assertions.assertNotNull(callReceipt2);
+        Assertions.assertTrue(callReceipt2.isSuccessful());
+        Assertions.assertNotNull(callReceipt2.getLogInfoList());
+        Assertions.assertFalse(callReceipt2.getLogInfoList().isEmpty());
+        Assertions.assertEquals(2, callReceipt2.getLogInfoList().size(), "Second call should emit exactly 2 logs");
+        
+        // Verify the third function call transaction and its logs
+        TransactionReceipt callReceipt3 = world.getTransactionReceiptByName("txCallEmit3");
+        Assertions.assertNotNull(callReceipt3);
+        Assertions.assertTrue(callReceipt3.isSuccessful());
+        Assertions.assertNotNull(callReceipt3.getLogInfoList());
+        Assertions.assertFalse(callReceipt3.getLogInfoList().isEmpty());
+        Assertions.assertEquals(2, callReceipt3.getLogInfoList().size(), "Third call should emit exactly 2 logs");
+        
+        // Verify logs from first call contain the expected contract address
+        org.ethereum.vm.LogInfo logInfo1 = callReceipt.getLogInfoList().get(0);
+        org.ethereum.vm.LogInfo logInfo2 = callReceipt.getLogInfoList().get(1);
+        
+        // Verify logs from second call contain the expected contract address
+        org.ethereum.vm.LogInfo logInfo3 = callReceipt2.getLogInfoList().get(0);
+        org.ethereum.vm.LogInfo logInfo4 = callReceipt2.getLogInfoList().get(1);
+        
+        // Verify logs from third call contain the expected contract address
+        org.ethereum.vm.LogInfo logInfo5 = callReceipt3.getLogInfoList().get(0);
+        org.ethereum.vm.LogInfo logInfo6 = callReceipt3.getLogInfoList().get(1);
+
+        // Verify that all logs from the same block have correct sequential log indexes
+        // Since all transactions are in the same block, log indexes should be sequential across all transactions:
+        // Transaction 1 (txCallEmit) should have logs at indexes 0, 1
+        // Transaction 2 (txCallEmit2) should have logs at indexes 2, 3  
+        // Transaction 3 (txCallEmit3) should have logs at indexes 4, 5
+        Assertions.assertEquals(0, logInfo1.getLogIndex(), "First log should have index 0");
+        Assertions.assertEquals(1, logInfo2.getLogIndex(), "Second log should have index 1");
+        Assertions.assertEquals(2, logInfo3.getLogIndex(), "Third log should have index 2");
+        Assertions.assertEquals(3, logInfo4.getLogIndex(), "Fourth log should have index 3");
+        Assertions.assertEquals(4, logInfo5.getLogIndex(), "Fifth log should have index 4");
+        Assertions.assertEquals(5, logInfo6.getLogIndex(), "Sixth log should have index 5");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeBlockWithLogEmittingContractAndVerifyLogIndexes(boolean isRSKIP144Activated) throws Exception {
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.consensusRules.rskip144", ConfigValueFactory.fromAnyRef(isRSKIP144Activated ? 1 : -1))
+        );
+        
+        // Now use DSL to create a block with log-emitting contract for log index verification
+        DslParser parser = DslParser.fromResource("dsl/log_indexes_pte.txt");
+        World world = new World(config);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // Get the blocks created by DSL
+        Block deployBlock = world.getBlockByName("b01");
+        Block callBlock1 = world.getBlockByName("b02");
+        Block callBlock2 = world.getBlockByName("b03");
+        
+        Assertions.assertNotNull(deployBlock);
+        Assertions.assertNotNull(callBlock1);
+        Assertions.assertNotNull(callBlock2);
+
+        BlockResult result = world.getBlockExecutor().execute(null, 0, callBlock2, callBlock1.getHeader(), false, false, false);
+
+        List<TransactionReceipt> transactionReceipts = result.getTransactionReceipts();
+
+        Assertions.assertNotNull(transactionReceipts);
+
+        Assertions.assertEquals(0, transactionReceipts.get(0).getLogInfoList().get(0).getLogIndex(), "First log should have index 0");
+        Assertions.assertEquals(1, transactionReceipts.get(0).getLogInfoList().get(1).getLogIndex(), "Second log should have index 1");
+        Assertions.assertEquals(2, transactionReceipts.get(1).getLogInfoList().get(0).getLogIndex(), "Third log should have index 2");
+        Assertions.assertEquals(3, transactionReceipts.get(1).getLogInfoList().get(1).getLogIndex(), "Fourth log should have index 3");
+        Assertions.assertEquals(4, transactionReceipts.get(2).getLogInfoList().get(0).getLogIndex(), "Fifth log should have index 4");
+        Assertions.assertEquals(5, transactionReceipts.get(2).getLogInfoList().get(1).getLogIndex(), "Sixth log should have index 5");
     }
 }
