@@ -19,39 +19,63 @@
 package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SnapSyncState;
 import co.rsk.net.sync.SnapshotPeersInformation;
 import co.rsk.net.sync.SyncMessageHandler;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DbKind;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
 import static co.rsk.net.sync.SnapSyncRequestManager.RequestFactory;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class SnapshotProcessorTest {
+public class SnapshotProcessorTest {
+    @TempDir
+    private Path tempDir;
+
+    private record ChunksResponse (SnapSyncState state, Peer peer, SnapStateChunkResponseMessage responseMessage) {}
+
     private static final int TEST_CHUNK_SIZE = 200;
     private static final int TEST_CHECKPOINT_DISTANCE = 10;
     private static final int TEST_MAX_SENDER_REQUESTS = 3;
@@ -70,6 +94,7 @@ class SnapshotProcessorTest {
     private final BlockHeaderParentDependantValidationRule blockHeaderParentValidator = mock(BlockHeaderParentDependantValidationRule.class);
     private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
     private SnapshotProcessor underTest;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
 
     @BeforeEach
     void setUp() throws UnknownHostException {
@@ -677,6 +702,44 @@ class SnapshotProcessorTest {
                 anyLong(), anyLong(), any(LinkedList.class), any(LinkedList.class));
     }
 
+    @Test
+    void givenProcessStateChunkResponseIsCalled_thenTemporaryDatasourceShouldFetchedAndCleanedUpProperly() {
+        final var blockChainBuilder = new BlockChainBuilder();
+        blockChainBuilder.build();
+
+        blockStore = mock(BlockStore.class);
+        blockchain = mock(Blockchain.class);
+        transactionPool = mock(TransactionPool.class);
+        doReturn(true).when(blockStore).isBlockExist(Mockito.any(byte[].class));
+        trieStore = mock(TrieStore.class);
+
+        //given
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                listener);
+
+        //when
+        readChunks(chunk -> underTest.processStateChunkResponse(chunk.state(), chunk.peer(), chunk.responseMessage()));
+
+        //then
+        Assertions.assertTrue(tmpSnapSyncKeyValueDataSource.keys().isEmpty());
+        Mockito.verify(tmpSnapSyncKeyValueDataSource, Mockito.times(658)).put(Mockito.any(byte[].class), Mockito.any(byte[].class));
+        Mockito.verify(trieStore, Mockito.times(655)).saveDTO(Mockito.any(TrieDTO.class));
+    }
+
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         blockchain = blockChainBuilder.ofSize(numberOfBlocks);
@@ -699,5 +762,71 @@ class SnapshotProcessorTest {
             latch.countDown();
             return null;
         }).when(listener).onQueueEmpty();
+    }
+
+    private void readChunks (Consumer<ChunksResponse> readFn) {
+        final var tmpDatabasePath = tempDir.resolve(SnapSyncState.TMP_NODES_DIR_NAME);
+        tmpSnapSyncKeyValueDataSource = Mockito.spy(KeyValueDataSourceUtils.makeDataSource(tmpDatabasePath, DbKind.ROCKS_DB));
+
+        try {
+            final var chunksFile = Objects.requireNonNull(this.getClass().getResource("/trie/chunksData.txt")).getFile();
+            final var reader = new BufferedReader(new FileReader(chunksFile));
+
+            reader.lines().forEach(line -> {
+                try {
+                    final var chunksDataMap = new ObjectMapper().readValue(line, new TypeReference<HashMap<String,String>>() {});
+                    final var chunkResponse = buildChunksToProcess(chunksDataMap, tmpSnapSyncKeyValueDataSource);
+                    readFn.accept(chunkResponse);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            reader.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ChunksResponse buildChunksToProcess (Map<String, String> chunksDataMap, KeyValueDataSource tmpSnapSyncKeyValueDataSource) {
+        final var remoteRootHash = HexUtils.stringHexToByteArray(chunksDataMap.get("state.getRemoteRootHash()"));
+        // This data was extracted from a large data set of chunks,
+        // that means the last verification for the whole trie will fail
+        // because there will be missing parts.
+        // In order to make it work for this test, we added a
+        // getFinalRemoteRootHash to the chunksData.txt, so we can force
+        // the last verification to pass
+        final var finalRemoteRootHash = chunksDataMap.containsKey("state.getFinalRemoteRootHash()") ? HexUtils.stringHexToByteArray(chunksDataMap.get("state.getFinalRemoteRootHash()")) : null;
+        final var id = Long.parseLong(chunksDataMap.get("responseMessage.getId()"));
+        final var from = Long.parseLong(chunksDataMap.get("responseMessage.getFrom()"));
+        final var to = Long.parseLong(chunksDataMap.get("responseMessage.getTo()"));
+        final var isComplete = Boolean.parseBoolean(chunksDataMap.get("responseMessage.isComplete()"));
+        final var chunk = HexUtils.stringHexToByteArray(chunksDataMap.get("responseMessage.getChunkOfTrieKeyValue()"));
+        final var blockNumber = Long.parseLong(chunksDataMap.get("responseMessage.getBlockNumber()"));
+
+        final var snapSyncState = mockSnapSyncStateToProcessChunk(from, remoteRootHash, finalRemoteRootHash, tmpSnapSyncKeyValueDataSource);
+
+        return new ChunksResponse(snapSyncState, peer, new SnapStateChunkResponseMessage(id, chunk, blockNumber, from, to, isComplete));
+    }
+
+    private SnapSyncState mockSnapSyncStateToProcessChunk(long from, byte[] remoteRootHash, byte[] finalRemoteRootHash, KeyValueDataSource tmpSnapSyncKeyValueDataSource) {
+        final var blockHeader = mock(BlockHeader.class);
+        final var snapSyncState = mock(SnapSyncState.class);
+        final var blockHeaderParentHash = new Keccak256(Keccak256Helper.keccak256("a6b071a6a8138226b29e46a375d3f3fbeeab3efa98be2d565375d07012bb1aaa"));
+
+        doReturn(from).when(snapSyncState).getNextExpectedFrom();
+        doReturn(new PriorityQueue<>()).when(snapSyncState).getChunkTaskQueue();
+        doReturn(remoteRootHash).doReturn(finalRemoteRootHash).when(snapSyncState).getRemoteRootHash();
+        doReturn(BigInteger.ZERO).when(snapSyncState).getStateSize();
+        doReturn(BigInteger.ZERO).when(snapSyncState).getStateChunkSize();
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(new PriorityQueue<>(
+                Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom)
+        )).when(snapSyncState).getSnapStateChunkQueue();
+        doReturn(blockHeader).when(snapSyncState).getLastVerifiedBlockHeader();
+        doReturn(blockHeaderParentHash).when(blockHeader).getParentHash();
+        doReturn(tmpSnapSyncKeyValueDataSource).when(snapSyncState).getTmpSnapSyncKeyValueDataSource();
+
+        return snapSyncState;
     }
 }

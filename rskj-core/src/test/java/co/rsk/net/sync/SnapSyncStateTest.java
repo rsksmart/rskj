@@ -53,7 +53,7 @@ class SnapSyncStateTest {
     private final SnapSyncRequestManager snapRequestManager = mock(SnapSyncRequestManager.class);
     private final SyncMessageHandler.Listener listener = mock(SyncMessageHandler.Listener.class);
 
-    private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler, snapshotProcessor, snapRequestManager, syncConfiguration, listener, null, Files.createTempDirectory("").toString());
+    private final SnapSyncState underTest = new SnapSyncState(syncEventsHandler, snapshotProcessor, snapRequestManager, syncConfiguration, listener, Files.createTempDirectory("").toString());
 
     SnapSyncStateTest() throws IOException {
     }

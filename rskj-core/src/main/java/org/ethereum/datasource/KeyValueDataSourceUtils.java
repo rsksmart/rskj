@@ -19,7 +19,7 @@ public class KeyValueDataSourceUtils {
     private KeyValueDataSourceUtils() { /* hidden */ }
 
     @Nonnull
-    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+    public static KeyValueDataSource makeDataSourceButNotInit(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
@@ -34,6 +34,13 @@ public class KeyValueDataSourceUtils {
             default:
                 throw new IllegalArgumentException("kind");
         }
+
+        return ds;
+    }
+
+    @Nonnull
+    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        KeyValueDataSource ds = makeDataSourceButNotInit(datasourcePath, kind);
 
         ds.init();
 

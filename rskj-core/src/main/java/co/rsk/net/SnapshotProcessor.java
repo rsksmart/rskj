@@ -42,6 +42,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -53,6 +54,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Function;
 
 import static co.rsk.net.sync.SnapSyncRequestManager.PeerSelector;
 
@@ -687,12 +689,23 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         }
 
         if (trieElements.size() > 0) {
+            final var existingNodesSizeInBytes = state.getTmpSnapSyncKeyValueDataSource().get(ByteUtil.intToBytes(SnapSyncState.TMP_NODES_SIZE_KEY));
+            var existingNodesSize = 0;
+
+            if(existingNodesSizeInBytes != null) {
+                existingNodesSize = ByteUtil.byteArrayToInt(existingNodesSizeInBytes);
+            }
+
             for (int i = 0; i < trieElements.size(); i++) {
                 final RLPElement trieElement = trieElements.get(i);
                 byte[] value = trieElement.getRLPData();
                 nodes.add(TrieDTO.decodeFromSync(value));
+
+                state.getTmpSnapSyncKeyValueDataSource().put(ByteUtil.intToBytes(existingNodesSize + i), value);
             }
             nodes.get(0).setLeftHash(firstNodeLeftHash);
+
+            state.getTmpSnapSyncKeyValueDataSource().put(ByteUtil.intToBytes(SnapSyncState.TMP_NODES_SIZE_KEY), ByteUtil.intToBytes(nodes.size() + existingNodesSize));
         }
 
         if (lastNodeHashes.size() > 0) {
@@ -711,7 +724,6 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         }
 
         if (TrieDTOInOrderRecoverer.verifyChunk(state.getRemoteRootHash(), preRootNodes, nodes, postRootNodes)) {
-            state.getAllNodes().addAll(nodes);
             state.setStateSize(state.getStateSize().add(BigInteger.valueOf(trieElements.size())));
             state.setStateChunkSize(state.getStateChunkSize().add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length)));
             if (message.isComplete()) {
@@ -732,29 +744,50 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         return lastVerifiedBlockHeader != null && blockStore.isBlockExist(lastVerifiedBlockHeader.getParentHash().getBytes());
     }
 
+    private void moveNodesToTrie(TrieDTO node, int index) {
+        trieStore.saveDTO(node);
+    }
+
+    Function<Integer, TrieDTO> getNodeFromTmpSnapSyncKeyValueDataSource(SnapSyncState state) {
+        return (Integer index) -> {
+            final var nodeInBytes = state.getTmpSnapSyncKeyValueDataSource().get(ByteUtil.intToBytes(index));
+            return TrieDTO.decodeFromSync(nodeInBytes);
+        };
+    }
+
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
     private boolean rebuildStateAndSave(SnapSyncState state) {
         logger.info("Recovering trie...");
-        final TrieDTO[] nodeArray = state.getAllNodes().toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
+        final var existingNodesSizeInBytes = state.getTmpSnapSyncKeyValueDataSource().get(ByteUtil.intToBytes(SnapSyncState.TMP_NODES_SIZE_KEY));
+        final var existingNodesSize = ByteUtil.byteArrayToInt(existingNodesSizeInBytes);
+        final var response = TrieDTOInOrderRecoverer.recoverTrie(this.getNodeFromTmpSnapSyncKeyValueDataSource(state), existingNodesSize, this::moveNodesToTrie);
+        final var result = response.node();
 
-        if (result.isPresent() && Arrays.equals(state.getRemoteRootHash(), result.get().calculateHash())) {
-            logger.info("State final validation OK!");
+        if (result.isEmpty() || !Arrays.equals(state.getRemoteRootHash(), result.get().calculateHash())) {
+            logger.error("State final validation FAILED");
 
-            this.blockchain.removeBlocksByNumber(0);
-            //genesis is removed so backwards sync will always start.
-
-            BlockConnectorHelper blockConnector = new BlockConnectorHelper(this.blockStore);
-            state.connectBlocks(blockConnector);
-            logger.info("Setting last block as best block...");
-            this.blockchain.setStatus(state.getLastBlock(), state.getLastBlockDifficulty());
-            this.transactionPool.setBestBlock(state.getLastBlock());
-            return true;
+            return false;
         }
-        logger.error("State final validation FAILED");
-        return false;
+
+        for (int i = 0; i < existingNodesSize; i++) {
+            state.getTmpSnapSyncKeyValueDataSource().delete(ByteUtil.intToBytes(i));
+        }
+
+        state.getTmpSnapSyncKeyValueDataSource().delete(ByteUtil.intToBytes(SnapSyncState.TMP_NODES_SIZE_KEY));
+
+        logger.info("State final validation OK!");
+
+        this.blockchain.removeBlocksByNumber(0);
+        //genesis is removed so backwards sync will always start.
+
+        BlockConnectorHelper blockConnector = new BlockConnectorHelper(this.blockStore);
+        state.connectBlocks(blockConnector);
+        logger.info("Setting last block as best block...");
+        this.blockchain.setStatus(state.getLastBlock(), state.getLastBlockDifficulty());
+        this.transactionPool.setBestBlock(state.getLastBlock());
+        return true;
     }
 
     private void generateChunkRequestTasks(SnapSyncState state) {
