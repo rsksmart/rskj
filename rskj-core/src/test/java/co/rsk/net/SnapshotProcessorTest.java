@@ -34,6 +34,7 @@ import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.AfterEach;
@@ -63,6 +64,7 @@ public class SnapshotProcessorTest {
     private BlockStore blockStore;
     private TrieStore trieStore;
     private RskSystemProperties rskSystemProperties;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
     private Peer peer;
     private final SnapshotPeersInformation peersInformation = mock(SnapshotPeersInformation.class);
     private final SnapSyncState snapSyncState = mock(SnapSyncState.class);
@@ -107,8 +109,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                trieStore,
-                rskSystemProperties.databaseDir());
+                tmpSnapSyncKeyValueDataSource);
         doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
         //when
         underTest.startSyncing(snapSyncState);
@@ -137,8 +138,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                trieStore,
-                rskSystemProperties.databaseDir());
+                tmpSnapSyncKeyValueDataSource);
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
@@ -185,8 +185,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                trieStore,
-                rskSystemProperties.databaseDir());
+                tmpSnapSyncKeyValueDataSource);
 
         ArgumentCaptor<SnapStatusResponseMessage> captor = ArgumentCaptor.forClass(SnapStatusResponseMessage.class);
 
@@ -201,8 +200,8 @@ public class SnapshotProcessorTest {
         assertNotNull(capturedMessage);
         int blockSize = capturedMessage.getBlocks().size();
         assertEquals(401, blockSize);
-        assertEquals(4600L,capturedMessage.getBlocks().get(0).getNumber());
-        assertEquals(5000L,capturedMessage.getBlocks().get(blockSize-1).getNumber());
+        assertEquals(4600L, capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(5000L, capturedMessage.getBlocks().get(blockSize - 1).getNumber());
     }
 
     @Test
@@ -224,8 +223,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                trieStore,
-                rskSystemProperties.databaseDir());
+                tmpSnapSyncKeyValueDataSource);
 
         ArgumentCaptor<SnapBlocksResponseMessage> captor = ArgumentCaptor.forClass(SnapBlocksResponseMessage.class);
 
@@ -239,8 +237,8 @@ public class SnapshotProcessorTest {
         assertNotNull(capturedMessage);
         int blockSize = capturedMessage.getBlocks().size();
         assertEquals(400, blockSize);
-        assertEquals(60L,capturedMessage.getBlocks().get(0).getNumber());
-        assertEquals(459,capturedMessage.getBlocks().get(blockSize-1).getNumber());
+        assertEquals(60L, capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(459, capturedMessage.getBlocks().get(blockSize - 1).getNumber());
     }
 
     @Test
@@ -264,8 +262,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                trieStore,
-                rskSystemProperties.databaseDir());
+                tmpSnapSyncKeyValueDataSource);
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
@@ -311,8 +308,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                trieStore,
-                rskSystemProperties.databaseDir());
+                tmpSnapSyncKeyValueDataSource);
 
         SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1, TEST_CHUNK_SIZE);
 
@@ -346,8 +342,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                trieStore,
-                rskSystemProperties.databaseDir()) {
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
                 latch.countDown();
@@ -398,8 +393,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                trieStore,
-                rskSystemProperties.databaseDir()) {
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
                 execLatch.countDown();
@@ -443,8 +437,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                trieStore,
-                rskSystemProperties.databaseDir()) {
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
                 latch.countDown();
@@ -495,8 +488,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                trieStore,
-                rskSystemProperties.databaseDir()) {
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
                 execLatch.countDown();
@@ -540,8 +532,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                trieStore,
-                rskSystemProperties.databaseDir()) {
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage requestMessage) {
                 latch.countDown();
@@ -592,8 +583,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                trieStore,
-                rskSystemProperties.databaseDir()) {
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
                 execLatch.countDown();
@@ -630,9 +620,7 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false,
-                trieStore,
-                rskSystemProperties.databaseDir()
+                false,tmpSnapSyncKeyValueDataSource
         );
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = new PriorityQueue<>(
@@ -660,6 +648,7 @@ public class SnapshotProcessorTest {
         transactionPool = blockChainBuilder.getTransactionPool();
         blockStore = blockChainBuilder.getBlockStore();
         trieStore = blockChainBuilder.getTrieStore();
+        tmpSnapSyncKeyValueDataSource = blockChainBuilder.getTmpSnapSyncKeyValueDataSource();
     }
 
     private Peer mockedPeer() throws UnknownHostException {

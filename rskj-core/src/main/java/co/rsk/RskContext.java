@@ -143,9 +143,12 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -175,7 +178,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private org.ethereum.db.BlockStore blockStore;
     private NetBlockStore netBlockStore;
     private TrieStore trieStore;
-    private TrieStore tmpSnapSyncTrieStore;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
     private StateRootsStore stateRootsStore;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
@@ -1316,6 +1319,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("wallet closed.");
         }
 
+        if (tmpSnapSyncKeyValueDataSource != null) {
+            logger.trace("disposing tmpSnapSyncKeyValueDataSource.");
+            tmpSnapSyncKeyValueDataSource.close();
+            logger.trace("trieStore disposed.");
+        }
+
         final long endTime = System.currentTimeMillis();
         logger.info("RSK context closed (after {} ms)", endTime - startTime);
     }
@@ -2096,21 +2105,53 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
                     getRskSystemProperties().isSnapshotParallelEnabled(),
-                    getTtmpSnapSyncTrieStore(),
-                    getRskSystemProperties().databaseDir()
+                    getTmpSnapSyncKeyValueDataSource()
             );
         }
         return snapshotProcessor;
     }
 
-    private synchronized TrieStore getTtmpSnapSyncTrieStore() {
-        checkIfNotClosed();
-
-        if (tmpSnapSyncTrieStore == null) {
-            tmpSnapSyncTrieStore = buildAbstractTrieStore(Paths.get(getRskSystemProperties().databaseDir()).resolve(SnapshotProcessor.TMP_TRIE_DIR_NAME));
+    private synchronized KeyValueDataSource getTmpSnapSyncKeyValueDataSource() {
+        if (!getRskSystemProperties().isClientSnapshotSyncEnabled()) {
+            return null;
         }
 
-        return tmpSnapSyncTrieStore;
+        checkIfNotClosed();
+
+        if (tmpSnapSyncKeyValueDataSource == null) {
+            final var databasePath = Paths.get(getRskSystemProperties().databaseDir());
+            final var tmpDatabasePath = databasePath.resolve(SnapshotProcessor.TMP_NODES_DIR_NAME);
+
+            try {
+                if (Files.exists(tmpDatabasePath)) {
+                    // Delete folder and its content if exists
+                    Files.walkFileTree(tmpDatabasePath,
+                            new SimpleFileVisitor<>() {
+                                @Override
+                                public @Nonnull FileVisitResult postVisitDirectory(@Nonnull Path dir, IOException exc) throws IOException {
+                                    Files.delete(dir);
+                                    return FileVisitResult.CONTINUE;
+                                }
+
+                                @Override
+                                public @Nonnull FileVisitResult visitFile(@Nonnull Path file, @Nonnull BasicFileAttributes attrs)
+                                        throws IOException {
+                                    Files.delete(file);
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                }
+
+                Files.createDirectory(tmpDatabasePath);
+            } catch (IOException e) {
+                logger.error("Unable to create temporary folder snapshot sync datasource", e);
+            }
+
+            final var currentDbKind = getDbKind(getRskSystemProperties().databaseDir());
+            tmpSnapSyncKeyValueDataSource = KeyValueDataSourceUtils.makeDataSource(tmpDatabasePath, currentDbKind);;
+        }
+
+        return tmpSnapSyncKeyValueDataSource;
     }
 
     private Web3 getWeb3() {
