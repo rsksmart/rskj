@@ -202,11 +202,10 @@ class P2shErpFederationTest {
         newDefaultKeys.add(federator10PublicKey);
         defaultKeys = newDefaultKeys;
 
-        federation = P2shErpFederationBuilder.builder()
-            .withMembersBtcPublicKeys(defaultKeys)
-            .build();
         ScriptCreationException exception =
-            assertThrows(ScriptCreationException.class, () -> federation.getRedeemScript());
+            assertThrows(ScriptCreationException.class, () -> P2shErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(defaultKeys)
+                .build());
         assertEquals(ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE, exception.getReason());
     }
 
