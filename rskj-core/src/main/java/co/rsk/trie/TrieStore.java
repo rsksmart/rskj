@@ -18,6 +18,8 @@
 
 package co.rsk.trie;
 
+import org.ethereum.datasource.DataSourceKeyIterator;
+
 import java.util.Optional;
 
 public interface TrieStore {
@@ -36,4 +38,6 @@ public interface TrieStore {
 
     Optional<TrieDTO> retrieveDTO(byte[] hash);
     void saveDTO(TrieDTO trieDTO);
+
+    void deleteHash (byte[] hash);
 }

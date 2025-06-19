@@ -20,6 +20,7 @@ package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
@@ -47,6 +48,11 @@ public class TrieStoreImpl implements TrieStore {
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
+    }
+
+    @Override
+    public void deleteHash (byte[] hash) {
+        store.delete(hash);
     }
 
     /**
