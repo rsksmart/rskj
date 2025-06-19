@@ -175,6 +175,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private org.ethereum.db.BlockStore blockStore;
     private NetBlockStore netBlockStore;
     private TrieStore trieStore;
+    private TrieStore tmpSnapSyncTrieStore;
     private StateRootsStore stateRootsStore;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
@@ -2094,10 +2095,22 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     checkpointDistance,
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
-                    getRskSystemProperties().isSnapshotParallelEnabled()
+                    getRskSystemProperties().isSnapshotParallelEnabled(),
+                    getTtmpSnapSyncTrieStore(),
+                    getRskSystemProperties().databaseDir()
             );
         }
         return snapshotProcessor;
+    }
+
+    private synchronized TrieStore getTtmpSnapSyncTrieStore() {
+        checkIfNotClosed();
+
+        if (tmpSnapSyncTrieStore == null) {
+            tmpSnapSyncTrieStore = buildAbstractTrieStore(Paths.get(getRskSystemProperties().databaseDir()).resolve(SnapshotProcessor.TMP_TRIE_DIR_NAME));
+        }
+
+        return tmpSnapSyncTrieStore;
     }
 
     private Web3 getWeb3() {

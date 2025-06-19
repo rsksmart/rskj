@@ -74,8 +74,11 @@ public class SnapshotProcessor implements InternalService {
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
+    public static final String TMP_TRIE_DIR_NAME = "snapSyncTmpTrie";
     private final Blockchain blockchain;
     private final TrieStore trieStore;
+    private final TrieStore tmpTrieStore;
+    private final String databaseDir;
     private final BlockStore blockStore;
     private final int chunkSize;
     private final int checkpointDistance;
@@ -111,10 +114,12 @@ public class SnapshotProcessor implements InternalService {
                              int checkpointDistance,
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
-                             boolean isParallelEnabled) {
+                             boolean isParallelEnabled,
+                             TrieStore tmpTrieStore,
+                             String databaseDir) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, tmpTrieStore, databaseDir);
     }
 
     @VisibleForTesting
@@ -132,9 +137,13 @@ public class SnapshotProcessor implements InternalService {
                       int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
-                      @Nullable SyncMessageHandler.Listener listener) {
+                      @Nullable SyncMessageHandler.Listener listener,
+                      TrieStore tmpTrieStore,
+                      String databaseDir) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
+        this.tmpTrieStore = tmpTrieStore;
+        this.databaseDir = databaseDir;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.checkpointDistance = checkpointDistance;
