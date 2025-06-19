@@ -3,6 +3,7 @@ package co.rsk.peg.federation;
 import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.ScriptValidations.FLYOVER_SCRIPT_BYTES;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,7 +56,6 @@ class P2shErpFederationTest {
         BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0340df69f28d69eef60845da7d81ff60a9060d4da35c767f017b0dd4e20448fb44"));
         BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02ac1901b6fba2c1dbd47d894d2bd76c8ba1d296d65f6ab47f1c6b22afb53e73eb"));
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
-        BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0245ef34f5ee218005c9c21227133e8568a4f3f11aeab919c66ff7b816ae1ffeea"));
         defaultKeys = Arrays.asList(
             federator0PublicKey,
             federator1PublicKey,
@@ -65,8 +65,7 @@ class P2shErpFederationTest {
             federator5PublicKey,
             federator6PublicKey,
             federator7PublicKey,
-            federator8PublicKey,
-            federator9PublicKey
+            federator8PublicKey
         );
         defaultThreshold = defaultKeys.size() / 2 + 1;
         emergencyKeys = federationConstants.getErpFedPubKeysList();
@@ -169,15 +168,14 @@ class P2shErpFederationTest {
     void createFederation_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
         activationDelayValue = csvValue;
 
-        federation = createDefaultP2shErpFederation();
         ErpFederationCreationException fedException = assertThrows(
             ErpFederationCreationException.class,
-            () -> federation.getRedeemScript()
+            this::createDefaultP2shErpFederation
         );
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
 
         // Check the builder throws the particular expected exception
-        ErpRedeemScriptBuilder builder = federation.getErpRedeemScriptBuilder();
+        ErpRedeemScriptBuilder builder =  P2shErpRedeemScriptBuilder.builder();
         RedeemScriptCreationException builderException = assertThrows(
             RedeemScriptCreationException.class,
             () -> builder.of(
@@ -279,7 +277,7 @@ class P2shErpFederationTest {
     void testEquals_differentNumberOfMembers() {
         // remove federator9
         List<BtcECKey> newDefaultKeys = federation.getBtcPublicKeys();
-        newDefaultKeys.remove(9);
+        newDefaultKeys.remove(8);
         defaultKeys = newDefaultKeys;
 
         ErpFederation otherFederation = createDefaultP2shErpFederation();
@@ -500,7 +498,7 @@ class P2shErpFederationTest {
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases with invalid redeem script that exceed the maximum size
-            if (generatedScript.script.getProgram().length <= MAX_SCRIPT_ELEMENT_SIZE) {
+            if (generatedScript.script.getProgram().length + FLYOVER_SCRIPT_BYTES <= MAX_SCRIPT_ELEMENT_SIZE) {
                 FederationArgs federationArgs = new FederationArgs(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                     ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -528,7 +526,7 @@ class P2shErpFederationTest {
         boolean signWithEmergencyMultisig) {
 
         List<BtcECKey> fedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9", "fed10"},
+            new String[]{"fed1", "fed2", "fed3", "fed4", "fed5", "fed6", "fed7", "fed8", "fed9"},
             true
         );
         List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(fedKeys);
