@@ -41,6 +41,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -73,10 +74,11 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
-    public static final String TMP_TRIE_DIR_NAME = "snapSyncTmpTrie";
+    public static final String TMP_NODES_DIR_NAME = "snapSyncTmpNodes";
     private final Blockchain blockchain;
     private final TrieStore trieStore;
-    private final String databaseDir;
+    private final KeyValueDataSource tmpSnapSyncKeyValueDataSource;
+    public static final int TMP_NODES_SIZE_KEY = -1;
     private final BlockStore blockStore;
     private final int chunkSize;
     private final int checkpointDistance;
@@ -143,7 +145,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                       String databaseDir) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
-        this.databaseDir = databaseDir;
+        this.tmpSnapSyncKeyValueDataSource = null;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.checkpointDistance = checkpointDistance;
