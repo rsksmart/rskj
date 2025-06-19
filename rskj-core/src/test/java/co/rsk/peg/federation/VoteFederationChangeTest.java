@@ -363,7 +363,8 @@ class VoteFederationChangeTest {
         // second one is which throws the exception
         Exception exception = assertThrows(Exception.class,
             () -> voteToCommitPendingFederation(secondAuthorizedTx));
-        String expectedMessage = "The size of the redeem script for scriptSig is 525, which is above the maximum allowed (520).";
+        // 525 is the size of the redeem script for 11 members + 34 flyover script bytes
+        String expectedMessage = "The size of the redeem script for scriptSig is 559, which is above the maximum allowed (520).";
         assertEquals(expectedMessage, exception.getMessage());
     }
 
