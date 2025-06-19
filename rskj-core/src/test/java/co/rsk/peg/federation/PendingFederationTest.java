@@ -210,9 +210,28 @@ class PendingFederationTest {
         assertEquals(expectedFederation, builtFederation);
     }
 
+    @Test
+    void buildFederation_with10Members_inMainnet_afterRSKIP201Activation_beforeRSKIP293_shouldThrowScriptCreationException() {
+        // Arrange
+        BridgeMainNetConstants mainnetConstants = BridgeMainNetConstants.getInstance();
+        FederationConstants federationConstants = mainnetConstants.getFederationConstants();
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.iris300().forBlock(0L);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        List<BtcECKey> federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000);
+        PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
+
+        // Act & Assert
+        assertThrows(ScriptCreationException.class, () -> pendingFederation.buildFederation(
+            federationCreationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        ));
+    }
+
     @ParameterizedTest
     @MethodSource("networkParameters")
-    void buildFederation_with10Members_afterRSKIP201Activation_beforeRSKIP353_shouldThrow(NetworkParameters networkParams, FederationConstants federationConstants) {
+    void buildFederation_with10Members_afterRSKIP201Activation_beforeRSKIP353_shouldThrowScriptCreationException(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
@@ -251,31 +270,10 @@ class PendingFederationTest {
         assertEquals(expectedFederation, builtFederation);
     }
 
-    @Test
-    void buildFederation_with10Members_inMainnet_afterRSKIP353Activation_beforeRSKIP305_shouldThrowScriptCreationException() {
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with10Members_afterRSKIP353Activation_beforeRSKIP305_shouldThrowScriptCreationException(NetworkParameters networkParams, FederationConstants federationConstants) {
         // Arrange
-        BridgeConstants mainnetConstants = BridgeMainNetConstants.getInstance();
-        FederationConstants federationConstants = mainnetConstants.getFederationConstants();
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
-        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
-        // 10 federation members keys + 4 emergency keys
-        List<BtcECKey> federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000);
-        PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-
-        // Act & assert
-        assertThrows(ScriptCreationException.class, () -> pendingFederation.buildFederation(
-            federationCreationTime,
-            FEDERATION_CREATION_BLOCK_NUMBER,
-            federationConstants,
-            activations
-        ));
-    }
-
-    @Test
-    void buildFederation_with11Members_afterRSKIP353Activation_beforeRSKIP305_shouldThrowScriptCreationException() {
-        // Arrange
-        BridgeConstants testnetConstants = BridgeTestNetConstants.getInstance();
-        FederationConstants federationConstants = testnetConstants.getFederationConstants();
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.lovell700().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
         // 11 federation members keys + 3 emergency keys
