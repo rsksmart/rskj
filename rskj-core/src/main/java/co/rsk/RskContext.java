@@ -143,9 +143,12 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -2096,18 +2099,49 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
                     getRskSystemProperties().isSnapshotParallelEnabled(),
-                    getTtmpSnapSyncTrieStore(),
-                    getRskSystemProperties().databaseDir()
+                    getTmpSnapSyncTrieStore()
             );
         }
         return snapshotProcessor;
     }
 
-    private synchronized TrieStore getTtmpSnapSyncTrieStore() {
+    private synchronized TrieStore getTmpSnapSyncTrieStore() {
+        if (!getRskSystemProperties().isClientSnapshotSyncEnabled()) {
+            return null;
+        }
+
         checkIfNotClosed();
 
         if (tmpSnapSyncTrieStore == null) {
-            tmpSnapSyncTrieStore = buildAbstractTrieStore(Paths.get(getRskSystemProperties().databaseDir()).resolve(SnapshotProcessor.TMP_TRIE_DIR_NAME));
+            final var databasePath = Paths.get(getRskSystemProperties().databaseDir());
+            final var tmpDatabasePath = databasePath.resolve(SnapshotProcessor.TMP_TRIE_DIR_NAME);
+
+            try {
+                if (Files.exists(tmpDatabasePath)) {
+                    // Delete folder and its content if exists
+                    Files.walkFileTree(tmpDatabasePath,
+                            new SimpleFileVisitor<>() {
+                                @Override
+                                public @Nonnull FileVisitResult postVisitDirectory(@Nonnull Path dir, IOException exc) throws IOException {
+                                    Files.delete(dir);
+                                    return FileVisitResult.CONTINUE;
+                                }
+
+                                @Override
+                                public @Nonnull FileVisitResult visitFile(@Nonnull Path file, @Nonnull BasicFileAttributes attrs)
+                                        throws IOException {
+                                    Files.delete(file);
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                }
+
+                Files.createDirectory(tmpDatabasePath);
+            } catch (IOException e) {
+                logger.error("Unable to create temporary folder snapshot sync trie store", e);
+            }
+
+            tmpSnapSyncTrieStore = buildAbstractTrieStore(tmpDatabasePath);
         }
 
         return tmpSnapSyncTrieStore;

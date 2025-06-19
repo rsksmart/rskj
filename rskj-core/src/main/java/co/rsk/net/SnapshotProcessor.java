@@ -78,7 +78,6 @@ public class SnapshotProcessor implements InternalService {
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final TrieStore tmpTrieStore;
-    private final String databaseDir;
     private final BlockStore blockStore;
     private final int chunkSize;
     private final int checkpointDistance;
@@ -115,11 +114,10 @@ public class SnapshotProcessor implements InternalService {
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
                              boolean isParallelEnabled,
-                             TrieStore tmpTrieStore,
-                             String databaseDir) {
+                             TrieStore tmpTrieStore) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, tmpTrieStore, databaseDir);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, tmpTrieStore);
     }
 
     @VisibleForTesting
@@ -138,12 +136,10 @@ public class SnapshotProcessor implements InternalService {
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
                       @Nullable SyncMessageHandler.Listener listener,
-                      TrieStore tmpTrieStore,
-                      String databaseDir) {
+                      TrieStore tmpTrieStore) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.tmpTrieStore = tmpTrieStore;
-        this.databaseDir = databaseDir;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.checkpointDistance = checkpointDistance;
