@@ -24,7 +24,6 @@ import co.rsk.net.Peer;
 import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
-import co.rsk.trie.TrieDTO;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
@@ -66,7 +65,6 @@ public class SnapSyncState extends BaseSyncState {
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private boolean stateFetched;
-    private final List<TrieDTO> allNodes;
 
     private long remoteTrieSize;
     private byte[] remoteRootHash;
@@ -94,7 +92,6 @@ public class SnapSyncState extends BaseSyncState {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor;
         this.snapRequestManager = snapRequestManager;
-        this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
         this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
 
@@ -279,10 +276,6 @@ public class SnapSyncState extends BaseSyncState {
 
     public void connectBlocks(BlockConnectorHelper blockConnectorHelper) {
         blockConnectorHelper.startConnecting(blocks);
-    }
-
-    public List<TrieDTO> getAllNodes() {
-        return allNodes;
     }
 
     public BigInteger getStateSize() {
