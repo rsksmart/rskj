@@ -29,32 +29,26 @@ public class BitcoinUtils {
         if (btcTx.getInputs().isEmpty()){
             return Optional.empty();
         }
+
         Optional<Script> redeemScript = extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
-
-        // we need to remove the signatures manually since we are using legacy method for calculating
-        // sighash for segwit txs too
-        BtcTransaction btcTxWithoutSignatures = getTxWithoutSignatures(networkParameters, btcTx);
-        return redeemScript.map(script -> btcTxWithoutSignatures.hashForSignature(
-            FIRST_INPUT_INDEX,
-            script,
-            BtcTransaction.SigHash.ALL,
-            false
-        ));
-    }
-
-    // TODO remove this after fixing tests
-    public static Optional<Sha256Hash> getFirstInputSigHash(BtcTransaction btcTx){
-        if (btcTx.getInputs().isEmpty()){
+        // if we cannot extract the rs from the first input,
+        // we can be sure that the tx is not a pegout.
+        if (redeemScript.isEmpty()) {
             return Optional.empty();
         }
 
-        Optional<Script> redeemScript = extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
-        return redeemScript.map(script -> btcTx.hashForSignature(
+        // to be able to recognize a segwit pegout,
+        // we need to manually remove the signatures from it,
+        // since the legacy sig hash calculation impl assumes
+        // they are located in the script sig, not in the witness.
+        BtcTransaction btcTxWithoutSignatures = removeSignaturesFromMultiSigTransaction(networkParameters, btcTx);
+        Sha256Hash firstInputLegacySigHash = btcTxWithoutSignatures.hashForSignature(
             FIRST_INPUT_INDEX,
-            script,
+            redeemScript.get(),
             BtcTransaction.SigHash.ALL,
             false
-        ));
+        );
+        return Optional.of(firstInputLegacySigHash);
     }
 
     public static Optional<Script> extractRedeemScriptFromInput(BtcTransaction transaction, int inputIndex) {
@@ -122,40 +116,50 @@ public class BitcoinUtils {
         return inputWitness.getSigInsertionIndex(sigHash, signingKey);
     }
 
+    /**
+     * Returns the hash of a Bitcoin transaction that has all its inputs from a multiSig,
+     * with the signatures removed.
+     * If the transaction is legacy, the method returns the hash of the transaction
+     * after removing all signatures from the inputs script sigs.
+     * If it does have witness data, it simply returns the current transaction hash.
+     *
+     * @param networkParameters network parameters
+     * @param transaction transaction
+     * @return the hash of the transaction without signatures from the input
+     */
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
         if (!transaction.hasWitness()) {
-            BtcTransaction transactionCopyWithoutSignatures = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-            BitcoinUtils.removeSignaturesFromMultiSigTransaction(transactionCopyWithoutSignatures);
-            return transactionCopyWithoutSignatures.getHash();
+            BtcTransaction multiSigTransactionWithoutSignatures = removeSignaturesFromMultiSigTransaction(networkParameters, transaction);
+            return multiSigTransactionWithoutSignatures.getHash();
         }
 
         return transaction.getHash();
     }
 
-    public static void removeSignaturesFromMultiSigTransaction(BtcTransaction transaction) {
+    public static BtcTransaction removeSignaturesFromMultiSigTransaction(NetworkParameters networkParameters, BtcTransaction transaction) {
+        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            Optional<Script> inputRedeemScriptOpt = extractRedeemScriptFromInput(transaction, inputIndex);
-            if (inputRedeemScriptOpt.isEmpty()) {
-                return;
+            // if we find one input that is not from a multiSig,
+            // we will return the original transaction
+            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(transaction, inputIndex);
+            if (redeemScriptOpt.isEmpty()) {
+                return transaction;
             }
-            Script inputRedeemScript = inputRedeemScriptOpt.get();
-            if (!inputRedeemScript.isSentToMultiSig()) {
-                return;
+
+            Script redeemScript = redeemScriptOpt.get();
+            if (!redeemScript.isSentToMultiSig()) {
+                return transaction;
             }
 
             boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
             if (inputHasWitness) {
-                setSpendingBaseScriptSegwit(transaction, inputIndex, inputRedeemScript);
+                setSpendingBaseScriptSegwit(transactionCopy, inputIndex, redeemScript);
             } else {
-                setSpendingBaseScriptLegacy(transaction, inputIndex, inputRedeemScript);
+                setSpendingBaseScriptLegacy(transactionCopy, inputIndex, redeemScript);
             }
         }
-    }
-
-    public static BtcTransaction getTxWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
-        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
-        removeSignaturesFromMultiSigTransaction(transactionCopy);
         return transactionCopy;
     }
 

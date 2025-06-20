@@ -1271,16 +1271,14 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
-        btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addInput(fundTxHash, 1, new Script(new byte[]{}));
-        btcTransaction.addInput(fundTxHash, 2, new Script(new byte[]{}));
-
-        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
         Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
+        btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, inputScript);
+        btcTransaction.addInput(fundTxHash, 1, inputScript);
+        btcTransaction.addInput(fundTxHash, 2, inputScript);
 
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
         Sha256Hash firstInputSigHash = btcTransaction.hashForSignature(
             FIRST_INPUT_INDEX,
             retiringFederation.getRedeemScript(),
@@ -1313,15 +1311,14 @@ class PegUtilsGetTransactionTypeTest {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash fundTxHash = BitcoinTestUtils.createHash(1);
-        btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, new Script(new byte[]{}));
-        btcTransaction.addInput(fundTxHash, 1, new Script(new byte[]{}));
-        btcTransaction.addInput(fundTxHash, 2, new Script(new byte[]{}));
-
-        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         Script p2SHScript = ScriptBuilder.createP2SHOutputScript(retiringFederation.getRedeemScript());
         Script inputScript = p2SHScript.createEmptyInputScript(null, retiringFederation.getRedeemScript());
-        btcTransaction.getInput(FIRST_INPUT_INDEX).setScriptSig(inputScript);
+        btcTransaction.addInput(fundTxHash, FIRST_OUTPUT_INDEX, inputScript);
+        btcTransaction.addInput(fundTxHash, 1, inputScript);
+        btcTransaction.addInput(fundTxHash, 2, inputScript);
+
+        btcTransaction.addOutput(Coin.COIN, activeFederation.getAddress());
 
         // Act
         federationContext = FederationContext.builder()
@@ -2178,7 +2175,7 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, migrationTx);
 
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, migrationTx);
         assertTrue(firstInputSigHash.isPresent());
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
@@ -2250,7 +2247,7 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
 
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, migrationTx);
         assertTrue(firstInputSigHash.isPresent());
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
