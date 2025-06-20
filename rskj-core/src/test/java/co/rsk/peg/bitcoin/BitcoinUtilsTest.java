@@ -95,7 +95,7 @@ class BitcoinUtilsTest {
 
     @ParameterizedTest
     @MethodSource("pegoutOrMigrationArgProvider")
-    void getFirstInputSigHash_pegout_or_migration(String btcTxHex) {
+    void getFirstInputLegacySigHash_pegout_or_migration(String btcTxHex) {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
         TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
@@ -110,7 +110,7 @@ class BitcoinUtilsTest {
         assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, btcTx);
         assertTrue(firstInputSigHash.isPresent());
 
         // Assert
@@ -136,7 +136,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, btcTx);
 
         // Assert
         assertFalse(firstInputSigHash.isPresent());
@@ -147,12 +147,12 @@ class BitcoinUtilsTest {
         // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"));
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, btcTx);
 
         // Assert
 
         // For bech32 tx ScriptSig is empty. No chunks. Since there are no scriptSig no redeemScript is extracted,
-        // therefore no sigHash is returned. getFirstInputSigHash method only returns a SigHash when redeemScript is extracted.
+        // therefore no sigHash is returned. getFirstInputLegacySigHash method only returns a SigHash when redeemScript is extracted.
         assertFalse(firstInputSigHash.isPresent());
     }
 
@@ -172,7 +172,7 @@ class BitcoinUtilsTest {
         assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, btcTx);
 
         // Assert
         assertTrue(firstInputSigHash.isPresent());
@@ -180,7 +180,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getFirstInputSigHash_forP2shP2wshTx_withNoRedeemScript_shouldReturnEmpty() {
+    void getFirstInputLegacySigHash_forP2shP2wshTx_withNoRedeemScript_shouldReturnEmpty() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -190,14 +190,14 @@ class BitcoinUtilsTest {
         btcTx.setWitness(0, witness);
 
         // Act
-        Optional<Sha256Hash> sigHash = getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = getFirstInputLegacySigHash(btcMainnetParams, btcTx);
 
         // Assert
         assertFalse(sigHash.isPresent());
     }
 
     @Test
-    void getFirstInputSigHash_forP2shP2wshTx_shouldReturnExpectedLegacyTxSigHash() {
+    void getFirstInputLegacySigHash_forP2shP2wshTx_shouldReturnExpectedLegacyTxSigHash() {
         // https://mempool.space/tx/a4d76b6211b078cbc1d2079002437fcf018cc85cd40dd6195bb0f6b42930b96b
         // Arrange
         final byte[] btcTxHex = Hex.decode("02000000000101f547ebc11f4cca193a8fbfdf9eaf5728d1c6770da371f5ada0655d68f23f9cca0000000023220020431ef0e7fb92b803aa735278649879a4ffe79f79eca7733a046d1d97698cac4fffffffff01905f0100000000001976a9140eda35d81e2a8537beebbbcdf63e3483be01269288ac0e004730440220375d5ddad1d329105d5bb2453fd4a57f93e8b864b11519cea4c6932d414236d3022056e9567d5e8fea093cab9d85432007add04eed9019790159f3b644c3b3e690930148304502210095201c22ed71453c89288bbb87e98425e59f90523ffbf8669cf6739cb4d98868022017ba3a6903c6aa4d770643717ed74edcddfda54f60f8825f5cd4ed12d265db64014830450221009d8e509f6f9b22e74401f3aa06df9e212af0708e798d9b8ae9badc725a7f3d890220592d4ac99a951408f5d49a76015f9c5c8e54e34ff32bba2bfeb73ea3b4ebd75d01483045022100a960302593ecae2aba3f41bcc4cda98e2fcf54de4c479440abf002c444b98bb0022055440ae8f2b425e7b2f47847794789c769645af002e8a1084dd59e693a5e04c20147304402200d11ffb6808f6b426aff02e603abfc8eac5b3e74e3b2fb4318d47640692c7b0d0220274929b2f6e583c43358adbde3465ea1254de0abd3787db88039d00dd3d3015e014830450221009681ba08b0c826fff6499c86fd0f38216d0ea36b24d440e4aa3f5598c385370602203e9e0dae5141c1fd8598d0cb42bc44a40dda55a0577e458a22d6843e536857b401483045022100da95b59e4aac7451b5fd9efb1fa0df16ef44d8e82070daf28c90a16de50491920220637241a243cf6b7d84b3be0dfe4f08c485dfe193bd97b1290632d190f584311b01483045022100916a09eef76b47165b99e77c9a55592bcdaecd22d4932df2366a92c9304cf80502207cd0b6d85a757952c0fd56d0ee7426a7a14ecddf068707ffab3ec06af87b4a1801483045022100b4b990d471ce70de4be19aa241466b214a27b428333dcccbe885092eec4d71d302200c4e3e50aa4c2b1417ee3f174e7332fc045c304114445e05616e032aa812e9aa01483045022100af9a30d639fc333387ebf77945b4397b85f93ff6a9d8f8aeee8cca22e3383c9e02207460a2adb4264a2ecffa2eb43e59ae78e33b6f9cee44989dbec56281e5e2c1c001483045022100afc850cec037c459bbf2e8b559c863f3fa43f5ae01984d7516051a1995133917022063f04ab8d398825ad9e22a37628cf69af19dda26e6e793a3f2e797350eca6d4b0100fd810520010000000000000000000000000000000000000000000000000000000000000075645b210211310637a4062844098b46278059298cc948e1ff314ca9ec75c82e0d0b8ad22c210238de69e208565fd82e4b76c4eff5d817a51679b8a90c41709e49660ba23501c521024b120731b26ec7165cddd214fc8e3f0c844a03dc0e533fb0cf9f89ad2f68a881210274564db76110474ac0d7e09080c182855b22a864cc201ed55217b23301f52f222102867f0e693a2553bf2bc13a5efa0b516b28e66317fbe8e484dd3f375bcb48ec592102881af2910c909f224557353dd28e3729363cf5c24232f26d25c92dac72a3dcdb21029c75b3257e0842c4be48e57e39bf2735c74a76c4b1c0b08d1cc66bf5b8748cc12102a46cbe93287cb51a398a157de2b428f21a94f46affdd916ce921bd10db6520332102d335ef4eeb74330c3a53f529f9741fa096412c7982ed681fcf69763894f34f892102d3f5fd6e107cf68b1be8dce0e16a0a8afb8dcef9a76c851d7eaf6d51c46a35752103163b86a62b4eeeb52f67cb16ce13a8622a066f2a063280749b956a97705dfc3d21033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e210343e106d90183e2eef7d5cb7538a634439bf1301d731787c6736922ff19e750ed21034461d4263b907cfc5ebb468f19d6a133b567f3cc4855e8725faaf60c6e388bca21036e92e6555d2e70af4f5a4f888145356e60bb1a5bc00786a8e9f50152090b2f692103ab54da6b69407dcaaa85f6904687052c93f1f9dd0633f1321b3e624fcd30144b2103bd5b51b1c5d799da190285c8078a2712b8e5dc6f73c799751e6256bb89a4bd042103be060191c9632184f2a0ab2638eeed04399372f37fc7a3cff5291cfd6426cf352103e6def9ef0597336eb58d24f955b6b63756cf7b3885322f9d0cf5a2a12f7e459b2103ef03253b7b4f33d68c39141eb016df15fafbb1d0fa4a2e7f208c94ea154ab8c30114ae67011eb2755b21021a560245f78312588f600315d75d493420bed65873b63d0d4bb8ca1b9163a35b2102218e9dc07ac4190a1d7df94fc75953b36671129f12668a94f1f504fe47399ead210272ed6e14e70f6b4757d412729730837bc63b6313276be8308a5a96afd63af9942102872f69892a74d60f6185c2908414dcddb24951c035a1a8466c6c56f55043e7602102886d7d8e865f75dfda3ddf94619af87ad8aa71e8ef393e1e57593576b7d7af1621028e59462fb53ba31186a353b7ea77ebefda9097392e45b7ca7a216168230d05af21028f5a88b08d75765b36951254e68060759de5be7e559972c37c67fc8cedafeb262102c9ced4bbc468af9ace1645df2fd50182d5822cb4c68aae0e50ae1d45da260d2a2102deba35a96add157b6de58f48bb6e23bcb0a17037bed1beb8ba98de6b0a0d71d62102f2e00fefa5868e2c56405e188ec1d97557a7c77fb6a448352cc091c2ae9d50492102fb8c06c723d4e59792e36e6226087fcfac65c1d8a0d5c5726a64102a551528442103077c62a45ea1a679e54c9f7ad800d8e40eaf6012657c8dccd3b61d5e070d9a432103616959a72dd302043e9db2dbd7827944ecb2d555a8f72a48bb8f916ec5aac6ec210362f9c79cd0586704d6a9ea863573f3b123d90a31faaa5a1d9a69bf9631c78ae321036899d94ad9d3f24152dd4fa79b9cb8dddbd26d18297be4facb295f57c9de60bd210376e4cb35baa8c46b0dcffaf303785c5f7aadf457df30ac956234cc8114e2f47d2103a587256beec4e167aebc478e1d6502bb277a596ae9574ccb646da11fffbf36502103bb9da162c3f581ced93167f86d7e0e5962762a1188f5bd1f8b5d08fed46ef73d2103c34fcd05cef2733ea7337c37f50ae26245646aba124948c6ff8dcdf8212849982103f8ac768e683a07ac4063f72a6d856aedeae109f844abcfa34ac9519d715177460114ae6800000000");
@@ -206,42 +206,44 @@ class BitcoinUtilsTest {
         final byte[] redeemScriptHex = Hex.decode("20010000000000000000000000000000000000000000000000000000000000000075645b210211310637a4062844098b46278059298cc948e1ff314ca9ec75c82e0d0b8ad22c210238de69e208565fd82e4b76c4eff5d817a51679b8a90c41709e49660ba23501c521024b120731b26ec7165cddd214fc8e3f0c844a03dc0e533fb0cf9f89ad2f68a881210274564db76110474ac0d7e09080c182855b22a864cc201ed55217b23301f52f222102867f0e693a2553bf2bc13a5efa0b516b28e66317fbe8e484dd3f375bcb48ec592102881af2910c909f224557353dd28e3729363cf5c24232f26d25c92dac72a3dcdb21029c75b3257e0842c4be48e57e39bf2735c74a76c4b1c0b08d1cc66bf5b8748cc12102a46cbe93287cb51a398a157de2b428f21a94f46affdd916ce921bd10db6520332102d335ef4eeb74330c3a53f529f9741fa096412c7982ed681fcf69763894f34f892102d3f5fd6e107cf68b1be8dce0e16a0a8afb8dcef9a76c851d7eaf6d51c46a35752103163b86a62b4eeeb52f67cb16ce13a8622a066f2a063280749b956a97705dfc3d21033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e210343e106d90183e2eef7d5cb7538a634439bf1301d731787c6736922ff19e750ed21034461d4263b907cfc5ebb468f19d6a133b567f3cc4855e8725faaf60c6e388bca21036e92e6555d2e70af4f5a4f888145356e60bb1a5bc00786a8e9f50152090b2f692103ab54da6b69407dcaaa85f6904687052c93f1f9dd0633f1321b3e624fcd30144b2103bd5b51b1c5d799da190285c8078a2712b8e5dc6f73c799751e6256bb89a4bd042103be060191c9632184f2a0ab2638eeed04399372f37fc7a3cff5291cfd6426cf352103e6def9ef0597336eb58d24f955b6b63756cf7b3885322f9d0cf5a2a12f7e459b2103ef03253b7b4f33d68c39141eb016df15fafbb1d0fa4a2e7f208c94ea154ab8c30114ae67011eb2755b21021a560245f78312588f600315d75d493420bed65873b63d0d4bb8ca1b9163a35b2102218e9dc07ac4190a1d7df94fc75953b36671129f12668a94f1f504fe47399ead210272ed6e14e70f6b4757d412729730837bc63b6313276be8308a5a96afd63af9942102872f69892a74d60f6185c2908414dcddb24951c035a1a8466c6c56f55043e7602102886d7d8e865f75dfda3ddf94619af87ad8aa71e8ef393e1e57593576b7d7af1621028e59462fb53ba31186a353b7ea77ebefda9097392e45b7ca7a216168230d05af21028f5a88b08d75765b36951254e68060759de5be7e559972c37c67fc8cedafeb262102c9ced4bbc468af9ace1645df2fd50182d5822cb4c68aae0e50ae1d45da260d2a2102deba35a96add157b6de58f48bb6e23bcb0a17037bed1beb8ba98de6b0a0d71d62102f2e00fefa5868e2c56405e188ec1d97557a7c77fb6a448352cc091c2ae9d50492102fb8c06c723d4e59792e36e6226087fcfac65c1d8a0d5c5726a64102a551528442103077c62a45ea1a679e54c9f7ad800d8e40eaf6012657c8dccd3b61d5e070d9a432103616959a72dd302043e9db2dbd7827944ecb2d555a8f72a48bb8f916ec5aac6ec210362f9c79cd0586704d6a9ea863573f3b123d90a31faaa5a1d9a69bf9631c78ae321036899d94ad9d3f24152dd4fa79b9cb8dddbd26d18297be4facb295f57c9de60bd210376e4cb35baa8c46b0dcffaf303785c5f7aadf457df30ac956234cc8114e2f47d2103a587256beec4e167aebc478e1d6502bb277a596ae9574ccb646da11fffbf36502103bb9da162c3f581ced93167f86d7e0e5962762a1188f5bd1f8b5d08fed46ef73d2103c34fcd05cef2733ea7337c37f50ae26245646aba124948c6ff8dcdf8212849982103f8ac768e683a07ac4063f72a6d856aedeae109f844abcfa34ac9519d715177460114ae68");
         Script redeemScript = new Script(redeemScriptHex);
 
-        // Act
-        Optional<Sha256Hash> sigHash = getFirstInputSigHash(btcTx);
-
-        // Assert
-        assertTrue(sigHash.isPresent());
-        Sha256Hash expectedSigHash = btcTx.hashForSignature(
+        BtcTransaction btcTxWithoutSignatures = removeSignaturesFromMultiSigTransaction(btcMainnetParams, btcTx);
+        Sha256Hash expectedSigHash = btcTxWithoutSignatures.hashForSignature(
             0,
             redeemScript,
             BtcTransaction.SigHash.ALL,
             false
         );
+
+        // Act
+        Optional<Sha256Hash> sigHash = getFirstInputLegacySigHash(btcMainnetParams, btcTx);
+
+        // Assert
+        assertTrue(sigHash.isPresent());
         assertEquals(expectedSigHash, sigHash.get());
     }
 
     @Test
-    void getFirstInputSigHash_no_input() {
+    void getFirstInputLegacySigHash_no_input() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, btcTx);
 
         // Assert
         assertFalse(sigHash.isPresent());
     }
 
     @Test
-    void getFirstInputSigHash_invalid_input_no_redeem_script() {
+    void getFirstInputLegacySigHash_invalid_input_no_redeem_script() {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams);
         btcTx.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputSigHash(btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, btcTx);
 
         // Assert
         assertTrue(sigHash.isEmpty());
@@ -834,7 +836,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnSameTxHash() {
+    void getMultiSigTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnSameTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
@@ -847,7 +849,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getTransactionHashWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTxHash() {
+    void getMultiSigTransactionHashWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -861,23 +863,24 @@ class BitcoinUtilsTest {
         // assert
         assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
     }
-/*
+
     @Test
-    void getTransactionHashWithoutSignatures_whenTxIsNotSegwitAndTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
+    void getMultiSigTransactionHashWithoutSignatures_whenTxIsNotSegwitAndTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldReturnSameTransactionHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
         BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
         Script p2pkhScriptSig = ScriptBuilder.createInputScript(null, pubKey);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
-        // act & assert
-        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
-        assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
+        // act
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+
+        // assert
+        assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
     }
 
     @Test
-    void getTransactionHashWithoutSignatures_whenTxIsNotSegwitButNotAllTransactionInputsHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
+    void getMultiSigTransactionHashWithoutSignatures_whenTxIsNotSegwitButNotAllTransactionInputsHaveP2shMultiSigInputScript_shouldReturnSameTransactionHash() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script p2shMultiSigScriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -888,14 +891,15 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, p2shMultiSigScriptSig);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
-        // act & assert
-        IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
-        assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
-    }*/
+        // act
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+
+        // assert
+        assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
+    }
 
     @Test
-    void getTransactionHashWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTxHash() {
+    void getMultiSigTransactionHashWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTxHash() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
@@ -930,7 +934,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getTransactionHashWithoutSignatures_forRealPegout() {
+    void getMultiSigTransactionHashWithoutSignatures_forRealPegout() {
         // arrange
         // getting the btc raw tx from a real release_btc event
         byte[] btcRawTxFromReleaseBtcEvent = Hex.decode("0200000001de890a3fcdf7391f8f66d0b04e26d8ef05c342c4ad5b5feb64e24b525aa1721001000000fd3a0300483045022100ba4f30ded162d3203c89c73c03e8c6001255ab62fb7e258a92b112f7cefe2e8e0220683d7e552b0e812257be4fb41f9d2a0b99a91e2cd8bc5e9eb2305a0ddf6b833c01483045022100c8705daac34ec164ef1a441a24f9f9661ecf5bd271d2d6d85d4bd11d444d65e7022065599fc87a8d335f0ddee2a93ed442fae55e08d514f16ba087d4442f3cb2fca001483045022100a85719ee3b3e8bc3716900575b059fd40b1f3852d4de58efa6de1185d6ed5bda022052beda3d8597f4071918136c2cfd8f80aede4aaf6e8710585d2e5fbe988fd0ce0147304402205e90f4c98d2187a1021d7200f40b11623d4e6d3e99d5481b70bedadda10be759022071a3bac20aa917abd46bdedd52d97033050cb8da28f9b93507c93af69ffe67f201483045022100eb2fc5dd75c210311bbb0a0f9eacbd0675e61d413a2b227422232735fd95238602204f92e268e55b113c732b4351ba2049ff48b6347ba6e9a4efe9da70fb97f321e601004dc901645521020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c21025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db210275d473555de2733c47125f9702b0f870df1d817379f5587f09b6c40ed2c6c9492102a95f095d0ce8cb3b9bf70cc837e3ebe1d107959b1fa3f9b2d8f33446f9c8cbdb2103250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf9321034851379ec6b8a701bd3eef8a0e2b119abb4bdde7532a3d6bcbff291b0daf3f25210350179f143a632ce4e6ac9a755b82f7f4266cfebb116a42cadb104c2c2a3350f92103b04fbd87ef5e2c0946a684c8c93950301a45943bbe56d979602038698facf9032103b58a5da144f5abab2e03e414ad044b732300de52fa25c672a7f7b3588877190659ae670350cd00b275532102370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80210257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d42103c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f92103cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b354ae68ffffffff0258369b02000000001976a91481769a94a036ceba700a71467f6cef39652acfd688ac33aa0c9d0000000017a914d3530b561910c250f58fbd572d2f7a7d847354ef8700000000");
@@ -946,7 +950,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromMultiSigTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTx() {
+    void getMultiSigTransactionWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTx() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script federationRedeemScript = federation.getRedeemScript();
@@ -981,18 +985,18 @@ class BitcoinUtilsTest {
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.removeSignaturesFromMultiSigTransaction(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionBeforeSigning, transaction);
+        assertEquals(transactionBeforeSigning, transactionWithoutSignatures);
 
-        for (TransactionInput input : transaction.getInputs()) {
+        for (TransactionInput input : transactionWithoutSignatures.getInputs()) {
             assertScriptSigWithoutSignaturesHasProperFormat(input.getScriptSig(), federationRedeemScript);
         }
     }
-/*
+
     @Test
-    void removeSignaturesFromMultiSigTransaction_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
+    void getMultiSigTransactionWithoutSignatures_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
 
@@ -1016,39 +1020,42 @@ class BitcoinUtilsTest {
         // we can only sign first input since the other input script sig will be empty
         BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
 
-        // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
-    }*/
+        // act
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+
+        // assert
+        assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
+    }
 
     @Test
-    void removeSignaturesFromMultiSigTransaction_realTransactionWithWitness_shouldRemoveSignatures() {
+    void getMultiSigTransactionWithoutSignatures_realTransactionWithWitness_shouldRemoveSignatures() {
         // arrange
         // data from tx https://mempool.space/testnet/tx/1744459aeaf7369aadc9fc40de9ab2bf575b14e35029b35a7ee4bbd3de65af7f
         byte[] rawTx = Hex.decode("02000000000101d654c3944d02808dda61dc0269cb8211da06035dab73c0a332e21a5e27d5c6c6000000002322002054ff1b72e598122f983989e6df42dc75736650c2409a08a237d3c3a6220b1c87fdffffff010ca00700000000001976a914af0c6784340fca71dc85be74e48c06f7850be1da88ac040047304402201f35f5f48ac56ebac8b656279c33886f0776f2e99e445ad653fdb376a05f964002200dbba1180d880e690c3d5d80295d358a1e0e58eb7ade5788c6f5e41c36b75516014830450221008608b2760b3f376a25a745433e5e562800bacf342a4fd0266c0944ff036a4035022050ebec91481289c8266038fc9eaf63e9c9b133934ceb8752901d8bc35d0b7c4801695221027de2af71862e0c64bf0ec5a66e3abc3b01fc57877802e6a6a81f6ea1d35610072102d9c67fef9f8d0707cbcca195eb5f26c6a65da6ca2d6130645c434bb924063856210346f033b8652a17d319d3ecbbbf20fd2cd663a6548173b9419d8228eef095012e53ae57472500");
         BtcTransaction transaction = new BtcTransaction(btcTestnetParams, rawTx);
 
         // act
-        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.removeSignaturesFromMultiSigTransaction(btcTestnetParams, transaction);
 
         // assert
-        for (int inputIndex = 0; inputIndex < transaction.getInputs().size(); inputIndex++) {
+        for (int inputIndex = 0; inputIndex < transactionWithoutSignatures.getInputs().size(); inputIndex++) {
             final int inputIndexFinal = inputIndex; // using final variable for lambda
-            Script redeemScript = BitcoinUtils.extractRedeemScriptFromInput(transaction, inputIndex).orElseThrow(
+            Script redeemScript = BitcoinUtils.extractRedeemScriptFromInput(transactionWithoutSignatures, inputIndex).orElseThrow(
                 () -> (RuntimeException) fail("Could not get redeem script from input " + inputIndexFinal)
             );
             assertSegwitScriptSigContainsHashedRedeemScript(
-                transaction.getInput(inputIndex).getScriptSig(),
+                transactionWithoutSignatures.getInput(inputIndex).getScriptSig(),
                 redeemScript
             );
             assertWitnessScriptWithoutSignaturesHasProperFormat(
-                transaction.getWitness(inputIndex),
+                transactionWithoutSignatures.getWitness(inputIndex),
                 redeemScript
             );
         }
     }
 
     @Test
-    void removeSignaturesFromMultiSigTransaction_whenTransactionIsSegwit_shouldReturnExpectedTx() {
+    void getMultiSigTransactionWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTx() {
         // arrange
         List<BtcECKey> federationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20);
         Federation federation = P2shP2wshErpFederationBuilder.builder()
@@ -1089,20 +1096,20 @@ class BitcoinUtilsTest {
         }
 
         // act
-        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.removeSignaturesFromMultiSigTransaction(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionBeforeSigning, transaction);
+        assertEquals(transactionBeforeSigning, transactionWithoutSignatures);
         assertEquals(
             transactionBeforeSigning.getHash(true),
-            transaction.getHash(true)
+            transactionWithoutSignatures.getHash(true)
         );
 
         // Get inputs again after removing signatures
-        transactionInputs = transaction.getInputs();
+        transactionInputs = transactionWithoutSignatures.getInputs();
         for (TransactionInput input : transactionInputs) {
             int inputIndex = transactionInputs.indexOf(input);
-            TransactionWitness witness = transaction.getWitness(inputIndex);
+            TransactionWitness witness = transactionWithoutSignatures.getWitness(inputIndex);
 
             assertWitnessScriptWithoutSignaturesHasProperFormat(witness, federationRedeemScript);
             assertSegwitScriptSigContainsHashedRedeemScript(input.getScriptSig(), federationRedeemScript);
@@ -1110,7 +1117,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromMultiSigTransaction_withLegacyAndSegwitInputs_shouldReturnExpectedTx() {
+    void getMultiSigTransactionWithoutSignatures_withLegacyAndSegwitInputs_shouldReturnExpectedTx() {
         // arrange
         List<BtcECKey> p2shFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(9);
         Federation p2shFederation = P2shErpFederationBuilder.builder()
@@ -1195,26 +1202,26 @@ class BitcoinUtilsTest {
         );
 
         // act
-        BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.removeSignaturesFromMultiSigTransaction(btcMainnetParams, transaction);
 
         // assert
-        assertEquals(transactionBeforeSigning, transaction);
+        assertEquals(transactionBeforeSigning, transactionWithoutSignatures);
         assertEquals(
             transactionBeforeSigning.getHash(true),
-            transaction.getHash(true)
+            transactionWithoutSignatures.getHash(true)
         );
 
         // Check first input (legacy), does not have signatures
         assertScriptSigWithoutSignaturesHasProperFormat(
-            transaction.getInput(legacyInputIndex).getScriptSig(),
+            transactionWithoutSignatures.getInput(legacyInputIndex).getScriptSig(),
             p2shFederation.getRedeemScript()
         );
 
         // Check second input (segwit), does not have signatures
-        TransactionWitness witness = transaction.getWitness(segwitInputIndex);
+        TransactionWitness witness = transactionWithoutSignatures.getWitness(segwitInputIndex);
         assertWitnessScriptWithoutSignaturesHasProperFormat(witness, p2wshFederation.getRedeemScript());
         assertSegwitScriptSigContainsHashedRedeemScript(
-            transaction.getInput(segwitInputIndex).getScriptSig(),
+            transactionWithoutSignatures.getInput(segwitInputIndex).getScriptSig(),
             p2wshFederation.getRedeemScript()
         );
     }
