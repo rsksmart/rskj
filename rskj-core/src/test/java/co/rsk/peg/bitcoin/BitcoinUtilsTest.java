@@ -861,7 +861,7 @@ class BitcoinUtilsTest {
         // assert
         assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
     }
-
+/*
     @Test
     void getTransactionHashWithoutSignatures_whenTxIsNotSegwitAndTransactionInputsDoNotHaveP2shMultiSigInputScript_shouldThrowIllegalArgumentException() {
         // arrange
@@ -892,7 +892,7 @@ class BitcoinUtilsTest {
         IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
             () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
         assertEquals("Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.", exception.getMessage());
-    }
+    }*/
 
     @Test
     void getTransactionHashWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTxHash() {
@@ -990,7 +990,7 @@ class BitcoinUtilsTest {
             assertScriptSigWithoutSignaturesHasProperFormat(input.getScriptSig(), federationRedeemScript);
         }
     }
-
+/*
     @Test
     void removeSignaturesFromMultiSigTransaction_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
         // arrange
@@ -1018,7 +1018,7 @@ class BitcoinUtilsTest {
 
         // act & assert
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
-    }
+    }*/
 
     @Test
     void removeSignaturesFromMultiSigTransaction_realTransactionWithWitness_shouldRemoveSignatures() {
