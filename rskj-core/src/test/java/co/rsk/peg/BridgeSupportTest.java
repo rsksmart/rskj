@@ -7496,11 +7496,16 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test release transaction info processing")
     class ReleaseTransactionInfo {
-        private final Coin outpointValue1 = Coin.valueOf(300_000);
-        private final Coin outpointValue2 = Coin.valueOf(150_000);
+        private final Coin outpointValue1 = Coin.valueOf(400_000);
+        private final Coin outpointValue2 = Coin.valueOf(90_000);
         private final Coin outpointValue3 = Coin.valueOf(50_000);
+
+        // requesting a release with an amount that needs all the outpoints,
+        // but that also has some change to the fed
+        private final Coin requestedValue1 = Coin.valueOf(100_000);
+        private final Coin requestedValue2 = Coin.valueOf(400_000);
         private final List<Coin> outpointValues = List.of(outpointValue1, outpointValue2, outpointValue3);
-        private final Coin totalAmountRequested = outpointValue1.add(outpointValue2).add(outpointValue3);
+        private final Coin totalAmountRequested = requestedValue1.add(requestedValue2);
 
         private List<LogInfo> logs;
         private Block currentBlock;
@@ -7555,12 +7560,10 @@ class BridgeSupportTest {
 
             // save releases in queue
             Address destinationAddress1 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "firstAddress");
-            Coin requestedValue1 = Coin.valueOf(100_000);
             Keccak256 rskTxHash1 = RskTestUtils.createHash(1);
             ReleaseRequestQueue.Entry releaseEntry1 = new ReleaseRequestQueue.Entry(destinationAddress1, requestedValue1, rskTxHash1);
 
             Address destinationAddress2 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "secondAddress");
-            Coin requestedValue2 = Coin.valueOf(400_000);
             Keccak256 rskTxHash2 = RskTestUtils.createHash(2);
             ReleaseRequestQueue.Entry releaseEntry2 = new ReleaseRequestQueue.Entry(destinationAddress2, requestedValue2, rskTxHash2);
 
@@ -7660,7 +7663,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void pegoutsFlow_fromAReleaseRequest_toBeingCorrectlySignedForFederators_whenSegwitFed() throws IOException {
+        void pegoutsFlow_fromAReleaseRequest_toTheReleaseChangeBeingCorrectlyRegistered_whenSegwitFed() throws Exception {
             // arrange
             // we need to recreate the federators keys to have the priv keys for signing
             List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
@@ -7672,6 +7675,8 @@ class BridgeSupportTest {
                 .build();
             federationStorageProvider.setNewFederation(activeFederation);
             setUpReleaseRequests();
+
+            currentBlock = buildBlock(pegoutTxIndexActivationHeight);
             setUpWithActivations(allActivations);
 
             // call update collections so release requests are moved to pegouts wfc structure
@@ -7730,6 +7735,29 @@ class BridgeSupportTest {
                 assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
             }
             assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
+
+            var previousBlockNumber = currentBlock.getNumber();
+
+            // register tx
+            // -------- TODO refactor this
+            pmtWithTransactions = createValidPmtForTransactions(List.of(pegoutWFS), btcMainnetParams);
+            var chainHeight = previousBlockNumber + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+
+            BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
+            recreateChainFromPmt(btcBlockStore, (int) chainHeight, pmtWithTransactions, (int) previousBlockNumber, btcMainnetParams);
+            bridgeStorageProvider.save();
+            // --------
+
+            int activeFedUtxosSizeBeforeRegisteringChange = federationSupport.getActiveFederationBtcUTXOs().size();
+
+            bridgeSupport.registerBtcTransaction(
+                tx,
+                pegoutWFS.bitcoinSerialize(),
+                (int) previousBlockNumber,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+
+            assertEquals(activeFedUtxosSizeBeforeRegisteringChange + 1, federationSupport.getActiveFederationBtcUTXOs().size());
         }
 
         private void updateBridgeSupport() {

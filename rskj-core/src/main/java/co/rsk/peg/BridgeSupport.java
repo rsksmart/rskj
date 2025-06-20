@@ -1424,8 +1424,8 @@ public class BridgeSupport {
         if (!activations.isActive(ConsensusRule.RSKIP379)){
             return;
         }
-        Optional<Sha256Hash> pegoutTxSigHash = getFirstInputSigHash(pegoutTx);
-        if (!pegoutTxSigHash.isPresent()){
+        Optional<Sha256Hash> pegoutTxSigHash = getFirstInputLegacySigHash(networkParameters, pegoutTx);
+        if (pegoutTxSigHash.isEmpty()){
             throw new IllegalStateException(String.format("SigHash could not be obtained from btc tx %s", pegoutTx.getHash()));
         }
         provider.setPegoutTxSigHash(pegoutTxSigHash.get());
