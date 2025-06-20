@@ -37,6 +37,30 @@ public class PegUtils {
     private PegUtils() { }
 
     static PegTxType getTransactionTypeUsingPegoutIndex(
+        NetworkParameters networkParameters,
+        ActivationConfig.ForBlock activations,
+        BridgeStorageProvider provider,
+        Wallet liveFederationsWallet,
+        BtcTransaction btcTransaction
+    ) {
+        if (!activations.isActive(ConsensusRule.RSKIP379)) {
+            throw new IllegalStateException("Can't call this method before RSKIP379 activation");
+        }
+
+        List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
+
+        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getFirstInputLegacySigHash(networkParameters, btcTransaction);
+        if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
+            return PegTxType.PEGOUT_OR_MIGRATION;
+        } else if (!liveFederationOutputs.isEmpty()){
+            return PegTxType.PEGIN;
+        } else {
+            return PegTxType.UNKNOWN;
+        }
+    }
+
+    // TODO remove this after fixing tests
+    static PegTxType getTransactionTypeUsingPegoutIndex(
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         Wallet liveFederationsWallet,
@@ -129,6 +153,7 @@ public class PegUtils {
         }
 
         return getTransactionTypeUsingPegoutIndex(
+            bridgeConstants.getBtcParams(),
             activations,
             provider,
             liveFederationsWallet,
