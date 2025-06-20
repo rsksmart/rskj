@@ -7590,7 +7590,7 @@ class BridgeSupportTest {
 
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
             assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber());
-            assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
+            assertPegoutTxSigHashWasSaved(bridgeStorageProvider, btcMainnetParams, releaseTransaction);
             assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointValues);
 
@@ -7614,6 +7614,7 @@ class BridgeSupportTest {
             assertScriptSigHasExpectedInputRedeemData(releaseTransaction.getInput(0), activeFederation.getRedeemScript());
 
             assertReleaseWasSettled(
+                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -7651,6 +7652,7 @@ class BridgeSupportTest {
             );
 
             assertReleaseWasSettled(
+                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -7687,6 +7689,7 @@ class BridgeSupportTest {
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             // assert release transaction was created as expected
             assertReleaseWasSettled(
+                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -7730,34 +7733,31 @@ class BridgeSupportTest {
                 bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
             }
 
-            // assert
+            // assert federators signed and that release was made
             for (BtcECKey federatorSignerKey : signers) {
                 assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
             }
             assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
 
-            var previousBlockNumber = currentBlock.getNumber();
-
-            // register tx
-            // -------- TODO refactor this
-            pmtWithTransactions = createValidPmtForTransactions(List.of(pegoutWFS), btcMainnetParams);
-            var chainHeight = previousBlockNumber + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
-
-            BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, allActivations);
-            recreateChainFromPmt(btcBlockStore, (int) chainHeight, pmtWithTransactions, (int) previousBlockNumber, btcMainnetParams);
-            bridgeStorageProvider.save();
-            // --------
-
             int activeFedUtxosSizeBeforeRegisteringChange = federationSupport.getActiveFederationBtcUTXOs().size();
+            // register release change utxo
+            int releaseTxBlockNumber = (int) currentBlock.getNumber();
+            setUpForTransactionRegistration(pegoutWFS, releaseTxBlockNumber, allActivations);
 
             bridgeSupport.registerBtcTransaction(
                 tx,
                 pegoutWFS.bitcoinSerialize(),
-                (int) previousBlockNumber,
+                releaseTxBlockNumber,
                 pmtWithTransactions.bitcoinSerialize()
             );
 
+            // assert utxo was registered
             assertEquals(activeFedUtxosSizeBeforeRegisteringChange + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+
+            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegoutWFS.getHash());
+            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+            assertEquals(releaseTxBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
         }
 
         private void updateBridgeSupport() {
@@ -7872,7 +7872,7 @@ class BridgeSupportTest {
             BtcTransaction pegin = createLegacyPeginFromMultiSigToActiveFed(amountToSendToActiveFed);
             Coin amountToSendToRetiringFed = amountToSendToActiveFed.div(2);
             pegin.addOutput(amountToSendToRetiringFed, retiringFederation.getAddress());
-            setUpForTransactionRegistration(pegin, allActivations);
+            setUpForTransactionRegistration(pegin, pegoutTxIndexActivationHeight, allActivations);
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -7922,7 +7922,7 @@ class BridgeSupportTest {
 
         private BtcTransaction arrangeLegacyPeginFromMultiSigToActiveFed(Coin amountToSend, ActivationConfig.ForBlock activations) throws Exception {
             BtcTransaction pegin = createLegacyPeginFromMultiSigToActiveFed(amountToSend);
-            setUpForTransactionRegistration(pegin, activations);
+            setUpForTransactionRegistration(pegin, pegoutTxIndexActivationHeight, activations);
 
             return pegin;
         }
@@ -7942,12 +7942,12 @@ class BridgeSupportTest {
         }
     }
 
-    private void setUpForTransactionRegistration(BtcTransaction btcTx, ActivationConfig.ForBlock activations) throws Exception {
+    private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcTxToRegisterBlockNumber, ActivationConfig.ForBlock activations) throws Exception {
         pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), btcMainnetParams);
-        var chainHeight = pegoutTxIndexActivationHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+        var chainHeight = btcTxToRegisterBlockNumber + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
 
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activations);
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, pegoutTxIndexActivationHeight, btcMainnetParams);
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcTxToRegisterBlockNumber, btcMainnetParams);
         bridgeStorageProvider.save();
     }
 
@@ -8148,6 +8148,7 @@ class BridgeSupportTest {
 
             BtcTransaction migrationTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             assertReleaseWasSettled(
+                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
