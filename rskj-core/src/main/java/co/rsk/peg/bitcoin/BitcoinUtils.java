@@ -121,7 +121,7 @@ public class BitcoinUtils {
      * with the signatures removed.
      * If the transaction is legacy, the method returns the hash of the transaction
      * after removing all signatures from the inputs script sigs.
-     * If it does have witness data, it simply returns the current transaction hash.
+     * If the transaction is segwit, it simply returns the current transaction hash.
      *
      * @param networkParameters network parameters
      * @param transaction transaction
@@ -136,6 +136,18 @@ public class BitcoinUtils {
         return transaction.getHash();
     }
 
+    /**
+     * Returns a Bitcoin transaction that has all its inputs from a multiSig,
+     * with the signatures removed.
+     * If the transaction is legacy, the method returns a copy of the transaction
+     * after removing all signatures from the inputs script sigs.
+     * If the transaction is segwit, it returns a copy of the transaction
+     * after removing all signatures from the transaction witnesses.
+     *
+     * @param networkParameters network parameters
+     * @param transaction transaction
+     * @return a transaction copy without the signatures
+     */
     public static BtcTransaction removeSignaturesFromMultiSigTransaction(NetworkParameters networkParameters, BtcTransaction transaction) {
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
 
