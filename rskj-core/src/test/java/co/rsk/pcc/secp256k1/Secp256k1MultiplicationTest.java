@@ -19,14 +19,18 @@
 
 package co.rsk.pcc.secp256k1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.signature.Secp256k1Service;
+import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -34,11 +38,14 @@ import org.mockito.ArgumentCaptor;
 class Secp256k1MultiplicationTest {
     private Secp256k1Multiplication secp256k1Multiplication;
     private Secp256k1Service secp256k1Service;
+    private ActivationConfig.ForBlock activations;
 
     @BeforeEach
     void setUp() {
         secp256k1Service = mock(Secp256k1Service.class);
-        secp256k1Multiplication = new Secp256k1Multiplication(secp256k1Service);
+        activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
+        secp256k1Multiplication = new Secp256k1Multiplication(activations, secp256k1Service);
     }
 
     @Test
@@ -60,20 +67,36 @@ class Secp256k1MultiplicationTest {
 
     @Test
     void givenDifferentDataLengths_whenGetGasForDataIsCalled_thenGasCostIsCalculatedCorrectly() {
-        //given
+        // given
         byte[] dataInput1 = new byte[0];
         byte[] dataInput2 = TestUtils.generateBytes("secp256k1MultiplicationRandomInput", 64);
         byte[] dataInput3 = TestUtils.generateBytes("secp256k1MultiplicationRandomInput", 96);
         long expectedGasCost = 3000;
 
-        //when the getGasForData method is called with different data lengths
+        // when the getGasForData method is called with different data lengths
         long gasCost1 = secp256k1Multiplication.getGasForData(dataInput1);
         long gasCost2 = secp256k1Multiplication.getGasForData(dataInput2);
         long gasCost3 = secp256k1Multiplication.getGasForData(dataInput3);
 
-        //then the gas cost should be calculated correctly
+        // then the gas cost should be calculated correctly
         assertEquals(expectedGasCost, gasCost1);
         assertEquals(expectedGasCost, gasCost2);
         assertEquals(expectedGasCost, gasCost3);
+    }
+
+    @Test
+    void whenRSKIP516IsNotActive_thenExecuteThrowsVMException() {
+        // given
+        Secp256k1Service secp256k1Service = mock(Secp256k1Service.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(false);
+        Secp256k1Multiplication secp256k1Multiplication = new Secp256k1Multiplication(activations, secp256k1Service);
+        byte[] inputData = TestUtils.generateBytes("secp256k1MultiplicationInput", 96);
+
+        // when & then
+        VMException exception = assertThrows(VMException.class, () -> {
+            secp256k1Multiplication.execute(inputData);
+        });
+        assertEquals("RSKIP516 is not active", exception.getMessage());
     }
 }

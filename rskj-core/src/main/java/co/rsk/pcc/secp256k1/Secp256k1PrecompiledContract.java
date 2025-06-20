@@ -17,26 +17,33 @@
  */
 package co.rsk.pcc.secp256k1;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
+import java.util.Optional;
+
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.signature.Secp256k1Service;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 
-import java.util.Optional;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 public abstract class Secp256k1PrecompiledContract extends PrecompiledContracts.PrecompiledContract {
+    private final ActivationConfig.ForBlock activations;
     protected final Secp256k1Service secp256k1Service;
 
-    public Secp256k1PrecompiledContract(Secp256k1Service secp256k1Service) {
+    public Secp256k1PrecompiledContract(ActivationConfig.ForBlock activations, Secp256k1Service secp256k1Service) {
+        this.activations = activations;
         this.secp256k1Service = secp256k1Service;
     }
 
     @Override
     public byte[] execute(byte[] data) throws VMException {
-        final var validatedData = Optional.ofNullable(data).orElse(EMPTY_BYTE_ARRAY);
-
-        return executeOperation(validatedData);
+        if (activations.isActive(ConsensusRule.RSKIP516)) {
+            final var validatedData = Optional.ofNullable(data).orElse(EMPTY_BYTE_ARRAY);
+            return executeOperation(validatedData);
+        } else {
+            throw new VMException("RSKIP516 is not active");
+        }
     }
 
     protected abstract byte[] executeOperation(byte[] data);

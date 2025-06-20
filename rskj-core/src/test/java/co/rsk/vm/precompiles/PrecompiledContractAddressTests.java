@@ -18,19 +18,20 @@ package co.rsk.vm.precompiles;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.RskAddress;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.
@@ -46,6 +47,8 @@ class PrecompiledContractAddressTests {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HDWALLETUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String SECP256K1_ADDITION_ADDR_STR = "0000000000000000000000000000000001000016";
+    public static final String SECP256K1_MULTIPLICATION_ADDR_STR = "0000000000000000000000000000000001000017";
 
     private final TestSystemProperties config = new TestSystemProperties();
 
@@ -53,27 +56,31 @@ class PrecompiledContractAddressTests {
     void testGetPrecompile() {
         PrecompiledContracts pcList = new PrecompiledContracts(config, null,
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
-        checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
-        checkAddr(pcList,SHA256_ADDR, "Sha256");
-        checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");
-        checkAddr(pcList,IDENTITY_ADDR_STR ,"Identity");
-        checkAddr(pcList,BIG_INT_MODEXP_ADDR ,"BigIntegerModexp");
-        checkAddr(pcList,BRIDGE_ADDR_STR ,"Bridge");
-        checkAddr(pcList,REMASC_ADDR_STR ,"RemascContract");
-        checkAddr(pcList,BLOCK_HEADER_ADDR_STR,"BlockHeaderContract");
-        checkAddr(pcList, HDWALLETUTILS_ADDR_STR,"HDWalletUtils");
+        checkAddr(pcList, ECRECOVER_ADDR, "ECRecover");
+        checkAddr(pcList, SHA256_ADDR, "Sha256");
+        checkAddr(pcList, RIPEMPD160_ADDR, "Ripempd160");
+        checkAddr(pcList, IDENTITY_ADDR_STR, "Identity");
+        checkAddr(pcList, BIG_INT_MODEXP_ADDR, "BigIntegerModexp");
+        checkAddr(pcList, BRIDGE_ADDR_STR, "Bridge");
+        checkAddr(pcList, REMASC_ADDR_STR, "RemascContract");
+        checkAddr(pcList, BLOCK_HEADER_ADDR_STR, "BlockHeaderContract");
+        checkAddr(pcList, HDWALLETUTILS_ADDR_STR, "HDWalletUtils");
+        checkAddr(pcList, SECP256K1_ADDITION_ADDR_STR, "Secp256k1Addition");
+        checkAddr(pcList, SECP256K1_MULTIPLICATION_ADDR_STR, "Secp256k1Multiplication");
     }
 
-    void checkAddr(PrecompiledContracts pcList,String addr,String className) {
+    void checkAddr(PrecompiledContracts pcList, String addr, String className) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         // Enabling necessary RSKIPs for every precompiled contract to be available
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
 
         RskAddress a;
         a = new RskAddress(addr);
-        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(activations, DataWord.valueOf(a.getBytes()));
-        Assertions.assertEquals(className,pc.getClass().getSimpleName());
+        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(activations,
+                DataWord.valueOf(a.getBytes()));
+        assertEquals(className, pc.getClass().getSimpleName());
     }
 }
