@@ -33,33 +33,32 @@ public class DifficultyUpdateBenchmark {
 
       // benchmark fixed point
       long start = System.nanoTime();
-      BigInteger updatedDifficultyBI = difficultyBI.multiply(ALPHA_POS).divide(SCALE);
+      BigInteger resultBI = difficultyBI.multiply(ALPHA_POS).divide(SCALE);
       long end = System.nanoTime();
       long benchDifficultyBI = end - start;
       System.out.printf("Difficulty as BigInteger %d ns\n", benchDifficultyBI);
-      System.out.printf("%s\n", updatedDifficultyBI.toString());
+      System.out.printf("%s\n", resultBI.toString());
 
       // benchmark BigDecimal
       start = System.nanoTime();
-      BigDecimal updatedDifficultyBD = difficultyBD.multiply(BigDecimal.valueOf(1.005));
+      BigDecimal resultBD = difficultyBD.multiply(BigDecimal.valueOf(1.005));
       end = System.nanoTime();
       long benchDifficultyBD = end - start;
       System.out.printf("Difficulty as BigDecimal %d ns\n", benchDifficultyBD);
-      System.out.printf("%s\n", updatedDifficultyBD.toString());
+      System.out.printf("%s\n", resultBD.toString());
 
       // calculate absolute and relative errors
-      BigDecimal fixedPointDiff = new BigDecimal(updatedDifficultyBI);
-      BigDecimal realDiff = updatedDifficultyBD;
-      BigDecimal absError = realDiff.subtract(fixedPointDiff).abs();
+      BigDecimal absError = resultBD.subtract(
+          new BigDecimal(resultBI)).abs();
       BigDecimal relError = absError
-          .divide(realDiff, 16, RoundingMode.HALF_UP)
+          .divide(resultBD, 16, RoundingMode.HALF_UP)
           .divide(new BigDecimal(0.005), RoundingMode.HALF_UP)
           .multiply(BigDecimal.valueOf(100));
 
       System.out.printf(
-          // "\nAbsolute error: %s%nRelative error: %s%%\n\n",
+          "\nAbsolute error: %s%nRelative error: %s%%\n\n",
           "\nRelative error: %s%%\n\n",
-          // absError.toPlainString(),
+          absError.toPlainString(),
           relError.toPlainString());
 
       System.out.println("----------------------\n");
