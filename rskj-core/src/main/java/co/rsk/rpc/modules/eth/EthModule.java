@@ -174,7 +174,7 @@ public class EthModule
             LOGGER.debug("eth_call(): {}", hReturn);
         }
     }
-    
+
     public String estimateGas(CallArgumentsParam args, @Nonnull BlockIdentifierParam bnOrId) {
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
