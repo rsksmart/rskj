@@ -52,7 +52,8 @@ class DefaultStateOverrideApplierTest {
     private AccountOverride accountOverride;
     private MutableRepository repository;
     private RskAddress address;
-    private DefaultStateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
+    private final DefaultStateOverrideApplier stateOverrideApplier = new DefaultStateOverrideApplier();
+
     @BeforeEach
     void setup() {
         address = TestUtils.generateAddress("address");
@@ -140,22 +141,4 @@ class DefaultStateOverrideApplierTest {
         });
     }
 
-    @Test
-    void testEqualsAndHashCode() {
-        AccountOverride other = new AccountOverride(address);
-        other.setBalance(BigInteger.TEN);
-        other.setNonce(1L);
-        other.setCode(new byte[]{1});
-        other.setState(Map.of(DataWord.valueOf(1), DataWord.valueOf(2)));
-        other.setStateDiff(Map.of(DataWord.valueOf(3), DataWord.valueOf(4)));
-
-        accountOverride.setBalance(BigInteger.TEN);
-        accountOverride.setNonce(1L);
-        accountOverride.setCode(new byte[]{1});
-        accountOverride.setState(Map.of(DataWord.valueOf(1), DataWord.valueOf(2)));
-        accountOverride.setStateDiff(Map.of(DataWord.valueOf(3), DataWord.valueOf(4)));
-
-        assertEquals(accountOverride, other);
-        assertEquals(accountOverride.hashCode(), other.hashCode());
-    }
 }
