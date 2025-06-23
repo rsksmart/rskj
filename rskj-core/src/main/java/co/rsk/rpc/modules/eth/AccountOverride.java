@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class AccountOverride {
+
     private BigInteger balance;
     private Long nonce;
     private byte[] code;
@@ -112,27 +113,34 @@ public class AccountOverride {
         }
 
         if (accountOverrideParam.getState() != null) {
-            Map<DataWord, DataWord> state = new HashMap<>();
+            Map<DataWord, DataWord> newState = new HashMap<>();
             for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
-                state.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
+                newState.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
-            this.setState(state);
+            this.setState(newState);
         }
 
         if (accountOverrideParam.getStateDiff() != null) {
-            Map<DataWord, DataWord> stateDiff = new HashMap<>();
+            Map<DataWord, DataWord> newStateDiff = new HashMap<>();
             for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
-                stateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
+                newStateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
-            this.setStateDiff(stateDiff);
+            this.setStateDiff(newStateDiff);
         }
+
         return this;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         AccountOverride that = (AccountOverride) o;
         return Objects.equals(balance, that.balance) &&
                 Objects.equals(nonce, that.nonce) &&
@@ -147,4 +155,5 @@ public class AccountOverride {
     public int hashCode() {
         return Objects.hash(balance, nonce, Arrays.hashCode(code), state, stateDiff, address, movePrecompileToAddress);
     }
+
 }
