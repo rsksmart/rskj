@@ -53,11 +53,13 @@ public class DifficultyUpdateBenchmark {
       BigDecimal absError = realDiff.subtract(fixedPointDiff).abs();
       BigDecimal relError = absError
           .divide(realDiff, 16, RoundingMode.HALF_UP)
+          .divide(new BigDecimal(0.005), RoundingMode.HALF_UP)
           .multiply(BigDecimal.valueOf(100));
 
       System.out.printf(
-          "\nAbsolute error: %s%nRelative error: %s%%\n\n",
-          absError.toPlainString(),
+          // "\nAbsolute error: %s%nRelative error: %s%%\n\n",
+          "\nRelative error: %s%%\n\n",
+          // absError.toPlainString(),
           relError.toPlainString());
 
       System.out.println("----------------------\n");
