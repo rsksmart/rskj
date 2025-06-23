@@ -117,8 +117,7 @@ class EthModuleTest {
 
     @Test
     void callSmokeTestWithAccountOverride() {
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(TestUtils.generateAddress("test"));
+        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("test"));
         accountOverride.setBalance(BigInteger.valueOf(100000));
 
         CallArguments args = new CallArguments();

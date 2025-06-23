@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
@@ -109,8 +108,7 @@ class EthModuleDSLTest {
         assertEquals(SIMPLE_CONTRACT_STORED_DATA, HexUtils.jsonHexToInt(result));
         // then the result is the stored state value: 10
 
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(new RskAddress(contractAddress));
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
         DataWord key = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000000");
         DataWord value = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000014");
         // given a call to the same contract with a state override setting storage[0] = 20
@@ -153,8 +151,7 @@ class EthModuleDSLTest {
         // then it returns the original stored value: 10
         assertEquals(SIMPLE_CONTRACT_STORED_DATA, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(new RskAddress(contractAddress));
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
         byte[] newCode = HexUtils.stringHexToByteArray(runtimeByteCode);
         // given a call to the same contract with overridden bytecode that returns 999
         accountOverride.setCode(newCode);
@@ -187,8 +184,7 @@ class EthModuleDSLTest {
         // then the returned balance is not equal to 30000
         assertNotEquals(defaultBalance, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride();
-        accountOverride.setAddress(acc.getAddress());
+        AccountOverride accountOverride = new AccountOverride(acc.getAddress());
         accountOverride.setBalance(BigInteger.valueOf(defaultBalance));
         // given a call to the same contract with a balance override setting msg.sender balance to 30000
         // when calling getMyBalance() with the override
