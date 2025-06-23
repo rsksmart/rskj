@@ -78,66 +78,86 @@ class DefaultStateOverrideApplierTest {
 
     @Test
     void applyWithBalance() {
+        // Given
         BigInteger balance = BigInteger.TEN;
         accountOverride.setBalance(balance);
+
+        // When
         stateOverrideApplier.applyToRepository(repository,accountOverride);
+
+        // Then
         assertEquals(accountOverride.getBalance(), repository.getBalance(address).asBigInteger());
     }
 
     @Test
     void applyWithNonce() {
+        // Given
         long nonce = 7L;
         accountOverride.setNonce(nonce);
+
+        // When
         stateOverrideApplier.applyToRepository(repository,accountOverride);
+
+        // Then
         assertEquals(accountOverride.getNonce(), repository.getNonce(address).longValue());
     }
 
     @Test
     void applyWithCode() {
+        // Given
         byte[] code = new byte[]{0x1, 0x2};
         accountOverride.setCode(code);
+
+        // When
         stateOverrideApplier.applyToRepository(repository,accountOverride);
+
+        // Then
         assertArrayEquals(accountOverride.getCode(), repository.getCode(address));
     }
 
     @Test
     void applyWithStateMustResetOtherValues() {
+        // Given
         Map<DataWord, DataWord> state = new HashMap<>();
         state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setState(state);
 
+        // Then
         assertNotNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
 
         // Add an existing key to ensure it is cleared
         stateOverrideApplier.applyToRepository(repository,accountOverride);
-
         assertEquals(accountOverride.getState().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
         assertNull(repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
-
     }
 
     @Test
     void applyWithStateDiffDoNotAlterOtherValues() {
-
+        // Given
         Map<DataWord, DataWord> stateDiff = new HashMap<>();
         stateDiff.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setStateDiff(stateDiff);
 
+        // When
         // Add an existing key to ensure it is cleared
         stateOverrideApplier.applyToRepository(repository,accountOverride);
 
+        // Then
         assertEquals(accountOverride.getStateDiff().get(DEFAULT_STORAGE_KEY_ONE), repository.getStorageValue(address, DEFAULT_STORAGE_KEY_ONE));
         assertEquals(DEFAULT_STORAGE_VALUE_TWO, repository.getStorageValue(address, DEFAULT_STORAGE_KEY_TWO));
     }
 
     @Test
     void applyStateAndStateDiffThrowsException(){
+        // Given
         Map<DataWord, DataWord> state = new HashMap<>();
         state.put(DEFAULT_STORAGE_KEY_ONE, DataWord.valueOf(10));
         accountOverride.setStateDiff(state);
         accountOverride.setState(state);
+
+        // Then
         assertThrows(IllegalStateException.class, () -> {
-            stateOverrideApplier.applyToRepository(repository,accountOverride);
+            stateOverrideApplier.applyToRepository(repository, accountOverride);
         });
     }
 
