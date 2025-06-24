@@ -88,7 +88,7 @@ public class EthModule
     private final long gasEstimationCap;
     private final long gasCallCap;
     private final PrecompiledContracts precompiledContracts;
-    private final boolean allowStateOverride;
+    private final boolean allowCallStateOverride;
     private final StateOverrideApplier stateOverrideApplier;
 
     public EthModule(
@@ -105,7 +105,7 @@ public class EthModule
             long gasEstimationCap,
             long gasCallCap,
             PrecompiledContracts precompiledContracts,
-            boolean allowStateOverride,
+            boolean allowCallStateOverride,
             StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
@@ -120,7 +120,7 @@ public class EthModule
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
         this.precompiledContracts = precompiledContracts;
-        this.allowStateOverride = allowStateOverride;
+        this.allowCallStateOverride = allowCallStateOverride;
         this.stateOverrideApplier = stateOverrideApplier;
     }
 
@@ -151,7 +151,7 @@ public class EthModule
 
         boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
 
-        if (shouldPerformStateOverride && !allowStateOverride) {
+        if (shouldPerformStateOverride && !allowCallStateOverride) {
             throw new UnsupportedOperationException("State Override is not supported");
         }
 

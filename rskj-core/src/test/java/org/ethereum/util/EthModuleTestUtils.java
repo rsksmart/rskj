@@ -61,7 +61,7 @@ public class EthModuleTestUtils {
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
                 new PrecompiledContracts(config, null, null),
-                config.getAllowStateOverride(),
+                config.getAllowCallStateOverride(),
                 new DefaultStateOverrideApplier());
     }
 
@@ -109,10 +109,10 @@ public class EthModuleTestUtils {
                                        TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
                                        ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
                                        EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
-                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap, PrecompiledContracts precompiledContracts, boolean allowStateOverride, StateOverrideApplier stateOverrideApplier) {
+                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap, PrecompiledContracts precompiledContracts, boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap, gasCap, precompiledContracts, allowStateOverride, stateOverrideApplier);
+                    bridgeSupportFactory, gasEstimationCap, gasCap, precompiledContracts, allowCallStateOverride, stateOverrideApplier);
         }
 
         private ProgramResult estimationResult;
