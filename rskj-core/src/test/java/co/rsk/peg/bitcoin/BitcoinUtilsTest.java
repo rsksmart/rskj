@@ -950,7 +950,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getMultiSigTransactionWithoutSignatures_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTx() {
+    void removeSignaturesFromMultiSigTransaction_whenTransactionIsLegacyAndInputsHaveP2shMultiSigInputScript_shouldReturnExpectedTx() {
         // arrange
         Federation federation = P2shErpFederationBuilder.builder().build();
         Script federationRedeemScript = federation.getRedeemScript();
@@ -996,7 +996,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getMultiSigTransactionWithoutSignatures_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
+    void getMultiSigTransactionHashWithoutSignatures_whenNotAllInputsHaveP2shMultiSigInputScript_shouldReturnOriginalTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
 
@@ -1028,7 +1028,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getMultiSigTransactionWithoutSignatures_realTransactionWithWitness_shouldRemoveSignatures() {
+    void removeSignaturesFromMultiSigTransaction_realTransactionWithWitness_shouldRemoveSignatures() {
         // arrange
         // data from tx https://mempool.space/testnet/tx/1744459aeaf7369aadc9fc40de9ab2bf575b14e35029b35a7ee4bbd3de65af7f
         byte[] rawTx = Hex.decode("02000000000101d654c3944d02808dda61dc0269cb8211da06035dab73c0a332e21a5e27d5c6c6000000002322002054ff1b72e598122f983989e6df42dc75736650c2409a08a237d3c3a6220b1c87fdffffff010ca00700000000001976a914af0c6784340fca71dc85be74e48c06f7850be1da88ac040047304402201f35f5f48ac56ebac8b656279c33886f0776f2e99e445ad653fdb376a05f964002200dbba1180d880e690c3d5d80295d358a1e0e58eb7ade5788c6f5e41c36b75516014830450221008608b2760b3f376a25a745433e5e562800bacf342a4fd0266c0944ff036a4035022050ebec91481289c8266038fc9eaf63e9c9b133934ceb8752901d8bc35d0b7c4801695221027de2af71862e0c64bf0ec5a66e3abc3b01fc57877802e6a6a81f6ea1d35610072102d9c67fef9f8d0707cbcca195eb5f26c6a65da6ca2d6130645c434bb924063856210346f033b8652a17d319d3ecbbbf20fd2cd663a6548173b9419d8228eef095012e53ae57472500");
@@ -1055,7 +1055,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getMultiSigTransactionWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTx() {
+    void removeSignaturesFromMultiSigTransaction_whenTransactionIsSegwit_shouldReturnExpectedTx() {
         // arrange
         List<BtcECKey> federationBtcKeys = BitcoinTestUtils.getBtcEcKeys(20);
         Federation federation = P2shP2wshErpFederationBuilder.builder()
@@ -1117,7 +1117,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getMultiSigTransactionWithoutSignatures_withLegacyAndSegwitInputs_shouldReturnExpectedTx() {
+    void removeSignaturesFromMultiSigTransaction_withLegacyAndSegwitInputs_shouldReturnExpectedTx() {
         // arrange
         List<BtcECKey> p2shFederationBtcKeys = BitcoinTestUtils.getBtcEcKeys(9);
         Federation p2shFederation = P2shErpFederationBuilder.builder()
