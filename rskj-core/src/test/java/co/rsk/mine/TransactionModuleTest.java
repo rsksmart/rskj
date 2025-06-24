@@ -652,6 +652,8 @@ class TransactionModuleTest {
                         config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
+                false,
                 new DefaultStateOverrideApplier()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());

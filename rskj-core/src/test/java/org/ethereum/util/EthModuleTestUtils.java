@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.util;
 
 import co.rsk.peg.constants.BridgeConstants;
@@ -61,6 +60,8 @@ public class EthModuleTestUtils {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                new PrecompiledContracts(config, null, null),
+                config.getAllowStateOverride(),
                 new DefaultStateOverrideApplier());
     }
 
@@ -81,6 +82,8 @@ public class EthModuleTestUtils {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
+                false,
                 null);
     }
 
@@ -106,10 +109,10 @@ public class EthModuleTestUtils {
                                        TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
                                        ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
                                        EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
-                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap, StateOverrideApplier stateOverrideApplier) {
+                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap, PrecompiledContracts precompiledContracts, boolean allowStateOverride, StateOverrideApplier stateOverrideApplier) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap, gasCap, stateOverrideApplier);
+                    bridgeSupportFactory, gasEstimationCap, gasCap, precompiledContracts, allowStateOverride, stateOverrideApplier);
         }
 
         private ProgramResult estimationResult;

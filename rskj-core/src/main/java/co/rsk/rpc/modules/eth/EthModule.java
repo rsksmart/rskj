@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -86,6 +87,8 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
+    private final PrecompiledContracts precompiledContracts;
+    private final boolean allowStateOverride;
     private final StateOverrideApplier stateOverrideApplier;
 
     public EthModule(
@@ -101,6 +104,8 @@ public class EthModule
             BridgeSupportFactory bridgeSupportFactory,
             long gasEstimationCap,
             long gasCallCap,
+            PrecompiledContracts precompiledContracts,
+            boolean allowStateOverride,
             StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
@@ -114,6 +119,8 @@ public class EthModule
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
+        this.precompiledContracts = precompiledContracts;
+        this.allowStateOverride = allowStateOverride;
         this.stateOverrideApplier = stateOverrideApplier;
     }
 
@@ -142,6 +149,12 @@ public class EthModule
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
 
+        boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
+
+        if (shouldPerformStateOverride && !allowStateOverride) {
+            throw new UnsupportedOperationException("State Override is not supported");
+        }
+
         MutableRepository mutableRepository = null;
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
@@ -150,11 +163,14 @@ public class EthModule
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
         }
 
-        if (accountOverrideList != null && !accountOverrideList.isEmpty()) {
+        if (shouldPerformStateOverride) {
             if (mutableRepository == null) {
                 mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
             }
             for (AccountOverride accountOverride : accountOverrideList) {
+                if (precompiledContracts.precompiledContactExists(accountOverride.getAddress())) {
+                    throw new InvalidParameterException("Precompiled contracts can not ve overridden");
+                }
                 stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
             }
         }
