@@ -152,7 +152,7 @@ public class EthModule
         boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
 
         if (shouldPerformStateOverride && !allowCallStateOverride) {
-            throw new UnsupportedOperationException("State Override is not supported");
+            throw new InvalidParameterException("State override is not allowed");
         }
 
         MutableRepository mutableRepository = null;
@@ -169,7 +169,7 @@ public class EthModule
             }
             for (AccountOverride accountOverride : accountOverrideList) {
                 if (precompiledContracts.precompiledContactExists(accountOverride.getAddress())) {
-                    throw new InvalidParameterException("Precompiled contracts can not ve overridden");
+                    throw new InvalidParameterException("Precompiled contracts can not be overridden");
                 }
                 stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
             }

@@ -194,12 +194,12 @@ class EthModuleTest {
                 new DefaultStateOverrideApplier());
 
         // When
-        Exception exception = assertThrows(UnsupportedOperationException.class, () -> {
+        Exception exception = assertThrows(InvalidParameterException.class, () -> {
             eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
         });
 
         // Then
-        assertEquals("State Override is not supported", exception.getMessage());
+        assertEquals("State override is not allowed", exception.getMessage());
     }
 
     @Test
@@ -247,7 +247,7 @@ class EthModuleTest {
         });
 
         // Then
-        assertEquals("Precompiled contracts can not ve overridden", exception.getMessage());
+        assertEquals("Precompiled contracts can not be overridden", exception.getMessage());
     }
 
     @Test
