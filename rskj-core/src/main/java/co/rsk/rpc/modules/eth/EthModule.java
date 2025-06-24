@@ -148,32 +148,14 @@ public class EthModule
     }
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
-
         boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
 
-        if (shouldPerformStateOverride && !allowCallStateOverride) {
-            throw new InvalidParameterException("State override is not allowed");
-        }
+        validateStateOverrideAllowance(shouldPerformStateOverride);
 
-        MutableRepository mutableRepository = null;
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
-        if (result.getFinalState() != null) {
-            mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
-        }
-
-        if (shouldPerformStateOverride) {
-            if (mutableRepository == null) {
-                mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
-            }
-            for (AccountOverride accountOverride : accountOverrideList) {
-                if (precompiledContracts.precompiledContactExists(accountOverride.getAddress())) {
-                    throw new InvalidParameterException("Precompiled contracts can not be overridden");
-                }
-                stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
-            }
-        }
+        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList);
 
         CallArguments callArgs = argsParam.toCallArguments();
 
@@ -188,6 +170,41 @@ public class EthModule
             return hReturn;
         } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
+        }
+    }
+
+    private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
+        if (shouldPerformStateOverride && !allowCallStateOverride) {
+            throw new InvalidParameterException("State override is not allowed");
+        }
+    }
+
+    private MutableRepository prepareRepository(ExecutionBlockRetriever.Result result,
+                                                Block block,
+                                                boolean shouldPerformStateOverride,
+                                                List<AccountOverride> accountOverrideList) {
+        MutableRepository mutableRepository = null;
+
+        if (result.getFinalState() != null) {
+            mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
+        }
+
+        if (shouldPerformStateOverride) {
+            if (mutableRepository == null) {
+                mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
+            }
+            applyStateOverride(mutableRepository, accountOverrideList);
+        }
+
+        return mutableRepository;
+    }
+
+    private void applyStateOverride(MutableRepository mutableRepository, List<AccountOverride> accountOverrideList) {
+        for (AccountOverride accountOverride : accountOverrideList) {
+            if (precompiledContracts.precompiledContactExists(accountOverride.getAddress())) {
+                throw new InvalidParameterException("Precompiled contracts can not be overridden");
+            }
+            stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
         }
     }
 
