@@ -208,7 +208,10 @@ public class PegUtilsLegacy {
                     }
 
                     Script legacyOutputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
-                    if (legacyOutputScript.equals(retiredFederationP2SHScript)) {
+                    Script segwitOutputScript = ScriptBuilder.createP2SHP2WSHOutputScript(inputStandardRedeemScript);
+                    if (legacyOutputScript.equals(retiredFederationP2SHScript) ||
+                        (activations.isActive(RSKIP305) && segwitOutputScript.equals(retiredFederationP2SHScript))
+                    ) {
                         return false;
                     }
                 } catch (ScriptException e) {
@@ -263,7 +266,7 @@ public class PegUtilsLegacy {
             federation -> standardP2shScripts.add(getFederationStandardP2SHScript(federation))
         );
 
-        boolean moveFromRetiringOrRetired =  isPegOutTx(btcTx, activations, standardP2shScripts);
+        boolean moveFromRetiringOrRetired = isPegOutTx(btcTx, activations, standardP2shScripts);
 
         Federation activeFederation = federationContext.getActiveFederation();
         BridgeBtcWallet activeFederationWallet = new BridgeBtcWallet(
@@ -331,7 +334,6 @@ public class PegUtilsLegacy {
             logger.debug("[getTransactionType][btc tx {}] is a peg-in", btcTx.getHash());
             return PegTxType.PEGIN;
         }
-
 
         if (isMigrationTx(
             btcTx,
