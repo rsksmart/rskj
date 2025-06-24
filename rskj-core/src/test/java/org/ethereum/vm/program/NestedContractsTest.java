@@ -1,4 +1,3 @@
-package org.ethereum.vm.program;
 /*
  * This file is part of RskJ
  * Copyright (C) 2020 RSK Labs Ltd.
@@ -16,6 +15,7 @@ package org.ethereum.vm.program;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package org.ethereum.vm.program;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -221,6 +221,7 @@ class NestedContractsTest {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 null,
                 false,
                 null);

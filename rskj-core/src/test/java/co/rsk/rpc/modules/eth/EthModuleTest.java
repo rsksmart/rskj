@@ -36,6 +36,7 @@ import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -49,6 +50,7 @@ import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.MatcherAssert;
@@ -110,6 +112,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -163,6 +166,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 true,
                 new DefaultStateOverrideApplier());
@@ -197,6 +201,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 false,
                 new DefaultStateOverrideApplier());
@@ -214,22 +219,34 @@ class EthModuleTest {
     void testCall_whenCalledWithAccountOverrideOverPrecompileContractAddress_throwsExceptionAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("test");
+        DataWord addressInDataWordForm = DataWord.valueFromHex(address.toHexString());
         String blockIdentifierString = "latest";
+        long blockNumber = 1L;
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam(blockIdentifierString);
         List<AccountOverride> accountOverrideList = List.of(new AccountOverride(address));
 
         ExecutionBlockRetriever.Result blockResultMock = mock(ExecutionBlockRetriever.Result.class);
+
         Block blockMock = mock(Block.class);
+        when(blockMock.getNumber()).thenReturn(blockNumber);
+
         ExecutionBlockRetriever executionBlockRetrieverMock = mock(ExecutionBlockRetriever.class);
         when(executionBlockRetrieverMock.retrieveExecutionBlock(blockIdentifierString))
                 .thenReturn(blockResultMock);
         when(blockResultMock.getBlock()).thenReturn(blockMock);
         when(blockResultMock.getFinalState()).thenReturn(new Trie());
 
+        ActivationConfig.ForBlock forBlockMock = mock(ActivationConfig.ForBlock.class);
+
+        ActivationConfig activationConfigMock = mock(ActivationConfig.class);
+        when(activationConfigMock.forBlock(blockNumber)).thenReturn(forBlockMock);
+
+        PrecompiledContracts.PrecompiledContract precompiledContractMock = mock(PrecompiledContracts.PrecompiledContract.class);
+
         PrecompiledContracts precompiledContractsMock = mock(PrecompiledContracts.class);
-        when(precompiledContractsMock.precompiledContactExists(address)).thenReturn(true);
+        when(precompiledContractsMock.getContractForAddress(forBlockMock, addressInDataWordForm)).thenReturn(precompiledContractMock);
 
         EthModule eth = new EthModule(
                 null,
@@ -245,6 +262,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                activationConfigMock,
                 precompiledContractsMock,
                 true,
                 new DefaultStateOverrideApplier());
@@ -256,6 +274,8 @@ class EthModuleTest {
 
         // Then
         assertEquals("Precompiled contracts can not be overridden", exception.getMessage());
+        verify(activationConfigMock, times(1)).forBlock(blockNumber);
+        verify(precompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
     }
 
     @Test
@@ -299,6 +319,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 true,
                 new DefaultStateOverrideApplier());
@@ -346,6 +367,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -398,6 +420,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -451,6 +474,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -613,6 +637,7 @@ class EthModuleTest {
                 ),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null
@@ -638,6 +663,7 @@ class EthModuleTest {
                 mock(BridgeSupportFactory.class),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 mock(DefaultStateOverrideApplier.class)
@@ -679,6 +705,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -728,6 +755,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -778,6 +806,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -828,6 +857,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -876,6 +906,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -922,6 +953,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -971,6 +1003,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -1116,6 +1149,7 @@ class EthModuleTest {
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -1147,6 +1181,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -1186,6 +1221,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
@@ -1223,6 +1259,7 @@ class EthModuleTest {
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 null);
