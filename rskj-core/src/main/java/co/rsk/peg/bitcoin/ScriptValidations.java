@@ -35,8 +35,4 @@ public class ScriptValidations {
             throw new ScriptCreationException(message, ABOVE_MAX_SCRIPT_FOR_WITNESS_SIZE);
         }
     }
-
-    private static int getBytesCountFromScript(Script redeemScript) {
-        return redeemScript.getProgram().length + FLYOVER_SCRIPT_BYTES;
-    }
 }
