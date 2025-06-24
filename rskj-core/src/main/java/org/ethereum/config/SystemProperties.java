@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -95,6 +94,7 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.ws.max_aggregated_frame_size";
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
     private static final String PROPERTY_RPC_CALL_GAS_CAP = "rpc.callGasCap";
+    private static final String PROPERTY_RPC_ALLOW_STATE_OVERRIDE = "rpc.allowStateOverride";
     private static final String PROPERTY_RPC_MAX_RESPONSE_SIZE = "rpc.maxResponseSize";
     private static final String PROPERTY_RPC_MIN_GAS_PRICE_MULTIPLIER = "rpc.minGasPriceMultiplier";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
@@ -773,6 +773,14 @@ public abstract class SystemProperties {
         }
 
         return configFromFiles.getLong(PROPERTY_RPC_CALL_GAS_CAP);
+    }
+
+    public boolean getAllowStateOverride() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_ALLOW_STATE_OVERRIDE)) {
+            return false;
+        }
+
+        return configFromFiles.getBoolean(PROPERTY_RPC_ALLOW_STATE_OVERRIDE);
     }
 
     public double getMinGasPriceMultiplier() {

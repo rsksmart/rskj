@@ -1076,6 +1076,8 @@ class Web3ImplLogsTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
+                false,
                 null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);

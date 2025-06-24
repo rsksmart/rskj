@@ -92,6 +92,7 @@ class EthModuleDSLTest {
 
     @Test
     void testCall_StateOverride_stateIsOverride() throws DslProcessorException, FileNotFoundException {
+        // When
         World world = new World();
         // given a deployed contract with stored state = 10
         String contractAddress = deployContractAndGetAddressFromDsl("dsl/eth_module/simple_contract.txt",world);
@@ -102,6 +103,8 @@ class EthModuleDSLTest {
         args.setData(SIMPLE_CONTRACT_GET_METHOD); //call  get() function
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        // Then
         // when calling get() on the contract without any override
         String result = eth.call(callArgumentsParam, blockIdentifierParam);
 
@@ -119,20 +122,21 @@ class EthModuleDSLTest {
         assertEquals(20, HexUtils.jsonHexToInt(result2));
     }
 
+    /**
+     * Runtime bytecode of the contract:
+     * <p>
+     * // SPDX-License-Identifier: MIT
+     * pragma solidity ^0.8.0;
+     * <p>
+     * contract FakeContract {
+     *     function get() public pure returns (uint) {
+     *         return 999;
+     *     }
+     * }
+     */
     @Test
     void testCall_StateOverride_codeOverride() throws DslProcessorException, FileNotFoundException {
-        /**
-         * Runtime bytecode of the contract:
-         *
-         * // SPDX-License-Identifier: MIT
-         * pragma solidity ^0.8.0;
-         *
-         * contract FakeContract {
-         *     function get() public pure returns (uint) {
-         *         return 999;
-         *     }
-         * }
-         */
+        // Given
         // This is the runtime bytecode of the contract above to override the original contract
         String runtimeByteCode = "0x6103e760005260206000f3";
         World world = new World();
@@ -146,6 +150,9 @@ class EthModuleDSLTest {
         args.setData("0x6d4ce63c"); //call  get() function
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        // Then
+
         // when calling get() on the contract without code override
         String result = eth.call(callArgumentsParam, blockIdentifierParam);
         // then it returns the original stored value: 10
@@ -163,6 +170,7 @@ class EthModuleDSLTest {
 
     @Test
     void testCall_StateOverride_balanceOverride()throws DslProcessorException, FileNotFoundException {
+        // Given
         long defaultBalance = 30000L;
         World world = new World();
 
@@ -178,6 +186,8 @@ class EthModuleDSLTest {
         args.setData(GET_MY_BALANCE_FUNCTION); //call  getMyBalance() function
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        // Then
 
         // when calling getMyBalance() without overrides
         String result = eth.call(callArgumentsParam, blockIdentifierParam);

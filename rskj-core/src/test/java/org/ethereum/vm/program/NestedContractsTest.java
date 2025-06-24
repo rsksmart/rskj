@@ -221,6 +221,8 @@ class NestedContractsTest {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
+                false,
                 null);
     }
 }
