@@ -18,6 +18,7 @@
  */
 package co.rsk.pcc.secp256k1;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.signature.Secp256k1Service;
 import org.ethereum.vm.GasCost;
 
@@ -25,8 +26,8 @@ public class Secp256k1Addition extends Secp256k1PrecompiledContract {
 
     private static final int EC_256_ADDITION_GAS_COST = 150;
 
-    public Secp256k1Addition(Secp256k1Service secp256k1Service) {
-        super(secp256k1Service);
+    public Secp256k1Addition(ActivationConfig.ForBlock activations, Secp256k1Service secp256k1Service) {
+        super(activations, secp256k1Service);
     }
 
     @Override

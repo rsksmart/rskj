@@ -155,11 +155,31 @@ transaction_build tx14
     gas 2000000
     build
 
+# Call method precompiledTest.callPrec(0x0000000000000000000000000000000001000016), SECP256K1_ADDITION CALL
+transaction_build tx16
+    sender acc1
+    nonce 15
+    contract tx01   # created in tx01
+    value 0
+    data e674f5e80000000000000000000000000000000000000000000000000000000001000016
+    gas 2000000
+    build
+
+# Call method precompiledTest.callPrec(0x0000000000000000000000000000000001000017), SECP256K1_MULTIPLICATION CALL
+transaction_build tx17
+    sender acc1
+    nonce 16
+    contract tx01   # created in tx01
+    value 0
+    data e674f5e80000000000000000000000000000000000000000000000000000000001000017
+    gas 2000000
+    build
+
 # Blocks
 
 block_build b01
     parent g00
-    transactions tx01 tx02 tx03 tx04 tx05 tx06 tx07 tx08 tx09 tx10 tx11 tx12 tx13 tx14 tx15
+    transactions tx01 tx02 tx03 tx04 tx05 tx06 tx07 tx08 tx09 tx10 tx11 tx12 tx13 tx14 tx15 tx16 tx17
     gasLimit 3000000000
     build
 

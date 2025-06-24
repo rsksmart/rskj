@@ -1,11 +1,11 @@
 package co.rsk.vm.precompiles;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslParser;
-import co.rsk.test.dsl.DslProcessorException;
-import co.rsk.test.dsl.WorldDslProcessor;
-import com.typesafe.config.ConfigValueFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -15,26 +15,35 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.typesafe.config.ConfigValueFactory;
+
+import co.rsk.config.TestSystemProperties;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.test.dsl.WorldDslProcessor;
 
 /**
- * After Iris hardfork, when a user wants to call a contract from another contract,
- * it has the chance to handle that failed call. Before Iris the whole call was marked as failed without
+ * After Iris hardfork, when a user wants to call a contract from another
+ * contract,
+ * it has the chance to handle that failed call. Before Iris the whole call was
+ * marked as failed without
  * any chance to do some error handling.
  *
- * This tests covers that functionality, focusing only on precompiled contracts. Using a contract to invoke all the existing precompiles
- * with trash data. This will produce different kind of events to verify the expected behaviour.
+ * This tests covers that functionality, focusing only on precompiled contracts.
+ * Using a contract to invoke all the existing precompiles
+ * with trash data. This will produce different kind of events to verify the
+ * expected behaviour.
  *
- * Note: Update this tests when a new precompiled is introduced => add a new transaction to that precompiled
+ * Note: Update this tests when a new precompiled is introduced => add a new
+ * transaction to that precompiled
  *
  * Events
- * - PrecompiledSuccess(address) => d1c48ee5d8b9dfbcca9046f456364548ef0b27b0a39faf92aa1c253abf816482
- * - PrecompiledFailure(address) => aa679a624a231df95e2bd73419c633e47abb959a4d3bbfd245a07c036c38202e
- * */
+ * - PrecompiledSuccess(address) =>
+ * d1c48ee5d8b9dfbcca9046f456364548ef0b27b0a39faf92aa1c253abf816482
+ * - PrecompiledFailure(address) =>
+ * aa679a624a231df95e2bd73419c633e47abb959a4d3bbfd245a07c036c38202e
+ */
 class PrecompiledContractsCallErrorHandlingTests {
     public static final String DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT = "dsl/contract_call/precompiled_error_handling.txt";
 
@@ -42,9 +51,8 @@ class PrecompiledContractsCallErrorHandlingTests {
 
     @Test
     void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
-        );
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1)));
 
         DslParser parser = DslParser.fromResource(DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT);
         world = new World(config);
@@ -68,15 +76,16 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOk("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
         assertTransactionOk("tx14", PrecompiledContracts.BLAKE2F_ADDR_STR);
+        assertTransactionOk("tx16", PrecompiledContracts.SECP256K1_ADDITION_ADDR_STR);
+        assertTransactionOk("tx17", PrecompiledContracts.SECP256K1_MULTIPLICATION_ADDR_STR);
 
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
 
     @Test
     void handleErrorOnFailedPrecompiledContractCall_afterIris() throws IOException, DslProcessorException {
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
-        );
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0)));
 
         DslParser parser = DslParser.fromResource(DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT);
         world = new World(config);
@@ -100,6 +109,8 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOkWithErrorHandling("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
         assertTransactionOkWithErrorHandling("tx14", PrecompiledContracts.BLAKE2F_ADDR_STR);
+        assertTransactionOk("tx16", PrecompiledContracts.SECP256K1_ADDITION_ADDR_STR);
+        assertTransactionOk("tx17", PrecompiledContracts.SECP256K1_MULTIPLICATION_ADDR_STR);
 
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
@@ -108,16 +119,17 @@ class PrecompiledContractsCallErrorHandlingTests {
      * Assert if a transaction ended properly without any failure.
      *
      * should emmit one PrecompiledSuccess because the whole execution finished ok
-     * */
+     */
     private void assertTransactionOk(String tx, String precompiledAddress) throws IOException {
-        assertTransaction(tx, precompiledAddress,1, 0, true);
+        assertTransaction(tx, precompiledAddress, 1, 0, true);
     }
 
     /**
      * Assert if a transaction ended properly but handled the internal error.
      *
-     * should emmit one PrecompiledFailure because it's possible to handle a failed precompiled call
-     * */
+     * should emmit one PrecompiledFailure because it's possible to handle a failed
+     * precompiled call
+     */
     private void assertTransactionOkWithErrorHandling(String tx, String precompiledAddress) throws IOException {
         assertTransaction(tx, precompiledAddress, 0, 1, true);
     }
@@ -125,14 +137,15 @@ class PrecompiledContractsCallErrorHandlingTests {
     /**
      * Assert if a transaction fails, because of the internal error.
      *
-     * shouldn't emmit any event because it failed before and exited the whole execution
-     * */
+     * shouldn't emmit any event because it failed before and exited the whole
+     * execution
+     */
     private void assertTransactionFail(String tx, String precompiledAddress) throws IOException {
-        assertTransaction(tx, precompiledAddress,0, 0, false);
+        assertTransaction(tx, precompiledAddress, 0, 0, false);
     }
 
     private void assertTransaction(String tx, String precompiledAddress, int expectedPrecompiledSuccessEventCount,
-                                   int expectedPrecompiledFailureEventCount, boolean expectedTransactionStatus) throws IOException {
+            int expectedPrecompiledFailureEventCount, boolean expectedTransactionStatus) throws IOException {
         Transaction transaction = world.getTransactionByName(tx);
 
         Assertions.assertNotNull(transaction);
@@ -157,14 +170,14 @@ class PrecompiledContractsCallErrorHandlingTests {
 
     /**
      * Checks if a transaction contains the same data to invoke "callPrec(address)"
-     * */
+     */
     private void assertExpectedData(Transaction transaction, String precompileToCall) throws IOException {
         // the first 4 bytes corresponds to method signature
         // then the first parameter is a uint32 padded to 32 bytes
 
         String[] types = new String[1];
         types[0] = "address";
-        CallTransaction.Function method = CallTransaction.Function.fromSignature("callPrec",types);
+        CallTransaction.Function method = CallTransaction.Function.fromSignature("callPrec", types);
         byte[] signature = method.encodeSignature();
         byte[] params = method.encodeArguments("0x" + precompileToCall);
 
@@ -177,7 +190,7 @@ class PrecompiledContractsCallErrorHandlingTests {
 
     /**
      * Checks how many times an event is contained on a receipt
-     * */
+     */
     public void assertEvents(TransactionReceipt receipt, String eventSignature, int times) {
         String[] params = new String[1];
         params[0] = "address";
@@ -196,7 +209,8 @@ class PrecompiledContractsCallErrorHandlingTests {
         return logInfo.getTopics().get(0).toString();
     }
 
-    private static boolean isExpectedEventSignature(String encodedEvent, String expectedEventSignature, String[] eventTypeParams) {
+    private static boolean isExpectedEventSignature(String encodedEvent, String expectedEventSignature,
+            String[] eventTypeParams) {
         CallTransaction.Function fun = CallTransaction.Function.fromSignature(expectedEventSignature, eventTypeParams);
         String encodedExpectedEvent = HashUtil.toPrintableHash(fun.encodeSignatureLong());
 
