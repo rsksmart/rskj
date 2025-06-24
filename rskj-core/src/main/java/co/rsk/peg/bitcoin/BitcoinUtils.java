@@ -143,6 +143,8 @@ public class BitcoinUtils {
      * after removing all signatures from the inputs script sigs.
      * If the transaction is segwit, it returns a copy of the transaction
      * after removing all signatures from the transaction witnesses.
+     * If the transaction has one input that is not from a multiSig,
+     * it returns the original transaction.
      *
      * @param networkParameters network parameters
      * @param transaction transaction
@@ -153,13 +155,11 @@ public class BitcoinUtils {
 
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-            // if we find one input that is not from a multiSig,
-            // we will return the original transaction
+
             Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(transaction, inputIndex);
             if (redeemScriptOpt.isEmpty()) {
                 return transaction;
             }
-
             Script redeemScript = redeemScriptOpt.get();
             if (!redeemScript.isSentToMultiSig()) {
                 return transaction;

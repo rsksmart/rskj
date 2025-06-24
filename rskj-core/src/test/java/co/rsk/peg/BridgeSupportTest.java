@@ -7665,7 +7665,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void pegoutsFlow_fromAReleaseRequest_toTheReleaseChangeBeingCorrectlyRegistered_whenSegwitFed() throws Exception {
+        void pegoutsFlow_fromAReleaseRequest_toThePegoutChangeBeingCorrectlyRegistered_whenSegwitFed() throws Exception {
             // arrange
             // we need to recreate the federators keys to have the priv keys for signing
             List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
@@ -7733,7 +7733,7 @@ class BridgeSupportTest {
                 bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
             }
 
-            // assert federators signed and that release was made
+            // assert federators signed and release was made
             for (BtcECKey federatorSignerKey : signers) {
                 assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
             }
@@ -7754,10 +7754,7 @@ class BridgeSupportTest {
             // assert utxo was registered
             assertEquals(activeFedUtxosSizeBeforeRegisteringChange + 1, federationSupport.getActiveFederationBtcUTXOs().size());
 
-            Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(pegoutWFS.getHash());
-            assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
-
-            assertEquals(releaseTxBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+            assertTransactionWasProcessed(bridgeStorageProvider, pegoutWFS.getHash(), releaseTxBlockNumber);
         }
 
         private void updateBridgeSupport() {
