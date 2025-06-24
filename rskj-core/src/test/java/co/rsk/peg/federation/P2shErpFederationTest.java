@@ -168,11 +168,18 @@ class P2shErpFederationTest {
     void createFederation_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
         activationDelayValue = csvValue;
 
+
         ErpFederationCreationException fedException = assertThrows(
             ErpFederationCreationException.class,
-            this::createDefaultP2shErpFederation
+            () -> P2shErpFederationBuilder.builder().withErpActivationDelay(activationDelayValue).build()
         );
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L})
+    void of_invalidCsvValues_throwsInvalidCSVValueException(long csvValue) {
+        activationDelayValue = csvValue;
 
         // Check the builder throws the particular expected exception
         ErpRedeemScriptBuilder builder =  P2shErpRedeemScriptBuilder.builder();
