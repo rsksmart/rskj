@@ -126,9 +126,10 @@ class P2shErpFederationTest {
     @ParameterizedTest
     @ValueSource(ints = {-100, 0})
     void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
+        P2shErpRedeemScriptBuilder builder = P2shErpRedeemScriptBuilder.builder();
         assertThrows(
             IllegalArgumentException.class,
-            () -> P2shErpRedeemScriptBuilder.builder().of(
+            () -> builder.of(
                 defaultKeys,
                 threshold,
                 emergencyKeys,
@@ -141,10 +142,10 @@ class P2shErpFederationTest {
     @Test
     void createFederation_withThresholdAboveDefaultKeysSize_throwsIllegalArgumentException() {
         int defaultThresholdAboveDefaultKeysSize = defaultKeys.size() + 1;
-
+        P2shErpRedeemScriptBuilder builder = P2shErpRedeemScriptBuilder.builder();
         assertThrows(
             IllegalArgumentException.class,
-            () -> P2shErpRedeemScriptBuilder.builder().of(
+            () -> builder.of(
                 defaultKeys,
                 defaultThresholdAboveDefaultKeysSize,
                 emergencyKeys,
@@ -166,10 +167,11 @@ class P2shErpFederationTest {
     @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L})
     void createFederation_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
         activationDelayValue = csvValue;
+        P2shErpFederationBuilder builder = P2shErpFederationBuilder.builder().withErpActivationDelay(activationDelayValue);
 
         ErpFederationCreationException fedException = assertThrows(
             ErpFederationCreationException.class,
-            () -> P2shErpFederationBuilder.builder().withErpActivationDelay(activationDelayValue).build()
+            builder::build
         );
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
     }
@@ -204,11 +206,11 @@ class P2shErpFederationTest {
         );
         newDefaultKeys.add(federator10PublicKey);
         defaultKeys = newDefaultKeys;
+        P2shErpFederationBuilder builder = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultKeys);
 
         ScriptCreationException exception =
-            assertThrows(ScriptCreationException.class, () -> P2shErpFederationBuilder.builder()
-                .withMembersBtcPublicKeys(defaultKeys)
-                .build());
+            assertThrows(ScriptCreationException.class, builder::build);
         assertEquals(ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE, exception.getReason());
     }
 
