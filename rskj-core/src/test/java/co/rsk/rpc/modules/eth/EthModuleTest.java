@@ -78,6 +78,7 @@ class EthModuleTest {
 
     @Test
     void callSmokeTest() {
+        // Given
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
@@ -97,7 +98,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -114,13 +115,17 @@ class EthModuleTest {
                 null);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
+        // Then
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
     void callSmokeTestWithAccountOverride() {
+        // Given
         AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("test"));
         accountOverride.setBalance(BigInteger.valueOf(100000));
 
@@ -146,7 +151,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -163,8 +168,11 @@ class EthModuleTest {
                 new DefaultStateOverrideApplier());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"),List.of(accountOverride));
 
+        // Then
         assertEquals(expectedResult, actualResult);
     }
 
@@ -177,7 +185,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 null,
@@ -225,7 +233,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 null,
@@ -252,6 +260,7 @@ class EthModuleTest {
 
     @Test
     void callSmokeTestWithAccountOverrideAndBlockFinalStateIsNotNull() {
+        // Given
         AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("test"));
         accountOverride.setBalance(BigInteger.valueOf(100000));
 
@@ -278,7 +287,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -295,13 +304,17 @@ class EthModuleTest {
                 new DefaultStateOverrideApplier());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
 
+        // Then
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
     void callWithoutReturn() {
+        // Given
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
@@ -321,7 +334,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -338,13 +351,17 @@ class EthModuleTest {
                 null);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
+        // Then
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
     void test_revertedTransaction() {
+        // Given
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
@@ -369,7 +386,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -387,7 +404,10 @@ class EthModuleTest {
 
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
 
+        // When
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        // Then
         RskJsonRpcRequestException exception = assertThrows(
                 RskJsonRpcRequestException.class,
                 () -> eth.call(
@@ -647,7 +667,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -696,7 +716,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -746,7 +766,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
