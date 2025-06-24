@@ -169,7 +169,6 @@ class P2shErpFederationTest {
     void createFederation_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
         activationDelayValue = csvValue;
 
-
         ErpFederationCreationException fedException = assertThrows(
             ErpFederationCreationException.class,
             () -> P2shErpFederationBuilder.builder().withErpActivationDelay(activationDelayValue).build()
