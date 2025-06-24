@@ -95,6 +95,5 @@ doc/rpc/openrpc.json
 
 
 bench.csv
-rel_error_per_scale.png
-fp_vs_bigdecimal_time_per_scale.png
-benchmark_rankings.txt
+error_per_scale.png
+time_per_scale.png
