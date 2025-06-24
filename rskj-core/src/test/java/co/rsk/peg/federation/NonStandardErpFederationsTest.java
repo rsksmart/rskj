@@ -1,9 +1,8 @@
 package co.rsk.peg.federation;
 
-import static co.rsk.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE;
-import static co.rsk.peg.bitcoin.ScriptValidations.FLYOVER_SCRIPT_BYTES;
+import static co.rsk.peg.bitcoin.ScriptValidations.MAX_SCRIPT_ELEMENT_SIZE_NO_FLYOVER;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static org.junit.jupiter.api.Assertions.*;
@@ -630,7 +629,7 @@ class NonStandardErpFederationsTest {
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases with invalid redeem script that exceed the maximum size
-            if (generatedScript.script.getProgram().length + FLYOVER_SCRIPT_BYTES <= MAX_SCRIPT_ELEMENT_SIZE) {
+            if (generatedScript.script.getProgram().length <= MAX_SCRIPT_ELEMENT_SIZE_NO_FLYOVER) {
                 networkParameters = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
                 defaultKeys = generatedScript.mainFed;
                 emergencyKeys = generatedScript.emergencyFed;
