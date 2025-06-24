@@ -92,3 +92,9 @@ doc/rpc/openrpc.json
 # Fuzzing
 **/.ci-fuzz-corpus/
 **/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
+
+
+bench.csv
+rel_error_per_scale.png
+fp_vs_bigdecimal_time_per_scale.png
+benchmark_rankings.txt
