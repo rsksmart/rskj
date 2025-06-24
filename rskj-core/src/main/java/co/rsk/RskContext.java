@@ -735,7 +735,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().getGasEstimationCap(),
                     getRskSystemProperties().getCallGasCap(),
                     getPrecompiledContracts(),
-                    getRskSystemProperties().getAllowStateOverride(),
+                    getRskSystemProperties().getAllowCallStateOverride(),
                     getStateOverrideApplier()
             );
         }
