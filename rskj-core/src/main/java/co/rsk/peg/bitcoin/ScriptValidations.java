@@ -8,6 +8,8 @@ import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT
 public class ScriptValidations {
 
     public static final int FLYOVER_SCRIPT_BYTES = 34;
+    public static final long MAX_SCRIPT_ELEMENT_SIZE_NO_FLYOVER = Script.MAX_SCRIPT_ELEMENT_SIZE - FLYOVER_SCRIPT_BYTES;
+    public static final long MAX_STANDARD_P2WSH_SCRIPT_SIZE_NO_FLYOVER = Script.MAX_STANDARD_P2WSH_SCRIPT_SIZE - FLYOVER_SCRIPT_BYTES;
 
     private ScriptValidations() {
     }
