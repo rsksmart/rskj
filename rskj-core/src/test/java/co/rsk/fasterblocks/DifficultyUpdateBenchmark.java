@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class DifficultyUpdateBenchmark {
     for (int j = 0; j <= ROUNDS; j++) {
       for (int n = 0; n <= 100; n++) {
         final double powerOfTwo = Math.pow(2, n);
+        final BigInteger scale = BigInteger.valueOf((long) powerOfTwo);
         final BigInteger factorScaled = BigInteger.valueOf((long) Math.floor(FACTOR * powerOfTwo)); // 1 + 0.005 = 1.005
                                                                                                     // =>
         BigInteger difficultyBI = new BigInteger("d2a47da04a3b12c8", 16);
@@ -38,8 +40,8 @@ public class DifficultyUpdateBenchmark {
 
         // benchmark fixed point
         long start = System.nanoTime();
-        // BigInteger resultBI = difficultyBI.multiply(factorScaled).divide(scale);
-        BigInteger resultBI = difficultyBI.multiply(factorScaled).shiftRight(n);
+        BigInteger resultBI = difficultyBI.multiply(factorScaled).divide(scale);
+        // BigInteger resultBI = difficultyBI.multiply(factorScaled).shiftRight(n);
         long end = System.nanoTime();
         long benchDifficultyBI = end - start;
 
@@ -63,12 +65,16 @@ public class DifficultyUpdateBenchmark {
       }
     }
 
-    toCsv(doAverage(benchResult, ROUNDS));
+    toCsv(doAverage(benchResult, ROUNDS), false);
+    toCsv(doMedian(benchResult), true);
   }
 
-  private void toCsv(List<BenchElem> benchResult) {
-    try (BufferedWriter out = new BufferedWriter(new FileWriter("bench.csv"))) {
-      out.write("n,factor,factorScaled,benchFP_ns_avg,benchBD_ns_avg,absError_avg,relError_avg\n");
+  private void toCsv(List<BenchElem> benchResult, boolean isMedian) {
+    String fileName = isMedian ? "bench_med.csv" : "bench_avg.csv";
+    try (BufferedWriter out = new BufferedWriter(new FileWriter(fileName))) {
+      String colAvg = "n,factor,factorScaled,benchFP_ns_avg,benchBD_ns_avg,absError_avg,relError_avg\n";
+      String colMed = "n,factor,factorScaled,benchFP_ns_med,benchBD_ns_med,absError_med,relError_med\n";
+      out.write(isMedian ? colMed : colAvg);
       for (int i = 0; i < benchResult.size(); i++) {
         BenchElem e = benchResult.get(i);
         out.write(String.format(
@@ -104,6 +110,18 @@ public class DifficultyUpdateBenchmark {
     return result;
   }
 
+  private List<BenchElem> doMedian(List<BenchElem> benchElems) {
+    // Agrupamos todos los BenchElem por valor de n
+    Map<Integer, List<BenchElem>> groups = new HashMap<>();
+    for (BenchElem elem : benchElems) {
+      groups.computeIfAbsent(elem.n, k -> new ArrayList<>()).add(elem);
+    }
+    // Para cada grupo, calculamos la mediana
+    return groups.values().stream()
+        .map(BenchElem::toMedianElem)
+        .collect(Collectors.toList());
+  }
+
   public static class BenchElem implements Comparable<BenchElem> {
     public BigInteger difficultyBI;
     public BigDecimal difficultyBD;
@@ -128,6 +146,54 @@ public class DifficultyUpdateBenchmark {
       this.n = n;
       this.factor = factor;
       this.factorScaled = factorScaled;
+    }
+
+    public static BenchElem toMedianElem(List<BenchElem> elems) {
+      int size = elems.size();
+      int mid = size / 2;
+
+      List<BigInteger> bis = elems.stream()
+          .map(e -> e.difficultyBI)
+          .sorted(Comparator.naturalOrder())
+          .collect(Collectors.toList());
+      BigInteger medianBI = bis.get(mid);
+
+      List<BigDecimal> bds = elems.stream()
+          .map(e -> e.difficultyBD)
+          .sorted(Comparator.naturalOrder())
+          .collect(Collectors.toList());
+      BigDecimal medianBD = bds.get(mid);
+
+      List<Long> fpTimes = elems.stream()
+          .map(e -> e.benchDifficultyBI)
+          .sorted()
+          .collect(Collectors.toList());
+      long medianFP = fpTimes.get(mid);
+
+      List<Long> bdTimes = elems.stream()
+          .map(e -> e.benchDifficultyBD)
+          .sorted()
+          .collect(Collectors.toList());
+      long medianBDt = bdTimes.get(mid);
+
+      List<BigDecimal> abs = elems.stream()
+          .map(e -> e.absError)
+          .sorted(Comparator.naturalOrder())
+          .collect(Collectors.toList());
+      BigDecimal medianAbs = abs.get(mid);
+
+      List<BigDecimal> rel = elems.stream()
+          .map(e -> e.relError)
+          .sorted(Comparator.naturalOrder())
+          .collect(Collectors.toList());
+      BigDecimal medianRel = rel.get(mid);
+
+      BenchElem ref = elems.get(0);
+      return new BenchElem(
+          medianBI, medianBD,
+          medianFP, medianBDt,
+          medianAbs, medianRel,
+          ref.n, ref.factor, ref.factorScaled);
     }
 
     public BenchElem toAvgElem(int rounds) {

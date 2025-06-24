@@ -94,6 +94,9 @@ doc/rpc/openrpc.json
 **/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
 
 
-bench.csv
-error_per_scale.png
-time_per_scale.png
+bench_avg.csv
+bench_med.csv
+error_per_scale_avg.png
+error_per_scale_med.png
+time_per_scale_avg.png
+time_per_scale_med.png
