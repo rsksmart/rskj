@@ -200,6 +200,15 @@ class NonStandardErpFederationsTest {
             ErpFederationCreationException.class,
             this::createDefaultNonStandardErpFederation);
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L })
+    void of_postRSKIP293_withInvalidCsvValues_throwsErpFederationCreationException(long csvValue) {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        activationDelayValue = csvValue;
 
         // Check the builder throws the particular expected exception
         ErpRedeemScriptBuilder builder = NonStandardErpRedeemScriptBuilderFactory.getNonStandardErpRedeemScriptBuilder(activations, networkParameters);
