@@ -321,6 +321,13 @@ public final class BridgeSupportTestUtil {
         assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
+    public static void assertTransactionWasProcessed(BridgeStorageProvider bridgeStorageProvider, Sha256Hash transactionHash, int executionBlockNumber) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+        assertEquals(executionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+    }
+
     public static void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
         Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
         assertTrue(topicOpt.isPresent());
