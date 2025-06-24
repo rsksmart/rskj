@@ -28,6 +28,7 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
@@ -60,6 +61,7 @@ public class EthModuleTestUtils {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 config.getAllowCallStateOverride(),
                 new DefaultStateOverrideApplier());
@@ -82,6 +84,7 @@ public class EthModuleTestUtils {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                null,
                 null,
                 false,
                 null);
@@ -109,10 +112,12 @@ public class EthModuleTestUtils {
                                        TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
                                        ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
                                        EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
-                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap, PrecompiledContracts precompiledContracts, boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier) {
+                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap,
+                                       ActivationConfig activationConfig, PrecompiledContracts precompiledContracts,
+                                       boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, gasEstimationCap, gasCap, precompiledContracts, allowCallStateOverride, stateOverrideApplier);
+                    bridgeSupportFactory, gasEstimationCap, gasCap, activationConfig, precompiledContracts, allowCallStateOverride, stateOverrideApplier);
         }
 
         private ProgramResult estimationResult;

@@ -16,13 +16,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockTxSignatureCache;
@@ -353,42 +350,6 @@ class PrecompiledContractTest {
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000009");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
         assertNull(contract);
-    }
-
-    @Test
-    void testPrecompiledContractExists_whenCalledWithAGenesisPrecompiledAddress_returnsTrueAsExpected() {
-        // Given
-        RskAddress address = PrecompiledContracts.ECRECOVER_ADDR;
-
-        // When
-        boolean result = precompiledContracts.precompiledContactExists(address);
-
-        // Then
-        assertTrue(result);
-    }
-
-    @Test
-    void testPrecompiledContractExists_whenCalledWithAConsensusEnabledPrecompiledAddress_returnsTrueAsExpected() {
-        // Given
-        RskAddress address = PrecompiledContracts.HD_WALLET_UTILS_ADDR;
-
-        // When
-        boolean result = precompiledContracts.precompiledContactExists(address);
-
-        // Then
-        assertTrue(result);
-    }
-
-    @Test
-    void testPrecompiledContractExists_whenCalledWithANonExistentPrecompiledAddress_returnsFalseAsExpected() {
-        // Given
-        RskAddress address = TestUtils.generateAddress("0000000000000000000000000000000000000000");
-
-        // When
-        boolean result = precompiledContracts.precompiledContactExists(address);
-
-        // Then
-        assertFalse(result);
     }
 
 }

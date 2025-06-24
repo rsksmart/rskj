@@ -652,6 +652,7 @@ class TransactionModuleTest {
                         config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
                 config.getCallGasCap(),
+                config.getActivationConfig(),
                 null,
                 false,
                 new DefaultStateOverrideApplier()
