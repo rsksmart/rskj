@@ -41,7 +41,7 @@ public class BitcoinUtils {
         // we need to manually remove the signatures from it,
         // since the legacy sig hash calculation impl assumes
         // they are located in the script sig, not in the witness.
-        BtcTransaction btcTxWithoutSignatures = removeSignaturesFromMultiSigTransaction(networkParameters, btcTx);
+        BtcTransaction btcTxWithoutSignatures = getMultiSigTransactionWithoutSignatures(networkParameters, btcTx);
         Sha256Hash firstInputLegacySigHash = btcTxWithoutSignatures.hashForSignature(
             FIRST_INPUT_INDEX,
             redeemScript.get(),
@@ -129,7 +129,7 @@ public class BitcoinUtils {
      */
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
         if (!transaction.hasWitness()) {
-            BtcTransaction multiSigTransactionWithoutSignatures = removeSignaturesFromMultiSigTransaction(networkParameters, transaction);
+            BtcTransaction multiSigTransactionWithoutSignatures = getMultiSigTransactionWithoutSignatures(networkParameters, transaction);
             return multiSigTransactionWithoutSignatures.getHash();
         }
 
@@ -150,29 +150,46 @@ public class BitcoinUtils {
      * @param transaction transaction
      * @return a transaction copy without the signatures
      */
-    public static BtcTransaction removeSignaturesFromMultiSigTransaction(NetworkParameters networkParameters, BtcTransaction transaction) {
-        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the actual tx
+    public static BtcTransaction getMultiSigTransactionWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
+        try {
+            removeSignaturesFromMultiSigTransaction(transactionCopy);
+        } catch (IllegalArgumentException e) {
+            return transaction;
+        }
+        return transactionCopy;
+    }
 
+    /**
+     * Removes the signatures of a Bitcoin transaction
+     * that has all its inputs from a multiSig.
+     * If the transaction is legacy, the method
+     * removes all the signatures from the inputs script sigs.
+     * If the transaction is segwit, it
+     * removes all the signatures from the transaction witnesses.
+     * If the transaction has one input that is not from a multiSig,
+     * it does nothing.
+     *
+     * @param transaction transaction
+     */
+    public static void removeSignaturesFromMultiSigTransaction(BtcTransaction transaction) {
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
-
-            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(transaction, inputIndex);
-            if (redeemScriptOpt.isEmpty()) {
-                return transaction;
-            }
-            Script redeemScript = redeemScriptOpt.get();
-            if (!redeemScript.isSentToMultiSig()) {
-                return transaction;
-            }
+            Script redeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
+                .filter(Script::isSentToMultiSig)
+                .orElseThrow(() -> {
+                    String message = "Cannot remove signatures from transaction inputs that do not have P2SH multisig input script.";
+                    logger.error("[removeSignaturesFromMultiSigTransaction] {}", message);
+                    return new IllegalArgumentException(message);
+                });
 
             boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
             if (inputHasWitness) {
-                setSpendingBaseScriptSegwit(transactionCopy, inputIndex, redeemScript);
+                setSpendingBaseScriptSegwit(transaction, inputIndex, redeemScript);
             } else {
-                setSpendingBaseScriptLegacy(transactionCopy, inputIndex, redeemScript);
+                setSpendingBaseScriptLegacy(transaction, inputIndex, redeemScript);
             }
         }
-        return transactionCopy;
     }
 
     public static Script createBaseInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
