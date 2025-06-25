@@ -18,6 +18,7 @@
 
 package co.rsk.peg.federation;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 
@@ -145,11 +146,11 @@ public final class FederationTestUtils {
     public static List<FederationMember> getFederationMembersWithBtcKeys(List<BtcECKey> keys) {
         return keys.stream()
             .map(btcKey -> new FederationMember(btcKey, new ECKey(), new ECKey()))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public static List<FederationMember> getFederationMembersWithKeys(List<BtcECKey> pks) {
-        return pks.stream().map(FederationTestUtils::getFederationMemberWithKey).collect(Collectors.toList());
+        return pks.stream().map(FederationTestUtils::getFederationMemberWithKey).toList();
     }
 
     public static FederationMember getFederationMemberWithKey(BtcECKey pk) {
@@ -168,6 +169,96 @@ public final class FederationTestUtils {
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
+
+    public static void spendFromErpSegwitCompatibleFed(
+        NetworkParameters networkParameters,
+        ErpFederation federation,
+        List<BtcECKey> signers,
+        Sha256Hash fundTxHash,
+        int outputIndex,
+        Address receiver,
+        Coin value) {
+
+        BtcTransaction spendTx = new BtcTransaction(networkParameters);
+        spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+        spendTx.addOutput(value, receiver);
+
+        int inputIndex = 0;
+        spendTx.setVersion(BTC_TX_VERSION_2);
+        spendTx.getInput(inputIndex).setSequenceNumber(federation.getActivationDelay());
+
+        // Create signatures
+        Script redeemScript = federation.getRedeemScript();
+        Sha256Hash sigHash = spendTx.hashForWitnessSignature(
+            inputIndex,
+            redeemScript,
+            value,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        int numberOfSignaturesRequired = federation.getNumberOfEmergencySignaturesRequired();
+        List<TransactionSignature> signatures = new ArrayList<>();
+        for (int i = 0; i < numberOfSignaturesRequired; i++) {
+            BtcECKey keyToSign = signers.get(i);
+            BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
+            TransactionSignature txSignature = new TransactionSignature(
+                signature,
+                BtcTransaction.SigHash.ALL,
+                false
+            );
+            signatures.add(txSignature);
+        }
+
+        TransactionWitness witness = createWitnessErpEmergencyNewScript(redeemScript, signatures, federation.getNumberOfEmergencySignaturesRequired());
+        spendTx.setWitness(inputIndex, witness);
+
+        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder()
+            .number(OP_0)
+            .data(hashedRedeemScript)
+            .build();
+
+        segwitScriptSig = new ScriptBuilder()
+            .data(segwitScriptSig.getProgram())
+            .build();
+
+        TransactionInput input = spendTx.getInput(inputIndex);
+        input.setScriptSig(segwitScriptSig);
+
+        Script inputScript = spendTx.getInput(inputIndex).getScriptSig();
+        inputScript.correctlySpends(
+            spendTx,
+            0,
+            federation.getP2SHScript(),
+            Script.ALL_VERIFY_FLAGS
+        );
+
+    }
+
+    private static TransactionWitness createWitnessErpEmergencyNewScript(Script witnessScript, List<TransactionSignature> thresholdSignatures, int signaturesSize) {
+        // with this new script structure, we need to add valid and invalid signatures
+        // in the inverse order the public keys appear in it
+
+        int zeroSignaturesSize = signaturesSize - thresholdSignatures.size();
+        List<byte[]> pushes = new ArrayList<>(signaturesSize + 2);
+        // since we are not using OP_CHECKMULTISIG anymore, we don't need to push a first empty byte
+        // so we add +2 pushes, related to the OP_NOTIF and the redeem script
+
+        // signatures to be used
+        for (int i = 0; i < thresholdSignatures.size(); i++) {
+            pushes.add(thresholdSignatures.get(i).encodeToBitcoin());
+        }
+
+        // empty signatures
+        for (int i = 0; i < zeroSignaturesSize; i ++) {
+            pushes.add(new byte[0]);
+        }
+        pushes.add(new byte[] {1}); // OP_NOTIF argument
+        pushes.add(witnessScript.getProgram());
+        return TransactionWitness.of(pushes);
+    }
+
 
     public static void spendFromErpFed(
         NetworkParameters networkParameters,

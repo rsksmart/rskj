@@ -12,12 +12,20 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegUtils;
 import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.bitcoin.*;
+import co.rsk.peg.constants.BridgeConstants;
+import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
+import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Stream;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class P2shP2wshErpFederationTest {
@@ -64,10 +72,10 @@ class P2shP2wshErpFederationTest {
     @ParameterizedTest
     @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L})
     void createFederation_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
+        P2shP2wshErpFederationBuilder p2shP2wshErpFederationBuilder = P2shP2wshErpFederationBuilder.builder()
+            .withErpActivationDelay(csvValue);
         ErpFederationCreationException fedException =
-            assertThrows(ErpFederationCreationException.class, () -> P2shP2wshErpFederationBuilder.builder()
-                .withErpActivationDelay(csvValue)
-                .build());
+            assertThrows(ErpFederationCreationException.class, p2shP2wshErpFederationBuilder::build);
 
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
     }
@@ -162,6 +170,64 @@ class P2shP2wshErpFederationTest {
                 BtcECKey signingKey = btcMembersKeys.get(i);
                 signTxInputWithKey(tx, inputIndex, sigHash, signingKey, outputScript);
             }
+        }
+
+
+        private static Stream<Arguments> spendFromP2shP2wshErpFedArgsProvider() {
+            BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
+            FederationConstants federationMainnetConstants = bridgeMainNetConstants.getFederationConstants();
+            BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
+            FederationConstants federationTestnetConstants = bridgeTestNetConstants.getFederationConstants();
+
+            return Stream.of(
+                Arguments.of(
+                    bridgeMainNetConstants.getBtcParams(),
+                    federationMainnetConstants.getErpFedActivationDelay()
+                ),
+                Arguments.of(
+                    bridgeTestNetConstants.getBtcParams(),
+                    federationTestnetConstants.getErpFedActivationDelay()
+                )
+            );
+        }
+
+        @ParameterizedTest()
+        @MethodSource("spendFromP2shP2wshErpFedArgsProvider")
+        void spendFromP2shP2wshErpFed(
+            NetworkParameters networkParameters,
+            long activationDelay) {
+
+            List<BtcECKey> erpKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"erp1", "erp2", "erp3", "erp4"},
+                true
+            );
+
+            ErpFederation p2wshP2shErpFederation = P2shP2wshErpFederationBuilder.builder()
+                .withNetworkParameters(networkParameters)
+                .withErpActivationDelay(activationDelay)
+                .withErpPublicKeys(erpKeys)
+                .build();
+
+            Coin value = Coin.valueOf(1_000_000);
+            Coin fees = Coin.valueOf(10_000);
+
+            Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
+                networkParameters,
+                "destination"
+            );
+
+            BtcTransaction fundTx = new BtcTransaction(networkParameters);
+            fundTx.addOutput(value, p2wshP2shErpFederation.getAddress());
+
+            assertDoesNotThrow(() -> FederationTestUtils.spendFromErpSegwitCompatibleFed(
+                networkParameters,
+                p2wshP2shErpFederation,
+                erpKeys,
+                fundTx.getHash(),
+                0,
+                destinationAddress,
+                value.minus(fees)
+            ));
         }
 
         @Test
