@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+
 public class AccountOverride {
 
     private BigInteger balance;
@@ -40,8 +43,8 @@ public class AccountOverride {
     private RskAddress movePrecompileToAddress;
 
     public AccountOverride(RskAddress address) {
-        if(address == null) {
-            throw new IllegalArgumentException("Address cannot be null");
+        if (address == null) {
+            throw invalidParamError("Address cannot be null");
         }
         this.address = address;
     }
@@ -51,6 +54,9 @@ public class AccountOverride {
     }
 
     public void setBalance(BigInteger balance) {
+        if (balance.compareTo(BigInteger.ZERO) < 0) {
+            throw invalidParamError("Balance must be equal or bigger than zero");
+        }
         this.balance = balance;
     }
 
@@ -59,6 +65,9 @@ public class AccountOverride {
     }
 
     public void setNonce(Long nonce) {
+        if (nonce < 0) {
+            throw invalidParamError("Nonce must be equal or bigger than zero");
+        }
         this.nonce = nonce;
     }
 
@@ -91,7 +100,7 @@ public class AccountOverride {
     }
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
-        throw new UnsupportedOperationException("Move precompile to address is not supported yet");
+        throw unimplemented("Move precompile to address is not supported yet");
     }
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
