@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.test.World;
@@ -60,11 +59,14 @@ class EthModuleDSLTest {
         EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         final Transaction tx01 = world.getTransactionByName("tx01");
         final CallArguments args = new CallArguments();
+
+        Assertions.assertNotNull(tx01.getContractAddress());
+
         args.setTo("0x" + tx01.getContractAddress().toHexString()); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
         args.setData("0xd96a094a0000000000000000000000000000000000000000000000000000000000000000"); // call to contract with param value = 0
-        args.setValue("0");
-        args.setNonce("1");
-        args.setGas("10000000");
+        args.setValue("0x0");
+        args.setNonce("0x1");
+        args.setGas("0x989680");
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("0x2");
         try {

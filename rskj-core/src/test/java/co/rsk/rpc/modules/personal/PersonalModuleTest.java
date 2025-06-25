@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.personal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +24,7 @@ import static org.mockito.Mockito.when;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
@@ -80,7 +80,7 @@ class PersonalModuleTest {
 
         // Hash of the expected transaction
         CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-        args.setChainId("" + ((int) props.getNetworkConstants().getChainId() - 2));
+        args.setChainId(HexUtils.toQuantityJsonHex((int) props.getNetworkConstants().getChainId() - 2));
         CallArgumentsParam argsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
         TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);

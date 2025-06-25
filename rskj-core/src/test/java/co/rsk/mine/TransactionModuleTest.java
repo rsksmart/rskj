@@ -420,8 +420,8 @@ class TransactionModuleTest {
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
-        args.setValue(value.toString());
-        args.setNonce(repository.getAccountState(addr1).getNonce().toString());
+        args.setValue(HexUtils.toQuantityJsonHex(value));
+        args.setNonce(HexUtils.toQuantityJsonHex(repository.getAccountState(addr1).getNonce()));
 
         return args;
     }
@@ -461,8 +461,8 @@ class TransactionModuleTest {
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
-        args.setValue(value.toString());
-        args.setNonce(repository.getAccountState(addr1).getNonce().toString());
+        args.setValue(HexUtils.toQuantityJsonHex(value));
+        args.setNonce(HexUtils.toQuantityJsonHex(repository.getAccountState(addr1).getNonce()));
 
         return args;
     }
@@ -482,8 +482,8 @@ class TransactionModuleTest {
         args.setData(data);
         args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
-        args.setValue(value.toString());
-        args.setNonce(repository.getAccountState(addr1).getNonce().toString());
+        args.setValue(HexUtils.toQuantityJsonHex(value));
+        args.setNonce(HexUtils.toQuantityJsonHex(repository.getAccountState(addr1).getNonce()));
         args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
 
         return args;
