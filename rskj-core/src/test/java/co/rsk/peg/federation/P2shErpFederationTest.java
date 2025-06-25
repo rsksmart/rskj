@@ -125,10 +125,10 @@ class P2shErpFederationTest {
 
     @ParameterizedTest
     @ValueSource(ints = {-100, 0})
-    void createFederation_withInvalidThresholdValues_throwsIllegalArgumentException(int threshold) {
+    void createFederation_withInvalidThresholdValues_throwsRedeemScriptCreationException(int threshold) {
         P2shErpRedeemScriptBuilder builder = P2shErpRedeemScriptBuilder.builder();
         assertThrows(
-            IllegalArgumentException.class,
+            RedeemScriptCreationException.class,
             () -> builder.of(
                 defaultKeys,
                 threshold,
@@ -140,11 +140,11 @@ class P2shErpFederationTest {
     }
 
     @Test
-    void createFederation_withThresholdAboveDefaultKeysSize_throwsIllegalArgumentException() {
+    void createFederation_withThresholdAboveDefaultKeysSize_throwsRedeemScriptCreationException() {
         int defaultThresholdAboveDefaultKeysSize = defaultKeys.size() + 1;
         P2shErpRedeemScriptBuilder builder = P2shErpRedeemScriptBuilder.builder();
         assertThrows(
-            IllegalArgumentException.class,
+            RedeemScriptCreationException.class,
             () -> builder.of(
                 defaultKeys,
                 defaultThresholdAboveDefaultKeysSize,
