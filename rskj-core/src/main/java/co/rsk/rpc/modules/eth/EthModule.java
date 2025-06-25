@@ -180,7 +180,7 @@ public class EthModule
 
     private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
         if (shouldPerformStateOverride && !allowCallStateOverride) {
-            throw new InvalidParameterException("State override is not allowed");
+            throw invalidParamError("State override is not allowed");
         }
     }
 
@@ -208,7 +208,7 @@ public class EthModule
         ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
         for (AccountOverride accountOverride : accountOverrideList) {
             if (precompiledContracts.getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString())) != null) {
-                throw new InvalidParameterException("Precompiled contracts can not be overridden");
+                throw invalidParamError("Precompiled contracts can not be overridden");
             }
             stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
         }
