@@ -67,16 +67,16 @@ class P2shErpRedeemScriptBuilderTest {
         return Stream.of(
             Arguments.of(NullPointerException.class, null, 0, erpKeys, erpThreshold, CSV_VALUE),
             // empty default keys
-            Arguments.of(IllegalArgumentException.class, Collections.emptyList(), 0, erpKeys, erpThreshold, CSV_VALUE),
-            Arguments.of(IllegalArgumentException.class, defaultKeys, -1, erpKeys, erpThreshold, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, Collections.emptyList(), 0, erpKeys, erpThreshold, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, -1, erpKeys, erpThreshold, CSV_VALUE),
             // threshold greater than default keys size
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultKeys.size()+1, erpKeys, erpThreshold, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultKeys.size()+1, erpKeys, erpThreshold, CSV_VALUE),
             Arguments.of(NullPointerException.class, defaultKeys, defaultThreshold, null, erpThreshold, CSV_VALUE),
             // empty erp keys
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, Collections.emptyList(), erpThreshold, CSV_VALUE),
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, erpKeys, -1, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, Collections.emptyList(), erpThreshold, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, -1, CSV_VALUE),
             // erp threshold greater than erp keys size
-            Arguments.of(IllegalArgumentException.class, defaultKeys, defaultThreshold, erpKeys, erpKeys.size() + 1, CSV_VALUE),
+            Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpKeys.size() + 1, CSV_VALUE),
             Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, -1L),
             Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, 0L),
             Arguments.of(RedeemScriptCreationException.class, defaultKeys, defaultThreshold, erpKeys, erpThreshold, surpassingMaxCsvValue)
