@@ -60,7 +60,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
-import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -207,11 +206,12 @@ class EthModuleTest {
                 new DefaultStateOverrideApplier());
 
         // When
-        Exception exception = assertThrows(InvalidParameterException.class, () -> {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
             eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
         });
 
         // Then
+        assertEquals(-32602, exception.getCode());
         assertEquals("State override is not allowed", exception.getMessage());
     }
 
@@ -268,11 +268,12 @@ class EthModuleTest {
                 new DefaultStateOverrideApplier());
 
         // When
-        Exception exception = assertThrows(InvalidParameterException.class, () -> {
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
             eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
         });
 
         // Then
+        assertEquals(-32602, exception.getCode());
         assertEquals("Precompiled contracts can not be overridden", exception.getMessage());
         verify(activationConfigMock, times(1)).forBlock(blockNumber);
         verify(precompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
