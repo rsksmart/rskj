@@ -152,6 +152,9 @@ public class PrecompiledContracts {
         this.remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
     }
 
+    public boolean precompiledContactExists(RskAddress address) {
+        return GENESIS_ADDRESSES.contains(address) || CONSENSUS_ENABLED_ADDRESSES.containsKey(address);
+    }
 
     public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
 

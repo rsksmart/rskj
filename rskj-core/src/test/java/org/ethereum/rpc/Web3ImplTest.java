@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
 
 import co.rsk.Flusher;
@@ -425,9 +424,9 @@ class Web3ImplTest {
         String result = chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
-                new BlockRefParam( "0x" + chain.block.getPrintableHash()));
+                new BlockRefParam("0x" + chain.block.getPrintableHash()));
         // then
-        assertEquals(NON_EXISTING_KEY_RESPONSE, result );
+        assertEquals(NON_EXISTING_KEY_RESPONSE, result);
     }
 
     @Test
@@ -440,7 +439,7 @@ class Web3ImplTest {
         Exception ex = assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(
                 new HexAddressParam(chain.accountAddress),
                 new HexNumberParam("0x0"),
-                new BlockRefParam( invalidBlockIdentifier)));
+                new BlockRefParam(invalidBlockIdentifier)));
         assertEquals("Block " + invalidBlockIdentifier + " not found", ex.getMessage());
     }
 
@@ -600,70 +599,70 @@ class Web3ImplTest {
         //[ {argsForCall}, { "blockNumber": "0x0" } -> return contract call respond at given args for call in genesis block
     void callByBlockNumber() {
         final ChainParams chain = createChainWithACall(false);
-        assertByBlockNumber(CALL_RESPOND, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertByBlockNumberRefParam(CALL_RESPOND, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return  contract call respond at given address in genesis block
     void callByBlockHash() {
         final ChainParams chain = createChainWithACall(false);
-        assertByBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertByBlockHashByBlockRefParam(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     void callByNonExistentBlockHash() {
         final ChainParams chain = createChainWithACall(false);
-        assertNonExistentBlockHash(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertNonExistentBlockHashRefParam(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
     void callByNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertNonBlockHashByBlockRefWhenCanonical(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
     void callByNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertNonBlockHashByBlockRefParamWhenIsNotCanonical(blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         // [ {argsForCall} { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
     void callByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(true);
-        assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertNonCanonicalBlockHashByBlockRefParamWhenCanonical(chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return  contract call respond at given address in genesis block
     void callByCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertCanonicalBlockHashWhenCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertCanonicalBlockHashByBlockRefParamWhenCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return  contract call respond at given address in genesis block
     void callByCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(false);
-        assertCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertCanonicalBlockHashByBlockRefParamWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return  contract call respond at given address in specified block
     void callByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(true);
-        assertNonCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertNonCanonicalBlockHashByBlockRefParamWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
         // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>" } -> return  contract call respond at given address in specified bloc
     void callByNonCanonicalBlockHash() {
         final ChainParams chain = createChainWithACall(true);
-        assertNonCanonicalBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
+        assertNonCanonicalBlockHashByBlockRefParam(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(TransactionFactoryHelper.toCallArgumentsParam(chain.argsForCall), blockRef));
     }
 
     @Test
@@ -1140,6 +1139,7 @@ class Web3ImplTest {
         final ChainParams chain = createChainWithATransaction(true);
         assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.eth_getTransactionCount(new HexAddressParam(chain.accountAddress), new BlockRefParam(blockRef)));
     }
+
     @Test
     void pendingTransactionsNoTxShouldReturnEmptyList() {
         World world = new World();
@@ -1160,8 +1160,8 @@ class Web3ImplTest {
         Web3Impl web3 = createWeb3WithMocks(ethModuleMock);
 
         Transaction mockTransaction1 = mockTransactionFrom("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
-        Transaction mockTransaction2 = mockTransactionFrom( "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
-        Transaction mockTransaction3 = mockTransactionFrom( "0xb3a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction2 = mockTransactionFrom("0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
+        Transaction mockTransaction3 = mockTransactionFrom("0xb3a15ed8c3b83efc744f2e0a7824a00846c21860");
         List<Transaction> allTransactions = Arrays.asList(mockTransaction1, mockTransaction2, mockTransaction3);
 
         when(ethModuleMock.ethPendingTransactions()).thenReturn(allTransactions);
@@ -2559,11 +2559,11 @@ class Web3ImplTest {
         String estimatedCost = "0x5c";
         ArgumentCaptor<BlockIdentifierParam> blockCaptor = ArgumentCaptor.forClass(BlockIdentifierParam.class);
 
-        when(ethModule.estimateGas(eq(args),blockCaptor.capture())).thenReturn(estimatedCost);
+        when(ethModule.estimateGas(eq(args), blockCaptor.capture())).thenReturn(estimatedCost);
         String result = web3.eth_estimateGas(args);
         BlockIdentifierParam capturedBlock = blockCaptor.getValue();
         assertEquals(BlockTag.LATEST.getTag(), capturedBlock.getIdentifier());
-        assertEquals(estimatedCost,result);
+        assertEquals(estimatedCost, result);
     }
 
     private void checkSendTransaction(Byte chainId) {
@@ -2775,7 +2775,11 @@ class Web3ImplTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
@@ -2895,7 +2899,11 @@ class Web3ImplTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
@@ -2961,7 +2969,11 @@ class Web3ImplTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
         TraceProvider traceProvider = new TraceProvider(List.of(debugTracer));
@@ -3039,7 +3051,7 @@ class Web3ImplTest {
         return ByteUtil.toHexString(acc1.getAddress().getBytes());
     }
 
-    //// Block Reference - EIP-1898 - Assertions - https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1898.md
+    /// / Block Reference - EIP-1898 - Assertions - https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1898.md
     private void assertByBlockNumber(String expected, Function<Map, String> toInvoke) {
         final Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -3047,6 +3059,11 @@ class Web3ImplTest {
             }
         };
         assertEquals(expected, toInvoke.apply(blockRef));
+    }
+
+    private void assertByBlockNumberRefParam(String expected, Function<BlockRefParam, String> toInvoke) {
+        BlockRefParam blockRefParam = new BlockRefParam(Map.of("blockNumber", "0x1"));
+        assertEquals(expected, toInvoke.apply(blockRefParam));
     }
 
     private void assertByBlockHash(String expected, Block block, Function<Map, String> toInvoke) {
@@ -3058,6 +3075,11 @@ class Web3ImplTest {
         assertEquals(expected, toInvoke.apply(blockRef));
     }
 
+    private void assertByBlockHashByBlockRefParam(String expected, Block block, Function<BlockRefParam, String> toInvoke) {
+        BlockRefParam blockRefParam = new BlockRefParam(Map.of("blockHash", "0x" + block.getPrintableHash()));
+        assertEquals(expected, toInvoke.apply(blockRefParam));
+    }
+
     private void assertNonExistentBlockHash(final Function<Map, String> toInvoke) {
         final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         final Map<String, String> blockRef = new HashMap<String, String>() {
@@ -3066,6 +3088,12 @@ class Web3ImplTest {
             }
         };
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
+    }
+
+    private void assertNonExistentBlockHashRefParam(final Function<BlockRefParam, String> toInvoke) {
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        BlockRefParam blockRefParam = new BlockRefParam(Map.of("blockHash", nonExistentBlockHash));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRefParam));
     }
 
     private void assertNonBlockHashWhenCanonical(Function<Map, String> toInvoke) {
@@ -3079,6 +3107,17 @@ class Web3ImplTest {
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
     }
+    private void assertNonBlockHashByBlockRefWhenCanonical(Function<BlockRefParam, String> toInvoke) {
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical", "true");
+            }
+        };
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRefParam));
+    }
 
     private void assertNonBlockHashWhenIsNotCanonical(Function<Map, String> toInvoke) {
         final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
@@ -3091,6 +3130,17 @@ class Web3ImplTest {
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
     }
+    private void assertNonBlockHashByBlockRefParamWhenIsNotCanonical(Function<BlockRefParam, String> toInvoke) {
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical", "false");
+            }
+        };
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRefParam));
+    }
 
     private void assertNonCanonicalBlockHashWhenCanonical(Block block, Function<Map, String> toInvoke) {
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -3101,6 +3151,16 @@ class Web3ImplTest {
         };
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRef));
+    }
+    private void assertNonCanonicalBlockHashByBlockRefParamWhenCanonical(Block block, Function<BlockRefParam, String> toInvoke) {
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block.getPrintableHash());
+                put("requireCanonical", "true");
+            }
+        };
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> toInvoke.apply(blockRefParam));
     }
 
     private void assertCanonicalBlockHashWhenCanonical(String expected, Block block, Function<Map, String> toInvoke) {
@@ -3114,6 +3174,17 @@ class Web3ImplTest {
         assertEquals(expected, toInvoke.apply(blockRef));
     }
 
+    private void assertCanonicalBlockHashByBlockRefParamWhenCanonical(String expected, Block block, Function<BlockRefParam, String> toInvoke) {
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block.getPrintableHash());
+                put("requireCanonical", "true");
+            }
+        };
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        assertEquals(expected, toInvoke.apply(blockRefParam));
+    }
+
     private void assertNonCanonicalBlockHashWhenNotCanonical(String expected, Block block, Function<Map, String> toInvoke) {
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -3124,6 +3195,17 @@ class Web3ImplTest {
 
         assertEquals(expected, toInvoke.apply(blockRef));
     }
+
+    private void assertNonCanonicalBlockHashByBlockRefParamWhenNotCanonical(String expected, Block block, Function<BlockRefParam, String> toInvoke) {
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block.getPrintableHash());
+                put("requireCanonical", "false");
+            }
+        };
+
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        assertEquals(expected, toInvoke.apply(blockRefParam));    }
 
     private void assertCanonicalBlockHashWhenNotCanonical(String expected, Block block, Function<Map, String> toInvoke) {
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -3136,14 +3218,26 @@ class Web3ImplTest {
         assertEquals(expected, toInvoke.apply(blockRef));
     }
 
-    private void assertNonCanonicalBlockHash(String expected, Block block, Function<Map, String> toInvoke) {
+    private void assertCanonicalBlockHashByBlockRefParamWhenNotCanonical(String expected, Block block, Function<BlockRefParam, String> toInvoke) {
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", "0x" + block.getPrintableHash());
+                put("requireCanonical", "false");
             }
         };
 
+        BlockRefParam blockRefParam = new BlockRefParam(blockRef);
+        assertEquals(expected, toInvoke.apply(blockRefParam));
+    }
+
+    private void assertNonCanonicalBlockHash(String expected, Block block, Function<Map, String> toInvoke) {
+        Map<String, String> blockRef = Map.of("blockHash", "0x" + block.getPrintableHash());
         assertEquals(expected, toInvoke.apply(blockRef));
+    }
+
+    private void assertNonCanonicalBlockHashByBlockRefParam(String expected, Block block, Function<BlockRefParam, String> toInvoke) {
+        BlockRefParam blockRefParam = new BlockRefParam(Map.of("blockHash", "0x" + block.getPrintableHash()));
+        assertEquals(expected, toInvoke.apply(blockRefParam));
     }
 
     private void assertInvalidInput(Function<Map, String> toInvoke) {
