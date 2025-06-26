@@ -10,9 +10,9 @@ public enum UnionResponseCode {
     INVALID_VALUE(-2),
     // Response codes when request or release is disabled:
     REQUEST_DISABLED(-3),
-    RELEASE_DISABLED(-4),
+    RELEASE_DISABLED(-3),
     // Environment restriction for preventing union bridge address being updated on production
-    ENVIRONMENT_DISABLED(-5),
+    ENVIRONMENT_DISABLED(-3),
     GENERIC_ERROR(-10)
     ;
 
