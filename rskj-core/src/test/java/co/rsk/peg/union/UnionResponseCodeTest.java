@@ -38,12 +38,12 @@ class UnionResponseCodeTest {
     @Test
     void getCode_whenReleaseDisabled_shouldReturnCode() {
         // Arrange
-        Assertions.assertEquals(-4, UnionResponseCode.RELEASE_DISABLED.getCode());
+        Assertions.assertEquals(-3, UnionResponseCode.RELEASE_DISABLED.getCode());
     }
 
     @Test
     void getCode_whenEnvironmentDisabled_shouldReturnCode() {
         // Arrange
-        Assertions.assertEquals(-5, UnionResponseCode.ENVIRONMENT_DISABLED.getCode());
+        Assertions.assertEquals(-3, UnionResponseCode.ENVIRONMENT_DISABLED.getCode());
     }
 }
