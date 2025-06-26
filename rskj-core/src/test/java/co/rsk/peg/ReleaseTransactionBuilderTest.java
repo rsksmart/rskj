@@ -66,6 +66,7 @@ class ReleaseTransactionBuilderTest {
         builder = new ReleaseTransactionBuilder(
             networkParameters,
             wallet,
+            federation.getFormatVersion(),
             changeAddress,
             Coin.MILLICOIN.multiply(2),
             activations
@@ -122,6 +123,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             standardMultisigFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
@@ -199,6 +201,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             bridgeConstants.getBtcParams(),
             thisWallet,
+            nonStandardErpFederation.getFormatVersion(),
             nonStandardErpFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activationsForBlock
@@ -506,6 +509,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.MILLICOIN,
             activations
@@ -570,6 +574,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.MILLICOIN,
             activations
@@ -626,6 +631,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.MILLICOIN,
             activations
@@ -661,6 +667,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.MILLICOIN.multiply(3),
             activations
@@ -688,6 +695,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
             networkParameters,
             newWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.MILLICOIN.multiply(3),
             activations
@@ -716,6 +724,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.MILLICOIN,
             activations
@@ -781,6 +790,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
@@ -833,6 +843,7 @@ class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
             networkParameters,
             thisWallet,
+            federation.getFormatVersion(),
             federation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations

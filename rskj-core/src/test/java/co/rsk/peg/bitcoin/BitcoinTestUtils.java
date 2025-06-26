@@ -140,7 +140,7 @@ public class BitcoinTestUtils {
     private static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
         TransactionInput input = transaction.getInput(inputIndex);
 
-        Script inputRedeemScript = extractRedeemScriptFromInput(input)
+        Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
             .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
 
         Script outputScript = createP2SHOutputScript(inputRedeemScript);
@@ -158,10 +158,25 @@ public class BitcoinTestUtils {
         }
     }
 
+    public static void signTxInputWithKey(BtcTransaction tx, int inputIndex, Sha256Hash sigHash, BtcECKey signingKey, Script outputScript) {
+        int sigInsertionIndex = getSigInsertionIndex(tx, inputIndex, sigHash, signingKey);
+        byte[] sig = signingKey.sign(sigHash).encodeToDER();
+
+        TransactionSignature federatorTxSig = new TransactionSignature(BtcECKey.ECDSASignature.decodeFromDER(sig), BtcTransaction.SigHash.ALL, false);
+        signInput(tx, inputIndex, federatorTxSig, sigInsertionIndex, outputScript);
+    }
+
     public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
         return IntStream.range(0, btcTx.getInputs().size())
-            .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
+            .mapToObj(i -> generateTransactionInputSigHash(btcTx, i))
             .toList();
+    }
+
+    public static Sha256Hash generateTransactionInputSigHash(BtcTransaction btcTx, int inputIndex) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            return generateSigHashForP2SHTransactionInput(btcTx, inputIndex);
+        }
+        return generateSigHashForSegwitTransactionInput(btcTx, inputIndex, btcTx.getInput(inputIndex).getValue());
     }
 
     public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
