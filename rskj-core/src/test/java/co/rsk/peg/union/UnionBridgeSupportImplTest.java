@@ -1003,10 +1003,38 @@ class UnionBridgeSupportImplTest {
     }
 
     @Test
+    void releaseUnionRbtc_whenIsDisabledAndCallerIsNotUnionBridgeContractAddress_shouldReturnUnauthorizedCaller() {
+        // arrange
+        when(rskTx.getSender(signatureCache)).thenReturn(
+            TestUtils.generateAddress("notUnionBridgeContractAddress"));
+
+        setupTransferPermissions(true, false);
+
+        BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        Coin weisTransferredToUnionBridge = new Coin(oneEth.multiply(BigInteger.TEN)); // 10 RBTC
+        Coin amountToRelease = new Coin(oneEth); // 1 RBTC
+        when(rskTx.getValue()).thenReturn(amountToRelease);
+
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            weisTransferredToUnionBridge,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+
+        // call save and assert that weisTransferredToUnionBridge still equals the original amount
+        unionBridgeSupport.save();
+        assertWeisTransferredStoredAmount(weisTransferredToUnionBridge);
+    }
+
+    @Test
     void releaseUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
         when(rskTx.getValue()).thenReturn(null);
 
@@ -1025,8 +1053,6 @@ class UnionBridgeSupportImplTest {
     @MethodSource("invalidAmountArgProvider")
     void releaseUnionRbtc_whenInvalidValue_shouldReturnInvalidValue(Coin amountToRelease) {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         when(rskTx.getValue()).thenReturn(amountToRelease);
@@ -1066,8 +1092,6 @@ class UnionBridgeSupportImplTest {
     @MethodSource("validAmountArgProvider")
     void releaseUnionRbtc_whenValidValue_shouldReturnSuccessCode(Coin amountToRelease) {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         when(rskTx.getValue()).thenReturn(amountToRelease);
@@ -1105,9 +1129,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void releaseUnionRbtc_whenNewTotalWeisTransferredAmountEqualToZero_shouldReturnSuccessCode() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
-
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         Coin minimumPeginTxValue = Coin.fromBitcoin(mainnetConstants.getMinimumPeginTxValue(
@@ -1137,8 +1158,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void releaseUnionRbtc_whenNewTotalWeisTransferredAmountLessThanZero_shouldReturnInvalidValue() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         Coin minimumPeginTxValue = Coin.fromBitcoin(mainnetConstants.getMinimumPeginTxValue(
@@ -1174,8 +1193,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void releaseUnionRbtc_whenRequestUnionRbtcIsCalledBeforeRelease_shouldReturnSuccess() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
