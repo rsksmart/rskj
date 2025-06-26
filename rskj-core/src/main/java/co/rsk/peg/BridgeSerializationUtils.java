@@ -854,6 +854,25 @@ public class BridgeSerializationUtils {
         return new PegoutsWaitingForConfirmations(entries);
     }
 
+    public static byte[] serializeBoolean(Boolean value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Cannot serialize null Boolean value");
+        }
+        return RLP.encodeInt(value ?  1 : 0);
+    }
+
+    public static Boolean deserializeBoolean(byte[] data) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        int decodedValue = RLP.decodeInt(data, 0);
+        if (decodedValue < 0 || decodedValue > 1) {
+            throw new IllegalArgumentException("Invalid serialized boolean value: " + decodedValue);
+        }
+        return decodedValue == 1;
+    }
+
     public static byte[] serializeInteger(Integer value) {
         return RLP.encodeBigInteger(BigInteger.valueOf(value));
     }
