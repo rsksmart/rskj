@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NetBlockStore;
+import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
  */
 public class BlockUtils {
     private static final long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
+
+    private static final int SNAP_BLOCK_CHECKPOINT_NUMBER = 5000;
 
     private BlockUtils() { }
 
@@ -116,6 +119,14 @@ public class BlockUtils {
         return blocks.stream()
                 .sorted(Comparator.comparingLong(Block::getNumber))
                 .collect(Collectors.toList());
+    }
+
+    public static long getSnapCheckpointBlockNumber(long bestBlockNumber, SyncConfiguration syncConfiguration) {
+        // round to SNAP_BLOCK_CHECKPOINT_NUMBER, so that the next checkpoint block selected is after 5000 blocks
+        long roundedBlockNumber = bestBlockNumber - (bestBlockNumber % SNAP_BLOCK_CHECKPOINT_NUMBER);
+        int checkpointDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+
+        return Math.max(0, roundedBlockNumber - checkpointDistance);
     }
 
     /**

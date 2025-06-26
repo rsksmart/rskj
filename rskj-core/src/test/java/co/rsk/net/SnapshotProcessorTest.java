@@ -22,6 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SnapSyncState;
 import co.rsk.net.sync.SnapshotPeersInformation;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.sync.SyncMessageHandler;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStore;
@@ -52,7 +53,6 @@ import static org.mockito.Mockito.*;
 
 class SnapshotProcessorTest {
     private static final int TEST_CHUNK_SIZE = 200;
-    private static final int TEST_CHECKPOINT_DISTANCE = 10;
     private static final int TEST_MAX_SENDER_REQUESTS = 3;
     private static final long THREAD_JOIN_TIMEOUT = 10_000; // 10 secs
 
@@ -68,12 +68,16 @@ class SnapshotProcessorTest {
     private final BlockValidationRule blockValidator = mock(BlockValidationRule.class);
     private final BlockHeaderParentDependantValidationRule blockHeaderParentValidator = mock(BlockHeaderParentDependantValidationRule.class);
     private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
+    private final SyncConfiguration syncConfiguration = mock(SyncConfiguration.class);
     private SnapshotProcessor underTest;
 
     @BeforeEach
     void setUp() throws UnknownHostException {
         peer = mockedPeer();
         when(peersInformation.getBestSnapPeerCandidates()).thenReturn(Collections.singletonList(peer));
+
+        when(syncConfiguration.getChunkSize()).thenReturn(5);
+        when(syncConfiguration.getMaxSkeletonChunks()).thenReturn(2);
     }
 
     @AfterEach
@@ -98,7 +102,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -126,7 +130,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -172,7 +176,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -209,7 +213,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -247,7 +251,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 200,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -292,7 +296,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -324,7 +328,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
@@ -374,7 +378,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
@@ -417,7 +421,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
@@ -467,7 +471,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
@@ -510,7 +514,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
@@ -560,7 +564,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
@@ -598,7 +602,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false);
@@ -637,7 +641,7 @@ class SnapshotProcessorTest {
                 blockHeaderParentValidator,
                 blockHeaderValidator,
                 TEST_CHUNK_SIZE,
-                TEST_CHECKPOINT_DISTANCE,
+                syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false));

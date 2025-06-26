@@ -91,7 +91,7 @@ class SnapshotSyncIntegrationTest {
 
         JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
         String serverBestBlockNumber = serverBestBlockResponse.get(0).get("result").get("number").asText();
-        assertTrue(HexUtils.jsonHexToLong(serverBestBlockNumber) > 6000);
+        assertTrue(HexUtils.jsonHexToLong(serverBestBlockNumber) > 10000);
 
         //when
         String rskConfFileChangedClient = configureClientConfWithGeneratedInformation(serverDbDir, clientDbDir.toString());
@@ -177,6 +177,7 @@ class SnapshotSyncIntegrationTest {
                     .toArray(OkHttpClientTestFixture.FromToAddressPair[]::new);
             Response response = OkHttpClientTestFixture.sendBulkTransactions(portServerRpc, pairs);
             assertTrue(response.isSuccessful());
+            response.body().close();
         }
     }
 }

@@ -2084,7 +2084,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             final RskSystemProperties rskSystemProperties = getRskSystemProperties();
             final Constants commonConstants = rskSystemProperties.getNetworkConstants();
             final SyncConfiguration syncConfig = getSyncConfiguration();
-            final int checkpointDistance = syncConfig.getChunkSize() * syncConfig.getMaxSkeletonChunks();
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig(),
@@ -2113,7 +2112,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new ValidGasUsedRule()
                     ),
                     getRskSystemProperties().getSnapshotChunkSize(),
-                    checkpointDistance,
+                    syncConfig,
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
                     getRskSystemProperties().isSnapshotParallelEnabled()

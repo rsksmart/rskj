@@ -77,13 +77,16 @@ public class SnapSyncState extends BaseSyncState {
 
     private BlockHeader lastVerifiedBlockHeader;
 
+    private BlockHeader validatedHeader;
+
     private long nextExpectedFrom = 0L;
 
     private volatile Boolean isRunning;
     private final Thread thread;
 
-    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
+    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration, @Nullable BlockHeader validatedHeader) {
         this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null);
+        this.validatedHeader = validatedHeader;
     }
 
     @VisibleForTesting
@@ -318,6 +321,11 @@ public class SnapSyncState extends BaseSyncState {
 
     public int getBlockHeaderChunkSize() {
         return syncConfiguration.getChunkSize();
+    }
+
+    @Nullable
+    public BlockHeader getValidatedHeader() {
+        return validatedHeader;
     }
 
     public boolean isRunning() {

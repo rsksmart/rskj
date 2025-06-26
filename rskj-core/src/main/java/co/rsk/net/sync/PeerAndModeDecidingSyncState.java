@@ -109,8 +109,8 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
         // we consider Snap as part of the Long Sync
         syncEventsHandler.onLongSyncUpdate(true, peerBestBlockNumOpt.get());
 
-        // start snap syncing
-        syncEventsHandler.startSnapSync(bestPeerOpt.get());
+        // select snap capable peer
+        syncEventsHandler.startSnapCapablePeerSelection();
         return true;
     }
 
