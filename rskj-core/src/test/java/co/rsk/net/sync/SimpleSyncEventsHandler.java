@@ -107,7 +107,10 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startSnapSync(Peer peer) { }
+    public void startSnapCapablePeerSelection() { }
+
+    @Override
+    public void startSnapSync(Peer peer, @Nullable BlockHeader validatedHeader) { }
 
     @Override
     public long nextMessageId() { return 0; }
