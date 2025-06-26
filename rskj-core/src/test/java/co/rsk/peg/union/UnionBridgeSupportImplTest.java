@@ -586,8 +586,6 @@ class UnionBridgeSupportImplTest {
     })
     void requestUnionRbtc_whenRequestIsDisabled_shouldReturnRequestDisabled(boolean requestEnabled, boolean releaseEnabled) {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         setupTransferPermissions(requestEnabled, releaseEnabled);
@@ -623,8 +621,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void requestUnionRbtc_whenRequestIsEnabledByDefault_shouldReturnSuccessCode() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
@@ -648,8 +644,6 @@ class UnionBridgeSupportImplTest {
     })
     void requestUnionRbtc_whenRequestIsEnabled_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         setupTransferPermissions(requestEnabled, releaseEnabled);
@@ -671,14 +665,30 @@ class UnionBridgeSupportImplTest {
     @Test
     void requestUnionRbtc_whenCallerIsNotUnionBridgeContractAddress_shouldReturnUnauthorizedCaller() {
         // arrange
-        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notUnionBridgeContractAddress"));
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants)
-            .build();
+
+        BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
+        Coin amountRequested = new Coin(oneEth);
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, amountRequested);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
+
+        // call save and assert that nothing is stored
+        unionBridgeSupport.save();
+        assertNoWeisTransferredIsStored();
+    }
+
+    @Test
+    void requestUnionRbtc_whenIsDisabledAndCallerIsNotUnionBridgeContractAddress_shouldReturnUnauthorizedCaller() {
+        // arrange
+        when(rskTx.getSender(signatureCache)).thenReturn(
+            TestUtils.generateAddress("notUnionBridgeContractAddress"));
+
+        setupTransferPermissions(false, true);
 
         BigInteger oneEth = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
         Coin amountRequested = new Coin(oneEth);
@@ -697,8 +707,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void requestUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         // act
@@ -729,8 +737,6 @@ class UnionBridgeSupportImplTest {
     @MethodSource("invalidAmountArgProvider")
     void requestUnionRbtc_whenInvalidValue_shouldReturnInvalidValue(Coin amountRequested) {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
         
         // To simulate the case where a locking cap is store
@@ -770,8 +776,6 @@ class UnionBridgeSupportImplTest {
     @MethodSource("validAmountArgProvider")
     void requestUnionRbtc_whenValidValue_shouldReturnSuccessCode(Coin amountRequested) {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         // act
@@ -788,9 +792,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void requestUnionRbtc_whenNewTotalWeisTransferredAmountEqualToLockingCap_shouldReturnSuccessCode() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
-
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         BigInteger oneRbtc = BigInteger.TEN.pow(18);
@@ -828,9 +829,6 @@ class UnionBridgeSupportImplTest {
     @Test
     void requestUnionRbtc_whenNewTotalWeisTransferredAmountSurpassLockingCap_shouldReturnInvalidValue() {
         // arrange
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(mainnetUnionBridgeConstants).build();
-
         when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
 
         BigInteger oneRbtc = BigInteger.TEN.pow(18);
