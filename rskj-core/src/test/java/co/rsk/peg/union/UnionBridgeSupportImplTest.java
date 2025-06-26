@@ -2,6 +2,7 @@ package co.rsk.peg.union;
 
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
+import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -1321,7 +1322,7 @@ class UnionBridgeSupportImplTest {
         assertTransferPermissionsWereStored(false, false);
 
         CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
-        byte[][] encodedTopicsSerialized = transferPermissionsEvent.encodeEventTopics(mainnetUnionBridgeContractAddress.toHexString());
+        byte[][] encodedTopicsSerialized = transferPermissionsEvent.encodeEventTopics(BRIDGE_ADDR.toHexString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsSerialized);
         byte[] encodedData = transferPermissionsEvent.encodeEventData(false, false);
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);

@@ -1,5 +1,7 @@
 package co.rsk.peg.union;
 
+import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -255,7 +257,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             storageProvider.setUnionBridgeRequestEnabled(false);
             storageProvider.setUnionBridgeReleaseEnabled(false);
 
-            eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, false, false);
+            eventLogger.logUnionBridgeTransferPermissionsUpdated(BRIDGE_ADDR, false, false);
 
             logger.warn("[{}] Union Bridge transfer permissions have been disabled due to an invalid amount to release.", RELEASE_UNION_RBTC_TAG);
             return UnionResponseCode.INVALID_VALUE;
