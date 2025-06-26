@@ -320,48 +320,60 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logUnionLockingCapIncreased(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
+        requireNonNull(caller);
+        requireNonNull(previousLockingCap);
+        requireNonNull(newLockingCap);
+
         CallTransaction.Function event = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
 
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(
-            requireNonNull(caller).toHexString());
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(caller.toHexString());
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
         byte[] encodedData = event.encodeEventData(
-            requireNonNull(previousLockingCap).asBigInteger(),
-            requireNonNull(newLockingCap).asBigInteger());
+            previousLockingCap.asBigInteger(),
+            newLockingCap.asBigInteger()
+        );
 
         addLog(encodedTopics, encodedData);
     }
 
     @Override
     public void logUnionRbtcRequested(RskAddress requester, co.rsk.core.Coin amount) {
+        requireNonNull(requester);
+        requireNonNull(amount);
+
         CallTransaction.Function event = BridgeEvents.UNION_RBTC_REQUESTED.getEvent();
 
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(requireNonNull(requester).toHexString());
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(requester.toHexString());
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
-        byte[] encodedData = event.encodeEventData(requireNonNull(amount).asBigInteger());
+        byte[] encodedData = event.encodeEventData(amount.asBigInteger());
 
         addLog(encodedTopics, encodedData);
     }
 
     @Override
     public void logUnionRbtcReleased(RskAddress receiver, co.rsk.core.Coin amount) {
+        requireNonNull(receiver);
+        requireNonNull(amount);
+
         CallTransaction.Function event = BridgeEvents.UNION_RBTC_RELEASED.getEvent();
 
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(requireNonNull(receiver).toHexString());
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(receiver.toHexString());
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
-        byte[] encodedData = event.encodeEventData(requireNonNull(amount).asBigInteger());
+        byte[] encodedData = event.encodeEventData(amount.asBigInteger());
 
         addLog(encodedTopics, encodedData);
     }
 
     @Override
     public void logUnionBridgeTransferPermissionsUpdated(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
+        requireNonNull(caller);
+
         CallTransaction.Function event = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
 
-        byte[][] encodedTopicsSerialized = event.encodeEventTopics(requireNonNull(caller).toHexString());
+        byte[][] encodedTopicsSerialized = event.encodeEventTopics(caller.toHexString());
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
         byte[] encodedData = event.encodeEventData(enablePowPegToUnionBridge, enableUnionBridgeToPowPeg);
