@@ -293,10 +293,8 @@ class UnionBridgeSupportImplTest {
     @Test
     void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabledCode() {
         // arrange
-        UnionBridgeConstants unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(unionBridgeConstants).build();
-
+        when(rskTx.getSender(signatureCache)).thenReturn(
+            changeUnionAddressAuthorizer);
         // act
         UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
             unionBridgeContractAddress);
@@ -318,6 +316,7 @@ class UnionBridgeSupportImplTest {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(unionBridgeConstants).build();
+
         when(rskTx.getSender(signatureCache)).thenReturn(
             TestUtils.generateAddress("notAuthorizedAddress"));
 
@@ -337,7 +336,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnInvalidValue(
+    void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsNull_shouldReturnSuccess(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -346,11 +345,12 @@ class UnionBridgeSupportImplTest {
         when(rskTx.getSender(signatureCache)).thenReturn(changeUnionAddressAuthorizer);
 
         // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx,
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setUnionBridgeContractAddressForTestnet(
+            rskTx,
             null);
 
         // assert
-        UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
+        UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
         Assertions.assertEquals(
             expectedResponseCode,
             actualResponseCode
@@ -361,7 +361,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsEmpty_shouldReturnInvalidValue(
+    void setUnionBridgeContractAddressForTestnet_whenGivenAddressIsEmpty_shouldReturnSuccess(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
@@ -375,13 +375,16 @@ class UnionBridgeSupportImplTest {
             emptyAddress);
 
         // assert
-        UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
+        UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
         Assertions.assertEquals(
             expectedResponseCode,
             actualResponseCode
         );
-        assertAddressWasNotSet();
-        assertNoAddressIsStored();
+        assertAddressWasSet(emptyAddress);
+
+        // call save and assert that the empty address is stored
+        unionBridgeSupport.save();
+        assertAddressWasStored(emptyAddress);
     }
 
     @ParameterizedTest
