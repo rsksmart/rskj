@@ -3483,8 +3483,8 @@ class BridgeTest {
         }
 
         @Test
-        void setUnionBridgeContractAddressForTestnet_afterRSKIP502_emptyArgument_shouldFail() throws VMException {
-            UnionResponseCode expectedUnionResponseCode = UnionResponseCode.INVALID_VALUE;
+        void setUnionBridgeContractAddressForTestnet_afterRSKIP502_emptyArgument_shouldSuccess() throws VMException {
+            UnionResponseCode expectedUnionResponseCode = UnionResponseCode.SUCCESS;
             when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(expectedUnionResponseCode);
 
             bridge = bridgeBuilder

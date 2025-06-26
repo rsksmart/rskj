@@ -56,21 +56,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     @Override
     public UnionResponseCode setUnionBridgeContractAddressForTestnet(@Nonnull Transaction tx, RskAddress unionBridgeContractAddress) {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
-
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
-
-        // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (!isEnvironmentTestnetOrRegtest()) {
-            return UnionResponseCode.ENVIRONMENT_DISABLED;
-        }
 
         AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
         if (!isAuthorized(tx, authorizer)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
-        if (!isValidAddress(unionBridgeContractAddress)) {
-            return UnionResponseCode.INVALID_VALUE;
+        // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
+        if (!isEnvironmentTestnetOrRegtest()) {
+            return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
@@ -98,15 +93,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             logger.warn(LOG_PATTERN, "isAuthorized", baseMessage);
         }
         return isAuthorized;
-    }
-
-    private boolean isValidAddress(RskAddress unionBridgeContractAddress) {
-        boolean isValidAddress = unionBridgeContractAddress != null && !unionBridgeContractAddress.equals(EMPTY_ADDRESS);
-        if (!isValidAddress) {
-            String baseMessage = "Union Bridge Contract Address cannot be null or empty";
-            logger.warn(LOG_PATTERN, "isValidAddress", baseMessage);
-        }
-        return isValidAddress;
     }
 
     @Override

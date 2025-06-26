@@ -93,10 +93,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public void setAddress(RskAddress address) {
-        if (address != null && address.equals(EMPTY_ADDRESS)) {
-            throw new IllegalArgumentException("Union Bridge address cannot be empty");
-        }
-
         this.unionBridgeAddress = address;
     }
 

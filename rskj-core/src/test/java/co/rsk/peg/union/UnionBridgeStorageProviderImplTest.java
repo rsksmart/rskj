@@ -103,14 +103,18 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     @Test
-    void setAddress_whenEmptyAddress_shouldNotSetEmptyAddress() {
+    void setAddress_whenEmptyAddress_shouldSetEmptyAddress() {
         // Arrange
         RskAddress emptyAddress = new RskAddress(new byte[20]);
 
         // Act
-        Assertions.assertThrows(IllegalArgumentException.class,
-            () -> unionBridgeStorageProvider.setAddress(emptyAddress),
-            "Union Bridge address cannot be empty");
+        unionBridgeStorageProvider.setAddress(emptyAddress);
+
+        // assert
+        Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
+        assertTrue(actualAddress.isPresent());
+        assertEquals(emptyAddress, actualAddress.get());
+        assertNoAddressIsStored();
     }
 
     @Test
@@ -161,6 +165,7 @@ class UnionBridgeStorageProviderImplTest {
         // Assert
         Optional<RskAddress> actualAddress = unionBridgeStorageProvider.getAddress();
         assertTrue(actualAddress.isPresent());
+        assertEquals(newUnionBridgeContractAddress, actualAddress.get());
         assertNoAddressIsStored();
     }
 
