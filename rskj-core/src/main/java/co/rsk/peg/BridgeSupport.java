@@ -2223,7 +2223,12 @@ public class BridgeSupport {
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
         } catch (BlockStoreException e) {
-            logger.warn("Illegal state trying to get block with hash {}", btcBlockHash, e);
+            String message = String.format(
+                "Error trying to get block with hash %s at height %d",
+                btcBlockHash,
+                block.getHeight()
+            );
+            logger.warn(message, e);
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
