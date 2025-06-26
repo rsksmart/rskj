@@ -54,7 +54,6 @@ import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.storage.*;
 import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import co.rsk.peg.union.UnionBridgeSupport;
-import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.vote.*;
 import co.rsk.peg.whitelist.*;

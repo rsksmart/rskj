@@ -61,7 +61,6 @@ import co.rsk.peg.pegin.RejectedPeginReason;
 import co.rsk.peg.pegininstructions.*;
 import co.rsk.peg.storage.*;
 import co.rsk.peg.union.UnionBridgeStorageProvider;
-import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
 import co.rsk.peg.union.UnionBridgeSupport;
 import co.rsk.peg.union.UnionResponseCode;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
