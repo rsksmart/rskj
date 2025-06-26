@@ -1431,7 +1431,7 @@ public class BridgeSupport {
             return;
         }
         Optional<Sha256Hash> pegoutTxSigHash = getFirstInputSigHash(pegoutTx);
-        if (!pegoutTxSigHash.isPresent()){
+        if (pegoutTxSigHash.isEmpty()){
             throw new IllegalStateException(String.format("SigHash could not be obtained from btc tx %s", pegoutTx.getHash()));
         }
         provider.setPegoutTxSigHash(pegoutTxSigHash.get());
@@ -2215,10 +2215,12 @@ public class BridgeSupport {
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
         } catch (BlockStoreException e) {
-            logger.warn(String.format(
-                    "Illegal state trying to get block with hash %s",
-                    btcBlockHash
-            ), e);
+            String message = String.format(
+                "Error trying to get block with hash %s at height %d",
+                btcBlockHash,
+                block.getHeight()
+            );
+            logger.warn(message, e);
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
@@ -3271,7 +3273,7 @@ public class BridgeSupport {
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {
         Optional<Coin> lockingCap = lockingCapSupport.getLockingCap();
-        if (!lockingCap.isPresent()) {
+        if (lockingCap.isEmpty()) {
             return true;
         }
 
