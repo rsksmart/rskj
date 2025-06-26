@@ -54,11 +54,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
-/**
- * Test class for BridgeEventLoggerImpl.
- *
- * @author martin.medina
- */
 class BridgeEventLoggerImplTest {
     private static final RskAddress BRIDGE_ADDRESS = PrecompiledContracts.BRIDGE_ADDR;
     private static final byte[] BRIDGE_ADDRESS_SERIALIZED = BRIDGE_ADDRESS.getBytes();
