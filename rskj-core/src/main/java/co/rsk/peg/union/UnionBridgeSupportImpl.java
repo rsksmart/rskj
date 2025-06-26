@@ -143,13 +143,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode requestUnionRbtc(Transaction tx, Coin amount) {
         final String REQUEST_UNION_RBTC_TAG = "requestUnionRbtc";
 
-        if (!isRequestEnabled()) {
-            return UnionResponseCode.REQUEST_DISABLED;
-        }
-
         RskAddress caller = tx.getSender(signatureCache);
         if (!isCallerUnionBridgeContractAddress(caller)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
+        }
+
+        if (!isRequestEnabled()) {
+            return UnionResponseCode.REQUEST_DISABLED;
         }
 
         if (!isAmountRequestedValid(amount)) {
