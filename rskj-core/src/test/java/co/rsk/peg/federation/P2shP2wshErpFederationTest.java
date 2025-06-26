@@ -218,13 +218,13 @@ class P2shP2wshErpFederationTest {
 
             BtcTransaction fundTx = new BtcTransaction(networkParameters);
             fundTx.addOutput(value, p2wshP2shErpFederation.getAddress());
-
+            int outputIndex = 0;
             assertDoesNotThrow(() -> FederationTestUtils.spendFromErpSegwitCompatibleFed(
                 networkParameters,
                 p2wshP2shErpFederation,
                 erpKeys,
                 fundTx.getHash(),
-                0,
+                outputIndex,
                 destinationAddress,
                 value.minus(fees)
             ));
