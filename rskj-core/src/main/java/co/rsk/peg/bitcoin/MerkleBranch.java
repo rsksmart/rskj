@@ -14,7 +14,7 @@ import java.util.List;
  * to a certain block.
  *
  * IMPORTANT: this class can only be used to validate
- * an existing merkle branch against a <block, transaction> pair.
+ * an existing merkle branch against a &lt;block, transaction&gt; pair.
  * It cannot be used to generate a merkle branch from a complete
  * block and a single transaction, since there's no use case
  * for it.
