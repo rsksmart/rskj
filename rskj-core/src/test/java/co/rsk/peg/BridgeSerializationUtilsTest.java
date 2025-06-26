@@ -1569,6 +1569,26 @@ class BridgeSerializationUtilsTest {
         Assertions.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void serializeDeserializeBoolean_whenValid_shouldSerialize(Boolean expectedValue) {
+        byte[] serializedValue = BridgeSerializationUtils.serializeBoolean(expectedValue);
+
+        Boolean deserializedValue = BridgeSerializationUtils.deserializeBoolean(serializedValue);
+        assertEquals(expectedValue, deserializedValue);
+    }
+
+    @Test
+    void serializeBoolean_whenNull_shouldThrowIllegalArgumentException() {
+        Assertions.assertThrowsExactly(IllegalArgumentException.class, () -> BridgeSerializationUtils.serializeBoolean(null));
+    }
+
+    @Test
+    void deserializeBoolean_whenNull_shouldReturnNull() {
+        Boolean deserializedValue = BridgeSerializationUtils.deserializeBoolean(null);
+        assertNull(deserializedValue);
+    }
+
     private Address mockAddressHash160(String hash160) {
         Address result = mock(Address.class);
         when(result.getHash160()).thenReturn(Hex.decode(hash160));
