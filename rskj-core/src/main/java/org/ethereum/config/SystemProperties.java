@@ -79,6 +79,10 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
     public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
+    public static final String PROPERTY_DB_SQL_ENABLED = "database.sql.enabled";
+    public static final String PROPERTY_DB_SQL_JDBC_URL = "database.sql.jdbcUrl";
+    public static final String PROPERTY_DB_SQL_USERNAME = "database.sql.username";
+    public static final String PROPERTY_DB_SQL_PASSWORD = "database.sql.password";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
     public static final String PROPERTY_RPC_HTTP_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.http.max_aggregated_frame_size";
@@ -253,6 +257,22 @@ public abstract class SystemProperties {
 
     public List<String> importTrustedKeys() {
         return configFromFiles.getStringList("database.import.trusted-keys");
+    }
+
+    public String sqlJdbcUrl() {
+        return configFromFiles.getString(PROPERTY_DB_SQL_JDBC_URL);
+    }
+
+    public String sqlUsername() {
+        return configFromFiles.getString(PROPERTY_DB_SQL_USERNAME);
+    }
+
+    public String sqlPassword() {
+        return configFromFiles.getString(PROPERTY_DB_SQL_PASSWORD);
+    }
+
+    public boolean sqlEnabled() {
+        return configFromFiles.getBoolean(PROPERTY_DB_SQL_ENABLED);
     }
 
     public List<Node> peerActive() {
