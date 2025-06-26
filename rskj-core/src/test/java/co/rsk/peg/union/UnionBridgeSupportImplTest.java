@@ -217,7 +217,7 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @MethodSource("testnetAndRegtestConstantsProvider")
-    void setUnionBridgeContractAddressForTestnet_whenAddressIsTheSameAddressInConstants_shouldReturnInvalidValue(
+    void setUnionBridgeContractAddressForTestnet_whenAddressIsTheSameAddressInConstants_shouldReturnSuccess(
         UnionBridgeConstants unionBridgeConstants) {
         // arrange
         unionBridgeSupport = unionBridgeSupportBuilder
