@@ -185,14 +185,6 @@ class BridgeSupportTest {
             signatureCache
         );
 
-        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
-
-        UnionBridgeSupportBuilder
-            .builder()
-            .withConstants(UnionBridgeMainNetConstants.getInstance())
-            .withStorageProvider(unionBridgeStorageProvider)
-            .withSignatureCache(signatureCache);
-
         repository = createRepository();
         bridgeStorageProvider = new BridgeStorageProvider(repository, contractAddress, btcMainnetParams, allActivations);
     }
