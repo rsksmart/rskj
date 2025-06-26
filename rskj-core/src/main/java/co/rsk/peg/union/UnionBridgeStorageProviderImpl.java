@@ -52,15 +52,15 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         if (nonNull(unionBridgeRequestEnabled)) {
             bridgeStorageAccessor.saveToRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-                unionBridgeRequestEnabled? 1L : 0L,
-                BridgeSerializationUtils::serializeLong
+                unionBridgeRequestEnabled,
+                BridgeSerializationUtils::serializeBoolean
             );
         }
         if (nonNull(unionBridgeReleaseEnabled)) {
             bridgeStorageAccessor.saveToRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-                unionBridgeReleaseEnabled? 1L : 0L,
-                BridgeSerializationUtils::serializeLong
+                unionBridgeReleaseEnabled,
+                BridgeSerializationUtils::serializeBoolean
             );
         }
     }
@@ -144,9 +144,10 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     public Optional<Boolean> isUnionBridgeRequestEnabled() {
         return Optional.ofNullable(unionBridgeRequestEnabled)
-            .or(() -> bridgeStorageAccessor.getFromRepository(
-                UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-                BridgeSerializationUtils::deserializeOptionalLong).map(value -> value == 1L));
+            .or(() -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
+                    UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+                    BridgeSerializationUtils::deserializeBoolean
+                )));
     }
 
     public void setUnionBridgeReleaseEnabled(boolean enabled) {
@@ -155,8 +156,9 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     public Optional<Boolean> isUnionBridgeReleaseEnabled() {
         return Optional.ofNullable(unionBridgeReleaseEnabled)
-            .or(() -> bridgeStorageAccessor.getFromRepository(
+            .or(() -> Optional.ofNullable(bridgeStorageAccessor.getFromRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-                BridgeSerializationUtils::deserializeOptionalLong).map(value -> value == 1L));
+                BridgeSerializationUtils::deserializeBoolean
+            )));
     }
 }
