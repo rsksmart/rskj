@@ -680,7 +680,7 @@ class BridgeEventLoggerImplTest {
     @MethodSource("logUnionRbtcRequestedInvalidArgProvider")
     void logUnionRbtcRequested_whenInvalidArg_shouldFail(RskAddress requester,
         co.rsk.core.Coin amount) {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
             () -> eventLogger.logUnionRbtcRequested(requester, amount),
             "Requester or amount cannot be null");
     }
@@ -699,7 +699,7 @@ class BridgeEventLoggerImplTest {
     @ParameterizedTest
     @MethodSource("logUnionRbtcReleasedInvalidArgProvider")
     void logUnionRbtcReleased_whenInvalidArg_shouldFail(RskAddress receiver, co.rsk.core.Coin amount) {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
             () -> eventLogger.logUnionRbtcReleased(receiver, amount),
             "Receiver or amount cannot be null");
     }
@@ -769,7 +769,7 @@ class BridgeEventLoggerImplTest {
     @ParameterizedTest
     @MethodSource("logUnionLockingCapIncreasedNullArgsProvider")
     void logUnionLockingCapIncreased_whenNullArgs_shouldFail(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
-        assertThrows(IllegalArgumentException.class, () -> eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap));
+        assertThrows(NullPointerException.class, () -> eventLogger.logUnionLockingCapIncreased(caller, previousLockingCap, newLockingCap));
     }
 
     private static Stream<Arguments> logUnionLockingCapIncreasedNullArgsProvider() {
@@ -820,7 +820,7 @@ class BridgeEventLoggerImplTest {
     @ParameterizedTest
     @MethodSource("logUnionBridgeTransferPermissionsUpdatedInvalidArgProvider")
     void logUnionBridgeTransferPermissionsUpdated_whenInvalidArg_shouldFail(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(NullPointerException.class,
             () -> eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, enablePowPegToUnionBridge, enableUnionBridgeToPowPeg),
             "Caller cannot be null");
     }
