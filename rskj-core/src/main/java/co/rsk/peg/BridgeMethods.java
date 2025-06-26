@@ -822,7 +822,86 @@ public enum BridgeMethods {
         activations -> activations.isActive(RSKIP271),
         fixedPermission(false),
         CallTypeHelper.ALLOW_STATIC_CALL
-    );
+    ),
+    // Union Bridge Methods
+    SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET(
+        CallTransaction.Function.fromSignature(
+            "setUnionBridgeContractAddressForTestnet",
+            new String[]{"address"},
+            new String[]{"int"}
+        ),
+        fixedCost(24000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeContractAddressForTestnet,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    GET_UNION_BRIDGE_CONTRACT_ADDRESS(
+        CallTransaction.Function.fromSignature(
+            "getUnionBridgeContractAddressForTestnet",
+            new String[]{},
+            new String[]{"address"}
+        ),
+        fixedCost(3_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<String>) Bridge::getUnionBridgeContractAddress,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    GET_UNION_BRIDGE_LOCKING_CAP(
+        CallTransaction.Function.fromSignature(
+            "getUnionBridgeLockingCap",
+            new String[]{},
+            new String[]{"int256"}
+        ),
+        fixedCost(3_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<BigInteger>) Bridge::getUnionBridgeLockingCap,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    INCREASE_UNION_BRIDGE_LOCKING_CAP(
+        CallTransaction.Function.fromSignature(
+            "increaseUnionBridgeLockingCap",
+            new String[]{"int256"},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    REQUEST_UNION_BRIDGE_RBTC(
+        CallTransaction.Function.fromSignature(
+            "requestUnionBridgeRbtc",
+            new String[]{"int256"},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::requestUnionBridgeRbtc,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    RELEASE_UNION_BRIDGE_RBTC(
+        CallTransaction.Function.fromSignature(
+            "releaseUnionBridgeRbtc",
+            new String[]{},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::releaseUnionBridgeRbtc,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    SET_UNION_BRIDGE_TRANSFER_PERMISSIONS(
+        CallTransaction.Function.fromSignature(
+            "setUnionBridgeTransferPermissions",
+            new String[]{"bool", "bool"},
+            new String[]{"int"}
+        ),
+        fixedCost(8_000L), // TODO: Define final cost
+        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions,
+        activations -> activations.isActive(RSKIP502),
+        fixedPermission(false)
+    ),
+    ;
 
     private static class CallTypeHelper {
         private static final Predicate<MsgType> ALLOW_STATIC_CALL = callType ->
