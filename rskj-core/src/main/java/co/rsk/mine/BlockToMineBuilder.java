@@ -45,6 +45,9 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
 
+import static co.rsk.core.DifficultyCalculator.BLOCK_COUNT_WINDOW;
+import static co.rsk.core.DifficultyCalculator.TEST_NEW_DIFFICULTY;
+
 /**
  * This component helps build a new block to mine.
  * It can also be used to generate a new block from the pending state, which is useful
@@ -252,7 +255,9 @@ public class BlockToMineBuilder {
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
 
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
+        List<BlockHeader> blockWindow = activationConfig.isActive(ConsensusRule.RSKIP517, blockNumber) && TEST_NEW_DIFFICULTY ?
+                mainchainHeaders.subList(0, (int) BLOCK_COUNT_WINDOW) : Collections.emptyList();
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader, blockWindow));
         return newHeader;
     }
 }

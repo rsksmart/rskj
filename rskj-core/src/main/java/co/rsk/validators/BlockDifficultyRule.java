@@ -21,10 +21,14 @@ package co.rsk.validators;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Checks block's difficulty against calculated difficulty value
@@ -37,9 +41,11 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule, 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     private final DifficultyCalculator difficultyCalculator;
+    private final ConsensusValidationMainchainView mainchainView;
 
-    public BlockDifficultyRule(DifficultyCalculator difficultyCalculator) {
+    public BlockDifficultyRule(DifficultyCalculator difficultyCalculator, ConsensusValidationMainchainView mainchainView) {
         this.difficultyCalculator = difficultyCalculator;
+        this.mainchainView = mainchainView;
     }
 
     @Override
@@ -48,7 +54,10 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule, 
             logger.warn("BlockDifficultyRule - block or parent are null");
             return false;
         }
-        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
+        // todo(fede) this is not production ready
+        List<BlockHeader> blockWindow = DifficultyCalculator.TEST_NEW_DIFFICULTY ?
+                mainchainView.getFromBestBlock((long)DifficultyCalculator.BLOCK_COUNT_WINDOW) : Collections.emptyList();
+        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent, blockWindow);
         BlockDifficulty difficulty = header.getDifficulty();
 
         if (!difficulty.equals(calcDifficulty)) {
