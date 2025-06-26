@@ -30,6 +30,7 @@ import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.pegin.RejectedPeginReason;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
