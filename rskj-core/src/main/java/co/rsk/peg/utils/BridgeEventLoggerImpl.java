@@ -17,6 +17,8 @@
  */
 package co.rsk.peg.utils;
 
+import static java.util.Objects.*;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -318,25 +320,27 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logUnionLockingCapIncreased(RskAddress caller, co.rsk.core.Coin previousLockingCap, co.rsk.core.Coin newLockingCap) {
-        if (caller == null || previousLockingCap == null || newLockingCap == null) {
-            throw new IllegalArgumentException("Caller, previous and new locking cap cannot be null");
-        }
+        requireNonNull(caller);
+        requireNonNull(previousLockingCap);
+        requireNonNull(newLockingCap);
 
         CallTransaction.Function event = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
 
         byte[][] encodedTopicsSerialized = event.encodeEventTopics(caller.toHexString());
         List<DataWord> encodedTopics = getEncodedTopics(encodedTopicsSerialized);
 
-        byte[] encodedData = event.encodeEventData(previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
+        byte[] encodedData = event.encodeEventData(
+            previousLockingCap.asBigInteger(),
+            newLockingCap.asBigInteger()
+        );
 
         addLog(encodedTopics, encodedData);
     }
 
     @Override
     public void logUnionRbtcRequested(RskAddress requester, co.rsk.core.Coin amount) {
-        if (requester == null || amount == null) {
-            throw new IllegalArgumentException("Requester and amount cannot be null");
-        }
+        requireNonNull(requester);
+        requireNonNull(amount);
 
         CallTransaction.Function event = BridgeEvents.UNION_RBTC_REQUESTED.getEvent();
 
@@ -350,9 +354,8 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logUnionRbtcReleased(RskAddress receiver, co.rsk.core.Coin amount) {
-        if (receiver == null || amount == null) {
-            throw new IllegalArgumentException("Receiver and amount cannot be null");
-        }
+        requireNonNull(receiver);
+        requireNonNull(amount);
 
         CallTransaction.Function event = BridgeEvents.UNION_RBTC_RELEASED.getEvent();
 
@@ -366,9 +369,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     @Override
     public void logUnionBridgeTransferPermissionsUpdated(RskAddress caller, boolean enablePowPegToUnionBridge, boolean enableUnionBridgeToPowPeg) {
-        if (caller == null) {
-            throw new IllegalArgumentException("Caller cannot be null");
-        }
+        requireNonNull(caller);
 
         CallTransaction.Function event = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
 
