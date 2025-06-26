@@ -18,9 +18,7 @@ import org.slf4j.LoggerFactory;
 public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeSupportImpl.class);
-
-    private static final RskAddress EMPTY_ADDRESS = new RskAddress(new byte[20]);
-    public static final String LOG_PATTERN = "[{}] {}";
+    private static final String LOG_PATTERN = "[{}] {}";
 
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
@@ -152,9 +150,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isRequestEnabled() {
         // By default, the request is enabled if the storage provider does not have a specific value set.
         Boolean isRequestEnabled = storageProvider.isUnionBridgeRequestEnabled().orElse(true);
-        if (!isRequestEnabled) {
-            logger.warn("[{isRequestEnabled}] Union Bridge Request is not enabled.");
-        }
+        logger.trace("[{isRequestEnabled}] Union Bridge request enabled: {}", isRequestEnabled);
+
         return isRequestEnabled;
     }
 
@@ -162,7 +159,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
         boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
         if (!isCallerUnionBridgeContractAddress) {
-            String baseMessage = String.format("Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s", callerAddress, unionBridgeContractAddress);
+            String baseMessage = String.format(
+                "Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s",
+                callerAddress,
+                unionBridgeContractAddress
+            );
             logger.warn(LOG_PATTERN, "isCallerUnionBridgeContractAddress", baseMessage);
         }
         return isCallerUnionBridgeContractAddress;
@@ -172,7 +173,9 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         boolean isAmountNullOrLessThanOne = isAmountToReleaseValid(amountRequested);
         if (isAmountNullOrLessThanOne) {
             logger.warn(
-                "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}", amountRequested);
+                "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}",
+                amountRequested
+            );
             return false;
         }
 
@@ -185,7 +188,10 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             newAmountRequested.compareTo(lockingCap) > 0;
         if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
             logger.warn(
-                "[isValidAmount] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}", previousAmountRequested, newAmountRequested, lockingCap
+                "[isValidAmount] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}",
+                previousAmountRequested,
+                newAmountRequested,
+                lockingCap
             );
             return false;
         }
@@ -199,16 +205,21 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         if (newCap.compareTo(currentLockingCap) < 1) {
             logger.warn(
                 "[isValidLockingCap] Attempted value doesn't increase Union Locking Cap. Value attempted: {} . currentLockingCap: {}",
-                newCap, currentLockingCap);
+                newCap,
+                currentLockingCap
+            );
             return false;
         }
 
         Coin maxLockingCapIncreaseAllowed = currentLockingCap.multiply(
-            BigInteger.valueOf(constants.getLockingCapIncrementsMultiplier()));
+            BigInteger.valueOf(constants.getLockingCapIncrementsMultiplier())
+        );
         if (newCap.compareTo(maxLockingCapIncreaseAllowed) > 0) {
             logger.warn(
                 "[isValidLockingCap] Attempted value tries to increase Union Locking Cap above its limit. Value attempted: {} . maxLockingCapIncreasedAllowed: {}",
-                newCap, maxLockingCapIncreaseAllowed);
+                newCap,
+                maxLockingCapIncreaseAllowed
+            );
             return false;
         }
 
@@ -233,7 +244,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         if (isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
             return UnionResponseCode.INVALID_VALUE;
         }
-
 
         Coin weisTransferredToUnionBridge = getWeisTransferredToUnionBridge();
 
@@ -266,9 +276,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isReleaseEnabled() {
         // By default, the release is enabled if the storage provider does not have a specific value set.
         Boolean isReleaseEnabled = storageProvider.isUnionBridgeReleaseEnabled().orElse(true);
-        if (!isReleaseEnabled) {
-            logger.warn("[isReleaseEnabled] Union Bridge Release is not enabled.");
-        }
+        logger.trace("[isReleaseEnabled] Union Bridge release enabled: {}", isReleaseEnabled);
+
         return isReleaseEnabled;
     }
 
@@ -287,8 +296,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         RskAddress caller = tx.getSender(signatureCache);
         eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, requestEnabled, releaseEnabled);
-        logger.info("[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
-            SET_TRANSFER_PERMISSIONS_TAG, requestEnabled, releaseEnabled);
+        logger.info(
+            "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
+            SET_TRANSFER_PERMISSIONS_TAG,
+            requestEnabled,
+            releaseEnabled
+        );
+
         return UnionResponseCode.SUCCESS;
     }
 
