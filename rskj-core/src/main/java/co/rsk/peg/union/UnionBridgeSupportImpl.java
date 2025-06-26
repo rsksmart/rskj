@@ -62,7 +62,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
-        if (!isChangeUnionAddressAuthorizedCaller(tx)) {
+        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
+        if (!isAuthorized(tx, authorizer)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -88,12 +89,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return isTestnetOrRegtest;
     }
 
-    private boolean isChangeUnionAddressAuthorizedCaller(Transaction tx) {
-        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
+    private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
         boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
         if (!isAuthorized) {
-            String baseMessage = String.format("Caller is not authorized to change union bridge contract address. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isChangeUnionAddressAuthorizedCaller", baseMessage);
+            String baseMessage = String.format("Caller is not authorized to call this method. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isAuthorized", baseMessage);
         }
         return isAuthorized;
     }
@@ -116,7 +116,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
-        if (!isChangeLockingCapAuthorizedCaller(tx)) {
+        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
+        if (!isAuthorized(tx, authorizer)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -132,16 +133,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
             INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newCap);
         return UnionResponseCode.SUCCESS;
-    }
-
-    private boolean isChangeLockingCapAuthorizedCaller(Transaction tx) {
-        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
-        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
-        if (!isAuthorized) {
-            String baseMessage = String.format("Caller is not authorized to increase locking cap. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isChangeLockingCapAuthorizedCaller", baseMessage);
-        }
-        return isAuthorized;
     }
 
     private Coin getWeisTransferredToUnionBridge() {
@@ -298,7 +289,8 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         boolean releaseEnabled) {
         final String SET_TRANSFER_PERMISSIONS_TAG = "setTransferPermissions";
 
-        if (!isChangeTransferPermissionsAuthorizedCaller(tx)) {
+        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
+        if (!isAuthorized(tx, authorizer)) {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
@@ -310,16 +302,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         logger.info("[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
             SET_TRANSFER_PERMISSIONS_TAG, requestEnabled, releaseEnabled);
         return UnionResponseCode.SUCCESS;
-    }
-
-    private boolean isChangeTransferPermissionsAuthorizedCaller(Transaction tx) {
-        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
-        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
-        if (!isAuthorized) {
-            String baseMessage = String.format("Caller is not authorized to change transfer permissions. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isChangeTransferPermissionsAuthorizedCaller", baseMessage);
-        }
-        return isAuthorized;
     }
 
     @Override
