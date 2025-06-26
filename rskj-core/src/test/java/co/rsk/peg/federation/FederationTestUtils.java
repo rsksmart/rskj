@@ -18,9 +18,9 @@
 
 package co.rsk.peg.federation;
 
-import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
+import static co.rsk.peg.bitcoin.BitcoinUtils.buildSegwitScriptSig;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -210,19 +210,10 @@ public final class FederationTestUtils {
             signatures.add(txSignature);
         }
 
-        TransactionWitness witness = createWitnessErpEmergencyNewScript(redeemScript, signatures, federation.getNumberOfEmergencySignaturesRequired());
+        TransactionWitness witness = createSpendingFederationScriptForEmergencyKeys(redeemScript, signatures, federation.getNumberOfEmergencySignaturesRequired());
         spendTx.setWitness(inputIndex, witness);
 
-        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
-        Script segwitScriptSig = new ScriptBuilder()
-            .number(OP_0)
-            .data(hashedRedeemScript)
-            .build();
-
-        segwitScriptSig = new ScriptBuilder()
-            .data(segwitScriptSig.getProgram())
-            .build();
-
+        Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
         TransactionInput input = spendTx.getInput(inputIndex);
         input.setScriptSig(segwitScriptSig);
 
@@ -236,26 +227,25 @@ public final class FederationTestUtils {
 
     }
 
-    private static TransactionWitness createWitnessErpEmergencyNewScript(Script witnessScript, List<TransactionSignature> thresholdSignatures, int signaturesSize) {
-        // with this new script structure, we need to add valid and invalid signatures
-        // in the inverse order the public keys appear in it
+    private static TransactionWitness createSpendingFederationScriptForEmergencyKeys(Script redeemScript, List<TransactionSignature> signatures, int requiredSignatures) {
+        int pushForByteArray = 1;
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int witnessSize = pushForRedeemScript + pushForOpNotif + requiredSignatures + pushForByteArray;
 
-        int zeroSignaturesSize = signaturesSize - thresholdSignatures.size();
-        List<byte[]> pushes = new ArrayList<>(signaturesSize + 2);
-        // since we are not using OP_CHECKMULTISIG anymore, we don't need to push a first empty byte
-        // so we add +2 pushes, related to the OP_NOTIF and the redeem script
-
+        List<byte[]> pushes = new ArrayList<>(witnessSize);
         // signatures to be used
-        for (int i = 0; i < thresholdSignatures.size(); i++) {
-            pushes.add(thresholdSignatures.get(i).encodeToBitcoin());
+        for (int i = 0; i < requiredSignatures; i++) {
+            pushes.add(signatures.get(i).encodeToBitcoin());
         }
 
         // empty signatures
-        for (int i = 0; i < zeroSignaturesSize; i ++) {
+        int remainingSpace = signatures.size() - requiredSignatures;
+        for (int i = 0; i < remainingSpace; i ++) {
             pushes.add(new byte[0]);
         }
-        pushes.add(new byte[] {1}); // OP_NOTIF argument
-        pushes.add(witnessScript.getProgram());
+        pushes.add(new byte[] {1});
+        pushes.add(redeemScript.getProgram());
         return TransactionWitness.of(pushes);
     }
 
