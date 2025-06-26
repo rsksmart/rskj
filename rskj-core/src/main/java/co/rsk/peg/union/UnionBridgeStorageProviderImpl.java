@@ -26,36 +26,14 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
 
     @Override
     public void save() {
-        if (!isNull(unionBridgeAddress)) {
-            bridgeStorageAccessor.saveToRepository(
-                UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
-                unionBridgeAddress,
-                BridgeSerializationUtils::serializeRskAddress
-            );
-        }
+        saveUnionBridgeAddress();
+        saveLockingCap();
+        saveWeisTransferredToUnionBridge();
+        saveRequestEnabled();
+        saveReleaseEnabled();
+    }
 
-        if (!isNull(unionBridgeLockingCap)) {
-            bridgeStorageAccessor.saveToRepository(
-                UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
-                unionBridgeLockingCap,
-                BridgeSerializationUtils::serializeRskCoin
-            );
-        }
-
-        if (nonNull(weisTransferredToUnionBridge)) {
-            bridgeStorageAccessor.saveToRepository(
-                UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
-                weisTransferredToUnionBridge,
-                BridgeSerializationUtils::serializeRskCoin
-            );
-        }
-        if (nonNull(unionBridgeRequestEnabled)) {
-            bridgeStorageAccessor.saveToRepository(
-                UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-                unionBridgeRequestEnabled,
-                BridgeSerializationUtils::serializeBoolean
-            );
-        }
+    private void saveReleaseEnabled() {
         if (nonNull(unionBridgeReleaseEnabled)) {
             bridgeStorageAccessor.saveToRepository(
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
@@ -63,6 +41,54 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 BridgeSerializationUtils::serializeBoolean
             );
         }
+    }
+
+    private void saveRequestEnabled() {
+        if (isNull(unionBridgeRequestEnabled)) {
+            return;
+        }
+
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            unionBridgeRequestEnabled,
+            BridgeSerializationUtils::serializeBoolean
+        );
+    }
+
+    private void saveWeisTransferredToUnionBridge() {
+        if (isNull(weisTransferredToUnionBridge)) {
+            return;
+        }
+
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            weisTransferredToUnionBridge,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+    }
+
+    private void saveLockingCap() {
+        if (isNull(unionBridgeLockingCap)) {
+            return;
+        }
+
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            unionBridgeLockingCap,
+            BridgeSerializationUtils::serializeRskCoin
+        );
+    }
+
+    private void saveUnionBridgeAddress() {
+        if (isNull(unionBridgeAddress)) {
+            return;
+        }
+
+        bridgeStorageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            unionBridgeAddress,
+            BridgeSerializationUtils::serializeRskAddress
+        );
     }
 
     @Override
