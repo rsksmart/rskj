@@ -231,15 +231,15 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode releaseUnionRbtc(Transaction tx) {
         final String RELEASE_UNION_RBTC_TAG = "releaseUnionRbtc";
 
-        final RskAddress unionBridgeAddress = tx.getSender(signatureCache);
+        final RskAddress caller = tx.getSender(signatureCache);
         final Coin releaseUnionRbtcValueInWeis = tx.getValue();
+
+        if (!isCallerUnionBridgeContractAddress(caller)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
+        }
 
         if (!isReleaseEnabled()) {
             return UnionResponseCode.RELEASE_DISABLED;
-        }
-
-        if (!isCallerUnionBridgeContractAddress(unionBridgeAddress)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
         if (isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
@@ -255,14 +255,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             storageProvider.setUnionBridgeRequestEnabled(false);
             storageProvider.setUnionBridgeReleaseEnabled(false);
 
-            eventLogger.logUnionBridgeTransferPermissionsUpdated(unionBridgeAddress, false, false);
+            eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, false, false);
 
             logger.warn("[{}] Union Bridge transfer permissions have been disabled due to an invalid amount to release.", RELEASE_UNION_RBTC_TAG);
             return UnionResponseCode.INVALID_VALUE;
         }
 
         storageProvider.decreaseWeisTransferredToUnionBridge(releaseUnionRbtcValueInWeis);
-        eventLogger.logUnionRbtcReleased(unionBridgeAddress, releaseUnionRbtcValueInWeis);
+        eventLogger.logUnionRbtcReleased(caller, releaseUnionRbtcValueInWeis);
         logger.info("[{}] Amount released by the union bridge has been transferred. Amount Released: {}.", RELEASE_UNION_RBTC_TAG, releaseUnionRbtcValueInWeis);
         return UnionResponseCode.SUCCESS;
     }
