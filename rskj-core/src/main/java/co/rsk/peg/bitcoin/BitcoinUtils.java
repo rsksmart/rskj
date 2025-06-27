@@ -25,7 +25,7 @@ public class BitcoinUtils {
 
     private BitcoinUtils() { }
 
-    public static Optional<Sha256Hash> getFirstInputLegacySigHash(NetworkParameters networkParameters, BtcTransaction btcTx) {
+    public static Optional<Sha256Hash> getSigHashForPegoutIndex(NetworkParameters networkParameters, BtcTransaction btcTx) {
         if (btcTx.getInputs().isEmpty()){
             return Optional.empty();
         }
@@ -37,18 +37,23 @@ public class BitcoinUtils {
             return Optional.empty();
         }
 
-        // to be able to recognize a segwit pegout,
-        // we need to manually remove the signatures from it,
-        // since the legacy sig hash calculation impl assumes
-        // they are located in the script sig, not in the witness.
-        BtcTransaction btcTxWithoutSignatures = getMultiSigTransactionWithoutSignatures(networkParameters, btcTx);
-        Sha256Hash firstInputLegacySigHash = btcTxWithoutSignatures.hashForSignature(
-            FIRST_INPUT_INDEX,
-            redeemScript.get(),
-            BtcTransaction.SigHash.ALL,
-            false
-        );
-        return Optional.of(firstInputLegacySigHash);
+        try {
+            // to be able to recognize a segwit pegout,
+            // we need to manually get the tx without signatures,
+            // since the legacy sig hash calculation impl
+            // removes them from the script sig, not from the witness.
+            BtcTransaction btcTxWithoutSignatures = getMultiSigTransactionWithoutSignatures(networkParameters, btcTx);
+            Sha256Hash firstInputLegacySigHash = btcTxWithoutSignatures.hashForSignature(
+                FIRST_INPUT_INDEX,
+                redeemScript.get(),
+                BtcTransaction.SigHash.ALL,
+                false
+            );
+            return Optional.of(firstInputLegacySigHash);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Tx {} is not a pegout", btcTx.getHash());
+            return Optional.empty();
+        }
     }
 
     public static Optional<Script> extractRedeemScriptFromInput(BtcTransaction transaction, int inputIndex) {
@@ -139,24 +144,13 @@ public class BitcoinUtils {
     /**
      * Returns a Bitcoin transaction that has all its inputs from a multiSig,
      * with the signatures removed.
-     * If the transaction is legacy, the method returns a copy of the transaction
-     * after removing all signatures from the inputs script sigs.
-     * If the transaction is segwit, it returns a copy of the transaction
-     * after removing all signatures from the transaction witnesses.
-     * If the transaction has one input that is not from a multiSig,
-     * it returns the original transaction.
-     *
      * @param networkParameters network parameters
      * @param transaction transaction
      * @return a transaction copy without the signatures
      */
-    public static BtcTransaction getMultiSigTransactionWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+    private static BtcTransaction getMultiSigTransactionWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
-        try {
-            removeSignaturesFromMultiSigTransaction(transactionCopy);
-        } catch (IllegalArgumentException e) {
-            return transaction;
-        }
+        removeSignaturesFromMultiSigTransaction(transactionCopy);
         return transactionCopy;
     }
 
@@ -168,7 +162,7 @@ public class BitcoinUtils {
      * If the transaction is segwit, it
      * removes all the signatures from the transaction witnesses.
      * If the transaction has one input that is not from a multiSig,
-     * it does nothing.
+     * it throws an IAE.
      *
      * @param transaction transaction
      */
