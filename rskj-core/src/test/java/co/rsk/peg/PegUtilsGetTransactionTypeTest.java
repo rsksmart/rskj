@@ -2175,7 +2175,7 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(retiredFed, retiredFedSigners, migrationTx);
 
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, migrationTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, migrationTx);
         assertTrue(firstInputSigHash.isPresent());
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);
@@ -2247,7 +2247,7 @@ class PegUtilsGetTransactionTypeTest {
 
         FederationTestUtils.addSignatures(retiredFederation, fedKeys, migrationTx);
 
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, migrationTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, migrationTx);
         assertTrue(firstInputSigHash.isPresent());
 
         when(provider.hasPegoutTxSigHash(firstInputSigHash.get())).thenReturn(true);

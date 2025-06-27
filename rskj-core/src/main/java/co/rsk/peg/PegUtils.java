@@ -49,7 +49,7 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getFirstInputLegacySigHash(networkParameters, btcTransaction);
+        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getSigHashForPegoutIndex(networkParameters, btcTransaction);
         if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
