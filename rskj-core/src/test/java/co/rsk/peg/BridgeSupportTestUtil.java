@@ -234,7 +234,7 @@ public final class BridgeSupportTestUtil {
     }
 
     public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, NetworkParameters networkParameters, BtcTransaction pegoutTransaction) {
-        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getFirstInputLegacySigHash(networkParameters, pegoutTransaction);
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(networkParameters, pegoutTransaction);
         assertTrue(pegoutTxSigHashOpt.isPresent());
 
         Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
