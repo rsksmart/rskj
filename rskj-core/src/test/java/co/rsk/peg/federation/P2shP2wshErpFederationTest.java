@@ -1,12 +1,15 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.signTxInputWithKey;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
+import static co.rsk.peg.federation.FederationTestUtils.createSpendingFederationScriptForEmergencyKeys;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegUtils;
@@ -175,18 +178,14 @@ class P2shP2wshErpFederationTest {
 
         private static Stream<Arguments> spendFromP2shP2wshErpFedArgsProvider() {
             BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
-            FederationConstants federationMainnetConstants = bridgeMainNetConstants.getFederationConstants();
             BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
-            FederationConstants federationTestnetConstants = bridgeTestNetConstants.getFederationConstants();
 
             return Stream.of(
                 Arguments.of(
-                    bridgeMainNetConstants.getBtcParams(),
-                    federationMainnetConstants.getErpFedActivationDelay()
+                    bridgeMainNetConstants
                 ),
                 Arguments.of(
-                    bridgeTestNetConstants.getBtcParams(),
-                    federationTestnetConstants.getErpFedActivationDelay()
+                    bridgeTestNetConstants
                 )
             );
         }
@@ -194,24 +193,26 @@ class P2shP2wshErpFederationTest {
         @ParameterizedTest()
         @MethodSource("spendFromP2shP2wshErpFedArgsProvider")
         void spendFromP2shP2wshErpFed(
-            NetworkParameters networkParameters,
-            long activationDelay) {
-
+            BridgeConstants bridgeConstants) {
+            // Arrange
             List<BtcECKey> erpKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
                 new String[]{"erp1", "erp2", "erp3", "erp4"},
                 true
             );
 
+            FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+            long erpActivationDelay = federationConstants.getErpFedActivationDelay();
+            NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
             ErpFederation p2wshP2shErpFederation = P2shP2wshErpFederationBuilder.builder()
                 .withNetworkParameters(networkParameters)
-                .withErpActivationDelay(activationDelay)
+                .withErpActivationDelay(erpActivationDelay)
                 .withErpPublicKeys(erpKeys)
                 .build();
 
             Coin value = Coin.valueOf(1_000_000);
-            Coin fees = Coin.valueOf(10_000);
 
-            Address destinationAddress = BitcoinTestUtils.createP2PKHAddress(
+            Address receiver = BitcoinTestUtils.createP2PKHAddress(
                 networkParameters,
                 "destination"
             );
@@ -219,14 +220,55 @@ class P2shP2wshErpFederationTest {
             BtcTransaction fundTx = new BtcTransaction(networkParameters);
             fundTx.addOutput(value, p2wshP2shErpFederation.getAddress());
             int outputIndex = 0;
-            assertDoesNotThrow(() -> FederationTestUtils.spendFromErpSegwitCompatibleFed(
-                networkParameters,
-                p2wshP2shErpFederation,
-                erpKeys,
-                fundTx.getHash(),
-                outputIndex,
-                destinationAddress,
-                value.minus(fees)
+
+            BtcTransaction spendTx = new BtcTransaction(networkParameters);
+            Sha256Hash fundTxHash = fundTx.getHash();
+            spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+            spendTx.addOutput(value, receiver);
+
+            int inputIndex = 0;
+            spendTx.setVersion(BTC_TX_VERSION_2);
+            spendTx.getInput(inputIndex).setSequenceNumber(erpActivationDelay);
+
+            // Create signatures
+            Script redeemScript = p2wshP2shErpFederation.getRedeemScript();
+            Sha256Hash sigHash = spendTx.hashForWitnessSignature(
+                inputIndex,
+                redeemScript,
+                value,
+                BtcTransaction.SigHash.ALL,
+                false
+            );
+
+            int numberOfSignaturesRequired = p2wshP2shErpFederation.getNumberOfEmergencySignaturesRequired();
+            List<TransactionSignature> signatures = new ArrayList<>();
+            for (int i = 0; i < numberOfSignaturesRequired; i++) {
+                BtcECKey keyToSign = erpKeys.get(i);
+                BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
+                keyToSign.verify(sigHash, signature);
+                TransactionSignature txSignature = new TransactionSignature(
+                    signature,
+                    BtcTransaction.SigHash.ALL,
+                    false
+                );
+                signatures.add(txSignature);
+            }
+
+            TransactionWitness witness = createSpendingFederationScriptForEmergencyKeys(redeemScript, signatures, numberOfSignaturesRequired);
+            spendTx.setWitness(inputIndex, witness);
+
+            Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
+            TransactionInput input = spendTx.getInput(inputIndex);
+            input.setScriptSig(segwitScriptSig);
+
+            Script inputScript = spendTx.getInput(inputIndex).getScriptSig();
+
+            // Act & Assert
+            assertDoesNotThrow(() -> inputScript.correctlySpends(
+                spendTx,
+                0,
+                p2wshP2shErpFederation.getP2SHScript(),
+                Script.ALL_VERIFY_FLAGS
             ));
         }
 
