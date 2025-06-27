@@ -39,6 +39,7 @@ public class ErpFederation extends Federation {
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.erpRedeemScriptBuilder = erpRedeemScriptBuilder;
+        validateRedeemScriptSize();
     }
 
     public ErpRedeemScriptBuilder getErpRedeemScriptBuilder() { return erpRedeemScriptBuilder; }
@@ -75,8 +76,6 @@ public class ErpFederation extends Federation {
                     getNumberOfEmergencySignaturesRequired(),
                     activationDelay
                 );
-
-                validateScriptSize();
             } catch (RedeemScriptCreationException e) {
                 throw new ErpFederationCreationException(e.getMessage(), e, REDEEM_SCRIPT_CREATION_FAILED);
             }
@@ -84,15 +83,15 @@ public class ErpFederation extends Federation {
         return redeemScript;
     }
 
-    private void validateScriptSize() {
+    private void validateRedeemScriptSize() {
         if (getFormatVersion() != P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
             // since the redeem script is located in the script sig,
             // we need to check it does not surpass the maximum allowed size
-            ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
+            ScriptValidations.validateSizeOfRedeemScriptForScriptSig(getRedeemScript());
             return;
         }
 
-        ScriptValidations.validateSizeOfRedeemScriptForWitness(redeemScript);
+        ScriptValidations.validateSizeOfRedeemScriptForWitness(getRedeemScript());
     }
 
     private RedeemScriptParser getRedeemScriptParser() {
