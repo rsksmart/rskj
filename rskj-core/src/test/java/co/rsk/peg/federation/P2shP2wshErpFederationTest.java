@@ -5,7 +5,6 @@ import static co.rsk.peg.bitcoin.BitcoinTestUtils.signTxInputWithKey;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
-import static co.rsk.peg.federation.FederationTestUtils.createSpendingFederationScriptForEmergencyKeys;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -219,15 +218,15 @@ class P2shP2wshErpFederationTest {
 
             BtcTransaction fundTx = new BtcTransaction(networkParameters);
             fundTx.addOutput(value, p2wshP2shErpFederation.getAddress());
-            int outputIndex = 0;
 
             BtcTransaction spendTx = new BtcTransaction(networkParameters);
             Sha256Hash fundTxHash = fundTx.getHash();
+            int outputIndex = 0;
             spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
             spendTx.addOutput(value, receiver);
 
-            int inputIndex = 0;
             spendTx.setVersion(BTC_TX_VERSION_2);
+            int inputIndex = 0;
             spendTx.getInput(inputIndex).setSequenceNumber(erpActivationDelay);
 
             // Create signatures
@@ -254,9 +253,9 @@ class P2shP2wshErpFederationTest {
                 signatures.add(txSignature);
             }
 
-            TransactionWitness witness = createSpendingFederationScriptForEmergencyKeys(redeemScript, signatures, numberOfSignaturesRequired);
-            spendTx.setWitness(inputIndex, witness);
-
+            TransactionWitness witness = FederationTestUtils.createBaseWitnessThatSpendsFromEmergencyKeys(redeemScript, signatures, numberOfSignaturesRequired);
+            TransactionWitness inputWitnessWithSignature = updateWitnessWithEmergencySignatures(witness, signatures);
+            spendTx.setWitness(inputIndex, inputWitnessWithSignature);
             Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
             TransactionInput input = spendTx.getInput(inputIndex);
             input.setScriptSig(segwitScriptSig);
@@ -447,6 +446,19 @@ class P2shP2wshErpFederationTest {
         private void assertTxHash(Sha256Hash expectedTxHash) {
             assertEquals(expectedTxHash, tx.getHash());
         }
+    }
+
+    private static TransactionWitness updateWitnessWithEmergencySignatures(TransactionWitness witness, List<TransactionSignature> signatures) {
+        List<byte[]> updatedPushes = new ArrayList<>();
+        for (TransactionSignature transactionSignature : signatures) {
+            updatedPushes.add(transactionSignature.encodeToBitcoin());
+        }
+
+        for (int i = signatures.size(); i < witness.getPushCount(); i++) {
+            updatedPushes.add(witness.getPush(i));
+        }
+
+        return TransactionWitness.of(updatedPushes);
     }
 
     @Test
