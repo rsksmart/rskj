@@ -244,6 +244,8 @@ public final class FederationTestUtils {
         for (int i = 0; i < remainingSpace; i ++) {
             pushes.add(new byte[0]);
         }
+        // IMPORTANT: The argument of OP_IF/NOTIF in P2WSH must be minimal.
+        // Ref: https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#new-script-semantics
         pushes.add(new byte[] {1});
         pushes.add(redeemScript.getProgram());
         return TransactionWitness.of(pushes);
