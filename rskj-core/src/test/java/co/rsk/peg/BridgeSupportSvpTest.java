@@ -575,7 +575,7 @@ class BridgeSupportSvpTest {
     }
 
     private void savePegoutIndex(BtcTransaction pegout) {
-        BitcoinUtils.getFirstInputLegacySigHash(btcMainnetParams, pegout)
+        BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, pegout)
             .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
     }
 
