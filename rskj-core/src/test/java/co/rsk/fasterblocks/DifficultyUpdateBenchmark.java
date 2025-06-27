@@ -31,8 +31,13 @@ public class DifficultyUpdateBenchmark {
       for (int n = 0; n <= 100; n++) {
         final double powerOfTwo = Math.pow(2, n);
         final BigInteger scale = BigInteger.valueOf((long) powerOfTwo);
-        final BigInteger factorScaled = BigInteger.valueOf((long) Math.floor(FACTOR * powerOfTwo)); // 1 + 0.005 = 1.005
-                                                                                                    // =>
+        // final BigInteger factorScaled = BigInteger.valueOf((long) Math.floor(FACTOR *
+        // powerOfTwo)); // 1 + 0.005 = 1.005
+        final BigInteger factorScaled = BigDecimal.valueOf(FACTOR)
+            .multiply(BigDecimal.valueOf(powerOfTwo))
+            .setScale(0, RoundingMode.FLOOR)
+            .toBigInteger();
+
         BigInteger difficultyBI = new BigInteger("d2a47da04a3b12c8", 16);
         BigDecimal difficultyBD = new BigDecimal("15178394771539038920");
 
@@ -40,8 +45,8 @@ public class DifficultyUpdateBenchmark {
 
         // benchmark fixed point
         long start = System.nanoTime();
-        BigInteger resultBI = difficultyBI.multiply(factorScaled).divide(scale);
-        // BigInteger resultBI = difficultyBI.multiply(factorScaled).shiftRight(n);
+        // BigInteger resultBI = difficultyBI.multiply(factorScaled).divide(scale);
+        BigInteger resultBI = difficultyBI.multiply(factorScaled).shiftRight(n);
         long end = System.nanoTime();
         long benchDifficultyBI = end - start;
 
