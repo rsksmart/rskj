@@ -1,7 +1,6 @@
 package co.rsk.peg.bitcoin;
 
-import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
-import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_NOT;
+import static co.rsk.bitcoinj.script.ScriptOpCodes.*;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -990,7 +989,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void removeSignaturesFromMultiSigTransaction_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
+    void removeSignaturesFromMultiSigTransaction_whenNotAllInputsHaveRedeemScript_shouldThrowIAE() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
 
@@ -1015,21 +1014,37 @@ class BitcoinUtilsTest {
         BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
 
         // act & assert
+        assertFalse(BitcoinUtils.extractRedeemScriptFromInput(transaction, 1).isPresent());
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
     }
 
     @Test
-    void getMultiSigTransactionHashWithoutSignatures_whenNotAllInputsHaveP2shMultiSigInputScript_shouldThrowIAE() {
+    void removeSignaturesFromMultiSigTransaction_whenAllInputsHaveRedeemScriptButNotAllFromP2shMultiSig_shouldThrowIAE() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
 
         Federation federation = P2shErpFederationBuilder.builder().build();
-        Script scriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
-        transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
+        Script federationScriptSig = federation.getP2SHScript().createEmptyInputScript(null, federation.getRedeemScript());
+        transaction.addInput(BitcoinTestUtils.createHash(1), 0, federationScriptSig);
 
-        // having an empty script sig means we cannot get the redeem script from it
-        Script emptyScriptSig = new Script(EMPTY_BYTE_ARRAY);
-        transaction.addInput(BitcoinTestUtils.createHash(2), 0, emptyScriptSig);
+        // let's create a redeem script that's not from a multisig: csv + OP_CSV + OP_DROP + pubkey + OP_CHECKSIG
+        long csv = 1000;
+        byte[] pubkey = Hex.decode("0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798");
+        byte[] serializedCsvValue = Utils.signedLongToByteArrayLE(csv);
+        ScriptBuilder builder = new ScriptBuilder();
+        Script redeemScriptNotFromMultiSig = builder
+            .data(serializedCsvValue)
+            .op(OP_CHECKSEQUENCEVERIFY)
+            .op(OP_DROP)
+            .data(pubkey)
+            .op(OP_CHECKSIG)
+            .build();
+
+        builder = new ScriptBuilder();
+        builder.data(new byte[]{}); // signature push
+        builder.data(redeemScriptNotFromMultiSig.getProgram());             // push del redeemScript
+        Script scriptSigNotFromMultiSig = builder.build();
+        transaction.addInput(BitcoinTestUtils.createHash(2), 0, scriptSigNotFromMultiSig);
 
         transaction.addOutput(Coin.COIN, destinationAddress);
 
@@ -1044,7 +1059,8 @@ class BitcoinUtilsTest {
         BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
+        assertTrue(BitcoinUtils.extractRedeemScriptFromInput(transaction, 1).isPresent());
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.removeSignaturesFromMultiSigTransaction(transaction));
     }
 
     @Test
