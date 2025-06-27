@@ -37,6 +37,7 @@ public class PegUtils {
     private PegUtils() { }
 
     static PegTxType getTransactionTypeUsingPegoutIndex(
+        NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         Wallet liveFederationsWallet,
@@ -48,7 +49,7 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getFirstInputSigHash(btcTransaction);
+        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getSigHashForPegoutIndex(networkParameters, btcTransaction);
         if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
@@ -129,6 +130,7 @@ public class PegUtils {
         }
 
         return getTransactionTypeUsingPegoutIndex(
+            bridgeConstants.getBtcParams(),
             activations,
             provider,
             liveFederationsWallet,

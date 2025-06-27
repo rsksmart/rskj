@@ -407,6 +407,7 @@ class BridgeSupportSvpTest {
 
             svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             assertReleaseWasSettled(
+                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -481,6 +482,7 @@ class BridgeSupportSvpTest {
 
             svpFundTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             assertReleaseWasSettled(
+                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -573,7 +575,7 @@ class BridgeSupportSvpTest {
     }
 
     private void savePegoutIndex(BtcTransaction pegout) {
-        BitcoinUtils.getFirstInputSigHash(pegout)
+        BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, pegout)
             .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
     }
 

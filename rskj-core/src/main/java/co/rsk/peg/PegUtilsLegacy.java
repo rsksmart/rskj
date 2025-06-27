@@ -207,8 +207,8 @@ public class PegUtilsLegacy {
                         return false;
                     }
 
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
-                    if (outputScript.equals(retiredFederationP2SHScript)) {
+                    Script legacyOutputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
+                    if (legacyOutputScript.equals(retiredFederationP2SHScript)) {
                         return false;
                     }
                 } catch (ScriptException e) {
