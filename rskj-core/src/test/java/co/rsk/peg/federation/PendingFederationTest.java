@@ -26,6 +26,8 @@ import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.federation.constants.FederationConstants;
+import co.rsk.peg.federation.constants.FederationMainNetConstants;
+import co.rsk.peg.federation.constants.FederationTestNetConstants;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -50,9 +52,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PendingFederationTest {
     private static final long FEDERATION_CREATION_BLOCK_NUMBER = 0L;
-    private final List<BtcECKey> federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600);
-    private final PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
-    private final List<FederationMember> federationMembers = pendingFederation.getMembers();
+    private List<BtcECKey> federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600);
+    private PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
+    private List<FederationMember> federationMembers = pendingFederation.getMembers();
 
     @Test
     void addANewMember_toPendingFederationMembers_shouldThrowAnException() {
@@ -294,8 +296,8 @@ class PendingFederationTest {
      * OP_CHECKMULTISIG which has a limit of 20 public keys.
      */
     @ParameterizedTest
-    @MethodSource("networkParameters")
-    void buildFederation_with102Members_afterRSKIP305_shouldThrowScriptCreationException(NetworkParameters networkParams, FederationConstants federationConstants) {
+    @MethodSource("federationConstantsArgs")
+    void buildFederation_with102Members_afterRSKIP305_shouldThrowErpFederationCreationException(FederationConstants federationConstants) {
         // Arrange
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
@@ -308,7 +310,7 @@ class PendingFederationTest {
         PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
 
         // Act & assert
-        assertThrows(ScriptCreationException.class, () -> pendingFederation.buildFederation(
+        assertThrows(ErpFederationCreationException.class, () -> pendingFederation.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
@@ -337,6 +339,61 @@ class PendingFederationTest {
 
         // Assert
         assertEquals(expectedFederation, builtFederation);
+    }
+
+    @ParameterizedTest
+    @MethodSource("networkParameters")
+    void buildFederation_with20Members_afterRSKIP305Activation_shouldBuildP2SHP2WSHErpFed(NetworkParameters networkParams, FederationConstants federationConstants) {
+        // Arrange
+        federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+            1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000
+        );
+        pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();;
+        federationMembers = pendingFederation.getMembers();
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+        FederationArgs federationArgs = new FederationArgs(federationMembers, federationCreationTime, FEDERATION_CREATION_BLOCK_NUMBER, networkParams);
+        List<BtcECKey> erpPubKeys = federationConstants.getErpFedPubKeysList();
+        long activationDelay = federationConstants.getErpFedActivationDelay();
+        Federation expectedFederation = FederationFactory.buildP2shP2wshErpFederation(federationArgs, erpPubKeys, activationDelay);
+
+        // Act
+        Federation builtFederation = pendingFederation.buildFederation(
+            federationCreationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        );
+
+        // Assert
+        assertEquals(expectedFederation, builtFederation);
+    }
+
+    @ParameterizedTest
+    @MethodSource("federationConstantsArgs")
+    void buildFederation_with21Members_afterRSKIP305Activation_shouldThrowErpFederationCreationException(FederationConstants federationConstants) {
+        // Arrange
+        federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+            1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100
+        );
+        pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();;
+        federationMembers = pendingFederation.getMembers();
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
+        Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
+
+        // Act & assert
+        assertThrows(ErpFederationCreationException.class, () -> pendingFederation.buildFederation(
+            federationCreationTime,
+            FEDERATION_CREATION_BLOCK_NUMBER,
+            federationConstants,
+            activations
+        ));
+    }
+
+    private static Stream<FederationConstants> federationConstantsArgs() {
+        return Stream.of(FederationMainNetConstants.getInstance(), FederationTestNetConstants.getInstance());
     }
 
     @Test
