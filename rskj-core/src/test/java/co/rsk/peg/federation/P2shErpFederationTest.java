@@ -2,7 +2,7 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.bitcoin.RedeemScriptCreationException.Reason.INVALID_CSV_VALUE;
 import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE;
-import static co.rsk.peg.bitcoin.ScriptValidations.MAX_REDEEM_SCRIPT_ELEMENT_SIZE;
+import static co.rsk.peg.bitcoin.ScriptValidations.MAX_P2SH_REDEEM_SCRIPT_SIZE;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.NULL_OR_EMPTY_EMERGENCY_KEYS;
 import static co.rsk.peg.federation.ErpFederationCreationException.Reason.REDEEM_SCRIPT_CREATION_FAILED;
 import static org.junit.jupiter.api.Assertions.*;
@@ -505,7 +505,7 @@ class P2shErpFederationTest {
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // Skip test cases with invalid redeem script that exceed the maximum size
-            if (generatedScript.script.getProgram().length <= MAX_REDEEM_SCRIPT_ELEMENT_SIZE) {
+            if (generatedScript.script.getProgram().length <= MAX_P2SH_REDEEM_SCRIPT_SIZE) {
                 FederationArgs federationArgs = new FederationArgs(
                     FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                     ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
