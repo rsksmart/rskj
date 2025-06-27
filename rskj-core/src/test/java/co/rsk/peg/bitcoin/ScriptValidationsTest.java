@@ -30,7 +30,7 @@ class ScriptValidationsTest {
 
     @Test
     void validateSizeOfRedeemScriptForWitness_withinLimit_shouldPass() {
-        byte[] program = new byte[(int) MAX_STANDARD_P2WSH_REDEEM_SCRIPT_SIZE];
+        byte[] program = new byte[(int) MAX_P2WSH_REDEEM_SCRIPT_SIZE];
         Script redeemScript = new Script(program);
         assertDoesNotThrow(() ->
             ScriptValidations.validateSizeOfRedeemScriptForWitness(redeemScript)
@@ -39,7 +39,7 @@ class ScriptValidationsTest {
 
     @Test
     void validateSizeOfRedeemScriptForWitness_exceedsLimit_shouldThrow() {
-        byte[] program = new byte[(int) MAX_STANDARD_P2WSH_REDEEM_SCRIPT_SIZE + 1];
+        byte[] program = new byte[(int) MAX_P2WSH_REDEEM_SCRIPT_SIZE + 1];
         Script redeemScript = new Script(program);
         ScriptCreationException ex = assertThrows(ScriptCreationException.class, () ->
             ScriptValidations.validateSizeOfRedeemScriptForWitness(redeemScript)
