@@ -20,7 +20,6 @@ package co.rsk.peg.federation;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
-import static co.rsk.peg.bitcoin.BitcoinUtils.buildSegwitScriptSig;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -170,79 +169,19 @@ public final class FederationTestUtils {
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
 
-    public static void spendFromErpSegwitCompatibleFed(
-        NetworkParameters networkParameters,
-        ErpFederation federation,
-        List<BtcECKey> signers,
-        Sha256Hash fundTxHash,
-        int outputIndex,
-        Address receiver,
-        Coin value) {
-
-        BtcTransaction spendTx = new BtcTransaction(networkParameters);
-        spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
-        spendTx.addOutput(value, receiver);
-
-        int inputIndex = 0;
-        spendTx.setVersion(BTC_TX_VERSION_2);
-        spendTx.getInput(inputIndex).setSequenceNumber(federation.getActivationDelay());
-
-        // Create signatures
-        Script redeemScript = federation.getRedeemScript();
-        Sha256Hash sigHash = spendTx.hashForWitnessSignature(
-            inputIndex,
-            redeemScript,
-            value,
-            BtcTransaction.SigHash.ALL,
-            false
-        );
-
-        int numberOfSignaturesRequired = federation.getNumberOfEmergencySignaturesRequired();
-        List<TransactionSignature> signatures = new ArrayList<>();
-        for (int i = 0; i < numberOfSignaturesRequired; i++) {
-            BtcECKey keyToSign = signers.get(i);
-            BtcECKey.ECDSASignature signature = keyToSign.sign(sigHash);
-            TransactionSignature txSignature = new TransactionSignature(
-                signature,
-                BtcTransaction.SigHash.ALL,
-                false
-            );
-            signatures.add(txSignature);
-        }
-
-        TransactionWitness witness = createSpendingFederationScriptForEmergencyKeys(redeemScript, signatures, federation.getNumberOfEmergencySignaturesRequired());
-        spendTx.setWitness(inputIndex, witness);
-
-        Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
-        TransactionInput input = spendTx.getInput(inputIndex);
-        input.setScriptSig(segwitScriptSig);
-
-        Script inputScript = spendTx.getInput(inputIndex).getScriptSig();
-        inputScript.correctlySpends(
-            spendTx,
-            0,
-            federation.getP2SHScript(),
-            Script.ALL_VERIFY_FLAGS
-        );
-
-    }
-
-    public static TransactionWitness createSpendingFederationScriptForEmergencyKeys(Script redeemScript, List<TransactionSignature> signatures, int requiredSignatures) {
+    public static TransactionWitness createBaseWitnessThatSpendsFromEmergencyKeys(Script redeemScript, List<TransactionSignature> signatures, int numberOfSignaturesRequiredToSpend) {
         int pushForByteArray = 1;
         int pushForOpNotif = 1;
         int pushForRedeemScript = 1;
-        int witnessSize = pushForRedeemScript + pushForOpNotif + requiredSignatures + pushForByteArray;
+        int witnessSize = pushForRedeemScript + pushForOpNotif + numberOfSignaturesRequiredToSpend + pushForByteArray;
 
         List<byte[]> pushes = new ArrayList<>(witnessSize);
-        // signatures to be used
-        for (int i = 0; i < requiredSignatures; i++) {
-            pushes.add(signatures.get(i).encodeToBitcoin());
-        }
+        byte[] emptyByte = {};
+        pushes.add(emptyByte);
 
         // empty signatures
-        int remainingSpace = signatures.size() - requiredSignatures;
-        for (int i = 0; i < remainingSpace; i ++) {
-            pushes.add(new byte[0]);
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i ++) {
+            pushes.add(emptyByte);
         }
         // IMPORTANT: The argument of OP_IF/NOTIF in P2WSH must be minimal.
         // Ref: https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#new-script-semantics
