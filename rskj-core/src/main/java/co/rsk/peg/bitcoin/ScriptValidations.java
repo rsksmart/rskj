@@ -19,7 +19,7 @@ public class ScriptValidations {
         if (bytesCountFromRedeemScript > MAX_P2SH_REDEEM_SCRIPT_SIZE) {
             String message = String.format("The size of the redeem script for scriptSig is %d, which is above the maximum allowed (%s).",
                 bytesCountFromRedeemScript,
-                Script.MAX_SCRIPT_ELEMENT_SIZE
+                MAX_P2SH_REDEEM_SCRIPT_SIZE
             );
             throw new ScriptCreationException(message, ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE);
         }
@@ -30,7 +30,7 @@ public class ScriptValidations {
         if (bytesCountFromRedeemScript > MAX_P2WSH_REDEEM_SCRIPT_SIZE) {
             String message = String.format("The size of the redeem script for witness is %d, which is above the maximum allowed (%s).",
                 bytesCountFromRedeemScript,
-                Script.MAX_STANDARD_P2WSH_SCRIPT_SIZE
+                MAX_P2WSH_REDEEM_SCRIPT_SIZE
             );
             throw new ScriptCreationException(message, ABOVE_MAX_SCRIPT_FOR_WITNESS_SIZE);
         }
