@@ -227,7 +227,7 @@ public final class FederationTestUtils {
 
     }
 
-    private static TransactionWitness createSpendingFederationScriptForEmergencyKeys(Script redeemScript, List<TransactionSignature> signatures, int requiredSignatures) {
+    public static TransactionWitness createSpendingFederationScriptForEmergencyKeys(Script redeemScript, List<TransactionSignature> signatures, int requiredSignatures) {
         int pushForByteArray = 1;
         int pushForOpNotif = 1;
         int pushForRedeemScript = 1;
