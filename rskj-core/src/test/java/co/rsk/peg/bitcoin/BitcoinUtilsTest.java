@@ -1055,7 +1055,7 @@ class BitcoinUtilsTest {
             "member04",
             "member05"
         }, true); // using private keys from federation declared above
-        // we can only sign first input since the other input script sig will be empty
+        // let's just sign first input
         BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, 0, keysToSign);
 
         // act & assert
