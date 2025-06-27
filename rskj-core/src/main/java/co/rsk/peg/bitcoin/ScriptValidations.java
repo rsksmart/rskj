@@ -8,7 +8,7 @@ import static co.rsk.peg.bitcoin.ScriptCreationException.Reason.ABOVE_MAX_SCRIPT
 public class ScriptValidations {
 
     public static final int FLYOVER_SCRIPT_BYTES = 34;
-    public static final long MAX_REDEEM_SCRIPT_ELEMENT_SIZE = Script.MAX_SCRIPT_ELEMENT_SIZE - FLYOVER_SCRIPT_BYTES;
+    public static final long MAX_P2SH_REDEEM_SCRIPT_SIZE = Script.MAX_SCRIPT_ELEMENT_SIZE - FLYOVER_SCRIPT_BYTES;
     public static final long MAX_STANDARD_P2WSH_REDEEM_SCRIPT_SIZE = Script.MAX_STANDARD_P2WSH_SCRIPT_SIZE - FLYOVER_SCRIPT_BYTES;
 
     private ScriptValidations() {
@@ -16,7 +16,7 @@ public class ScriptValidations {
 
     public static void validateSizeOfRedeemScriptForScriptSig(Script redeemScript) throws ScriptCreationException {
         int bytesCountFromRedeemScript = redeemScript.getProgram().length;
-        if (bytesCountFromRedeemScript > MAX_REDEEM_SCRIPT_ELEMENT_SIZE) {
+        if (bytesCountFromRedeemScript > MAX_P2SH_REDEEM_SCRIPT_SIZE) {
             String message = String.format("The size of the redeem script for scriptSig is %d, which is above the maximum allowed (%s).",
                 bytesCountFromRedeemScript,
                 Script.MAX_SCRIPT_ELEMENT_SIZE
