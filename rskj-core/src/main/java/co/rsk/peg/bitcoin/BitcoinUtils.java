@@ -51,7 +51,7 @@ public class BitcoinUtils {
             );
             return Optional.of(firstInputLegacySigHash);
         } catch (IllegalArgumentException e) {
-            logger.warn("Tx {} is not a pegout", btcTx.getHash());
+            logger.warn("Tx {} is not a pegout. Reason: {}", btcTx.getHash(), e.getMessage());
             return Optional.empty();
         }
     }
