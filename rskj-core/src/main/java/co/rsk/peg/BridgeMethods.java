@@ -837,7 +837,7 @@ public enum BridgeMethods {
     ),
     GET_UNION_BRIDGE_CONTRACT_ADDRESS(
         CallTransaction.Function.fromSignature(
-            "getUnionBridgeContractAddressForTestnet",
+            "getUnionBridgeContractAddress",
             new String[]{},
             new String[]{"address"}
         ),
