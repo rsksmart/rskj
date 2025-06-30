@@ -1,8 +1,8 @@
 # mining
-/rskj-core/src/main/java/co/rsk/mine/                                       @rsksmart/rsk-mining
-/rskj-core/src/main/java/co/rsk/rpc/modules/mnr/                            @rsksmart/rsk-mining
-/rskj-core/src/main/java/co/rsk/validators/ProofOfWorkRule.java             @rsksmart/rsk-mining
-/rskj-core/src/main/java/co/rsk/validators/Rskip92MerkleProofValidator.java @rsksmart/rsk-mining
+/rskj-core/src/main/java/co/rsk/mine/                                       @rsksmart/rsk-core
+/rskj-core/src/main/java/co/rsk/rpc/modules/mnr/                            @rsksmart/rsk-core
+/rskj-core/src/main/java/co/rsk/validators/ProofOfWorkRule.java             @rsksmart/rsk-core
+/rskj-core/src/main/java/co/rsk/validators/Rskip92MerkleProofValidator.java @rsksmart/rsk-core
 
 # powpeg
 /rskj-core/src/main/java/co/rsk/peg/                                        @rsksmart/rsk-fed
