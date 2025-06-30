@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.util.ByteUtil;
 
 import java.util.ArrayList;
@@ -48,6 +49,11 @@ public class MultiTrieStore implements TrieStore {
         for (int i = 1; i <= liveEpochs; i++) { // starting in 1 so it's easier to calculate epoch according index
             epochs.add(trieStoreFactory.newInstance(String.valueOf(this.currentEpoch - i)));
         }
+    }
+
+    @Override
+    public void deleteHash (byte[] hash) {
+        getCurrentStore().deleteHash(hash);
     }
 
     /**

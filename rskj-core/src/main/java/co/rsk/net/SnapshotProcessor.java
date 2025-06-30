@@ -672,7 +672,7 @@ public class SnapshotProcessor implements InternalService {
         }
 
         if (TrieDTOInOrderRecoverer.verifyChunk(state.getRemoteRootHash(), preRootNodes, nodes, postRootNodes)) {
-            state.getAllNodes().addAll(nodes);
+            nodes.forEach(tmpTrieStore::saveDTO);
             state.setStateSize(state.getStateSize().add(BigInteger.valueOf(trieElements.size())));
             state.setStateChunkSize(state.getStateChunkSize().add(BigInteger.valueOf(message.getChunkOfTrieKeyValue().length)));
             if (message.isComplete()) {
@@ -693,15 +693,81 @@ public class SnapshotProcessor implements InternalService {
         return lastVerifiedBlockHeader != null && blockStore.isBlockExist(lastVerifiedBlockHeader.getParentHash().getBytes());
     }
 
+    private void moveTmpTrieToTrie(TrieDTO node) {
+        trieStore.saveDTO(node);
+        tmpTrieStore.deleteHash(node.calculateHash());
+    }
+
+    private boolean validateAndMoveTmpTrie(TrieDTO node) {
+        if (Optional.ofNullable(node.getLeftHash()).isPresent()) {
+            var leftNode = node.getLeftNode();
+            var saveToTrie = false;
+
+            if (Optional.ofNullable(leftNode).isEmpty()) {
+                final var leftNodeOptional = tmpTrieStore.retrieveDTO(node.getLeftHash());
+
+                if (leftNodeOptional.isEmpty()) {
+                    return false;
+                }
+
+                leftNode = leftNodeOptional.get();
+                saveToTrie = true;
+            }
+
+            if (!Arrays.equals(node.getLeftHash(), leftNode.calculateHash())) {
+                return false;
+            }
+
+            final var isValid = validateAndMoveTmpTrie(leftNode);
+
+            if (isValid && saveToTrie) {
+                moveTmpTrieToTrie(leftNode);
+            }
+
+            return isValid;
+        }
+
+        if (Optional.ofNullable(node.getRightHash()).isPresent()) {
+            var rightNode = node.getRightNode();
+            var saveToTrie = false;
+
+            if (Optional.ofNullable(rightNode).isEmpty()) {
+                final var rightNodeOptional = tmpTrieStore.retrieveDTO(node.getRightHash());
+
+                if (rightNodeOptional.isEmpty()) {
+                    return false;
+                }
+
+                rightNode = rightNodeOptional.get();
+                saveToTrie = true;
+            }
+
+            if (!Arrays.equals(node.getRightHash(), rightNode.calculateHash())) {
+                return false;
+            }
+
+            final var isValid = validateAndMoveTmpTrie(rightNode);
+
+            if (isValid && saveToTrie) {
+                moveTmpTrieToTrie(rightNode);
+            }
+
+            return isValid;
+        }
+
+        moveTmpTrieToTrie(node);
+
+        return true;
+    }
+
     /**
      * Once state share is received, rebuild the trie, save it in db and save all the blocks.
      */
     private boolean rebuildStateAndSave(SnapSyncState state) {
         logger.info("Recovering trie...");
-        final TrieDTO[] nodeArray = state.getAllNodes().toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
+        final var result = tmpTrieStore.retrieveDTO(state.getRemoteRootHash());
 
-        if (result.isPresent() && Arrays.equals(state.getRemoteRootHash(), result.get().calculateHash())) {
+        if (result.isPresent() && validateAndMoveTmpTrie(result.get())) {
             logger.info("State final validation OK!");
 
             this.blockchain.removeBlocksByNumber(0);
