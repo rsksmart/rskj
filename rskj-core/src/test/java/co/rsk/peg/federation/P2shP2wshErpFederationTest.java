@@ -253,7 +253,7 @@ class P2shP2wshErpFederationTest {
                 signatures.add(txSignature);
             }
 
-            TransactionWitness witness = FederationTestUtils.createBaseWitnessThatSpendsFromEmergencyKeys(redeemScript, signatures, numberOfSignaturesRequired);
+            TransactionWitness witness = FederationTestUtils.createBaseWitnessThatSpendsFromEmergencyKeys(redeemScript, numberOfSignaturesRequired);
             TransactionWitness inputWitnessWithSignature = updateWitnessWithEmergencySignatures(witness, signatures);
             spendTx.setWitness(inputIndex, inputWitnessWithSignature);
             Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
@@ -450,13 +450,18 @@ class P2shP2wshErpFederationTest {
 
     private static TransactionWitness updateWitnessWithEmergencySignatures(TransactionWitness witness, List<TransactionSignature> signatures) {
         List<byte[]> updatedPushes = new ArrayList<>();
+        byte[] emptyByte = new byte[0];
+
+        updatedPushes.add(emptyByte);
         for (TransactionSignature transactionSignature : signatures) {
             updatedPushes.add(transactionSignature.encodeToBitcoin());
         }
 
-        for (int i = signatures.size(); i < witness.getPushCount(); i++) {
-            updatedPushes.add(witness.getPush(i));
-        }
+        int opNotifPosition = witness.getPushCount() - 2;
+        updatedPushes.add(witness.getPush(opNotifPosition));
+
+        int redeemScriptPosition = witness.getPushCount() - 1;
+        updatedPushes.add(witness.getPush(redeemScriptPosition));
 
         return TransactionWitness.of(updatedPushes);
     }
