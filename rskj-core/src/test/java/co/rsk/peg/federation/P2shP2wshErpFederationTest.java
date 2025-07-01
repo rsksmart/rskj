@@ -191,7 +191,7 @@ class P2shP2wshErpFederationTest {
 
         @ParameterizedTest()
         @MethodSource("spendFromP2shP2wshErpFedArgsProvider")
-        void spendFromP2shP2wshErpFed(
+        void spendFromP2shP2wshErpFedEmergencyKeys(
             BridgeConstants bridgeConstants) {
             // Arrange
             List<BtcECKey> erpKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
