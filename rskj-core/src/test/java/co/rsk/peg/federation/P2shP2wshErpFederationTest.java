@@ -230,10 +230,10 @@ class P2shP2wshErpFederationTest {
             spendTx.getInput(inputIndex).setSequenceNumber(erpActivationDelay);
 
             // Create signatures
-            Script redeemScript = p2wshP2shErpFederation.getRedeemScript();
+            Script p2wshP2shRedeemScript = p2wshP2shErpFederation.getRedeemScript();
             Sha256Hash sigHash = spendTx.hashForWitnessSignature(
                 inputIndex,
-                redeemScript,
+                p2wshP2shRedeemScript,
                 value,
                 BtcTransaction.SigHash.ALL,
                 false
@@ -253,10 +253,10 @@ class P2shP2wshErpFederationTest {
                 signatures.add(txSignature);
             }
 
-            TransactionWitness witness = FederationTestUtils.createBaseWitnessThatSpendsFromEmergencyKeys(redeemScript, numberOfSignaturesRequired);
+            TransactionWitness witness = FederationTestUtils.createBaseWitnessThatSpendsFromEmergencyKeys(p2wshP2shRedeemScript, numberOfSignaturesRequired);
             TransactionWitness inputWitnessWithSignature = updateWitnessWithEmergencySignatures(witness, signatures);
             spendTx.setWitness(inputIndex, inputWitnessWithSignature);
-            Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
+            Script segwitScriptSig = buildSegwitScriptSig(p2wshP2shRedeemScript);
             TransactionInput input = spendTx.getInput(inputIndex);
             input.setScriptSig(segwitScriptSig);
 
