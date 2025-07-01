@@ -48,7 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ReleaseTransactionBuilder {
 
-    private static final int BTC_TX_VERSION_1 = 1;
+    public static final int BTC_TX_VERSION_1 = 1;
     public static final int BTC_TX_VERSION_2 = 2;
 
     public class BuildResult {
