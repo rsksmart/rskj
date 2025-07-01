@@ -52,11 +52,11 @@ import org.mockito.invocation.InvocationOnMock;
 
 class ReleaseTransactionBuilderTest {
     private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
-    private final Address changeAddress =  mockAddress(1000);
-    private final NetworkParameters regtestParameters =  new BridgeRegTestConstants().getBtcParams();
-    private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
     private final BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
     private final NetworkParameters btcMainNetParams = bridgeMainNetConstants.getBtcParams();
+    private final NetworkParameters regtestParameters =  new BridgeRegTestConstants().getBtcParams();
+    private final Address changeAddress = BitcoinTestUtils.createP2PKHAddress(regtestParameters, "changeAddress");
+    private final Coin feePerKb = Coin.MILLICOIN.multiply(2);
     private final Federation activeP2shErpFederation = P2shErpFederationBuilder.builder().build();
     private final Script activeFederationP2SHScript = activeP2shErpFederation.getP2SHScript();
     private final Federation p2shP2wshErpProposedFederation = P2shP2wshErpFederationBuilder.builder().build();
@@ -84,30 +84,30 @@ class ReleaseTransactionBuilderTest {
 
     @Test
     void first_output_pay_fees() {
-        Federation standardMultisigFederation = StandardMultiSigFederationBuilder.builder()
-            .withNetworkParameters(regtestParameters).build();
+        Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
+            .build();
 
-        Script p2SHScript = standardMultisigFederation.getP2SHScript();
+        Script p2SHScript = activeFederation.getP2SHScript();
         List<UTXO> utxos = getUtxos(p2SHScript);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            new Context(regtestParameters),
-            standardMultisigFederation,
+            new Context(btcMainNetParams),
+            activeFederation,
             utxos,
             false,
             bridgeStorageProviderMock
         );
 
         ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
-            regtestParameters,
+            btcMainNetParams,
             thisWallet,
             federation.getFormatVersion(),
-            standardMultisigFederation.getAddress(),
+            activeFederation.getAddress(),
             Coin.SATOSHI.multiply(1000),
             activations
         );
 
-        Address pegoutRecipient = mockAddress(123);
+        Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "destinationAddress");
         Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
 
         ReleaseTransactionBuilder.BuildResult result = rtb.buildAmountTo(
@@ -121,7 +121,7 @@ class ReleaseTransactionBuilderTest {
         TransactionOutput changeOutput = result.getBtcTx().getOutput(1);
 
         // Second output should be the change output to the Federation
-        assertEquals(standardMultisigFederation.getAddress(), changeOutput.getAddressFromP2SH(regtestParameters));
+        assertEquals(activeFederation.getAddress(), changeOutput.getAddressFromP2SH(btcMainNetParams));
         // And if its value is the spent UTXOs summatory minus the requested pegout amount
         // we can ensure the Federation is not paying fees for pegouts
         assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
