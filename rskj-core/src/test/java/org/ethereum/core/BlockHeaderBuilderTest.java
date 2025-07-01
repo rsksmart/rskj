@@ -259,12 +259,12 @@ class BlockHeaderBuilderTest {
         assertArrayEquals(new byte[0], header.getExtraData());
     }
 
-    @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} then expectedSize {2}")
+    @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} and useRSKIP351 {2} and useRSKIP481 {3} then expectedSize {4}")
     @ArgumentsSource(CreateHeaderArgumentsProvider.class)
-    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, int expectedSize) {
+    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, boolean useRSKIP481, int expectedSize) {
         BlockHeaderBuilder blockHeaderBuilder = useRSKIP351
-                ? this.blockHeaderBuilder
-                : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
+                ? useRSKIP481 ? this.blockHeaderBuilder : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481))
+                : new BlockHeaderBuilder(useRSKIP481 ? ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351) : ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351, ConsensusRule.RSKIP481));
         byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase",128);
         byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader",80);
         byte[] merkleProof = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "merkleProof",32);
@@ -505,12 +505,18 @@ class BlockHeaderBuilderTest {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    Arguments.of(false, false, false, 21),
-                    Arguments.of(false, true, false, 19),
-                    Arguments.of(true, false, false, 19),
-                    Arguments.of(false, false, true, 22),
-                    Arguments.of(false, true, true, 20),
-                    Arguments.of(true, false, true, 20)
+                    Arguments.of(false, false, false, false, 21),
+                    Arguments.of(false, false, false, true, 22),
+                    Arguments.of(false, true, false, false, 19),
+                    Arguments.of(false, true, false, true, 20),
+                    Arguments.of(true, false, false, false, 19),
+                    Arguments.of(true, false, false, true, 20),
+                    Arguments.of(false, false, true, false, 22),
+                    Arguments.of(false, false, true, true, 23),
+                    Arguments.of(false, true, true, false, 20),
+                    Arguments.of(false, true, true, true, 21),
+                    Arguments.of(true, false, true, false, 20),
+                    Arguments.of(true, false, true, true, 21)
             );
         }
     }
@@ -534,7 +540,14 @@ class BlockHeaderBuilderTest {
     @Test
     void createHeaderWithVersion1AfterRskip351() {
         // RSKIP351 = 0
-        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP481)).build();
         assertEquals((byte) 0x1, header.getVersion());
+    }
+
+    @Test
+    void createHeaderWithVersion2AfterRskip351() {
+        // RSKIP351 = 0
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
+        assertEquals((byte) 0x2, header.getVersion());
     }
 }
