@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_1;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -302,7 +303,7 @@ class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    void buildMigrationTransaction_withAFederationWithEnoughUTXOs_beforeRSKIP376_shouldReturnACorrectMigrationTx() {
+    void buildMigrationTransaction_withAFederationWithEnoughUTXOs_beforeRSKIP376_shouldReturnACorrectMigrationTx_withVersion1() {
         // Arrange
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -338,19 +339,23 @@ class ReleaseTransactionBuilderTest {
         assertEquals(expectedResponseCode, actualResponseCode);
 
         BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.getBtcTx();
-        int numberOfOutputs = 1; // 1 for the new federation
-        assertEquals(numberOfOutputs, migrationTransactionUnsigned.getOutputs().size());
+
+        int expectedNumberOfInputs = utxos.size(); // All UTXOs should be migrated
+        assertEquals(expectedNumberOfInputs, migrationTransactionUnsigned.getInputs().size());
+
+        int expectedNumberOfOutputs = 1; // 1 for the new federation
+        assertEquals(expectedNumberOfOutputs, migrationTransactionUnsigned.getOutputs().size());
 
         TransactionOutput actualFirstOutput = migrationTransactionUnsigned.getOutput(0);
         Coin valuePlusFee = actualFirstOutput.getValue().add(migrationTransactionUnsigned.getFee());
         assertEquals(migrationTxOutputsValue, valuePlusFee);
         assertEquals(proposedFederationAddress, actualFirstOutput.getAddressFromP2SH(btcMainNetParams));
 
-        assertEquals(1, migrationTransactionUnsigned.getVersion());
+        assertEquals(BTC_TX_VERSION_1, migrationTransactionUnsigned.getVersion());
     }
 
     @Test
-    void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx() {
+    void buildMigrationTransaction_withAFederationWithEnoughUTXOs_afterRSKIP376_shouldReturnACorrectMigrationTx_withVersion2() {
         // Arrange
         List<UTXO> utxos = getUtxos(activeFederationP2SHScript);
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -385,8 +390,12 @@ class ReleaseTransactionBuilderTest {
         assertEquals(expectedResponseCode, actualResponseCode);
 
         BtcTransaction migrationTransactionUnsigned = migrationTransactionUnsignedBuildResult.getBtcTx();
-        int numberOfOutputs = 1; // 1 for the new federation
-        assertEquals(numberOfOutputs, migrationTransactionUnsigned.getOutputs().size());
+
+        int expectedNumberOfInputs = utxos.size(); // All UTXOs should be migrated
+        assertEquals(expectedNumberOfInputs, migrationTransactionUnsigned.getInputs().size());
+
+        int expectedNumberOfOutputs = 1; // 1 for the new federation
+        assertEquals(expectedNumberOfOutputs, migrationTransactionUnsigned.getOutputs().size());
 
         TransactionOutput actualFirstOutput = migrationTransactionUnsigned.getOutput(0);
         Coin valuePlusFee = actualFirstOutput.getValue().add(migrationTransactionUnsigned.getFee());
