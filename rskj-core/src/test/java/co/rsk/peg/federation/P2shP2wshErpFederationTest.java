@@ -215,17 +215,19 @@ class P2shP2wshErpFederationTest {
             fundTx.addOutput(value, p2wshP2shErpFederation.getAddress());
 
             BtcTransaction spendTx = new BtcTransaction(thisNetworkParameters);
-            Sha256Hash fundTxHash = fundTx.getHash();
-            int outputIndex = 0;
-            spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
             BtcECKey destination = BitcoinTestUtils.getBtcEcKeyFromSeed("destination");
             spendTx.addOutput(value, destination);
+
+            // Create signatures
+            Script p2wshP2shRedeemScript = p2wshP2shErpFederation.getRedeemScript();
+            Script segwitScriptSig = buildSegwitScriptSig(p2wshP2shRedeemScript);
+            Sha256Hash fundTxHash = fundTx.getHash();
+            int outputIndex = 0;
+            spendTx.addInput(fundTxHash, outputIndex, segwitScriptSig);
 
             spendTx.setVersion(BTC_TX_VERSION_2);
             spendTx.getInput(FIRST_INPUT_INDEX).setSequenceNumber(erpActivationDelay);
 
-            // Create signatures
-            Script p2wshP2shRedeemScript = p2wshP2shErpFederation.getRedeemScript();
             Sha256Hash sigHash = spendTx.hashForWitnessSignature(
                 FIRST_INPUT_INDEX,
                 p2wshP2shRedeemScript,
@@ -251,10 +253,6 @@ class P2shP2wshErpFederationTest {
             TransactionWitness witness = FederationTestUtils.createBaseWitnessThatSpendsFromEmergencyKeys(p2wshP2shRedeemScript, numberOfSignaturesRequired);
             TransactionWitness inputWitnessWithSignature = updateWitnessWithEmergencySignatures(witness, signatures);
             spendTx.setWitness(FIRST_INPUT_INDEX, inputWitnessWithSignature);
-            Script segwitScriptSig = buildSegwitScriptSig(p2wshP2shRedeemScript);
-            TransactionInput input = spendTx.getInput(FIRST_INPUT_INDEX);
-            input.setScriptSig(segwitScriptSig);
-
             Script inputScript = spendTx.getInput(FIRST_INPUT_INDEX).getScriptSig();
 
             // Act & Assert
