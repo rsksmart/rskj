@@ -189,7 +189,7 @@ class P2shP2wshErpFederationTest {
             );
         }
 
-        @ParameterizedTest()
+        @ParameterizedTest
         @MethodSource("spendFromP2shP2wshErpFedArgsProvider")
         void spendFromP2shP2wshErpFedEmergencyKeys(
             BridgeConstants bridgeConstants) {
