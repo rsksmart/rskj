@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -1075,7 +1074,11 @@ class Web3ImplLogsTest {
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugTracer debugTracer = new RskTracer(null, null, null, null);
