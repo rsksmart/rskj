@@ -211,11 +211,6 @@ class P2shP2wshErpFederationTest {
 
             Coin value = Coin.valueOf(1_000_000);
 
-            Address destination = BitcoinTestUtils.createP2PKHAddress(
-                thisNetworkParameters,
-                "destination"
-            );
-
             BtcTransaction fundTx = new BtcTransaction(thisNetworkParameters);
             fundTx.addOutput(value, p2wshP2shErpFederation.getAddress());
 
@@ -223,6 +218,7 @@ class P2shP2wshErpFederationTest {
             Sha256Hash fundTxHash = fundTx.getHash();
             int outputIndex = 0;
             spendTx.addInput(fundTxHash, outputIndex, new Script(new byte[]{}));
+            BtcECKey destination = BitcoinTestUtils.getBtcEcKeyFromSeed("destination");
             spendTx.addOutput(value, destination);
 
             spendTx.setVersion(BTC_TX_VERSION_2);
