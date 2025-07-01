@@ -530,9 +530,12 @@ class ReleaseTransactionBuilderTest {
         );
         FederationArgs federationArgs = new FederationArgs(members, Instant.now(), 0, btcMainNetParams);
 
-        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(federationArgs,
+        ErpFederation nonStandardErpFederation = FederationFactory.buildNonStandardErpFederation(
+            federationArgs,
             bridgeMainNetConstants.getFederationConstants().getErpFedPubKeysList(),
-            bridgeMainNetConstants.getFederationConstants().getErpFedActivationDelay(), activations);
+            bridgeMainNetConstants.getFederationConstants().getErpFedActivationDelay(),
+            activations
+        );
 
         Script p2SHScript = nonStandardErpFederation.getP2SHScript();
         List<UTXO> utxos = getUtxos(p2SHScript);
@@ -554,7 +557,7 @@ class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Address pegoutRecipient = mockAddress(123);
+        Address pegoutRecipient = BitcoinTestUtils.createP2PKHAddress(btcMainNetParams, "destinationAddress");
         Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
 
         ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(
@@ -747,14 +750,9 @@ class ReleaseTransactionBuilderTest {
 
         doThrow(new IllegalStateException()).when(wallet).completeTx(any(SendRequest.class));
 
-        ReleaseTransactionBuilder.BuildResult result = null;
-        try {
-            result = builder.buildAmountTo(to, amount);
-        } catch (Exception e) {
-            assertInstanceOf(IllegalStateException.class, e);
-        }
+        assertThrows(IllegalStateException.class, () -> builder.buildAmountTo(to, amount));
+
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
-        Assertions.assertNull(result);
     }
 
     @Test
@@ -1129,7 +1127,7 @@ class ReleaseTransactionBuilderTest {
         });
 
         Mockito.doAnswer((InvocationOnMock m) -> {
-            SendRequest sr = m.<SendRequest>getArgument(0);
+            SendRequest sr = m.getArgument(0);
 
             BtcTransaction tx = sr.tx;
 
