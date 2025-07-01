@@ -32,8 +32,8 @@ public class StandardMultisigFederation extends Federation {
 
     protected StandardMultisigFederation(
         FederationArgs federationArgs,
-        int formatVersion) {
-
+        int formatVersion
+    ) {
         super(federationArgs, formatVersion);
     }
 
@@ -42,7 +42,6 @@ public class StandardMultisigFederation extends Federation {
         if (redeemScript == null) {
             redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
-        ScriptValidations.validateSizeOfRedeemScriptForScriptSig(redeemScript);
 
         return redeemScript;
     }
