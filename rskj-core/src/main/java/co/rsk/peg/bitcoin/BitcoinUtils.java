@@ -250,6 +250,16 @@ public class BitcoinUtils {
             .build();
     }
 
+    public static byte[] getSerializedTransactionCopyWithoutWitness(BtcTransaction btcTransaction) {
+        NetworkParameters params = btcTransaction.getParams();
+        BtcTransaction transactionCopy = new BtcTransaction(params, btcTransaction.bitcoinSerialize());
+
+        for (int i = 0; i < transactionCopy.getInputs().size(); i++) {
+            transactionCopy.setWitness(i, TransactionWitness.getEmpty());
+        }
+        return transactionCopy.bitcoinSerialize();
+    }
+
     public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {
         if (segwitScriptSig == null) {
             throw new IllegalArgumentException("SegwitScriptSig must not be null");
