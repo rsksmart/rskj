@@ -52,13 +52,15 @@ class PendingFederationTest {
 
     @Test
     void addANewMember_toPendingFederationMembers_shouldThrowAnException() {
+        FederationMember newMember = new FederationMember(new BtcECKey(), new ECKey(), new ECKey());
+        List<FederationMember> pendingFederationMembers = pendingFederation.getMembers();
         assertThrows(
             UnsupportedOperationException.class,
-            () -> pendingFederation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()))
+            () -> pendingFederationMembers.add(newMember)
         );
         assertThrows(
             UnsupportedOperationException.class,
-            () -> pendingFederation.getMembers().remove(0)
+            () -> pendingFederationMembers.remove(0)
         );
     }
 
@@ -433,7 +435,7 @@ class PendingFederationTest {
         List<BtcECKey> federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
             1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000
         );
-        PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();;
+        PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
         List<FederationMember> federationMembers = pendingFederation.getMembers();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
@@ -462,8 +464,7 @@ class PendingFederationTest {
         List<BtcECKey> federationMembersKeys = getFederationMembersKeys(100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
             1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100
         );
-        PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();;
-        List<FederationMember> federationMembers = pendingFederation.getMembers();
+        PendingFederation pendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(federationMembersKeys).build();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
         Instant federationCreationTime = federationConstants.getGenesisFederationCreationTime();
@@ -482,8 +483,9 @@ class PendingFederationTest {
         BtcECKey otherFederationMemberKey = BtcECKey.fromPrivate(BigInteger.valueOf(100));
         PendingFederation otherPendingFederation = PendingFederationBuilder.builder().withMembersBtcPublicKeys(List.of(otherFederationMemberKey)).build();
 
+        Instant creationTime = Instant.ofEpochMilli(12L);
         assertThrows(IllegalStateException.class, () -> otherPendingFederation.buildFederation(
-            Instant.ofEpochMilli(12L),
+            creationTime,
             0L,
             null,
             null
