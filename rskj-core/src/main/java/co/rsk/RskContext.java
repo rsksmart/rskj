@@ -266,6 +266,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private MinGasPriceProvider minGasPriceProvider;
     private StateOverrideApplier stateOverrideApplier;
     private final Map<String, DbKind> dbPathToDbKindMap = new HashMap<>();
+    private SnapStateChunkResponseMessageStore snapStateChunkResponseMessageStore;
 
     private volatile boolean closed;
 
@@ -2109,10 +2110,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     checkpointDistance,
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
-                    getRskSystemProperties().isSnapshotParallelEnabled()
+                    getRskSystemProperties().isSnapshotParallelEnabled(),
+                    getSnapStateChunkResponseMessageStore()
             );
         }
         return snapshotProcessor;
+    }
+
+    private SnapStateChunkResponseMessageStore getSnapStateChunkResponseMessageStore() {
+        if (snapStateChunkResponseMessageStore == null) {
+            snapStateChunkResponseMessageStore = new SnapStateChunkResponseMessageStore(getRskSystemProperties());
+        }
+
+        return snapStateChunkResponseMessageStore;
     }
 
     private Web3 getWeb3() {
