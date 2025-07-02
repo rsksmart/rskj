@@ -35,13 +35,25 @@ public class TrieDTOInOrderRecoverer {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
-    public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection, Consumer<? super TrieDTO> processTrieDTO) {
-        Optional<TrieDTO> result = recoverSubtree(trieCollection, 0, trieCollection.length - 1, processTrieDTO);
-        result.ifPresent(processTrieDTO);
+    public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection, TrieStore trieStore) {
+        Optional<TrieDTO> result = recoverSubtree(trieCollection, 0, trieCollection.length - 1, trieStore);
+
+        if (trieStore != null) {
+            result.ifPresent(n -> {
+                final var a = n.toMessage();
+                final var b = TrieDTO.decodeFromMessage(a, trieStore);
+                final var c = b.toMessage();
+                final var d = TrieDTO.decodeFromMessage(c, trieStore);
+
+                logger.info(d.calculateHashString());
+            });
+            result.ifPresent(trieStore::saveDTO);
+        }
+
         return result;
     }
 
-    private static Optional<TrieDTO> recoverSubtree(TrieDTO[] trieCollection, int start, int end, Consumer<? super TrieDTO> processTrieDTO) {
+    private static Optional<TrieDTO> recoverSubtree(TrieDTO[] trieCollection, int start, int end, TrieStore trieStore) {
         if (end - start < 0) {
             return Optional.empty();
         }
@@ -49,10 +61,43 @@ public class TrieDTOInOrderRecoverer {
             return Optional.of(fromTrieDTO(trieCollection[start], Optional.empty(), Optional.empty()));
         }
         int indexRoot = findRoot(trieCollection, start, end);
-        Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1, processTrieDTO);
-        left.ifPresent(processTrieDTO);
-        Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end, processTrieDTO);
-        right.ifPresent(processTrieDTO);
+        Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1, trieStore);
+        if (trieStore != null) {
+            left.ifPresent(n -> {
+                final var a = n.toMessage();
+                final var b = TrieDTO.decodeFromMessage(a, trieStore);
+
+                if (b == null) {
+                    logger.info("KLK left: null");
+                    return;
+                }
+
+
+                final var c = b.toMessage();
+                final var d = TrieDTO.decodeFromMessage(c, trieStore);
+
+                logger.info("left: {}", d.calculateHashString());
+            });
+            left.ifPresent(trieStore::saveDTO);
+        }
+        Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end, trieStore);
+        if (trieStore != null) {
+            right.ifPresent(n -> {
+                final var a = n.toMessage();
+                final var b = TrieDTO.decodeFromMessage(a, trieStore);
+
+                if (b == null) {
+                    logger.info("KLK right: null");
+                    return;
+                }
+
+                final var c = b.toMessage();
+                final var d = TrieDTO.decodeFromMessage(c, trieStore);
+
+                logger.info("right: {}", d.calculateHashString());
+            });
+            right.ifPresent(trieStore::saveDTO);
+        }
         return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
     }
 
@@ -65,8 +110,7 @@ public class TrieDTOInOrderRecoverer {
             return false;
         }
         TrieDTO[] nodeArray = allNodes.toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, t -> {
-        });
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, null);
         if (!result.isPresent() || !Arrays.equals(remoteRootHash, result.get().calculateHash())) {
             logger.warn("Root hash does not match! Calculated is present: {}", result.isPresent());
             return false;

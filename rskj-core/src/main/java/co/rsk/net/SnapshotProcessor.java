@@ -694,7 +694,7 @@ public class SnapshotProcessor implements InternalService {
     private boolean rebuildStateAndSave(SnapSyncState state) {
         logger.info("Recovering trie...");
         final TrieDTO[] nodeArray = state.getAllNodes().toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore::saveDTO);
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, this.trieStore);
 
         if (result.isPresent() && Arrays.equals(state.getRemoteRootHash(), result.get().calculateHash())) {
             logger.info("State final validation OK!");
