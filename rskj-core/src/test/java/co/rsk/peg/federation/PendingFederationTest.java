@@ -390,7 +390,7 @@ class PendingFederationTest {
             .build();
 
         // Act & assert
-        assertThrows(ScriptCreationException.class, () -> pendingFederationWith102Members.buildFederation(
+        assertThrows(ErpFederationCreationException.class, () -> pendingFederationWith102Members.buildFederation(
             federationCreationTime,
             FEDERATION_CREATION_BLOCK_NUMBER,
             federationConstants,
