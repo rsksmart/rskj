@@ -35,7 +35,10 @@ public class P2shErpRedeemScriptBuilder implements ErpRedeemScriptBuilder{
             defaultRedeemScript = ScriptBuilder.createRedeemScript(defaultThreshold, defaultPublicKeys);
             emergencyRedeemScript = ScriptBuilder.createRedeemScript(emergencyThreshold, emergencyPublicKeys);
         } catch (IllegalArgumentException e) {
-            throw new RedeemScriptCreationException("There was an error creating the redeem scripts", INVALID_INTERNAL_REDEEM_SCRIPTS);
+            throw new RedeemScriptCreationException(
+                String.format("There was an error creating the redeem scripts. %s", e.getMessage()),
+                INVALID_INTERNAL_REDEEM_SCRIPTS
+            );
         }
 
         ErpRedeemScriptBuilderUtils.validateRedeemScriptValues(defaultRedeemScript, emergencyRedeemScript, csvValue);
