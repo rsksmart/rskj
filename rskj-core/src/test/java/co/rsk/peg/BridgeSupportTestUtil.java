@@ -206,7 +206,6 @@ public final class BridgeSupportTestUtil {
     }
 
     public static void assertReleaseWasSettled(
-        NetworkParameters networkParameters,
         Repository repository,
         BridgeStorageProvider bridgeStorageProvider,
         List<LogInfo> logs,
@@ -218,7 +217,7 @@ public final class BridgeSupportTestUtil {
     ) throws IOException {
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
         assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransaction.getHash(), releaseCreationTxHash, executionBlock);
-        assertPegoutTxSigHashWasSaved(bridgeStorageProvider, networkParameters, releaseTransaction);
+        assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
         assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransaction.getHash(), totalAmountRequested);
         assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseTransaction, expectedOutpointsValues);
     }
@@ -233,8 +232,8 @@ public final class BridgeSupportTestUtil {
         assertTrue(pegoutEntry.isPresent());
     }
 
-    public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, NetworkParameters networkParameters, BtcTransaction pegoutTransaction) {
-        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(networkParameters, pegoutTransaction);
+    public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(pegoutTransaction);
         assertTrue(pegoutTxSigHashOpt.isPresent());
 
         Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
