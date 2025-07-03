@@ -109,7 +109,7 @@ class BitcoinUtilsTest {
         assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
         assertTrue(firstInputSigHash.isPresent());
 
         // Assert
@@ -135,7 +135,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertFalse(firstInputSigHash.isPresent());
@@ -146,7 +146,7 @@ class BitcoinUtilsTest {
         // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"));
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
 
@@ -171,7 +171,7 @@ class BitcoinUtilsTest {
         assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertTrue(firstInputSigHash.isPresent());
@@ -189,7 +189,7 @@ class BitcoinUtilsTest {
         btcTx.setWitness(0, witness);
 
         // Act
-        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertFalse(sigHash.isPresent());
@@ -214,7 +214,7 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertTrue(sigHash.isPresent());
@@ -228,7 +228,7 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertFalse(sigHash.isPresent());
@@ -242,7 +242,7 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertTrue(sigHash.isEmpty());
@@ -841,7 +841,7 @@ class BitcoinUtilsTest {
         Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
 
         // act
-        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
 
         // assert
         assertEquals(transactionHashBeforeRemovingSignatures, transactionHashWithoutSignatures);
@@ -857,7 +857,7 @@ class BitcoinUtilsTest {
         transaction.setWitness(0, transactionWitness);
 
         // act
-        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
 
         // assert
         assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
@@ -872,7 +872,7 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction));
     }
 
     @Test
@@ -888,7 +888,7 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction));
     }
 
     @Test
@@ -920,7 +920,7 @@ class BitcoinUtilsTest {
         }
 
         // act
-        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
 
         // assert
         assertEquals(transactionHashBeforeSigning, transactionHashWithoutSignatures);
@@ -934,7 +934,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTxFromReleaseBtcEvent = new BtcTransaction(btcMainnetParams, btcRawTxFromReleaseBtcEvent);
 
         // act
-        Sha256Hash btcTxHashWithoutSigs = getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, btcTxFromReleaseBtcEvent);
+        Sha256Hash btcTxHashWithoutSigs = getMultiSigTransactionHashWithoutSignatures(btcTxFromReleaseBtcEvent);
 
         // assert
         // the tx hash emitted in the release_requested event does not have the signatures

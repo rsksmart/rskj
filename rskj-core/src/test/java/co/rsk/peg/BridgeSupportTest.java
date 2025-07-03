@@ -7590,7 +7590,7 @@ class BridgeSupportTest {
 
             PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = bridgeStorageProvider.getPegoutsWaitingForConfirmations();
             assertPegoutWasAddedToPegoutsWaitingForConfirmations(pegoutsWaitingForConfirmations, releaseTransactionHash, releaseCreationTxHash, currentBlock.getNumber());
-            assertPegoutTxSigHashWasSaved(bridgeStorageProvider, btcMainnetParams, releaseTransaction);
+            assertPegoutTxSigHashWasSaved(bridgeStorageProvider, releaseTransaction);
             assertLogReleaseRequested(logs, releaseCreationTxHash, releaseTransactionHash, totalAmountRequested);
             assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointValues);
 
@@ -7614,7 +7614,6 @@ class BridgeSupportTest {
             assertScriptSigHasExpectedInputRedeemData(releaseTransaction.getInput(0), activeFederation.getRedeemScript());
 
             assertReleaseWasSettled(
-                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -7652,7 +7651,6 @@ class BridgeSupportTest {
             );
 
             assertReleaseWasSettled(
-                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -7689,7 +7687,6 @@ class BridgeSupportTest {
             BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             // assert release transaction was created as expected
             assertReleaseWasSettled(
-                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
@@ -8145,7 +8142,6 @@ class BridgeSupportTest {
 
             BtcTransaction migrationTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             assertReleaseWasSettled(
-                btcMainnetParams,
                 repository,
                 bridgeStorageProvider,
                 logs,
