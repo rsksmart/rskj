@@ -37,7 +37,6 @@ public class PegUtils {
     private PegUtils() { }
 
     static PegTxType getTransactionTypeUsingPegoutIndex(
-        NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         BridgeStorageProvider provider,
         Wallet liveFederationsWallet,
@@ -49,7 +48,7 @@ public class PegUtils {
 
         List<TransactionOutput> liveFederationOutputs = btcTransaction.getWalletOutputs(liveFederationsWallet);
 
-        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getSigHashForPegoutIndex(networkParameters, btcTransaction);
+        Optional<Sha256Hash> inputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTransaction);
         if (inputSigHash.isPresent() && provider.hasPegoutTxSigHash(inputSigHash.get())){
             return PegTxType.PEGOUT_OR_MIGRATION;
         } else if (!liveFederationOutputs.isEmpty()){
@@ -130,7 +129,6 @@ public class PegUtils {
         }
 
         return getTransactionTypeUsingPegoutIndex(
-            bridgeConstants.getBtcParams(),
             activations,
             provider,
             liveFederationsWallet,
@@ -158,7 +156,7 @@ public class PegUtils {
         return provider.getSvpFundTxHashUnsigned()
             .map(svpFundTxHashUnsigned -> {
                 try {
-                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
+                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
                     return svpFundTxHashUnsigned.equals(txHashWithoutSignatures);
                 } catch (IllegalArgumentException e) {
                     logger.trace(
@@ -180,7 +178,7 @@ public class PegUtils {
         return provider.getSvpSpendTxHashUnsigned()
             .map(svpSpendTxHashUnsigned -> {
                 try {
-                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(networkParameters, transaction);
+                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
                     return svpSpendTxHashUnsigned.equals(txHashWithoutSignatures);
                 } catch (IllegalArgumentException e) {
                     logger.trace(

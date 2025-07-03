@@ -173,7 +173,7 @@ class PegUtilsTest {
 
         // Act
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-            PegUtils.getTransactionTypeUsingPegoutIndex(btcMainnetParams, fingerrootActivations, provider, liveFederationWallet, btcTransaction)
+            PegUtils.getTransactionTypeUsingPegoutIndex(fingerrootActivations, provider, liveFederationWallet, btcTransaction)
         );
 
         // Assert
@@ -192,7 +192,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -215,7 +214,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -237,7 +235,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -262,7 +259,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -287,7 +283,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -321,7 +316,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -343,7 +337,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -368,7 +361,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -392,7 +384,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -418,7 +409,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -454,7 +444,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -481,7 +470,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -518,7 +506,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -546,7 +533,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -583,7 +569,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -612,7 +597,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -649,7 +633,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -694,7 +677,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
@@ -729,7 +711,6 @@ class PegUtilsTest {
 
         // Act
         PegTxType pegTxType = PegUtils.getTransactionTypeUsingPegoutIndex(
-            btcMainnetParams,
             activations,
             provider,
             liveFederationWallet,
