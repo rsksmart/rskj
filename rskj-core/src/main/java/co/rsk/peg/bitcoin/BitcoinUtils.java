@@ -25,7 +25,7 @@ public class BitcoinUtils {
 
     private BitcoinUtils() { }
 
-    public static Optional<Sha256Hash> getSigHashForPegoutIndex(NetworkParameters networkParameters, BtcTransaction btcTx) {
+    public static Optional<Sha256Hash> getSigHashForPegoutIndex(BtcTransaction btcTx) {
         if (btcTx.getInputs().isEmpty()){
             return Optional.empty();
         }
@@ -42,7 +42,7 @@ public class BitcoinUtils {
             // we need to manually get the tx without signatures,
             // since the legacy sig hash calculation impl
             // removes them from the script sig, not from the witness.
-            BtcTransaction btcTxWithoutSignatures = getMultiSigTransactionWithoutSignatures(networkParameters, btcTx);
+            BtcTransaction btcTxWithoutSignatures = getMultiSigTransactionWithoutSignatures(btcTx);
             Sha256Hash firstInputLegacySigHash = btcTxWithoutSignatures.hashForSignature(
                 FIRST_INPUT_INDEX,
                 redeemScript.get(),
@@ -128,13 +128,12 @@ public class BitcoinUtils {
      * after removing all signatures from the inputs script sigs.
      * If the transaction is segwit, it simply returns the current transaction hash.
      *
-     * @param networkParameters network parameters
      * @param transaction transaction
      * @return the hash of the transaction without signatures from the input
      */
-    public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+    public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(BtcTransaction transaction) {
         if (!transaction.hasWitness()) {
-            BtcTransaction multiSigTransactionWithoutSignatures = getMultiSigTransactionWithoutSignatures(networkParameters, transaction);
+            BtcTransaction multiSigTransactionWithoutSignatures = getMultiSigTransactionWithoutSignatures(transaction);
             return multiSigTransactionWithoutSignatures.getHash();
         }
 
@@ -144,11 +143,11 @@ public class BitcoinUtils {
     /**
      * Returns a Bitcoin transaction that has all its inputs from a multiSig,
      * with the signatures removed.
-     * @param networkParameters network parameters
      * @param transaction transaction
      * @return a transaction copy without the signatures
      */
-    private static BtcTransaction getMultiSigTransactionWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
+    private static BtcTransaction getMultiSigTransactionWithoutSignatures(BtcTransaction transaction) {
+        NetworkParameters networkParameters = transaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
         removeSignaturesFromMultiSigTransaction(transactionCopy);
         return transactionCopy;
@@ -248,6 +247,16 @@ public class BitcoinUtils {
         return new ScriptBuilder()
             .data(segwitScriptSig.getProgram())
             .build();
+    }
+
+    public static BtcTransaction getTransactionWithoutWitness(BtcTransaction btcTransaction) {
+        NetworkParameters params = btcTransaction.getParams();
+        BtcTransaction transactionCopy = new BtcTransaction(params, btcTransaction.bitcoinSerialize());
+
+        for (int i = 0; i < transactionCopy.getInputs().size(); i++) {
+            transactionCopy.setWitness(i, TransactionWitness.getEmpty());
+        }
+        return transactionCopy;
     }
 
     public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {

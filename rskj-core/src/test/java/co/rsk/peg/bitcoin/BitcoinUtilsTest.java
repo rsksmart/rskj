@@ -109,7 +109,7 @@ class BitcoinUtilsTest {
         assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
         assertTrue(firstInputSigHash.isPresent());
 
         // Assert
@@ -135,7 +135,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode(btcTxHex));
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertFalse(firstInputSigHash.isPresent());
@@ -146,7 +146,7 @@ class BitcoinUtilsTest {
         // PEGIN BECH32 - https://www.blockchain.com/explorer/transactions/btc/aeb98f9a7632efefcd8f9d89b881a0d7a80e4e5c501482f8c9a57db1d7e919c0
         BtcTransaction btcTx = new BtcTransaction(btcMainnetParams, Hex.decode("010000000001012ee5f3cf0cf707d9fb1233653c3c8dfc96850cdf80ba716d4b4917d1ded876220000000000ffffffff0320a107000000000017a914056d0d9c5b14dd720d9f61fdb3f557c074f95cef8700000000000000001b6a1952534b5401a0df67b9589bd0527af41f66294a846da513e1f9f3c201000000000016001402bd283849dbe761ee7a8e9d902a5dee1f9807f20248304502210080e065d2ed38d819d26869e3ea25918adaa62fbaf1ce3a98e809a5c6a3c0beb10220669234d087835efcbccf21dbf225fee2abea4e37d29abead8a6da660812c450b01210210a19836ab556cc76f66ad8536fb613869db9676d123a7e56a1488369b646ed100000000"));
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
 
@@ -171,7 +171,7 @@ class BitcoinUtilsTest {
         assertEquals(signatures.size(), redeemScriptParser.getM());
 
         // Act
-        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertTrue(firstInputSigHash.isPresent());
@@ -189,7 +189,7 @@ class BitcoinUtilsTest {
         btcTx.setWitness(0, witness);
 
         // Act
-        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertFalse(sigHash.isPresent());
@@ -214,7 +214,7 @@ class BitcoinUtilsTest {
         );
 
         // Act
-        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertTrue(sigHash.isPresent());
@@ -228,7 +228,7 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertFalse(sigHash.isPresent());
@@ -242,7 +242,7 @@ class BitcoinUtilsTest {
         btcTx.addOutput(Coin.COIN, destinationAddress);
 
         // Act
-        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcMainnetParams, btcTx);
+        Optional<Sha256Hash> sigHash = BitcoinUtils.getSigHashForPegoutIndex(btcTx);
 
         // Assert
         assertTrue(sigHash.isEmpty());
@@ -841,7 +841,7 @@ class BitcoinUtilsTest {
         Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
 
         // act
-        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
 
         // assert
         assertEquals(transactionHashBeforeRemovingSignatures, transactionHashWithoutSignatures);
@@ -857,7 +857,7 @@ class BitcoinUtilsTest {
         transaction.setWitness(0, transactionWitness);
 
         // act
-        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
 
         // assert
         assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
@@ -872,7 +872,7 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction));
     }
 
     @Test
@@ -888,7 +888,7 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
         // act & assert
-        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction));
     }
 
     @Test
@@ -920,7 +920,7 @@ class BitcoinUtilsTest {
         }
 
         // act
-        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, transaction);
+        Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
 
         // assert
         assertEquals(transactionHashBeforeSigning, transactionHashWithoutSignatures);
@@ -934,7 +934,7 @@ class BitcoinUtilsTest {
         BtcTransaction btcTxFromReleaseBtcEvent = new BtcTransaction(btcMainnetParams, btcRawTxFromReleaseBtcEvent);
 
         // act
-        Sha256Hash btcTxHashWithoutSigs = getMultiSigTransactionHashWithoutSignatures(btcMainnetParams, btcTxFromReleaseBtcEvent);
+        Sha256Hash btcTxHashWithoutSigs = getMultiSigTransactionHashWithoutSignatures(btcTxFromReleaseBtcEvent);
 
         // assert
         // the tx hash emitted in the release_requested event does not have the signatures
@@ -1343,6 +1343,49 @@ class BitcoinUtilsTest {
         for (int i = 1; i < opNotIfIndex; i++) { // all the other pushes should be empty, for signing
             assertArrayEquals(emptyByte, inputWitness.getPush(i));
         }
+    }
+
+    @Test
+    void getTransactionWithoutWitness_forSegwitTx_shouldReturnTxWithoutWitness() {
+        // using values from testing with rits
+        // arrange
+        NetworkParameters testnet = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+
+        byte[] rawOriginalTx = Hex.decode("02000000000102ad63bb3d634405d7fc587e326ffded9a466c4f9a8994b3da04a238867c99ddee000000002322002064a977662a5a4bf9917f1ee212e3aef7419b3bb1618be1d57f5a33b99df87e78ffffffffad63bb3d634405d7fc587e326ffded9a466c4f9a8994b3da04a238867c99ddee0100000023220020cabce4c919445262a40e82c100cf4ef2386dc2cc07e7eafa145f72a576a2420bffffffff0158a80e000000000017a91453863f60cf78368efd11bd8cb89012a91027eb52870500000000fd1e01645221020b1d25b03d041028326ac5b27af941524c31bf09df5fece7476d3940f9cd23942102501878fb22fdf374921d168bb1ea02b324f00eb2c7610cb452167a9dcdab016421034ba6ec42eab139697c3614653e130e76fc15d1d7e5c91b3df63d3c06195d422653ae6702f401b2755321029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e433012103284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd2103776b1fd8f86da3c1db3d69699e8250a15877d286734ea9a6da8e9d8ad25d16c12103ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc2103b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b2455ae680500000000fd400120000000000000000000000000000000000000000000000000000000000000000175645221020b1d25b03d041028326ac5b27af941524c31bf09df5fece7476d3940f9cd23942102501878fb22fdf374921d168bb1ea02b324f00eb2c7610cb452167a9dcdab016421034ba6ec42eab139697c3614653e130e76fc15d1d7e5c91b3df63d3c06195d422653ae6702f401b2755321029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e433012103284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd2103776b1fd8f86da3c1db3d69699e8250a15877d286734ea9a6da8e9d8ad25d16c12103ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc2103b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b2455ae6800000000");
+        BtcTransaction originalTx = new BtcTransaction(testnet, rawOriginalTx);
+        assertTrue(originalTx.hasWitness());
+
+        // act
+        BtcTransaction txWithoutWitness = BitcoinUtils.getTransactionWithoutWitness(originalTx);
+
+        // assert
+        assertFalse(txWithoutWitness.hasWitness());
+
+        byte[] expectedRawTxWithoutWitness = Hex.decode("0200000002ad63bb3d634405d7fc587e326ffded9a466c4f9a8994b3da04a238867c99ddee000000002322002064a977662a5a4bf9917f1ee212e3aef7419b3bb1618be1d57f5a33b99df87e78ffffffffad63bb3d634405d7fc587e326ffded9a466c4f9a8994b3da04a238867c99ddee0100000023220020cabce4c919445262a40e82c100cf4ef2386dc2cc07e7eafa145f72a576a2420bffffffff0158a80e000000000017a91453863f60cf78368efd11bd8cb89012a91027eb528700000000");
+        BtcTransaction expectedTxWithoutWitness = new BtcTransaction(testnet, expectedRawTxWithoutWitness);
+
+        assertEquals(expectedTxWithoutWitness, txWithoutWitness);
+        assertEquals(originalTx.getHash(), txWithoutWitness.getHash());
+        assertNotEquals(originalTx.getHash(true), txWithoutWitness.getHash(true));
+    }
+
+    @Test
+    void getTransactionWithoutWitness_forLegacyTx_shouldReturnSameTx() {
+        // https://mempool.space/tx/a4d76b6211b078cbc1d2079002437fcf018cc85cd40dd6195bb0f6b42930b96b
+        // arrange
+        byte[] rawOriginalTx = Hex.decode("02000000017a04759c9582155575ca7e9b0549765d324b975501f48c5c3a8416a1226d62bf00000000d900473044022021fbc3bec74c2c65cb8edcebc03c4b7ec56185086fdf9a0f1578ce6e24a2cd570220626c8fcfa71a26365674b226e5cd3c33029b55a7bfe748923e3b773a36d7223401473044022055f9728a0fdc3533af8f4021f25ce78caaf6d76942969c31a860ebc64c2cee80022041c805e53ad25f8f41fe41def5ced4dacc0028d98df655c3b1b08d8e99f2549a01475221027451384fe9d38e1da80f2d50030bcc4264d3cb657165341cf2fdf901236033212102cf8cc726acd796084e77091f448af9bd872ce4736abb05c2ea90635106574e4552aefdffffff0300000000000000001b6a1952534b540162db6c4b118d7259c23692b162829e6bd5e4d5b099de0a000000000017a9141dee6852dffce78d819a6215f33f6876babef5e0871d4238000000000017a9145d6469cc1a459cc9fbb5ac5e2909865f8d3b442d8772c92500");
+        BtcTransaction originalTx = new BtcTransaction(btcMainnetParams, rawOriginalTx);
+        assertFalse(originalTx.hasWitness());
+
+        // act
+        BtcTransaction txWithoutWitness = BitcoinUtils.getTransactionWithoutWitness(originalTx);
+
+        // assert
+        assertFalse(txWithoutWitness.hasWitness());
+
+        assertEquals(originalTx, txWithoutWitness);
+        assertEquals(originalTx.getHash(), txWithoutWitness.getHash());
+        assertEquals(originalTx.getHash(true), txWithoutWitness.getHash(true));
     }
 
     @Test

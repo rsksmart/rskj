@@ -552,7 +552,7 @@ class FederationChangeIT {
     private void assertPegoutsShouldWorkToFed(Federation federation, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var pegout = createPegout(federation, senderSeed);
         // save pegout index
-        BitcoinUtils.getSigHashForPegoutIndex(NETWORK_PARAMS, pegout)
+        BitcoinUtils.getSigHashForPegoutIndex(pegout)
             .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
 
         int utxosSizeBeforeRegisteringPegout = federationUtxosReference.size();
@@ -1045,7 +1045,7 @@ class FederationChangeIT {
             .toList();
 
         for (var pegoutTx : pegoutsTxs) {
-            var lastPegoutSigHash = BitcoinUtils.getSigHashForPegoutIndex(NETWORK_PARAMS, pegoutTx);
+            var lastPegoutSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutTx);
             assertTrue(lastPegoutSigHash.isPresent());
             assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
         }
