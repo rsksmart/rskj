@@ -249,14 +249,14 @@ public class BitcoinUtils {
             .build();
     }
 
-    public static byte[] getSerializedTransactionCopyWithoutWitness(BtcTransaction btcTransaction) {
+    public static BtcTransaction getTransactionWithoutWitness(BtcTransaction btcTransaction) {
         NetworkParameters params = btcTransaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(params, btcTransaction.bitcoinSerialize());
 
         for (int i = 0; i < transactionCopy.getInputs().size(); i++) {
             transactionCopy.setWitness(i, TransactionWitness.getEmpty());
         }
-        return transactionCopy.bitcoinSerialize();
+        return transactionCopy;
     }
 
     public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {
