@@ -1346,7 +1346,7 @@ class BitcoinUtilsTest {
     }
 
     @Test
-    void getSerializedTransactionCopyWithoutWitness_forSegwitTx_shouldReturnTxWithoutWitness() {
+    void getTransactionWithoutWitness_forSegwitTx_shouldReturnTxWithoutWitness() {
         // using values from testing with rits
         // arrange
         NetworkParameters testnet = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
@@ -1356,35 +1356,36 @@ class BitcoinUtilsTest {
         assertTrue(originalTx.hasWitness());
 
         // act
-        byte[] txWithoutWitnessSerialized = BitcoinUtils.getSerializedTransactionCopyWithoutWitness(originalTx);
-        BtcTransaction txWithoutWitness = new BtcTransaction(testnet, txWithoutWitnessSerialized);
+        BtcTransaction txWithoutWitness = BitcoinUtils.getTransactionWithoutWitness(originalTx);
 
         // assert
         assertFalse(txWithoutWitness.hasWitness());
 
         byte[] expectedRawTxWithoutWitness = Hex.decode("0200000002ad63bb3d634405d7fc587e326ffded9a466c4f9a8994b3da04a238867c99ddee000000002322002064a977662a5a4bf9917f1ee212e3aef7419b3bb1618be1d57f5a33b99df87e78ffffffffad63bb3d634405d7fc587e326ffded9a466c4f9a8994b3da04a238867c99ddee0100000023220020cabce4c919445262a40e82c100cf4ef2386dc2cc07e7eafa145f72a576a2420bffffffff0158a80e000000000017a91453863f60cf78368efd11bd8cb89012a91027eb528700000000");
-        assertArrayEquals(expectedRawTxWithoutWitness, txWithoutWitnessSerialized);
+        BtcTransaction expectedTxWithoutWitness = new BtcTransaction(testnet, expectedRawTxWithoutWitness);
 
+        assertEquals(expectedTxWithoutWitness, txWithoutWitness);
         assertEquals(originalTx.getHash(), txWithoutWitness.getHash());
+        assertNotEquals(originalTx.getHash(true), txWithoutWitness.getHash(true));
     }
 
     @Test
-    void getSerializedTransactionCopyWithoutWitness_forLegacyTx_shouldReturnSameTx() {
+    void getTransactionWithoutWitness_forLegacyTx_shouldReturnSameTx() {
         // https://mempool.space/tx/a4d76b6211b078cbc1d2079002437fcf018cc85cd40dd6195bb0f6b42930b96b
         // arrange
         byte[] rawOriginalTx = Hex.decode("02000000017a04759c9582155575ca7e9b0549765d324b975501f48c5c3a8416a1226d62bf00000000d900473044022021fbc3bec74c2c65cb8edcebc03c4b7ec56185086fdf9a0f1578ce6e24a2cd570220626c8fcfa71a26365674b226e5cd3c33029b55a7bfe748923e3b773a36d7223401473044022055f9728a0fdc3533af8f4021f25ce78caaf6d76942969c31a860ebc64c2cee80022041c805e53ad25f8f41fe41def5ced4dacc0028d98df655c3b1b08d8e99f2549a01475221027451384fe9d38e1da80f2d50030bcc4264d3cb657165341cf2fdf901236033212102cf8cc726acd796084e77091f448af9bd872ce4736abb05c2ea90635106574e4552aefdffffff0300000000000000001b6a1952534b540162db6c4b118d7259c23692b162829e6bd5e4d5b099de0a000000000017a9141dee6852dffce78d819a6215f33f6876babef5e0871d4238000000000017a9145d6469cc1a459cc9fbb5ac5e2909865f8d3b442d8772c92500");
         BtcTransaction originalTx = new BtcTransaction(btcMainnetParams, rawOriginalTx);
+        assertFalse(originalTx.hasWitness());
 
         // act
-        byte[] txWithoutWitnessSerialized = BitcoinUtils.getSerializedTransactionCopyWithoutWitness(originalTx);
-        BtcTransaction txWithoutWitness = new BtcTransaction(btcMainnetParams, txWithoutWitnessSerialized);
+        BtcTransaction txWithoutWitness = BitcoinUtils.getTransactionWithoutWitness(originalTx);
 
         // assert
         assertFalse(txWithoutWitness.hasWitness());
 
-        assertArrayEquals(rawOriginalTx, txWithoutWitnessSerialized);
-
+        assertEquals(originalTx, txWithoutWitness);
         assertEquals(originalTx.getHash(), txWithoutWitness.getHash());
+        assertEquals(originalTx.getHash(true), txWithoutWitness.getHash(true));
     }
 
     @Test
