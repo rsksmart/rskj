@@ -106,7 +106,7 @@ public final class PendingFederation {
         long creationBlockNumber,
         FederationConstants federationConstants,
         ActivationConfig.ForBlock activations
-        ) {
+    ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
         }

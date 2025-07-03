@@ -7496,11 +7496,16 @@ class BridgeSupportTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test release transaction info processing")
     class ReleaseTransactionInfo {
-        private final Coin outpointValue1 = Coin.valueOf(300_000);
-        private final Coin outpointValue2 = Coin.valueOf(150_000);
+        private final Coin outpointValue1 = Coin.valueOf(400_000);
+        private final Coin outpointValue2 = Coin.valueOf(90_000);
         private final Coin outpointValue3 = Coin.valueOf(50_000);
+
+        // requesting a release with an amount that needs all the outpoints,
+        // but that also has some change to the fed
+        private final Coin requestedValue1 = Coin.valueOf(100_000);
+        private final Coin requestedValue2 = Coin.valueOf(400_000);
         private final List<Coin> outpointValues = List.of(outpointValue1, outpointValue2, outpointValue3);
-        private final Coin totalAmountRequested = outpointValue1.add(outpointValue2).add(outpointValue3);
+        private final Coin totalAmountRequested = requestedValue1.add(requestedValue2);
 
         private List<LogInfo> logs;
         private Block currentBlock;
@@ -7555,12 +7560,10 @@ class BridgeSupportTest {
 
             // save releases in queue
             Address destinationAddress1 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "firstAddress");
-            Coin requestedValue1 = Coin.valueOf(100_000);
             Keccak256 rskTxHash1 = RskTestUtils.createHash(1);
             ReleaseRequestQueue.Entry releaseEntry1 = new ReleaseRequestQueue.Entry(destinationAddress1, requestedValue1, rskTxHash1);
 
             Address destinationAddress2 = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "secondAddress");
-            Coin requestedValue2 = Coin.valueOf(400_000);
             Keccak256 rskTxHash2 = RskTestUtils.createHash(2);
             ReleaseRequestQueue.Entry releaseEntry2 = new ReleaseRequestQueue.Entry(destinationAddress2, requestedValue2, rskTxHash2);
 
@@ -7660,7 +7663,7 @@ class BridgeSupportTest {
         }
 
         @Test
-        void pegoutsFlow_fromAReleaseRequest_toBeingCorrectlySignedForFederators_whenSegwitFed() throws IOException {
+        void pegoutsFlow_fromAReleaseRequest_toThePegoutChangeBeingCorrectlyRegistered_whenSegwitFed() throws Exception {
             // arrange
             // we need to recreate the federators keys to have the priv keys for signing
             List<BtcECKey> membersBtcPublicKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
@@ -7672,6 +7675,8 @@ class BridgeSupportTest {
                 .build();
             federationStorageProvider.setNewFederation(activeFederation);
             setUpReleaseRequests();
+
+            currentBlock = buildBlock(pegoutTxIndexActivationHeight);
             setUpWithActivations(allActivations);
 
             // call update collections so release requests are moved to pegouts wfc structure
@@ -7725,11 +7730,28 @@ class BridgeSupportTest {
                 bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
             }
 
-            // assert
+            // assert federators signed and release was made
             for (BtcECKey federatorSignerKey : signers) {
                 assertFederatorSigning(rskTxHash.getBytes(), pegoutWFS, sigHashes, activeFederation, federatorSignerKey, logs);
             }
             assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
+
+            int activeFedUtxosSizeBeforeRegisteringChange = federationSupport.getActiveFederationBtcUTXOs().size();
+            // register release change utxo
+            int releaseTxBlockNumber = (int) currentBlock.getNumber();
+            setUpForTransactionRegistration(pegoutWFS, releaseTxBlockNumber, allActivations);
+
+            bridgeSupport.registerBtcTransaction(
+                tx,
+                pegoutWFS.bitcoinSerialize(),
+                releaseTxBlockNumber,
+                pmtWithTransactions.bitcoinSerialize()
+            );
+
+            // assert utxo was registered
+            assertEquals(activeFedUtxosSizeBeforeRegisteringChange + 1, federationSupport.getActiveFederationBtcUTXOs().size());
+
+            assertTransactionWasProcessed(bridgeStorageProvider, pegoutWFS.getHash(), releaseTxBlockNumber);
         }
 
         private void updateBridgeSupport() {
@@ -7844,7 +7866,7 @@ class BridgeSupportTest {
             BtcTransaction pegin = createLegacyPeginFromMultiSigToActiveFed(amountToSendToActiveFed);
             Coin amountToSendToRetiringFed = amountToSendToActiveFed.div(2);
             pegin.addOutput(amountToSendToRetiringFed, retiringFederation.getAddress());
-            setUpForTransactionRegistration(pegin, allActivations);
+            setUpForTransactionRegistration(pegin, pegoutTxIndexActivationHeight, allActivations);
 
             // act
             bridgeSupport.registerBtcTransaction(
@@ -7894,7 +7916,7 @@ class BridgeSupportTest {
 
         private BtcTransaction arrangeLegacyPeginFromMultiSigToActiveFed(Coin amountToSend, ActivationConfig.ForBlock activations) throws Exception {
             BtcTransaction pegin = createLegacyPeginFromMultiSigToActiveFed(amountToSend);
-            setUpForTransactionRegistration(pegin, activations);
+            setUpForTransactionRegistration(pegin, pegoutTxIndexActivationHeight, activations);
 
             return pegin;
         }
@@ -7914,12 +7936,12 @@ class BridgeSupportTest {
         }
     }
 
-    private void setUpForTransactionRegistration(BtcTransaction btcTx, ActivationConfig.ForBlock activations) throws Exception {
+    private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcTxToRegisterBlockNumber, ActivationConfig.ForBlock activations) throws Exception {
         pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), btcMainnetParams);
-        var chainHeight = pegoutTxIndexActivationHeight + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
+        var chainHeight = btcTxToRegisterBlockNumber + bridgeMainNetConstants.getBtc2RskMinimumAcceptableConfirmations();
 
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeMainNetConstants, bridgeStorageProvider, activations);
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, pegoutTxIndexActivationHeight, btcMainnetParams);
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcTxToRegisterBlockNumber, btcMainnetParams);
         bridgeStorageProvider.save();
     }
 
@@ -8339,14 +8361,14 @@ class BridgeSupportTest {
                 hopActivations,
                 p2shFed,
                 1,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 161200L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 154400L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
                 hopActivations,
                 p2shFed,
                 150,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 638000L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 631200L)
             )
         );
     }
@@ -8395,21 +8417,21 @@ class BridgeSupportTest {
                 fingerrootActivations,
                 p2shFed,
                 0,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 151400L: 158000L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 151400L: 151200L)
             ),
             // active fed is p2sh and there is one pegout request
             Arguments.of(
                 fingerrootActivations,
                 p2shFed,
                 1,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 161200L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 154600L: 154400L)
             ),
             // active fed is p2sh and there are many pegout requests
             Arguments.of(
                 fingerrootActivations,
                 p2shFed,
                 150,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 638000L)
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 631400L: 631200L)
             )
         );
     }
@@ -8419,12 +8441,13 @@ class BridgeSupportTest {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
+        List<BtcECKey> erpFedPubKeys = federationConstants.getErpFedPubKeysList();
 
         ErpFederation p2shFed = P2shErpFederationBuilder.builder()
             .withCreationTime(Instant.now())
             .withCreationBlockNumber(1L)
             .withNetworkParameters(bridgeConstants.getBtcParams())
-            .withErpPublicKeys(federationConstants.getErpFedPubKeysList())
+            .withErpPublicKeys(erpFedPubKeys)
             .withErpActivationDelay(federationConstants.getErpFedActivationDelay())
             .build();
 
@@ -8432,7 +8455,7 @@ class BridgeSupportTest {
             .withCreationTime(Instant.now())
             .withCreationBlockNumber(1L)
             .withNetworkParameters(bridgeConstants.getBtcParams())
-            .withErpPublicKeys(federationConstants.getErpFedPubKeysList())
+            .withErpPublicKeys(erpFedPubKeys)
             .withErpActivationDelay(federationConstants.getErpFedActivationDelay())
             .build();
 
@@ -8453,7 +8476,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9490L: 9820L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9490L: 9480L),
                 List.of(),
                 List.of(p2shFedUtxo1)
             ),
@@ -8462,7 +8485,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 17940L: 18600L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 17940L: 17920L),
                 List.of(pegoutRequest1),
                 List.of()
             ),
@@ -8471,7 +8494,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9830L: 10160L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9830L: 9820L),
                 List.of(pegoutRequest1),
                 List.of(p2shFedUtxo1)
             ),
@@ -8479,7 +8502,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10170L: 10500L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10170L: 10160L),
                 List.of(pegoutRequest1, pegoutRequest2),
                 List.of(p2shFedUtxo1)
             ),
@@ -8487,7 +8510,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10510L: 10840L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 10510L: 10500L),
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
                 List.of(p2shFedUtxo1)
             ),
@@ -8497,7 +8520,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 18900L: 19560L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 18900L: 18880L),
                 List.of(pegoutRequest1, bigPegoutRequest),
                 List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
             ),
@@ -8505,7 +8528,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19240L: 19900L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19240L: 19220L),
                 List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
                 List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
             ),
@@ -8513,17 +8536,15 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19580L: 20240L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 19580L: 19560L),
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
                 List.of(p2shFedUtxo1, p2shFedBigUtxoUtxo)
             ),
-
-
             // active fed is p2sh p2wsh and there are 0 pegout requests
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 5670L: 5750L), // Savings: 59.75% for mainnet. 58.57% for regtest.
+                Coin.valueOf(5670L), // Savings: 59.75% for mainnet. 58.57% for regtest.
                 List.of(),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8532,7 +8553,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9580L: 9740L),
+                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 9580L: 9570L),
                 List.of(pegoutRequest1),
                 List.of()
             ),
@@ -8540,7 +8561,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 6010L: 6090L), // Savings: 61.12% for mainnet. 59.94% for regtest.
+                Coin.valueOf(6010L), // Savings: 61.12% for mainnet. 59.94% for regtest.
                 List.of(pegoutRequest1),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8548,7 +8569,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 6350L: 6430L), // Savings: 62.42% for mainnet. 61.24% for regtest.
+                Coin.valueOf(6350L), // Savings: 62.42% for mainnet. 61.24% for regtest.
                 List.of(pegoutRequest1, pegoutRequest2),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8556,7 +8577,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 6690L: 6770L), // Savings: 63.66% for mainnet. 62.45% for regtest.
+                Coin.valueOf(6690L), // Savings: 63.66% for mainnet. 62.45% for regtest.
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3),
                 List.of(p2shP2wshFedUtxo1)
             ),
@@ -8566,7 +8587,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 11260L: 11430L), // Savings: 59.58% for mainnet. 58.45% for regtest.
+                Coin.valueOf(11260L), // Savings: 59.58% for mainnet. 58.45% for regtest.
                 List.of(pegoutRequest1, bigPegoutRequest),
                 List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
             ),
@@ -8574,7 +8595,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 11600L: 11770L), // Savings: 60.29% for mainnet. 59.13% for regtest.
+                Coin.valueOf(11600L), // Savings: 60.29% for mainnet. 59.13% for regtest.
                 List.of(pegoutRequest1, pegoutRequest2, bigPegoutRequest),
                 List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
             ),
@@ -8582,7 +8603,7 @@ class BridgeSupportTest {
             Arguments.of(
                 activations,
                 p2shP2wshFed,
-                Coin.valueOf(bridgeConstants instanceof BridgeMainNetConstants? 11940L: 12110L), // Savings: 60.97% for mainnet. 59.83% for regtest.
+                Coin.valueOf(11940L), // Savings: 60.97% for mainnet. 59.83% for regtest.
                 List.of(pegoutRequest1, pegoutRequest2, pegoutRequest3, bigPegoutRequest),
                 List.of(p2shP2wshFedUtxo1, p2shP2wshFedBigUtxo)
             )
