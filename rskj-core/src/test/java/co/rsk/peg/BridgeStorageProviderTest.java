@@ -1404,7 +1404,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void setAndSaveReleaseOutpointsValues_preTbd800_shouldNotSaveInStorage() {
+        void setAndSaveReleaseOutpointsValues_preReed800_shouldNotSaveInStorage() {
             // Arrange
             ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
             bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, lovellActivations);
@@ -1546,7 +1546,7 @@ class BridgeStorageProviderTest {
         }
 
         @Test
-        void getReleaseOutpointsValues_preTbd800_shouldThrowIllegalStateException() {
+        void getReleaseOutpointsValues_preReed800_shouldThrowIllegalStateException() {
             // Arrange
             ActivationConfig.ForBlock lovell700 = ActivationConfigsForTest.lovell700().forBlock(0L);
             bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, lovell700);
