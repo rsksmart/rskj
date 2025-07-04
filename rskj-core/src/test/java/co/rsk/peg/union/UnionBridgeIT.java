@@ -411,6 +411,44 @@ class UnionBridgeIT {
         assertUnionBridgeBalance(expectedUnionAddressBalance);
     }
 
+    @Test
+    @Order(20)
+    void setTransferPermissions_whenEnableOnlyRelease_shouldEnableReleasePermission()
+        throws VMException {
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
+        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(false, true);
+    }
+
+    @Test
+    @Order(21)
+    void requestUnionBridgeRbtc_whenRequestNowIsDisabled_shouldReturnDisabledCode()
+        throws VMException {
+        Coin currentUnionAddressBalance = repository.getBalance(CURRENT_UNION_BRIDGE_ADDRESS);
+
+        int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
+
+        assertEquals(UnionResponseCode.REQUEST_DISABLED.getCode(), requestUnionResponseCode);
+        // Assert union bridge balance remains the same
+        assertUnionBridgeBalance(currentUnionAddressBalance);
+    }
+
+    @Test
+    @Order(22)
+    void releaseUnionBridgeRbtc_whenReleaseIsEnabled_shouldReleaseUnionBridgeRbtc()
+        throws VMException {
+        Coin currentUnionAddressBalance = repository.getBalance(CURRENT_UNION_BRIDGE_ADDRESS);
+
+        int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
+
+        assertEquals(UnionResponseCode.SUCCESS.getCode(), releaseUnionResponseCode);
+        assertWeisTransferredToUnionBridge(Coin.ZERO);
+
+        simulateTransferBackToBridgeAddress(AMOUNT_TO_RELEASE);
+        Coin expectedUnionBalance = currentUnionAddressBalance.subtract(AMOUNT_TO_RELEASE);
+        assertUnionBridgeBalance(expectedUnionBalance);
+    }
+
     private void setupChangeUnionAddressAuthorizer() {
         when(rskTx.getSender(signatureCache)).thenReturn(CHANGE_UNION_ADDRESS_AUTHORIZER);
     }
