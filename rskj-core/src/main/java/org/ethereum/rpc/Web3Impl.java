@@ -33,6 +33,7 @@ import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.eth.AccountOverride;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -404,9 +405,23 @@ public class Web3Impl implements Web3 {
         return toQuantityJsonHex(b);
     }
 
+    private String eth_call(CallArgumentsParam args, Map<String, String> inputs, List<AccountOverride> accountOverrideList) {
+        return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber), accountOverrideList));
+    }
+
     @Override
-    public String eth_call(CallArgumentsParam args, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> getEthModule().call(args, new BlockIdentifierParam(blockNumber)));
+    public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam) {
+        return eth_call(args, blockRefParam, Map.of());
+    }
+
+    @Override
+    public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam) {
+        List<AccountOverride> accountOverrideList = accParam.entrySet().stream()
+                .map(entry -> new AccountOverride(entry.getKey().getAddress()).fromAccountOverrideParam(entry.getValue())).toList();
+        if (blockRefParam.getIdentifier() != null) {
+            return getEthModule().call(args, new BlockIdentifierParam(blockRefParam.getIdentifier()), accountOverrideList);
+        }
+        return eth_call(args, blockRefParam.getInputs(), accountOverrideList);
     }
 
     @Override
@@ -550,8 +565,8 @@ public class Web3Impl implements Web3 {
     protected String invokeByBlockRef(Map<String, String> inputs, UnaryOperator<String> toInvokeByBlockNumber) {
         final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
         return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
-                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
-                        .orElseThrow(() -> invalidParamError("Invalid block input"))
+                    .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
+                    .orElseThrow(() -> invalidParamError("Invalid block input"))
                 );
     }
 
@@ -849,10 +864,22 @@ public class Web3Impl implements Web3 {
         }
 
         Block block = blockStore.getBlockByHash(txInfo.getBlockHash());
-        Transaction tx = block.getTransactionsList().get(txInfo.getIndex());
-        txInfo.setTransaction(tx);
 
-        return new TransactionReceiptDTO(block, txInfo, signatureCache);
+        byte[] blockHash = block.getHash().getBytes();
+        int logIndexAcc = 0;
+        for(Transaction tx: block.getTransactionsList()) {
+
+            if(tx.getHash().equals(transactionHash.getHash())){
+                txInfo.setTransaction(tx);
+                break;
+            }
+            logIndexAcc += Optional.ofNullable(blockchain.getTransactionInfoByBlock(tx,blockHash))
+                    .map(TransactionInfo::getReceipt)
+                    .map(TransactionReceipt::getLogInfoList).map(List::size)
+                    .orElse(0);
+
+        }
+        return new TransactionReceiptDTO(block, txInfo, signatureCache, logIndexAcc);
     }
 
     @Override
