@@ -41,6 +41,8 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.test.builders.MigrationTransactionBuilder;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -828,7 +830,156 @@ class BridgeSupportAddSignatureTest {
 
         // assert pegout was removed from wfs structure
         assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForSignatures().size());
+    }
 
+    @ParameterizedTest
+    @MethodSource("activeAndRetiringFedsAndSigningKeysArgs")
+    void addSignature_migrationTx_withOneSharedFederatorAndOneOnlyPartOfRetiringFed(
+        Federation retiringFederation,
+        Federation activeFederation,
+        BtcECKey sharedSigner,
+        BtcECKey nonSharedSigner
+    ) throws IOException {
+        // arrange
+        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        Repository repository = createRepository();
+        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+            bridgeMainnetConstants,
+            activationsAfterForks,
+            logs
+        );
+
+        federationStorageProvider.setOldFederation(retiringFederation);
+        federationStorageProvider.setNewFederation(activeFederation);
+        // Move the required blocks ahead for the new powpeg to become active
+        var blockNumber =
+            retiringFederation.getCreationBlockNumber() + bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationsAfterForks);
+        Block currentBlock = buildBlock(blockNumber);
+
+        FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
+        FederationSupport federationSupport = FederationSupportBuilder.builder()
+            .withFederationConstants(federationConstants)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withRskExecutionBlock(currentBlock)
+            .withActivations(activationsAfterForks)
+            .build();
+        BridgeSupport bridgeSupport = BridgeSupportBuilder.builder()
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(currentBlock)
+            .withActivations(activationsAfterForks)
+            .withBridgeConstants(bridgeMainnetConstants)
+            .withFederationSupport(federationSupport)
+            .withLockingCapSupport(lockingCapSupport)
+            .build();
+
+        // create migration to be signed
+        BtcTransaction migrationTx = MigrationTransactionBuilder.builder()
+            .withRetiringFederation(retiringFederation)
+            .withActiveFederation(activeFederation)
+            .build();
+
+        // add migration wfs to repo
+        SortedMap<Keccak256, BtcTransaction> pegoutsWFS = new TreeMap<>();
+        Keccak256 rskTxHash = createHash3(1);
+        pegoutsWFS.put(rskTxHash, migrationTx);
+        repository.addStorageBytes(bridgeAddress,
+            PEGOUTS_WAITING_FOR_SIGNATURES.getKey(),
+            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(pegoutsWFS)
+        );
+
+        // TODO refactor this to not use if inside a test
+        if (retiringFederation.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            for (int i = 0; i < migrationTx.getInputs().size(); i++) {
+                Coin amountReceived = migrationTx.getInput(i).getValue();
+                List<Coin> outpointsValues = List.of(amountReceived);
+                repository.addStorageBytes(
+                    bridgeAddress,
+                    getStorageKeyForReleaseOutpointsValues(migrationTx.getHash()),
+                    BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+                );
+            }
+        }
+
+        BtcTransaction migrationTxReference = bridgeStorageProvider.getPegoutsWaitingForSignatures().get(rskTxHash);
+
+        // act
+        List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(migrationTx);
+
+        // sign with shared federator
+        List<byte[]> signatures = generateSignerEncodedSignatures(sharedSigner, sigHashes);
+        bridgeSupport.addSignature(sharedSigner, signatures, rskTxHash);
+
+        assertFederatorSigning(
+            rskTxHash.getBytes(),
+            migrationTxReference,
+            sigHashes,
+            retiringFederation,
+            sharedSigner,
+            logs
+        );
+
+        // sign with different federator
+        List<byte[]> signatures2 = generateSignerEncodedSignatures(nonSharedSigner, sigHashes);
+        bridgeSupport.addSignature(nonSharedSigner, signatures2, rskTxHash);
+        assertFederatorSigning(
+            rskTxHash.getBytes(),
+            migrationTxReference,
+            sigHashes,
+            retiringFederation,
+            nonSharedSigner,
+            logs
+        );
+    }
+
+    private static Stream<Arguments> activeAndRetiringFedsAndSigningKeysArgs() {
+        final List<BtcECKey> retiringLegacyFederationKeys = getBtcEcKeysFromSeeds(
+            new String[] {"sharedFederator", "retiringFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
+            true
+        );
+        Federation retiringLegacyFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(retiringLegacyFederationKeys)
+            .build();
+
+        final List<BtcECKey> activeLegacyFederationKeys = getBtcEcKeysFromSeeds(
+            new String[] {"sharedFederator", "activeFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
+            true
+        );
+        Federation activeLegacyFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(activeLegacyFederationKeys)
+            .build();
+
+        final List<BtcECKey> activeSegwitFederationKeys = getBtcEcKeysFromSeeds(
+            new String[] {
+                "sharedFederator", "activeFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
+                "signer11", "signer12", "signer13", "signer14", "signer15", "signer16", "signer17", "signer18", "signer19", "signer20"
+            },
+            true
+        );
+        Federation activeSegwitFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(activeSegwitFederationKeys)
+            .build();
+
+        final List<BtcECKey> retiringSegwitFederationKeys = getBtcEcKeysFromSeeds(
+            new String[] {
+                "sharedFederator", "retiringFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
+                "signer11", "signer12", "signer13", "signer14", "signer15", "signer16", "signer17", "signer18", "signer19", "signer20"
+            },
+            true
+        );
+        Federation retiringSegwitFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(retiringSegwitFederationKeys)
+            .build();
+
+        return Stream.of(
+            Arguments.of(retiringLegacyFederation, activeLegacyFederation, retiringLegacyFederationKeys.get(0), retiringLegacyFederationKeys.get(1)),
+            Arguments.of(retiringLegacyFederation, activeSegwitFederation, retiringLegacyFederationKeys.get(0), retiringLegacyFederationKeys.get(1)),
+            Arguments.of(retiringSegwitFederation, activeSegwitFederation, retiringSegwitFederationKeys.get(0), retiringSegwitFederationKeys.get(1))
+        );
     }
 
     private static void assertEvent(List<LogInfo> logs, int index, CallTransaction.Function event, Object[] topics, Object[] params) {
