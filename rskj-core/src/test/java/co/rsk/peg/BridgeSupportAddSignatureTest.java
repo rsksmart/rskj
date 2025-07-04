@@ -1,9 +1,11 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.PegUtils.getFlyoverFederationRedeemScript;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
@@ -767,32 +769,71 @@ class BridgeSupportAddSignatureTest {
             .build();
 
         final List<BtcECKey> keys = getBtcEcKeysFromSeeds(
-            new String[] {"signer1", "signer2", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
+            new String[] {"signer1", "signer2", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
+                "signer11", "signer12", "signer13", "signer14", "signer15", "signer16", "signer17", "signer18", "signer19", "signer20"
+            },
             true
         );
         Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
             .withMembersBtcPublicKeys(keys)
             .build();
         federationStorageProvider.setNewFederation(activeFederation);
+        Script activeFederationRedeemScript = activeFederation.getRedeemScript();
+
+        // create prev txs
+        BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
+        Coin prevValue = Coin.COIN;
+        // one sent to the active fed
+        prevTx.addOutput(prevValue, activeFederation.getAddress());
+        // one sent to the active fed adding flyover prefix
+        BtcTransaction prevTxFlyover = new BtcTransaction(btcMainnetParams);
+        Coin prevValueFlyover = Coin.COIN.div(2);
+        Keccak256 flyoverDerivationHash = new Keccak256("0000000000000000000000000000000000000000000000000000000000000001");
+        Address activeFederationFlyoverAddress = getFlyoverFederationAddress(
+            btcMainnetParams,
+            flyoverDerivationHash,
+            activeFederation
+        );
+        Script activeFederationFlyoverRedeemScript = getFlyoverFederationRedeemScript(
+            flyoverDerivationHash,
+            activeFederationRedeemScript
+        );
+        prevTxFlyover.addOutput(prevValueFlyover, activeFederationFlyoverAddress);
 
         // create pegout to be signed
-        BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
-        prevTx.addOutput(Coin.COIN, activeFederation.getAddress());
-
         Keccak256 rskTxHash = createHash3(1);
         BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
         pegout.setVersion(BTC_TX_VERSION_2);
-        // add input
+        // add inputs
         pegout.addInput(prevTx.getOutput(0));
-        int inputIndex = 0;
-        // add output
-        pegout.addOutput(Coin.MILLICOIN, activeFederation.getAddress());
-        // sign input
-        BitcoinUtils.addSpendingFederationBaseScript(pegout, inputIndex, activeFederation.getRedeemScript(), activeFederation.getFormatVersion());
+        pegout.addInput(prevTxFlyover.getOutput(0));
+        // add outputs
+        Coin valueToSend = bridgeMainnetConstants.getMinimumPegoutTxValue();
+        // add user output
+        pegout.addOutput(valueToSend, BitcoinTestUtils.getBtcEcKeyFromSeed("receiver"));
+        // add change output
+        pegout.addOutput(prevValue.subtract(valueToSend), activeFederation.getAddress());
+        // sign inputs
+        int inputSentToActiveFederationIndex = 0;
+        BitcoinUtils.addSpendingFederationBaseScript(
+            pegout,
+            inputSentToActiveFederationIndex,
+            activeFederationRedeemScript,
+            activeFederation.getFormatVersion()
+        );
+        int inputSentToFlyoverActiveFederationIndex = 1;
+        BitcoinUtils.addSpendingFederationBaseScript(
+            pegout,
+            inputSentToFlyoverActiveFederationIndex,
+            activeFederationFlyoverRedeemScript,
+            activeFederation.getFormatVersion()
+        );
 
         // save outpoints values
-        Coin amountReceived = pegout.getInput(inputIndex).getValue();
-        List<Coin> outpointsValues = List.of(amountReceived);
+        List<Coin> outpointsValues = new ArrayList<>();
+        for (TransactionInput input : pegout.getInputs()) {
+            outpointsValues.add(input.getValue());
+        }
         repository.addStorageBytes(
             bridgeAddress,
             getStorageKeyForReleaseOutpointsValues(pegout.getHash()),
@@ -813,7 +854,8 @@ class BridgeSupportAddSignatureTest {
         // act
         // sign with all federators
         List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegout);
-        List<BtcECKey> federatorSignersKeys = keys.subList(0, 5); // we only need 5/9 signers
+        int neededSignatures = activeFederation.getNumberOfSignaturesRequired();
+        List<BtcECKey> federatorSignersKeys = keys.subList(0, neededSignatures);
         for (BtcECKey federatorSignerKey : federatorSignersKeys) {
             List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
             bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
@@ -910,7 +952,7 @@ class BridgeSupportAddSignatureTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 retiringFederation.getCreationBlockNumber() + bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationsAfterForks);
-            Block currentBlock = buildBlock(blockNumber);
+            Block currentBlock = createRskBlock(blockNumber);
 
             FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
             FederationSupport federationSupport = FederationSupportBuilder.builder()

@@ -18,6 +18,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.RELEASE_REQUEST_QUEUE_WITH_TXHASH;
 import static co.rsk.peg.BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
@@ -7519,7 +7520,7 @@ class BridgeSupportTest {
             Coin feePerKb = Coin.valueOf(10_000L);
             when(feePerKbSupport.getFeePerKb()).thenReturn(feePerKb);
 
-            currentBlock = buildBlock(0L);
+            currentBlock = createRskBlock(0L);
         }
 
         private void setUpWithActivations(ActivationConfig.ForBlock activations) {
@@ -7676,7 +7677,7 @@ class BridgeSupportTest {
             federationStorageProvider.setNewFederation(activeFederation);
             setUpReleaseRequests();
 
-            currentBlock = buildBlock(pegoutTxIndexActivationHeight);
+            currentBlock = createRskBlock(pegoutTxIndexActivationHeight);
             setUpWithActivations(allActivations);
 
             // call update collections so release requests are moved to pegouts wfc structure
@@ -7704,7 +7705,7 @@ class BridgeSupportTest {
 
             // advance blockchain so pegouts have enough confirmations
             var blockNumber = currentBlock.getNumber() + bridgeMainNetConstants.getRsk2BtcMinimumAcceptableConfirmations();
-            currentBlock = buildBlock(blockNumber);
+            currentBlock = createRskBlock(blockNumber);
             updateBridgeSupport();
 
             // call update collections so pegouts are moved from wfc to wfs
@@ -7719,7 +7720,7 @@ class BridgeSupportTest {
 
             // advance blockchain to start signing pegout
             var newBlockNumber = currentBlock.getNumber() + 1;
-            currentBlock = buildBlock(newBlockNumber);
+            currentBlock = createRskBlock(newBlockNumber);
             updateBridgeSupport();
 
             List<BtcECKey> signers = membersBtcPublicKeys.subList(0, activeFederation.getNumberOfSignaturesRequired());
@@ -7851,7 +7852,7 @@ class BridgeSupportTest {
             federationStorageProvider.setOldFederation(retiringFederation);
             federationStorageProvider.setNewFederation(activeFederation);
             var blockNumber = federationConstantsMainnet.getFederationActivationAge(allActivations) + 1;
-            currentBlock = buildBlock(blockNumber);
+            currentBlock = createRskBlock(blockNumber);
 
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(federationConstantsMainnet)
@@ -8103,7 +8104,7 @@ class BridgeSupportTest {
             federationStorageProvider.setNewFederation(activeFederation);
 
             blockNumber = federationConstantsMainnet.getFederationActivationAge(allActivations) + federationConstantsMainnet.getFundsMigrationAgeSinceActivationBegin() + activeFederation.getCreationBlockNumber() + 1;
-            Block currentBlock = RskTestUtils.createRskBlock(blockNumber);
+            Block currentBlock = createRskBlock(blockNumber);
             federationSupport = FederationSupportBuilder.builder()
                 .withFederationConstants(federationConstantsMainnet)
                 .withFederationStorageProvider(federationStorageProvider)
