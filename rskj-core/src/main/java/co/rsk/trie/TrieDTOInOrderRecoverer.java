@@ -21,13 +21,20 @@ package co.rsk.trie;
 import co.rsk.crypto.Keccak256;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class TrieDTOInOrderRecoverer {
+
+    public record RecoverSubtreeResponse(Optional<TrieDTO> node, int index) {
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(TrieDTOInOrderRecoverer.class);
 
@@ -56,6 +63,39 @@ public class TrieDTOInOrderRecoverer {
         return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
     }
 
+    public static RecoverSubtreeResponse recoverTrie(Function<Integer, TrieDTO> getNodeFn, int trieCollectionSize, BiConsumer<? super TrieDTO, Integer> processTrieDTO) {
+        final var response = recoverSubtree(getNodeFn, 0, trieCollectionSize - 1, processTrieDTO);
+        final var result = response.node();
+        result.ifPresent(node -> processTrieDTO.accept(node, response.index()));
+
+        return response;
+    }
+
+    private static RecoverSubtreeResponse recoverSubtree(Function<Integer, TrieDTO> getNodeFn, int start, int end, BiConsumer<? super TrieDTO, Integer> processTrieDTO) {
+        if (end - start < 0) {
+            return new RecoverSubtreeResponse(Optional.empty(), -1);
+        }
+        if (end - start == 0) {
+            final var recoveredNode = Optional.of(fromTrieDTO(getNodeFn.apply(start), Optional.empty(), Optional.empty()));
+
+            return new RecoverSubtreeResponse(recoveredNode, start);
+        }
+
+        int indexRoot = findRoot(getNodeFn, start, end);
+
+        final var leftResponse = recoverSubtree(getNodeFn, start, indexRoot - 1, processTrieDTO);
+        final var left = leftResponse.node();
+        left.ifPresent(node -> processTrieDTO.accept(node, leftResponse.index()));
+
+        final var rightResponse = recoverSubtree(getNodeFn, indexRoot + 1, end, processTrieDTO);
+        final var right = rightResponse.node();
+        right.ifPresent(node -> processTrieDTO.accept(node, rightResponse.index()));
+
+        final var recoveredNode = Optional.of(fromTrieDTO(getNodeFn.apply(indexRoot), left, right));
+
+        return new RecoverSubtreeResponse(recoveredNode, indexRoot);
+    }
+
     public static boolean verifyChunk(byte[] remoteRootHash, List<TrieDTO> preRootNodes, List<TrieDTO> nodes, List<TrieDTO> postRootNodes) {
         List<TrieDTO> allNodes = Lists.newArrayList(preRootNodes);
         allNodes.addAll(nodes);
@@ -65,7 +105,7 @@ public class TrieDTOInOrderRecoverer {
             return false;
         }
         TrieDTO[] nodeArray = allNodes.toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, t -> {
+        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, node -> {
         });
         if (!result.isPresent() || !Arrays.equals(remoteRootHash, result.get().calculateHash())) {
             logger.warn("Root hash does not match! Calculated is present: {}", result.isPresent());
@@ -79,6 +119,24 @@ public class TrieDTOInOrderRecoverer {
         int max = start;
         for (int i = start; i <= end; i++) {
             if (getValue(trieCollection[i]) > getValue(trieCollection[max])) {
+                max = i;
+            }
+        }
+        return max;
+    }
+
+    private static int findRoot(Function<Integer, TrieDTO> getNodeFn, int start, int end) {
+        int max = start;
+        TrieDTO maxNode = null;
+
+        for (int i = start; i <= end; i++) {
+            final var node = getNodeFn.apply(i);
+
+            if(maxNode == null) {
+                maxNode = node;
+            }
+
+            if (getValue(node) > getValue(maxNode)) {
                 max = i;
             }
         }
