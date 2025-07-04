@@ -137,13 +137,6 @@ public final class BridgeSupportTestUtil {
         return pegoutEntry.getBtcTransaction();
     }
 
-    public static Block buildBlock(long blockNumber) {
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        return Block.createBlockFromHeader(blockHeader, true);
-    }
-
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
         // assert last push has the redeem script
         int redeemScriptIndex = witness.getPushCount() - 1;

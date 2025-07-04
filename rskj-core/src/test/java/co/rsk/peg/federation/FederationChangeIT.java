@@ -1,5 +1,6 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
@@ -63,7 +64,7 @@ class FederationChangeIT {
                 "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
     private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
     private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
-        "newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09", "newMember10",
+        "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "newMember10",
         "newMember11", "newMember12", "newMember13", "newMember14", "newMember15", "newMember16", "newMember17", "newMember18", "newMember19", "newMember20"
     }, true);
     private static final int NEW_FEDERATION_MEMBERS_SIZE = 20;
@@ -225,7 +226,7 @@ class FederationChangeIT {
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
         var blockNumber = 0L;
-        currentBlock = buildBlock(blockNumber);
+        currentBlock = createRskBlock(blockNumber);
 
         federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
@@ -379,7 +380,8 @@ class FederationChangeIT {
         assertEquals(1, pegoutsTxs.size());
         var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
 
-        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, 5));
+        int neededSignatures = federationSupport.getActiveFederationThreshold();
+        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, neededSignatures));
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         registerBtcTransaction(svpFundTx);
@@ -411,15 +413,27 @@ class FederationChangeIT {
         var svpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
         assertTrue(svpSpendTxWaitingForSignatures.isPresent());
 
+        var proposedFederation = federationSupport.getProposedFederation();
+        assertTrue(proposedFederation.isPresent());
+
         // Add the signatures for the svp spend tx
         var svpSpendTxCreationHash = svpSpendTxWaitingForSignatures.get().getKey();
         var svpSpendTx = svpSpendTxWaitingForSignatures.get().getValue();
         var svpSpendTxSigHashes = IntStream.range(0, svpSpendTx.getInputs().size())
             .mapToObj(i -> BitcoinUtils.generateSigHashForSegwitTransactionInput(svpSpendTx, i, svpSpendTx.getInput(i).getValue()))
             .toList();
+
         for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, NEW_FEDERATION_THRESHOLD)) {
             List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
             bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
+            assertFederatorSigning(
+                svpSpendTxCreationHash.getBytes(),
+                svpSpendTx,
+                svpSpendTxSigHashes,
+                proposedFederation.get(),
+                proposedFederatorSignerKey,
+                logs
+            );
         }
 
         // Verify that the svp spend tx was released
@@ -465,7 +479,7 @@ class FederationChangeIT {
         // Move the required blocks ahead for the new powpeg to become active
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(ACTIVATIONS);
-        currentBlock = buildBlock(blockNumber);
+        currentBlock = createRskBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -475,7 +489,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationBegin() + 1L;
-        currentBlock = buildBlock(blockNumber);
+        currentBlock = createRskBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -485,7 +499,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationEnd(ACTIVATIONS) + 1L;
-        currentBlock = buildBlock(blockNumber);
+        currentBlock = createRskBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
 
