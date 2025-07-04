@@ -466,6 +466,61 @@ class UnionBridgeIT {
         assertEquals(UnionResponseCode.INVALID_VALUE.getCode(), requestUnionRbtcResponseCode);
     }
 
+    @Test
+    @Order(25)
+    void releaseUnionBridgeRbtc_whenSurpassWeisTransferredBalance_shouldFailAndDisable() throws VMException {
+        Coin unionAddressBalanceBeforeRelease = repository.getBalance(CURRENT_UNION_BRIDGE_ADDRESS);
+        Coin currentUnionWeisTransferred = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        Coin amountToRelease = currentUnionWeisTransferred.add(Coin.valueOf(1));
+        int releaseUnionResponseCode = releaseUnionRbtc(amountToRelease);
+
+        assertEquals(UnionResponseCode.INVALID_VALUE.getCode(), releaseUnionResponseCode);
+
+        // Assert that weis transferred amount is still the same
+        assertWeisTransferredToUnionBridge(currentUnionWeisTransferred);
+        // Assert that the union bridge balance increased with the amount refunded
+        Coin expectedUnionBalance = unionAddressBalanceBeforeRelease.add(amountToRelease);
+        assertUnionBridgeBalance(expectedUnionBalance);
+    }
+
+    @Test
+    @Order(26)
+    void releaseUnionBridgeRbtc_whenIllegalStateEnterSystemInPauseMode_shouldFail() throws VMException {
+        Coin unionAddressBalanceBeforeRelease = repository.getBalance(CURRENT_UNION_BRIDGE_ADDRESS);
+        Coin currentUnionWeisTransferred = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
+
+        assertEquals(UnionResponseCode.RELEASE_DISABLED.getCode(), releaseUnionResponseCode);
+        // Assert that the weis transferred amount remains unchanged
+        assertWeisTransferredToUnionBridge(currentUnionWeisTransferred);
+        // Assert that the union bridge balance is equal to the current amount plus the released refunded amount
+        Coin expectedUnionBalance = unionAddressBalanceBeforeRelease.add(AMOUNT_TO_RELEASE);
+        assertUnionBridgeBalance(expectedUnionBalance);
+    }
+
+    @Test
+    @Order(27)
+    void requestUnionRbtc_whenIllegalStateEnterSystemInPauseMode_shouldFail() throws VMException {
+        Coin currentWeisTransferred = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        // Attempt to request union rBTC
+        int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
+
+        // Assert that the response code is SYSTEM_IN_PAUSE_MODE
+        assertEquals(UnionResponseCode.REQUEST_DISABLED.getCode(), requestUnionResponseCode);
+
+        // Assert that the weis transferred amount remains unchanged
+        assertWeisTransferredToUnionBridge(currentWeisTransferred);
+    }
+
     private void setupChangeUnionAddressAuthorizer() {
         when(rskTx.getSender(signatureCache)).thenReturn(CHANGE_UNION_ADDRESS_AUTHORIZER);
     }
