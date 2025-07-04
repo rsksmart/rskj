@@ -92,7 +92,7 @@ class UnionBridgeIT {
 
     private static final int LOCKING_CAP_INCREMENTS_MULTIPLIER = unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier();
     private static final Coin INITIAL_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap();
-    private static Coin NEW_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap()
+    private static final Coin NEW_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap()
         .multiply(BigInteger.valueOf(
             LOCKING_CAP_INCREMENTS_MULTIPLIER));
 
@@ -447,6 +447,23 @@ class UnionBridgeIT {
         simulateTransferBackToBridgeAddress(AMOUNT_TO_RELEASE);
         Coin expectedUnionBalance = currentUnionAddressBalance.subtract(AMOUNT_TO_RELEASE);
         assertUnionBridgeBalance(expectedUnionBalance);
+    }
+
+    @Test
+    @Order(23)
+    void setTransferPermissions_whenEnableBothPermissions_shouldEnable() throws VMException {
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
+        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(true, true);
+    }
+
+    @Test
+    @Order(24)
+    void requestUnionBridgeRbtc_whenSurpassLockingCap_shouldFail() throws VMException {
+        Coin currentLockingCap = getUnionBridgeLockingCap();
+        Coin amountToRequest = currentLockingCap.add(Coin.valueOf(1)); // Request more than the locking cap
+        int requestUnionRbtcResponseCode = requestUnionRbtc(amountToRequest);
+        assertEquals(UnionResponseCode.INVALID_VALUE.getCode(), requestUnionRbtcResponseCode);
     }
 
     private void setupChangeUnionAddressAuthorizer() {
