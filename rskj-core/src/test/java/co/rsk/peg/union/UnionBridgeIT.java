@@ -80,6 +80,11 @@ class UnionBridgeIT {
                 "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"))
             .getAddress());
 
+    private static final RskAddress CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode(
+                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))
+            .getAddress());
+
     private static final RskAddress CURRENT_UNION_BRIDGE_ADDRESS = new RskAddress(
         "5988645d30cd01e4b3bc2c02cb3909dec991ae31");
     private static final RskAddress NEW_UNION_BRIDGE_CONTRACT_ADDRESS = TestUtils.generateAddress(
@@ -87,7 +92,7 @@ class UnionBridgeIT {
 
     private static final int LOCKING_CAP_INCREMENTS_MULTIPLIER = unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier();
     private static final Coin INITIAL_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap();
-    private static final Coin NEW_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap()
+    private static Coin NEW_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap()
         .multiply(BigInteger.valueOf(
             LOCKING_CAP_INCREMENTS_MULTIPLIER));
 
@@ -311,12 +316,73 @@ class UnionBridgeIT {
         assertUnionBridgeBalance(Coin.ZERO);
     }
 
+    @Test
+    @Order(12)
+    void setTransferPermissions_whenAllActivations_shouldDisableRequestAndRelease() throws VMException {
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
+        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(false, false);
+    }
+
+    @Test
+    @Order(13)
+    void requestUnionBridgeRbtc_whenRequestIsDisabled_shouldReturnDisabledCode()
+        throws VMException {
+        int requestUnionResponseCodeAfterUpdate = requestUnionRbtc(AMOUNT_TO_REQUEST);
+        assertEquals(UnionResponseCode.REQUEST_DISABLED.getCode(),
+            requestUnionResponseCodeAfterUpdate,
+            "Requesting union rBTC should fail when request permission is disabled");
+        // Assert no funds were refunded and the union bridge balance remains the same
+        assertUnionBridgeBalance(Coin.ZERO);
+    }
+
+    @Test
+    @Order(14)
+    void releaseUnionBridgeRbtc_whenReleaseIsDisabled_shouldReturnDisabledCode()
+        throws VMException {
+        int releaseUnionResponseCodeAfterUpdate = releaseUnionRbtc(AMOUNT_TO_RELEASE);
+        assertEquals(UnionResponseCode.RELEASE_DISABLED.getCode(),
+            releaseUnionResponseCodeAfterUpdate,
+            "Releasing union rBTC should fail when release permission is disabled");
+        // Union Balance should be equal to the amount release refunded
+        assertUnionBridgeBalance(AMOUNT_TO_RELEASE);
+    }
+
+    @Test
+    @Order(15)
+    void increaseUnionBridgeLockingCap_whenTransferIsDisabled_shouldIncrease() throws VMException {
+        Coin newLockingCap = NEW_LOCKING_CAP.multiply(
+            BigInteger.valueOf(LOCKING_CAP_INCREMENTS_MULTIPLIER));
+        int actualUnionResponseCode = increaseUnionBridgeLockingCap(newLockingCap);
+        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        // Assert that the locking cap is updated
+        assertStoredUnionLockingCap(newLockingCap);
+    }
+
+    @Test
+    @Order(16)
+    void setUnionBridgeContractAddressForTestnet_whenMainnetAndTransferIsDisabled_shouldFail()
+        throws VMException {
+        RskAddress actualUnionAddress = getUnionBridgeContractAddress();
+        assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, actualUnionAddress);
+
+        int actualUnionResponseCode = updateUnionAddress(NEW_UNION_BRIDGE_CONTRACT_ADDRESS);
+        assertEquals(UnionResponseCode.ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
+
+        // Assert that the union address remains unchanged
+        assertNoAddressIsStored();
+    }
+
     private void setupChangeUnionAddressAuthorizer() {
         when(rskTx.getSender(signatureCache)).thenReturn(CHANGE_UNION_ADDRESS_AUTHORIZER);
     }
 
     private void setupUnionAddressAsCaller() {
         when(rskTx.getSender(signatureCache)).thenReturn(CURRENT_UNION_BRIDGE_ADDRESS);
+    }
+
+    private void setupChangeTransferPermissionsAuthorizer() {
+        when(rskTx.getSender(signatureCache)).thenReturn(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
     }
 
     private int updateUnionAddress(RskAddress newUnionAddress) throws VMException {
@@ -433,5 +499,33 @@ class UnionBridgeIT {
 
         repository.save();
         repository.commit();
+    }
+
+    private int setUnionTransferPermissions(boolean requestEnabled, boolean releaseEnabled)
+        throws VMException {
+        setupChangeTransferPermissionsAuthorizer();
+        CallTransaction.Function function = SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
+        byte[] setUnionTransferPermissionsData = function.encode(requestEnabled, releaseEnabled);
+        byte[] result = bridge.execute(setUnionTransferPermissionsData);
+        BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.decodeResult(
+            result)[0];
+        return decodedResult.intValue();
+    }
+
+    private void assertUnionTransferredPermissions(boolean expectedRequestEnabled,
+        boolean expectedReleaseEnabled) {
+        Boolean actualRequestEnabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeBoolean
+        );
+        Assertions.assertEquals(expectedRequestEnabled, actualRequestEnabled,
+            "Union bridge request enabled should match expected value");
+
+        Boolean actualRequestDisabled = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            BridgeSerializationUtils::deserializeBoolean
+        );
+        Assertions.assertEquals(expectedReleaseEnabled, actualRequestDisabled,
+            "Union bridge release enabled should match expected value");
     }
 }
