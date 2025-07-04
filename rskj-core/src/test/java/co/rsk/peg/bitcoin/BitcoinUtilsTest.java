@@ -1558,7 +1558,7 @@ class BitcoinUtilsTest {
         addSpendingFederationBaseScript(transaction, inputIndex, redeemScript, federation.getFormatVersion());
 
         // act
-        Sha256Hash sigHash = generateSigHashForP2SHTransactionInput(transaction, inputIndex);
+        Sha256Hash sigHash = generateSigHashForLegacyTransactionInput(transaction, inputIndex);
 
         // assert
         Sha256Hash expectedSigHash = transaction.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
@@ -1605,7 +1605,7 @@ class BitcoinUtilsTest {
 
         // act & assert
         assertThrows(IllegalArgumentException.class,
-            () -> generateSigHashForP2SHTransactionInput(transaction, inputIndex));
+            () -> generateSigHashForLegacyTransactionInput(transaction, inputIndex));
     }
 
     @Test

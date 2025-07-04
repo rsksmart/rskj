@@ -218,7 +218,7 @@ public class BitcoinTestUtils {
 
     public static Sha256Hash generateTransactionInputSigHash(BtcTransaction btcTx, int inputIndex) {
         if (!inputHasWitness(btcTx, inputIndex)) {
-            return generateSigHashForP2SHTransactionInput(btcTx, inputIndex);
+            return generateSigHashForLegacyTransactionInput(btcTx, inputIndex);
         }
         return generateSigHashForSegwitTransactionInput(btcTx, inputIndex, btcTx.getInput(inputIndex).getValue());
     }
