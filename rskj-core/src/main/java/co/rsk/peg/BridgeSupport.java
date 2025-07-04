@@ -1725,16 +1725,17 @@ public class BridgeSupport {
             return;
         }
 
-        Optional<Federation> optionalFederation = getFederationFromPublicKey(federatorPublicKey);
-        if (optionalFederation.isEmpty()) {
-            logger.warn(
-                "[addReleaseSignatures] Supplied federator btc public key {} does not belong to any of the federators.",
-                federatorPublicKey
-            );
-            return;
+        Address address = releaseTx.getInput(0).getConnectedOutput().getAddressFromP2SH(networkParameters);
+        if (!isNull(address)) {
+            logger.warn("-----------------HERE-------------------- Address found: {}", address);
         }
 
-        Federation federation = optionalFederation.get();
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(releaseTx, 0);
+        if (redeemScript.isEmpty()) {
+            throw new IllegalStateException("Redeem script should be in the input");
+        }
+
+        Federation federation = getFederationFromRedeemScript(redeemScript.get());
         Optional<FederationMember> federationMember = federation.getMemberByBtcPublicKey(federatorPublicKey);
         if (federationMember.isEmpty()){
             logger.warn(
@@ -1761,18 +1762,18 @@ public class BridgeSupport {
         provider.getPegoutsWaitingForSignatures().remove(releaseCreationRskTxHash);
     }
 
-    private Optional<Federation> getFederationFromPublicKey(BtcECKey federatorPublicKey) {
+    private Federation getFederationFromRedeemScript(Script redeemScript) {
         Federation retiringFederation = getRetiringFederation();
         Federation activeFederation = getActiveFederation();
 
-        if (activeFederation.hasBtcPublicKey(federatorPublicKey)) {
-            return Optional.of(activeFederation);
+        if (activeFederation.getRedeemScript().equals(redeemScript)) {
+            return activeFederation;
         }
-        if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
-            return Optional.of(retiringFederation);
+        if (retiringFederation != null && retiringFederation.getRedeemScript().equals(redeemScript)) {
+            return retiringFederation;
         }
 
-        return Optional.empty();
+        throw new IllegalStateException("Redeem script should match retiring or active fed ones.");
     }
 
     private boolean isSvpSpendTx(Keccak256 releaseCreationRskTxHash) {
