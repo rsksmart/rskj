@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
@@ -977,7 +978,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            currentBlock = buildBlock(blockNumber);
+            currentBlock = createRskBlock(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
@@ -1032,7 +1033,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            currentBlock = buildBlock(blockNumber);
+            currentBlock = createRskBlock(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
