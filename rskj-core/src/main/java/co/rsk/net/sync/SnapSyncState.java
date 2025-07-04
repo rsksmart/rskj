@@ -21,7 +21,6 @@ package co.rsk.net.sync;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.Peer;
-import co.rsk.net.SnapshotProcessor;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.trie.TrieDTO;
@@ -50,7 +49,7 @@ public class SnapSyncState extends BaseSyncState {
     public static final String UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG = "Unexpected response: [{}] received with id: [{}]. Ignoring";
     public static final String PROCESSING_WAS_INTERRUPTED_MSG = "{} processing was interrupted";
 
-    private final SnapshotProcessor snapshotProcessor;
+    private final SnapProcessor snapshotProcessor;
     private final SnapSyncRequestManager snapRequestManager;
 
     // queue for processing of SNAP responses
@@ -83,12 +82,12 @@ public class SnapSyncState extends BaseSyncState {
     private volatile Boolean isRunning;
     private final Thread thread;
 
-    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
+    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
         this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null);
     }
 
     @VisibleForTesting
-    SnapSyncState(SyncEventsHandler syncEventsHandler, SnapshotProcessor snapshotProcessor,
+    SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor,
                   SnapSyncRequestManager snapRequestManager, SyncConfiguration syncConfiguration,
                   @Nullable SyncMessageHandler.Listener listener) {
         super(syncEventsHandler, syncConfiguration);
