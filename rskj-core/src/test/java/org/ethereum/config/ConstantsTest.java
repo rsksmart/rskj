@@ -91,4 +91,14 @@ class ConstantsTest {
         //then
         assertEquals(maxInitCodeSizeExpected, maxInitCodeSize);
     }
+
+    @Test
+    void minSequentialSetGasLimitTest() {
+        // Assert the values of MIN_SEQUENTIAL_SET_GAS_LIMIT
+        assertEquals(7_500_000L, Constants.mainnet().getMinSequentialSetGasLimit());
+        assertEquals(7_500_000L, Constants.testnet(mock(ActivationConfig.class)).getMinSequentialSetGasLimit());
+        assertEquals(7_500_000L, Constants.testnet2(mock(ActivationConfig.class)).getMinSequentialSetGasLimit());
+        assertEquals(7_500_000L, Constants.devnetWithFederation().getMinSequentialSetGasLimit());
+        assertEquals(1_000_000L, Constants.regtest().getMinSequentialSetGasLimit()); // Ensure regtest remains unchanged
+    }
 }

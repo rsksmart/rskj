@@ -31,6 +31,7 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -55,37 +56,47 @@ public class LogFilter extends Filter {
         this.maxBlocksToQuery = maxBlocksToQuery;
     }
 
-    void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
-        add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
-    }
-
-    void onTransaction(Transaction tx, Block block, int txIndex, boolean reverseLogIdxOrder) {
-        TransactionInfo txInfo = blockchain.getTransactionInfoByBlock(tx, block.getHash().getBytes());
+    List<LogFilterEvent> onTransaction(TransactionInfo txInfo, Block block, int txIndex, int acc) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
-
+        List<LogFilterEvent> eventList = new ArrayList<>(logs.length);
         for (int i = 0; i < logs.length; i++) {
-            int logIdx = reverseLogIdxOrder ? logs.length - i - 1 : i;
+            int logIdx = acc + i;
 
-            LogInfo logInfo = receipt.getLogInfoList().get(logIdx);
+            LogInfo logInfo = receipt.getLogInfoList().get(i);
 
             if (addressesTopicsFilter.matchesExactly(logInfo)) {
-                onLogMatch(logInfo, block, txIndex, receipt.getTransaction(), logIdx);
+                eventList.add(new LogFilter.LogFilterEvent(new LogFilterElement(logInfo, block, txIndex, receipt.getTransaction(), logIdx)));
             }
         }
+        return eventList;
     }
 
     void onBlock(Block block, boolean reverseTxOrder) {
+        List<LogFilterEvent> matchingEvents = new ArrayList<>();
         if (!addressesTopicsFilter.matchBloom(new Bloom(block.getLogBloom()))) {
             return;
         }
 
         List<Transaction> txs = block.getTransactionsList();
+        int acc = 0;
 
         for (int i = 0; i < txs.size(); i++) {
-            int txIdx = reverseTxOrder ? txs.size() - i - 1 : i;
-            onTransaction(txs.get(txIdx), block, txIdx, reverseTxOrder);
+            Transaction tx = txs.get(i);
+            TransactionInfo txInfo = blockchain.getTransactionInfoByBlock(tx, block.getHash().getBytes());
+            matchingEvents.addAll(onTransaction(txInfo, block, i, acc));
+            acc += txInfo.getReceipt().getLogInfoList().size();
+        }
+
+        if (reverseTxOrder) {
+            for (int j = matchingEvents.size() - 1; j >= 0; j--) {
+                add(matchingEvents.get(j));
+            }
+        } else {
+            for (LogFilterEvent event : matchingEvents) {
+                add(event);
+            }
         }
     }
 
