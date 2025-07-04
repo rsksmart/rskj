@@ -18,6 +18,8 @@
  */
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SnapSyncState;
@@ -32,6 +34,7 @@ import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.AfterEach;
@@ -60,6 +63,8 @@ public class SnapshotProcessorTest {
     private TransactionPool transactionPool;
     private BlockStore blockStore;
     private TrieStore trieStore;
+    private RskSystemProperties rskSystemProperties;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
     private Peer peer;
     private final SnapshotPeersInformation peersInformation = mock(SnapshotPeersInformation.class);
     private final SnapSyncState snapSyncState = mock(SnapSyncState.class);
@@ -74,6 +79,8 @@ public class SnapshotProcessorTest {
     void setUp() throws UnknownHostException {
         peer = mockedPeer();
         when(peersInformation.getBestSnapPeerCandidates()).thenReturn(Collections.singletonList(peer));
+
+        rskSystemProperties = new TestSystemProperties();
     }
 
     @AfterEach
@@ -101,7 +108,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,
+                tmpSnapSyncKeyValueDataSource);
         doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
         //when
         underTest.startSyncing(snapSyncState);
@@ -129,7 +137,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,
+                tmpSnapSyncKeyValueDataSource);
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
@@ -175,7 +184,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,
+                tmpSnapSyncKeyValueDataSource);
 
         ArgumentCaptor<SnapStatusResponseMessage> captor = ArgumentCaptor.forClass(SnapStatusResponseMessage.class);
 
@@ -190,8 +200,8 @@ public class SnapshotProcessorTest {
         assertNotNull(capturedMessage);
         int blockSize = capturedMessage.getBlocks().size();
         assertEquals(401, blockSize);
-        assertEquals(4600L,capturedMessage.getBlocks().get(0).getNumber());
-        assertEquals(5000L,capturedMessage.getBlocks().get(blockSize-1).getNumber());
+        assertEquals(4600L, capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(5000L, capturedMessage.getBlocks().get(blockSize - 1).getNumber());
     }
 
     @Test
@@ -212,7 +222,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,
+                tmpSnapSyncKeyValueDataSource);
 
         ArgumentCaptor<SnapBlocksResponseMessage> captor = ArgumentCaptor.forClass(SnapBlocksResponseMessage.class);
 
@@ -226,8 +237,8 @@ public class SnapshotProcessorTest {
         assertNotNull(capturedMessage);
         int blockSize = capturedMessage.getBlocks().size();
         assertEquals(400, blockSize);
-        assertEquals(60L,capturedMessage.getBlocks().get(0).getNumber());
-        assertEquals(459,capturedMessage.getBlocks().get(blockSize-1).getNumber());
+        assertEquals(60L, capturedMessage.getBlocks().get(0).getNumber());
+        assertEquals(459, capturedMessage.getBlocks().get(blockSize - 1).getNumber());
     }
 
     @Test
@@ -250,7 +261,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,
+                tmpSnapSyncKeyValueDataSource);
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
@@ -295,7 +307,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,
+                tmpSnapSyncKeyValueDataSource);
 
         SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1, TEST_CHUNK_SIZE);
 
@@ -328,7 +341,8 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                listener) {
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
                 latch.countDown();
@@ -378,7 +392,8 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                listener) {
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
                 execLatch.countDown();
@@ -421,7 +436,8 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                listener) {
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
                 latch.countDown();
@@ -471,7 +487,8 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                listener) {
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
                 execLatch.countDown();
@@ -514,7 +531,8 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                listener) {
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage requestMessage) {
                 latch.countDown();
@@ -564,7 +582,8 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                listener) {
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
                 execLatch.countDown();
@@ -601,7 +620,8 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false,tmpSnapSyncKeyValueDataSource
+        );
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = new PriorityQueue<>(
                 Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom));
@@ -628,6 +648,7 @@ public class SnapshotProcessorTest {
         transactionPool = blockChainBuilder.getTransactionPool();
         blockStore = blockChainBuilder.getBlockStore();
         trieStore = blockChainBuilder.getTrieStore();
+        tmpSnapSyncKeyValueDataSource = blockChainBuilder.getTmpSnapSyncKeyValueDataSource();
     }
 
     private Peer mockedPeer() throws UnknownHostException {

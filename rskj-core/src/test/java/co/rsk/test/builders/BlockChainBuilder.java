@@ -73,6 +73,7 @@ public class BlockChainBuilder {
     private TrieStore trieStore;
     private boolean requireUnclesValidation;
     private SignatureCache signatureCache;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
 
     public BlockChainBuilder() {
         this.requireUnclesValidation = true; // default
@@ -150,6 +151,10 @@ public class BlockChainBuilder {
         return trieStore;
     }
 
+    public KeyValueDataSource getTmpSnapSyncKeyValueDataSource() {
+        return tmpSnapSyncKeyValueDataSource;
+    }
+
     public Repository getRepository() {
         return repository;
     }
@@ -175,6 +180,10 @@ public class BlockChainBuilder {
 
         if (trieStore == null) {
             trieStore = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
+        }
+
+        if (tmpSnapSyncKeyValueDataSource == null) {
+            tmpSnapSyncKeyValueDataSource = new HashMapDB().setClearOnClose(false);
         }
 
         if (repository == null) {
