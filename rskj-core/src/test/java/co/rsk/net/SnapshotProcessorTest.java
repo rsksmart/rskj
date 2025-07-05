@@ -21,27 +21,40 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SnapSyncState;
 import co.rsk.net.sync.SnapshotPeersInformation;
 import co.rsk.net.sync.SyncMessageHandler;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieDTO;
+import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -54,6 +67,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class SnapshotProcessorTest {
+    private record ChunksResponse (SnapSyncState state, Peer peer, SnapStateChunkResponseMessage responseMessage) {}
+
     private static final int TEST_CHUNK_SIZE = 200;
     private static final int TEST_CHECKPOINT_DISTANCE = 10;
     private static final int TEST_MAX_SENDER_REQUESTS = 3;
@@ -642,6 +657,56 @@ public class SnapshotProcessorTest {
         verify(snapSyncState, times(1)).submitRequest(any(PeerSelector.class), any(RequestFactory.class));
     }
 
+    @Test
+    void givenProcessStateChunkResponseIsCalled_thenTemporaryDatasourceShouldFetchedAndCleanedUpProperly() throws InterruptedException {
+        final var blockChainBuilder = new BlockChainBuilder();
+        blockChainBuilder.build();
+        tmpSnapSyncKeyValueDataSource = Mockito.spy(blockChainBuilder.getTmpSnapSyncKeyValueDataSource());
+        blockStore = mock(BlockStore.class);
+        blockchain = mock(Blockchain.class);
+        transactionPool = mock(TransactionPool.class);
+        doReturn(true).when(blockStore).isBlockExist(Mockito.any(byte[].class));
+        trieStore = mock(TrieStore.class);
+
+        final var rawChunks = getRawChunks();
+        final var chunkMessages = getChunksToProcess();
+        final var nodes = buildAllNodes(rawChunks, chunkMessages.get(0).state.getRemoteRootHash());
+
+        //given
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                TEST_CHECKPOINT_DISTANCE,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                listener,
+                tmpSnapSyncKeyValueDataSource) {
+            @Override
+            TrieDTO getNodeFromTmpSnapSyncKeyValueDataSource(int index) {
+                // To avoid the encoding and decoding issues we are going to bypass the temporary datasource
+                // retrieval and will use the in-memory array containing all the nodes properly decoded.
+                return nodes.get(index);
+            }
+        };
+
+        //when
+        chunkMessages.forEach(chunk -> underTest.processStateChunkResponse(chunk.state(), chunk.peer(), chunk.responseMessage()));
+
+        //then
+        Assertions.assertTrue(tmpSnapSyncKeyValueDataSource.keys().isEmpty());
+        Mockito.verify(tmpSnapSyncKeyValueDataSource, Mockito.times(1470)).put(Mockito.any(byte[].class), Mockito.any(byte[].class));
+        Mockito.verify(trieStore, Mockito.times(1467)).saveDTO(Mockito.any(TrieDTO.class));
+    }
+
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         blockchain = blockChainBuilder.ofSize(numberOfBlocks);
@@ -666,4 +731,134 @@ public class SnapshotProcessorTest {
             return null;
         }).when(listener).onQueueEmpty();
     }
+
+    private List<String> getRawChunks () {
+        final var lines = new ArrayList<String>();
+
+        try {
+            final var chunksFile = Objects.requireNonNull(this.getClass().getResource("/trie/snapSyncChunks.txt")).getFile();
+            final var reader = new BufferedReader(new FileReader(chunksFile));
+
+            reader.lines().forEach(lines::add);
+
+            reader.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return lines;
+    }
+
+    private List<ChunksResponse> getChunksToProcess () {
+        final var remoteRootHash = HexUtils.stringHexToByteArray("0xa6b071a6a8138226b29e46a375d3f3fbeeab3efa98be2d565375d07012bb1acf");
+
+        final var rawChunks = getRawChunks();
+
+        final var chunk1 = HexUtils.stringHexToByteArray(rawChunks.get(0));
+        final var chunk2 = HexUtils.stringHexToByteArray(rawChunks.get(1));
+        final var chunk3 = HexUtils.stringHexToByteArray(rawChunks.get(2));
+
+        final var blockNumber = 7738044L;
+
+        final var state1From = 837324800L;
+        final var state2From = 837376000L;
+        final var state3From = 837427200L;
+
+        final var snapSyncState1 = mockSnapSyncStateToProcessChunk(state1From, remoteRootHash);
+        final var snapSyncState2 = mockSnapSyncStateToProcessChunk(state2From, remoteRootHash);
+        final var snapSyncState3 = mockSnapSyncStateToProcessChunk(state3From, remoteRootHash);
+
+        final var chunkResponse1 = new ChunksResponse(snapSyncState1, peer, new SnapStateChunkResponseMessage(56642, chunk1, blockNumber, state1From, state2From, false));
+        final var chunkResponse2 = new ChunksResponse(snapSyncState2, peer, new SnapStateChunkResponseMessage(56643, chunk2, blockNumber, state2From, state3From, false));
+        final var chunkResponse3 = new ChunksResponse(snapSyncState3, peer, new SnapStateChunkResponseMessage(56644, chunk3, blockNumber, state3From, 837478400L, true));
+
+        return List.of(chunkResponse1, chunkResponse2, chunkResponse3);
+    }
+
+    private SnapSyncState mockSnapSyncStateToProcessChunk(long from, byte[] remoteRootHash) {
+        final var blockHeader = mock(BlockHeader.class);
+        final var snapSyncState = mock(SnapSyncState.class);
+        final var blockHeaderParentHash = new Keccak256(Keccak256Helper.keccak256("a6b071a6a8138226b29e46a375d3f3fbeeab3efa98be2d565375d07012bb1aaa"));
+
+        doReturn(from).when(snapSyncState).getNextExpectedFrom();
+        doReturn(new PriorityQueue<>()).when(snapSyncState).getChunkTaskQueue();
+        doReturn(remoteRootHash).when(snapSyncState).getRemoteRootHash();
+        doReturn(BigInteger.ZERO).when(snapSyncState).getStateSize();
+        doReturn(BigInteger.ZERO).when(snapSyncState).getStateChunkSize();
+        doReturn(true).when(snapSyncState).isRunning();
+        doReturn(new PriorityQueue<>(
+                Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom)
+        )).when(snapSyncState).getSnapStateChunkQueue();
+        doReturn(blockHeader).when(snapSyncState).getLastVerifiedBlockHeader();
+        doReturn(blockHeaderParentHash).when(blockHeader).getParentHash();
+
+        return snapSyncState;
+    }
+
+    // We need to do this due to multiple issues decoding and encoding the TrieDTO,
+    // this way we will avoid running any encoding and decoding operation that might break
+    // the mocked data.
+    private List<TrieDTO> buildAllNodes (List<String> chunks, byte[] remoteRootHash) {
+        final var allNodes = new ArrayList<TrieDTO>();
+
+        for (final var strChunk : chunks) {
+            final var chunk = HexUtils.stringHexToByteArray(strChunk);
+            final var nodeLists = RLP.decodeList(chunk);
+            final var preRootElements = RLP.decodeList(nodeLists.get(0).getRLPData());
+            final var trieElements = RLP.decodeList(nodeLists.get(1).getRLPData());
+            final var firstNodeLeftHash = nodeLists.get(2).getRLPData();
+            final var lastNodeHashes = RLP.decodeList(nodeLists.get(3).getRLPData());
+            final var postRootElements = RLP.decodeList(nodeLists.get(4).getRLPData());
+            final var preRootNodes = new ArrayList<TrieDTO>();
+            final var nodes = new ArrayList<TrieDTO>();
+            final var postRootNodes = new ArrayList<TrieDTO>();
+
+            for (int i = 0; i < preRootElements.size(); i++) {
+                final var trieElement = (RLPList) preRootElements.get(i);
+                final var value = trieElement.get(0).getRLPData();
+                final var leftHash = trieElement.get(1).getRLPData();
+                final var node = TrieDTO.decodeFromSync(value);
+                node.setLeftHash(leftHash);
+                preRootNodes.add(node);
+            }
+
+            if (trieElements.size() > 0) {
+                for (int i = 0; i < trieElements.size(); i++) {
+                    final var trieElement = trieElements.get(i);
+                    final var value = trieElement.getRLPData();
+                    nodes.add(TrieDTO.decodeFromSync(value));
+                }
+                nodes.get(0).setLeftHash(firstNodeLeftHash);
+            }
+
+            if (lastNodeHashes.size() > 0) {
+                TrieDTO lastNode = nodes.get(nodes.size() - 1);
+                lastNode.setLeftHash(lastNodeHashes.get(0).getRLPData());
+                lastNode.setRightHash(lastNodeHashes.get(1).getRLPData());
+            }
+
+            for (int i = 0; i < postRootElements.size(); i++) {
+                final var trieElement = (RLPList) postRootElements.get(i);
+                final var value = trieElement.get(0).getRLPData();
+                final var rightHash = trieElement.get(1).getRLPData();
+                final var node = TrieDTO.decodeFromSync(value);
+                node.setRightHash(rightHash);
+                postRootNodes.add(node);
+            }
+
+            if (TrieDTOInOrderRecoverer.verifyChunk(remoteRootHash, preRootNodes, nodes, postRootNodes)) {
+                allNodes.addAll(nodes);
+            }
+        }
+
+        // The trie that is mocked does not have the same hash when recovered,
+        // hence forcing the root node to return the desired hash.
+        final var rootNode = spy(allNodes.get(1090));
+        doReturn(remoteRootHash).when(rootNode).calculateHash();
+
+        allNodes.set(1090, rootNode);
+
+        return allNodes;
+    }
+
 }
