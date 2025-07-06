@@ -2105,7 +2105,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
                     getRskSystemProperties().isSnapshotParallelEnabled(),
-                    getTmpSnapSyncKeyValueDataSource()
+                    getTmpSnapSyncKeyValueDataSource(),
+                    getRskSystemProperties().databaseDir()
             );
         }
         return snapshotProcessor;

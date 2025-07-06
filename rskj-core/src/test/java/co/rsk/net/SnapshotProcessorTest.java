@@ -124,7 +124,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                tmpSnapSyncKeyValueDataSource);
+                tmpSnapSyncKeyValueDataSource, "");
         doReturn(Optional.of(peer)).when(peersInformation).getBestSnapPeer();
         //when
         underTest.startSyncing(snapSyncState);
@@ -153,7 +153,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                tmpSnapSyncKeyValueDataSource);
+                tmpSnapSyncKeyValueDataSource, "");
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
@@ -200,7 +200,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                tmpSnapSyncKeyValueDataSource);
+                tmpSnapSyncKeyValueDataSource, "");
 
         ArgumentCaptor<SnapStatusResponseMessage> captor = ArgumentCaptor.forClass(SnapStatusResponseMessage.class);
 
@@ -238,7 +238,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                tmpSnapSyncKeyValueDataSource);
+                tmpSnapSyncKeyValueDataSource, "");
 
         ArgumentCaptor<SnapBlocksResponseMessage> captor = ArgumentCaptor.forClass(SnapBlocksResponseMessage.class);
 
@@ -277,7 +277,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                tmpSnapSyncKeyValueDataSource);
+                tmpSnapSyncKeyValueDataSource, "");
 
         for (long blockNumber = 0; blockNumber < blockchain.getSize(); blockNumber++) {
             Block currentBlock = blockchain.getBlockByNumber(blockNumber);
@@ -323,7 +323,7 @@ public class SnapshotProcessorTest {
                 TEST_MAX_SENDER_REQUESTS,
                 true,
                 false,
-                tmpSnapSyncKeyValueDataSource);
+                tmpSnapSyncKeyValueDataSource, "");
 
         SnapStateChunkRequestMessage snapStateChunkRequestMessage = new SnapStateChunkRequestMessage(1L, 1L, 1, TEST_CHUNK_SIZE);
 
@@ -357,7 +357,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
                 latch.countDown();
@@ -408,7 +408,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
                 execLatch.countDown();
@@ -452,7 +452,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
                 latch.countDown();
@@ -503,7 +503,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
                 execLatch.countDown();
@@ -547,7 +547,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage requestMessage) {
                 latch.countDown();
@@ -598,7 +598,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
                 execLatch.countDown();
@@ -635,7 +635,7 @@ public class SnapshotProcessorTest {
                 TEST_CHECKPOINT_DISTANCE,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false,tmpSnapSyncKeyValueDataSource
+                false,tmpSnapSyncKeyValueDataSource, ""
         );
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = new PriorityQueue<>(
@@ -689,7 +689,7 @@ public class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
-                tmpSnapSyncKeyValueDataSource) {
+                tmpSnapSyncKeyValueDataSource, "") {
             @Override
             TrieDTO getNodeFromTmpSnapSyncKeyValueDataSource(int index) {
                 // To avoid the encoding and decoding issues we are going to bypass the temporary datasource

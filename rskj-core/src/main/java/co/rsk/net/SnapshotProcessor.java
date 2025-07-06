@@ -30,10 +30,12 @@ import co.rsk.trie.TrieDTO;
 import co.rsk.trie.TrieDTOInOrderIterator;
 import co.rsk.trie.TrieDTOInOrderRecoverer;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -51,7 +53,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -76,9 +83,12 @@ public class SnapshotProcessor implements InternalService {
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
     public static final String TMP_NODES_DIR_NAME = "snapSyncTmpNodes";
+    public static final String TMP_CHUNKS_TESTING_DATA_FILE_NAME_WITH_EXTENSION = "chunksData.json";
     private final Blockchain blockchain;
     private final TrieStore trieStore;
     private final KeyValueDataSource tmpSnapSyncKeyValueDataSource;
+    private final String databasedir;
+    private final Path pathToChunksFile;
     private static final int TMP_NODES_SIZE_KEY = -1;
     private final BlockStore blockStore;
     private final int chunkSize;
@@ -116,10 +126,11 @@ public class SnapshotProcessor implements InternalService {
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
                              boolean isParallelEnabled,
-                             KeyValueDataSource tmpSnapSyncKeyValueDataSource) {
+                             KeyValueDataSource tmpSnapSyncKeyValueDataSource,
+                             String databasedir) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, tmpSnapSyncKeyValueDataSource);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, tmpSnapSyncKeyValueDataSource, databasedir);
     }
 
     @VisibleForTesting
@@ -138,10 +149,15 @@ public class SnapshotProcessor implements InternalService {
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
                       @Nullable SyncMessageHandler.Listener listener,
-                      KeyValueDataSource tmpSnapSyncKeyValueDataSource) {
+                      KeyValueDataSource tmpSnapSyncKeyValueDataSource,
+                      String databasedir) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
         this.tmpSnapSyncKeyValueDataSource = tmpSnapSyncKeyValueDataSource;
+        this.databasedir = databasedir;
+        final var databasePath = Paths.get(databasedir);
+        final var tmpDatabasePath = databasePath.resolve(SnapshotProcessor.TMP_NODES_DIR_NAME);
+        this.pathToChunksFile = tmpDatabasePath.resolve(SnapshotProcessor.TMP_CHUNKS_TESTING_DATA_FILE_NAME_WITH_EXTENSION);
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.checkpointDistance = checkpointDistance;
@@ -589,6 +605,31 @@ public class SnapshotProcessor implements InternalService {
         }
 
         logger.debug("State chunk received chunkNumber {}. From {} to {} of total size {}", responseMessage.getFrom() / CHUNK_ITEM_SIZE, responseMessage.getFrom(), responseMessage.getTo(), state.getRemoteTrieSize());
+
+        try {
+            final var chunksDataMap = new HashMap<String, String>();
+
+            chunksDataMap.put("state.getNextExpectedFrom()", String.valueOf(state.getNextExpectedFrom()));
+            chunksDataMap.put("state.getStateChunkSize()", state.getStateChunkSize().toString());
+            chunksDataMap.put("state.getStateSize()", state.getStateSize().toString());
+            chunksDataMap.put("state.getRemoteRootHash()", HexUtils.toJsonHex(state.getRemoteRootHash()));
+            chunksDataMap.put("state.isRunning()", String.valueOf(state.isRunning()));
+
+            chunksDataMap.put("responseMessage.getFrom()", String.valueOf(responseMessage.getFrom()));
+            chunksDataMap.put("responseMessage.getTo()", String.valueOf(responseMessage.getTo()));
+            chunksDataMap.put("responseMessage.getId()", String.valueOf(responseMessage.getId()));
+            chunksDataMap.put("responseMessage.getBlockNumber()", String.valueOf(responseMessage.getBlockNumber()));
+            chunksDataMap.put("responseMessage.getChunkOfTrieKeyValue()", HexUtils.toJsonHex(responseMessage.getChunkOfTrieKeyValue()));
+            chunksDataMap.put("responseMessage.isComplete()", String.valueOf(responseMessage.isComplete()));
+
+            final var writer = new BufferedWriter(new FileWriter(pathToChunksFile.toFile(), true));
+
+            writer.append(new ObjectMapper().writeValueAsString(chunksDataMap));
+            writer.append('\n');
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = state.getSnapStateChunkQueue();
         queue.add(responseMessage);
