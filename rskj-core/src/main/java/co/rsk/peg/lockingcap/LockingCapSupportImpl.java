@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.SignatureCache;
@@ -45,7 +46,7 @@ public class LockingCapSupportImpl implements LockingCapSupport {
     }
 
     @Override
-    public boolean increaseLockingCap(Transaction tx, Coin newLockingCap) throws LockingCapIllegalArgumentException {
+    public boolean increaseLockingCap(Transaction tx,@Nonnull Coin newLockingCap) throws LockingCapIllegalArgumentException {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
         if (newLockingCap.getValue() <= 0) {

@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.federation.constants.FederationMainNetConstants;
 import co.rsk.peg.feeperkb.constants.FeePerKbMainNetConstants;
 import co.rsk.peg.lockingcap.constants.LockingCapMainNetConstants;
+import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
 import co.rsk.peg.whitelist.constants.WhitelistMainNetConstants;
 
 public class BridgeMainNetConstants extends BridgeConstants {
@@ -16,6 +17,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         whitelistConstants = WhitelistMainNetConstants.getInstance();
         federationConstants = FederationMainNetConstants.getInstance();
         lockingCapConstants = LockingCapMainNetConstants.getInstance();
+        unionBridgeConstants = UnionBridgeMainNetConstants.getInstance();
 
         btc2RskMinimumAcceptableConfirmations = 100;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
