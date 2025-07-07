@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.*;
@@ -840,6 +841,11 @@ class BridgeSupportAddSignatureTest {
         BtcECKey sharedSigner,
         BtcECKey nonSharedSigner
     ) throws IOException {
+        assertTrue(retiringFederation.hasBtcPublicKey(sharedSigner));
+        assertTrue(activeFederation.hasBtcPublicKey(sharedSigner));
+        assertTrue(retiringFederation.hasBtcPublicKey(nonSharedSigner));
+        assertFalse(activeFederation.hasBtcPublicKey(nonSharedSigner));
+
         // arrange
         StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
         FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
@@ -894,15 +900,16 @@ class BridgeSupportAddSignatureTest {
 
         // TODO refactor this to not use if inside a test
         if (retiringFederation.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            List<Coin> outpointsValues = new ArrayList<>();
             for (int i = 0; i < migrationTx.getInputs().size(); i++) {
                 Coin amountReceived = migrationTx.getInput(i).getValue();
-                List<Coin> outpointsValues = List.of(amountReceived);
-                repository.addStorageBytes(
-                    bridgeAddress,
-                    getStorageKeyForReleaseOutpointsValues(migrationTx.getHash()),
-                    BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
-                );
+                outpointsValues.add(amountReceived);
             }
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(migrationTx.getHash()),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+            );
         }
 
         BtcTransaction migrationTxReference = bridgeStorageProvider.getPegoutsWaitingForSignatures().get(rskTxHash);
@@ -937,8 +944,11 @@ class BridgeSupportAddSignatureTest {
     }
 
     private static Stream<Arguments> activeAndRetiringFedsAndSigningKeysArgs() {
+        String sharedFederatorSeed = "sharedFederator";
+        String differentRetiringFederatorSeed = "retiringFederator";
+
         final List<BtcECKey> retiringLegacyFederationKeys = getBtcEcKeysFromSeeds(
-            new String[] {"sharedFederator", "retiringFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
+            new String[] {sharedFederatorSeed, differentRetiringFederatorSeed, "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
             true
         );
         Federation retiringLegacyFederation = P2shErpFederationBuilder.builder()
@@ -946,7 +956,7 @@ class BridgeSupportAddSignatureTest {
             .build();
 
         final List<BtcECKey> activeLegacyFederationKeys = getBtcEcKeysFromSeeds(
-            new String[] {"sharedFederator", "activeFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
+            new String[] {sharedFederatorSeed, "activeFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
             true
         );
         Federation activeLegacyFederation = P2shErpFederationBuilder.builder()
@@ -955,7 +965,7 @@ class BridgeSupportAddSignatureTest {
 
         final List<BtcECKey> activeSegwitFederationKeys = getBtcEcKeysFromSeeds(
             new String[] {
-                "sharedFederator", "activeFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
+                sharedFederatorSeed, "activeFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
                 "signer11", "signer12", "signer13", "signer14", "signer15", "signer16", "signer17", "signer18", "signer19", "signer20"
             },
             true
@@ -966,7 +976,7 @@ class BridgeSupportAddSignatureTest {
 
         final List<BtcECKey> retiringSegwitFederationKeys = getBtcEcKeysFromSeeds(
             new String[] {
-                "sharedFederator", "retiringFederator", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
+                sharedFederatorSeed, differentRetiringFederatorSeed, "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
                 "signer11", "signer12", "signer13", "signer14", "signer15", "signer16", "signer17", "signer18", "signer19", "signer20"
             },
             true
@@ -975,10 +985,13 @@ class BridgeSupportAddSignatureTest {
             .withMembersBtcPublicKeys(retiringSegwitFederationKeys)
             .build();
 
+        BtcECKey sharedFederatorKey = BitcoinTestUtils.getBtcEcKeyFromSeed(sharedFederatorSeed);
+        BtcECKey differentFederatorKey = BitcoinTestUtils.getBtcEcKeyFromSeed(differentRetiringFederatorSeed);
+
         return Stream.of(
-            Arguments.of(retiringLegacyFederation, activeLegacyFederation, retiringLegacyFederationKeys.get(0), retiringLegacyFederationKeys.get(1)),
-            Arguments.of(retiringLegacyFederation, activeSegwitFederation, retiringLegacyFederationKeys.get(0), retiringLegacyFederationKeys.get(1)),
-            Arguments.of(retiringSegwitFederation, activeSegwitFederation, retiringSegwitFederationKeys.get(0), retiringSegwitFederationKeys.get(1))
+            Arguments.of(retiringLegacyFederation, activeLegacyFederation, sharedFederatorKey, differentFederatorKey),
+            Arguments.of(retiringLegacyFederation, activeSegwitFederation, sharedFederatorKey, differentFederatorKey),
+            Arguments.of(retiringSegwitFederation, activeSegwitFederation, sharedFederatorKey, differentFederatorKey)
         );
     }
 
