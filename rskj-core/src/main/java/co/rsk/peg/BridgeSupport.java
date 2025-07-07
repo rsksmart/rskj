@@ -1750,7 +1750,7 @@ public class BridgeSupport {
             eventLogger.logAddSignature(signingFederationMember, releaseTx, releaseCreationRskTxHashSerialized);
         }
 
-        processSigning(signingFederationMember, federation, signatures, releaseCreationRskTxHash, releaseTx);
+        processSigning(signingFederationMember, signatures, releaseCreationRskTxHash, releaseTx);
 
         if (!BridgeUtils.hasEnoughSignatures(btcContext, releaseTx)) {
             logMissingSignatures(releaseTx, releaseCreationRskTxHash, federation);
@@ -1802,7 +1802,7 @@ public class BridgeSupport {
             return;
         }
 
-        processSigning(federationMember, proposedFederation, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
+        processSigning(federationMember, signatures, svpSpendTxCreationRskTxHash, svpSpendTx);
        
         // save current fed signature back in storage
         svpSpendTxWFS.setValue(svpSpendTx);
@@ -1844,17 +1844,14 @@ public class BridgeSupport {
 
     private void processSigning(
         FederationMember federatorMember,
-        Federation federation,
         List<byte[]> signatures,
         Keccak256 releaseCreationRskTxHash,
         BtcTransaction btcTx
     ) {
-
-        int federationFormatVersion = federation.getFormatVersion();
         // Build input sig hashes for signatures
         List<Sha256Hash> sigHashes = new ArrayList<>();
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
-            Sha256Hash sigHash = generateSigHashForFederationFormatVersion(btcTx, i, federationFormatVersion);
+            Sha256Hash sigHash = generateInputSigHash(btcTx, i);
             sigHashes.add(sigHash);
         }
 
@@ -1869,16 +1866,16 @@ public class BridgeSupport {
         }
 
         // All signatures are correct. Proceed to signing
-        boolean signed = sign(federatorBtcPublicKey, federation, txSigs, sigHashes, releaseCreationRskTxHash, btcTx);
+        boolean signed = sign(federatorBtcPublicKey, txSigs, sigHashes, releaseCreationRskTxHash, btcTx);
 
         if (signed && activations.isActive(ConsensusRule.RSKIP326)) {
             eventLogger.logAddSignature(federatorMember, btcTx, releaseCreationRskTxHash.getBytes());
         }
     }
 
-    private Sha256Hash generateSigHashForFederationFormatVersion(BtcTransaction btcTx, int inputIndex, int federationFormatVersion) {
-        if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
-            return generateSigHashForP2SHTransactionInput(btcTx, inputIndex);
+    private Sha256Hash generateInputSigHash(BtcTransaction btcTx, int inputIndex) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            return generateSigHashForLegacyTransactionInput(btcTx, inputIndex);
         }
 
         return provider.getReleaseOutpointsValues(btcTx.getHash())
@@ -1932,13 +1929,11 @@ public class BridgeSupport {
 
     private boolean sign(
         BtcECKey federatorBtcPublicKey,
-        Federation federation,
         List<TransactionSignature> txSigs,
         List<Sha256Hash> sigHashes,
         Keccak256 releaseCreationRskTxHash,
         BtcTransaction btcTx
     ) {
-
         boolean signed = false;
         for (int i = 0; i < sigHashes.size(); i++) {
             Sha256Hash sigHash = sigHashes.get(i);
@@ -1951,15 +1946,16 @@ public class BridgeSupport {
                 break;
             }
 
-            Optional<Script> redeemScriptOpt = extractRedeemScriptFromInput(btcTx, i);
-            if (redeemScriptOpt.isEmpty()) {
+            Optional<Script> redeemScript = extractRedeemScriptFromInput(btcTx, i);
+            if (redeemScript.isEmpty()) {
                 logger.debug("[sign] Couldn't extract redeem script from input {} of tx {}.", i, btcTx.getHash());
                 break;
             }
 
             try {
                 int sigIndex = getSigInsertionIndex(btcTx, i, sigHash, federatorBtcPublicKey);
-                signInput(btcTx, i, txSigs.get(i), sigIndex, federation.getP2SHScript());
+                Script outputScript = buildOutputScript(btcTx, i, redeemScript.get());
+                signInput(btcTx, i, txSigs.get(i), sigIndex, outputScript);
 
                 logger.debug("[sign] Tx input {} for tx {} signed.", i, releaseCreationRskTxHash);
                 signed = true;
@@ -1975,6 +1971,13 @@ public class BridgeSupport {
         }
 
         return signed;
+    }
+
+    private Script buildOutputScript(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            return ScriptBuilder.createP2SHOutputScript(redeemScript);
+        }
+        return ScriptBuilder.createP2SHP2WSHOutputScript(redeemScript);
     }
 
     /**
