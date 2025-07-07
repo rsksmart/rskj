@@ -63,12 +63,12 @@ class P2shP2wshErpFederationTest {
 
     @ParameterizedTest
     @ValueSource(longs = {-100L, 0L, ErpRedeemScriptBuilderUtils.MAX_CSV_VALUE + 1, 100_000L, 8_400_000L})
-    void getRedeemScript_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
-        P2shP2wshErpFederationBuilder federationBuilder = P2shP2wshErpFederationBuilder.builder();
-        ErpFederation federationWithCsvValue = federationBuilder.withErpActivationDelay(csvValue).build();
-
+    void createFederation_invalidCsvValues_throwsErpFederationCreationException(long csvValue) {
         ErpFederationCreationException fedException =
-            assertThrows(ErpFederationCreationException.class, federationWithCsvValue::getRedeemScript);
+            assertThrows(ErpFederationCreationException.class, () -> P2shP2wshErpFederationBuilder.builder()
+                .withErpActivationDelay(csvValue)
+                .build());
+
         assertEquals(REDEEM_SCRIPT_CREATION_FAILED, fedException.getReason());
     }
 
