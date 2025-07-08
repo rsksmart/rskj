@@ -170,10 +170,10 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     private boolean isAmountRequestedValid(Coin amountRequested) {
-        boolean isAmountNullOrLessThanOne = isAmountToReleaseValid(amountRequested);
+        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(Coin.ZERO) < 1;
         if (isAmountNullOrLessThanOne) {
             logger.warn(
-                "[isValidAmount] Amount requested cannot be negative or zero. Amount requested: {}",
+                "[isAmountRequestedValid] Amount requested cannot be negative or zero. Amount requested: {}",
                 amountRequested
             );
             return false;
@@ -188,7 +188,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             newAmountRequested.compareTo(lockingCap) > 0;
         if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
             logger.warn(
-                "[isValidAmount] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}",
+                "[isAmountRequestedValid] New amount request + previous amount requested cannot be greater than the Union Locking Cap. Previous amount requested: {}. New amount request: {} . Union Locking Cap: {}",
                 previousAmountRequested,
                 newAmountRequested,
                 lockingCap
@@ -241,7 +241,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.RELEASE_DISABLED;
         }
 
-        if (isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
+        if (!isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
@@ -266,11 +266,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     private static boolean isAmountToReleaseValid(Coin amountToRelease) {
-        boolean isAmountValid = amountToRelease == null || amountToRelease.compareTo(Coin.ZERO) < 1;
-        if (!isAmountValid) {
-            logger.warn("[{isAmountToReleaseValid}] Amount to be released cannot be null or less than one. Amount to release: {}", amountToRelease);
+        boolean isAmountNullOrLessThanOne = amountToRelease == null || amountToRelease.compareTo(Coin.ZERO) < 1;
+        if (isAmountNullOrLessThanOne) {
+            logger.warn("[isAmountToReleaseValid] Amount to be released cannot be null or less than one. Amount to release: {}", amountToRelease);
+            return false;
         }
-        return isAmountValid;
+        return true;
     }
 
     private boolean isReleaseEnabled() {
