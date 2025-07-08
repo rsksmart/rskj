@@ -600,14 +600,14 @@ class UnionBridgeSupportImplTest {
     private void setupTransferPermissions(boolean requestEnabled, boolean releaseEnabled) {
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            requestEnabled? 1L: 0L,
-            BridgeSerializationUtils::serializeLong
+            requestEnabled,
+            BridgeSerializationUtils::serializeBoolean
         );
 
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-            releaseEnabled? 1L: 0L,
-            BridgeSerializationUtils::serializeLong
+            releaseEnabled,
+            BridgeSerializationUtils::serializeBoolean
         );
     }
 
@@ -1251,20 +1251,16 @@ class UnionBridgeSupportImplTest {
 
     private void assertTransferPermissionsWereStored(boolean requestEnabled,
         boolean releaseEnabled) {
-        Optional<Long> retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
+        Boolean retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            BridgeSerializationUtils::deserializeOptionalLong
+            BridgeSerializationUtils::deserializeBoolean
         );
-        Optional<Long> retrievedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
+        Boolean retrievedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-            BridgeSerializationUtils::deserializeOptionalLong
+            BridgeSerializationUtils::deserializeBoolean
         );
-
-        Assertions.assertTrue(retrievedUnionBridgeRequestEnabled.isPresent());
-        Assertions.assertEquals(requestEnabled ? 1L : 0L, retrievedUnionBridgeRequestEnabled.get());
-
-        Assertions.assertTrue(retrievedUnionBridgeReleaseEnabled.isPresent());
-        Assertions.assertEquals(releaseEnabled ? 1L : 0L, retrievedUnionBridgeReleaseEnabled.get());
+        Assertions.assertEquals(requestEnabled, retrievedUnionBridgeRequestEnabled);
+        Assertions.assertEquals(releaseEnabled, retrievedUnionBridgeReleaseEnabled);
     }
 
 
