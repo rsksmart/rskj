@@ -21,7 +21,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
-        AddressBasedAuthorizer expectedUnionBridgeChangeAuthorizer = new AddressBasedAuthorizer(
+        AddressBasedAuthorizer expectedMainnetUnionBridgeChangeAuthorizer = new AddressBasedAuthorizer(
+            Collections.singletonList(ECKey.fromPrivate(BigInteger.ZERO)),
+            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
+        AddressBasedAuthorizer expectedTestnetUnionBridgeChangeAuthorizer = new AddressBasedAuthorizer(
+            Collections.singletonList(ECKey.fromPublicOnly(Hex.decode(
+                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
+            ))),
+            AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
+        AddressBasedAuthorizer expectedRegTestUnionBridgeChangeAuthorizer = new AddressBasedAuthorizer(
             Collections.singletonList(ECKey.fromPublicOnly(Hex.decode(
                 "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
             ))),
@@ -29,9 +39,9 @@ class UnionBridgeConstantsTest {
         );
 
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), expectedUnionBridgeChangeAuthorizer),
-            Arguments.of(UnionBridgeTestNetConstants.getInstance(), expectedUnionBridgeChangeAuthorizer),
-            Arguments.of(UnionBridgeRegTestConstants.getInstance(), expectedUnionBridgeChangeAuthorizer)
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), expectedMainnetUnionBridgeChangeAuthorizer),
+            Arguments.of(UnionBridgeTestNetConstants.getInstance(), expectedTestnetUnionBridgeChangeAuthorizer),
+            Arguments.of(UnionBridgeRegTestConstants.getInstance(), expectedRegTestUnionBridgeChangeAuthorizer)
         );
     }
 
@@ -119,7 +129,7 @@ class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> unionBridgeAddressProvider() {
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31"),
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), "0000000000000000000000000000000000000000"),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31"),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), "5988645d30cd01e4b3bc2c02cb3909dec991ae31")
         );
