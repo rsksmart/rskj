@@ -820,17 +820,18 @@ class BridgeSupportTest {
         private BridgeEventLogger bridgeEventLogger;
         private BridgeSupport bridgeSupport;
 
+        private static final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
+
         private SignatureCache signatureCache;
         private Transaction transaction;
-
-        private RskAddress unionBridgeContractAddress;
+        private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress("newUnionBridgeContractAddress");
 
         @BeforeEach
         void setUp() {
             signatureCache = mock(SignatureCache.class);
             unionBridgeStorageProvider = mock(UnionBridgeStorageProvider.class);
-            unionBridgeSupport = UnionBridgeSupportBuilder.builder()
-                .withSignatureCache(signatureCache)
+            unionBridgeSupport =
+                unionBridgeSupportBuilder.withSignatureCache(signatureCache)
                 .withConstants(unionBridgeConstants)
                 .withStorageProvider(unionBridgeStorageProvider)
                 .build();
@@ -848,7 +849,6 @@ class BridgeSupportTest {
                 .build();
 
             transaction = mock(Transaction.class);
-            unionBridgeContractAddress = TestUtils.generateAddress("unionBridgeContractAddress");
         }
 
         @ParameterizedTest
@@ -865,8 +865,7 @@ class BridgeSupportTest {
                 .build();
 
             // act
-            UnionResponseCode actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction,
-                unionBridgeContractAddress);
+            UnionResponseCode actualResponseCode = bridgeSupport.setUnionBridgeContractAddressForTestnet(transaction, newUnionBridgeContractAddress);
 
             // assert
             Assertions.assertEquals(
@@ -875,7 +874,7 @@ class BridgeSupportTest {
             );
             verify(unionBridgeSupport).setUnionBridgeContractAddressForTestnet(
                 transaction,
-                unionBridgeContractAddress
+                newUnionBridgeContractAddress
             );
             // Verify save method is not called when setAddress is called
             verify(unionBridgeSupport, never()).save();
@@ -891,34 +890,58 @@ class BridgeSupportTest {
         }
 
         @ParameterizedTest
-        @MethodSource("expectedUnionBridgeContractAddressProvider")
-        void getUnionBridgeContractAddress_shouldReturnInitialUnionBridgeContractAddress(RskAddress expectedUnionBridgeContractAddress) {
+        @MethodSource("unionBridgeConstantsProvider")
+        void getUnionBridgeContractAddress_shouldReturnInitialUnionBridgeContractAddress(UnionBridgeConstants unionBridgeConstants) {
+            unionBridgeSupport = unionBridgeSupportBuilder
+                .withConstants(unionBridgeConstants)
+                .build();
+
+            bridgeSupport = bridgeSupportBuilder
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
             // act
             RskAddress actualUnionBridgeContractAddress = bridgeSupport.getUnionBridgeContractAddress();
 
             // assert
+            RskAddress expectedUnionBridgeContractAddress = unionBridgeConstants.getAddress();
             assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
         }
 
-        private static Stream<Arguments> expectedUnionBridgeContractAddressProvider() {
+        private static Stream<Arguments> unionBridgeConstantsProvider() {
             return Stream.of(
-                Arguments.of(UnionBridgeMainNetConstants.getInstance().getAddress()),
-                Arguments.of(UnionBridgeTestNetConstants.getInstance().getAddress()),
-                Arguments.of(UnionBridgeRegTestConstants.getInstance().getAddress())
+                Arguments.of(UnionBridgeMainNetConstants.getInstance()),
+                Arguments.of(UnionBridgeTestNetConstants.getInstance()),
+                Arguments.of(UnionBridgeRegTestConstants.getInstance())
+            );
+        }
+
+        private static Stream<Arguments> unionBridgeTestnetAndRegTestConstantsProvider() {
+            return Stream.of(
+                Arguments.of(UnionBridgeTestNetConstants.getInstance()),
+                Arguments.of(UnionBridgeRegTestConstants.getInstance())
             );
         }
 
         @ParameterizedTest
-        @MethodSource("expectedUnionBridgeContractAddressProvider")
-        void getUnionBridgeContractAddress_whenStoredAddress_shouldReturnUnionBridgeContractAddress(RskAddress expectedUnionBridgeContractAddress) {
+        @MethodSource("unionBridgeTestnetAndRegTestConstantsProvider")
+        void getUnionBridgeContractAddress_whenStoredAddress_shouldReturnUnionBridgeContractAddress(UnionBridgeConstants unionBridgeConstants) {
             // arrange
-            when(unionBridgeStorageProvider.getAddress()).thenReturn(Optional.of(unionBridgeContractAddress));
+            unionBridgeSupport = unionBridgeSupportBuilder
+                .withConstants(unionBridgeConstants)
+                .build();
+
+            bridgeSupport = bridgeSupportBuilder
+                .withUnionBridgeSupport(unionBridgeSupport)
+                .build();
+
+            when(unionBridgeStorageProvider.getAddress()).thenReturn(Optional.of(newUnionBridgeContractAddress));
 
             // act
             RskAddress actualUnionBridgeContractAddress = bridgeSupport.getUnionBridgeContractAddress();
 
             // assert
-            assertEquals(expectedUnionBridgeContractAddress, actualUnionBridgeContractAddress);
+            assertEquals(newUnionBridgeContractAddress, actualUnionBridgeContractAddress);
         }
 
 
@@ -1037,7 +1060,7 @@ class BridgeSupportTest {
             co.rsk.core.Coin amountRequested = new co.rsk.core.Coin(weiPerEther);
             unionBridgeSupport = mock(UnionBridgeSupport.class);
             when(unionBridgeSupport.requestUnionRbtc(transaction, amountRequested)).thenReturn(UnionResponseCode.SUCCESS);
-            when(unionBridgeSupport.getUnionBridgeContractAddress()).thenReturn(unionBridgeContractAddress);
+            when(unionBridgeSupport.getUnionBridgeContractAddress()).thenReturn(newUnionBridgeContractAddress);
 
             bridgeSupport = bridgeSupportBuilder.withUnionBridgeSupport(unionBridgeSupport).build();
 
@@ -1049,11 +1072,11 @@ class BridgeSupportTest {
 
             verify(repository, times(1)).transfer(
                 BRIDGE_ADDR,
-                unionBridgeContractAddress,
+                newUnionBridgeContractAddress,
                 amountRequested
             );
             verify(bridgeEventLogger, times(1)).logUnionRbtcRequested(
-                unionBridgeContractAddress,
+                newUnionBridgeContractAddress,
                 amountRequested
             );
 
@@ -1072,6 +1095,8 @@ class BridgeSupportTest {
 
             BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(weiPerEther.multiply(BigInteger.TEN)); // 10 RBTC
+
+            RskAddress unionBridgeContractAddress = unionBridgeConstants.getAddress();
             when(transaction.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
             when(transaction.getValue()).thenReturn(amountToRelease);
 
@@ -1114,7 +1139,7 @@ class BridgeSupportTest {
 
             BigInteger weiPerEther = BigInteger.TEN.pow(18); // 1 ETH = 1000000000000000000 wei
             co.rsk.core.Coin amountToRelease = new co.rsk.core.Coin(weiPerEther.multiply(BigInteger.TEN)); // 10 RBTC
-            when(transaction.getSender(signatureCache)).thenReturn(unionBridgeContractAddress);
+            when(transaction.getSender(signatureCache)).thenReturn(newUnionBridgeContractAddress);
             when(transaction.getValue()).thenReturn(amountToRelease);
 
             // act
