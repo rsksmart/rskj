@@ -1208,6 +1208,32 @@ class UnionBridgeSupportImplTest {
         assertNoTransferPermissionsWereStored();
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "true, false",
+        "false, true",
+        "false, false"
+    })
+    void setTransferPermissions_whenCallerIsAuthorized_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants).build();
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer);
+
+        // act
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+
+        // call save and assert that the permissions are stored
+        unionBridgeSupport.save();
+
+        assertTransferPermissionsWereStored(requestEnabled, releaseEnabled);
+    }
+
     private void assertNoTransferPermissionsWereStored() {
         Optional<Long> retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
@@ -1229,8 +1255,9 @@ class UnionBridgeSupportImplTest {
         "false, true",
         "false, false"
     })
-    void setTransferPermissions_whenCallerIsAuthorized_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
+    void setTransferPermissions_whenNoChangingCurrentState_shouldReturnSuccessCodeAndEmitNoEvent(boolean requestEnabled, boolean releaseEnabled) {
         // arrange
+        setupTransferPermissions(requestEnabled, releaseEnabled);
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
             .withConstants(bridgeConstants).build();
@@ -1241,7 +1268,7 @@ class UnionBridgeSupportImplTest {
 
         // assert
         Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+        assertNoEventWasEmitted();
 
         // call save and assert that the permissions are stored
         unionBridgeSupport.save();
