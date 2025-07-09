@@ -692,8 +692,7 @@ class UnionBridgeStorageProviderImplTest {
         boolean storedValue = !enabled;
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            storedValue ? 1L : 0L, BridgeSerializationUtils::serializeLong);
-
+            storedValue, BridgeSerializationUtils::serializeBoolean);
 
         // Act
         unionBridgeStorageProvider.setUnionBridgeRequestEnabled(enabled);
@@ -720,12 +719,11 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     private void assertGivenUnionBridgeRequestEnabledIsStored(boolean expectedValue) {
-        Optional<Long> savedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
+        Boolean savedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            BridgeSerializationUtils::deserializeOptionalLong);
+            BridgeSerializationUtils::deserializeBoolean);
 
-        assertTrue(savedUnionBridgeRequestEnabled.isPresent());
-        assertEquals(expectedValue ? 1L : 0L, savedUnionBridgeRequestEnabled.get());
+        assertEquals(expectedValue, savedUnionBridgeRequestEnabled);
     }
 
     @Test
@@ -743,7 +741,7 @@ class UnionBridgeStorageProviderImplTest {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-             requestEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong);
+             requestEnabled, BridgeSerializationUtils::serializeBoolean);
 
         // Act
         Optional<Boolean> isUnionBridgeRequestEnabled = unionBridgeStorageProvider.isUnionBridgeRequestEnabled();
@@ -811,12 +809,11 @@ class UnionBridgeStorageProviderImplTest {
     }
 
     private void assertGivenUnionBridgeReleaseEnabledIsStored(boolean expectedValue) {
-        Optional<Long> savedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
+        Boolean savedUnionBridgeReleaseEnabled = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-            BridgeSerializationUtils::deserializeOptionalLong);
+            BridgeSerializationUtils::deserializeBoolean);
 
-        assertTrue(savedUnionBridgeReleaseEnabled.isPresent());
-        assertEquals(expectedValue ? 1L : 0L, savedUnionBridgeReleaseEnabled.get());
+        assertEquals(expectedValue, savedUnionBridgeReleaseEnabled);
     }
 
     @ParameterizedTest
@@ -826,7 +823,7 @@ class UnionBridgeStorageProviderImplTest {
         boolean storedValue = !enabled;
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-            storedValue ? 1L : 0L, BridgeSerializationUtils::serializeLong);
+            storedValue, BridgeSerializationUtils::serializeBoolean);
 
         // Act
         unionBridgeStorageProvider.setUnionBridgeReleaseEnabled(enabled);
@@ -860,7 +857,7 @@ class UnionBridgeStorageProviderImplTest {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-             releaseEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong);
+             releaseEnabled, BridgeSerializationUtils::serializeBoolean);
 
         // Act
         Optional<Boolean> isUnionBridgeReleaseEnabled = unionBridgeStorageProvider.isUnionBridgeReleaseEnabled();
@@ -970,7 +967,7 @@ class UnionBridgeStorageProviderImplTest {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            unionBridgeRequestEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
+            unionBridgeRequestEnabled, BridgeSerializationUtils::serializeBoolean
         );
 
         // Act
@@ -991,7 +988,7 @@ class UnionBridgeStorageProviderImplTest {
         // Arrange
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-            unionBridgeReleaseEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
+            unionBridgeReleaseEnabled, BridgeSerializationUtils::serializeBoolean
         );
 
         // Act
@@ -1027,12 +1024,12 @@ class UnionBridgeStorageProviderImplTest {
         // Simulate there is UNION_BRIDGE_REQUEST_ENABLED's value already stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
-            unionBridgeRequestEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
+            unionBridgeRequestEnabled, BridgeSerializationUtils::serializeBoolean
         );
         // Simulate there is UNION_BRIDGE_RELEASE_ENABLED's value already stored
         storageAccessor.saveToRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
-            unionBridgeReleaseEnabled ? 1L : 0L, BridgeSerializationUtils::serializeLong
+            unionBridgeReleaseEnabled, BridgeSerializationUtils::serializeBoolean
         );
 
         // Set the new values
