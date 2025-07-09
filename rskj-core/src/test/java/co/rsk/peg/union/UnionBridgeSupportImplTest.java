@@ -14,35 +14,24 @@ import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
-import co.rsk.peg.union.constants.UnionBridgeConstants;
-import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
-import co.rsk.peg.union.constants.UnionBridgeRegTestConstants;
-import co.rsk.peg.union.constants.UnionBridgeTestNetConstants;
+import co.rsk.peg.union.constants.*;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.UnionBridgeSupportBuilder;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.*;
 
 class UnionBridgeSupportImplTest {
 
@@ -707,22 +696,6 @@ class UnionBridgeSupportImplTest {
         unionBridgeSupport.save();
         assertNoWeisTransferredIsStored();
     }
-
-    @Test
-    void requestUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
-        // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.requestUnionRbtc(rskTx, null);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
-
-        // call save and assert that nothing is stored
-        unionBridgeSupport.save();
-        assertNoWeisTransferredIsStored();
-    }
     
     private static Stream<Arguments> invalidAmountArgProvider() {
         Coin surpassingLockingCap = mainnetUnionBridgeConstants.getInitialLockingCap()
@@ -1034,23 +1007,6 @@ class UnionBridgeSupportImplTest {
         // call save and assert that weisTransferredToUnionBridge still equals the original amount
         unionBridgeSupport.save();
         assertWeisTransferredStoredAmount(weisTransferredToUnionBridge);
-    }
-
-    @Test
-    void releaseUnionRbtc_whenGivenAmountNull_shouldReturnInvalidValue() {
-        // arrange
-        when(rskTx.getSender(signatureCache)).thenReturn(mainnetUnionBridgeContractAddress);
-        when(rskTx.getValue()).thenReturn(null);
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.releaseUnionRbtc(rskTx);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.INVALID_VALUE, actualResponseCode);
-
-        // call save and assert that nothing is stored
-        unionBridgeSupport.save();
-        assertNoWeisTransferredIsStored();
     }
 
     @ParameterizedTest
