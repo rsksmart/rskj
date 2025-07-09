@@ -271,10 +271,21 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
+        if (isTransferPermissionStateAlreadySet(requestEnabled, releaseEnabled)) {
+            logger.info(
+                "[{}] Transfer permissions are already set to the requested values. Request enabled: {}, Release enabled: {}",
+                SET_TRANSFER_PERMISSIONS_TAG,
+                requestEnabled,
+                releaseEnabled
+            );
+            return UnionResponseCode.SUCCESS;
+        }
+
         storageProvider.setUnionBridgeRequestEnabled(requestEnabled);
         storageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
 
         RskAddress caller = tx.getSender(signatureCache);
+
         eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, requestEnabled, releaseEnabled);
         logger.info(
             "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
@@ -284,6 +295,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         );
 
         return UnionResponseCode.SUCCESS;
+    }
+
+    private boolean isTransferPermissionStateAlreadySet(boolean requestEnabled, boolean releaseEnabled) {
+        boolean currentRequestEnabled = isRequestEnabled();
+        boolean currentReleaseEnabled = isReleaseEnabled();
+
+        return currentRequestEnabled == requestEnabled && currentReleaseEnabled == releaseEnabled;
     }
 
     @Override
