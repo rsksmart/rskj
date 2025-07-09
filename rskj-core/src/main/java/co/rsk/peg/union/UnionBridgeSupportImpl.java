@@ -62,26 +62,25 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
-        if (!isEnvironmentTestnetOrRegtest()) {
+        if (isCurrentEnvironmentMainnet()) {
+            String baseMessage = String.format(
+                "Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s",
+                constants.getBtcParams().getId()
+            );
+            logger.warn(LOG_PATTERN, "setUnionBridgeContractAddressForTestnet", baseMessage);
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
 
         storageProvider.setAddress(unionBridgeContractAddress);
-        logger.info("[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, currentUnionBridgeAddress, unionBridgeContractAddress);
+        logger.info(
+            "[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}",
+            SET_UNION_BRIDGE_ADDRESS_TAG,
+            currentUnionBridgeAddress,
+            unionBridgeContractAddress
+        );
         return UnionResponseCode.SUCCESS;
-    }
-
-    private boolean isEnvironmentTestnetOrRegtest() {
-        String currentNetworkId = constants.getBtcParams().getId();
-
-        boolean isTestnetOrRegtest = currentNetworkId.equals(NetworkParameters.ID_TESTNET) || currentNetworkId.equals(NetworkParameters.ID_REGTEST);
-        if (!isTestnetOrRegtest) {
-            String baseMessage = String.format("Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s", currentNetworkId);
-            logger.warn(LOG_PATTERN, "isEnvironmentTestnetOrRegtest", baseMessage);
-        }
-        return isTestnetOrRegtest;
     }
 
     private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
