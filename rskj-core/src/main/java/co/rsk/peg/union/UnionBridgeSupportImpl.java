@@ -46,11 +46,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return storageProvider.getAddress().orElse(constants.getAddress());
     }
 
-    private boolean isCurrentEnvironmentMainnet() {
-        String currentNetworkId = constants.getBtcParams().getId();
-        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
-    }
-
     @Override
     public UnionResponseCode setUnionBridgeContractAddressForTestnet(@Nonnull Transaction tx, RskAddress unionBridgeContractAddress) {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
@@ -81,15 +76,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             unionBridgeContractAddress
         );
         return UnionResponseCode.SUCCESS;
-    }
-
-    private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
-        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
-        if (!isAuthorized) {
-            String baseMessage = String.format("Caller is not authorized to call this method. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isAuthorized", baseMessage);
-        }
-        return isAuthorized;
     }
 
     @Override
@@ -169,20 +155,18 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     }
 
     private boolean isAmountRequestedValid(Coin amountRequested) {
-        boolean isAmountNullOrLessThanOne = amountRequested == null || amountRequested.compareTo(Coin.ZERO) < 1;
-        if (isAmountNullOrLessThanOne) {
+        if (amountRequested.compareTo(Coin.ZERO) <= 0) {
             logger.warn(
-                "[isAmountRequestedValid] Amount requested cannot be negative or zero. Amount requested: {}",
+                "[isAmountRequestedValid] Amount requested must be a positive number. Amount requested: {}",
                 amountRequested
             );
             return false;
         }
 
         Coin lockingCap = getLockingCap();
-
         Coin previousAmountRequested = getWeisTransferredToUnionBridge();
-
         Coin newAmountRequested = previousAmountRequested.add(amountRequested);
+
         boolean doesNewAmountAndPreviousAmountRequestedSurpassLockingCap =
             newAmountRequested.compareTo(lockingCap) > 0;
         if (doesNewAmountAndPreviousAmountRequestedSurpassLockingCap) {
@@ -240,7 +224,12 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.RELEASE_DISABLED;
         }
 
-        if (!isAmountToReleaseValid(releaseUnionRbtcValueInWeis)) {
+        if (releaseUnionRbtcValueInWeis.compareTo(Coin.ZERO) <= 0) {
+            logger.warn(
+                "[{}] Amount to be released must be a positive number. Amount to release: {}.",
+                RELEASE_UNION_RBTC_TAG,
+                releaseUnionRbtcValueInWeis
+            );
             return UnionResponseCode.INVALID_VALUE;
         }
 
@@ -262,15 +251,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         eventLogger.logUnionRbtcReleased(caller, releaseUnionRbtcValueInWeis);
         logger.info("[{}] Amount released by the union bridge has been transferred. Amount Released: {}.", RELEASE_UNION_RBTC_TAG, releaseUnionRbtcValueInWeis);
         return UnionResponseCode.SUCCESS;
-    }
-
-    private static boolean isAmountToReleaseValid(Coin amountToRelease) {
-        boolean isAmountNullOrLessThanOne = amountToRelease == null || amountToRelease.compareTo(Coin.ZERO) < 1;
-        if (isAmountNullOrLessThanOne) {
-            logger.warn("[isAmountToReleaseValid] Amount to be released cannot be null or less than one. Amount to release: {}", amountToRelease);
-            return false;
-        }
-        return true;
     }
 
     private boolean isReleaseEnabled() {
@@ -309,5 +289,19 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     @Override
     public void save() {
         storageProvider.save();
+    }
+
+    private boolean isCurrentEnvironmentMainnet() {
+        String currentNetworkId = constants.getBtcParams().getId();
+        return currentNetworkId.equals(NetworkParameters.ID_MAINNET);
+    }
+
+    private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
+        boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
+        if (!isAuthorized) {
+            String baseMessage = String.format("Caller is not authorized to call this method. Caller address: %s", tx.getSender());
+            logger.warn(LOG_PATTERN, "isAuthorized", baseMessage);
+        }
+        return isAuthorized;
     }
 }
