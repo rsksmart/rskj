@@ -61,7 +61,7 @@ class UnionBridgeSupportImplTest {
     private static final RskAddress newUnionBridgeContractAddress = TestUtils.generateAddress(
         "secondNewUnionBridgeContractAddress");
 
-    private final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();;
+    private final UnionBridgeSupportBuilder unionBridgeSupportBuilder = UnionBridgeSupportBuilder.builder();
 
     private UnionBridgeSupport unionBridgeSupport;
     private StorageAccessor storageAccessor;
