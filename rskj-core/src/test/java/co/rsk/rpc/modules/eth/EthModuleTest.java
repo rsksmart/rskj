@@ -17,7 +17,6 @@
  */
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -26,17 +25,23 @@ import co.rsk.core.Wallet;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.BlockIdentifierParam;
@@ -45,6 +50,8 @@ import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -72,6 +79,7 @@ class EthModuleTest {
 
     @Test
     void callSmokeTest() {
+        // Given
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
@@ -91,7 +99,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -102,16 +110,233 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
+        // Then
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void callSmokeTestWithAccountOverride() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("test"));
+        accountOverride.setBalance(BigInteger.valueOf(100000));
+
+        CallArguments args = new CallArguments();
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, null, null),
+                true,
+                new DefaultStateOverrideApplier());
+
+        String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"),List.of(accountOverride));
+
+        // Then
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    void testCall_whenCalledWithAccountOverrideListButAccountOverrideIsNotAllowed_throwsExceptionAsExpected() {
+        // Given
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+        List<AccountOverride> accountOverrideList = List.of(new AccountOverride(TestUtils.generateAddress("test")));
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, null, null),
+                false,
+                new DefaultStateOverrideApplier());
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("State override is not allowed", exception.getMessage());
+    }
+
+    @Test
+    void testCall_whenCalledWithAccountOverrideOverPrecompileContractAddress_throwsExceptionAsExpected() {
+        // Given
+        RskAddress address = TestUtils.generateAddress("test");
+        DataWord addressInDataWordForm = DataWord.valueFromHex(address.toHexString());
+        String blockIdentifierString = "latest";
+        long blockNumber = 1L;
+
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam(blockIdentifierString);
+        List<AccountOverride> accountOverrideList = List.of(new AccountOverride(address));
+
+        ExecutionBlockRetriever.Result blockResultMock = mock(ExecutionBlockRetriever.Result.class);
+
+        Block blockMock = mock(Block.class);
+        when(blockMock.getNumber()).thenReturn(blockNumber);
+
+        ExecutionBlockRetriever executionBlockRetrieverMock = mock(ExecutionBlockRetriever.class);
+        when(executionBlockRetrieverMock.retrieveExecutionBlock(blockIdentifierString))
+                .thenReturn(blockResultMock);
+        when(blockResultMock.getBlock()).thenReturn(blockMock);
+        when(blockResultMock.getFinalState()).thenReturn(new Trie());
+
+        ActivationConfig.ForBlock forBlockMock = mock(ActivationConfig.ForBlock.class);
+
+        ActivationConfig activationConfigMock = mock(ActivationConfig.class);
+        when(activationConfigMock.forBlock(blockNumber)).thenReturn(forBlockMock);
+
+        PrecompiledContracts.PrecompiledContract precompiledContractMock = mock(PrecompiledContracts.PrecompiledContract.class);
+
+        PrecompiledContracts precompiledContractsMock = mock(PrecompiledContracts.class);
+        when(precompiledContractsMock.getContractForAddress(forBlockMock, addressInDataWordForm)).thenReturn(precompiledContractMock);
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                null,
+                executionBlockRetrieverMock,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                activationConfigMock,
+                precompiledContractsMock,
+                true,
+                new DefaultStateOverrideApplier());
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Precompiled contracts can not be overridden", exception.getMessage());
+        verify(activationConfigMock, times(1)).forBlock(blockNumber);
+        verify(precompiledContractsMock, times(1)).getContractForAddress(forBlockMock, addressInDataWordForm);
+    }
+
+    @Test
+    void callSmokeTestWithAccountOverrideAndBlockFinalStateIsNotNull() {
+        // Given
+        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("test"));
+        accountOverride.setBalance(BigInteger.valueOf(100000));
+
+        CallArguments args = new CallArguments();
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.retrieveExecutionBlock("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+        when(blockResult.getFinalState()).thenReturn(new Trie());
+
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        RepositorySnapshot snapshot = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(any(),eq(block), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                executor,
+                retriever,
+                repositoryLocator,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, null, null),
+                true,
+                new DefaultStateOverrideApplier());
+
+        String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
+        String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"), List.of(accountOverride));
+
+        // Then
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
     void callWithoutReturn() {
+        // Given
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
@@ -131,7 +356,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -142,16 +367,24 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
+
+        // When
         String actualResult = eth.call(TransactionFactoryHelper.toCallArgumentsParam(args), new BlockIdentifierParam("latest"));
 
+        // Then
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
     void test_revertedTransaction() {
+        // Given
         CallArguments args = new CallArguments();
         ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
@@ -176,7 +409,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -187,11 +420,18 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
 
+        // When
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
+
+        // Then
         RskJsonRpcRequestException exception = assertThrows(
                 RskJsonRpcRequestException.class,
                 () -> eth.call(
@@ -234,7 +474,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
 
@@ -393,7 +637,11 @@ class EthModuleTest {
                         signatureCache
                 ),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null
         );
 
         HexAddressParam addressParam = new HexAddressParam(TestUtils.generateAddress("addr").toHexString());
@@ -415,7 +663,11 @@ class EthModuleTest {
                 mock(EthModuleTransaction.class),
                 mock(BridgeSupportFactory.class),
                 config.getGasEstimationCap(),
-                config.getCallGasCap()
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                mock(DefaultStateOverrideApplier.class)
         );
         assertThat(eth.chainId(), is("0x21"));
     }
@@ -442,7 +694,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -453,7 +705,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
@@ -488,7 +744,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -499,7 +755,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
         BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
@@ -535,7 +795,7 @@ class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
-                anyByte(),
+                (byte) 1,
                 null,
                 null,
                 executor,
@@ -546,7 +806,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
@@ -593,7 +857,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -638,7 +906,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -681,7 +953,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -727,7 +1003,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(args);
 
@@ -869,7 +1149,11 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         List<Transaction> result = ethModule.ethPendingTransactions();
 
@@ -897,7 +1181,11 @@ class EthModuleTest {
                 null,
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
         Transaction mockTransaction2 = createMockTransaction( "0xa3a15ed8c3b83efc744f2e0a7824a00846c21860");
@@ -933,7 +1221,11 @@ class EthModuleTest {
                 null,
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         Transaction mockTransaction1 = createMockTransaction("0x63a15ed8c3b83efc744f2e0a7824a00846c21860");
         Transaction mockTransaction2 = createMockTransaction("0x13a15ed8c3b83efc744f2e0a7824a00846c21860");
@@ -967,13 +1259,16 @@ class EthModuleTest {
                 null,
                 new BridgeSupportFactory(null, null, null, signatureCache),
                 config.getGasEstimationCap(),
-                config.getCallGasCap());
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                null,
+                false,
+                null);
 
         List<Transaction> result = ethModule.ethPendingTransactions();
 
         assertTrue(result.isEmpty(), "Expected no transactions as wallet is disabled");
     }
-
 
     private Transaction createMockTransaction(String fromAddress) {
         Transaction transaction = mock(Transaction.class);

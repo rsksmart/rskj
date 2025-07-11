@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -34,6 +33,7 @@ import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.CallTransaction;
@@ -50,6 +50,7 @@ import org.ethereum.rpc.parameters.BlockIdentifierParam;
 import org.ethereum.rpc.parameters.CallArgumentsParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -59,6 +60,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +88,10 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
     private final long gasCallCap;
+    private final ActivationConfig activationConfig;
+    private final PrecompiledContracts precompiledContracts;
+    private final boolean allowCallStateOverride;
+    private final StateOverrideApplier stateOverrideApplier;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -99,7 +105,11 @@ public class EthModule
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory,
             long gasEstimationCap,
-            long gasCallCap) {
+            long gasCallCap,
+            ActivationConfig activationConfig,
+            PrecompiledContracts precompiledContracts,
+            boolean allowCallStateOverride,
+            StateOverrideApplier stateOverrideApplier) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -112,6 +122,10 @@ public class EthModule
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
         this.gasCallCap = gasCallCap;
+        this.activationConfig = activationConfig;
+        this.precompiledContracts = precompiledContracts;
+        this.allowCallStateOverride = allowCallStateOverride;
+        this.stateOverrideApplier = stateOverrideApplier;
     }
 
     @Override
@@ -134,25 +148,68 @@ public class EthModule
     }
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId) {
-        String hReturn = null;
-        CallArguments args = argsParam.toCallArguments();
-        try {
-            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
-            Block block = result.getBlock();
-            Trie finalState = result.getFinalState();
-            ProgramResult res;
-            if (finalState != null) {
-                res = callConstantWithState(args, block, finalState);
-            } else {
-                res = callConstant(args, block);
-            }
-            handleTransactionRevertIfHappens(res);
-            hReturn = HexUtils.toUnformattedJsonHex(res.getHReturn());
+        return call(argsParam, bnOrId, Collections.emptyList());
+    }
 
+    public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
+        boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
+
+        validateStateOverrideAllowance(shouldPerformStateOverride);
+
+        ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
+        Block block = result.getBlock();
+
+        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList);
+
+        CallArguments callArgs = argsParam.toCallArguments();
+
+        String hReturn = null;
+        try {
+            ProgramResult programResult = mutableRepository != null ?
+                    callConstant(callArgs, block, mutableRepository) :
+                    callConstant(callArgs, block);
+
+            handleTransactionRevertIfHappens(programResult);
+            hReturn = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
             return hReturn;
-        }
-        finally {
+        } finally {
             LOGGER.debug("eth_call(): {}", hReturn);
+        }
+    }
+
+    private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
+        if (shouldPerformStateOverride && !allowCallStateOverride) {
+            throw invalidParamError("State override is not allowed");
+        }
+    }
+
+    private MutableRepository prepareRepository(ExecutionBlockRetriever.Result result,
+                                                Block block,
+                                                boolean shouldPerformStateOverride,
+                                                List<AccountOverride> accountOverrideList) {
+        MutableRepository mutableRepository = null;
+
+        if (result.getFinalState() != null) {
+            mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
+        }
+
+        if (shouldPerformStateOverride) {
+            if (mutableRepository == null) {
+                mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
+            }
+            applyStateOverride(block, mutableRepository, accountOverrideList);
+        }
+
+        return mutableRepository;
+    }
+
+    private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList) {
+        ActivationConfig.ForBlock blockActivations = activationConfig.forBlock(block.getNumber());
+        for (AccountOverride accountOverride : accountOverrideList) {
+            if (precompiledContracts.getContractForAddress(blockActivations, DataWord.valueFromHex(accountOverride.getAddress().toHexString())) != null) {
+                throw invalidParamError("Precompiled contracts can not be overridden");
+            }
+            stateOverrideApplier.applyToRepository(mutableRepository, accountOverride);
         }
     }
 
@@ -299,6 +356,21 @@ public class EthModule
         );
     }
 
+    public ProgramResult callConstant(CallArguments args, Block executionBlock, RepositorySnapshot snapshot) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        return reversibleTransactionExecutor.executeTransaction(
+                snapshot,
+                executionBlock,
+                executionBlock.getCoinbase(),
+                hexArgs.getGasPrice(),
+                hexArgs.gasLimitForCall(this.gasCallCap),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
+    }
+
     /**
      * Look for { Error("msg") } function, if it matches decode the "msg" param.
      * The 4 first bytes are the function signature.
@@ -331,21 +403,6 @@ public class EthModule
         }
 
         return Pair.of((String) decode[0], bytes);
-    }
-
-    private ProgramResult callConstantWithState(CallArguments args, Block executionBlock, Trie state) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                new MutableRepository(new TrieStoreImpl(new HashMapDB()), state),
-                executionBlock,
-                executionBlock.getCoinbase(),
-                hexArgs.getGasPrice(),
-                hexArgs.gasLimitForCall(this.gasCallCap),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
     }
 
     private void handleTransactionRevertIfHappens(ProgramResult res) {
