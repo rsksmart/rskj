@@ -443,8 +443,7 @@ class P2shP2wshErpFederationTest {
 
     private static TransactionWitness updateWitnessWithEmergencySignatures(TransactionWitness witness, List<TransactionSignature> signatures) {
         List<byte[]> updatedPushes = new ArrayList<>();
-        byte[] emptyByte = new byte[0];
-
+        byte[] emptyByte = witness.getPush(0);
         updatedPushes.add(emptyByte);
         for (TransactionSignature transactionSignature : signatures) {
             updatedPushes.add(transactionSignature.encodeToBitcoin());
