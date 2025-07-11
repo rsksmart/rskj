@@ -180,6 +180,13 @@ public final class BridgeSupportTestUtil {
         }
     }
 
+    public static void assertFederatorDidNotSignInputs(BtcTransaction btcTx, List<Sha256Hash> sigHashes, BtcECKey key) {
+        for (int i = 0; i < btcTx.getInputs().size(); i++) {
+            Sha256Hash sigHash = sigHashes.get(i);
+            assertFalse(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
+        }
+    }
+
     public static void assertReleaseRejectionWasSettled(
         Repository repository,
         BridgeStorageProvider bridgeStorageProvider,
