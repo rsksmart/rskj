@@ -1,9 +1,9 @@
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeStorageIndexKey.PEGOUTS_WAITING_FOR_SIGNATURES;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.PegTestUtils.createHash3;
+import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.ReleaseTransactionBuilder.BTC_TX_VERSION_2;
 import static co.rsk.peg.bitcoin.BitcoinTestUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
@@ -78,17 +78,14 @@ class BridgeSupportAddSignatureTest {
     private final Instant creationTime = Instant.ofEpochMilli(1000L);
     private final long creationBlockNumber = 0L;
 
-    private ActivationConfig.ForBlock activationsBeforeForks;
-    private ActivationConfig.ForBlock activationsAfterForks;
-    private BridgeSupportBuilder bridgeSupportBuilder;
+    private final ActivationConfig.ForBlock activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
+    private final ActivationConfig.ForBlock activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
+    private final BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
     private WhitelistSupport whitelistSupport;
     private LockingCapSupport lockingCapSupport;
 
     @BeforeEach
     void setUpOnEachTest() {
-        activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
-        activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
-        bridgeSupportBuilder = BridgeSupportBuilder.builder();
         whitelistSupport = mock(WhitelistSupport.class);
         lockingCapSupport = mock(LockingCapSupport.class);
     }
@@ -737,103 +734,226 @@ class BridgeSupportAddSignatureTest {
         );
     }
 
-    @Test
-    void addSignature_correctFederator_whenFedIsSegwit_shouldSign() throws IOException {
-        // arrange
-        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
-        FederationSupport federationSupport = federationSupportBuilder
-            .withFederationConstants(bridgeMainnetConstants.getFederationConstants())
-            .withFederationStorageProvider(federationStorageProvider)
-            .withActivations(activationsAfterForks)
-            .build();
-
-        Repository repository = createRepository();
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
-        List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
-            bridgeMainnetConstants,
-            activationsAfterForks,
-            logs
-        );
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withActivations(activationsAfterForks)
-            .withBridgeConstants(bridgeMainnetConstants)
-            .withRepository(repository)
-            .withEventLogger(bridgeEventLogger)
-            .withProvider(bridgeStorageProvider)
-            .withFederationSupport(federationSupport)
-            .build();
-
-        final List<BtcECKey> keys = getBtcEcKeysFromSeeds(
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("Add signature tests")
+    class AddSignature {
+        private final List<BtcECKey> legacyFederationKeys = getBtcEcKeysFromSeeds(
             new String[] {"signer1", "signer2", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9"},
             true
         );
-        Federation activeFederation = P2shP2wshErpFederationBuilder.builder()
-            .withMembersBtcPublicKeys(keys)
+        private final Federation legacyFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(legacyFederationKeys)
             .build();
-        federationStorageProvider.setNewFederation(activeFederation);
 
-        // create pegout to be signed
-        BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
-        prevTx.addOutput(Coin.COIN, activeFederation.getAddress());
-
-        Keccak256 rskTxHash = createHash3(1);
-        BtcTransaction pegout = new BtcTransaction(btcMainnetParams);
-        pegout.setVersion(BTC_TX_VERSION_2);
-        // add input
-        pegout.addInput(prevTx.getOutput(0));
-        int inputIndex = 0;
-        // add output
-        pegout.addOutput(Coin.MILLICOIN, activeFederation.getAddress());
-        // sign input
-        BitcoinUtils.addSpendingFederationBaseScript(pegout, inputIndex, activeFederation.getRedeemScript(), activeFederation.getFormatVersion());
-
-        // save outpoints values
-        Coin amountReceived = pegout.getInput(inputIndex).getValue();
-        List<Coin> outpointsValues = List.of(amountReceived);
-        repository.addStorageBytes(
-            bridgeAddress,
-            getStorageKeyForReleaseOutpointsValues(pegout.getHash()),
-            BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+        private final List<BtcECKey> segwitKeys = getBtcEcKeysFromSeeds(
+            new String[] {"signer1", "signer2", "signer3", "signer4", "signer5", "signer6", "signer7", "signer8", "signer9", "signer10",
+                "signer11", "signer12", "signer13", "signer14", "signer15", "signer16", "signer17", "signer18", "signer19", "signer20"
+            },
+            true
         );
-        // add pegout wfs to repo
-        SortedMap<Keccak256, BtcTransaction> pegouts = new TreeMap<>();
-        pegouts.put(rskTxHash, pegout);
-        repository.addStorageBytes(bridgeAddress,
-            PEGOUTS_WAITING_FOR_SIGNATURES.getKey(),
-            BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(pegouts)
-        );
+        private final Federation segwitFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(segwitKeys)
+            .build();
 
-        SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
-        assertEquals(1, pegoutsWFS.size());
-        BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
+        private final Keccak256 rskTxHash = createHash3(1);
 
-        // act
-        // sign with all federators
-        List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(pegout);
-        List<BtcECKey> federatorSignersKeys = keys.subList(0, 5); // we only need 5/9 signers
-        for (BtcECKey federatorSignerKey : federatorSignersKeys) {
-            List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
-            bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
-        }
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private BridgeSupport bridgeSupport;
+        private List<LogInfo> logs;
+        private BtcTransaction pegout;
+        private List<Sha256Hash> sigHashes;
 
-        // assert
-        for (BtcECKey federatorSignerKey : federatorSignersKeys) {
-            assertFederatorSigning(
-                rskTxHash.getBytes(),
-                pegoutWFS,
-                sigHashes,
-                activeFederation,
-                federatorSignerKey,
+
+        private void setUp(Federation activeFederation) {
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+            FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+            FederationSupport federationSupport = federationSupportBuilder
+                .withFederationConstants(bridgeMainnetConstants.getFederationConstants())
+                .withFederationStorageProvider(federationStorageProvider)
+                .withActivations(activationsAfterForks)
+                .build();
+
+            repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeAddress, btcMainnetParams, activationsAfterForks);
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeMainnetConstants,
+                activationsAfterForks,
                 logs
             );
-        }
-        assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
 
-        // assert pegout was removed from wfs structure
-        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForSignatures().size());
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(activationsAfterForks)
+                .withBridgeConstants(bridgeMainnetConstants)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withProvider(bridgeStorageProvider)
+                .withFederationSupport(federationSupport)
+                .build();
+
+            federationStorageProvider.setNewFederation(activeFederation);
+            Script activeFederationRedeemScript = activeFederation.getRedeemScript();
+
+            // create prev tx
+            BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
+            Coin prevValue = Coin.COIN;
+            prevTx.addOutput(prevValue, activeFederation.getAddress());
+
+            // create pegout to be signed
+            pegout = new BtcTransaction(btcMainnetParams);
+            pegout.setVersion(BTC_TX_VERSION_2);
+            // add input
+            pegout.addInput(prevTx.getOutput(0));
+            // add outputs
+            Coin valueToSend = bridgeMainnetConstants.getMinimumPegoutTxValue();
+            // add user output
+            pegout.addOutput(valueToSend, BitcoinTestUtils.getBtcEcKeyFromSeed("receiver"));
+            // add change output
+            pegout.addOutput(prevValue.subtract(valueToSend), activeFederation.getAddress());
+            // sign inputs
+            int inputSentToActiveFederationIndex = 0;
+            BitcoinUtils.addSpendingFederationBaseScript(
+                pegout,
+                inputSentToActiveFederationIndex,
+                activeFederationRedeemScript,
+                activeFederation.getFormatVersion()
+            );
+
+            // add pegout wfs to repo
+            SortedMap<Keccak256, BtcTransaction> pegouts = new TreeMap<>();
+            pegouts.put(rskTxHash, pegout);
+            repository.addStorageBytes(bridgeAddress,
+                PEGOUTS_WAITING_FOR_SIGNATURES.getKey(),
+                BridgeSerializationUtils.serializeRskTxsWaitingForSignatures(pegouts)
+            );
+
+            sigHashes = generateTransactionInputsSigHashes(pegout);
+        }
+
+        private void signWithFederators(List<BtcECKey> federatorSignersKeys) throws IOException {
+            for (BtcECKey federatorSignerKey : federatorSignersKeys) {
+                List<byte[]> signatures = generateSignerEncodedSignatures(federatorSignerKey, sigHashes);
+                bridgeSupport.addSignature(federatorSignerKey, signatures, rskTxHash);
+            }
+        }
+
+        @Test
+        void addSignature_correctFederator_whenFedIsSegwit_shouldSign() throws IOException {
+            // arrange
+            setUp(segwitFederation);
+
+            // save outpoints values
+            List<Coin> outpointsValues = new ArrayList<>();
+            for (TransactionInput input : pegout.getInputs()) {
+                outpointsValues.add(input.getValue());
+            }
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(pegout.getHash()),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+            );
+
+            SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+            assertEquals(1, pegoutsWFS.size());
+            BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
+
+            // act
+            int neededSignatures = segwitFederation.getNumberOfSignaturesRequired();
+            List<BtcECKey> federatorSignersKeys = segwitKeys.subList(0, neededSignatures);
+            signWithFederators(federatorSignersKeys);
+
+            // assert
+            assertTxFullySignedAndReleased(segwitFederation, federatorSignersKeys, pegoutWFS);
+        }
+
+        @Test
+        void addSignature_correctFederator_whenFedIsSegwit_txFullySigned_shouldNotAddExtraSignature() throws IOException {
+            // arrange
+            setUp(segwitFederation);
+
+            // save outpoints values
+            List<Coin> outpointsValues = new ArrayList<>();
+            for (TransactionInput input : pegout.getInputs()) {
+                outpointsValues.add(input.getValue());
+            }
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(pegout.getHash()),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues)
+            );
+
+            SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+            assertEquals(1, pegoutsWFS.size());
+            BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
+
+            // act
+            int neededSignatures = segwitFederation.getNumberOfSignaturesRequired();
+            List<BtcECKey> federatorSignersKeys = segwitKeys.subList(0, neededSignatures);
+            signWithFederators(federatorSignersKeys);
+
+            BtcTransaction pegoutBeforeAddingExtraSig = new BtcTransaction(btcMainnetParams, pegoutWFS.bitcoinSerialize());
+            // extra signature should not be added to pegout
+            // since it should have been already removed from wfs map
+            BtcECKey extraSigner = segwitKeys.get(neededSignatures + 1);
+            signWithFederators(List.of(extraSigner));
+
+            // assert
+            assertEquals(pegoutBeforeAddingExtraSig, pegoutWFS);
+            assertTxFullySignedAndReleased(segwitFederation, federatorSignersKeys, pegoutWFS);
+            assertFederatorDidNotSignInputs(
+                pegoutWFS,
+                sigHashes,
+                extraSigner
+            );
+        }
+
+        @Test
+        void addSignature_correctFederator_whenFedIsLegacy_txFullySigned_shouldNotAddExtraSignature() throws IOException {
+            setUp(legacyFederation);
+
+            SortedMap<Keccak256, BtcTransaction> pegoutsWFS = bridgeStorageProvider.getPegoutsWaitingForSignatures();
+            assertEquals(1, pegoutsWFS.size());
+            BtcTransaction pegoutWFS = pegoutsWFS.get(rskTxHash);
+
+            int neededSignatures = legacyFederation.getNumberOfSignaturesRequired();
+            List<BtcECKey> federatorSignersKeys = legacyFederationKeys.subList(0, neededSignatures);
+            signWithFederators(federatorSignersKeys);
+
+            BtcTransaction pegoutBeforeAddingExtraSig = new BtcTransaction(btcMainnetParams, pegoutWFS.bitcoinSerialize());
+            // extra signature should not be added to pegout
+            // since it should have been already removed from wfs map
+            BtcECKey extraSigner = legacyFederationKeys.get(legacyFederation.getNumberOfSignaturesRequired() + 1);
+            signWithFederators(List.of(extraSigner));
+
+            // assert
+            assertEquals(pegoutBeforeAddingExtraSig, pegoutWFS);
+            assertTxFullySignedAndReleased(legacyFederation, federatorSignersKeys, pegoutWFS);
+            assertFederatorDidNotSignInputs(
+                pegoutWFS,
+                sigHashes,
+                extraSigner
+            );
+        }
+
+        private void assertTxFullySignedAndReleased(Federation federation, List<BtcECKey> federatorSignersKeys, BtcTransaction pegoutWFS) throws IOException {
+            for (BtcECKey federatorSignerKey : federatorSignersKeys) {
+                assertFederatorSigning(
+                    rskTxHash.getBytes(),
+                    pegoutWFS,
+                    sigHashes,
+                    federation,
+                    federatorSignerKey,
+                    logs
+                );
+            }
+            assertLogReleaseBtc(logs, pegoutWFS, rskTxHash);
+
+            // assert pegout was removed from wfs structure
+            assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForSignatures().size());
+        }
     }
 
     @Nested
@@ -910,7 +1030,7 @@ class BridgeSupportAddSignatureTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 retiringFederation.getCreationBlockNumber() + bridgeMainnetConstants.getFederationConstants().getFederationActivationAge(activationsAfterForks);
-            Block currentBlock = buildBlock(blockNumber);
+            Block currentBlock = createRskBlock(blockNumber);
 
             FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
             FederationSupport federationSupport = FederationSupportBuilder.builder()
