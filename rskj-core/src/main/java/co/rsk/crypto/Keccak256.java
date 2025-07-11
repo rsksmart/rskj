@@ -91,7 +91,7 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
     }
 
     /**
-     * Returns an identical Sha3Hash with a copy of the the internal byte array.
+     * Returns an identical Sha3Hash with a copy of the internal byte array.
      */
     public Keccak256 copy() {
         return new Keccak256(ByteUtil.cloneBytes(bytes));
