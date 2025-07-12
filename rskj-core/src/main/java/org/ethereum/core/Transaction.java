@@ -343,8 +343,7 @@ public class Transaction {
     /**
      * Only for compatibility until we could finally remove old {@link org.ethereum.crypto.ECKey.ECDSASignature}.
      *
-     * @param signature
-     * @return
+     * @param signature to be set
      */
     public void setSignature(ECKey.ECDSASignature signature) {
         this.signature = ECDSASignature.fromSignature(signature);
