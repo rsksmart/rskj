@@ -1,9 +1,12 @@
 package co.rsk.peg.bitcoin;
 
+import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_0;
 import static co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
+import co.rsk.peg.federation.FederationFormatVersion;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.*;
@@ -26,9 +29,8 @@ public class BitcoinUtils {
         if (btcTx.getInputs().isEmpty()){
             return Optional.empty();
         }
-        TransactionInput txInput = btcTx.getInput(FIRST_INPUT_INDEX);
-        Optional<Script> redeemScript = extractRedeemScriptFromInput(txInput);
 
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(btcTx, FIRST_INPUT_INDEX);
         return redeemScript.map(script -> btcTx.hashForSignature(
             FIRST_INPUT_INDEX,
             script,
@@ -37,7 +39,15 @@ public class BitcoinUtils {
         ));
     }
 
-    public static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
+    public static Optional<Script> extractRedeemScriptFromInput(BtcTransaction transaction, int inputIndex) {
+        if (!inputHasWitness(transaction, inputIndex)) {
+            return extractRedeemScriptFromInputScriptSig(transaction.getInput(inputIndex));
+        }
+
+        return extractRedeemScriptFromInputWitness(transaction.getWitness(inputIndex));
+    }
+
+    private static Optional<Script> extractRedeemScriptFromInputScriptSig(TransactionInput txInput) {
         Script inputScript = txInput.getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
         if (chunks == null || chunks.isEmpty()) {
@@ -54,12 +64,44 @@ public class BitcoinUtils {
             return Optional.of(redeemScript);
         } catch (ScriptException e) {
             logger.debug(
-                "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
+                "[extractRedeemScriptFromInputScriptSig] Failed to extract redeem script from tx input {}. {}",
                 txInput,
                 e.getMessage()
             );
             return Optional.empty();
         }
+    }
+
+    private static Optional<Script> extractRedeemScriptFromInputWitness(TransactionWitness txInputWitness) {
+        int witnessSize = txInputWitness.getPushCount();
+        int redeemScriptIndex = witnessSize - 1;
+        try {
+            byte[] redeemScriptData = txInputWitness.getPush(redeemScriptIndex);
+            Script redeemScript = new Script(redeemScriptData);
+            return Optional.of(redeemScript);
+        } catch (Exception e) {
+            logger.debug(
+                "[extractRedeemScriptFromInputWitness] Failed to extract redeem script from tx input {}. {}",
+                txInputWitness,
+                e.getMessage()
+            );
+            return Optional.empty();
+        }
+    }
+
+    public static boolean inputHasWitness(BtcTransaction btcTx, int inputIndex) {
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        return !inputWitness.equals(TransactionWitness.getEmpty());
+    }
+
+    public static int getSigInsertionIndex(BtcTransaction tx, int inputIndex, Sha256Hash sigHash, BtcECKey signingKey) {
+        if (!inputHasWitness(tx, inputIndex)) {
+            Script inputScript = tx.getInput(inputIndex).getScriptSig();
+            return inputScript.getSigInsertionIndex(sigHash, signingKey);
+        }
+
+        TransactionWitness inputWitness = tx.getWitness(inputIndex);
+        return inputWitness.getSigInsertionIndex(sigHash, signingKey);
     }
 
     public static Sha256Hash getMultiSigTransactionHashWithoutSignatures(NetworkParameters networkParameters, BtcTransaction transaction) {
@@ -79,8 +121,10 @@ public class BitcoinUtils {
             throw new IllegalArgumentException(message);
         }
 
-        for (TransactionInput input : transaction.getInputs()) {
-            Script inputRedeemScript = extractRedeemScriptFromInput(input)
+        List<TransactionInput> inputs = transaction.getInputs();
+        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+            TransactionInput input = inputs.get(inputIndex);
+            Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .orElseThrow(
                     () -> {
                         String message = "Cannot remove signatures from transaction inputs that do not have p2sh multisig input script.";
@@ -94,9 +138,69 @@ public class BitcoinUtils {
         }
     }
 
-    public static Script createBaseP2SHInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
+    public static Script createBaseInputScriptThatSpendsFromRedeemScript(Script redeemScript) {
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         return outputScript.createEmptyInputScript(null, redeemScript);
+    }
+
+    public static TransactionWitness createBaseWitnessThatSpendsFromErpRedeemScript(Script redeemScript) {
+        int pushForEmptyByte = 1;
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int numberOfSignaturesRequiredToSpend = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int witnessSize = pushForRedeemScript + pushForOpNotif + numberOfSignaturesRequiredToSpend + pushForEmptyByte;
+
+        List<byte[]> pushes = new ArrayList<>(witnessSize);
+        byte[] emptyByte = {};
+        pushes.add(emptyByte); // OP_0
+
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i++) {
+            pushes.add(emptyByte);
+        }
+
+        pushes.add(emptyByte); // OP_NOTIF
+        pushes.add(redeemScript.getProgram());
+        return TransactionWitness.of(pushes);
+    }
+
+    public static void addSpendingFederationBaseScript(BtcTransaction btcTx, int inputIndex, Script redeemScript, int federationFormatVersion) {
+        TransactionInput input = btcTx.getInput(inputIndex);
+
+        if (federationFormatVersion != FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
+            input.setScriptSig(inputScript);
+            return;
+        }
+
+        TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
+        btcTx.setWitness(inputIndex, witnessScript);
+        Script segwitScriptSig = buildSegwitScriptSig(redeemScript);
+        input.setScriptSig(segwitScriptSig);
+    }
+
+    public static Script buildSegwitScriptSig(Script redeemScript) {
+        if (redeemScript == null) {
+            throw new IllegalArgumentException("redeemScript must not be null");
+        }
+        // we need the hashed redeem script to be in one chunk
+        byte[] hashedRedeemScript = Sha256Hash.hash(redeemScript.getProgram());
+        Script segwitScriptSig = new ScriptBuilder()
+            .number(OP_0)
+            .data(hashedRedeemScript)
+            .build();
+
+        return new ScriptBuilder()
+            .data(segwitScriptSig.getProgram())
+            .build();
+    }
+
+    public static byte[] extractHashedRedeemScriptProgramFromSegwitScriptSig(Script segwitScriptSig) {
+        if (segwitScriptSig == null) {
+            throw new IllegalArgumentException("SegwitScriptSig must not be null");
+        }
+        byte[] segwitScriptSigProgram = segwitScriptSig.getProgram();
+        // The whole program is [22 00 20 + redeemScriptHash], so we just need to skip the first 3 bytes.
+        return Arrays.copyOfRange(segwitScriptSigProgram, 3, segwitScriptSigProgram.length);
     }
 
     public static Optional<TransactionOutput> searchForOutput(List<TransactionOutput> transactionOutputs, Script outputScriptPubKey) {
@@ -107,9 +211,16 @@ public class BitcoinUtils {
 
     public static Sha256Hash generateSigHashForP2SHTransactionInput(BtcTransaction btcTx, int inputIndex) {
         return Optional.ofNullable(btcTx.getInput(inputIndex))
-            .flatMap(BitcoinUtils::extractRedeemScriptFromInput)
+            .flatMap(BitcoinUtils::extractRedeemScriptFromInputScriptSig)
             .map(redeemScript -> btcTx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false))
             .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from p2sh input"));
+    }
+
+    public static Sha256Hash generateSigHashForSegwitTransactionInput(BtcTransaction btcTx, int inputIndex, Coin prevValue) {
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        return extractRedeemScriptFromInputWitness(inputWitness)
+            .map(redeemScript -> btcTx.hashForWitnessSignature(inputIndex, redeemScript, prevValue, BtcTransaction.SigHash.ALL, false))
+            .orElseThrow(() -> new IllegalArgumentException("Couldn't extract redeem script from segwit input"));
     }
 
     public static Optional<Sha256Hash> findWitnessCommitment(BtcTransaction tx, ActivationConfig.ForBlock activations) {
@@ -169,5 +280,22 @@ public class BitcoinUtils {
         );
 
         return Sha256Hash.wrap(witnessCommitmentHash);
+    }
+
+    public static void signInput(BtcTransaction btcTx, int inputIndex, TransactionSignature signature, int sigInsertionIndex, Script outputScript) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            // put signature in script sig
+            TransactionInput input = btcTx.getInput(inputIndex);
+            Script inputScript = input.getScriptSig();
+            Script inputScriptWithSignature =
+                outputScript.getScriptSigWithSignature(inputScript, signature.encodeToBitcoin(), sigInsertionIndex);
+            input.setScriptSig(inputScriptWithSignature);
+            return;
+        }
+
+        // put signature in witness
+        TransactionWitness inputWitness = btcTx.getWitness(inputIndex);
+        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(outputScript, signature.encodeToBitcoin(), sigInsertionIndex);
+        btcTx.setWitness(inputIndex, inputWitnessWithSignature);
     }
 }
