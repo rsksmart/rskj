@@ -426,6 +426,30 @@ public class Trie {
     }
 
     /**
+     * Returns a trie chunk that follows the {@code key} provided in the parameter.
+     * <p>
+     * If the key is {@code null}, it returns the first chunk in the trie.
+     * <p>
+     * If there's no next chunk for the provided key (the last key in the tree), it returns {@code null}.
+     * <p>
+     * If the key is not found, it returns {@code null}.
+     *
+     * @param key the key to find the next chunk for, or {@code null} to get the first chunk
+     * @return the next chunk in the trie, or {@code null} if there is no next chunk
+     */
+    @Nullable
+    public TrieChunk getNextChunk(@Nullable byte[] key) {
+        var keySlice = Optional.ofNullable(key)
+                .map(TrieKeySlice::fromKey)
+                .orElse(null);
+        var iter = new TrieChunkIterator(this, keySlice, TrieChunk.MAX_CHUNK_SIZE);
+        if (iter.hasNext()) {
+            return iter.next();
+        }
+        return null;
+    }
+
+    /**
      * put key value association, returning a new NewTrie
      *
      * @param key   key to be updated or created, a byte array
@@ -912,7 +936,7 @@ public class Trie {
         return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, childrenSize);
     }
 
-    private Trie split(TrieKeySlice commonPath) {
+    public Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
         Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash, this.childrenSize);
@@ -1166,7 +1190,7 @@ public class Trie {
     }
 
     @Nullable
-    private List<Trie> findNodes(TrieKeySlice key) {
+    public List<Trie> findNodes(TrieKeySlice key) {
         if (sharedPath.length() > key.length()) {
             return null;
         }

@@ -67,6 +67,8 @@ public interface SyncState {
 
     void onSnapStateChunk(Peer peer, SnapStateChunkResponseMessage responseMessage);
 
+    void onSnapStateChunk(Peer peer, SnapStateChunkV2ResponseMessage responseMessage);
+
     void onEnter();
 
     void tick(Duration duration);
