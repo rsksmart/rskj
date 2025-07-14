@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SnapSyncState;
 import co.rsk.net.sync.SnapshotPeersInformation;
@@ -58,6 +59,7 @@ class SnapshotProcessorTest {
 
     private Blockchain blockchain;
     private TransactionPool transactionPool;
+    private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private TrieStore trieStore;
     private Peer peer;
@@ -97,6 +99,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -125,6 +128,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -171,6 +175,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -208,6 +213,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -246,6 +252,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -291,6 +298,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -323,6 +331,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -373,6 +382,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -416,6 +426,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -466,6 +477,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -509,6 +521,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -517,6 +530,7 @@ class SnapshotProcessorTest {
                 syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
+                false,
                 false,
                 listener) {
             @Override
@@ -559,6 +573,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -567,6 +582,7 @@ class SnapshotProcessorTest {
                 syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
+                false,
                 false,
                 listener) {
             @Override
@@ -597,6 +613,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -605,7 +622,7 @@ class SnapshotProcessorTest {
                 syncConfiguration,
                 TEST_MAX_SENDER_REQUESTS,
                 true,
-                false);
+                false, false, null);
 
         PriorityQueue<SnapStateChunkResponseMessage> queue = new PriorityQueue<>(
                 Comparator.comparingLong(SnapStateChunkResponseMessage::getFrom));
@@ -636,6 +653,7 @@ class SnapshotProcessorTest {
                 peersInformation,
                 blockStore,
                 transactionPool,
+                stateRootHandler,
                 blockParentValidator,
                 blockValidator,
                 blockHeaderParentValidator,
@@ -683,6 +701,7 @@ class SnapshotProcessorTest {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         blockchain = blockChainBuilder.ofSize(numberOfBlocks);
         transactionPool = blockChainBuilder.getTransactionPool();
+        stateRootHandler = blockChainBuilder.getStateRootHandler();
         blockStore = blockChainBuilder.getBlockStore();
         trieStore = blockChainBuilder.getTrieStore();
     }
