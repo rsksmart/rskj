@@ -219,6 +219,16 @@ public class MessageVisitor {
         this.syncProcessor.processStateChunkResponse(sender, message);
     }
 
+    public void apply(SnapStateChunkV2RequestMessage message) {
+        logger.debug("snapshot chunk v2 request : {}", message.getId());
+        this.snapshotProcessor.processStateChunkRequest(sender, message);
+    }
+
+    public void apply(SnapStateChunkV2ResponseMessage message) {
+        logger.debug("snapshot chunk v2 response : {}", message.getId());
+        this.syncProcessor.processStateChunkResponse(sender, message);
+    }
+
     public void apply(TransactionsMessage message) {
         if (blockProcessor.hasBetterBlockToSync()) {
             loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());

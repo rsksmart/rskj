@@ -694,4 +694,20 @@ public class ByteUtil {
                 .get(shorts);
         return shorts;
     }
+
+    /**
+     * Checks if a byte array's length does not exceed the specified maximum length.
+     *
+     * @param array     The byte array to check. Must not be null.
+     * @param maxLength The maximum allowed length of the array.
+     * @throws NullPointerException     if the array is null
+     * @throws IllegalArgumentException if the array length exceeds maxLength
+     */
+    public static void checkMaxArrayLength(byte[] array, int maxLength) {
+        Objects.requireNonNull(array);
+        if (array.length > maxLength) {
+            throw new IllegalArgumentException(String.format("Byte array length %d exceeds maximum allowed length %d",
+                    array.length, maxLength));
+        }
+    }
 }

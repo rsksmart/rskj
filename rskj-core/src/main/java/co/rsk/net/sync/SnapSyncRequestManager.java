@@ -93,7 +93,7 @@ public class SnapSyncRequestManager {
 
     @FunctionalInterface
     public interface PeerSelector {
-        Optional<Peer> selectPeer(@Nullable NodeID failedPeerIds);
+        Optional<Peer> selectPeer(@Nullable NodeID failedPeerId);
 
         static Builder builder() {
             return new Builder();

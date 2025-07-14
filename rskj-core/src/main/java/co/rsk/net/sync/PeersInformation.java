@@ -85,6 +85,7 @@ public class PeersInformation implements SnapshotPeersInformation {
         this.peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType, message, arguments);
     }
 
+    @Override
     public void processSyncingError(Peer peer, EventType eventType, String message, Object... arguments) {
         failedPeers.put(peer.getPeerNodeID(), Instant.now());
         reportEventToPeerScoring(peer, eventType, message, arguments);

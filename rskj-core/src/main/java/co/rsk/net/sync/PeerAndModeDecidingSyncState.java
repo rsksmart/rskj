@@ -92,6 +92,8 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
             return false;
         }
 
+        logger.info("Snap syncing enabled, checking for snap-capable peers");
+
         Optional<Peer> bestPeerOpt = peersInformation.getBestSnapPeer();
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
 

@@ -69,6 +69,14 @@ public interface SnapProcessor {
     void processStateChunkResponse(SnapSyncState state, Peer sender, SnapStateChunkResponseMessage responseMessage);
 
     /**
+     * Process state chunk response
+     * @param state Current state
+     * @param sender Message sender
+     * @param responseMessage Response message
+     */
+    void processStateChunkResponse(SnapSyncState state, Peer sender, SnapStateChunkV2ResponseMessage responseMessage);
+
+    /**
      * Process snap status request
      * @param sender Message sender
      * @param requestMessage Request message
@@ -88,4 +96,11 @@ public interface SnapProcessor {
      * @param requestMessage Request message
      */
     void processStateChunkRequest(Peer sender, SnapStateChunkRequestMessage requestMessage);
+
+    /**
+     * Process state chunk request
+     * @param sender Message sender
+     * @param requestMessage Request message
+     */
+    void processStateChunkRequest(Peer sender, SnapStateChunkV2RequestMessage requestMessage);
 }
