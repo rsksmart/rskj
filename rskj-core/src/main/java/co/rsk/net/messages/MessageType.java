@@ -241,11 +241,11 @@ public enum MessageType {
                 try {
                     blockHeaderExtension = BlockHeaderExtension.fromEncoded(message.get(2).getRLPData());
                 } catch (RuntimeException e) {
-                    superBlockFields = blockFactory.decodeSuperBlockFields(message.get(2).getRLPData(), true);
+                    superBlockFields = blockFactory.decodeSuperBlockFields(message.get(2).getRLPData());
                 }
             } else if (message.size() == 4) {
                 blockHeaderExtension = BlockHeaderExtension.fromEncoded(message.get(2).getRLPData());
-                superBlockFields = blockFactory.decodeSuperBlockFields(message.get(3).getRLPData(), true);
+                superBlockFields = blockFactory.decodeSuperBlockFields(message.get(3).getRLPData());
             }
 
             return new BodyResponseMessage(id, transactions, uncles, blockHeaderExtension, superBlockFields);

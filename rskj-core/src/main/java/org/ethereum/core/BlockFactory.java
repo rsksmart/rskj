@@ -116,7 +116,7 @@ public class BlockFactory {
         if (isRSKIP481Active && block.size() == 4) {
             RLPList superBlockFieldsRlp = (RLPList) block.get(3);
 
-            superBlockFields = decodeSuperBlockFields(superBlockFieldsRlp, sealed);
+            superBlockFields = decodeSuperBlockFields(superBlockFieldsRlp);
         }
 
         return newBlock(header, transactionList, uncleList, superBlockFields, sealed);
@@ -350,26 +350,18 @@ public class BlockFactory {
         return Collections.unmodifiableList(parsedTxs);
     }
 
-    public SuperBlockFields decodeSuperBlockFields(byte[] encoded, boolean sealed) {
-        return decodeSuperBlockFields(RLP.decodeList(encoded), sealed);
+    public SuperBlockFields decodeSuperBlockFields(byte[] encoded) {
+        return decodeSuperBlockFields(RLP.decodeList(encoded));
     }
 
-    private SuperBlockFields decodeSuperBlockFields(RLPList superBlockFieldsRlp, boolean sealed) {
+    private SuperBlockFields decodeSuperBlockFields(RLPList superBlockFieldsRlp) {
         byte[] superParentHash = superBlockFieldsRlp.get(0).getRLPData();
 
         long superBlockNumber = parseBigInteger(superBlockFieldsRlp.get(1).getRLPData()).longValueExact();
 
-        RLPList superUncleHeadersRlp = (RLPList) superBlockFieldsRlp.get(2);
-        List<BlockHeader> superUncleList = new ArrayList<>();
-        for (int k = 0; k < superUncleHeadersRlp.size(); k++) {
-            RLPElement element = superUncleHeadersRlp.get(k);
-            BlockHeader superUncleHeader = decodeHeader((RLPList)element, false, sealed);
-            superUncleList.add(superUncleHeader);
-        }
-
-        byte[] superBridgeEventRlp = superBlockFieldsRlp.get(3).getRLPData();
+        byte[] superBridgeEventRlp = superBlockFieldsRlp.get(2).getRLPData();
         SuperBridgeEvent bridgeEvent = SuperBridgeEvent.decode(superBridgeEventRlp);
 
-        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, superUncleList, bridgeEvent);
+        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, bridgeEvent);
     }
 }
