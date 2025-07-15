@@ -5,7 +5,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -19,17 +18,23 @@ import org.junit.jupiter.params.provider.MethodSource;
 class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
-        List<RskAddress> mainnetAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d"))));
+        List<RskAddress> mainnetAuthorizers = mapToRskAddresses(Stream.of(
+            "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d",
+            "040a595228043ec16d64849b8cb82d0fad281480ca01cb9e33da89aeefb180415314f05c83e0b29c51e06465588f724367993550bad1967c929e0a43465746e2d6",
+            "049367a75caac20bb0a0a8bae7a5076e2ba4a6cd3f2f963b3f007b7ffde716c93cfcde1b7f7eb01c978b76b9e94556c8d9f2f44ab723ec4ec1e1dd9559f6f927a2"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
-        List<RskAddress> testnetAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))));
+        List<RskAddress> testnetAuthorizers = mapToRskAddresses(Stream.of(
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a",
+            "041768f38193655b6a4776d287b949f87e21fb3b2e3ed1581dbe7569ef641edef041ab862f4ab228566c5ae49abd478d9d92d870348304df35e23967adea3f6ded",
+            "049191c1f944ac723e5807ff771144295e4d6945ef1c6c30bd68927711410e6d40ec81b07a42b03093605d03edd15608a81511faeacd1815ab9341f4f77c212865"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
-        List<RskAddress> regtestAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"))));
+        List<RskAddress> regtestAuthorizers = mapToRskAddresses(Stream.of(
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a",
+            "041768f38193655b6a4776d287b949f87e21fb3b2e3ed1581dbe7569ef641edef041ab862f4ab228566c5ae49abd478d9d92d870348304df35e23967adea3f6ded",
+            "049191c1f944ac723e5807ff771144295e4d6945ef1c6c30bd68927711410e6d40ec81b07a42b03093605d03edd15608a81511faeacd1815ab9341f4f77c212865"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), mainnetAuthorizers),
@@ -64,17 +69,23 @@ class UnionBridgeConstantsTest {
     }
 
     private static Stream<Arguments> unionBridgeChangeLockingCapAuthorizerProvider() {
-        List<RskAddress> mainnetAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09"))));
+        List<RskAddress> mainnetAuthorizers = mapToRskAddresses(Stream.of(
+            "040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09",
+            "04ee99364235a33edbd177c0293bd3e13f1c85b2ee6197e66aa7e975fb91183b08b30bf1227468980180e10092decaaeed0ae1c4bcf29d17993569bb3c1b274f83",
+            "0462096357f02602ce227580aa36672a5cba4fc461918c9e1697992ee2895dbb6c1fd2be4859135b3be0e42a20b466738aa03f3871390108746d2ecbe7ffb7aad9"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
-        List<RskAddress> testnetAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"))));
+        List<RskAddress> testnetAuthorizers = mapToRskAddresses(Stream.of(
+            "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b",
+            "04c8a5827bfadd2bce6fa782e6c48dd61503d38c86e29381781167cd6371eb56f50bc03c9e9c265ea7e07709b964e0b4b0f3d416955225fcb9202e6763ddd5ca91",
+            "0442329d63de5ec5b2f285da7e2f3eb484db3ee5e39066579244211021b81c32d7061922075e2272a8e8a633a5856071eef7e7f800b3d93c9acee91e0f0f37ac2f"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
-        List<RskAddress> regtestAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b"))));
+        List<RskAddress> regtestAuthorizers = mapToRskAddresses(Stream.of(
+            "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b",
+            "04c8a5827bfadd2bce6fa782e6c48dd61503d38c86e29381781167cd6371eb56f50bc03c9e9c265ea7e07709b964e0b4b0f3d416955225fcb9202e6763ddd5ca91",
+            "0442329d63de5ec5b2f285da7e2f3eb484db3ee5e39066579244211021b81c32d7061922075e2272a8e8a633a5856071eef7e7f800b3d93c9acee91e0f0f37ac2f"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), mainnetAuthorizers),
@@ -83,7 +94,7 @@ class UnionBridgeConstantsTest {
         );
     }
 
-    private static List<RskAddress> mapToRskAddress(List<ECKey> keys) {
+    private static List<RskAddress> mapToRskAddresses(List<ECKey> keys) {
         return keys.stream()
             .map(ECKey::getAddress)
             .map(RskAddress::new)
@@ -103,17 +114,23 @@ class UnionBridgeConstantsTest {
     }
 
     private static Stream<Arguments> unionBridgeChangeTransferPermissionsAuthorizerProvider() {
-        List<RskAddress> mainnetAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282"))));
+        List<RskAddress> mainnetAuthorizers = mapToRskAddresses(Stream.of(
+            "0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282",
+            "0486559d73a991df9e5eef1782c41959ecc7e334ef57ddcb6e4ebc500771a50f0c3b889afb9917165db383a9bf9a8e9b4f73abd542109ba06387f016f62df41b0f",
+            "048817254d54e9776964e6e1102591474043dd3dae11088919ef6cb37625a66852627b146986cbc3b188ce69ca86468fa11b275a6577e0c7d3a3c6c1b343537e3f"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
-        List<RskAddress> testnetAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))));
+        List<RskAddress> testnetAuthorizers = mapToRskAddresses(Stream.of(
+            "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f",
+            "04cf42ec9eb287adc7196e8d3d2c288542b1db733681c22887e3a3e31eb98504002825ecbe0cd9b61aff3600ffd0ca4542094c75cb0bac5e93be0c7e00b2ead9ea",
+            "043a7510e39f8c406fb682c20d0e74e6f18f6ec6cb4bc9718a3c47f9bda741f3333ed39e9854b9ad89f16fccb52453975ff1039dd913addfa6a6c56bcacbd92ff9"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
-        List<RskAddress> regtestAuthorizers = mapToRskAddress(Collections.singletonList(
-            ECKey.fromPublicOnly(Hex.decode(
-                "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f"))));
+        List<RskAddress> regtestAuthorizers = mapToRskAddresses(Stream.of(
+            "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f",
+            "04cf42ec9eb287adc7196e8d3d2c288542b1db733681c22887e3a3e31eb98504002825ecbe0cd9b61aff3600ffd0ca4542094c75cb0bac5e93be0c7e00b2ead9ea",
+            "043a7510e39f8c406fb682c20d0e74e6f18f6ec6cb4bc9718a3c47f9bda741f3333ed39e9854b9ad89f16fccb52453975ff1039dd913addfa6a6c56bcacbd92ff9"
+        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         return Stream.of(
             Arguments.of(UnionBridgeMainNetConstants.getInstance(), mainnetAuthorizers),
