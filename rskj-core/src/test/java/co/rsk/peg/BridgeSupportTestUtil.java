@@ -137,13 +137,6 @@ public final class BridgeSupportTestUtil {
         return pegoutEntry.getBtcTransaction();
     }
 
-    public static Block buildBlock(long blockNumber) {
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        return Block.createBlockFromHeader(blockHeader, true);
-    }
-
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
         // assert last push has the redeem script
         int redeemScriptIndex = witness.getPushCount() - 1;
@@ -184,6 +177,13 @@ public final class BridgeSupportTestUtil {
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
             Sha256Hash sigHash = sigHashes.get(i);
             assertTrue(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
+        }
+    }
+
+    public static void assertFederatorDidNotSignInputs(BtcTransaction btcTx, List<Sha256Hash> sigHashes, BtcECKey key) {
+        for (int i = 0; i < btcTx.getInputs().size(); i++) {
+            Sha256Hash sigHash = sigHashes.get(i);
+            assertFalse(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
         }
     }
 

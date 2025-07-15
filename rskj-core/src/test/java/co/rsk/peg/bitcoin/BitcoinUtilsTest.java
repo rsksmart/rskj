@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.*;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -555,12 +556,22 @@ class BitcoinUtilsTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("test sig insertion index and sign input methods for legacy and segwit feds")
     class Signing {
-        private final List<BtcECKey> federationSignersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+        private static final List<BtcECKey> legacyFederationSignersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
             "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"
         }, true); // we need the priv keys
-        private final BtcECKey firstFederatorSigningKey = federationSignersKeys.get(0);
-        private final BtcECKey secondFederatorSigningKey = federationSignersKeys.get(1);
-        private final BtcECKey thirdFederatorSigningKey = federationSignersKeys.get(2);
+        private static final List<BtcECKey> segwitFederationSignersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "member10",
+            "member11", "member12", "member13", "member14", "member15", "member16", "member17", "member18", "member19", "member20"
+        }, true); // we need the priv keys
+        private static final Federation legacyFederation = P2shErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(legacyFederationSignersKeys)
+            .build();
+        private static final Federation segwitFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(segwitFederationSignersKeys)
+            .build();
+        private final BtcECKey firstFederatorSigningKey = legacyFederationSignersKeys.get(0);
+        private final BtcECKey secondFederatorSigningKey = legacyFederationSignersKeys.get(1);
+        private final BtcECKey thirdFederatorSigningKey = legacyFederationSignersKeys.get(2);
         private final byte[] emptyByte = new byte[] {};
         private final int inputIndex = 0; // our tx will just have one input
 
@@ -612,23 +623,20 @@ class BitcoinUtilsTest {
         }
 
         private static Stream<Federation> federationArgs() {
-            return Stream.of(
-                P2shErpFederationBuilder.builder().build(),
-                P2shP2wshErpFederationBuilder.builder().build()
-            );
+            return Stream.of(legacyFederation, segwitFederation);
         }
 
         @Test
         void signInput_forFirstAndSecondFederators_legacyFed_shouldSignInTheCorrectOrder() {
             // arrange
-            Federation federation = P2shErpFederationBuilder.builder().build();
-            setUp(federation);
+            setUp(legacyFederation);
 
             // act
+            Script outputScript = legacyFederation.getP2SHScript();
             // sign with first federator
-            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, outputScript);
             // sign with second federator
-            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, outputScript);
 
             // assert
             // after signing with second federator,
@@ -649,14 +657,14 @@ class BitcoinUtilsTest {
         @Test
         void signInput_forFirstAndSecondFederators_segwitFed_shouldSignInTheCorrectOrder() {
             // arrange
-            Federation federation = P2shP2wshErpFederationBuilder.builder().build();
-            setUp(federation);
+            setUp(segwitFederation);
 
             // act
+            Script outputScript = segwitFederation.getP2SHScript();
             // sign with first federator
-            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, outputScript);
             // sign with second federator
-            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, outputScript);
 
             // assert
             TransactionWitness inputWitness = tx.getWitness(inputIndex);
@@ -677,14 +685,14 @@ class BitcoinUtilsTest {
         @Test
         void signInput_forSecondAndFirstFederators_legacyFed_shouldSignInTheCorrectOrder() {
             // arrange
-            Federation federation = P2shErpFederationBuilder.builder().build();
-            setUp(federation);
+            setUp(legacyFederation);
 
             // act
+            Script outputScript = legacyFederation.getP2SHScript();
             // sign with second federator
-            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, outputScript);
             // sign with first federator
-            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, outputScript);
 
             // assert
             // after signing with second federator,
@@ -705,14 +713,14 @@ class BitcoinUtilsTest {
         @Test
         void signInput_forSecondAndFirstFederators_segwitFed_shouldSignInTheCorrectOrder() {
             // arrange
-            Federation federation = P2shP2wshErpFederationBuilder.builder().build();
-            setUp(federation);
+            setUp(segwitFederation);
 
             // act
+            Script outputScript = segwitFederation.getP2SHScript();
             // sign with second federator
-            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, secondFederatorSigningKey, outputScript);
             // sign with first federator
-            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, federation.getP2SHScript());
+            signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, outputScript);
 
             // assert
             TransactionWitness inputWitness = tx.getWitness(inputIndex);
@@ -733,12 +741,11 @@ class BitcoinUtilsTest {
         @Test
         void signInput_forFirstAndThirdAndSecondFederators_legacyFed_shouldSignInTheCorrectOrder() {
             // arrange
-            Federation federation = P2shErpFederationBuilder.builder().build();
-            setUp(federation);
+            setUp(legacyFederation);
 
             // act & assert
             // sign with first and third federators
-            Script outputScript = federation.getP2SHScript();
+            Script outputScript = legacyFederation.getP2SHScript();
             // sign with first federator
             signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, outputScript);
             // sign with third federator
@@ -773,11 +780,10 @@ class BitcoinUtilsTest {
         @Test
         void signInput_forFirstAndThirdAndSecondFederators_segwitFed_shouldSignInTheCorrectOrder() {
             // arrange
-            Federation federation = P2shP2wshErpFederationBuilder.builder().build();
-            setUp(federation);
+            setUp(segwitFederation);
 
             // act
-            Script outputScript = federation.getP2SHScript();
+            Script outputScript = segwitFederation.getP2SHScript();
             // sign with first federator
             signTxInputWithKey(tx, inputIndex, sigHash, firstFederatorSigningKey, outputScript);
             // sign with third federator
@@ -808,6 +814,40 @@ class BitcoinUtilsTest {
             // now, third federator sig should be the third one found
             thirdFederatorSignatureIndex = 3;
             assertSigInWitness(inputWitness, thirdFederatorSigningKey, thirdFederatorSignatureIndex);
+        }
+
+        @Test
+        void signInput_fullySignedTx_legacyFed_shouldNotThrow() {
+            // arrange
+            setUp(legacyFederation);
+
+            // act
+            Script outputScript = legacyFederation.getP2SHScript();
+            for (BtcECKey signingKey : legacyFederationSignersKeys.subList(0, legacyFederation.getNumberOfSignaturesRequired())) {
+                signTxInputWithKey(tx, inputIndex, sigHash, signingKey, outputScript);
+            }
+
+            // assert
+            assertTrue(BridgeUtils.hasEnoughSignatures(new Context(btcMainnetParams), tx));
+            BtcECKey extraSigningKey = legacyFederationSignersKeys.get(legacyFederation.getNumberOfSignaturesRequired() + 1);
+            assertDoesNotThrow(() -> signTxInputWithKey(tx, inputIndex, sigHash, extraSigningKey, outputScript));
+        }
+
+        @Test
+        void signInput_fullySignedTx_segwitFed_shouldNotThrow() {
+            // arrange
+            setUp(segwitFederation);
+
+            // act
+            Script outputScript = segwitFederation.getP2SHScript();
+            for (BtcECKey signingKey : segwitFederationSignersKeys.subList(0, segwitFederation.getNumberOfSignaturesRequired())) {
+                signTxInputWithKey(tx, inputIndex, sigHash, signingKey, outputScript);
+            }
+
+            // assert
+            assertTrue(BridgeUtils.hasEnoughSignatures(new Context(btcMainnetParams), tx));
+            BtcECKey extraSigningKey = segwitFederationSignersKeys.get(segwitFederation.getNumberOfSignaturesRequired() + 1);
+            assertDoesNotThrow(() -> signTxInputWithKey(tx, inputIndex, sigHash, extraSigningKey, outputScript));
         }
 
         private void assertFirstValueIsAnEmptyByte(byte[] data) {
