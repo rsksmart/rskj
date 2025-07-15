@@ -39,6 +39,8 @@ import static java.lang.Math.max;
  */
 public class FamilyUtils {
 
+    public record FindSuperParentAndBridgeEventResponse (Block superParent, SuperBridgeEvent superBridgeEvent) {}
+
     /**
      * Calculate the set of hashes of ancestors of a block
      *
@@ -173,7 +175,7 @@ public class FamilyUtils {
         return family;
     }
 
-    public static Trio<Block, List<BlockHeader>, SuperBridgeEvent> findSuperParentAndUnclesAndBridgeEvent(
+    public static FindSuperParentAndBridgeEventResponse findSuperParentAndUnclesAndBridgeEvent(
             BlockStore blockStore,
             ReceiptStore receiptStore,
             Block block,
@@ -183,19 +185,7 @@ public class FamilyUtils {
         List<Block> ancestors = superParentAndAncestors.getRight();
 
         if (superParent == null) {
-            return Trio.of(null, Collections.emptyList(), null);
-        }
-
-        List<BlockHeader> uncles = new ArrayList<>();
-        for (Block ancestor : ancestors) {
-            List<Block> blockList = blockStore.getChainBlocksByNumber(ancestor.getNumber());
-            for (Block b : blockList) {
-                if (!ancestor.getHash().equals(b.getHash())
-                        && ancestor.getParentHash().equals(b.getParentHash())
-                        && b.isSuper().orElse(false)) {
-                    uncles.add(b.getHeader());
-                }
-            }
+            return new FindSuperParentAndBridgeEventResponse(null,  null);
         }
 
         SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
@@ -205,7 +195,7 @@ public class FamilyUtils {
                 )
         );
 
-        return Trio.of(superParent, uncles, bridgeEvent);
+        return new FindSuperParentAndBridgeEventResponse(superParent, bridgeEvent);
     }
 
     public static Pair<Block, List<Block>> findSuperParentAndAncestors(BlockStore blockStore, BlockHeader header) {
