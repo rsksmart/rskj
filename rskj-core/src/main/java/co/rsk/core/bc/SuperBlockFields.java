@@ -20,28 +20,22 @@ package co.rsk.core.bc;
 
 import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.Collections;
-import java.util.List;
 
 public class SuperBlockFields {
 
     private final BytesSlice parentHash;
     private final long blockNumber;
-    private final List<BlockHeader> uncleList;
     private final SuperBridgeEvent bridgeEvent;
 
-    public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber,
-                            @Nonnull List<BlockHeader> uncleList, @Nullable SuperBridgeEvent bridgeEvent) {
+    public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber, @Nullable SuperBridgeEvent bridgeEvent) {
         this.parentHash = parentHash;
         this.blockNumber = blockNumber;
-        this.uncleList = Collections.unmodifiableList(uncleList);
         this.bridgeEvent = bridgeEvent;
     }
 
@@ -53,10 +47,6 @@ public class SuperBlockFields {
         return blockNumber;
     }
 
-    public List<BlockHeader> getUncleList() {
-        return uncleList;
-    }
-
     public SuperBridgeEvent getBridgeEvent() {
         return bridgeEvent;
     }
@@ -65,20 +55,15 @@ public class SuperBlockFields {
         return RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeList(uncleList.stream().map(BlockHeader::getFullEncoded).toArray(byte[][]::new)),
                 RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
         );
     }
 
     @Nonnull
     public Keccak256 getHash() {
-        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncleList));
-
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(unclesListHash),
-                RLP.encodeBigInteger(BigInteger.valueOf(uncleList.size())),
                 RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
         );
 

@@ -186,13 +186,12 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            Trio<Block, List<BlockHeader>, SuperBridgeEvent> superParentAndUnclesAndBridgeEvent =
+            final var superParentAndBridgeEvent =
                     FamilyUtils.findSuperParentAndUnclesAndBridgeEvent(blockStore, receiptStore, block, result.getTransactionReceipts());
 
             SuperBlockFields superBlockFields = makeSuperBlockFields(
-                    superParentAndUnclesAndBridgeEvent.getFirst(),
-                    superParentAndUnclesAndBridgeEvent.getMiddle(),
-                    superParentAndUnclesAndBridgeEvent.getLast()
+                    superParentAndBridgeEvent.superParent(),
+                    superParentAndBridgeEvent.superBridgeEvent()
             );
             block.setSuperChainFields(superBlockFields);
         }
@@ -201,15 +200,13 @@ public class BlockExecutor {
         profiler.stop(metric);
     }
 
-    private static SuperBlockFields makeSuperBlockFields(Block superParent, List<BlockHeader> uncles, SuperBridgeEvent event) {
+    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event) {
         Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
         long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
-        List<BlockHeader> uncleList = superParent == null ? Collections.emptyList() : uncles;
 
         return new SuperBlockFields(
                 superParentHash,
                 superParentBlockNumber,
-                uncleList,
                 event
         );
     }
