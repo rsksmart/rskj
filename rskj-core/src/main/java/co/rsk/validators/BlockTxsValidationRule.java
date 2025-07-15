@@ -35,13 +35,6 @@ import java.util.Map;
 
 import static java.math.BigInteger.ONE;
 
-/**
- * Validate a transactions list.
- * It validates each transaction nonce againts the expeced sender account nonce
- * It allows many transactions with the same sender
- *
- * @return true if the transactions are valid, false if any transaction is invalid
- */
 public class BlockTxsValidationRule implements BlockParentDependantValidationRule{
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -55,6 +48,13 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         this.signatureCache = signatureCache;
     }
 
+    /**
+     * Validate a transactions list.
+     * It validates each transaction nonce againts the expeced sender account nonce
+     * It allows many transactions with the same sender
+     *
+     * @return true if the transactions are valid, false if any transaction is invalid
+     */
     @Override
     public boolean isValid(Block block, Block parent) {
 
