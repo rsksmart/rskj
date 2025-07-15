@@ -109,7 +109,7 @@ class PegUtilsLegacyTest {
 
         // Tx sending less than the minimum allowed, not a peg-in tx
         BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
-        tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), federation.getAddress());
+        tx.addOutput(minimumPegInValueAfterIris.div(2), federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
         Wallet federationWallet = new BridgeBtcWallet(btcContext, List.of(federation));
@@ -236,10 +236,11 @@ class PegUtilsLegacyTest {
         Wallet federationsWallet = new BridgeBtcWallet(btcContext, federations);
 
         Coin minimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations);
+        Coin halfMinimumPeginValue = minimumPeginTxValue.div(2);
 
-        // Tx sending less than 1 btc to the first federation, not a peg-in tx
+        // Tx sending less than minimum pegin value to the first federation, so it's not a peg-in tx
         BtcTransaction tx = new BtcTransaction(networkParametersRegtest);
-        tx.addOutput(Coin.CENT, address1);
+        tx.addOutput(halfMinimumPeginValue, address1);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(isValidPegInTx(
             tx,
@@ -250,9 +251,9 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        // Tx sending less than 1 btc to the second federation, not a peg-in tx
+        // Tx sending less than minimum pegin value to the second federation, so it's not a peg-in tx
         tx = new BtcTransaction(networkParametersRegtest);
-        tx.addOutput(Coin.CENT, address2);
+        tx.addOutput(halfMinimumPeginValue, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(isValidPegInTx(
             tx,
@@ -263,10 +264,11 @@ class PegUtilsLegacyTest {
             activations
         ));
 
-        // Tx sending less than 1 btc to both federations, not a peg-in tx
+        // Tx sending less than minimum pegin value (total) to both federations, so it's not a peg-in tx
+        Coin lessThanHalfMinimumPeginValue = halfMinimumPeginValue.minus(Coin.SATOSHI);
         tx = new BtcTransaction(networkParametersRegtest);
-        tx.addOutput(Coin.CENT, address1);
-        tx.addOutput(Coin.CENT, address2);
+        tx.addOutput(lessThanHalfMinimumPeginValue, address1);
+        tx.addOutput(lessThanHalfMinimumPeginValue, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(isValidPegInTx(
             tx,

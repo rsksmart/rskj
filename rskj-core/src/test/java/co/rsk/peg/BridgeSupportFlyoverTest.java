@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
@@ -975,7 +976,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            currentBlock = buildBlock(blockNumber);
+            currentBlock = createRskBlock(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
@@ -1030,7 +1031,7 @@ class BridgeSupportFlyoverTest {
             // Move the required blocks ahead for the new powpeg to become active
             var blockNumber =
                 activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
-            currentBlock = buildBlock(blockNumber);
+            currentBlock = createRskBlock(blockNumber);
 
             setUpWithActivations(allActivations);
             createFlyoverBtcTransaction(allActivations);
@@ -1577,22 +1578,22 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_before_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        Coin valueToSend = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.CENT);
+        Coin halfMinimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).div(2);
         BigInteger result = sendFundsToActiveFederation(
             false,
-            valueToSend
+            halfMinimumPeginTxValue
         );
 
-        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(halfMinimumPeginTxValue).asBigInteger(), result);
     }
 
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueBelowMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.CENT);
+        Coin halfMinimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).div(2);
         BigInteger result = sendFundsToActiveFederation(
             true,
-            valueBelowMinimum
+            halfMinimumPeginTxValue
         );
 
         Assertions.assertEquals(

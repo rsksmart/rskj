@@ -137,13 +137,6 @@ public final class BridgeSupportTestUtil {
         return pegoutEntry.getBtcTransaction();
     }
 
-    public static Block buildBlock(long blockNumber) {
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        return Block.createBlockFromHeader(blockHeader, true);
-    }
-
     public static void assertWitnessAndScriptSigHaveExpectedInputRedeemData(TransactionWitness witness, TransactionInput input, Script expectedRedeemScript) {
         // assert last push has the redeem script
         int redeemScriptIndex = witness.getPushCount() - 1;
@@ -184,6 +177,13 @@ public final class BridgeSupportTestUtil {
         for (int i = 0; i < btcTx.getInputs().size(); i++) {
             Sha256Hash sigHash = sigHashes.get(i);
             assertTrue(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
+        }
+    }
+
+    public static void assertFederatorDidNotSignInputs(BtcTransaction btcTx, List<Sha256Hash> sigHashes, BtcECKey key) {
+        for (int i = 0; i < btcTx.getInputs().size(); i++) {
+            Sha256Hash sigHash = sigHashes.get(i);
+            assertFalse(BridgeUtils.isInputSignedByThisFederator(btcTx, i, key, sigHash));
         }
     }
 
@@ -233,7 +233,7 @@ public final class BridgeSupportTestUtil {
     }
 
     public static void assertPegoutTxSigHashWasSaved(BridgeStorageProvider bridgeStorageProvider, BtcTransaction pegoutTransaction) {
-        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getFirstInputSigHash(pegoutTransaction);
+        Optional<Sha256Hash> pegoutTxSigHashOpt = BitcoinUtils.getSigHashForPegoutIndex(pegoutTransaction);
         assertTrue(pegoutTxSigHashOpt.isPresent());
 
         Sha256Hash pegoutTxSigHash = pegoutTxSigHashOpt.get();
@@ -318,6 +318,13 @@ public final class BridgeSupportTestUtil {
 
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
         assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertTransactionWasProcessed(BridgeStorageProvider bridgeStorageProvider, Sha256Hash transactionHash, int executionBlockNumber) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+        assertEquals(executionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
     }
 
     public static void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {
