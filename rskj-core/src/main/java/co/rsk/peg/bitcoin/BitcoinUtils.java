@@ -146,7 +146,7 @@ public class BitcoinUtils {
      * @param transaction transaction
      * @return a transaction copy without the signatures
      */
-    private static BtcTransaction getMultiSigTransactionWithoutSignatures(BtcTransaction transaction) {
+    public static BtcTransaction getMultiSigTransactionWithoutSignatures(BtcTransaction transaction) {
         NetworkParameters networkParameters = transaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
         removeSignaturesFromMultiSigTransaction(transactionCopy);
