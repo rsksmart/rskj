@@ -36,7 +36,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
         changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
             changeUnionBridgeContractAddressAuthorizers,
-            MinimumRequiredCalculation.MAJORITY
+            MinimumRequiredCalculation.ONE
         );
 
         // TODO: Replace with actual authorizers
