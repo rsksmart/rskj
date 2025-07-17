@@ -23,7 +23,9 @@ import org.ethereum.net.rlpx.Node;
 
 import javax.annotation.concurrent.Immutable;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Immutable
