@@ -41,6 +41,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -48,8 +50,16 @@ import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -73,8 +83,11 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
+    public static final String TMP_NODES_DIR_NAME = "snapSyncTmpNodes";
     private final Blockchain blockchain;
     private final TrieStore trieStore;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
+    public static final int TMP_NODES_SIZE_KEY = -1;
     private final BlockStore blockStore;
     private final int chunkSize;
     private final int checkpointDistance;
@@ -114,10 +127,11 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                              int checkpointDistance,
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
-                             boolean isParallelEnabled) { // NOSONAR
+                             boolean isParallelEnabled,
+                             String databaseDir) {
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null, null, databaseDir);
     }
 
     @VisibleForTesting
@@ -136,9 +150,12 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                       int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
-                      @Nullable SyncMessageHandler.Listener listener) {
+                      @Nullable SyncMessageHandler.Listener listener,
+                      KeyValueDataSource tmpSnapSyncKeyValueDataSource,
+                      String databaseDir) {
         this.blockchain = blockchain;
         this.trieStore = trieStore;
+        this.tmpSnapSyncKeyValueDataSource = getTmpSnapSyncKeyValueDataSource(databaseDir);
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
         this.checkpointDistance = checkpointDistance;
@@ -161,6 +178,43 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                 return isRunning;
             }
         }, "snap sync server handler");
+    }
+
+    private synchronized KeyValueDataSource getTmpSnapSyncKeyValueDataSource(String databaseDir) {
+        if (tmpSnapSyncKeyValueDataSource == null) {
+            final var databasePath = Paths.get(databaseDir);
+            final var tmpDatabasePath = databasePath.resolve(SnapshotProcessor.TMP_NODES_DIR_NAME);
+
+            try {
+                if (Files.exists(tmpDatabasePath)) {
+                    // Delete folder and its content if exists
+                    Files.walkFileTree(tmpDatabasePath,
+                            new SimpleFileVisitor<>() {
+                                @Override
+                                public @Nonnull FileVisitResult postVisitDirectory(@Nonnull Path dir, IOException exc) throws IOException {
+                                    Files.delete(dir);
+                                    return FileVisitResult.CONTINUE;
+                                }
+
+                                @Override
+                                public @Nonnull FileVisitResult visitFile(@Nonnull Path file, @Nonnull BasicFileAttributes attrs)
+                                        throws IOException {
+                                    Files.delete(file);
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                }
+
+                Files.createDirectory(tmpDatabasePath);
+            } catch (IOException e) {
+                logger.error("Unable to create temporary folder snapshot sync datasource", e);
+            }
+
+            final var currentDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+            tmpSnapSyncKeyValueDataSource = KeyValueDataSourceUtils.makeDataSource(tmpDatabasePath, currentDbKind);;
+        }
+
+        return tmpSnapSyncKeyValueDataSource;
     }
 
     public void startSyncing(SnapSyncState state) {
@@ -818,6 +872,12 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
     @Override
     public void stop() {
+        if (tmpSnapSyncKeyValueDataSource != null) {
+            logger.trace("disposing tmpSnapSyncKeyValueDataSource.");
+            tmpSnapSyncKeyValueDataSource.close();
+            logger.trace("tmpSnapSyncKeyValueDataSource disposed.");
+        }
+
         if (isRunning != Boolean.TRUE) {
             logger.warn("Invalid state, isRunning: [{}]", isRunning);
             return;

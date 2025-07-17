@@ -1330,6 +1330,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("wallet closed.");
         }
 
+        if (snapshotProcessor != null) {
+            logger.trace("closing snapshotProcessor.");
+            snapshotProcessor.stop();
+            logger.trace("snapshotProcessor closed.");
+        }
+
         final long endTime = System.currentTimeMillis();
         logger.info("RSK context closed (after {} ms)", endTime - startTime);
     }
@@ -2109,7 +2115,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     checkpointDistance,
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
-                    getRskSystemProperties().isSnapshotParallelEnabled()
+                    getRskSystemProperties().isSnapshotParallelEnabled(),
+                    getRskSystemProperties().databaseDir()
             );
         }
         return snapshotProcessor;
