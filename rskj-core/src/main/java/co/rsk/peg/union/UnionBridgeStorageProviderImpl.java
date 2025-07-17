@@ -1,6 +1,5 @@
 package co.rsk.peg.union;
 
-import static co.rsk.peg.union.UnionBridgeStorageIndexKey.UNION_BRIDGE_CHANGE_CONTRACT_ADDRESS_ELECTION;
 import static co.rsk.peg.union.UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION;
 import static co.rsk.peg.union.UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION;
 import static java.util.Objects.isNull;
@@ -19,7 +18,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
     private final StorageAccessor bridgeStorageAccessor;
 
     private RskAddress unionBridgeAddress;
-    private ABICallElection changeAddressElection;
 
     private Coin unionBridgeLockingCap;
     private ABICallElection increaseLockingCapElection;
@@ -41,7 +39,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
         saveWeisTransferredToUnionBridge();
         saveRequestEnabled();
         saveReleaseEnabled();
-        saveChangeAddressElection();
         saveIncreaseLockingCapElection();
         saveTransferPermissionsElection();
     }
@@ -101,18 +98,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
             UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             unionBridgeAddress,
             BridgeSerializationUtils::serializeRskAddress
-        );
-    }
-
-    private void saveChangeAddressElection() {
-        if (changeAddressElection == null) {
-            return;
-        }
-
-        bridgeStorageAccessor.saveToRepository(
-            UNION_BRIDGE_CHANGE_CONTRACT_ADDRESS_ELECTION.getKey(),
-            changeAddressElection,
-            BridgeSerializationUtils::serializeElection
         );
     }
 
@@ -231,18 +216,6 @@ public class UnionBridgeStorageProviderImpl implements UnionBridgeStorageProvide
                 UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
                 BridgeSerializationUtils::deserializeBoolean
             )));
-    }
-
-    @Override
-    public ABICallElection getChangeAddressElection(AddressBasedAuthorizer authorizer) {
-        if (changeAddressElection != null) {
-            return changeAddressElection;
-        }
-
-        changeAddressElection = bridgeStorageAccessor.getFromRepository(
-            UNION_BRIDGE_CHANGE_CONTRACT_ADDRESS_ELECTION.getKey(),
-            data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
-        return changeAddressElection;
     }
 
     @Override

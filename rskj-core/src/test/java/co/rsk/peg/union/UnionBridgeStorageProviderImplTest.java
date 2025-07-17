@@ -8,10 +8,16 @@ import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.constants.UnionBridgeMainNetConstants;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +44,29 @@ class UnionBridgeStorageProviderImplTest {
 
     private static final boolean unionBridgeReleaseEnabled = true;
     private static final boolean newUnionBridgeReleaseEnabled = false;
+
+    private static final AddressBasedAuthorizer INCREASE_LOCKING_CAP_AUTHORIZER =
+        UnionBridgeMainNetConstants.getInstance().getChangeLockingCapAuthorizer();
+    private static final RskAddress INCREASE_LOCKING_CAP_AUTHORIZER_1 = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode("040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09")).getAddress()
+    );
+    private static final RskAddress INCREASE_LOCKING_CAP_AUTHORIZER_2 = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode("04ee99364235a33edbd177c0293bd3e13f1c85b2ee6197e66aa7e975fb91183b08b30bf1227468980180e10092decaaeed0ae1c4bcf29d17993569bb3c1b274f83")).getAddress()
+    );
+
+    private static final AddressBasedAuthorizer TRANSFER_PERMISSIONS_AUTHORIZER =
+        UnionBridgeMainNetConstants.getInstance().getChangeTransferPermissionsAuthorizer();
+    private static final RskAddress TRANSFER_PERMISSIONS_AUTHORIZER_1 = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode("0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282")).getAddress()
+    );
+    private static final RskAddress TRANSFER_PERMISSIONS_AUTHORIZER_2 = new RskAddress(
+        ECKey.fromPublicOnly(Hex.decode("0486559d73a991df9e5eef1782c41959ecc7e334ef57ddcb6e4ebc500771a50f0c3b889afb9917165db383a9bf9a8e9b4f73abd542109ba06387f016f62df41b0f")).getAddress()
+    );
+
+    // Function names for election tests
+    private static final String CHANGE_ADDRESS_FUNCTION = "setUnionBridgeContractAddressForTestnet";
+    private static final String INCREASE_LOCKING_CAP_FUNCTION = "increaseLockingCap";
+    private static final String TRANSFER_PERMISSIONS_FUNCTION = "setTransferPermissions";
 
     private StorageAccessor storageAccessor;
     private UnionBridgeStorageProviderImpl unionBridgeStorageProvider;
@@ -1063,6 +1092,65 @@ class UnionBridgeStorageProviderImplTest {
         assertNoWeisTransferredToUnionBridgeIsStored();
         assertNoUnionBridgeRequestEnabledIsStored();
         assertNoUnionBridgeReleaseEnabledIsStored();
+        assertNoIncreaseLockingCapElectionIsStored();
+        assertNoTransferPermissionElectionIsStored();
+    }
+
+    private void assertNoIncreaseLockingCapElectionIsStored() {
+        ABICallElection retrievedIncreaseLockingCapElection = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
+            data -> data == null ? null
+                : BridgeSerializationUtils.deserializeElection(data,
+                    INCREASE_LOCKING_CAP_AUTHORIZER)
+        );
+        assertNull(retrievedIncreaseLockingCapElection);
+    }
+    
+    private void assertGivenIncreaseLockingCapElectionIsStored(ABICallElection expectedElection) {
+        ABICallElection retrievedElection = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
+            data -> BridgeSerializationUtils.deserializeElection(data, INCREASE_LOCKING_CAP_AUTHORIZER)
+        );
+        assertNotNull(retrievedElection);
+
+        assertElectionsAreEqual(expectedElection, retrievedElection);
+    }
+
+    private static void assertElectionsAreEqual(ABICallElection expectedElection,
+        ABICallElection actualElection) {
+        assertEquals(expectedElection.getVotes().size(), actualElection.getVotes().size());
+        // Verify each vote in the expected election is in the retrieved election
+        for (ABICallSpec spec : expectedElection.getVotes().keySet()) {
+            List<RskAddress> expectedVoters = expectedElection.getVotes().get(spec);
+
+            assertTrue(actualElection.getVotes().containsKey(spec));
+            List<RskAddress> actualVoters = actualElection.getVotes().get(spec);
+            assertEquals(expectedVoters.size(), actualVoters.size());
+
+            for (int i = 0; i < expectedVoters.size(); i++) {
+                assertEquals(expectedVoters.get(i), actualVoters.get(i));
+            }
+        }
+    }
+
+    private void assertNoTransferPermissionElectionIsStored() {
+        ABICallElection retrievedTransferPermissionElection = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
+            data -> data == null ? null
+                : BridgeSerializationUtils.deserializeElection(data,
+                    TRANSFER_PERMISSIONS_AUTHORIZER)
+        );
+        assertNull(retrievedTransferPermissionElection);
+    }
+    
+    private void assertGivenTransferPermissionsElectionIsStored(ABICallElection expectedElection) {
+        ABICallElection retrievedElection = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
+            data -> BridgeSerializationUtils.deserializeElection(data, TRANSFER_PERMISSIONS_AUTHORIZER)
+        );
+        assertNotNull(retrievedElection);
+
+        assertElectionsAreEqual(expectedElection, retrievedElection);
     }
 
     private void assertGivenWeisTransferredToUnionBridgeIsStored(
@@ -1071,6 +1159,340 @@ class UnionBridgeStorageProviderImplTest {
             UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin);
         assertNotNull(savedWeisTransferredToUnionBridge);
+
         assertEquals(expectedTransferredToUnionBridge, savedWeisTransferredToUnionBridge);
+    }
+    
+    @Test
+    void getIncreaseLockingCapElection_whenNoElectionStoredOrSet_shouldReturnNewEmptyElection() {
+        // Act
+        ABICallElection increaseLockingCapElection = unionBridgeStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+
+        // Assert
+        assertNotNull(increaseLockingCapElection);
+        assertTrue(increaseLockingCapElection.getVotes().isEmpty());
+    }
+
+    @Test
+    void getIncreaseLockingCapElection_whenElectionStored_shouldReturnStoredElection() {
+        // Arrange
+        ABICallElection expectedElection = new ABICallElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+
+        // Add a vote to the election
+        ABICallSpec increaseLockingCapVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(newUnionBridgeLockingCap)
+        });
+        expectedElection.vote(increaseLockingCapVote, INCREASE_LOCKING_CAP_AUTHORIZER_1);
+
+        // To simulate, there is an election already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
+            expectedElection, BridgeSerializationUtils::serializeElection
+        );
+
+        // Act
+        ABICallElection actualElection = unionBridgeStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+
+        // Assert
+        assertNotNull(actualElection);
+        assertEquals(1, actualElection.getVotes().size());
+        assertTrue(actualElection.getVotes().containsKey(increaseLockingCapVote));
+        List<RskAddress> voters = actualElection.getVotes().get(increaseLockingCapVote);
+        assertEquals(1, voters.size());
+        assertEquals(INCREASE_LOCKING_CAP_AUTHORIZER_1, voters.get(0));
+    }
+
+    @Test
+    void getIncreaseLockingCapElection_whenVoteToCacheElection_shouldAddVotesToCacheElection() {
+        // Arrange
+        // First, store an election in the repository
+        ABICallElection storedIncreaseLockingCapElection = new ABICallElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        ABICallSpec firstVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(newUnionBridgeLockingCap)});
+        storedIncreaseLockingCapElection.vote(firstVote, INCREASE_LOCKING_CAP_AUTHORIZER_1);
+
+        // to simulate, there is an election already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
+            storedIncreaseLockingCapElection, BridgeSerializationUtils::serializeElection
+        );
+        
+        // Then, get the election once to cache it
+        ABICallElection cachedElection = unionBridgeStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        
+        // Add a second vote for the same locking cap
+        ABICallSpec secondVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(newUnionBridgeLockingCap)});
+        cachedElection.vote(secondVote, INCREASE_LOCKING_CAP_AUTHORIZER_2);
+        
+        // Act
+        ABICallElection actualElection = unionBridgeStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        
+        // Assert
+        assertNotNull(actualElection);
+        // Since both authorizers voted for the same locking cap, we expect only one vote in the election
+        assertEquals(1, actualElection.getVotes().size());
+        // Both votes should be present in the election
+        assertTrue(actualElection.getVotes().containsKey(firstVote));
+        assertTrue(actualElection.getVotes().containsKey(secondVote));
+
+        // Both votes should be equal since they are for the same value
+        assertEquals(firstVote, secondVote);
+
+        // Check that both authorizers voted for the same locking cap
+        List<RskAddress> votingAddresses = actualElection.getVotes().get(firstVote);
+        assertEquals(2, votingAddresses.size());
+        assertEquals(INCREASE_LOCKING_CAP_AUTHORIZER_1, votingAddresses.get(0));
+        assertEquals(INCREASE_LOCKING_CAP_AUTHORIZER_2, votingAddresses.get(1));
+    }
+    
+    @Test
+    void save_whenIncreaseLockingCapElectionIsSet_shouldPersistElectionState() {
+        // Arrange
+        // Get an empty election
+        ABICallElection election = unionBridgeStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        assertNotNull(election);
+        assertTrue(election.getVotes().isEmpty());
+        
+        // Add two votes for different locking caps
+        ABICallSpec firstVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(newUnionBridgeLockingCap)
+        });
+        election.vote(firstVote, INCREASE_LOCKING_CAP_AUTHORIZER_1);
+        
+        // Create a different locking cap value for the second vote
+        Coin differentLockingCap = newUnionBridgeLockingCap.multiply(BigInteger.valueOf(3));
+        ABICallSpec secondVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(differentLockingCap)
+        });
+        election.vote(secondVote, INCREASE_LOCKING_CAP_AUTHORIZER_2);
+        
+        // Act
+        unionBridgeStorageProvider.save();
+        
+        // Assert
+        assertGivenIncreaseLockingCapElectionIsStored(election);
+    }
+    
+    @Test
+    void save_whenIncreaseLockingCapElectionStoredAndMoreVotesAdded_shouldPersistUpdatedElection() {
+        // Arrange
+        // Store an election with one vote
+        ABICallElection initialElection = new ABICallElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        ABICallSpec initialVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(unionBridgeLockingCap)
+        });
+        initialElection.vote(initialVote, INCREASE_LOCKING_CAP_AUTHORIZER_1);
+        
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION.getKey(),
+            initialElection, BridgeSerializationUtils::serializeElection
+        );
+        
+        // Get the stored election
+        ABICallElection retrievedElection = unionBridgeStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        assertNotNull(retrievedElection);
+        assertEquals(1, retrievedElection.getVotes().size());
+        
+        // Add one more vote for a different locking cap
+        ABICallSpec additionalVote = new ABICallSpec(INCREASE_LOCKING_CAP_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(newUnionBridgeLockingCap)
+        });
+        retrievedElection.vote(additionalVote, INCREASE_LOCKING_CAP_AUTHORIZER_2);
+        
+        // Act
+        unionBridgeStorageProvider.save();
+        
+        // Create a new storage provider instance with no cache
+        UnionBridgeStorageProviderImpl newStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
+        
+        // Assert
+        // Get the election from the new provider
+        ABICallElection finalElection = newStorageProvider.getIncreaseLockingCapElection(INCREASE_LOCKING_CAP_AUTHORIZER);
+        assertNotNull(finalElection);
+        assertEquals(2, finalElection.getVotes().size());
+        
+        // Verify both votes are present
+        assertTrue(finalElection.getVotes().containsKey(initialVote));
+        assertTrue(finalElection.getVotes().containsKey(additionalVote));
+        
+        // Verify voters for each vote
+        List<RskAddress> initialVoters = finalElection.getVotes().get(initialVote);
+        assertEquals(1, initialVoters.size());
+        assertEquals(INCREASE_LOCKING_CAP_AUTHORIZER_1, initialVoters.get(0));
+        
+        List<RskAddress> additionalVoters = finalElection.getVotes().get(additionalVote);
+        assertEquals(1, additionalVoters.size());
+        assertEquals(INCREASE_LOCKING_CAP_AUTHORIZER_2, additionalVoters.get(0));
+    }
+    
+    @Test
+    void getTransferPermissionsElection_whenNoElectionStoredOrSet_shouldReturnNewEmptyElection() {
+        // Act
+        ABICallElection transferPermissionsElection = unionBridgeStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+
+        // Assert
+        assertNotNull(transferPermissionsElection);
+        assertTrue(transferPermissionsElection.getVotes().isEmpty());
+    }
+    
+    @Test
+    void getTransferPermissionsElection_whenElectionStored_shouldReturnStoredElection() {
+        // Arrange
+        ABICallElection expectedElection = new ABICallElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+
+        // Add a vote to the election
+        ABICallSpec transferPermissionsVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(true),
+            BridgeSerializationUtils.serializeBoolean(false)
+        });
+        expectedElection.vote(transferPermissionsVote, TRANSFER_PERMISSIONS_AUTHORIZER_1);
+
+        // To simulate, there is an election already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
+            expectedElection, BridgeSerializationUtils::serializeElection
+        );
+
+        // Act
+        ABICallElection actualElection = unionBridgeStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+
+        // Assert
+        assertNotNull(actualElection);
+        assertEquals(1, actualElection.getVotes().size());
+        assertTrue(actualElection.getVotes().containsKey(transferPermissionsVote));
+        List<RskAddress> voters = actualElection.getVotes().get(transferPermissionsVote);
+        assertEquals(1, voters.size());
+        assertEquals(TRANSFER_PERMISSIONS_AUTHORIZER_1, voters.get(0));
+    }
+    
+    @Test
+    void getTransferPermissionsElection_whenVoteToCacheElection_shouldAddVotesToCacheElection() {
+        // Arrange
+        // First, store an election in the repository
+        ABICallElection storedTransferPermissionsElection = new ABICallElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        ABICallSpec firstVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(true),
+            BridgeSerializationUtils.serializeBoolean(false)
+        });
+        storedTransferPermissionsElection.vote(firstVote, TRANSFER_PERMISSIONS_AUTHORIZER_1);
+
+        // to simulate, there is an election already stored
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
+            storedTransferPermissionsElection, BridgeSerializationUtils::serializeElection
+        );
+        
+        // Then, get the election once to cache it
+        ABICallElection cachedElection = unionBridgeStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        
+        // Add a second vote for the same permissions
+        ABICallSpec secondVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(true),
+            BridgeSerializationUtils.serializeBoolean(false)
+        });
+        cachedElection.vote(secondVote, TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        
+        // Act
+        ABICallElection actualElection = unionBridgeStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        
+        // Assert
+        assertNotNull(actualElection);
+        // Since both authorizers voted for the same permissions, we expect only one vote in the election
+        assertEquals(1, actualElection.getVotes().size());
+        // Both votes should be present in the election
+        assertTrue(actualElection.getVotes().containsKey(firstVote));
+        assertTrue(actualElection.getVotes().containsKey(secondVote));
+
+        // Both votes should be equal since they are for the same value
+        assertEquals(firstVote, secondVote);
+
+        // Check that both authorizers voted for the same permissions
+        List<RskAddress> votingAddresses = actualElection.getVotes().get(firstVote);
+        assertEquals(2, votingAddresses.size());
+        assertEquals(TRANSFER_PERMISSIONS_AUTHORIZER_1, votingAddresses.get(0));
+        assertEquals(TRANSFER_PERMISSIONS_AUTHORIZER_2, votingAddresses.get(1));
+    }
+    
+    @Test
+    void save_whenTransferPermissionsElectionIsSet_shouldPersistElectionState() {
+        // Arrange
+        // Get an empty election
+        ABICallElection election = unionBridgeStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertNotNull(election);
+        assertTrue(election.getVotes().isEmpty());
+        
+        // Add two votes for different permission combinations
+        ABICallSpec firstVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(true),
+            BridgeSerializationUtils.serializeBoolean(false)
+        });
+        election.vote(firstVote, TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        
+        ABICallSpec secondVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(false),
+            BridgeSerializationUtils.serializeBoolean(true)
+        });
+        election.vote(secondVote, TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        
+        // Act
+        unionBridgeStorageProvider.save();
+        
+        // Assert
+        assertGivenTransferPermissionsElectionIsStored(election);
+    }
+    
+    @Test
+    void save_whenTransferPermissionsElectionStoredAndMoreVotesAdded_shouldPersistUpdatedElection() {
+        // Arrange
+        // Store an election with one vote
+        ABICallElection initialElection = new ABICallElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        ABICallSpec initialVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(true),
+            BridgeSerializationUtils.serializeBoolean(true)
+        });
+        initialElection.vote(initialVote, TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        
+        storageAccessor.saveToRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_TRANSFER_PERMISSIONS_ELECTION.getKey(),
+            initialElection, BridgeSerializationUtils::serializeElection
+        );
+        
+        // Get the stored election
+        ABICallElection retrievedElection = unionBridgeStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertNotNull(retrievedElection);
+        assertEquals(1, retrievedElection.getVotes().size());
+        
+        // Add one more vote for a different permission combination
+        ABICallSpec additionalVote = new ABICallSpec(TRANSFER_PERMISSIONS_FUNCTION, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(false),
+            BridgeSerializationUtils.serializeBoolean(false)
+        });
+        retrievedElection.vote(additionalVote, TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        
+        // Act
+        unionBridgeStorageProvider.save();
+        
+        // Create a new storage provider instance with no cache
+        UnionBridgeStorageProviderImpl newStorageProvider = new UnionBridgeStorageProviderImpl(storageAccessor);
+        
+        // Assert
+        // Get the election from the new provider
+        ABICallElection finalElection = newStorageProvider.getTransferPermissionsElection(TRANSFER_PERMISSIONS_AUTHORIZER);
+        assertNotNull(finalElection);
+        assertEquals(2, finalElection.getVotes().size());
+        
+        // Verify both votes are present
+        assertTrue(finalElection.getVotes().containsKey(initialVote));
+        assertTrue(finalElection.getVotes().containsKey(additionalVote));
+        
+        // Verify voters for each vote
+        List<RskAddress> initialVoters = finalElection.getVotes().get(initialVote);
+        assertEquals(1, initialVoters.size());
+        assertEquals(TRANSFER_PERMISSIONS_AUTHORIZER_1, initialVoters.get(0));
+        
+        List<RskAddress> additionalVoters = finalElection.getVotes().get(additionalVote);
+        assertEquals(1, additionalVoters.size());
+        assertEquals(TRANSFER_PERMISSIONS_AUTHORIZER_2, additionalVoters.get(0));
     }
 }
