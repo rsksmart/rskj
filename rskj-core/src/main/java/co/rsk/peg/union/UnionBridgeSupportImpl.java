@@ -73,70 +73,14 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
-        RskAddress txSender = tx.getSender(signatureCache);
-        ABICallElection changeAddressElection = storageProvider.getChangeAddressElection(
-            authorizer);
-        ABICallSpec changeAddressVote = new ABICallSpec(SET_UNION_BRIDGE_ADDRESS_TAG, new byte[][]{
-            BridgeSerializationUtils.serializeRskAddress(unionBridgeContractAddress)});
-
-        return handleVote(
-            txSender,
-            changeAddressElection,
-            changeAddressVote,
-            arguments -> BridgeSerializationUtils.deserializeRskAddress(arguments[0]),
-            newUnionBridgeAddress -> {
-                RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
-                storageProvider.setAddress(newUnionBridgeAddress);
-                logger.info(
-                    "[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}",
-                    SET_UNION_BRIDGE_ADDRESS_TAG,
-                    currentUnionBridgeAddress,
-                    newUnionBridgeAddress
-                );
-            }
+        RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
+        storageProvider.setAddress(unionBridgeContractAddress);
+        logger.info(
+            "[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}",
+            SET_UNION_BRIDGE_ADDRESS_TAG,
+            currentUnionBridgeAddress,
+            unionBridgeContractAddress
         );
-    }
-
-    /**
-     * Generic method to handle the voting process
-     *
-     * @param txSender The address of the transaction sender
-     * @param election The election instance managing the voting process
-     * @param voteSpec The specification of the vote
-     * @param deserializer Function to deserialize the value
-     * @param winnerHandler Function to apply if a winner is found
-     * @return Response code indicating success or failure
-     */
-    private <T> UnionResponseCode handleVote(
-        RskAddress txSender,
-        ABICallElection election,
-        ABICallSpec voteSpec,
-        Function<byte[][], T> deserializer,
-        Consumer<T> winnerHandler
-    ) {
-        boolean successfulVote = election.vote(voteSpec, txSender);
-        if (!successfulVote) {
-            logger.warn("[handleVote] Unsuccessful {} vote", voteSpec);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        Optional<ABICallSpec> winnerOptional = election.getWinner();
-        if (winnerOptional.isEmpty()) {
-            logger.info("[handleVote] Successful {} vote.", voteSpec);
-            return UnionResponseCode.SUCCESS;
-        }
-
-        ABICallSpec winner = winnerOptional.get();
-        T winnerValue;
-        try {
-            winnerValue = deserializer.apply(winner.getArguments());
-        } catch (Exception e) {
-            logger.warn("[handleVote] Exception deserializing winner value", e);
-            return UnionResponseCode.GENERIC_ERROR;
-        }
-
-        winnerHandler.accept(winnerValue);
-        election.clear();
         return UnionResponseCode.SUCCESS;
     }
 
@@ -178,6 +122,49 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
                     INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newLockingCap);
             }
         );
+    }
+
+    /**
+     * Generic method to handle the voting process
+     *
+     * @param txSender      The address of the transaction sender
+     * @param election      The election instance managing the voting process
+     * @param voteSpec      The specification of the vote
+     * @param deserializer  Function to deserialize the value
+     * @param winnerHandler Function to apply if a winner is found
+     * @return Response code indicating success or failure
+     */
+    private <T> UnionResponseCode handleVote(
+        RskAddress txSender,
+        ABICallElection election,
+        ABICallSpec voteSpec,
+        Function<byte[][], T> deserializer,
+        Consumer<T> winnerHandler
+    ) {
+        boolean successfulVote = election.vote(voteSpec, txSender);
+        if (!successfulVote) {
+            logger.warn("[handleVote] Unsuccessful {} vote", voteSpec);
+            return UnionResponseCode.GENERIC_ERROR;
+        }
+
+        Optional<ABICallSpec> winnerOptional = election.getWinner();
+        if (winnerOptional.isEmpty()) {
+            logger.info("[handleVote] Successful {} vote.", voteSpec);
+            return UnionResponseCode.SUCCESS;
+        }
+
+        ABICallSpec winner = winnerOptional.get();
+        T winnerValue;
+        try {
+            winnerValue = deserializer.apply(winner.getArguments());
+        } catch (Exception e) {
+            logger.warn("[handleVote] Exception deserializing winner value", e);
+            return UnionResponseCode.GENERIC_ERROR;
+        }
+
+        winnerHandler.accept(winnerValue);
+        election.clear();
+        return UnionResponseCode.SUCCESS;
     }
 
     private Coin getWeisTransferredToUnionBridge() {
