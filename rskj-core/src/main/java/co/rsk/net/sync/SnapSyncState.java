@@ -19,6 +19,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.*;
@@ -74,6 +75,7 @@ public class SnapSyncState extends BaseSyncState {
     private Block lastBlock;
     private BlockDifficulty lastBlockDifficulty;
     private Peer lastBlockSender;
+    private Keccak256 lastSavedTrieHash;
 
     private BlockHeader lastVerifiedBlockHeader;
 
@@ -179,6 +181,26 @@ public class SnapSyncState extends BaseSyncState {
     }
 
     @Override
+    public void onSnapStateChunk(Peer sender, SnapStateChunkV2ResponseMessage responseMessage) {
+        if (!snapRequestManager.processResponse(responseMessage)) {
+            logger.warn(UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG, responseMessage.getMessageType(), responseMessage.getId());
+            return;
+        }
+
+        try {
+            responseQueue.put(new SyncMessageHandler.Job(sender, responseMessage, MetricKind.SNAP_STATE_V2_CHUNK_RESPONSE) {
+                @Override
+                public void run() {
+                    snapshotProcessor.processStateChunkResponse(SnapSyncState.this, sender, responseMessage);
+                }
+            });
+        } catch (InterruptedException e) {
+            logger.warn(PROCESSING_WAS_INTERRUPTED_MSG, MessageType.SNAP_STATE_CHUNK_V2_RESPONSE_MESSAGE, e);
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    @Override
     public void newBlockHeaders(Peer sender, BlockHeadersResponseMessage responseMessage) {
         if (!snapRequestManager.processResponse(responseMessage)) {
             logger.warn(UNEXPECTED_RESPONSE_RECEIVED_WITH_ID_IGNORING_MSG, responseMessage.getMessageType(), responseMessage.getId());
@@ -229,6 +251,14 @@ public class SnapSyncState extends BaseSyncState {
         this.lastBlock = lastBlock;
         this.lastBlockDifficulty = lastBlockDifficulty;
         this.lastBlockSender = lastBlockSender;
+    }
+
+    public Keccak256 getLastSavedTrieHash() {
+        return lastSavedTrieHash;
+    }
+
+    public void setLastSavedTrieHash(Keccak256 lastSavedTrieHash) {
+        this.lastSavedTrieHash = lastSavedTrieHash;
     }
 
     public BlockHeader getLastVerifiedBlockHeader() {
