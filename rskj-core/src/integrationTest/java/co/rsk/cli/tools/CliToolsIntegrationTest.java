@@ -21,10 +21,10 @@ import co.rsk.RskContext;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.util.cli.CommandLineFixture;
 import co.rsk.util.DataBytesFixture;
 import co.rsk.util.HexUtils;
 import co.rsk.util.OkHttpClientTestFixture;
+import co.rsk.util.cli.CommandLineFixture;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.Response;
@@ -112,7 +112,7 @@ class CliToolsIntegrationTest {
                 }
         );
 
-        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        String responseBody = OkHttpClientTestFixture.responseBody(responseMap.get("latestProcessedBlock"));
         JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
         JsonNode transactionsNode = jsonRpcResponse.get(0).get("result").get("transactions");
 
@@ -187,7 +187,7 @@ class CliToolsIntegrationTest {
                 }
         );
 
-        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        String responseBody = OkHttpClientTestFixture.responseBody(responseMap.get("latestProcessedBlock"));
         JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
         JsonNode result = jsonRpcResponse.get(0).get("result");
         JsonNode transactionsNode = result.get("transactions");
@@ -220,7 +220,7 @@ class CliToolsIntegrationTest {
                 }
         );
 
-        String responseBody = responseMap.get("latestProcessedBlock").body().string();
+        String responseBody = OkHttpClientTestFixture.responseBody(responseMap.get("latestProcessedBlock"));
         JsonNode jsonRpcResponse = objectMapper.readTree(responseBody);
         JsonNode result = jsonRpcResponse.get(0).get("result");
         JsonNode transactionsNode = result.get("transactions");

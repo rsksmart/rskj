@@ -17,6 +17,7 @@
  */
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.net.rlpx.Node;
 
@@ -24,13 +25,13 @@ import javax.annotation.concurrent.Immutable;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Immutable
 public final class SyncConfiguration {
     @VisibleForTesting
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, 0, false, false, 0);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 1, 30, 5, 20, 192, 20, 10, 0, false, false, 0);
 
     @VisibleForTesting
     public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 0, false, false, 0);
@@ -48,7 +49,7 @@ public final class SyncConfiguration {
     private final boolean isClientSnapSyncEnabled;
 
     private final int snapshotSyncLimit;
-    private final Map<String, Node> nodeIdToSnapshotTrustedPeerMap;
+    private final Set<NodeID> snapBootNodeIds;
 
     /**
      * @param expectedPeers            The expected number of peers we would want to start finding a connection point.
@@ -107,7 +108,7 @@ public final class SyncConfiguration {
             int snapshotSyncLimit,
             List<Node> snapBootNodes) {
         this.expectedPeers = expectedPeers;
-        this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
+        this.timeoutWaitingPeers = Duration.ofMinutes(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
         this.expirationTimePeerStatus = Duration.ofMinutes(expirationTimePeerStatus);
         this.maxSkeletonChunks = maxSkeletonChunks;
@@ -121,8 +122,7 @@ public final class SyncConfiguration {
 
         List<Node> snapBootNodesList = snapBootNodes != null ? snapBootNodes : Collections.emptyList();
 
-        nodeIdToSnapshotTrustedPeerMap = Collections.unmodifiableMap(snapBootNodesList.stream()
-                .collect(Collectors.toMap(peer -> peer.getId().toString(), peer -> peer)));
+        snapBootNodeIds = snapBootNodesList.stream().map(Node::getId).collect(Collectors.toSet());
     }
 
     public int getExpectedPeers() {
@@ -138,7 +138,7 @@ public final class SyncConfiguration {
     }
 
     public Duration getTimeoutWaitingRequest() {
-        return  timeoutWaitingRequest;
+        return timeoutWaitingRequest;
     }
 
     public Duration getExpirationTimePeerStatus() {
@@ -173,7 +173,7 @@ public final class SyncConfiguration {
         return snapshotSyncLimit;
     }
 
-    public Map<String, Node> getNodeIdToSnapshotTrustedPeerMap() {
-        return nodeIdToSnapshotTrustedPeerMap;
+    public Set<NodeID> getSnapBootNodeIds() {
+        return snapBootNodeIds;
     }
 }
