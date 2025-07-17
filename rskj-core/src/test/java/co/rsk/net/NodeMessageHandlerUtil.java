@@ -18,6 +18,9 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.nio.file.Files;
+
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.mock;
 
@@ -26,7 +29,7 @@ public class NodeMessageHandlerUtil {
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
-    public static NodeMessageHandler createHandler(Blockchain blockchain) {
+    public static NodeMessageHandler createHandler(Blockchain blockchain) throws IOException {
         final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -38,13 +41,13 @@ public class NodeMessageHandlerUtil {
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class), Files.createTempDirectory("").toString());
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         return new NodeMessageHandler(config, processor, syncProcessor, null, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
 
-    public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
+    public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) throws IOException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore blockStore = world.getBlockStore();
@@ -54,7 +57,7 @@ public class NodeMessageHandlerUtil {
     public static NodeMessageHandler createHandlerWithSyncProcessor(
             Blockchain blockchain,
             SyncConfiguration syncConfiguration,
-            ChannelManager channelManager, BlockStore blockStore) {
+            ChannelManager channelManager, BlockStore blockStore) throws IOException {
         final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -70,7 +73,8 @@ public class NodeMessageHandlerUtil {
                 DIFFICULTY_CALCULATOR,
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class),
-                mock(EthereumListener.class)
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString()
         );
 
         return new NodeMessageHandler(config, processor, syncProcessor, null, channelManager, null, null, mock(StatusResolver.class));

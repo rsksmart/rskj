@@ -143,12 +143,9 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1333,6 +1330,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("wallet closed.");
         }
 
+        if (snapshotProcessor != null) {
+            logger.trace("closing snapshotProcessor.");
+            snapshotProcessor.stop();
+            logger.trace("snapshotProcessor closed.");
+        }
+
         final long endTime = System.currentTimeMillis();
         logger.info("RSK context closed (after {} ms)", endTime - startTime);
     }
@@ -2038,7 +2041,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getPeersInformation(),
                     getGenesis(),
                     getCompositeEthereumListener(),
-                    getSnapshotProcessor());
+                    getSnapshotProcessor(),
+                    getRskSystemProperties().databaseDir());
         }
 
         return syncProcessor;
@@ -2112,8 +2116,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     checkpointDistance,
                     getRskSystemProperties().getSnapshotMaxSenderRequests(),
                     getRskSystemProperties().checkHistoricalHeaders(),
-                    getRskSystemProperties().isSnapshotParallelEnabled(),
-                    getRskSystemProperties().databaseDir()
+                    getRskSystemProperties().isSnapshotParallelEnabled()
             );
         }
         return snapshotProcessor;

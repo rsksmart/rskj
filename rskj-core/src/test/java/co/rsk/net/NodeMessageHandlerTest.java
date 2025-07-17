@@ -57,10 +57,12 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -441,7 +443,7 @@ class NodeMessageHandlerTest {
     }
 
     @Test
-    void processStatusMessageUsingSyncProcessor() {
+    void processStatusMessageUsingSyncProcessor() throws IOException {
         final SimplePeer sender = new SimplePeer();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -460,7 +462,7 @@ class NodeMessageHandlerTest {
     }
 
     @Test
-    void processStatusMessageWithKnownBestBlock() {
+    void processStatusMessageWithKnownBestBlock() throws IOException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -480,7 +482,7 @@ class NodeMessageHandlerTest {
                 new DummyBlockValidationRule(),
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 null,
-                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class), mock(EthereumListener.class));
+                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class), mock(EthereumListener.class), Files.createTempDirectory("").toString());
         final NodeMessageHandler handler = new NodeMessageHandler(config,
                 bp, syncProcessor, null, null, null,
                 null, mock(StatusResolver.class));
@@ -997,7 +999,7 @@ class NodeMessageHandlerTest {
     }
 
     @Test
-    void testTooLongIdle() {
+    void testTooLongIdle() throws IOException {
         final SimplePeer sender = new SimplePeer();
 
         final ChannelManager channelManager = mock(ChannelManager.class);

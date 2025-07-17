@@ -38,6 +38,8 @@ import org.ethereum.util.RskMockFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +49,7 @@ import static org.mockito.Mockito.mock;
  * Created by ajlopez on 5/14/2016.
  */
 class OneAsyncNodeTest {
-    private static SimpleAsyncNode createNode() {
+    private static SimpleAsyncNode createNode() throws IOException {
         final World world = new World();
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
@@ -66,7 +68,8 @@ class OneAsyncNodeTest {
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class)
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString()
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, null, channelManager, null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
 
@@ -80,7 +83,7 @@ class OneAsyncNodeTest {
     }
 
     @Test
-    void buildBlockchain() {
+    void buildBlockchain() throws IOException {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -96,7 +99,7 @@ class OneAsyncNodeTest {
     }
 
     @Test
-    void buildBlockchainInReverse() {
+    void buildBlockchainInReverse() throws IOException {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);

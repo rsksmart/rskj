@@ -38,6 +38,8 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.jupiter.api.Assertions;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.*;
 
 import static org.mockito.Mockito.mock;
@@ -112,18 +114,18 @@ public class SimpleAsyncNode extends SimpleNode {
         return this.syncProcessor;
     }
 
-    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain){
+    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain) throws IOException {
         return createNode(blockChain, SyncConfiguration.DEFAULT);
     }
 
-    public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) {
+    public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) throws IOException {
         return createNode(blockchain, syncConfiguration, mock(IndexedBlockStore.class));
     }
 
     public static SimpleAsyncNode createNode(
             Blockchain blockchain,
             SyncConfiguration syncConfiguration,
-            org.ethereum.db.BlockStore indexedBlockStore) {
+            org.ethereum.db.BlockStore indexedBlockStore) throws IOException {
         NetBlockStore blockStore = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(config, blockStore, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
@@ -139,7 +141,8 @@ public class SimpleAsyncNode extends SimpleNode {
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class),
-                mock(EthereumListener.class)
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString()
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, null, channelManager, null, peerScoringManager, mock(StatusResolver.class));
 
@@ -148,13 +151,13 @@ public class SimpleAsyncNode extends SimpleNode {
 
     // TODO(mc) find out why the following two work differently
 
-    public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
+    public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) throws IOException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockChainBuilder.extend(blockchain, size, false, true);
         return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING, mock(org.ethereum.db.BlockStore.class));
     }
 
-    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) throws IOException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, size, withUncles, mining);

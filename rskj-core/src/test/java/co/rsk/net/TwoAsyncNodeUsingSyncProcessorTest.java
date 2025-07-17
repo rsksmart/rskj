@@ -32,6 +32,7 @@ import org.ethereum.db.BlockStore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.mockito.Mockito.doReturn;
@@ -49,7 +50,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void buildBlockchainAndSynchronize() {
+    void buildBlockchainAndSynchronize() throws IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -74,7 +75,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void buildBlockchainAndSynchronize400Blocks() {
+    void buildBlockchainAndSynchronize400Blocks() throws IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(400, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -99,7 +100,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void buildBlockchainWithUnclesAndSynchronize() {
+    void buildBlockchainWithUnclesAndSynchronize() throws IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -126,7 +127,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void buildBlockchainPartialAndSynchronize() {
+    void buildBlockchainPartialAndSynchronize() throws IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -173,7 +174,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void sendNewBlock() throws InterruptedException {
+    void sendNewBlock() throws InterruptedException, IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -198,7 +199,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void stopSyncingAfter5SkeletonChunks() {
+    void stopSyncingAfter5SkeletonChunks() throws IOException {
         int longSyncLimit = SyncConfiguration.IMMEDIATE_FOR_TESTING.getLongSyncLimit();
         int fiveChunksSize = 960;
         int b1Size = 30;
@@ -240,7 +241,7 @@ class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void syncInMultipleStepsWithLongBlockchain() {
+    void syncInMultipleStepsWithLongBlockchain() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain b1 = builder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);

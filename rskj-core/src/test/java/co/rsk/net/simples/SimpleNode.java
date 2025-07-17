@@ -28,6 +28,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 
+import java.io.IOException;
+
 /**
  * Created by ajlopez on 5/14/2016.
  */
@@ -80,7 +82,7 @@ public class SimpleNode {
 
     public NodeID getNodeID() { return nodeID; }
 
-    public static SimpleNode createNode() {
+    public static SimpleNode createNode() throws IOException {
         final World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
         NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(blockChain);
