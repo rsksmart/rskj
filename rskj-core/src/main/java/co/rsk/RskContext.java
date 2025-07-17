@@ -143,12 +143,9 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1331,6 +1328,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("closing wallet.");
             wallet.close();
             logger.trace("wallet closed.");
+        }
+
+        if (snapshotProcessor != null) {
+            logger.trace("closing snapshotProcessor.");
+            snapshotProcessor.stop();
+            logger.trace("snapshotProcessor closed.");
         }
 
         final long endTime = System.currentTimeMillis();

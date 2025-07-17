@@ -34,6 +34,7 @@ import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.AfterEach;
@@ -41,8 +42,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +67,7 @@ class SnapshotProcessorTest {
     private BlockStore blockStore;
     private TrieStore trieStore;
     private RskSystemProperties rskSystemProperties;
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
     private Peer peer;
     private final SnapshotPeersInformation peersInformation = mock(SnapshotPeersInformation.class);
     private final SnapSyncState snapSyncState = mock(SnapSyncState.class);
@@ -89,7 +94,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenStartSyncingIsCalled_thenSnapStatusStartToBeRequestedFromPeer() {
+    void givenStartSyncingIsCalled_thenSnapStatusStartToBeRequestedFromPeer() throws IOException {
         //given
         initializeBlockchainWithAmountOfBlocks(10);
         underTest = new SnapshotProcessor(
@@ -116,7 +121,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenSnapStatusResponseCalled_thenSnapChunkRequestsAreMade() {
+    void givenSnapStatusResponseCalled_thenSnapChunkRequestsAreMade() throws IOException {
         //given
         List<Block> blocks = new ArrayList<>();
         List<BlockDifficulty> difficulties = new ArrayList<>();
@@ -165,7 +170,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenSnapStatusRequestReceived_thenSnapStatusResponseIsSent() {
+    void givenSnapStatusRequestReceived_thenSnapStatusResponseIsSent() throws IOException {
         //given
         initializeBlockchainWithAmountOfBlocks(5010);
         underTest = new SnapshotProcessor(
@@ -203,7 +208,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenSnapBlockRequestReceived_thenSnapBlocksResponseMessageIsSent() {
+    void givenSnapBlockRequestReceived_thenSnapBlocksResponseMessageIsSent() throws IOException {
         //given
         initializeBlockchainWithAmountOfBlocks(5010);
         underTest = new SnapshotProcessor(
@@ -240,7 +245,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenSnapBlocksResponseReceived_thenSnapBlocksRequestMessageIsSent() {
+    void givenSnapBlocksResponseReceived_thenSnapBlocksRequestMessageIsSent() throws IOException {
         //given
         List<Block> blocks = new ArrayList<>();
         List<BlockDifficulty> difficulties = new ArrayList<>();
@@ -288,7 +293,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenSnapStateChunkRequest_thenSnapStateChunkResponseMessageIsSent() {
+    void givenSnapStateChunkRequest_thenSnapStateChunkResponseMessageIsSent() throws IOException {
         //given
         initializeBlockchainWithAmountOfBlocks(1000);
         underTest = new SnapshotProcessor(
@@ -318,7 +323,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenProcessSnapStatusRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
+    void givenProcessSnapStatusRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException, IOException {
         //given
         Peer mPeer = mock(Peer.class);
         SnapStatusRequestMessage msg = mock(SnapStatusRequestMessage.class);
@@ -340,6 +345,7 @@ class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
+                tmpSnapSyncKeyValueDataSource,
                 rskSystemProperties.databaseDir()) {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
@@ -362,7 +368,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenProcessSnapStatusRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException {
+    void givenProcessSnapStatusRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException, IOException {
         //given
         NodeID nodeID = mock(NodeID.class);
         Peer mPeer = mock(Peer.class);
@@ -391,6 +397,7 @@ class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
+                tmpSnapSyncKeyValueDataSource,
                 rskSystemProperties.databaseDir()) {
             @Override
             void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
@@ -413,7 +420,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenProcessSnapBlocksRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
+    void givenProcessSnapBlocksRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException, IOException {
         //given
         Peer mPeer = mock(Peer.class);
         SnapBlocksRequestMessage msg = mock(SnapBlocksRequestMessage.class);
@@ -435,6 +442,7 @@ class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
+                tmpSnapSyncKeyValueDataSource,
                 rskSystemProperties.databaseDir()) {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
@@ -457,7 +465,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenProcessSnapBlocksRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException {
+    void givenProcessSnapBlocksRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException, IOException {
         //given
         NodeID nodeID = mock(NodeID.class);
         Peer mPeer = mock(Peer.class);
@@ -486,6 +494,7 @@ class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
+                tmpSnapSyncKeyValueDataSource,
                 rskSystemProperties.databaseDir()) {
             @Override
             void processSnapBlocksRequestInternal(Peer sender, SnapBlocksRequestMessage requestMessage) {
@@ -508,7 +517,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenProcessStateChunkRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException {
+    void givenProcessStateChunkRequestIsCalled_thenInternalOneIsCalledLater() throws InterruptedException, IOException {
         //given
         Peer mPeer = mock(Peer.class);
         SnapStateChunkRequestMessage msg = mock(SnapStateChunkRequestMessage.class);
@@ -530,6 +539,7 @@ class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
+                tmpSnapSyncKeyValueDataSource,
                 rskSystemProperties.databaseDir()) {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage requestMessage) {
@@ -552,7 +562,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenProcessStateChunkRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException {
+    void givenProcessStateChunkRequestIsCalledFourTimes_thenItGetsRateLimited() throws InterruptedException, IOException {
         //given
         NodeID nodeID = mock(NodeID.class);
         Peer mPeer = mock(Peer.class);
@@ -581,6 +591,7 @@ class SnapshotProcessorTest {
                 true,
                 false,
                 listener,
+                tmpSnapSyncKeyValueDataSource,
                 rskSystemProperties.databaseDir()) {
             @Override
             void processStateChunkRequestInternal(Peer sender, SnapStateChunkRequestMessage request) {
@@ -603,7 +614,7 @@ class SnapshotProcessorTest {
     }
 
     @Test
-    void givenErrorRLPData_thenOnStateChunkErrorIsCalled() {
+    void givenErrorRLPData_thenOnStateChunkErrorIsCalled() throws IOException {
         underTest = new SnapshotProcessor(
                 blockchain,
                 trieStore,
@@ -701,6 +712,7 @@ class SnapshotProcessorTest {
         transactionPool = blockChainBuilder.getTransactionPool();
         blockStore = blockChainBuilder.getBlockStore();
         trieStore = blockChainBuilder.getTrieStore();
+        tmpSnapSyncKeyValueDataSource = blockChainBuilder.getTmpSnapSyncKeyValueDataSource();
     }
 
     private Peer mockedPeer() throws UnknownHostException {
