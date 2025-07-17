@@ -363,7 +363,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             },
             transferPermissions -> {
                 boolean winnerRequestEnabled = transferPermissions.getLeft();
-                boolean winnerReleaseEnabled = transferPermissions.getLeft();
+                boolean winnerReleaseEnabled = transferPermissions.getRight();
 
                 storageProvider.setUnionBridgeRequestEnabled(winnerRequestEnabled);
                 storageProvider.setUnionBridgeReleaseEnabled(winnerReleaseEnabled);

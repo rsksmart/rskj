@@ -64,7 +64,6 @@ class UnionBridgeStorageProviderImplTest {
     );
 
     // Function names for election tests
-    private static final String CHANGE_ADDRESS_FUNCTION = "setUnionBridgeContractAddressForTestnet";
     private static final String INCREASE_LOCKING_CAP_FUNCTION = "increaseLockingCap";
     private static final String TRANSFER_PERMISSIONS_FUNCTION = "setTransferPermissions";
 
