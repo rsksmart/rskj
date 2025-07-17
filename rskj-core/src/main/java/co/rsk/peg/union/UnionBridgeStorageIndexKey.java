@@ -4,7 +4,6 @@ import org.ethereum.vm.DataWord;
 
 public enum UnionBridgeStorageIndexKey {
     UNION_BRIDGE_CONTRACT_ADDRESS("unionBridgeContractAddress"),
-    UNION_BRIDGE_CHANGE_CONTRACT_ADDRESS_ELECTION("unionBridgeChangeContractAddressElection"),
 
     UNION_BRIDGE_LOCKING_CAP("unionBridgeLockingCap"),
     UNION_BRIDGE_INCREASE_LOCKING_CAP_ELECTION("unionBridgeIncreaseLockingCapElection"),

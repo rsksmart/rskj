@@ -18,7 +18,6 @@ public interface UnionBridgeStorageProvider {
     Optional<Boolean> isUnionBridgeRequestEnabled();
     void setUnionBridgeReleaseEnabled(boolean enabled);
     Optional<Boolean> isUnionBridgeReleaseEnabled();
-    ABICallElection getChangeAddressElection(AddressBasedAuthorizer authorizer);
     ABICallElection getIncreaseLockingCapElection(AddressBasedAuthorizer authorizer);
     ABICallElection getTransferPermissionsElection(AddressBasedAuthorizer authorizer);
     void save();
