@@ -878,29 +878,61 @@ class BitcoinUtilsTest {
     void getMultiSigTransactionHashWithoutSignatures_whenTransactionDoesNotHaveInputs_shouldReturnSameTxHash() {
         // arrange
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        Sha256Hash transactionHashBeforeRemovingSignatures = transaction.getHash();
+        BtcTransaction transactionBeforeSigning = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+        Sha256Hash transactionHashBeforeRemovingSignatures = transactionBeforeSigning.getHash();
 
         // act
         Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction);
 
         // assert
         assertEquals(transactionHashBeforeRemovingSignatures, transactionHashWithoutSignatures);
+        assertEquals(transactionBeforeSigning, transactionWithoutSignatures);
     }
 
     @Test
     void getMultiSigTransactionHashWithoutSignatures_whenTransactionIsSegwit_shouldReturnExpectedTxHash() {
         // arrange
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        BtcTransaction prevTx = new BtcTransaction(btcMainnetParams);
+        Coin prevValue = Coin.COIN;
+        prevTx.addOutput(prevValue, federation.getAddress());
+
         BtcTransaction transaction = new BtcTransaction(btcMainnetParams);
-        transaction.addInput(BitcoinTestUtils.createHash(1), 0, new Script(new byte[]{}));
-        TransactionWitness transactionWitness = new TransactionWitness(1);
-        transactionWitness.setPush(0, new byte[]{});
-        transaction.setWitness(0, transactionWitness);
+        Script emptyScript = new Script(new byte[]{});
+        transaction.addInput(BitcoinTestUtils.createHash(1), 0, emptyScript);
+        addSpendingFederationBaseScript(
+            transaction,
+            0,
+            federation.getRedeemScript(),
+            federation.getFormatVersion()
+        );
+
+        BtcTransaction transactionBeforeSigning = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+
+        List<BtcECKey> keysToSign = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01",
+            "member02",
+            "member03",
+            "member04",
+            "member05"
+        }, true); // using some of the private keys from federation declared above
+        signWitnessTransactionInputFromP2shMultiSig(
+            transaction,
+            0,
+            prevValue,
+            keysToSign
+        );
 
         // act
         Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction);
 
         // assert
         assertEquals(transaction.getHash(), transactionHashWithoutSignatures);
+        assertEquals(transactionBeforeSigning.getHash(), transactionHashWithoutSignatures);
+        assertEquals(transactionBeforeSigning, transactionWithoutSignatures);
+        assertEquals(transactionWithoutSignatures.getHash(), transactionHashWithoutSignatures);
     }
 
     @Test
@@ -913,6 +945,7 @@ class BitcoinUtilsTest {
 
         // act & assert
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction));
     }
 
     @Test
@@ -929,6 +962,7 @@ class BitcoinUtilsTest {
 
         // act & assert
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction));
+        assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction));
     }
 
     @Test
@@ -941,7 +975,8 @@ class BitcoinUtilsTest {
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, scriptSig);
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, scriptSig);
         transaction.addOutput(Coin.COIN, destinationAddress);
-        Sha256Hash transactionHashBeforeSigning = transaction.getHash();
+        BtcTransaction transactionBeforeSigning = new BtcTransaction(btcMainnetParams, transaction.bitcoinSerialize());
+        Sha256Hash transactionHashBeforeSigning = transactionBeforeSigning.getHash();
 
         List<BtcECKey> keysToSign = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
             "member01",
@@ -961,9 +996,12 @@ class BitcoinUtilsTest {
 
         // act
         Sha256Hash transactionHashWithoutSignatures = BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(transaction);
+        BtcTransaction transactionWithoutSignatures = BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction);
 
         // assert
+        assertEquals(transactionBeforeSigning, transactionWithoutSignatures);
         assertEquals(transactionHashBeforeSigning, transactionHashWithoutSignatures);
+        assertEquals(transactionWithoutSignatures.getHash(), transactionHashWithoutSignatures);
     }
 
     @Test
