@@ -299,7 +299,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
         List<BlockDifficulty> difficultiesFromResponse = responseMessage.getDifficulties();
         if (difficultiesFromResponse == null || blocksFromResponse.size() != difficultiesFromResponse.size()) {
-            failSyncing(state, sender, EventType.INVALID_BLOCK, "Blocks and difficulties size mismatch. Blocks: [{}], Difficulties: [{}]", blocksFromResponse.size(), Optional.ofNullable(difficultiesFromResponse).map(List::size));
+            failSyncing(state, sender, EventType.INVALID_BLOCK, "Blocks and difficulties size mismatch. Blocks: [{}], Difficulties: [{}]", blocksFromResponse.size(), Optional.ofNullable(difficultiesFromResponse).map(List::size).map(Object::toString).orElse("<null>"));
             return;
         }
 

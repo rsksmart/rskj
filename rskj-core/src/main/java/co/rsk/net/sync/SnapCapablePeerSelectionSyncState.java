@@ -240,23 +240,10 @@ public class SnapCapablePeerSelectionSyncState extends BaseSyncState {
             return;
         }
 
-        // Select a peer with the highest cumulative difficulty adjusted with multiplying by the number of peers with the same checkpoint header
-        Map<Keccak256, Integer> headerHashCounts = validatedPeers.values().stream()
-                .map(vh -> vh.header.getHash())
-                .collect(Collectors.toMap(
-                        hash -> hash,
-                        h -> 1,
-                        Integer::sum
-                ));
-        Comparator<ValidatedPeerInfo> comparator = Comparator.comparing(
-                (ValidatedPeerInfo info) -> info.validatedHeader.cumulativeDifficulty.asBigInteger()
-                        .multiply(BigInteger.valueOf(headerHashCounts.get(info.validatedHeader.header.getHash())))
-        ).thenComparing((ValidatedPeerInfo info) -> info.peerStatus.getStatus().getTotalDifficulty());
-
         ValidatedPeerInfo bestPeerInfo = validatedPeers.entrySet().stream()
                 .map(entry -> new ValidatedPeerInfo(entry.getKey(), peersInformation.getPeer(entry.getKey()), entry.getValue()))
                 .filter(info -> isPeerStatusAvailable(info.peerStatus))
-                .max(comparator)
+                .max(peerComparator())
                 .orElse(null);
         if (bestPeerInfo == null) {
             logger.warn("No valid peers found after validation");
@@ -266,6 +253,22 @@ public class SnapCapablePeerSelectionSyncState extends BaseSyncState {
 
         logger.info("Selected peer with highest total difficulty: {}", bestPeerInfo.peer.getPeerNodeID());
         onPeerSelectionComplete(bestPeerInfo.peer, bestPeerInfo.validatedHeader);
+    }
+
+    private Comparator<ValidatedPeerInfo> peerComparator() {
+        // Select a peer with the highest cumulative difficulty adjusted with multiplying by the number of peers with the same checkpoint header
+        Map<Keccak256, Integer> headerHashCounts = validatedPeers.values().stream()
+                .map(vh -> vh.header.getHash())
+                .collect(Collectors.toMap(
+                        hash -> hash,
+                        h -> 1,
+                        Integer::sum
+                ));
+
+        return Comparator.comparing(
+                (ValidatedPeerInfo info) -> info.validatedHeader.cumulativeDifficulty.asBigInteger()
+                        .multiply(BigInteger.valueOf(headerHashCounts.get(info.validatedHeader.header.getHash())))
+        ).thenComparing((ValidatedPeerInfo info) -> info.peerStatus.getStatus().getTotalDifficulty());
     }
 
     private void onPeerSelectionComplete(Peer selectedSnapCapablePeer, @Nullable ValidatedHeader validatedHeader) {
