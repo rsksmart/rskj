@@ -5,11 +5,18 @@ import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.vote.ABICallElection;
+import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -66,15 +73,70 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
-        RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
+        RskAddress txSender = tx.getSender(signatureCache);
+        ABICallElection changeAddressElection = storageProvider.getChangeAddressElection(
+            authorizer);
+        ABICallSpec changeAddressVote = new ABICallSpec(SET_UNION_BRIDGE_ADDRESS_TAG, new byte[][]{
+            BridgeSerializationUtils.serializeRskAddress(unionBridgeContractAddress)});
 
-        storageProvider.setAddress(unionBridgeContractAddress);
-        logger.info(
-            "[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}",
-            SET_UNION_BRIDGE_ADDRESS_TAG,
-            currentUnionBridgeAddress,
-            unionBridgeContractAddress
+        return handleVote(
+            txSender,
+            changeAddressElection,
+            changeAddressVote,
+            arguments -> BridgeSerializationUtils.deserializeRskAddress(arguments[0]),
+            newUnionBridgeAddress -> {
+                RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
+                storageProvider.setAddress(newUnionBridgeAddress);
+                logger.info(
+                    "[{}] Union Bridge Contract Address has been updated. Previous address: {} New address: {}",
+                    SET_UNION_BRIDGE_ADDRESS_TAG,
+                    currentUnionBridgeAddress,
+                    newUnionBridgeAddress
+                );
+            }
         );
+    }
+
+    /**
+     * Generic method to handle the voting process
+     *
+     * @param txSender The address of the transaction sender
+     * @param election The election instance managing the voting process
+     * @param voteSpec The specification of the vote
+     * @param deserializer Function to deserialize the value
+     * @param winnerHandler Function to apply if a winner is found
+     * @return Response code indicating success or failure
+     */
+    private <T> UnionResponseCode handleVote(
+        RskAddress txSender,
+        ABICallElection election,
+        ABICallSpec voteSpec,
+        Function<byte[][], T> deserializer,
+        Consumer<T> winnerHandler
+    ) {
+        boolean successfulVote = election.vote(voteSpec, txSender);
+        if (!successfulVote) {
+            logger.warn("[handleVote] Unsuccessful {} vote", voteSpec);
+            return UnionResponseCode.GENERIC_ERROR;
+        }
+
+        Optional<ABICallSpec> winnerOptional = election.getWinner();
+        if (winnerOptional.isEmpty()) {
+            logger.info("[handleVote] Successful {} vote.", voteSpec);
+            return UnionResponseCode.SUCCESS;
+        }
+
+        ABICallSpec winner = winnerOptional.get();
+        T winnerValue;
+        try {
+            winnerValue = deserializer.apply(winner.getArguments());
+        } catch (Exception e) {
+            logger.warn("[handleVote] Exception deserializing winner value", e);
+            return UnionResponseCode.GENERIC_ERROR;
+        }
+
+        winnerHandler.accept(winnerValue);
+        election.clear();
         return UnionResponseCode.SUCCESS;
     }
 
@@ -96,14 +158,26 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.INVALID_VALUE;
         }
 
-        Coin lockingCapBeforeUpdate = getLockingCap();
-        storageProvider.setLockingCap(newCap);
-        RskAddress caller = tx.getSender(signatureCache);
-        eventLogger.logUnionLockingCapIncreased(caller, lockingCapBeforeUpdate, newCap);
+        RskAddress txSender = tx.getSender(signatureCache);
 
-        logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
-            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newCap);
-        return UnionResponseCode.SUCCESS;
+        ABICallElection increaseLockingCapElection = storageProvider.getIncreaseLockingCapElection(
+            authorizer);
+        ABICallSpec increaseLockingCapVote = new ABICallSpec(INCREASE_LOCKING_CAP_TAG, new byte[][]{
+            BridgeSerializationUtils.serializeRskCoin(newCap)});
+
+        return handleVote(
+            txSender,
+            increaseLockingCapElection,
+            increaseLockingCapVote,
+            winnerArgs -> BridgeSerializationUtils.deserializeRskCoin(winnerArgs[0]),
+            newLockingCap -> {
+                Coin lockingCapBeforeUpdate = getLockingCap();
+                storageProvider.setLockingCap(newLockingCap);
+                eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, newLockingCap);
+                logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
+                    INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newLockingCap);
+            }
+        );
     }
 
     private Coin getWeisTransferredToUnionBridge() {
@@ -281,20 +355,41 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             return UnionResponseCode.SUCCESS;
         }
 
-        storageProvider.setUnionBridgeRequestEnabled(requestEnabled);
-        storageProvider.setUnionBridgeReleaseEnabled(releaseEnabled);
+        RskAddress txSender = tx.getSender(signatureCache);
+        ABICallElection setTransferPermissionsElection = storageProvider.getTransferPermissionsElection(
+            authorizer);
+        ABICallSpec setTransferPermissionsVote = new ABICallSpec(SET_TRANSFER_PERMISSIONS_TAG, new byte[][]{
+            BridgeSerializationUtils.serializeBoolean(requestEnabled),
+            BridgeSerializationUtils.serializeBoolean(releaseEnabled)
+        });
 
-        RskAddress caller = tx.getSender(signatureCache);
+        return handleVote(
+            txSender,
+            setTransferPermissionsElection,
+            setTransferPermissionsVote,
+            winnerArgs -> {
+                boolean winnerRequestEnabled = BridgeSerializationUtils.deserializeBoolean(
+                    winnerArgs[0]);
+                boolean winnerReleaseEnabled = BridgeSerializationUtils.deserializeBoolean(
+                    winnerArgs[1]);
+                return Pair.of(winnerRequestEnabled, winnerReleaseEnabled);
+            },
+            transferPermissions -> {
+                boolean winnerRequestEnabled = transferPermissions.getLeft();
+                boolean winnerReleaseEnabled = transferPermissions.getLeft();
 
-        eventLogger.logUnionBridgeTransferPermissionsUpdated(caller, requestEnabled, releaseEnabled);
-        logger.info(
-            "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
-            SET_TRANSFER_PERMISSIONS_TAG,
-            requestEnabled,
-            releaseEnabled
+                storageProvider.setUnionBridgeRequestEnabled(winnerRequestEnabled);
+                storageProvider.setUnionBridgeReleaseEnabled(winnerReleaseEnabled);
+
+                eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, winnerRequestEnabled, winnerReleaseEnabled);
+                logger.info(
+                    "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
+                    SET_TRANSFER_PERMISSIONS_TAG,
+                    winnerRequestEnabled,
+                    winnerReleaseEnabled
+                );
+            }
         );
-
-        return UnionResponseCode.SUCCESS;
     }
 
     private boolean isTransferPermissionStateAlreadySet(boolean requestEnabled, boolean releaseEnabled) {
