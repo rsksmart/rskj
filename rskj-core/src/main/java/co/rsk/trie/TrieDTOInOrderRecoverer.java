@@ -25,9 +25,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class TrieDTOInOrderRecoverer {
+
+    public record RecoverSubtreeResponse(Optional<TrieDTO> node, int index) {
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(TrieDTOInOrderRecoverer.class);
 
@@ -35,25 +39,45 @@ public class TrieDTOInOrderRecoverer {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
-    public static Optional<TrieDTO> recoverTrie(TrieDTO[] trieCollection, Consumer<? super TrieDTO> processTrieDTO) {
-        Optional<TrieDTO> result = recoverSubtree(trieCollection, 0, trieCollection.length - 1, processTrieDTO);
-        result.ifPresent(processTrieDTO);
-        return result;
+    /**
+     * Recover a Trie structure given a list of nodes.
+     *
+     * @param getNodeFnByIndex will retrieve the node by index given any source
+     * @param trieCollectionSize will be size of all the nodes to be recovered
+     * @param processTrieDTO will update the nodes in the source. This is because some hashes will be calculated for validation purposes.
+     * @return
+     */
+    public static RecoverSubtreeResponse recoverTrie(Function<Integer, TrieDTO> getNodeFnByIndex, int trieCollectionSize, BiConsumer<? super TrieDTO, Integer> processTrieDTO) {
+        final var response = recoverSubtree(getNodeFnByIndex, 0, trieCollectionSize - 1, processTrieDTO);
+        final var result = response.node();
+        result.ifPresent(node -> processTrieDTO.accept(node, response.index()));
+
+        return response;
     }
 
-    private static Optional<TrieDTO> recoverSubtree(TrieDTO[] trieCollection, int start, int end, Consumer<? super TrieDTO> processTrieDTO) {
+    private static RecoverSubtreeResponse recoverSubtree(Function<Integer, TrieDTO> getNodeFnByIndex, int start, int end, BiConsumer<? super TrieDTO, Integer> processTrieDTO) {
         if (end - start < 0) {
-            return Optional.empty();
+            return new RecoverSubtreeResponse(Optional.empty(), -1);
         }
         if (end - start == 0) {
-            return Optional.of(fromTrieDTO(trieCollection[start], Optional.empty(), Optional.empty()));
+            final var recoveredNode = Optional.of(fromTrieDTO(getNodeFnByIndex.apply(start), Optional.empty(), Optional.empty()));
+
+            return new RecoverSubtreeResponse(recoveredNode, start);
         }
-        int indexRoot = findRoot(trieCollection, start, end);
-        Optional<TrieDTO> left = recoverSubtree(trieCollection, start, indexRoot - 1, processTrieDTO);
-        left.ifPresent(processTrieDTO);
-        Optional<TrieDTO> right = recoverSubtree(trieCollection, indexRoot + 1, end, processTrieDTO);
-        right.ifPresent(processTrieDTO);
-        return Optional.of(fromTrieDTO(trieCollection[indexRoot], left, right));
+
+        int indexRoot = findRoot(getNodeFnByIndex, start, end);
+
+        final var leftResponse = recoverSubtree(getNodeFnByIndex, start, indexRoot - 1, processTrieDTO);
+        final var left = leftResponse.node();
+        left.ifPresent(node -> processTrieDTO.accept(node, leftResponse.index()));
+
+        final var rightResponse = recoverSubtree(getNodeFnByIndex, indexRoot + 1, end, processTrieDTO);
+        final var right = rightResponse.node();
+        right.ifPresent(node -> processTrieDTO.accept(node, rightResponse.index()));
+
+        final var recoveredNode = Optional.of(fromTrieDTO(getNodeFnByIndex.apply(indexRoot), left, right));
+
+        return new RecoverSubtreeResponse(recoveredNode, indexRoot);
     }
 
     public static boolean verifyChunk(byte[] remoteRootHash, List<TrieDTO> preRootNodes, List<TrieDTO> nodes, List<TrieDTO> postRootNodes) {
@@ -65,8 +89,9 @@ public class TrieDTOInOrderRecoverer {
             return false;
         }
         TrieDTO[] nodeArray = allNodes.toArray(new TrieDTO[0]);
-        Optional<TrieDTO> result = TrieDTOInOrderRecoverer.recoverTrie(nodeArray, t -> {
+        final var response = TrieDTOInOrderRecoverer.recoverTrie(index -> nodeArray[index], nodeArray.length, (node, index) -> {
         });
+        final var result = response.node();
         if (!result.isPresent() || !Arrays.equals(remoteRootHash, result.get().calculateHash())) {
             logger.warn("Root hash does not match! Calculated is present: {}", result.isPresent());
             return false;
@@ -80,6 +105,25 @@ public class TrieDTOInOrderRecoverer {
         for (int i = start; i <= end; i++) {
             if (getValue(trieCollection[i]) > getValue(trieCollection[max])) {
                 max = i;
+            }
+        }
+        return max;
+    }
+
+    private static int findRoot(Function<Integer, TrieDTO> getNodeFnByIndex, int start, int end) {
+        int max = start;
+        TrieDTO maxNode = null;
+
+        for (int i = start; i <= end; i++) {
+            final var node = getNodeFnByIndex.apply(i);
+
+            if(maxNode == null) {
+                maxNode = node;
+            }
+
+            if (getValue(node) > getValue(maxNode)) {
+                max = i;
+                maxNode = node;
             }
         }
         return max;
