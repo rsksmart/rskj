@@ -37,7 +37,7 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
 
         changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
             changeUnionBridgeContractAddressAuthorizers,
-            MinimumRequiredCalculation.ONE
+            MinimumRequiredCalculation.MAJORITY
         );
 
         // TODO: Replace with actual authorizers
@@ -50,7 +50,7 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
 
         changeLockingCapAuthorizer = new AddressBasedAuthorizer(
             changeLockingCapAuthorizers,
-            MinimumRequiredCalculation.ONE
+            MinimumRequiredCalculation.MAJORITY
         );
 
         // TODO: Replace with actual authorizers
@@ -63,7 +63,7 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
 
         changeTransferPermissionsAuthorizer = new AddressBasedAuthorizer(
             changeTransferPermissionsAuthorizers,
-            MinimumRequiredCalculation.ONE
+            MinimumRequiredCalculation.MAJORITY
         );
     }
 

@@ -36,7 +36,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
 
         changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
             changeUnionBridgeContractAddressAuthorizers,
-            MinimumRequiredCalculation.ONE
+            MinimumRequiredCalculation.MAJORITY
         );
 
         // TODO: Replace with actual authorizers
@@ -47,7 +47,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         changeLockingCapAuthorizer = new AddressBasedAuthorizer(
             changeLockingCapAuthorizers,
-            MinimumRequiredCalculation.ONE
+            MinimumRequiredCalculation.MAJORITY
         );
 
         // TODO: Replace with actual authorizers
@@ -58,7 +58,7 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         changeTransferPermissionsAuthorizer = new AddressBasedAuthorizer(
             changeTransferPermissionsAuthorizers,
-            MinimumRequiredCalculation.ONE
+            MinimumRequiredCalculation.MAJORITY
         );
     }
 
