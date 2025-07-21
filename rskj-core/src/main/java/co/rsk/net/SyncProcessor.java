@@ -328,7 +328,7 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void startSnapSync(Peer peer) {
         logger.info("Start Snap syncing with {}", peer.getPeerNodeID());
-        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, tmpSnapSyncKeyValueDataSource, databaseDir));
+        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, databaseDir));
     }
 
     @Override

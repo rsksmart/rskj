@@ -23,7 +23,6 @@ import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
-import co.rsk.trie.TrieDTO;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
@@ -74,7 +73,6 @@ public class SnapSyncState extends BaseSyncState {
     private BigInteger stateSize = BigInteger.ZERO;
     private BigInteger stateChunkSize = BigInteger.ZERO;
     private boolean stateFetched;
-    private final List<TrieDTO> allNodes;
 
     private long remoteTrieSize;
     private byte[] remoteRootHash;
@@ -93,21 +91,24 @@ public class SnapSyncState extends BaseSyncState {
 
     private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
     public static final String TMP_NODES_DIR_NAME = "snapSyncTmpNodes";
+    // We are going to use a key / value store, to store all the nodes that we receive from snap server,
+    // since we are using a map, we don't know how many nodes are stored there, which means that we need
+    // to save the size of all the nodes added. This is why we have this key and it is -1, because the
+    // map can't have a key less than 0. That way we make sure it will not be used by mistake.
     public static final int TMP_NODES_SIZE_KEY = -1;
 
-    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration, KeyValueDataSource tmpSnapSyncKeyValueDataSource, String databaseDir) {
-        this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null, tmpSnapSyncKeyValueDataSource, databaseDir);
+    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration, String databaseDir) {
+        this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null, databaseDir);
     }
 
     @VisibleForTesting
     SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor,
                   SnapSyncRequestManager snapRequestManager, SyncConfiguration syncConfiguration,
-                  @Nullable SyncMessageHandler.Listener listener, KeyValueDataSource tmpSnapSyncKeyValueDataSource,
+                  @Nullable SyncMessageHandler.Listener listener,
                   String databaseDir) {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor;
         this.snapRequestManager = snapRequestManager;
-        this.allNodes = Lists.newArrayList();
         this.blocks = Lists.newArrayList();
         this.thread = new Thread(new SyncMessageHandler("SNAP/client", responseQueue, listener) {
 
@@ -151,7 +152,7 @@ public class SnapSyncState extends BaseSyncState {
             }
 
             final var currentDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
-            tmpSnapSyncKeyValueDataSource = KeyValueDataSourceUtils.makeDataSource(tmpDatabasePath, currentDbKind);;
+            tmpSnapSyncKeyValueDataSource = KeyValueDataSourceUtils.makeDataSourceButNotInit(tmpDatabasePath, currentDbKind);
         }
 
         return tmpSnapSyncKeyValueDataSource;
@@ -167,6 +168,11 @@ public class SnapSyncState extends BaseSyncState {
             logger.warn(INVALID_STATE_IS_RUNNING_MSG, isRunning);
             return;
         }
+
+        if (tmpSnapSyncKeyValueDataSource != null) {
+            tmpSnapSyncKeyValueDataSource.init();
+        }
+
         isRunning = Boolean.TRUE;
         thread.start();
         snapshotProcessor.startSyncing(this);
@@ -337,10 +343,6 @@ public class SnapSyncState extends BaseSyncState {
         blockConnectorHelper.startConnecting(blocks);
     }
 
-    public List<TrieDTO> getAllNodes() {
-        return allNodes;
-    }
-
     public BigInteger getStateSize() {
         return stateSize;
     }
@@ -382,6 +384,10 @@ public class SnapSyncState extends BaseSyncState {
     }
 
     public void finish() {
+        if (tmpSnapSyncKeyValueDataSource != null) {
+            tmpSnapSyncKeyValueDataSource.close();
+        }
+
         if (isRunning != Boolean.TRUE) {
             logger.warn(INVALID_STATE_IS_RUNNING_MSG, isRunning);
             return;
@@ -396,6 +402,10 @@ public class SnapSyncState extends BaseSyncState {
     }
 
     public void fail(Peer peer, EventType eventType, String message, Object... arguments) {
+        if (tmpSnapSyncKeyValueDataSource != null) {
+            tmpSnapSyncKeyValueDataSource.close();
+        }
+
         if (isRunning != Boolean.TRUE) {
             logger.warn(INVALID_STATE_IS_RUNNING_MSG, isRunning);
             return;
