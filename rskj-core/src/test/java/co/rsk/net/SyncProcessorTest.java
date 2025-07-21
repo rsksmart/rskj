@@ -36,7 +36,9 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 
@@ -52,7 +54,7 @@ class SyncProcessorTest {
     public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     @Test
-    void noPeers() {
+    void noPeers() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -69,7 +71,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, getPeerScoringManager()),
                 mock(Genesis.class),
-                listener);
+                listener,
+                Files.createTempDirectory("").toString());
 
         Assertions.assertEquals(0, processor.getPeersCount());
         Assertions.assertEquals(0, processor.getNoAdvancedPeers());
@@ -80,7 +83,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processStatusWithAdvancedPeers() {
+    void processStatusWithAdvancedPeers() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
@@ -107,7 +110,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
         processor.processStatus(sender, status);
 
         Assertions.assertEquals(1, processor.getPeersCount());
@@ -131,7 +135,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
+    void syncWithAdvancedPeerAfterTimeoutWaitingPeers() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
@@ -159,7 +163,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
         processor.processStatus(sender, status);
 
         Assertions.assertEquals(1, processor.getPeersCount());
@@ -189,7 +194,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
+    void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = TestUtils.generateBytes("hash",32);
@@ -214,7 +219,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
                 genesisBlock,
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
         processor.processStatus(sender, status);
@@ -235,7 +241,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void syncWithAdvancedStatusAnd5Peers() {
+    void syncWithAdvancedStatusAnd5Peers() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
@@ -259,7 +265,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         List<SimplePeer> senders = new ArrayList<>();
         Random random = new Random(SyncProcessor.class.hashCode());
@@ -313,7 +320,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processStatusWithPeerWithSameDifficulty() {
+    void processStatusWithPeerWithSameDifficulty() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -339,7 +346,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 genesisBlock,
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         processor.processStatus(sender, status);
 
@@ -354,7 +362,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void sendSkeletonRequest() {
+    void sendSkeletonRequest() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -370,7 +378,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         processor.sendSkeletonRequest(sender, 0);
 
@@ -387,7 +396,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void sendBlockHashRequest() {
+    void sendBlockHashRequest() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -405,7 +414,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         processor.sendBlockHashRequest(sender, 100);
 
@@ -423,7 +433,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBlockHashResponseWithUnknownHash() {
+    void processBlockHashResponseWithUnknownHash() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
@@ -436,13 +446,14 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         Assertions.assertThrows(Exception.class, () -> processor.processStatus(sender, new Status(100, null)));
     }
 
     @Test
-    void processBlockHeadersResponseWithEmptyList() {
+    void processBlockHeadersResponseWithEmptyList() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -457,7 +468,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -469,7 +481,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBlockHeadersResponseRejectsNonSolicitedMessages() {
+    void processBlockHeadersResponseRejectsNonSolicitedMessages() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -486,7 +498,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -499,7 +512,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
+    void processBlockHeadersResponseWithManyHeadersMissingFirstParent() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         Blockchain otherBlockchain = new BlockChainBuilder().ofSize(10, true);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -516,7 +529,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -532,7 +546,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBlockHeadersResponseWithOneExistingHeader() {
+    void processBlockHeadersResponseWithOneExistingHeader() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -549,7 +563,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -562,7 +577,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBodyResponseRejectsNonSolicitedMessages() {
+    void processBodyResponseRejectsNonSolicitedMessages() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
@@ -578,7 +593,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         BodyResponseMessage response = new BodyResponseMessage(TestUtils.generateLong("response"), null, null, null);
         processor.registerExpectedMessage(response);
@@ -588,7 +604,7 @@ class SyncProcessorTest {
         Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
-    void testProcessBodyResponseAddsToBlockchain(TestSystemProperties config) {
+    void testProcessBodyResponseAddsToBlockchain(TestSystemProperties config) throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().setConfig(config).ofSize(10, new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig()));
 
@@ -613,7 +629,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         BlockHeaderExtension extension = blockchain.getBestBlock().getHeader().getExtension();
@@ -642,19 +659,19 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBodyResponseAddsToBlockchain() {
+    void processBodyResponseAddsToBlockchain() throws IOException {
         testProcessBodyResponseAddsToBlockchain(new TestSystemProperties());
     }
 
     @Test
-    void processBodyResponseAddsToBlockchainWithoutFingerroot500() {
+    void processBodyResponseAddsToBlockchainWithoutFingerroot500() throws IOException {
         testProcessBodyResponseAddsToBlockchain(new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(-1))
         ));
     }
 
     @Test
-    void doesntProcessInvalidBodyResponse() {
+    void doesntProcessInvalidBodyResponse() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -680,7 +697,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                listener);
+                listener,
+                Files.createTempDirectory("").toString());
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         BlockHeaderExtension extension = blockchain.getBestBlock().getHeader().getExtension();
         Account senderAccount = createAccount("sender");
@@ -715,7 +733,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void doesntProcessUnexpectedBodyResponse() {
+    void doesntProcessUnexpectedBodyResponse() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
@@ -743,7 +761,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         BlockHeaderExtension extension = blockchain.getBestBlock().getHeader().getExtension();
@@ -772,7 +791,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBodyResponseWithTransactionAddsToBlockchain() {
+    void processBodyResponseWithTransactionAddsToBlockchain() throws IOException {
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
 
@@ -836,7 +855,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
         BlockHeaderExtension extension = block.getHeader().getExtension();
@@ -864,7 +884,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processBlockResponseAddsToBlockchain() {
+    void processBlockResponseAddsToBlockchain() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -889,7 +909,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
         BlockResponseMessage response = new BlockResponseMessage(TestUtils.generateLong("response"), block);
         processor.registerExpectedMessage(response);
 
@@ -901,7 +922,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
+    void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
         Blockchain advancedBlockchain = new BlockChainBuilder().ofSize(100);
@@ -923,7 +944,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         processor.processStatus(sender, StatusUtils.fromBlockchain(advancedBlockchain));
 
@@ -960,7 +982,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
+    void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(30);
         org.ethereum.db.BlockStore blockStore = builder.getBlockStore();
@@ -983,7 +1005,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         Status status = StatusUtils.fromBlockchain(advancedBlockchain);
         processor.processStatus(sender, status);
@@ -1019,7 +1042,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processSkeletonResponseWithTenBlockIdentifiers() {
+    void processSkeletonResponseWithTenBlockIdentifiers() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -1041,7 +1064,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         int connectionPoint = 0;
         int step = 10;
@@ -1070,7 +1094,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processSkeletonResponseWithoutBlockIdentifiers() {
+    void processSkeletonResponseWithoutBlockIdentifiers() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -1086,7 +1110,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
@@ -1100,7 +1125,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void processSkeletonResponseWithConnectionPoint() {
+    void processSkeletonResponseWithConnectionPoint() throws IOException {
         Blockchain blockchain = new BlockChainBuilder().ofSize(25);
 
         final NetBlockStore store = new NetBlockStore();
@@ -1123,7 +1148,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
-                mock(EthereumListener.class));
+                mock(EthereumListener.class),
+                Files.createTempDirectory("").toString());
 
         int connectionPoint = 25;
         int step = 10;
@@ -1147,7 +1173,7 @@ class SyncProcessorTest {
     }
 
     @Test
-    void syncEventsSentToListener() {
+    void syncEventsSentToListener() throws IOException {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer peer = new SimplePeer(new byte[] { 0x01 });
@@ -1167,7 +1193,8 @@ class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, peersInformation,
                 mock(Genesis.class),
-                listener);
+                listener,
+                Files.createTempDirectory("").toString());
 
         peersInformation.registerPeer(peer);
 

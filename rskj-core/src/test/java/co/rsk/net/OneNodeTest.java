@@ -26,6 +26,7 @@ import org.ethereum.core.Block;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +41,7 @@ class OneNodeTest {
     }
 
     @Test
-    void buildBlockchain() {
+    void buildBlockchain() throws IOException {
         SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -53,7 +54,7 @@ class OneNodeTest {
     }
 
     @Test
-    void buildBlockchainInReverse() {
+    void buildBlockchainInReverse() throws IOException {
         SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);

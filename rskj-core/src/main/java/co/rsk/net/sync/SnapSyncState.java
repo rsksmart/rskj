@@ -29,12 +29,21 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -82,14 +91,19 @@ public class SnapSyncState extends BaseSyncState {
     private volatile Boolean isRunning;
     private final Thread thread;
 
-    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration) {
-        this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null);
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
+    public static final String TMP_NODES_DIR_NAME = "snapSyncTmpNodes";
+    public static final int TMP_NODES_SIZE_KEY = -1;
+
+    public SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor, SyncConfiguration syncConfiguration, KeyValueDataSource tmpSnapSyncKeyValueDataSource, String databaseDir) {
+        this(syncEventsHandler, snapshotProcessor, new SnapSyncRequestManager(syncConfiguration, syncEventsHandler), syncConfiguration, null, tmpSnapSyncKeyValueDataSource, databaseDir);
     }
 
     @VisibleForTesting
     SnapSyncState(SyncEventsHandler syncEventsHandler, SnapProcessor snapshotProcessor,
                   SnapSyncRequestManager snapRequestManager, SyncConfiguration syncConfiguration,
-                  @Nullable SyncMessageHandler.Listener listener) {
+                  @Nullable SyncMessageHandler.Listener listener, KeyValueDataSource tmpSnapSyncKeyValueDataSource,
+                  String databaseDir) {
         super(syncEventsHandler, syncConfiguration);
         this.snapshotProcessor = snapshotProcessor;
         this.snapRequestManager = snapRequestManager;
@@ -102,6 +116,49 @@ public class SnapSyncState extends BaseSyncState {
                 return isRunning;
             }
         }, "snap sync client handler");
+
+        this.tmpSnapSyncKeyValueDataSource = getTmpSnapSyncKeyValueDataSource(databaseDir);
+    }
+
+    private synchronized KeyValueDataSource getTmpSnapSyncKeyValueDataSource(String databaseDir) {
+        if (tmpSnapSyncKeyValueDataSource == null) {
+            final var databasePath = Paths.get(databaseDir);
+            final var tmpDatabasePath = databasePath.resolve(SnapSyncState.TMP_NODES_DIR_NAME);
+
+            try {
+                if (Files.exists(tmpDatabasePath)) {
+                    // Delete folder and its content if exists
+                    Files.walkFileTree(tmpDatabasePath,
+                            new SimpleFileVisitor<>() {
+                                @Override
+                                public @Nonnull FileVisitResult postVisitDirectory(@Nonnull Path dir, IOException exc) throws IOException {
+                                    Files.delete(dir);
+                                    return FileVisitResult.CONTINUE;
+                                }
+
+                                @Override
+                                public @Nonnull FileVisitResult visitFile(@Nonnull Path file, @Nonnull BasicFileAttributes attrs)
+                                        throws IOException {
+                                    Files.delete(file);
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                }
+
+                Files.createDirectory(tmpDatabasePath);
+            } catch (IOException e) {
+                logger.error("Unable to create temporary folder snapshot sync datasource", e);
+            }
+
+            final var currentDbKind = KeyValueDataSourceUtils.getDbKindValueFromDbKindFile(databaseDir);
+            tmpSnapSyncKeyValueDataSource = KeyValueDataSourceUtils.makeDataSource(tmpDatabasePath, currentDbKind);;
+        }
+
+        return tmpSnapSyncKeyValueDataSource;
+    }
+
+    public KeyValueDataSource getTmpSnapSyncKeyValueDataSource() {
+        return tmpSnapSyncKeyValueDataSource;
     }
 
     @Override

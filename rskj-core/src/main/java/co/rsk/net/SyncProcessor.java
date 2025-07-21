@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.validator.DifficultyRule;
@@ -79,6 +80,9 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private SyncState syncState;
 
+    private KeyValueDataSource tmpSnapSyncKeyValueDataSource;
+    private String databaseDir;
+
     @VisibleForTesting
     public SyncProcessor(Blockchain blockchain,
                          BlockStore blockStore,
@@ -91,9 +95,12 @@ public class SyncProcessor implements SyncEventsHandler {
                          DifficultyCalculator difficultyCalculator,
                          PeersInformation peersInformation,
                          Genesis genesis,
-                         EthereumListener ethereumListener) {
+                         EthereumListener ethereumListener,
+                         String databaseDir) {
 
-        this(blockchain, blockStore, consensusValidationMainchainView, blockSyncService, syncConfiguration, blockFactory, blockHeaderValidationRule, syncBlockValidatorRule, difficultyCalculator, peersInformation, genesis, ethereumListener, null);
+        this(blockchain, blockStore, consensusValidationMainchainView, blockSyncService, syncConfiguration,
+                blockFactory, blockHeaderValidationRule, syncBlockValidatorRule, difficultyCalculator, peersInformation,
+                genesis, ethereumListener, null, databaseDir);
     }
 
     public SyncProcessor(Blockchain blockchain,
@@ -108,7 +115,8 @@ public class SyncProcessor implements SyncEventsHandler {
                          PeersInformation peersInformation,
                          Genesis genesis,
                          EthereumListener ethereumListener,
-                         SnapshotProcessor snapshotProcessor) {
+                         SnapshotProcessor snapshotProcessor,
+                         String databaseDir) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
@@ -133,6 +141,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         this.peersInformation = peersInformation;
         this.snapshotProcessor = snapshotProcessor;
+        this.databaseDir = databaseDir;
         setSyncState(new PeerAndModeDecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
 
@@ -319,7 +328,7 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void startSnapSync(Peer peer) {
         logger.info("Start Snap syncing with {}", peer.getPeerNodeID());
-        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration));
+        setSyncState(new SnapSyncState(this, snapshotProcessor, syncConfiguration, tmpSnapSyncKeyValueDataSource, databaseDir));
     }
 
     @Override

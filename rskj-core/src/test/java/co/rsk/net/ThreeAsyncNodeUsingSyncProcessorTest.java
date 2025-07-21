@@ -29,12 +29,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 
 @SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
 class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
-    void synchronizeNewNodesInAChain() {
+    void synchronizeNewNodesInAChain() throws IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100,false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
@@ -83,7 +85,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    void synchronizeNewNodeWithBestChain() {
+    void synchronizeNewNodeWithBestChain() throws IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50,false, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
@@ -132,7 +134,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void synchronizeNewNodeWithTwoPeers() {
+    public void synchronizeNewNodeWithTwoPeers() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, false);
 
@@ -184,7 +186,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void synchronizeNewNodeWithTwoPeersDefault() {
+    public void synchronizeNewNodeWithTwoPeersDefault() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(50, false);
         Blockchain b2 = new BlockChainBuilder().ofSize(0, false);
 
@@ -225,7 +227,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void synchronizeNewNodeWithTwoPeers200Default() {
+    public void synchronizeNewNodeWithTwoPeers200Default() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(200, false);
         Blockchain b2 = new BlockChainBuilder().ofSize(0, false);
 
@@ -266,7 +268,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void synchronizeWithTwoPeers200AndOneFails() {
+    public void synchronizeWithTwoPeers200AndOneFails() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(200, false);
         Blockchain b2 = new BlockChainBuilder().ofSize(0, false);
 
@@ -312,7 +314,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void synchronizeNewNodeWithTwoPeers200Different() {
+    public void synchronizeNewNodeWithTwoPeers200Different() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(193, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1,7);
         Blockchain b3 = new BlockChainBuilder().ofSize(0, false);
@@ -355,7 +357,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void synchronizeNewNodeWithThreePeers400Different() {
+    public void synchronizeNewNodeWithThreePeers400Different() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(0, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 200);
         Blockchain b3 = BlockChainBuilder.copyAndExtend(b2,200);
@@ -403,7 +405,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void dontSynchronizeNodeWithShorterChain() throws InterruptedException {
+    public void dontSynchronizeNodeWithShorterChain() throws InterruptedException, IOException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(50, false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
@@ -448,7 +450,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer() throws InterruptedException {
+    public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer() throws InterruptedException, IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, false);
         Blockchain b3 = BlockChainBuilder.copyAndExtend(b2, 7, false);
@@ -497,7 +499,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void ignoreNewBlockHashesWhenSyncing() {
+    public void ignoreNewBlockHashesWhenSyncing() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, false);
 
@@ -538,7 +540,7 @@ class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Disabled
-    public void acceptNewBlockHashWhenNotSyncing() {
+    public void acceptNewBlockHashWhenNotSyncing() throws IOException {
         Blockchain b1 = new BlockChainBuilder().ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, false);
 
