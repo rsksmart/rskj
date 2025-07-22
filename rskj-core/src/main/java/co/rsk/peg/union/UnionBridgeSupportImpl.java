@@ -13,10 +13,7 @@ import co.rsk.peg.vote.ABICallSpec;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
-import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -109,61 +106,34 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         ABICallSpec increaseLockingCapVote = new ABICallSpec(INCREASE_LOCKING_CAP_TAG, new byte[][]{
             BridgeSerializationUtils.serializeRskCoin(newCap)});
 
-        return handleVote(
-            txSender,
-            increaseLockingCapElection,
-            increaseLockingCapVote,
-            winnerArgs -> BridgeSerializationUtils.deserializeRskCoin(winnerArgs[0]),
-            newLockingCap -> {
-                Coin lockingCapBeforeUpdate = getLockingCap();
-                storageProvider.setLockingCap(newLockingCap);
-                eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, newLockingCap);
-                logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
-                    INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, newLockingCap);
-            }
-        );
-    }
-
-    /**
-     * Generic method to handle the voting process
-     *
-     * @param txSender      The address of the transaction sender
-     * @param election      The election instance managing the voting process
-     * @param voteSpec      The specification of the vote
-     * @param deserializer  Function to deserialize the value
-     * @param winnerHandler Function to apply if a winner is found
-     * @return Response code indicating success or failure
-     */
-    private <T> UnionResponseCode handleVote(
-        RskAddress txSender,
-        ABICallElection election,
-        ABICallSpec voteSpec,
-        Function<byte[][], T> deserializer,
-        Consumer<T> winnerHandler
-    ) {
-        boolean successfulVote = election.vote(voteSpec, txSender);
+        boolean successfulVote = increaseLockingCapElection.vote(increaseLockingCapVote, txSender);
         if (!successfulVote) {
-            logger.warn("[handleVote] Unsuccessful {} vote", voteSpec);
+            logger.warn("[{}] Unsuccessful {} vote", INCREASE_LOCKING_CAP_TAG, increaseLockingCapVote);
             return UnionResponseCode.GENERIC_ERROR;
         }
 
-        Optional<ABICallSpec> winnerOptional = election.getWinner();
-        if (winnerOptional.isEmpty()) {
-            logger.info("[handleVote] Successful {} vote.", voteSpec);
+        Optional<ABICallSpec> electionWinner = increaseLockingCapElection.getWinner();
+        if (electionWinner.isEmpty()) {
+            logger.info("[{}}] Successful {} vote.", INCREASE_LOCKING_CAP_TAG, increaseLockingCapVote);
             return UnionResponseCode.SUCCESS;
         }
 
-        ABICallSpec winner = winnerOptional.get();
-        T winnerValue;
+        ABICallSpec winner = electionWinner.get();
+        Coin winnerLockingCap;
         try {
-            winnerValue = deserializer.apply(winner.getArguments());
+            winnerLockingCap = BridgeSerializationUtils.deserializeRskCoin(winner.getArguments()[0]);
         } catch (Exception e) {
-            logger.warn("[handleVote] Exception deserializing winner value", e);
+            // This block should not be reached if the serialization and deserialization are consistent.
+            logger.warn("[{}] Exception deserializing winner value", INCREASE_LOCKING_CAP_TAG, e);
             return UnionResponseCode.GENERIC_ERROR;
         }
 
-        winnerHandler.accept(winnerValue);
-        election.clear();
+        Coin lockingCapBeforeUpdate = getLockingCap();
+        storageProvider.setLockingCap(winnerLockingCap);
+        eventLogger.logUnionLockingCapIncreased(txSender, lockingCapBeforeUpdate, winnerLockingCap);
+        logger.info("[{}] Union Locking Cap has been increased. Previous value: {}. New value: {}",
+            INCREASE_LOCKING_CAP_TAG, lockingCapBeforeUpdate, winnerLockingCap);
+        increaseLockingCapElection.clear();
         return UnionResponseCode.SUCCESS;
     }
 
@@ -350,33 +320,45 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             BridgeSerializationUtils.serializeBoolean(releaseEnabled)
         });
 
-        return handleVote(
-            txSender,
-            setTransferPermissionsElection,
-            setTransferPermissionsVote,
-            winnerArgs -> {
-                boolean winnerRequestEnabled = BridgeSerializationUtils.deserializeBoolean(
-                    winnerArgs[0]);
-                boolean winnerReleaseEnabled = BridgeSerializationUtils.deserializeBoolean(
-                    winnerArgs[1]);
-                return Pair.of(winnerRequestEnabled, winnerReleaseEnabled);
-            },
-            transferPermissions -> {
-                boolean winnerRequestEnabled = transferPermissions.getLeft();
-                boolean winnerReleaseEnabled = transferPermissions.getRight();
+        boolean successfulVote = setTransferPermissionsElection.vote(setTransferPermissionsVote, txSender);
+        if (!successfulVote) {
+            logger.warn("[{}] Unsuccessful {} vote", SET_TRANSFER_PERMISSIONS_TAG, setTransferPermissionsVote);
+            return UnionResponseCode.GENERIC_ERROR;
+        }
 
-                storageProvider.setUnionBridgeRequestEnabled(winnerRequestEnabled);
-                storageProvider.setUnionBridgeReleaseEnabled(winnerReleaseEnabled);
+        Optional<ABICallSpec> electionWinner = setTransferPermissionsElection.getWinner();
+        if (electionWinner.isEmpty()) {
+            logger.info("[{}}] Successful {} vote.", SET_TRANSFER_PERMISSIONS_TAG, setTransferPermissionsVote);
+            return UnionResponseCode.SUCCESS;
+        }
 
-                eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, winnerRequestEnabled, winnerReleaseEnabled);
-                logger.info(
-                    "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
-                    SET_TRANSFER_PERMISSIONS_TAG,
-                    winnerRequestEnabled,
-                    winnerReleaseEnabled
-                );
-            }
+        ABICallSpec winner = electionWinner.get();
+        Boolean winnerRequestEnabled;
+        Boolean winnerReleaseEnabled;
+        try {
+            winnerRequestEnabled = BridgeSerializationUtils.deserializeBoolean(
+                winner.getArguments()[0]);
+            winnerReleaseEnabled = BridgeSerializationUtils.deserializeBoolean(
+                winner.getArguments()[1]);
+        } catch (Exception e) {
+            // This block should not be reached if the serialization and deserialization are consistent.
+            logger.warn("[{}] Exception deserializing winner value", SET_TRANSFER_PERMISSIONS_TAG, e);
+            return UnionResponseCode.GENERIC_ERROR;
+        }
+
+        storageProvider.setUnionBridgeRequestEnabled(winnerRequestEnabled);
+        storageProvider.setUnionBridgeReleaseEnabled(winnerReleaseEnabled);
+
+        eventLogger.logUnionBridgeTransferPermissionsUpdated(txSender, winnerRequestEnabled, winnerReleaseEnabled);
+        logger.info(
+            "[{}] Transfer permissions have been updated. Request enabled: {}, Release enabled: {}",
+            SET_TRANSFER_PERMISSIONS_TAG,
+            winnerRequestEnabled,
+            winnerReleaseEnabled
         );
+
+        setTransferPermissionsElection.clear();
+        return UnionResponseCode.SUCCESS;
     }
 
     private boolean isTransferPermissionStateAlreadySet(boolean requestEnabled, boolean releaseEnabled) {
