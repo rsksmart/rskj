@@ -554,7 +554,7 @@ public class BridgeSupport {
 
         NonRefundablePeginReason nonRefundablePeginReason = switch (rejectedPeginReason) {
             case INVALID_AMOUNT -> NonRefundablePeginReason.INVALID_AMOUNT;
-            case LEGACY_PEGIN_UNDETERMINED_SENDER, PEGIN_V1_INVALID_PAYLOAD ->
+            case LEGACY_PEGIN_UNDETERMINED_SENDER, PEGIN_V1_INVALID_PAYLOAD, LEGACY_PEGIN_MULTISIG_SENDER ->
                 protocolVersion == 1 ? NonRefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET
                     : NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
             default -> throw new IllegalStateException("Unexpected value: " + rejectedPeginReason);

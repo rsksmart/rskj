@@ -41,7 +41,7 @@ public class BridgeBtcWallet extends Wallet {
         this.btcContext = btcContext;
     }
 
-    protected Optional<Federation> getDestinationFederation(byte[] payToScriptHash) {
+    public Optional<Federation> getDestinationFederation(byte[] payToScriptHash) {
         Context.propagate(this.btcContext);
         return federations.stream().filter(federation ->
             Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)).findFirst();
