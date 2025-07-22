@@ -19,6 +19,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.bitcoin.UtxoUtils;
+import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.trie.Trie;
@@ -118,6 +119,23 @@ public final class BridgeSupportTestUtil {
         when(currentStored.getHeader()).thenReturn(currentBlock);
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
+    }
+
+    public static PartialMerkleTree buildPMTAndRecreateChainForTransactionRegistration(
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        int btcBlockToRegisterHeight,
+        BtcTransaction transaction,
+        BtcBlockStoreWithCache btcBlockStore
+    ) throws BlockStoreException {
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), networkParameters);
+        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
+        bridgeStorageProvider.save();
+
+        return pmtWithTransactions;
     }
 
     public static DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
