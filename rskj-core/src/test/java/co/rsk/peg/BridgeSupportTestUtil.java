@@ -22,6 +22,8 @@ import co.rsk.peg.bitcoin.UtxoUtils;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.FederationMember;
+import co.rsk.peg.pegin.RejectedPeginReason;
+import co.rsk.peg.utils.NonRefundablePeginReason;
 import co.rsk.trie.Trie;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -255,6 +257,17 @@ public final class BridgeSupportTestUtil {
         assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(pegoutTxSigHash));
     }
 
+    public static void assertReleaseTransactionInfoWasProcessed(
+        Repository repository,
+        BridgeStorageProvider bridgeStorageProvider,
+        List<LogInfo> logs,
+        BtcTransaction releaseTransaction,
+        List<Coin> outpointsValues
+    ) {
+        assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointsValues);
+        assertReleaseOutpointsValuesWereSaved(repository, bridgeStorageProvider, releaseTransaction, outpointsValues);
+    }
+
     public static void assertLogReleaseRequested(List<LogInfo> logs, Keccak256 releaseCreationTxHash, Sha256Hash pegoutTransactionHash, Coin requestedAmount) {
         CallTransaction.Function releaseRequestedEvent = BridgeEvents.RELEASE_REQUESTED.getEvent();
 
@@ -266,17 +279,6 @@ public final class BridgeSupportTestUtil {
 
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
         assertEventWasEmittedWithExpectedData(logs, encodedData);
-    }
-
-    public static void assertReleaseTransactionInfoWasProcessed(
-        Repository repository,
-        BridgeStorageProvider bridgeStorageProvider,
-        List<LogInfo> logs,
-        BtcTransaction releaseTransaction,
-        List<Coin> outpointsValues
-    ) {
-        assertLogPegoutTransactionCreated(logs, releaseTransaction, outpointsValues);
-        assertReleaseOutpointsValuesWereSaved(repository, bridgeStorageProvider, releaseTransaction, outpointsValues);
     }
 
     public static void assertLogPegoutTransactionCreated(List<LogInfo> logs, BtcTransaction releaseTransaction, List<Coin> expectedOutpointsValues) {
@@ -309,6 +311,13 @@ public final class BridgeSupportTestUtil {
         assertEquals(expectedOutpointsValues, releaseOutpointsValues.get());
     }
 
+    public static void assertTransactionWasProcessed(BridgeStorageProvider bridgeStorageProvider, Sha256Hash transactionHash, int executionBlockNumber) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+        assertEquals(executionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+    }
+
     private static void assertLogAddSignature(List<LogInfo> logs, FederationMember federationMember, byte[] rskTxHash) {
         CallTransaction.Function addSignatureEvent = BridgeEvents.ADD_SIGNATURE.getEvent();
         ECKey federatorRskPublicKey = federationMember.getRskPublicKey();
@@ -335,11 +344,29 @@ public final class BridgeSupportTestUtil {
         assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
-    public static void assertTransactionWasProcessed(BridgeStorageProvider bridgeStorageProvider, Sha256Hash transactionHash, int executionBlockNumber) throws IOException {
-        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
-        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+    public static void assertLogRejectedPegin(List<LogInfo> logs, BtcTransaction btcTx, RejectedPeginReason reason) {
+        CallTransaction.Function rejectedPeginEvent = BridgeEvents.REJECTED_PEGIN.getEvent();
 
-        assertEquals(executionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+        byte[] btcTxHashSerialized = btcTx.getHash().getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(rejectedPeginEvent, btcTxHashSerialized);
+
+        int reasonValue = reason.getValue();
+        byte[] encodedData = getEncodedData(rejectedPeginEvent, reasonValue);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
+    }
+
+    public static void assertLogNonRefundablePegin(List<LogInfo> logs, BtcTransaction pegin, NonRefundablePeginReason reason) {
+        CallTransaction.Function unrefundablePeginEvent = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
+        byte[] btcTxHashSerialized = pegin.getHash().getBytes();
+        List<DataWord> encodedTopics = getEncodedTopics(unrefundablePeginEvent, btcTxHashSerialized);
+
+        int reasonValue = reason.getValue();
+        byte[] encodedData = getEncodedData(unrefundablePeginEvent, reasonValue);
+
+        assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
+        assertEventWasEmittedWithExpectedData(logs, encodedData);
     }
 
     public static void assertEventWasEmittedWithExpectedTopics(List<LogInfo> logs, List<DataWord> expectedTopics) {

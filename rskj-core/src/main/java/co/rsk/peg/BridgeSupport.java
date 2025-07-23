@@ -552,16 +552,20 @@ public class BridgeSupport {
             rejectedPeginReason);
         eventLogger.logRejectedPegin(btcTx, rejectedPeginReason);
 
-        NonRefundablePeginReason nonRefundablePeginReason = switch (rejectedPeginReason) {
-            case INVALID_AMOUNT -> NonRefundablePeginReason.INVALID_AMOUNT;
-            case LEGACY_PEGIN_UNDETERMINED_SENDER, PEGIN_V1_INVALID_PAYLOAD, LEGACY_PEGIN_MULTISIG_SENDER ->
-                protocolVersion == 1 ? NonRefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET
-                    : NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
-            default -> throw new IllegalStateException("Unexpected value: " + rejectedPeginReason);
-        };
+        NonRefundablePeginReason nonRefundablePeginReason =
+            switch (rejectedPeginReason) {
+                case INVALID_AMOUNT -> NonRefundablePeginReason.INVALID_AMOUNT;
+                case LEGACY_PEGIN_MULTISIG_SENDER -> NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS;
+                case LEGACY_PEGIN_UNDETERMINED_SENDER, PEGIN_V1_INVALID_PAYLOAD ->
+                    protocolVersion == 1 ? NonRefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET
+                        : NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
+                default -> throw new IllegalStateException("Unexpected value: " + rejectedPeginReason);
+            };
 
-        logger.debug("[handleNonRefundablePegin] Nonrefundable tx {}. Reason {}", btcTx.getHash(),
-            nonRefundablePeginReason);
+        logger.debug("[handleNonRefundablePegin] Nonrefundable tx {}. Reason {}",
+            btcTx.getHash(),
+            nonRefundablePeginReason
+        );
         eventLogger.logNonRefundablePegin(btcTx, nonRefundablePeginReason);
 
         if (!activations.isActive(RSKIP459)) {
