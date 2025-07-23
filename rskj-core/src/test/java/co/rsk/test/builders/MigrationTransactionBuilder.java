@@ -1,7 +1,6 @@
 package co.rsk.test.builders;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.BitcoinUtils;
 import co.rsk.peg.federation.Federation;
 import co.rsk.peg.federation.P2shP2wshErpFederationBuilder;
@@ -9,16 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MigrationTransactionBuilder {
+    private final List<BtcTransaction> prevTxs;
     private NetworkParameters networkParameters;
     private Federation activeFederation;
     private Federation retiringFederation;
-    private final List<UTXO> utxos;
 
     private MigrationTransactionBuilder() {
         this.networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
         this.activeFederation = P2shP2wshErpFederationBuilder.builder().build();
         this.retiringFederation = P2shP2wshErpFederationBuilder.builder().build();
-        this.utxos = new ArrayList<>();
+        this.prevTxs = new ArrayList<>();
     }
 
     public static MigrationTransactionBuilder builder() {
@@ -40,45 +39,34 @@ public class MigrationTransactionBuilder {
         return this;
     }
 
-    public MigrationTransactionBuilder withUTXO(UTXO utxo) {
-        this.utxos.add(utxo);
+    public MigrationTransactionBuilder withPrevTx(BtcTransaction prevTx) {
+        this.prevTxs.add(prevTx);
         return this;
     }
 
     public BtcTransaction build() {
         BtcTransaction migrationTx = new BtcTransaction(networkParameters);
 
-        addInputsToTransaction(migrationTx);
+        addInputsToMigrationTx(migrationTx);
         addOutputsToTransaction(migrationTx);
 
         return migrationTx;
     }
 
-    private void addInputsToTransaction(BtcTransaction transaction) {
-        if (utxos.isEmpty()) {
-            UTXO defaultUtxo = new UTXO(
-                BitcoinTestUtils.createHash(11),
-                0,
-                Coin.COIN,
-                0,
-                false,
-                retiringFederation.getP2SHScript()
-            );
-            utxos.add(defaultUtxo);
+    private void addInputsToMigrationTx(BtcTransaction migrationTx) {
+        if (prevTxs.isEmpty()) {
+            BtcTransaction defaultPrevTx = new BtcTransaction(networkParameters);
+            defaultPrevTx.addOutput(Coin.COIN, retiringFederation.getAddress());
+            prevTxs.add(defaultPrevTx);
         }
 
         int inputIndex = 0;
-        for (UTXO utxo : utxos) {
-            TransactionInput input = new TransactionInput(
-                networkParameters,
-                null,
-                new byte[]{},
-                new TransactionOutPoint(networkParameters, utxo.getIndex(), utxo.getHash())
-            );
-
-            transaction.addInput(input);
+        for (BtcTransaction prevTx : prevTxs) {
+            for (TransactionOutput prevTxOutput : prevTx.getOutputs()) {
+                migrationTx.addInput(prevTxOutput);
+            }
             BitcoinUtils.addSpendingFederationBaseScript(
-                transaction,
+                migrationTx,
                 inputIndex,
                 retiringFederation.getRedeemScript(),
                 retiringFederation.getFormatVersion()
@@ -89,11 +77,10 @@ public class MigrationTransactionBuilder {
     }
 
     private void addOutputsToTransaction(BtcTransaction transaction) {
-        Coin totalAmount = utxos.stream().reduce(
-            Coin.ZERO,
-            (sum, utxo) -> sum.add(utxo.getValue()),
-            Coin::add
-        );
+        Coin totalAmount = Coin.ZERO;
+        for (BtcTransaction prevTx : prevTxs) {
+            totalAmount = totalAmount.add(prevTx.getOutputSum());
+        }
         TransactionOutput output = new TransactionOutput(
             networkParameters,
             null,
