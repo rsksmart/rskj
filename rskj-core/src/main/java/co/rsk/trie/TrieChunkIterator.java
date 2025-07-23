@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class TrieChunkIterator implements Iterator<TrieChunk> {
@@ -51,7 +52,7 @@ public class TrieChunkIterator implements Iterator<TrieChunk> {
     @Override
     public TrieChunk next() {
         if (!hasNext()) {
-            throw new IllegalStateException("No more elements to iterate over");
+            throw new NoSuchElementException("No more elements to iterate over");
         }
 
         LinkedHashMap<byte[], byte[]> keyValues = new LinkedHashMap<>();

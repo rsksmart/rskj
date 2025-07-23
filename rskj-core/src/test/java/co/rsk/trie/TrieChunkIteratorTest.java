@@ -22,7 +22,9 @@ import org.ethereum.datasource.HashMapDB;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static org.bouncycastle.util.encoders.Hex.decode;
 import static org.junit.jupiter.api.Assertions.*;
@@ -134,10 +136,10 @@ class TrieChunkIteratorTest {
         
         // Now try to call next() when there are no more elements
         assertFalse(iterator.hasNext());
-        
-        IllegalStateException exception = assertThrows(
-            IllegalStateException.class,
-            iterator::next
+
+        NoSuchElementException exception = assertThrows(
+                NoSuchElementException.class,
+                iterator::next
         );
         assertTrue(exception.getMessage().contains("No more elements"));
     }
