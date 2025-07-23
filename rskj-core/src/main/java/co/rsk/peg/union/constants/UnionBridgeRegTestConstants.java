@@ -28,11 +28,9 @@ public class UnionBridgeRegTestConstants extends UnionBridgeConstants {
         lockingCapIncrementsMultiplier = 4;
 
         // TODO: Replace with actual authorizers
-        // seed: unionBridgeAuthorizer, unionBridgeAuthorizer2, unionBridgeAuthorizer3
+        // seed: unionBridgeAuthorizer
         List<ECKey> changeUnionBridgeContractAddressAuthorizers = Stream.of(
-            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a",
-            "041768f38193655b6a4776d287b949f87e21fb3b2e3ed1581dbe7569ef641edef041ab862f4ab228566c5ae49abd478d9d92d870348304df35e23967adea3f6ded",
-            "049191c1f944ac723e5807ff771144295e4d6945ef1c6c30bd68927711410e6d40ec81b07a42b03093605d03edd15608a81511faeacd1815ab9341f4f77c212865"
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
 
         changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
