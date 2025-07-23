@@ -39,7 +39,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -1231,5 +1238,22 @@ public class Trie {
     public Trie markAsSaved() {
         this.saved = true;
         return this;
+    }
+
+    /**
+     * Extracts a Trie instance from a NodeReference by retrieving the underlying node.
+     * This is a utility method to safely convert a NodeReference to its corresponding Trie node.
+     *
+     * @param nodeRef the NodeReference to convert to a Trie, may be null
+     * @return the Trie instance referenced by the NodeReference
+     * @throws IllegalArgumentException if the node reference is null or empty
+     * @throws IllegalStateException    if the node reference does not point to a valid node in the store
+     */
+    @Nonnull
+    public static Trie fromRef(@Nullable NodeReference nodeRef) {
+        if (nodeRef == null || nodeRef.isEmpty()) {
+            throw new IllegalArgumentException("Node reference is empty or null");
+        }
+        return nodeRef.getNode().orElseThrow(() -> new IllegalStateException("Node reference does not point to a valid node"));
     }
 }

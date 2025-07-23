@@ -26,7 +26,14 @@ import org.ethereum.util.RLPList;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnull TrieChunk.Proof proof) {
 
@@ -133,7 +140,7 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
                     return Optional.empty();
                 }
 
-                Optional<Trie> leftNodeOpt = applyProof(trie.getLeft().getNode().get(), proofNodes, leftChildNode, rightChildNode);
+                Optional<Trie> leftNodeOpt = applyProof(Trie.fromRef(trie.getLeft()), proofNodes, leftChildNode, rightChildNode);
                 if (leftNodeOpt.isEmpty()) {
                     return Optional.empty();
                 }
@@ -143,7 +150,7 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
                         ? new NodeReference(null, proofNode.rightNode(), null)
                         : trie.getRight();
             } else {
-                Optional<Trie> rightNodeOpt = applyProof(trie.getRight().getNode().get(), proofNodes, leftChildNode, rightChildNode);
+                Optional<Trie> rightNodeOpt = applyProof(Trie.fromRef(trie.getRight()), proofNodes, leftChildNode, rightChildNode);
                 if (rightNodeOpt.isEmpty()) {
                     return Optional.empty();
                 }
@@ -202,10 +209,10 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
 
             Trie node = nodes.get(0);
             if (!node.getLeft().isEmpty()) {
-                leftChildNode = node.getLeft().getNode().get();
+                leftChildNode = Trie.fromRef(node.getLeft());
             }
             if (!node.getRight().isEmpty()) {
-                rightChildNode = node.getRight().getNode().get();
+                rightChildNode = Trie.fromRef(node.getRight());
             }
 
             for (int i = 1; i < nodes.size(); i++) {
@@ -214,7 +221,7 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
                 Trie rightNode = null;
                 Optional<Keccak256> rightNodeHashOpt = node.getRight().getHash();
                 if (rightNodeHashOpt.isPresent() && !rightNodeHashOpt.get().equals(nodes.get(i - 1).getHash())) {
-                    rightNode = node.getRight().getNode().get();
+                    rightNode = Trie.fromRef(node.getRight());
                 }
                 proofNodes.add(new ProofNode(node.getSharedPath().length(), rightNode));
             }

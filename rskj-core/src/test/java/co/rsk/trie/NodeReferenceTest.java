@@ -103,4 +103,67 @@ class NodeReferenceTest {
         verify(nodeStopperMock, times(1)).stop(exitStatus);
     }
 
+    @Test
+    void testFromRef_nullNodeReference_throwsIllegalArgumentException() {
+        // Given
+        NodeReference nullNodeRef = null;
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> Trie.fromRef(nullNodeRef)
+        );
+        assertEquals("Node reference is empty or null", exception.getMessage());
+    }
+
+    @Test
+    void testFromRef_emptyNodeReference_throwsIllegalArgumentException() {
+        // Given
+        NodeReference emptyNodeRef = NodeReference.empty();
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> Trie.fromRef(emptyNodeRef)
+        );
+        assertEquals("Node reference is empty or null", exception.getMessage());
+    }
+
+    @Test
+    void testFromRef_nodeReferenceWithNoValidNode_throwsIllegalStateException() {
+        // Given
+        Keccak256 lazyHashMock = mock(Keccak256.class);
+        byte[] bytesMock = new byte[0];
+        doReturn(bytesMock).when(lazyHashMock).getBytes();
+
+        TrieStoreImpl trieStoreMock = mock(TrieStoreImpl.class);
+        doReturn(Optional.empty()).when(trieStoreMock).retrieve(bytesMock);
+
+        NodeStopper nodeStopperMock = mock(NodeStopper.class);
+        doNothing().when(nodeStopperMock).stop(anyInt());
+
+        NodeReference nodeReference = new NodeReference(trieStoreMock, null, lazyHashMock, nodeStopperMock);
+
+        // When & Then
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> Trie.fromRef(nodeReference)
+        );
+        assertEquals("Node reference does not point to a valid node", exception.getMessage());
+    }
+
+    @Test
+    void testFromRef_validNodeReference_returnsTrie() {
+        // Given
+        Trie trieMock = mock(Trie.class);
+        NodeReference nodeReference = new NodeReference(null, trieMock, null);
+
+        // When
+        Trie result = Trie.fromRef(nodeReference);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(trieMock, result);
+    }
+
 }
