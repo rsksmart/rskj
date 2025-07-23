@@ -243,7 +243,7 @@ public class PegUtils {
                 return new PeginEvaluationResult(PeginProcessAction.REGISTER);
             case P2SHMULTISIG:
             case P2SHP2WSH:
-                if (hasOutputsToBothLegacyAndSegwitFeds(btcTx, fedWallet)) {
+                if (hasOutputsToDifferentTypesOfFeds(btcTx, fedWallet)) {
                     return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
                 }
                 return new PeginEvaluationResult(PeginProcessAction.REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
@@ -252,27 +252,21 @@ public class PegUtils {
         }
     }
 
-    private static boolean hasOutputsToBothLegacyAndSegwitFeds(BtcTransaction btcTx, Wallet fedWallet) {
+    private static boolean hasOutputsToDifferentTypesOfFeds(BtcTransaction btcTx, Wallet fedWallet) {
         Set<Federation> destinationFeds = new HashSet<>();
-
         for (TransactionOutput output : btcTx.getOutputs()) {
-            byte[] outputP2shScript = output.getScriptPubKey().getChunks().get(1).data; // HASH160 SCRIPT_DATA EQUAL
+            byte[] outputP2shScript = output.getScriptPubKey().getChunks().get(1).data; // HASH160 PUBKEY EQUAL
             Optional<Federation> destinationFed = ((BridgeBtcWallet) fedWallet).getDestinationFederation(outputP2shScript);
             destinationFed.ifPresent(destinationFeds::add);
         }
-
-        if (destinationFeds.size() != 2) {
+        if (destinationFeds.size() == 1) {
             return false;
         }
 
         Iterator<Federation> iterator = destinationFeds.iterator();
         Federation firstFed = iterator.next();
         Federation secondFed = iterator.next();
-        return firstFed.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion() &&
-            secondFed.getFormatVersion() == FederationFormatVersion.P2SH_ERP_FEDERATION.getFormatVersion()
-            ||
-            firstFed.getFormatVersion() == FederationFormatVersion.P2SH_ERP_FEDERATION.getFormatVersion() &&
-                secondFed.getFormatVersion() == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion();
+        return firstFed.getFormatVersion() != secondFed.getFormatVersion();
     }
 
     public static Keccak256 getFlyoverDerivationHash(

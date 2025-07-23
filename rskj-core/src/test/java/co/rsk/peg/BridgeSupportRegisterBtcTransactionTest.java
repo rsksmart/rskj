@@ -7,6 +7,7 @@ import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseInputScriptThatSpendsFro
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.pegin.RejectedPeginReason.*;
+import static co.rsk.peg.utils.NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS;
 import static co.rsk.peg.utils.NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -1732,13 +1733,14 @@ class BridgeSupportRegisterBtcTransactionTest {
         private final Coin prevTxValue = Coin.COIN;
         private final Coin valueToSend = prevTxValue.div(4);
 
+        List<LogInfo> logs;
         private long blockNumber;
         private BtcTransaction prevTx;
 
         void setUp(ForBlock activations) {
             Repository repository = createRepository();
             bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, activations);
-            List<LogInfo> logs = new ArrayList<>();
+            logs = new ArrayList<>();
             bridgeEventLogger = new BridgeEventLoggerImpl(
                 bridgeMainnetConstants,
                 activations,
@@ -1798,8 +1800,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            // pegout should have one input, related to the retiring fed
-            assertRefundHasExpectedAmountOfInputs(1);
+            // refund tx should have one input, related to the retiring fed
+            assertPeginWasRejectedAndRefunded(1, pegin);
             // since retiring fed is legacy, redeem data should be in the script sig
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
         }
@@ -1819,8 +1821,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            // pegout should have one input, related to the retiring fed
-            assertRefundHasExpectedAmountOfInputs(1);
+            // refund tx should have one input, related to the retiring fed
+            assertPeginWasRejectedAndRefunded(1, pegin);
             // since retiring fed is legacy, redeem data should be in the script sig
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
         }
@@ -1840,8 +1842,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            // pegout should have one input, related to the active fed
-            assertRefundHasExpectedAmountOfInputs(1);
+            // refund tx should have one input, related to the active fed
+            assertPeginWasRejectedAndRefunded(1, pegin);
             // since active fed is segwit, redeem data should be in the witness
             assertRefundInputIsFromSegwitFederation(activeFederation, 0);
         }
@@ -1861,8 +1863,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            // pegout should have one input, related to the active fed
-            assertRefundHasExpectedAmountOfInputs(1);
+            // refund tx should have one input, related to the active fed
+            assertPeginWasRejectedAndRefunded(1, pegin);
             // since active fed is segwit, redeem data should be in the witness
             assertRefundInputIsFromSegwitFederation(activeFederation, 0);
         }
@@ -1895,8 +1897,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            // pegout should have two inputs, one related to the active fed and one to the retiring fed
-            assertRefundHasExpectedAmountOfInputs(2);
+            // refund tx should have two inputs, one related to the active fed and one to the retiring fed
+            assertPeginWasRejectedAndRefunded(2, pegin);
             // both feds are legacy
             // first input should belong to retiring fed
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
@@ -1932,8 +1934,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            // pegout should have two inputs, one related to the active fed and one to the retiring fed
-            assertRefundHasExpectedAmountOfInputs(2);
+            // refund tx should have two inputs, one related to the active fed and one to the retiring fed
+            assertPeginWasRejectedAndRefunded(2, pegin);
             // both feds are legacy
             // first input should belong to retiring fed
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
@@ -1954,10 +1956,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             pegin.addOutput(valueToSend, retiringFederation.getAddress());
             pegin.addOutput(valueToSend, activeFederation.getAddress());
 
+            // act
             registerPegin(pegin);
 
             // assert
-            assertNotRefund();
+            assertRejectedPeginWasNotRefunded(pegin);
         }
 
         @Test
@@ -1977,7 +1980,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             registerPegin(pegin);
 
             // assert
-            assertNotRefund();
+            assertRejectedPeginWasNotRefunded(pegin);
         }
 
         private void registerPegin(BtcTransaction pegin) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
@@ -1988,7 +1991,7 @@ class BridgeSupportRegisterBtcTransactionTest {
                 pegin,
                 btcBlockStore
             );
-            // act
+
             bridgeSupport.registerBtcTransaction(
                 rskTx,
                 pegin.bitcoinSerialize(),
@@ -1998,9 +2001,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             bridgeSupport.save();
         }
 
-        private void assertRefundHasExpectedAmountOfInputs(int expectedAmountOfInputs) throws IOException {
+        private void assertPeginWasRejectedAndRefunded(int expectedAmountOfRefundInputs, BtcTransaction rejectedPegin) throws IOException {
             BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
-            assertEquals(expectedAmountOfInputs, pegout.getInputs().size());
+            assertEquals(expectedAmountOfRefundInputs, pegout.getInputs().size());
+
+            assertLogRejectedPegin(logs, rejectedPegin, LEGACY_PEGIN_MULTISIG_SENDER);
         }
 
         private void assertRefundInputIsFromLegacyFederation(Federation federation, int inputToFederationIndex) throws IOException {
@@ -2013,6 +2018,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
             var inputToFederation = pegout.getInput(inputToFederationIndex);
             var inputWitness = pegout.getWitness(inputToFederationIndex);
+
             assertWitnessAndScriptSigHaveExpectedInputRedeemData(
                 inputWitness,
                 inputToFederation,
@@ -2020,8 +2026,11 @@ class BridgeSupportRegisterBtcTransactionTest {
             );
         }
 
-        private void assertNotRefund() throws IOException {
+        private void assertRejectedPeginWasNotRefunded(BtcTransaction rejectedPegin) throws IOException {
             assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+
+            assertLogRejectedPegin(logs, rejectedPegin, LEGACY_PEGIN_MULTISIG_SENDER);
+            assertLogNonRefundablePegin(logs, rejectedPegin, OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS);
         }
 
         private BtcTransaction buildPeginFromP2shMultiSig() {
