@@ -28,11 +28,8 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         lockingCapIncrementsMultiplier = 3;
 
         // TODO: Replace with actual authorizers
-        // seed: unionBridgeAuthorizer, unionBridgeAuthorizer2, unionBridgeAuthorizer3
         List<ECKey> changeUnionBridgeContractAddressAuthorizers = Stream.of(
-            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a",
-            "041768f38193655b6a4776d287b949f87e21fb3b2e3ed1581dbe7569ef641edef041ab862f4ab228566c5ae49abd478d9d92d870348304df35e23967adea3f6ded",
-            "049191c1f944ac723e5807ff771144295e4d6945ef1c6c30bd68927711410e6d40ec81b07a42b03093605d03edd15608a81511faeacd1815ab9341f4f77c212865"
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
 
         changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
@@ -41,7 +38,6 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         );
 
         // TODO: Replace with actual authorizers
-        // seed: changeLockingCapAuthorizer, changeLockingCapAuthorizer2, changeLockingCapAuthorizer3
         List<ECKey> changeLockingCapAuthorizers = Stream.of(
             "049929eb3c107a65108830f4c221068f42301bd8b054f91bd594944e7fb488fd1c93a8921fb28d3494769598eb271cd2834a31c5bd08fa075170b3da804db00a5b",
             "04c8a5827bfadd2bce6fa782e6c48dd61503d38c86e29381781167cd6371eb56f50bc03c9e9c265ea7e07709b964e0b4b0f3d416955225fcb9202e6763ddd5ca91",
@@ -54,7 +50,6 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         );
 
         // TODO: Replace with actual authorizers
-        // seed: changeTransferPermissionsAuthorizers, changeTransferPermissionsAuthorizers2, changeTransferPermissionsAuthorizers3
         List<ECKey> changeTransferPermissionsAuthorizers = Stream.of(
             "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f",
             "04cf42ec9eb287adc7196e8d3d2c288542b1db733681c22887e3a3e31eb98504002825ecbe0cd9b61aff3600ffd0ca4542094c75cb0bac5e93be0c7e00b2ead9ea",

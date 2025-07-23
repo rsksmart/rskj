@@ -55,11 +55,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         final String SET_UNION_BRIDGE_ADDRESS_TAG = "setUnionBridgeContractAddressForTestnet";
         logger.info("[{}] Setting new union bridge contract address: {}", SET_UNION_BRIDGE_ADDRESS_TAG, unionBridgeContractAddress);
 
-        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
-
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
         if (isCurrentEnvironmentMainnet()) {
             String baseMessage = String.format(
@@ -68,6 +63,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
             );
             logger.warn(LOG_PATTERN, "setUnionBridgeContractAddressForTestnet", baseMessage);
             return UnionResponseCode.ENVIRONMENT_DISABLED;
+        }
+
+        AddressBasedAuthorizer authorizer = constants.getChangeUnionBridgeContractAddressAuthorizer();
+        if (!isAuthorized(tx, authorizer)) {
+            return UnionResponseCode.UNAUTHORIZED_CALLER;
         }
 
         RskAddress currentUnionBridgeAddress = getUnionBridgeContractAddress();
