@@ -18,6 +18,7 @@
  */
 package co.rsk.snap;
 
+import co.rsk.core.RskAddress;
 import co.rsk.util.*;
 import co.rsk.util.cli.NodeIntegrationTestCommandLine;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,6 +26,7 @@ import com.squareup.okhttp.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -170,14 +172,20 @@ class SnapshotSyncIntegrationTest {
     private void generateBlocks() throws IOException {
         List<String> accounts = OkHttpClientTestFixture.PRE_FUNDED_ACCOUNTS;
         Random rand = new Random(111);
+        int bulkSize = 10;
 
         for (int i = 0; i < 1001; i++) {
-            OkHttpClientTestFixture.FromToAddressPair[] pairs = IntStream.range(0, 10)
-                    .mapToObj(n -> of(accounts.get(rand.nextInt(accounts.size())), accounts.get(rand.nextInt(accounts.size()))))
+            int bulkPos = bulkSize * i;
+            OkHttpClientTestFixture.FromToAddressPair[] pairs = IntStream.range(0, bulkSize)
+                    .mapToObj(n -> of(accounts.get(rand.nextInt(accounts.size())), accountFromSeed("cow #" + bulkPos + n)))
                     .toArray(OkHttpClientTestFixture.FromToAddressPair[]::new);
             Response response = OkHttpClientTestFixture.sendBulkTransactions(portServerRpc, pairs);
             assertTrue(response.isSuccessful());
             response.body().close();
         }
+    }
+
+    private static String accountFromSeed(String seed) {
+        return "0x" + new RskAddress(ECKey.fromPrivate(seed.getBytes()).getAddress());
     }
 }
