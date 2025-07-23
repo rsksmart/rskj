@@ -24,7 +24,6 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.core.bc.SuperBridgeEvent;
 import co.rsk.core.types.bytes.Bytes;
-import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -36,10 +35,7 @@ import org.ethereum.db.ReceiptStore;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidationRule {
@@ -83,26 +79,6 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
         }
     }
 
-    private boolean isSuperUncle(Keccak256 superParentHash, Map<Keccak256, Block> ancestorMap, BlockHeader uncleHeader) {
-        if (!uncleHeader.isSuper().orElse(false)) {
-            return false;
-        }
-
-        Keccak256 parentHash = uncleHeader.getParentHash();
-        while (parentHash != null) {
-            if (parentHash.equals(superParentHash)) {
-                return true;
-            }
-            Block parent = ancestorMap.get(parentHash);
-            if (parent == null) {
-                return false;
-            }
-
-            parentHash = parent.getParentHash();
-        }
-        return false;
-    }
-
     @VisibleForTesting
     protected boolean areSuperBlockFieldsValid(Block block, SuperBlockFields superBlockFields) {
         Pair<Block, List<Block>> superParentAndAncestors = FamilyUtils.findSuperParentAndAncestors(blockStore, block.getHeader());
@@ -110,12 +86,8 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
         Block superParent = superParentAndAncestors.getLeft();
         List<Block> ancestors = superParentAndAncestors.getRight();
 
-        List<BlockHeader> uncleList = superBlockFields.getUncleList();
         if (superParent == null) {
             if (superBlockFields.getParentHash() != null || superBlockFields.getBlockNumber() != 0) {
-                return false;
-            }
-            if (!uncleList.isEmpty()) {
                 return false;
             }
         } else {
@@ -124,12 +96,6 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
             }
             if (superBlockFields.getBlockNumber() != superParent.getSuperBlockFields().getBlockNumber() + 1) {
                 return false;
-            }
-            Map<Keccak256, Block> ancestorMap = ancestors.stream().collect(Collectors.toMap(Block::getHash, Function.identity()));
-            for (BlockHeader blockHeader : uncleList) {
-                if (!isSuperUncle(superParent.getHash(), ancestorMap, blockHeader)) {
-                    return false;
-                }
             }
         }
 
