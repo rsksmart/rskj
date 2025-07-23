@@ -237,19 +237,16 @@ public class PegUtils {
     }
 
     private static PeginEvaluationResult evaluateLegacyPegin(BtcTransaction btcTx, Wallet fedWallet, TxSenderAddressType senderAddressType)  {
-        switch (senderAddressType) {
-            case P2PKH:
-            case P2SHP2WPKH:
-                return new PeginEvaluationResult(PeginProcessAction.REGISTER);
-            case P2SHMULTISIG:
-            case P2SHP2WSH:
+        return switch (senderAddressType) {
+            case P2PKH, P2SHP2WPKH -> new PeginEvaluationResult(PeginProcessAction.REGISTER);
+            case P2SHMULTISIG, P2SHP2WSH -> {
                 if (hasOutputsToDifferentTypesOfFeds(btcTx, fedWallet)) {
-                    return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
+                    yield new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
                 }
-                return new PeginEvaluationResult(PeginProcessAction.REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
-            default:
-                return new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_UNDETERMINED_SENDER);
-        }
+                yield new PeginEvaluationResult(PeginProcessAction.REFUND, LEGACY_PEGIN_MULTISIG_SENDER);
+            }
+            default -> new PeginEvaluationResult(PeginProcessAction.NO_REFUND, LEGACY_PEGIN_UNDETERMINED_SENDER);
+        };
     }
 
     private static boolean hasOutputsToDifferentTypesOfFeds(BtcTransaction btcTx, Wallet fedWallet) {
