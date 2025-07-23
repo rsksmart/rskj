@@ -697,6 +697,431 @@ class SnapshotProcessorTest {
                 anyLong(), anyLong(), any(LinkedList.class), any(LinkedList.class));
     }
 
+    // Tests for processStateChunkRequest(Peer, SnapStateChunkV2RequestMessage)
+    @Test
+    void testProcessStateChunkRequest_ValidRequest() throws InterruptedException {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true, // useStateChunkV2 = true
+                listener);
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                1L, 
+                blockchain.getBlockByNumber(1).getHash().getBytes(), 
+                "testkey".getBytes()
+        );
+        
+        CountDownLatch latch = new CountDownLatch(1);
+        doCountDownOnQueueEmpty(listener, latch);
+        underTest.start();
+
+        // When
+        underTest.processStateChunkRequest(peer, requestMessage);
+
+        // Then
+        assertTrue(latch.await(THREAD_JOIN_TIMEOUT, TimeUnit.MILLISECONDS));
+        ArgumentCaptor<SyncMessageHandler.Job> jobArg = ArgumentCaptor.forClass(SyncMessageHandler.Job.class);
+        verify(listener, times(1)).onJobRun(jobArg.capture());
+        assertEquals(peer, jobArg.getValue().getSender());
+        assertEquals(requestMessage.getMessageType(), jobArg.getValue().getMsgType());
+    }
+
+    @Test
+    void testProcessStateChunkRequest_NotRunning() {
+        // Given
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true, // useStateChunkV2 = true
+                listener);
+        // SnapshotProcessor not started, so isRunning should be false/null
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                1L, 
+                new byte[32], 
+                "testkey".getBytes()
+        );
+
+        // When
+        underTest.processStateChunkRequest(peer, requestMessage);
+
+        // Then - No job should be scheduled when not running
+        verify(listener, never()).onJobRun(any());
+    }
+
+    @Test
+    void testProcessStateChunkRequest_UseStateChunkV1() throws InterruptedException {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                false, // useStateChunkV2 = false
+                listener);
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                1L, 
+                blockchain.getBlockByNumber(1).getHash().getBytes(), 
+                "testkey".getBytes()
+        );
+        
+        underTest.start();
+
+        // When
+        underTest.processStateChunkRequest(peer, requestMessage);
+
+        // Then - Should log warning and not process
+        // No job should be scheduled
+        Thread.sleep(100); // Give some time for potential processing
+        verify(listener, never()).onJobRun(any());
+    }
+
+    // Tests for processStateChunkV2RequestInternal()
+    @Test
+    void testProcessStateChunkV2RequestInternal_ValidRequest() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true, // useStateChunkV2 = true
+                listener);
+        
+                 Block testBlock = blockchain.getBlockByNumber(1);
+         // StateRootHandler is a real object from BlockChainBuilder, no mocking needed
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                123L, 
+                testBlock.getHash().getBytes(), 
+                null // fromKey = null for first chunk
+        );
+
+        // When
+        underTest.processStateChunkV2RequestInternal(peer, requestMessage);
+
+        // Then
+        verify(peer, times(1)).sendMessage(any(SnapStateChunkV2ResponseMessage.class));
+    }
+
+    @Test
+    void testProcessStateChunkV2RequestInternal_NullBlockHash() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true,
+                listener);
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                123L, 
+                null, // null blockHash
+                "testkey".getBytes()
+        );
+
+        // When
+        underTest.processStateChunkV2RequestInternal(peer, requestMessage);
+
+        // Then - Should handle error and not send message
+        verify(peer, never()).sendMessage(any());
+    }
+
+    @Test
+    void testProcessStateChunkV2RequestInternal_BlockNotFound() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true,
+                listener);
+        
+        byte[] nonExistentBlockHash = new byte[32]; // Block that doesn't exist
+        Arrays.fill(nonExistentBlockHash, (byte) 0xFF);
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                123L, 
+                nonExistentBlockHash, 
+                "testkey".getBytes()
+        );
+
+        // When
+        underTest.processStateChunkV2RequestInternal(peer, requestMessage);
+
+        // Then - Should handle error and not send message
+        verify(peer, never()).sendMessage(any());
+    }
+
+    @Test
+    void testProcessStateChunkV2RequestInternal_LargeFromKey() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true,
+                listener);
+        
+        Block testBlock = blockchain.getBlockByNumber(1);
+        byte[] oversizedFromKey = new byte[1025]; // Exceeds MAX_STATE_KEY_SIZE (1024)
+        Arrays.fill(oversizedFromKey, (byte) 0x01);
+        
+        SnapStateChunkV2RequestMessage requestMessage = new SnapStateChunkV2RequestMessage(
+                123L, 
+                testBlock.getHash().getBytes(), 
+                oversizedFromKey
+        );
+
+        // When
+        underTest.processStateChunkV2RequestInternal(peer, requestMessage);
+
+        // Then - Should handle error and not send message
+        verify(peer, never()).sendMessage(any());
+    }
+
+    // Tests for processStateChunkResponse(SnapSyncState, Peer, SnapStateChunkV2ResponseMessage)
+    @Test
+    void testProcessStateChunkResponse_NotRunning() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true,
+                listener);
+        
+        when(snapSyncState.isRunning()).thenReturn(false);
+        
+        SnapStateChunkV2ResponseMessage responseMessage = mock(SnapStateChunkV2ResponseMessage.class);
+
+        // When
+        underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
+
+        // Then - Should return early without processing
+        verify(snapSyncState, never()).getLastBlock();
+    }
+
+    @Test
+    void testProcessStateChunkResponse_InvalidChunkVersion() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                false, // useStateChunkV2 = false
+                listener);
+        
+        when(snapSyncState.isRunning()).thenReturn(true);
+        
+        SnapStateChunkV2ResponseMessage responseMessage = mock(SnapStateChunkV2ResponseMessage.class);
+
+        // When
+        underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
+
+        // Then - Should process error and not continue
+        verify(peersInformation, times(1)).processSyncingError(eq(peer), eq(co.rsk.scoring.EventType.INVALID_STATE_CHUNK), anyString(), any());
+        verify(snapSyncState, never()).getLastBlock();
+    }
+
+    @Test
+    void testProcessStateChunkResponse_EmptyChunk() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true, // useStateChunkV2 = true
+                listener);
+        
+        when(snapSyncState.isRunning()).thenReturn(true);
+        Block lastBlock = blockchain.getBlockByNumber(1);
+        when(snapSyncState.getLastBlock()).thenReturn(lastBlock);
+        
+        co.rsk.trie.TrieChunk emptyChunk = new co.rsk.trie.TrieChunk(new LinkedHashMap<>(), co.rsk.trie.TrieChunk.Proof.EMPTY);
+        SnapStateChunkV2ResponseMessage responseMessage = new SnapStateChunkV2ResponseMessage(123L, emptyChunk);
+
+        // When
+        underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
+
+        // Then - Should process error for empty chunk
+        verify(peersInformation, times(1)).processSyncingError(eq(peer), eq(co.rsk.scoring.EventType.INVALID_STATE_CHUNK), anyString(), any(), any());
+    }
+
+    @Test
+    void testProcessStateChunkResponse_ChunkSizeExceedsMaximum() {
+        // Given
+        initializeBlockchainWithAmountOfBlocks(5);
+        underTest = new SnapshotProcessor(
+                blockchain,
+                trieStore,
+                peersInformation,
+                blockStore,
+                transactionPool,
+                stateRootHandler,
+                blockParentValidator,
+                blockValidator,
+                blockHeaderParentValidator,
+                blockHeaderValidator,
+                TEST_CHUNK_SIZE,
+                syncConfiguration,
+                TEST_MAX_SENDER_REQUESTS,
+                true,
+                false,
+                true, // useStateChunkV2 = true
+                listener);
+        
+        when(snapSyncState.isRunning()).thenReturn(true);
+        Block lastBlock = blockchain.getBlockByNumber(1);
+        when(snapSyncState.getLastBlock()).thenReturn(lastBlock);
+        
+        // Create a chunk with too many items
+        LinkedHashMap<byte[], byte[]> oversizedKeyValues = new LinkedHashMap<>();
+        for (int i = 0; i < co.rsk.trie.TrieChunk.MAX_CHUNK_SIZE + 1; i++) {
+            oversizedKeyValues.put(("key" + i).getBytes(), ("value" + i).getBytes());
+        }
+        co.rsk.trie.TrieChunk oversizedChunk = new co.rsk.trie.TrieChunk(oversizedKeyValues, co.rsk.trie.TrieChunk.Proof.EMPTY);
+        SnapStateChunkV2ResponseMessage responseMessage = new SnapStateChunkV2ResponseMessage(123L, oversizedChunk);
+
+        // When
+        underTest.processStateChunkResponse(snapSyncState, peer, responseMessage);
+
+        // Then - Should process error for oversized chunk
+        verify(peersInformation, times(1)).processSyncingError(eq(peer), eq(co.rsk.scoring.EventType.INVALID_STATE_CHUNK), anyString(), any(), any(), any());
+    }
+
     private void initializeBlockchainWithAmountOfBlocks(int numberOfBlocks) {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         blockchain = blockChainBuilder.ofSize(numberOfBlocks);
