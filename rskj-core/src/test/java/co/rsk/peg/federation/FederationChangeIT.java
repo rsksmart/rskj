@@ -1,7 +1,8 @@
 package co.rsk.peg.federation;
 
+import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeEventsTestUtils.*;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
-import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseP2SHInputScriptThatSpendsFromRedeemScript;
 import static co.rsk.peg.bitcoin.UtxoUtils.extractOutpointValues;
 import static co.rsk.peg.federation.FederationStorageIndexKey.NEW_FEDERATION_BTC_UTXOS_KEY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,10 +63,12 @@ class FederationChangeIT {
             new String[]{
                 "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"}, true);
     private static final List<FederationMember> ORIGINAL_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(ORIGINAL_FEDERATION_MEMBERS_KEYS);
-    private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS =
-        BitcoinTestUtils.getBtcEcKeysFromSeeds(
-            new String[]{
-                "newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09"}, true);
+    private static final List<BtcECKey> NEW_FEDERATION_MEMBERS_KEYS = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+        "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09", "newMember10",
+        "newMember11", "newMember12", "newMember13", "newMember14", "newMember15", "newMember16", "newMember17", "newMember18", "newMember19", "newMember20"
+    }, true);
+    private static final int NEW_FEDERATION_MEMBERS_SIZE = 20;
+    private static final int NEW_FEDERATION_THRESHOLD = NEW_FEDERATION_MEMBERS_SIZE / 2 + 1;
     private static final List<FederationMember> NEW_FEDERATION_MEMBERS = FederationTestUtils.getFederationMembersWithBtcKeys(NEW_FEDERATION_MEMBERS_KEYS);
     private static final SignatureCache SIGNATURE_CACHE = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private static final Transaction UPDATE_COLLECTIONS_TX = buildUpdateCollectionsTx();
@@ -223,10 +226,7 @@ class FederationChangeIT {
         federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
         var blockNumber = 0L;
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = createRskBlock(blockNumber);
 
         federationSupport = FederationSupportBuilder.builder()
             .withFederationConstants(FEDERATION_CONSTANTS)
@@ -287,7 +287,7 @@ class FederationChangeIT {
         var erpPubKeys = FEDERATION_CONSTANTS.getErpFedPubKeysList();
         var activationDelay = FEDERATION_CONSTANTS.getErpFedActivationDelay();
 
-        return FederationFactory.buildP2shErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
+        return FederationFactory.buildP2shP2wshErpFederation(expectedFederationArgs, erpPubKeys, activationDelay);
     }
 
     private int voteToCreatePendingFederation(Transaction tx) {
@@ -380,7 +380,8 @@ class FederationChangeIT {
         assertEquals(1, pegoutsTxs.size());
         var svpFundTx = new BtcTransaction(NETWORK_PARAMS, pegoutsTxs.get(0).getBtcTransaction().bitcoinSerialize());
 
-        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, 5));
+        int neededSignatures = federationSupport.getActiveFederationThreshold();
+        signInputs(svpFundTx, ORIGINAL_FEDERATION_MEMBERS_KEYS.subList(0, neededSignatures));
 
         int activeFederationUtxosSizeBeforeRegisteringTx = federationSupport.getActiveFederationBtcUTXOs().size();
         registerBtcTransaction(svpFundTx);
@@ -412,15 +413,27 @@ class FederationChangeIT {
         var svpSpendTxWaitingForSignatures = bridgeStorageProvider.getSvpSpendTxWaitingForSignatures();
         assertTrue(svpSpendTxWaitingForSignatures.isPresent());
 
+        var proposedFederation = federationSupport.getProposedFederation();
+        assertTrue(proposedFederation.isPresent());
+
         // Add the signatures for the svp spend tx
         var svpSpendTxCreationHash = svpSpendTxWaitingForSignatures.get().getKey();
         var svpSpendTx = svpSpendTxWaitingForSignatures.get().getValue();
         var svpSpendTxSigHashes = IntStream.range(0, svpSpendTx.getInputs().size())
-            .mapToObj(i -> BitcoinUtils.generateSigHashForP2SHTransactionInput(svpSpendTx, i))
+            .mapToObj(i -> BitcoinUtils.generateSigHashForSegwitTransactionInput(svpSpendTx, i, svpSpendTx.getInput(i).getValue()))
             .toList();
-        for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, 5)) {
+
+        for (BtcECKey proposedFederatorSignerKey : NEW_FEDERATION_MEMBERS_KEYS.subList(0, NEW_FEDERATION_THRESHOLD)) {
             List<byte[]> signatures = BitcoinTestUtils.generateSignerEncodedSignatures(proposedFederatorSignerKey, svpSpendTxSigHashes);
             bridgeSupport.addSignature(proposedFederatorSignerKey, signatures, svpSpendTxCreationHash);
+            assertFederatorSigning(
+                svpSpendTxCreationHash.getBytes(),
+                svpSpendTx,
+                svpSpendTxSigHashes,
+                proposedFederation.get(),
+                proposedFederatorSignerKey,
+                logs
+            );
         }
 
         // Verify that the svp spend tx was released
@@ -452,26 +465,13 @@ class FederationChangeIT {
         assertEventWasEmittedWithExpectedData(encodedData);
     }
 
-    private List<DataWord> getEncodedTopics(CallTransaction.Function bridgeEvent, Object... args) {
-        byte[][] encodedTopicsInBytes = bridgeEvent.encodeEventTopics(args);
-        return LogInfo.byteArrayToList(encodedTopicsInBytes);
-    }
-
-    private byte[] getEncodedData(CallTransaction.Function bridgeEvent, Object... args) {
-        return bridgeEvent.encodeEventData(args);
-    }
-
     private void assertEventWasEmittedWithExpectedTopics(List<DataWord> expectedTopics) {
-        Optional<LogInfo> topicOpt = logs.stream()
-            .filter(log -> log.getTopics().equals(expectedTopics))
-            .findFirst();
+        Optional<LogInfo> topicOpt = getLogsTopics(logs, expectedTopics);
         assertTrue(topicOpt.isPresent());
     }
 
     private void assertEventWasEmittedWithExpectedData(byte[] expectedData) {
-        Optional<LogInfo> data = logs.stream()
-            .filter(log -> Arrays.equals(log.getData(), expectedData))
-            .findFirst();
+        Optional<LogInfo> data = getLogsData(logs, expectedData);
         assertTrue(data.isPresent());
     }
     
@@ -479,10 +479,7 @@ class FederationChangeIT {
         // Move the required blocks ahead for the new powpeg to become active
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFederationActivationAge(ACTIVATIONS);
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = createRskBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -492,10 +489,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationBegin() + 1L;
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = createRskBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
     }
@@ -505,10 +499,7 @@ class FederationChangeIT {
         // adding 1 as the migration is exclusive
         var blockNumber = 
             currentBlock.getNumber() + FEDERATION_CONSTANTS.getFundsMigrationAgeSinceActivationEnd(ACTIVATIONS) + 1L;
-        var blockHeader = new BlockHeaderBuilder(mock(ActivationConfig.class))
-            .setNumber(blockNumber)
-            .build();
-        currentBlock = Block.createBlockFromHeader(blockHeader, true);
+        currentBlock = createRskBlock(blockNumber);
 
         advanceBlockchainTo(currentBlock);
 
@@ -575,7 +566,7 @@ class FederationChangeIT {
     private void assertPegoutsShouldWorkToFed(Federation federation, List<UTXO> federationUtxosReference, String senderSeed) throws Exception {
         var pegout = createPegout(federation, senderSeed);
         // save pegout index
-        BitcoinUtils.getFirstInputSigHash(pegout)
+        BitcoinUtils.getSigHashForPegoutIndex(pegout)
             .ifPresent(inputSigHash -> bridgeStorageProvider.setPegoutTxSigHash(inputSigHash));
 
         int utxosSizeBeforeRegisteringPegout = federationUtxosReference.size();
@@ -704,25 +695,28 @@ class FederationChangeIT {
         flyoverPeginBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
 
         userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(NETWORK_PARAMS, senderSeed);
-        var flyoverDerivationHash = BridgeSupportTestUtil.getFlyoverDerivationHash(
-            ACTIVATIONS,
+        var flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             DERIVATION_ARGUMENTS_HASH,
             userRefundBtcAddress,
             LIQUIDITY_PROVIDER_BTC_ADDRESS,
-            LBC_ADDRESS
+            LBC_ADDRESS,
+            ACTIVATIONS
         );
 
-        var flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
-            .of(flyoverDerivationHash, federation.getRedeemScript());
-        var recipient = Address.fromP2SHScript(NETWORK_PARAMS, ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript));
-        flyoverPeginBtcTx.addOutput(Coin.COIN, recipient);
+        var flyoverFederationAddress = PegUtils.getFlyoverFederationAddress(NETWORK_PARAMS, flyoverDerivationHash, federation);
+        flyoverPeginBtcTx.addOutput(Coin.COIN, flyoverFederationAddress);
 
         return Pair.of(flyoverPeginBtcTx, flyoverDerivationHash);
     }
 
     private BtcTransaction createPegout(Federation federation, String senderSeed) {
+        var prevTx = new BtcTransaction(NETWORK_PARAMS);
+        prevTx.addOutput(Coin.COIN, federation.getAddress());
+
+        TransactionOutput outpoint = prevTx.getOutput(0);
         var pegout = new BtcTransaction(NETWORK_PARAMS);
-        pegout.addInput(BitcoinTestUtils.createHash(1), 0, createBaseP2SHInputScriptThatSpendsFromRedeemScript(federation.getRedeemScript()));
+        pegout.addInput(outpoint);
+        BitcoinUtils.addSpendingFederationBaseScript(pegout, 0, federation.getRedeemScript(), federation.getFormatVersion());
 
         var receiverPublicKey = BitcoinTestUtils.getBtcEcKeyFromSeed(senderSeed);
         pegout.addOutput(Coin.COIN, receiverPublicKey);
@@ -856,7 +850,7 @@ class FederationChangeIT {
     private void signInputs(BtcTransaction transaction, List<BtcECKey> keysToSign) {
         List<TransactionInput> inputs = transaction.getInputs();
         IntStream.range(0, inputs.size()).forEach(i ->
-            BitcoinTestUtils.signTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
+            BitcoinTestUtils.signLegacyTransactionInputFromP2shMultiSig(transaction, i, keysToSign)
         );
     }
     
@@ -929,7 +923,7 @@ class FederationChangeIT {
 
     private void assertPendingFederationIsBuiltAsExpected(PendingFederation pendingFederation) {
         assertNotNull(pendingFederation);
-        assertEquals(9, pendingFederation.getSize());
+        assertEquals(NEW_FEDERATION_MEMBERS_SIZE, pendingFederation.getSize());
         assertTrue(pendingFederation.getMembers().containsAll(NEW_FEDERATION_MEMBERS));
     }
 
@@ -1016,9 +1010,12 @@ class FederationChangeIT {
         for (PegoutsWaitingForConfirmations.Entry pegoutEntry : bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries()) {
             var pegoutBtcTransaction = pegoutEntry.getBtcTransaction();
 
-            for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
+            List<TransactionInput> inputs = pegoutBtcTransaction.getInputs();
+            for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+                TransactionInput input = inputs.get(inputIndex);
+
                 // Each input should contain the right scriptSig
-                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(input).orElseThrow();
+                Script inputRedeemScript = BitcoinUtils.extractRedeemScriptFromInput(pegoutBtcTransaction, inputIndex).orElseThrow();
 
                 // Get the standard redeem script to compare against, since it could be a flyover redeem script
                 var redeemScriptChunks = ScriptParser.parseScriptProgram(
@@ -1062,7 +1059,7 @@ class FederationChangeIT {
             .toList();
 
         for (var pegoutTx : pegoutsTxs) {
-            var lastPegoutSigHash = BitcoinUtils.getFirstInputSigHash(pegoutTx);
+            var lastPegoutSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutTx);
             assertTrue(lastPegoutSigHash.isPresent());
             assertTrue(bridgeStorageProvider.hasPegoutTxSigHash(lastPegoutSigHash.get()));
         }

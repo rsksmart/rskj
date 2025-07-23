@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSerializationUtils.deserializeOutpointsValues;
 import static co.rsk.peg.BridgeStorageIndexKey.*;
 import static org.ethereum.TestUtils.assertThrows;
 import static org.ethereum.TestUtils.mockAddress;
@@ -42,6 +43,8 @@ import co.rsk.trie.TrieStoreImpl;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Stream;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -55,6 +58,9 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -69,12 +75,13 @@ import org.mockito.quality.Strictness;
 class BridgeStorageProviderTest {
     private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
 
-    private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
-    private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
-    private final NetworkParameters testnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-    private final NetworkParameters mainnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+    private static final NetworkParameters testnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+    private static final NetworkParameters mainnetBtcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
     private final RskAddress bridgeAddress = PrecompiledContracts.BRIDGE_ADDR;
+
+    private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
+    private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
 
     private int transactionOffset;
 
@@ -974,8 +981,8 @@ class BridgeStorageProviderTest {
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @Tag("save, set and get svp spend transaction waiting for signatures tests")
     class SvpSpendTxWaitingForSignaturesTests {
-        private final Keccak256 spendTxCreationHash = RskTestUtils.createHash(1);
-        private final BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
+        private static final Keccak256 spendTxCreationHash = RskTestUtils.createHash(1);
+        private static final BtcTransaction svpSpendTx = new BtcTransaction(mainnetBtcParams);
         private final Map.Entry<Keccak256, BtcTransaction> svpSpendTxWaitingForSignatures =
             new AbstractMap.SimpleEntry<>(spendTxCreationHash, svpSpendTx);
         private Repository repository;
@@ -1008,55 +1015,20 @@ class BridgeStorageProviderTest {
             assertNull(actualSvpSpendTxWaitingForSignatures);
         }
 
-        @Test
-        void setSvpSpendTxWaitingForSignatures_postLovell700AndInvalidEntry_shouldThrowIllegalArgumentException() {
-            // Arrange
-            Map.Entry<Keccak256, BtcTransaction> invalidSvpSpendTxWaitingForSignatures =
-                new AbstractMap.SimpleEntry<>(null, null);
-
-            // Act
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(invalidSvpSpendTxWaitingForSignatures)
+        private static Stream<Arguments> invalidEntryArgs() {
+            return Stream.of(
+                Arguments.of(null, null),
+                Arguments.of(spendTxCreationHash, null),
+                Arguments.of(null, svpSpendTx)
             );
-
-            bridgeStorageProvider.save();
-
-            // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
-                bridgeAddress,
-                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
-            );
-            assertNull(actualSvpSpendTxWaitingForSignatures);
         }
 
-        @Test
-        void setSvpSpendTxWaitingForSignatures_postLovell700AndNullKeyInEntry_shouldThrowIllegalArgumentException() {
+        @ParameterizedTest
+        @MethodSource("invalidEntryArgs")
+        void setSvpSpendTxWaitingForSignatures_postLovell700AndInvalidEntry_shouldThrowIllegalArgumentException(Keccak256 spendTxCreationHash, BtcTransaction svpSpendTx) {
             // Arrange
             Map.Entry<Keccak256, BtcTransaction> invalidSvpSpendTxWaitingForSignatures =
-                new AbstractMap.SimpleEntry<>(null, svpSpendTx);
-
-            // Act
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> bridgeStorageProvider.setSvpSpendTxWaitingForSignatures(invalidSvpSpendTxWaitingForSignatures)
-            );
-
-            bridgeStorageProvider.save();
-
-            // Assert
-            byte[] actualSvpSpendTxWaitingForSignatures = repository.getStorageBytes(
-                bridgeAddress,
-                SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey()
-            );
-            assertNull(actualSvpSpendTxWaitingForSignatures);
-        }
-
-        @Test
-        void setSvpSpendTxWaitingForSignatures_postLovell700AndNullValueInEntry_shouldThrowIllegalArgumentException() {
-            // Arrange
-            Map.Entry<Keccak256, BtcTransaction> invalidSvpSpendTxWaitingForSignatures =
-                new AbstractMap.SimpleEntry<>(spendTxCreationHash, null);
+                new AbstractMap.SimpleEntry<>(spendTxCreationHash, svpSpendTx);
 
             // Act
             assertThrows(
@@ -1152,10 +1124,10 @@ class BridgeStorageProviderTest {
         @Test
         void getSvpSpendTxWaitingForSignatures_whenDifferentEntryIsInStorageAndAnotherIsSetButNotSaved_shouldReturnTheSetEntry() {
             // Arrange
-            Keccak256 anotherSvSpendTxCreationHash = RskTestUtils.createHash(2);
+            Keccak256 anotherSvpSpendTxCreationHash = RskTestUtils.createHash(2);
             BtcTransaction anotherSvpSpendTx = new BtcTransaction(mainnetBtcParams);
             Map.Entry<Keccak256, BtcTransaction> anotherSvpSpendTxWaitingForSignatures =
-              new AbstractMap.SimpleEntry<>(anotherSvSpendTxCreationHash, anotherSvpSpendTx);
+              new AbstractMap.SimpleEntry<>(anotherSvpSpendTxCreationHash, anotherSvpSpendTx);
             repository.addStorageBytes(
                 bridgeAddress,
                 SVP_SPEND_TX_WAITING_FOR_SIGNATURES.getKey(),
@@ -1406,6 +1378,249 @@ class BridgeStorageProviderTest {
             assertFalse(bridgeStorageProvider.getSvpFundTxSigned().isPresent());
             assertFalse(bridgeStorageProvider.getSvpSpendTxWaitingForSignatures().isPresent());
             assertFalse(bridgeStorageProvider.getSvpSpendTxHashUnsigned().isPresent());
+        }
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("save, set and get releases outpoints tests")
+    class ReleasesOutpointsValues {
+        private static final Sha256Hash releaseTxHash1 = BitcoinTestUtils.createHash(1);
+        private static final List<Coin> outpointsValues1 = Arrays.asList(
+            Coin.valueOf(12345), Coin.SATOSHI, Coin.COIN
+        );
+        private static final Sha256Hash releaseTxHash2 = BitcoinTestUtils.createHash(2);
+        private static final List<Coin> outpointsValues2 = Arrays.asList(
+            Coin.valueOf(123456), Coin.COIN, Coin.SATOSHI
+        );
+
+        private BridgeStorageProvider bridgeStorageProvider;
+        private Repository repository;
+
+        @BeforeEach
+        void setup() {
+            repository = createRepository();
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, activationsAllForks);
+        }
+
+        @Test
+        void setAndSaveReleaseOutpointsValues_preReed800_shouldNotSaveInStorage() {
+            // Arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, lovellActivations);
+
+            // Act
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1);
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualReleaseOutpointsValues = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1)
+            );
+            assertNull(actualReleaseOutpointsValues);
+        }
+
+        @Test
+        void outpointsValues_immutable() {
+            // arrange
+            List<Coin> outpointsValues = new ArrayList<>(
+                Arrays.asList(Coin.MILLICOIN, Coin.SATOSHI, Coin.COIN)
+            );
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues);
+            Optional<List<Coin>> actualReleaseOutpointsValuesBeforeModifyingOpt = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            assertTrue(actualReleaseOutpointsValuesBeforeModifyingOpt.isPresent());
+            List<Coin> actualReleaseOutpointsValuesBeforeModifying = List.copyOf(actualReleaseOutpointsValuesBeforeModifyingOpt.get());
+
+            // Act
+            outpointsValues.add(Coin.FIFTY_COINS);
+
+            // assert
+            Optional<List<Coin>> actualReleaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            assertTrue(actualReleaseOutpointsValues.isPresent());
+            assertEquals(actualReleaseOutpointsValuesBeforeModifying, actualReleaseOutpointsValues.get());
+        }
+
+        private static Stream<Arguments> invalidReleaseOutpointsEntryArgs() {
+            return Stream.of(
+                Arguments.of(null, null),
+                Arguments.of(releaseTxHash1, null),
+                Arguments.of(releaseTxHash1, new ArrayList<>()),
+                Arguments.of(null, outpointsValues1)
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("invalidReleaseOutpointsEntryArgs")
+        void setAndSaveReleaseOutpointsValues_invalidEntry_shouldThrowIllegalArgumentExceptionAndNotSaveInStorage(
+            Sha256Hash releaseTxHash,
+            List<Coin> outpointsValues
+        ) {
+            // Act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash, outpointsValues)
+            );
+
+            bridgeStorageProvider.save();
+            byte[] actualReleaseOutpointsValues = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1)
+            );
+            assertNull(actualReleaseOutpointsValues);
+        }
+
+        @Test
+        void setReleaseOutpointsValues_whenEntryAlreadySaved_shouldThrowIllegalArgumentException() {
+            // arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues1)
+            );
+
+            // Act & assert
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1)
+            );
+        }
+
+        @Test
+        void setAndSaveReleaseOutpointsValues_forTwoDifferentEntries_shouldSaveBothInStorage() {
+            // Arrange
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1);
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash2, outpointsValues2);
+
+            // Act
+            bridgeStorageProvider.save();
+
+            // Assert
+            byte[] actualReleaseOutpointsValues1 = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1)
+            );
+            assertNotNull(actualReleaseOutpointsValues1);
+            assertEquals(outpointsValues1, deserializeOutpointsValues(actualReleaseOutpointsValues1));
+
+            byte[] actualReleaseOutpointsValues2 = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash2)
+            );
+            assertNotNull(actualReleaseOutpointsValues2);
+            assertEquals(outpointsValues2, deserializeOutpointsValues(actualReleaseOutpointsValues2));
+        }
+
+        @Test
+        void setAndSaveReleaseOutpointsValues_forNewEntry_whenAnotherEntryIsInStorage_shouldHaveBothInStorage() {
+            // Arrange
+            // save entry in storage
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues1)
+            );
+
+            // Act
+            // add new entry
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash2, outpointsValues2);
+            bridgeStorageProvider.save();
+
+            // Assert
+            // both entries are saved
+            byte[] actualReleaseOutpointsValues1 = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1)
+            );
+            assertNotNull(actualReleaseOutpointsValues1);
+
+            byte[] actualReleaseOutpointsValues2 = repository.getStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash2)
+            );
+            assertNotNull(actualReleaseOutpointsValues2);
+        }
+
+        private DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
+            return RELEASES_OUTPOINTS_VALUES.getCompoundKey("-", releaseTxHash.toString());
+        }
+
+        @Test
+        void getReleaseOutpointsValues_preReed800_shouldThrowIllegalStateException() {
+            // Arrange
+            ActivationConfig.ForBlock lovell700 = ActivationConfigsForTest.lovell700().forBlock(0L);
+            bridgeStorageProvider = createBridgeStorageProvider(repository, mainnetBtcParams, lovell700);
+
+            // Act & assert
+            assertThrows(IllegalStateException.class, () -> bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1));
+            assertThrows(IllegalStateException.class, () -> bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash2));
+        }
+
+        @Test
+        void getReleaseOutpointsValues_whenEntryNotSetNorSaved_shouldReturnEmpty() {
+            Optional<List<Coin>> actualReleaseOutpointsValues = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            assertTrue(actualReleaseOutpointsValues.isEmpty());
+        }
+
+        @Test
+        void getReleaseOutpointsValues_whenEntrySetButNotSaved_shouldReturnValues() {
+            // Arrange
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1);
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash2, outpointsValues2);
+
+            // Act
+            Optional<List<Coin>> actualReleaseOutpointsValues1 = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            Optional<List<Coin>> actualReleaseOutpointsValues2 = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash2);
+
+            // Assert
+            assertTrue(actualReleaseOutpointsValues1.isPresent());
+            assertEquals(outpointsValues1, actualReleaseOutpointsValues1.get());
+
+            assertTrue(actualReleaseOutpointsValues2.isPresent());
+            assertEquals(outpointsValues2, actualReleaseOutpointsValues2.get());
+        }
+
+        @Test
+        void getReleaseOutpointsValues_whenEntrySetAndSaved_shouldReturnValues() {
+            // Arrange
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash1, outpointsValues1);
+            bridgeStorageProvider.setReleaseOutpointsValues(releaseTxHash2, outpointsValues2);
+            bridgeStorageProvider.save();
+
+            // Act
+            Optional<List<Coin>> actualReleaseOutpointsValues1 = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            Optional<List<Coin>> actualReleaseOutpointsValues2 = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash2);
+
+            // Assert
+            assertTrue(actualReleaseOutpointsValues1.isPresent());
+            assertEquals(outpointsValues1, actualReleaseOutpointsValues1.get());
+
+            assertTrue(actualReleaseOutpointsValues2.isPresent());
+            assertEquals(outpointsValues2, actualReleaseOutpointsValues2.get());
+        }
+
+        @Test
+        void getReleaseOutpointsValues_whenEntriesSavedInStorage_shouldReturnValues() {
+            // Arrange
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash1),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues1)
+            );
+            repository.addStorageBytes(
+                bridgeAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash2),
+                BridgeSerializationUtils.serializeOutpointsValues(outpointsValues2)
+            );
+
+            // Act
+            Optional<List<Coin>> savedReleaseOutpointsValues1 = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash1);
+            assertTrue(savedReleaseOutpointsValues1.isPresent());
+            assertEquals(outpointsValues1, savedReleaseOutpointsValues1.get());
+
+            Optional<List<Coin>> savedReleaseOutpointsValues2 = bridgeStorageProvider.getReleaseOutpointsValues(releaseTxHash2);
+            assertTrue(savedReleaseOutpointsValues2.isPresent());
+            assertEquals(outpointsValues2, savedReleaseOutpointsValues2.get());
         }
     }
 
