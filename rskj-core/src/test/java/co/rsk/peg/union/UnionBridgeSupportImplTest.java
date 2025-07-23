@@ -1276,6 +1276,43 @@ class UnionBridgeSupportImplTest {
         assertTransferPermissionsWereStored(requestEnabled, releaseEnabled);
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "true, false",
+        "false, true",
+        "false, false"
+    })
+    void setTransferPermissions_whenSomeVotesDiffersAndFinalOneMatchesOneVoteAndWins_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
+        // arrange
+        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
+        unionBridgeSupport = unionBridgeSupportBuilder
+            .withConstants(bridgeConstants).build();
+
+        // act
+
+        // First vote
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer1);
+        UnionResponseCode firstVoteResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, firstVoteResponseCode);
+
+        // Second vote with different requestEnabled value
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
+        UnionResponseCode secondVoteResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, !requestEnabled, releaseEnabled);
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, secondVoteResponseCode);
+
+        // Third vote with the same values as the first vote
+        when(rskTx.getSender(signatureCache)).thenReturn(changeTransferPermissionsAuthorizer2);
+        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
+
+        // assert
+        Assertions.assertEquals(UnionResponseCode.SUCCESS, actualResponseCode);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+
+        // call save and assert that the permissions are stored
+        unionBridgeSupport.save();
+        assertTransferPermissionsWereStored(requestEnabled, releaseEnabled);
+    }
+
     private void assertNoTransferPermissionsWereStored() {
         Optional<Long> retrievedUnionBridgeRequestEnabled = storageAccessor.getFromRepository(
             UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),

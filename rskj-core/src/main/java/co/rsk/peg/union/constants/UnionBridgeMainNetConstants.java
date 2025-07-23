@@ -6,6 +6,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.vote.AddressBasedAuthorizer.MinimumRequiredCalculation;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,15 +28,8 @@ public class UnionBridgeMainNetConstants extends UnionBridgeConstants {
         initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(300)); // 300 rbtc
         lockingCapIncrementsMultiplier = 2;
 
-        // TODO: Replace with actual authorizers
-        List<ECKey> changeUnionBridgeContractAddressAuthorizers = Stream.of(
-            "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d",
-            "040a595228043ec16d64849b8cb82d0fad281480ca01cb9e33da89aeefb180415314f05c83e0b29c51e06465588f724367993550bad1967c929e0a43465746e2d6",
-            "049367a75caac20bb0a0a8bae7a5076e2ba4a6cd3f2f963b3f007b7ffde716c93cfcde1b7f7eb01c978b76b9e94556c8d9f2f44ab723ec4ec1e1dd9559f6f927a2"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
-
         changeUnionBridgeContractAddressAuthorizer = new AddressBasedAuthorizer(
-            changeUnionBridgeContractAddressAuthorizers,
+            Collections.emptyList(),
             MinimumRequiredCalculation.ONE
         );
 

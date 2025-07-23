@@ -5,6 +5,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizer;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -18,26 +19,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 class UnionBridgeConstantsTest {
 
     private static Stream<Arguments> changeUnionAddressAuthorizerProvider() {
-        List<RskAddress> mainnetAuthorizers = mapToRskAddresses(Stream.of(
-            "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d",
-            "040a595228043ec16d64849b8cb82d0fad281480ca01cb9e33da89aeefb180415314f05c83e0b29c51e06465588f724367993550bad1967c929e0a43465746e2d6",
-            "049367a75caac20bb0a0a8bae7a5076e2ba4a6cd3f2f963b3f007b7ffde716c93cfcde1b7f7eb01c978b76b9e94556c8d9f2f44ab723ec4ec1e1dd9559f6f927a2"
-        ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
-
         List<RskAddress> testnetAuthorizers = mapToRskAddresses(Stream.of(
-            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a",
-            "041768f38193655b6a4776d287b949f87e21fb3b2e3ed1581dbe7569ef641edef041ab862f4ab228566c5ae49abd478d9d92d870348304df35e23967adea3f6ded",
-            "049191c1f944ac723e5807ff771144295e4d6945ef1c6c30bd68927711410e6d40ec81b07a42b03093605d03edd15608a81511faeacd1815ab9341f4f77c212865"
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         List<RskAddress> regtestAuthorizers = mapToRskAddresses(Stream.of(
-            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a",
-            "041768f38193655b6a4776d287b949f87e21fb3b2e3ed1581dbe7569ef641edef041ab862f4ab228566c5ae49abd478d9d92d870348304df35e23967adea3f6ded",
-            "049191c1f944ac723e5807ff771144295e4d6945ef1c6c30bd68927711410e6d40ec81b07a42b03093605d03edd15608a81511faeacd1815ab9341f4f77c212865"
+            "041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         return Stream.of(
-            Arguments.of(UnionBridgeMainNetConstants.getInstance(), mainnetAuthorizers),
+            Arguments.of(UnionBridgeMainNetConstants.getInstance(), Collections.emptyList()),
             Arguments.of(UnionBridgeTestNetConstants.getInstance(), testnetAuthorizers),
             Arguments.of(UnionBridgeRegTestConstants.getInstance(), regtestAuthorizers)
         );
