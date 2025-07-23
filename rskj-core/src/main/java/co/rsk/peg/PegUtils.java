@@ -252,7 +252,7 @@ public class PegUtils {
     private static boolean hasOutputsToDifferentTypesOfFeds(BtcTransaction btcTx, Wallet fedWallet) {
         Set<Federation> destinationFeds = new HashSet<>();
         for (TransactionOutput output : btcTx.getOutputs()) {
-            byte[] outputP2shScript = output.getScriptPubKey().getChunks().get(1).data; // HASH160 PUBKEY EQUAL
+            byte[] outputP2shScript = output.getScriptPubKey().getPubKeyHash();
             Optional<Federation> destinationFed = ((BridgeBtcWallet) fedWallet).getDestinationFederation(outputP2shScript);
             destinationFed.ifPresent(destinationFeds::add);
         }
