@@ -22,7 +22,12 @@ import co.rsk.core.types.ints.Uint24;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 public class TrieChunkIterator implements Iterator<TrieChunk> {
 
@@ -60,12 +65,12 @@ public class TrieChunkIterator implements Iterator<TrieChunk> {
             }
 
             if (!node.getRight().isEmpty()) {
-                Trie rightNode = node.getRight().getNode().get();
+                Trie rightNode = Trie.fromRef(node.getRight());
                 TrieKeySlice rightKey = element.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
                 visiting.push(new IterationElement(rightKey, rightNode));
             }
             if (!node.getLeft().isEmpty()) {
-                Trie leftNode = node.getLeft().getNode().get();
+                Trie leftNode = Trie.fromRef(node.getLeft());
                 TrieKeySlice leftKey = element.getNodeKey().rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftKey, leftNode));
             }
@@ -104,7 +109,7 @@ public class TrieChunkIterator implements Iterator<TrieChunk> {
             Trie childNode = nodes.get(i - 1);
             if (childNode.getHash().equals(leftNode.getHash().orElse(null))) {
                 if (!rightNode.isEmpty()) {
-                    Trie rightTrie = rightNode.getNode().get();
+                    Trie rightTrie = Trie.fromRef(rightNode);
                     visiting.push(new IterationElement(currentKey.rebuildSharedPath((byte) 0x01, rightTrie.getSharedPath()), rightTrie));
                 }
 
@@ -118,13 +123,13 @@ public class TrieChunkIterator implements Iterator<TrieChunk> {
 
         NodeReference rightNode = node.getRight();
         if (!rightNode.isEmpty()) {
-            Trie rightTrie = rightNode.getNode().get();
+            Trie rightTrie = Trie.fromRef(rightNode);
             visiting.push(new IterationElement(currentKey.rebuildSharedPath((byte) 0x01, rightTrie.getSharedPath()), rightTrie));
         }
 
         NodeReference leftNode = node.getLeft();
         if (!leftNode.isEmpty()) {
-            Trie leftTrie = leftNode.getNode().get();
+            Trie leftTrie = Trie.fromRef(leftNode);
             visiting.push(new IterationElement(currentKey.rebuildSharedPath((byte) 0x00, leftTrie.getSharedPath()), leftTrie));
         }
     }
