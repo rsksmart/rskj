@@ -1732,6 +1732,7 @@ class BridgeSupportRegisterBtcTransactionTest {
         private final Script multiSigRedeemScript = ScriptBuilder.createRedeemScript(2, multiSigKeys);
         private final Coin prevTxValue = Coin.COIN;
         private final Coin valueToSend = prevTxValue.div(4);
+        private final Address anotherOutputAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "address");
 
         List<LogInfo> logs;
         private long blockNumber;
@@ -1807,6 +1808,30 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
+        void registerBtcTransaction_legacyPeginP2SHMultisigSender_twoOutputsSentToP2shErpRetiringFed_shouldRefund() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withCreationBlockNumber(activeFedCreationBlockNumber)
+                .build();
+            setUp(allActivations);
+
+            BtcTransaction pegin = buildPeginFromP2shMultiSig();
+            pegin.addOutput(valueToSend, retiringFederation.getAddress());
+            pegin.addOutput(valueToSend, retiringFederation.getAddress());
+
+            registerPegin(pegin);
+
+            // assert
+            // refund tx should have two inputs, both related to the retiring fed
+            int expectedAmoutOfRefundTxInputs = 2;
+            assertPeginWasRejectedAndRefunded(expectedAmoutOfRefundTxInputs, pegin);
+            // retiring fed is legacy
+            assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
+            assertRefundInputIsFromLegacyFederation(retiringFederation, 1);
+        }
+
+        @Test
         void registerBtcTransaction_legacyPeginP2SHP2WSHMultisigSender_sentToP2shErpRetiringFed_shouldRefund() throws Exception {
             // arrange
             retiringFederation = P2shErpFederationBuilder.builder().build();
@@ -1825,6 +1850,30 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertPeginWasRejectedAndRefunded(1, pegin);
             // since retiring fed is legacy, redeem data should be in the script sig
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
+        }
+
+        @Test
+        void registerBtcTransaction_legacyPeginP2SHP2WSHMultisigSender_twoOutputsSentToP2shErpRetiringFed_shouldRefund() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withCreationBlockNumber(activeFedCreationBlockNumber)
+                .build();
+            setUp(allActivations);
+
+            BtcTransaction pegin = buildPeginFromP2shP2wshMultiSig();
+            pegin.addOutput(valueToSend, retiringFederation.getAddress());
+            pegin.addOutput(valueToSend, retiringFederation.getAddress());
+
+            registerPegin(pegin);
+
+            // assert
+            // refund tx should have two inputs, both related to the retiring fed
+            int expectedAmoutOfRefundTxInputs = 2;
+            assertPeginWasRejectedAndRefunded(expectedAmoutOfRefundTxInputs, pegin);
+            // retiring fed is legacy
+            assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
+            assertRefundInputIsFromLegacyFederation(retiringFederation, 1);
         }
 
         @Test
@@ -1849,6 +1898,30 @@ class BridgeSupportRegisterBtcTransactionTest {
         }
 
         @Test
+        void registerBtcTransaction_legacyPeginP2SHMultisigSender_twoOutputsSentToP2shP2wshErpActiveFed_shouldRefund() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withCreationBlockNumber(activeFedCreationBlockNumber)
+                .build();
+            setUp(allActivations);
+
+            BtcTransaction pegin = buildPeginFromP2shMultiSig();
+            pegin.addOutput(valueToSend, activeFederation.getAddress());
+            pegin.addOutput(valueToSend, activeFederation.getAddress());
+
+            registerPegin(pegin);
+
+            // assert
+            // refund tx should have two inputs, both related to the active fed
+            int expectedAmoutOfRefundTxInputs = 2;
+            assertPeginWasRejectedAndRefunded(expectedAmoutOfRefundTxInputs, pegin);
+            // active fed is segwit
+            assertRefundInputIsFromSegwitFederation(activeFederation, 0);
+            assertRefundInputIsFromSegwitFederation(activeFederation, 1);
+        }
+
+        @Test
         void registerBtcTransaction_legacyPeginP2SHP2WSHMultisigSender_sentToP2shP2wshErpActiveFed_shouldRefund() throws Exception {
             // arrange
             retiringFederation = P2shErpFederationBuilder.builder().build();
@@ -1867,6 +1940,30 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertPeginWasRejectedAndRefunded(1, pegin);
             // since active fed is segwit, redeem data should be in the witness
             assertRefundInputIsFromSegwitFederation(activeFederation, 0);
+        }
+
+        @Test
+        void registerBtcTransaction_legacyPeginP2SHP2WSHMultisigSender_twoOutputsSentToP2shP2wshErpActiveFed_shouldRefund() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            activeFederation = P2shP2wshErpFederationBuilder.builder()
+                .withCreationBlockNumber(activeFedCreationBlockNumber)
+                .build();
+            setUp(allActivations);
+
+            BtcTransaction pegin = buildPeginFromP2shP2wshMultiSig();
+            pegin.addOutput(valueToSend, activeFederation.getAddress());
+            pegin.addOutput(valueToSend, activeFederation.getAddress());
+
+            registerPegin(pegin);
+
+            // assert
+            // refund tx should have two inputs, both related to the active fed
+            int expectedAmoutOfRefundTxInputs = 2;
+            assertPeginWasRejectedAndRefunded(expectedAmoutOfRefundTxInputs, pegin);
+            // active fed is segwit
+            assertRefundInputIsFromSegwitFederation(activeFederation, 0);
+            assertRefundInputIsFromSegwitFederation(activeFederation, 1);
         }
 
         @Test
@@ -1892,18 +1989,21 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             BtcTransaction pegin = buildPeginFromP2shMultiSig();
             pegin.addOutput(valueToSend, retiringFederation.getAddress());
+            pegin.addOutput(valueToSend, retiringFederation.getAddress());
             pegin.addOutput(valueToSend, activeFederation.getAddress());
 
             registerPegin(pegin);
 
             // assert
-            // refund tx should have two inputs, one related to the active fed and one to the retiring fed
-            assertPeginWasRejectedAndRefunded(2, pegin);
+            // refund tx should have three inputs, two related to the retiring fed and one to the active fed
+            int expectedAmoutOfRefundTxInputs = 3;
+            assertPeginWasRejectedAndRefunded(expectedAmoutOfRefundTxInputs, pegin);
             // both feds are legacy
-            // first input should belong to retiring fed
+            // first and second inputs should belong to retiring fed
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
-            // second input should belong to active fed
-            assertRefundInputIsFromLegacyFederation(activeFederation, 1);
+            assertRefundInputIsFromLegacyFederation(retiringFederation, 1);
+            // third input should belong to active fed
+            assertRefundInputIsFromLegacyFederation(activeFederation, 2);
         }
 
         @Test
@@ -1930,17 +2030,20 @@ class BridgeSupportRegisterBtcTransactionTest {
             BtcTransaction pegin = buildPeginFromP2shP2wshMultiSig();
             pegin.addOutput(valueToSend, retiringFederation.getAddress());
             pegin.addOutput(valueToSend, activeFederation.getAddress());
+            pegin.addOutput(valueToSend, activeFederation.getAddress());
 
             registerPegin(pegin);
 
             // assert
-            // refund tx should have two inputs, one related to the active fed and one to the retiring fed
-            assertPeginWasRejectedAndRefunded(2, pegin);
+            // refund tx should have three inputs, one related to the retiring fed and two to the active fed
+            int expectedAmoutOfRefundTxInputs = 3;
+            assertPeginWasRejectedAndRefunded(expectedAmoutOfRefundTxInputs, pegin);
             // both feds are legacy
             // first input should belong to retiring fed
             assertRefundInputIsFromLegacyFederation(retiringFederation, 0);
-            // second input should belong to active fed
+            // second and third inputs should belong to active fed
             assertRefundInputIsFromLegacyFederation(activeFederation, 1);
+            assertRefundInputIsFromLegacyFederation(activeFederation, 2);
         }
 
         @Test
@@ -1954,6 +2057,7 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             BtcTransaction pegin = buildPeginFromP2shMultiSig();
             pegin.addOutput(valueToSend, retiringFederation.getAddress());
+            pegin.addOutput(valueToSend, activeFederation.getAddress());
             pegin.addOutput(valueToSend, activeFederation.getAddress());
 
             // act
@@ -1973,6 +2077,7 @@ class BridgeSupportRegisterBtcTransactionTest {
             setUp(allActivations);
 
             BtcTransaction pegin = buildPeginFromP2shP2wshMultiSig();
+            pegin.addOutput(valueToSend, retiringFederation.getAddress());
             pegin.addOutput(valueToSend, retiringFederation.getAddress());
             pegin.addOutput(valueToSend, activeFederation.getAddress());
 
@@ -2044,6 +2149,8 @@ class BridgeSupportRegisterBtcTransactionTest {
             Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(multiSigRedeemScript);
             peginFromP2shMultiSig.getInput(0).setScriptSig(inputScript);
 
+            peginFromP2shMultiSig.addOutput(prevTxValue.div(6), anotherOutputAddress); // to have one output sent to a different address
+
             return peginFromP2shMultiSig;
         }
 
@@ -2057,6 +2164,8 @@ class BridgeSupportRegisterBtcTransactionTest {
 
             Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(multiSigRedeemScript);
             peginFromP2shP2wshMultiSig.getInput(0).setScriptSig(inputScript);
+
+            peginFromP2shP2wshMultiSig.addOutput(prevTxValue.div(6), anotherOutputAddress); // to have one output sent to a different address
 
             return peginFromP2shP2wshMultiSig;
         }
