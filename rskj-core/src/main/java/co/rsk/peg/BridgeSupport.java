@@ -555,7 +555,7 @@ public class BridgeSupport {
         NonRefundablePeginReason nonRefundablePeginReason =
             switch (rejectedPeginReason) {
                 case INVALID_AMOUNT -> NonRefundablePeginReason.INVALID_AMOUNT;
-                case LEGACY_PEGIN_MULTISIG_SENDER -> NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS;
+                case LEGACY_PEGIN_MULTISIG_SENDER -> NonRefundablePeginReason.OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS; // Only reason for a legacy pegin multisig sender not being refunded is if it has outputs to different types of feds
                 case LEGACY_PEGIN_UNDETERMINED_SENDER, PEGIN_V1_INVALID_PAYLOAD ->
                     protocolVersion == 1 ? NonRefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET
                         : NonRefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
