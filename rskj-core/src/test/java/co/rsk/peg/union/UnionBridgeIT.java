@@ -105,9 +105,11 @@ class UnionBridgeIT {
 
     private static final int LOCKING_CAP_INCREMENTS_MULTIPLIER = unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier();
     private static final Coin INITIAL_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap();
-    private static final Coin NEW_LOCKING_CAP = unionBridgeMainNetConstants.getInitialLockingCap()
+    private static final Coin INITIAL_MAX_LOCKING_CAP_INCREMENT = unionBridgeMainNetConstants.getInitialLockingCap()
         .multiply(BigInteger.valueOf(
             LOCKING_CAP_INCREMENTS_MULTIPLIER));
+    private static final Coin NEW_LOCKING_CAP = INITIAL_MAX_LOCKING_CAP_INCREMENT.subtract(Coin.valueOf(20));
+    private static final Coin DIFFERENT_LOCKING_CAP_FOR_VOTING = INITIAL_MAX_LOCKING_CAP_INCREMENT;
 
     private static final BigInteger ONE_ETH = BigInteger.TEN.pow(
         18); // 1 ETH = 1000000000000000000 wei
@@ -188,8 +190,12 @@ class UnionBridgeIT {
         Function function = SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
         byte[] setUnionBridgeContractAddressData = function.encode(
             NEW_UNION_BRIDGE_CONTRACT_ADDRESS.toHexString());
+        executeBridgeMethodAndAssertFail(setUnionBridgeContractAddressData);
+    }
+
+    private void executeBridgeMethodAndAssertFail(byte[] bridgeMethod) {
         VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(setUnionBridgeContractAddressData));
+            () -> bridge.execute(bridgeMethod));
         assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
     }
 
@@ -198,9 +204,7 @@ class UnionBridgeIT {
     void getUnionBridgeContractAddress_whenLovell_shouldFail() {
         Function function = GET_UNION_BRIDGE_CONTRACT_ADDRESS.getFunction();
         byte[] getUnionBridgeContractAddressData = function.encode();
-        VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(getUnionBridgeContractAddressData));
-        assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
+        executeBridgeMethodAndAssertFail(getUnionBridgeContractAddressData);
     }
 
     @Test
@@ -208,9 +212,7 @@ class UnionBridgeIT {
     void getUnionBridgeLockingCap_whenLovell_shouldFail() {
         Function function = GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
         byte[] getUnionBridgeLockingCapData = function.encode();
-        VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(getUnionBridgeLockingCapData));
-        assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
+        executeBridgeMethodAndAssertFail(getUnionBridgeLockingCapData);
     }
 
     @Test
@@ -218,9 +220,7 @@ class UnionBridgeIT {
     void increaseUnionBridgeLockingCap_whenLovell_shouldFail() {
         Function function = INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
         byte[] increaseUnionBridgeLockingCapData = function.encode(NEW_LOCKING_CAP.asBigInteger());
-        VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(increaseUnionBridgeLockingCapData));
-        assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
+        executeBridgeMethodAndAssertFail(increaseUnionBridgeLockingCapData);
     }
 
     @Test
@@ -228,9 +228,7 @@ class UnionBridgeIT {
     void requestUnionBridgeRbtc_whenLovell_shouldFail() {
         Function function = REQUEST_UNION_BRIDGE_RBTC.getFunction();
         byte[] requestUnionBridgeRbtcData = function.encode(AMOUNT_TO_REQUEST.asBigInteger());
-        VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(requestUnionBridgeRbtcData));
-        assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
+        executeBridgeMethodAndAssertFail(requestUnionBridgeRbtcData);
     }
 
     @Test
@@ -239,9 +237,7 @@ class UnionBridgeIT {
         Function function = RELEASE_UNION_BRIDGE_RBTC.getFunction();
         when(rskTx.getValue()).thenReturn(AMOUNT_TO_RELEASE);
         byte[] releaseUnionBridgeRbtcData = function.encode();
-        VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(releaseUnionBridgeRbtcData));
-        assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
+        executeBridgeMethodAndAssertFail(releaseUnionBridgeRbtcData);
     }
 
     @Test
@@ -249,9 +245,7 @@ class UnionBridgeIT {
     void setUnionBridgeTransferPermissions_whenLovell_shouldFail() {
         Function function = SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
         byte[] setUnionTransferPermissionsData = function.encode(true, true);
-        VMException actualException = assertThrows(VMException.class,
-            () -> bridge.execute(setUnionTransferPermissionsData));
-        assertEquals(BridgeIllegalArgumentException.class, actualException.getCause().getClass());
+        executeBridgeMethodAndAssertFail(setUnionTransferPermissionsData);
     }
 
     @Test
@@ -260,9 +254,13 @@ class UnionBridgeIT {
         throws VMException {
         // Setup for all activations
         setupForAllActivations();
-
         // Setup authorizer for changing union address
-        setupAuthorizer(CHANGE_UNION_ADDRESS_AUTHORIZER);
+        setupCaller(CHANGE_UNION_ADDRESS_AUTHORIZER);
+
+        // Assert that the union address is equal to the constant address
+        RskAddress unionAddressBeforeAttemptToUpdate = getUnionBridgeContractAddress();
+        assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, unionAddressBeforeAttemptToUpdate);
+        assertNoAddressIsStored();
 
         // Attempt to update union address when mainnet network. It should fail.
         int actualUnionResponseCode = updateUnionAddress(NEW_UNION_BRIDGE_CONTRACT_ADDRESS);
@@ -273,25 +271,12 @@ class UnionBridgeIT {
 
         // Assert that the union address continues to be the constant address
         RskAddress actualUnionAddress = getUnionBridgeContractAddress();
-        assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, actualUnionAddress);
+        assertEquals(unionAddressBeforeAttemptToUpdate, actualUnionAddress);
     }
 
     @Test
     @Order(8)
-    void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabled()
-        throws VMException {
-        // Attempt to update union address when mainnet network. It should fail.
-        int actualUnionResponseCode = updateUnionAddress(NEW_UNION_BRIDGE_CONTRACT_ADDRESS);
-        assertEquals(UnionResponseCode.ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
-
-        // // Assert union address remains unchanged
-        RskAddress updatedUnionAddress = getUnionBridgeContractAddress();
-        assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, updatedUnionAddress);
-    }
-
-    @Test
-    @Order(9)
-    void increaseUnionBridgeLockingCap_whenNoAuthorized_shouldIncreaseLockingCap() throws VMException {
+    void increaseUnionBridgeLockingCap_whenNoAuthorized_shouldFailAndReturnUnauthorizedCaller() throws VMException {
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
 
@@ -300,53 +285,67 @@ class UnionBridgeIT {
 
         // Assert that the locking cap remains unchanged
         assertEquals(INITIAL_LOCKING_CAP, getUnionBridgeLockingCap());
-        // Assert that the stored union locking cap is still null since no increased has been made
-        assertStoredUnionLockingCap(null);
+        // Assert that the stored union locking cap is still null since no increase has been made
+        assertNoStoredUnionLockingCap();
+    }
+
+    @Test
+    @Order(9)
+    void increaseUnionBridgeLockingCap_whenFirstVote_shouldVoteSuccessful() throws VMException {
+        // Arrange
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_1);
+
+        // Act
+        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP);
+
+        // Assert
+        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        Coin actualUnionLockingCap = getUnionBridgeLockingCap();
+        assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
+        assertNoStoredUnionLockingCap();
     }
 
     @Test
     @Order(10)
-    void increaseUnionBridgeLockingCap_whenFirstVote_shouldVoteSuccessful() throws VMException {
-        setupAuthorizer(CHANGE_LOCKING_CAP_AUTHORIZER_1);
-
+    void increaseUnionBridgeLockingCap_whenSecondVoteForDifferentValue_shouldVoteSuccessful() throws VMException {
+        // Arrange
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
         // Act
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP);
+        int actualUnionResponseCode = increaseUnionBridgeLockingCap(DIFFERENT_LOCKING_CAP_FOR_VOTING);
+        // Assert
         assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
-
-        // Assert that the locking cap remains unchanged
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
-        assertStoredUnionLockingCap(null);
+        assertNoStoredUnionLockingCap();
     }
 
     @Test
     @Order(11)
-    void increaseUnionBridgeLockingCap_whenSecondVoteForDifferentValue_shouldVoteSuccessful() throws VMException {
-        Coin differentLockingCap = NEW_LOCKING_CAP.subtract(new Coin(BigInteger.TEN));
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(differentLockingCap);
+    void increaseUnionBridgeLockingCap_whenThirdVoteForSameValue_shouldVoteSuccessful() throws VMException {
+        // Act
+        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP);
+        // Assert
         assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
-
-        // Assert that the locking cap remains unchanged
-        Coin actualUnionLockingCap = getUnionBridgeLockingCap();
-        assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
-        assertStoredUnionLockingCap(null);
+        assertLockingCap(NEW_LOCKING_CAP);
     }
 
     @Test
     @Order(12)
-    void increaseUnionBridgeLockingCap_whenThirdVoteForSameValue_shouldVoteSuccessful() throws VMException {
-        setupAuthorizer(CHANGE_LOCKING_CAP_AUTHORIZER_2);
-
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP);
+    void increaseUnionBridgeLockingCap_whenVoteAgainForPreviousDifferentValueAfterElectionClear_shouldVoteSuccessfulButNoChange() throws VMException {
+        Coin lockingCapBeforeUpdate = getUnionBridgeLockingCap();
+        // Act
+        int actualUnionResponseCode = increaseUnionBridgeLockingCap(DIFFERENT_LOCKING_CAP_FOR_VOTING);
+        // Assert
         assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
-
-        // Assert that the locking cap is updated
-        assertLockingCap(NEW_LOCKING_CAP);
+        // Assert that the locking cap remains unchanged
+        assertLockingCap(lockingCapBeforeUpdate);
     }
 
     @Test
     @Order(13)
     void increaseUnionBridgeLockingCap_whenSmallerLockingCap_shouldReturnInvalidValue() throws VMException {
+        // Assert that the new locking cap is greater than the initial locking cap
+        assertEquals(-1, INITIAL_LOCKING_CAP.compareTo(NEW_LOCKING_CAP));
         // Attempt to increase the locking cap with a smaller value than the current one
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(INITIAL_LOCKING_CAP);
         // Assert that the response code is INVALID_VALUE
@@ -397,7 +396,7 @@ class UnionBridgeIT {
     @Order(16)
     void releaseUnionBridgeRbtc_whenUnauthorized_shouldReturnUnauthorized()
         throws VMException {
-        setupNoAuthorized();
+        setupCallerNoAuthorized();
 
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
         assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER.getCode(), releaseUnionResponseCode);
@@ -435,7 +434,7 @@ class UnionBridgeIT {
     @Test
     @Order(18)
     void setTransferPermissions_whenUnauthorized_shouldReturnUnauthorized() throws VMException {
-        setupNoAuthorized();
+        setupCallerNoAuthorized();
 
         assertNoUnionTransferredPermissionsIsStored();
 
@@ -451,7 +450,7 @@ class UnionBridgeIT {
     @Order(19)
     void setTransferPermissions_whenFirstVote_shouldVoteSuccessful() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
@@ -465,7 +464,7 @@ class UnionBridgeIT {
     @Order(20)
     void setTransferPermissions_whenSecondVoteForDifferentValue_shouldVoteSuccessful() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
@@ -479,7 +478,7 @@ class UnionBridgeIT {
     @Order(21)
     void setTransferPermissions_whenThirdVoteForSameValue_shouldVoteSuccessful() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
@@ -511,7 +510,7 @@ class UnionBridgeIT {
     @Order(23)
     void increaseUnionBridgeLockingCap_whenFirstVoteWhileTransferIsDisabled_shouldVoteSuccessful() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_LOCKING_CAP_AUTHORIZER_1);
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_1);
 
         Coin lockingCapBeforeIncrement = getUnionBridgeLockingCap();
         Coin newLockingCap = NEW_LOCKING_CAP.multiply(
@@ -531,7 +530,7 @@ class UnionBridgeIT {
     @Order(24)
     void increaseUnionBridgeLockingCap_whenSecondVoteWhileTransferIsDisabled_shouldIncrementLockingCap() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_LOCKING_CAP_AUTHORIZER_2);
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
 
         Coin newLockingCap = NEW_LOCKING_CAP.multiply(
             BigInteger.valueOf(LOCKING_CAP_INCREMENTS_MULTIPLIER));
@@ -550,7 +549,7 @@ class UnionBridgeIT {
     @Order(25)
     void setUnionBridgeContractAddressForTestnet_whenMainnetAndTransferIsDisabled_shouldFail()
         throws VMException {
-        setupAuthorizer(CHANGE_UNION_ADDRESS_AUTHORIZER);
+        setupCaller(CHANGE_UNION_ADDRESS_AUTHORIZER);
         RskAddress actualUnionAddress = getUnionBridgeContractAddress();
         assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, actualUnionAddress);
 
@@ -566,7 +565,7 @@ class UnionBridgeIT {
     void setTransferPermissions_whenFirstVoteToEnableOnlyRequest_shouldVoteSuccessful()
         throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
         assertUnionTransferredPermissions(false, false);
 
         // Act
@@ -584,7 +583,7 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableOnlyRequest_shouldUpdatePermissions()
         throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, false);
@@ -637,7 +636,7 @@ class UnionBridgeIT {
     void setTransferPermissions_whenFirstVoteToEnableOnlyRelease_shouldVoteSuccessful()
         throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
@@ -653,7 +652,7 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableOnlyRelease_shouldUpdatePermissions()
         throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
@@ -702,7 +701,7 @@ class UnionBridgeIT {
     @Order(34)
     void setTransferPermissions_whenFirstVoteToEnableBothPermissions_shouldVoteSuccessful() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
@@ -714,7 +713,7 @@ class UnionBridgeIT {
     @Order(35)
     void setTransferPermissions_whenSecondVoteToEnableBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
@@ -757,7 +756,7 @@ class UnionBridgeIT {
     @Order(38)
     void setTransferPermissions_whenFirstVoteToEnableBackBothPermissions_shouldVoteSuccessful() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
@@ -769,7 +768,7 @@ class UnionBridgeIT {
     @Order(39)
     void setTransferPermissions_whenSecondVoteToEnableBackBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
-        setupAuthorizer(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
@@ -818,12 +817,12 @@ class UnionBridgeIT {
         assertUnionBridgeBalance(expectedUnionBalance);
     }
 
-    private void setupNoAuthorized() {
-        when(rskTx.getSender(signatureCache)).thenReturn(NO_AUTHORIZED);
+    private void setupCallerNoAuthorized() {
+        setupCaller(NO_AUTHORIZED);
     }
 
     private void setupUnionAddressAsCaller() {
-        when(rskTx.getSender(signatureCache)).thenReturn(CURRENT_UNION_BRIDGE_ADDRESS);
+        setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
     }
 
     private int updateUnionAddress(RskAddress newUnionAddress) throws VMException {
@@ -869,14 +868,23 @@ class UnionBridgeIT {
         return decodedResult.intValue();
     }
 
-    private void setupAuthorizer(RskAddress authorizer) {
-        when(rskTx.getSender(signatureCache)).thenReturn(authorizer);
+    private void setupCaller(RskAddress caller) {
+        when(rskTx.getSender(signatureCache)).thenReturn(caller);
     }
 
     private void assertLockingCap(Coin expectedLockingCap) throws VMException {
         Coin actualLockingCap = getUnionBridgeLockingCap();
         assertEquals(expectedLockingCap, actualLockingCap);
         assertStoredUnionLockingCap(expectedLockingCap);
+    }
+
+    private void assertNoStoredUnionLockingCap() {
+        Coin storedLockingCap = storageAccessor.getFromRepository(
+            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            BridgeSerializationUtils::deserializeRskCoin
+        );
+        Assertions.assertNull(storedLockingCap,
+            "Union bridge locking cap should not be stored when no increase has been made");
     }
 
     private void assertStoredUnionLockingCap(Coin expectedLockingCap) {
