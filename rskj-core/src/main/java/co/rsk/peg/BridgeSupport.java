@@ -588,9 +588,10 @@ public class BridgeSupport {
      * @param btcTx Peg-in transaction to process
      * @param rskTxHash Hash of the RSK transaction where the prg-in is being processed
      * @param height Peg-in transaction height in Bitcoin network
-     * @deprecated
+     * @deprecated since ARROWHEAD-6.0.0. Need to keep the code for backward compatibility and consensus
      */
-    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated(since="ARROWHEAD-6.0.0", forRemoval=false)
     private void legacyRegisterPegin(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
