@@ -20,16 +20,16 @@ public class FederationTestNetConstants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         genesisFederationPublicKeys = Stream.of(
-            "026df77fe41e8ac503ba47cb3a27e12661c5ee9d7f9f185d11c5680c0923356c3e",
-            "02b0db2c66fbad3a46f2b0a617660a66ad72f5391aec659dd4b4de5e45d642e404",
+            "02339027256892db5d03bd3835fde93551941b3c5b9ad765b8e8d3451e3b7a2b3e",
+            "033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e",
             "031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("2025-06-03T12:00:00.000Z").toInstant();
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
-            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
-            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
+            "04339027256892db5d03bd3835fde93551941b3c5b9ad765b8e8d3451e3b7a2b3ed7c795665d7c20da2416f4be67e23b19a7654c29ce983acf5936c1705d105276",
+            "043267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e75b8577faac2183782cb0d76820cf9f356831d216e99d886f8a6bc47fe696939",
             "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
