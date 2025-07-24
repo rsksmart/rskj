@@ -12,7 +12,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -22,17 +21,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class BridgeBtcWalletTest {
     private final Coin coin = Coin.COIN;
     private final BtcECKey newKey = BitcoinTestUtils.getBtcEcKeyFromSeed("newKey");
-    private final List<BtcECKey> multiSigKeys = Arrays.asList(
-        BitcoinTestUtils.getBtcEcKeyFromSeed("key1"),
-        BitcoinTestUtils.getBtcEcKeyFromSeed("key2"),
-        BitcoinTestUtils.getBtcEcKeyFromSeed("key3")
-    );
+    private final List<BtcECKey> multiSigKeys =
+        BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{"key1", "key2", "key3"}, true);
     private final Script multiSigRedeemScript = ScriptBuilder.createRedeemScript(2, multiSigKeys);
 
     private List<Federation> liveFeds;
     private BridgeBtcWallet wallet;
     private BtcTransaction tx;
-    byte[] outputToMultiSigP2shScript;
+    private byte[] outputToMultiSigP2shScript;
+    private byte[] outputToP2PkhScript;
 
     @BeforeEach
     void setUp() {
@@ -41,15 +38,23 @@ class BridgeBtcWalletTest {
 
     void setUpWalletAndNetworkParams(NetworkParameters params) {
         Address multiSigAddress = Address.fromP2SHScript(params, ScriptBuilder.createP2SHOutputScript(multiSigRedeemScript));
+        String p2PkhAddressSeed = "seed";
+        Address p2PkhAddress = BitcoinTestUtils.createP2PKHAddress(params, p2PkhAddressSeed);
 
         Context context = new Context(params);
         Context.propagate(context);
         wallet = new BridgeBtcWallet(context, liveFeds);
 
         tx = new BtcTransaction(params);
-        tx.addOutput(coin, multiSigAddress); // always adding an output to a some multisig address
+        // always adding one output to some multisig address and one to some p2pkh address
+        tx.addOutput(coin, multiSigAddress);
+        tx.addOutput(coin, p2PkhAddress);
+
         TransactionOutput outputToMultiSigAddress = tx.getOutput(0);
         outputToMultiSigP2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToMultiSigAddress);
+
+        TransactionOutput outputToP2PkhAddress = tx.getOutput(1);
+        outputToP2PkhScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToP2PkhAddress);
     }
 
     @ParameterizedTest
@@ -65,11 +70,12 @@ class BridgeBtcWalletTest {
         tx.addOutput(coin, fed1.getAddress());
 
         // act
-        TransactionOutput outputToFed1 = tx.getOutput(1);
+        TransactionOutput outputToFed1 = tx.getOutput(2);
         byte[] outputToFed1P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed1);
 
         // assert
         assertNoDestinationFederation(outputToMultiSigP2shScript);
+        assertNoDestinationFederation(outputToP2PkhScript);
         assertDestinationFederation(fed1, outputToFed1P2shScript);
     }
 
@@ -96,14 +102,15 @@ class BridgeBtcWalletTest {
         tx.addOutput(coin, fed2.getAddress());
 
         // act
-        TransactionOutput outputToFed1 = tx.getOutput(1);
+        TransactionOutput outputToFed1 = tx.getOutput(2);
         byte[] outputToFed1P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed1);
 
-        TransactionOutput outputToFed2 = tx.getOutput(2);
+        TransactionOutput outputToFed2 = tx.getOutput(3);
         byte[] outputToFed2P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed2);
 
         // assert
         assertNoDestinationFederation(outputToMultiSigP2shScript);
+        assertNoDestinationFederation(outputToP2PkhScript);
         assertDestinationFederation(fed1, outputToFed1P2shScript);
         assertDestinationFederation(fed2, outputToFed2P2shScript);
     }
@@ -126,14 +133,15 @@ class BridgeBtcWalletTest {
         tx.addOutput(coin, fed2.getAddress());
 
         // act
-        TransactionOutput outputToFed1 = tx.getOutput(1);
+        TransactionOutput outputToFed1 = tx.getOutput(2);
         byte[] outputToFed1P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed1);
 
-        TransactionOutput outputToFed2 = tx.getOutput(2);
+        TransactionOutput outputToFed2 = tx.getOutput(3);
         byte[] outputToFed2P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed2);
 
         // assert
         assertNoDestinationFederation(outputToMultiSigP2shScript);
+        assertNoDestinationFederation(outputToP2PkhScript);
         assertDestinationFederation(fed1, outputToFed1P2shScript);
         assertDestinationFederation(fed2, outputToFed2P2shScript);
     }
@@ -152,11 +160,12 @@ class BridgeBtcWalletTest {
         tx.addOutput(coin, fed1.getAddress());
 
         // act
-        TransactionOutput outputToFed1 = tx.getOutput(1);
+        TransactionOutput outputToFed1 = tx.getOutput(2);
         byte[] outputToFed1P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed1);
 
         // assert
         assertNoDestinationFederation(outputToMultiSigP2shScript);
+        assertNoDestinationFederation(outputToP2PkhScript);
         assertDestinationFederation(fed1, outputToFed1P2shScript);
     }
 
@@ -182,14 +191,15 @@ class BridgeBtcWalletTest {
         tx.addOutput(coin, fed2.getAddress());
 
         // act
-        TransactionOutput outputToFed1 = tx.getOutput(1);
+        TransactionOutput outputToFed1 = tx.getOutput(2);
         byte[] outputToFed1P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed1);
 
-        TransactionOutput outputToFed2 = tx.getOutput(2);
+        TransactionOutput outputToFed2 = tx.getOutput(3);
         byte[] outputToFed2P2shScript = BitcoinTestUtils.getOutputScriptPubKeyHash(outputToFed2);
 
         // assert
         assertNoDestinationFederation(outputToMultiSigP2shScript);
+        assertNoDestinationFederation(outputToP2PkhScript);
         assertDestinationFederation(fed1, outputToFed1P2shScript);
         assertDestinationFederation(fed2, outputToFed2P2shScript);
     }
