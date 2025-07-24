@@ -582,9 +582,10 @@ public class BridgeSupport {
      * @param btcTx Peg-in transaction to process
      * @param rskTxHash Hash of the RSK transaction where the prg-in is being processed
      * @param height Peg-in transaction height in Bitcoin network
-     * @deprecated
+     * @deprecated since ARROWHEAD-6.0.0. Need to keep the code for backward compatibility and consensus
      */
-    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated(since="ARROWHEAD-6.0.0", forRemoval=false)
     private void legacyRegisterPegin(
         BtcTransaction btcTx,
         Keccak256 rskTxHash,
@@ -2216,10 +2217,7 @@ public class BridgeSupport {
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
         } catch (BlockStoreException e) {
-            logger.warn(String.format(
-                    "Illegal state trying to get block with hash %s",
-                    btcBlockHash
-            ), e);
+            logger.warn("Illegal state trying to get block with hash {}", btcBlockHash, e);
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
@@ -3226,7 +3224,7 @@ public class BridgeSupport {
 
     private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {
         Optional<Coin> lockingCap = lockingCapSupport.getLockingCap();
-        if (!lockingCap.isPresent()) {
+        if (lockingCap.isEmpty()) {
             return true;
         }
 
