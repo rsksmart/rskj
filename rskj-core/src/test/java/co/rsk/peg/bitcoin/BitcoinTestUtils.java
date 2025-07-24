@@ -315,4 +315,8 @@ public class BitcoinTestUtils {
         searchForOutput(outputs, expectedOutputScript)
             .ifPresent(transaction::addInput);
     }
+
+    public static byte[] getOutputScriptPubKeyHash(TransactionOutput output) {
+        return output.getScriptPubKey().getPubKeyHash();
+    }
 }
