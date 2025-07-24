@@ -20,17 +20,17 @@ public class FederationTestNetConstants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         genesisFederationPublicKeys = Stream.of(
-            "02339027256892db5d03bd3835fde93551941b3c5b9ad765b8e8d3451e3b7a2b3e",
-            "033267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e",
-            "031c749a4e732bf871ec985496431b71d85c533690c12a4228143cc290c928078f"
+            "03f7f755a259ce31f44a44f32fad9b744a7d529243a78a3f832f80c95a3f6813c2",
+            "03930cc5564c1a1382cc3cbb6e39db6d65d41e0948d9f7fa77125e09d03be431a4",
+            "0202a813e06617ed8f71aacd49f4e320c4113e07608cc20c02cdd78f9f3955e124"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("2025-06-03T12:00:00.000Z").toInstant();
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
-            "04339027256892db5d03bd3835fde93551941b3c5b9ad765b8e8d3451e3b7a2b3ed7c795665d7c20da2416f4be67e23b19a7654c29ce983acf5936c1705d105276",
-            "043267e382e076cbaa199d49ea7362535f95b135de181caf66b391f541bf39ab0e75b8577faac2183782cb0d76820cf9f356831d216e99d886f8a6bc47fe696939",
-            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+            "04f7f755a259ce31f44a44f32fad9b744a7d529243a78a3f832f80c95a3f6813c27daf400b879ecf7a147324d96be401dc9d179ef49c39f62488cca3bd2290f113",
+            "04930cc5564c1a1382cc3cbb6e39db6d65d41e0948d9f7fa77125e09d03be431a48aa8260e693b8c188445bfea0fe2bb6e703b65bb6a4f3524c0050817bf2979bf",
+            "0402a813e06617ed8f71aacd49f4e320c4113e07608cc20c02cdd78f9f3955e1244f90624d0be1f4ebab0598ec9bcab8f68ec20e29822b20001407e3411f1215a6"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
