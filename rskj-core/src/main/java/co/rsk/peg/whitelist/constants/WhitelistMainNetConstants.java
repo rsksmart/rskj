@@ -14,8 +14,9 @@ public class WhitelistMainNetConstants extends WhitelistConstants {
     private WhitelistMainNetConstants() {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
+        // Same as testnet
         ECKey authorizerPublicKey = ECKey.fromPublicOnly(Hex.decode(
-            "041a2449e9d63409c5a8ea3a21c4109b1a6634ee88fd57176d45ea46a59713d5e0b688313cf252128a3e49a0b2effb4b413e5a2525a6fa5894d059f815c9d9efa6"
+            "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
         ));
         List<ECKey> lockWhitelistAuthorizedKeys = Collections.singletonList(authorizerPublicKey);
 
