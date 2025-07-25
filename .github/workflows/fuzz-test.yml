@@ -1,0 +1,55 @@
+name: Execute Fuzzing Tests
+
+on:
+  push:
+    branches:
+      - "master"
+      - "*-rc"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch for Fuzzing Tests'
+        required: false
+        default: 'master'
+
+jobs:
+  fuzz-test:
+    runs-on: ubuntu-latest
+    env:
+      # Pick dispatch input on manual runs else the ref name
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
+    steps:
+      - name: Validate branch name
+        id: validate-branch
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔎  Testing branch = $TARGET_BRANCH"
+          if [[ ! "$TARGET_BRANCH" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
+            echo "❌  Invalid branch name: $TARGET_BRANCH"
+            exit 1
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+
+      - name: Setup Java & Gradle
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 #v4.7.1
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 #v4.2.3
+        name: Restore Gradle Wrapper
+        with:
+          path: |
+            gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-v1
+          fail-on-cache-miss: true
+
+      - name: Run fuzz tests
+        run: |
+          #Adding fuzzTest instead of runAllFuzzTests to avoid running all the fuzz tests but it is something to evaluate. 
+          JAZZER_FUZZ=1 ./gradlew runAllFuzzTests --info --continue

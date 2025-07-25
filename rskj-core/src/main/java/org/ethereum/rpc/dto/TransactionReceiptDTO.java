@@ -49,7 +49,7 @@ public class TransactionReceiptDTO {
     private String effectiveGasPrice;   // The actual value per gas deducted on the transaction.
 
 
-    public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache, int longIndexOffset) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         status = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getStatus());
@@ -69,7 +69,7 @@ public class TransactionReceiptDTO {
         for (int i = 0; i < logs.length; i++) {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
             logs[i] = new LogFilterElement(logInfo, block, txInfo.getIndex(),
-                    txInfo.getReceipt().getTransaction(), i);
+                    txInfo.getReceipt().getTransaction(), i+longIndexOffset);
         }
 
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
@@ -77,6 +77,9 @@ public class TransactionReceiptDTO {
         transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
         logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
         effectiveGasPrice = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getTransaction().getGasPrice().getBytes());
+    }
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {
+        this(block, txInfo, signatureCache, 0);
     }
 
     public String getTransactionHash() {

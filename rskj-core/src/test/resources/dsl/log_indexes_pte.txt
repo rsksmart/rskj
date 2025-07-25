@@ -1,0 +1,117 @@
+comment
+
+// Simple contract that emits logs for testing
+contract SimpleLogEmitter {
+    event LogOne(uint256 value);
+    event LogTwo(address sender);
+
+    function emitTwoLogs() external {
+        emit LogOne(block.timestamp);
+        emit LogTwo(msg.sender);
+    }
+}
+
+// Compiled with Solidity 0.8.20, same as used in Web3ImplLogsTest
+
+end
+
+account_new acc1 10000000
+
+# Deploy the SimpleLogEmitter contract
+transaction_build txDeploy
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 608060405234801561000f575f80fd5b506101668061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610029575f3560e01c806346422b891461002d575b5f80fd5b610035610037565b005b7fccf3c03278b22671760afcb29bf4ab841c8a916185285211b5eeabaa1f384d3e4260405161006691906100bf565b60405180910390a17f08a3e137237eb3d8f53847a2913005de9056dd038b91dcdf8f9cf13bdf31208b3360405161009d9190610117565b60405180910390a1565b5f819050919050565b6100b9816100a7565b82525050565b5f6020820190506100d25f8301846100b0565b92915050565b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f610101826100d8565b9050919050565b610111816100f7565b82525050565b5f60208201905061012a5f830184610108565b9291505056fea2646970667358221220e36ef30a5e6d6e0007b35ec119efa4ac48c35bfa4c9f8cb108c655ea1be7988c64736f6c63430008180033
+    gas 300000
+    build
+
+block_build b01
+    parent g00
+    transactions txDeploy
+    gasLimit 7500000
+    build
+
+block_connect b01
+
+assert_best b01
+
+# Call the emitTwoLogs function - First call
+transaction_build txCallEmit
+    sender acc1
+    nonce 1
+    contract txDeploy  # contract created in txDeploy
+    value 0
+    data 46422b89  # emitTwoLogs() function signature
+    gas 100000
+    build
+
+# Call the emitTwoLogs function - Second call
+transaction_build txCallEmit2
+    sender acc1
+    nonce 2
+    contract txDeploy  # contract created in txDeploy
+    value 0
+    data 46422b89  # emitTwoLogs() function signature
+    gas 100000
+    build
+
+# Call the emitTwoLogs function - Third call
+transaction_build txCallEmit3
+    sender acc1
+    nonce 3
+    contract txDeploy  # contract created in txDeploy
+    value 0
+    data 46422b89  # emitTwoLogs() function signature
+    gas 100000
+    build
+
+# Execute all three log-emitting transactions in a single block
+block_build b02
+    parent b01
+    transactions txCallEmit txCallEmit2 txCallEmit3
+    gasLimit 7500000
+    build
+
+block_connect b02
+
+assert_best b02
+
+# Call the emitTwoLogs function - Fourth call
+transaction_build txCallEmit4
+    sender acc1
+    nonce 4
+    contract txDeploy  # contract created in txDeploy
+    value 0
+    data 46422b89  # emitTwoLogs() function signature
+    gas 100000
+    build
+
+# Call the emitTwoLogs function - Fifth call
+transaction_build txCallEmit5
+    sender acc1
+    nonce 5
+    contract txDeploy  # contract created in txDeploy
+    value 0
+    data 46422b89  # emitTwoLogs() function signature
+    gas 100000
+    build
+
+# Call the emitTwoLogs function - Sixth call
+transaction_build txCallEmit6
+    sender acc1
+    nonce 6
+    contract txDeploy  # contract created in txDeploy
+    value 0
+    data 46422b89  # emitTwoLogs() function signature
+    gas 100000
+    build
+
+# Define but not connect the next block with the next three log-emitting transactions
+block_build b03
+    parent b02
+    transactions txCallEmit4 txCallEmit5 txCallEmit6
+    gasLimit 7500000
+    build
+
+assert_best b02

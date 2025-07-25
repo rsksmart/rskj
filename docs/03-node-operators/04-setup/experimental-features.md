@@ -74,12 +74,27 @@ Snap-capable Boot Nodes. These can be plugged in `snapshot.client.snapBootNodes`
 
 The following are public Snap-capable Bootstrap Nodes provided by Rootstock:
 
-| Network | NodeID | Hostname |
-| ------- | ------ | -------- |
-| Mainnet | f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da | snapshot-sync-euw2-1.mainnet.rskcomputing.net |
-| Mainnet | e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215 | snapshot-sync-use1-1.mainnet.rskcomputing.net |
-| Testnet | fcbfbfce93671320d32ab36ab04ae1564a31892cba219f0a489337aad105dcfc0ebe7d7c2b109d1f4462e8e80588d8ef639b6f321cc1a3f51ec072bed3438105 | snapshot-sync-usw2-1.testnet.rskcomputing.net |
-| Testnet | 137eb4328a7c2298e26dd15bba4796a7cc30b5097f8a14b384c8dc78caab49fac7a897c39a5a7e87838ac6dc1a80b94891d274a85ac76e7342d66e8a9ed26bf5 | snapshot-sync-euw1-1.testnet.rskcomputing.net |
+_**Mainnet**_
+
+- Bootstrap 1:
+  - Host: `snapshot-sync-use1-1.mainnet.rskcomputing.net`
+  - Node ID: `e3a25521354aa99424f5de89cdd2e36aa9b9a96d965d1f7f47d876be0cdbd29c7df327a74170f6a9ea44f54f6ab8ae0dae28e40bb89dbd572a617e2008cfc215`
+
+
+- Bootstrap 2:
+  - Host: `snapshot-sync-euw2-1.mainnet.rskcomputing.net`
+  - Node ID: `f0093935353f94c723a9b67d143ad62464aaf3c959dc05a87f00b637f9c734513493d53f7223633514ea33f2a685878620f0d002cabc05d7f37e6c152774d5da`
+
+_**Testnet**_
+
+- Bootstrap 1:
+  - Host: `snapshot-sync-euw1-1.testnet.rskcomputing.net`
+  - Node ID: `137eb4328a7c2298e26dd15bba4796a7cc30b5097f8a14b384c8dc78caab49fac7a897c39a5a7e87838ac6dc1a80b94891d274a85ac76e7342d66e8a9ed26bf5`
+
+
+- Bootstrap 2:
+  - Host: `snapshot-sync-usw2-1.testnet.rskcomputing.net`
+  - Node ID: `fcbfbfce93671320d32ab36ab04ae1564a31892cba219f0a489337aad105dcfc0ebe7d7c2b109d1f4462e8e80588d8ef639b6f321cc1a3f51ec072bed3438105`
 
 **Mainnet Configuration Example**
 

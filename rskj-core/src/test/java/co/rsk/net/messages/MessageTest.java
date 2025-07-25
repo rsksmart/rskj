@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -223,22 +222,22 @@ class MessageTest {
     @Test
     void encodeDecodeBlockHeadersResponseMessageWithoutRSKIP351() {
         ActivationConfig activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
-        BlockFactory blockFactory = new BlockFactory(activationConfig);
+        BlockFactory anotherBlockFactory = new BlockFactory(activationConfig);
         BlockMiner blockMiner = new BlockMiner(activationConfig);
 
         List<BlockHeader> headers = new ArrayList<>();
         for (int k = 1; k <= 4; k++) {
-            BlockHeader header = blockFactory.getBlockHeaderBuilder()
+            BlockHeader header = anotherBlockFactory.getBlockHeaderBuilder()
                     .setNumber(MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION + k)
                     .setDifficulty(BlockDifficulty.ONE)
                     .setIncludeForkDetectionData(true)
                     .build();
-            Block block = blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), null, false);
+            Block block = anotherBlockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList(), null, false);
             Block minedBlock = blockMiner.mineBlock(block);
             headers.add(minedBlock.getHeader());
         }
 
-        BlockHeadersResponseMessage newMessage = testBlockHeadersResponseMessage(blockFactory, headers);
+        BlockHeadersResponseMessage newMessage = testBlockHeadersResponseMessage(anotherBlockFactory, headers);
 
         for (int k = 0; k < headers.size(); k++) {
             assertEquals(headers.get(k).getNumber(), newMessage.getBlockHeaders().get(k).getNumber());
@@ -404,7 +403,7 @@ class MessageTest {
     void encodeDecodeStateChunkRequestMessage() {
         long someId = 42;
 
-        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L, 100L);
+        SnapStateChunkRequestMessage message = new SnapStateChunkRequestMessage(someId, 0L, 0L);
 
         byte[] encoded = message.getEncoded();
 
@@ -607,7 +606,6 @@ class MessageTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        BlockGenerator blockGenerator = this.blockGenerator;
         Block parent = blockGenerator.getGenesisBlock();
 
         for (int k = 1; k < 10; k++) {

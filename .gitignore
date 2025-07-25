@@ -72,19 +72,26 @@ rskdump.json
 rskj-core/keyfiletest.txt
 rskj-core/java/
 
-#GradleJARS
+# GradleJARS
 rskj-core/libs/gradle-witness.jar
 rskj-core/libs/rsk-gradle-witness.jar
 rskj-core/networkStateExporterTest.json
 gradle/wrapper/gradle-wrapper.jar
 
-#Classes
+# Classes
 classes/
 
-#Infer
+# Infer
 infer-out/
 
 # jenv
 .java-version
 
 doc/rpc/openrpc.json
+
+# Fuzzing
+**/.ci-fuzz-corpus/
+**/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
+
+# VS Code
+.vscode

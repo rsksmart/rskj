@@ -4,6 +4,7 @@ plugins {
     id "com.diffplug.spotless" version "6.13.0"
 }
 
+apply from: 'src/fuzzTest/fuzzing.gradle'
 apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 
@@ -94,7 +95,7 @@ def getFilteredFiles() {
 def configureCheckstyleTask(Checkstyle task, String sourceDir) {
     def filteredFilesCheckstyle = getFilteredFilesForCheckstyle(sourceDir)
 
-   if (!filteredFilesCheckstyle.isEmpty()) {
+    if (!filteredFilesCheckstyle.isEmpty()) {
         task.source = project.files(filteredFilesCheckstyle)
     } else {
         println "No files to assign to Checkstyle for ${sourceDir}. Skipping task."
@@ -129,10 +130,11 @@ def getFilteredFilesForCheckstyle(String sourceDir) {
 // Configure each Checkstyle task
 tasks.withType(Checkstyle).configureEach { Checkstyle task ->
     def sourceDirMapping = [
-            'checkstyleMain': 'src/main/java',
-            'checkstyleTest': 'src/test/java',
+            'checkstyleMain'           : 'src/main/java',
+            'checkstyleTest'           : 'src/test/java',
             'checkstyleIntegrationTest': 'src/integrationTest/java',
-            'checkstyleJmh': 'src/jmh/java'
+            'checkstyleJmh'            : 'src/jmh/java',
+            'checkstyleFuzz'           : 'src/fuzzTest/java'
     ]
 
     sourceDirMapping.each { taskName, sourceDir ->
@@ -166,6 +168,16 @@ sourceSets {
         resources {
             srcDirs = ['src/jmh/resources']
         }
+    }
+    fuzzTest {
+        java {
+            srcDirs = ['src/fuzzTest/java']
+        }
+        resources {
+            srcDirs = ['src/fuzzTest/resources']
+        }
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += sourceSets.main.output + sourceSets.test.output
     }
 }
 
@@ -207,6 +219,7 @@ jacocoTestReport {
     reports {
         xml.required = true
     }
+    sourceSets sourceSets.main, sourceSets.fuzzTest
 }
 
 task parallelTest(type: Test) {
@@ -256,87 +269,95 @@ tasks.withType(AbstractArchiveTask) {
     fileMode = 0664
 }
 
+tasks.matching { it.name.contains("Fuzz") && it instanceof Test }.configureEach {
+    ignoreFailures = true
+}
+
 ext {
     libVersions = [
-            nettyVer               : '4.1.78.Final',
-            spongyCastleVer        : '1.58.0.0',
-            bouncyCastleVer        : '1.59',
-            ethereumLeveldbJniVer  : '1.18.3',
-            rocksdbJniVer          : '7.10.2',
-            slf4jVer               : '1.7.36',
-            logbackVer             : '1.2.10',
-            jacksonVer             : '2.15.4',
-            commonsLang3Ver        : '3.12.0',
-            typesafeConfigVer      : '1.4.2',
-            mapdbVer               : '2.0-beta13',
-            jsonrpc4jVer           : '1.6',
-            jaxwsRtVer             : '2.3.5',
-            picocliVer             : '4.6.3',
+            nettyVer             : '4.1.78.Final',
+            spongyCastleVer      : '1.58.0.0',
+            bouncyCastleVer      : '1.59',
+            ethereumLeveldbJniVer: '1.18.3',
+            rocksdbJniVer        : '7.10.2',
+            slf4jVer             : '1.7.36',
+            logbackVer           : '1.2.10',
+            jacksonVer           : '2.15.4',
+            commonsLang3Ver      : '3.12.0',
+            typesafeConfigVer    : '1.4.2',
+            mapdbVer             : '2.0-beta13',
+            jsonrpc4jVer         : '1.6',
+            jaxwsRtVer           : '2.3.5',
+            picocliVer           : '4.6.3',
 
-            bitcoinjThinVer: '0.14.4-rsk-17',
-            rskjNativeVer: '1.3.0',
+            bitcoinjThinVer      : '0.14.4-rsk-17',
+            rskjNativeVer        : '1.3.0',
     ]
 
     libs = [
-            nettyLib               : "io.netty:netty-codec-http:${libVersions.nettyVer}",
-            spongyCastleLib        : "com.madgag.spongycastle:core:${libVersions.spongyCastleVer}",
-            bouncyCastleLib        : "org.bouncycastle:bclcrypto-jdk15on:${libVersions.bouncyCastleVer}",
-            ethereumLeveldbJniLib  : "org.ethereum:leveldbjni-all:${libVersions.ethereumLeveldbJniVer}",
+            nettyLib             : "io.netty:netty-codec-http:${libVersions.nettyVer}",
+            spongyCastleLib      : "com.madgag.spongycastle:core:${libVersions.spongyCastleVer}",
+            bouncyCastleLib      : "org.bouncycastle:bclcrypto-jdk15on:${libVersions.bouncyCastleVer}",
+            ethereumLeveldbJniLib: "org.ethereum:leveldbjni-all:${libVersions.ethereumLeveldbJniVer}",
             rocksdbJniLib        : "org.rocksdb:rocksdbjni:${libVersions.rocksdbJniVer}",
-            slf4jApiLib            : "org.slf4j:slf4j-api:${libVersions.slf4jVer}",
-            log4jOverSlf4jLib      : "org.slf4j:log4j-over-slf4j:${libVersions.slf4jVer}",
-            logbackCoreLib         : "ch.qos.logback:logback-core:${libVersions.logbackVer}",
-            logbackClassicLib      : "ch.qos.logback:logback-classic:${libVersions.logbackVer}",
-            jacksonLib             : "com.fasterxml.jackson.core:jackson-databind:${libVersions.jacksonVer}",
-            commonsLang3Lib        : "org.apache.commons:commons-lang3:${libVersions.commonsLang3Ver}",
-            typesafeConfigLib      : "com.typesafe:config:${libVersions.typesafeConfigVer}",
-            mapdbLib               : "org.mapdb:mapdb:${libVersions.mapdbVer}",
-            jsonrpc4jLib           : "com.github.briandilley.jsonrpc4j:jsonrpc4j:${libVersions.jsonrpc4jVer}",
-            jaxwsRtLib             : "com.sun.xml.ws:jaxws-rt:${libVersions.jaxwsRtVer}",
-            picocliLib             : "info.picocli:picocli:${libVersions.picocliVer}",
+            slf4jApiLib          : "org.slf4j:slf4j-api:${libVersions.slf4jVer}",
+            log4jOverSlf4jLib    : "org.slf4j:log4j-over-slf4j:${libVersions.slf4jVer}",
+            logbackCoreLib       : "ch.qos.logback:logback-core:${libVersions.logbackVer}",
+            logbackClassicLib    : "ch.qos.logback:logback-classic:${libVersions.logbackVer}",
+            jacksonLib           : "com.fasterxml.jackson.core:jackson-databind:${libVersions.jacksonVer}",
+            commonsLang3Lib      : "org.apache.commons:commons-lang3:${libVersions.commonsLang3Ver}",
+            typesafeConfigLib    : "com.typesafe:config:${libVersions.typesafeConfigVer}",
+            mapdbLib             : "org.mapdb:mapdb:${libVersions.mapdbVer}",
+            jsonrpc4jLib         : "com.github.briandilley.jsonrpc4j:jsonrpc4j:${libVersions.jsonrpc4jVer}",
+            jaxwsRtLib           : "com.sun.xml.ws:jaxws-rt:${libVersions.jaxwsRtVer}",
+            picocliLib           : "info.picocli:picocli:${libVersions.picocliVer}",
 
-            bitcoinjThinLib        : "co.rsk.bitcoinj:bitcoinj-thin:${libVersions.bitcoinjThinVer}",
-            rskjNativeLib          : "co.rsk:native:${libVersions.rskjNativeVer}",
+            bitcoinjThinLib      : "co.rsk.bitcoinj:bitcoinj-thin:${libVersions.bitcoinjThinVer}",
+            rskjNativeLib        : "co.rsk:native:${libVersions.rskjNativeVer}",
     ]
 
     testLibVersions = [
-            junitVer          : '5.10.3',
-            junitSuiteVer     : '1.10.3',
-            mockitoInlineVer  : '5.2.0',
-            mockitoJupiterVer : '5.12.0',
-            awaitilityVer     : '4.2.0',
-            commonsIoVer      : '2.11.0',
-            commonsCodecVer   : '1.15',
-            jacksonVer        : '2.15.4',
-            okhttpWsVer       : '2.7.5',
+            junitVer         : '5.10.3',
+            junitSuiteVer    : '1.10.3',
+            mockitoInlineVer : '5.2.0',
+            mockitoJupiterVer: '5.12.0',
+            awaitilityVer    : '4.2.0',
+            commonsIoVer     : '2.11.0',
+            commonsCodecVer  : '1.15',
+            jacksonVer       : '2.15.4',
+            okhttpWsVer      : '2.7.5',
 
             rskLllVer        : '0.0.2',
+
+            jazzerJunitVer   : '0.24.0',
     ]
 
     jmhLibVersions = [
-            jmh: "1.36",
+            jmh  : "1.36",
             web3j: "4.9.8",
     ]
 
     testLibs = [
-            junitLib                : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
-            junitParams             : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
-            junitSuite              : "org.junit.platform:junit-platform-suite:${testLibVersions.junitSuiteVer}",
-            mockitoLib              : "org.mockito:mockito-inline:${testLibVersions.mockitoInlineVer}",
-            mockitoJupiter          : "org.mockito:mockito-junit-jupiter:${testLibVersions.mockitoJupiterVer}",
-            awaitilityLib           : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
-            commonsIoLib            : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
-            commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
-            jacksonLib              : "com.fasterxml.jackson.core:jackson-databind:${testLibVersions.jacksonVer}",
-            okhttpWsLib             : "com.squareup.okhttp:okhttp-ws:${testLibVersions.okhttpWsVer}",
+            junitLib       : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
+            junitParams    : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
+            junitSuite     : "org.junit.platform:junit-platform-suite:${testLibVersions.junitSuiteVer}",
+            mockitoLib     : "org.mockito:mockito-inline:${testLibVersions.mockitoInlineVer}",
+            mockitoJupiter : "org.mockito:mockito-junit-jupiter:${testLibVersions.mockitoJupiterVer}",
+            awaitilityLib  : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
+            commonsIoLib   : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
+            commonsCodecLib: "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
+            jacksonLib     : "com.fasterxml.jackson.core:jackson-databind:${testLibVersions.jacksonVer}",
+            okhttpWsLib    : "com.squareup.okhttp:okhttp-ws:${testLibVersions.okhttpWsVer}",
 
-            rskLllLib               : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
+            rskLllLib      : "co.rsk:lll-compiler:${testLibVersions.rskLllVer}",
+
+            jazzerJunit    : "com.code-intelligence:jazzer-junit:${testLibVersions.jazzerJunitVer}",
     ]
 
     jmhLibs = [
-            jmhCore                 : "org.openjdk.jmh:jmh-core:${jmhLibVersions.jmh}",
-            jmhAnnotations          : "org.openjdk.jmh:jmh-generator-annprocess:${jmhLibVersions.jmh}",
-            web3jCore               : "org.web3j:core:${jmhLibVersions.web3j}",
+            jmhCore       : "org.openjdk.jmh:jmh-core:${jmhLibVersions.jmh}",
+            jmhAnnotations: "org.openjdk.jmh:jmh-generator-annprocess:${jmhLibVersions.jmh}",
+            web3jCore     : "org.web3j:core:${jmhLibVersions.web3j}",
     ]
 
 }
@@ -393,6 +414,18 @@ dependencies {
     integrationTestImplementation "${testLibs.okhttpWsLib}"
     integrationTestImplementation "${libs.commonsLang3Lib}"
 
+    fuzzTestImplementation "${libs.bouncyCastleLib}"
+    fuzzTestImplementation "${testLibs.junitLib}"
+    fuzzTestImplementation "${testLibs.junitParams}"
+    fuzzTestImplementation "${testLibs.junitSuite}"
+    fuzzTestImplementation "${testLibs.mockitoLib}"
+    fuzzTestImplementation "${testLibs.mockitoJupiter}"
+    fuzzTestImplementation "${testLibs.awaitilityLib}"
+    fuzzTestImplementation "${testLibs.commonsIoLib}"
+    fuzzTestImplementation "${testLibs.commonsCodecLib}"
+    fuzzTestImplementation "${testLibs.okhttpWsLib}"
+    fuzzTestImplementation "${testLibs.rskLllLib}"
+    fuzzTestImplementation "${testLibs.jazzerJunit}"
 }
 
 javadoc {
@@ -429,9 +462,9 @@ task generateResources {
         def commitHash = gitCommitHash()
         def currentBranch = gitCurrentBranch()
         generated.text = """
-build.hash=$commitHash
-build.branch=$currentBranch
-"""
+            build.hash=$commitHash
+            build.branch=$currentBranch
+            """
     }
 }
 
@@ -570,7 +603,7 @@ static def amendPathIfNeeded(details) {
 task checkstyleAll {
     group = 'Verification'
     description = 'Run all Checkstyle checks'
-    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest'
+    dependsOn 'checkstyleMain', 'checkstyleTest', 'checkstyleJmh', 'checkstyleIntegrationTest', 'checkstyleFuzz'
 }
 
 task spotlessAll {

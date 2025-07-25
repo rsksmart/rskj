@@ -235,9 +235,37 @@ public class World {
         if (transactionInfo == null) {
             return null;
         }
+        
+        // Get the block containing this transaction
+        Block block = blockStore.getBlockByHash(transactionInfo.getBlockHash());
+        if (block == null) {
+            return null;
+        }
+        
+        // Calculate log index offset by counting logs from all previous transactions in the same block
+        // This matches the logic from Web3Impl.eth_getTransactionReceipt()
+        int logIndexOffset = 0;
+        for (Transaction tx : block.getTransactionsList()) {
+            if (tx.getHash().equals(transaction.getHash())) {
+                // Found our transaction, stop counting
+                break;
+            }
+            // Add the number of logs from this previous transaction
+            TransactionInfo prevTxInfo = this.receiptStore.get(tx.getHash().getBytes(), block.getHash().getBytes()).orElse(null);
+            if (prevTxInfo != null && prevTxInfo.getReceipt().getLogInfoList() != null) {
+                logIndexOffset += prevTxInfo.getReceipt().getLogInfoList().size();
+            }
+        }
+        
         TransactionReceipt transactionReceipt = transactionInfo.getReceipt();
-
         transactionReceipt.setTransaction(transaction);
+        
+        // Apply log index adjustment to match production behavior
+        if (transactionReceipt.getLogInfoList() != null) {
+            for (int i = 0; i < transactionReceipt.getLogInfoList().size(); i++) {
+                transactionReceipt.getLogInfoList().get(i).setLogIndex(i + logIndexOffset);
+            }
+        }
 
         return transactionReceipt;
     }
