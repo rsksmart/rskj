@@ -135,7 +135,7 @@ class ActivationConfigTest {
         "    rskip454: lovell700",
         "    rskip459: lovell700",
         "    rskip460: lovell700",
-        "    rskip502: tbd800",
+        "    rskip502: reed800",
         "}"
     ));
 
