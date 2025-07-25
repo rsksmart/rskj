@@ -28,9 +28,9 @@ public class FederationTestNetConstants extends FederationConstants {
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
-            "04f7f755a259ce31f44a44f32fad9b744a7d529243a78a3f832f80c95a3f6813c27daf400b879ecf7a147324d96be401dc9d179ef49c39f62488cca3bd2290f113",
-            "04930cc5564c1a1382cc3cbb6e39db6d65d41e0948d9f7fa77125e09d03be431a48aa8260e693b8c188445bfea0fe2bb6e703b65bb6a4f3524c0050817bf2979bf",
-            "0402a813e06617ed8f71aacd49f4e320c4113e07608cc20c02cdd78f9f3955e1244f90624d0be1f4ebab0598ec9bcab8f68ec20e29822b20001407e3411f1215a6"
+            "04910ef64c3269a4cd665e0572a42b8f370172d6076964242159843b3d3976631a99e1e86a5136a7f94373bafff1172d60ba2f87be755f2e892c54528d53a628a7",
+            "04c645d01fdc7184ff3274748697c826af357d22546a24f51b65b510d22991b57b5341ef49515f40aca2cdcee817b7213175055b31abe18fcb863aa8ec89d03fe4",
+            "046e8920b163e515f351e310d8bc97a8375cfb7866ccec3892dceec9214a37257bfae4368d00d2fc4b8d3c19bb7b54fa85ba3ae9dacd314f4ea1d22c02050d5a6a"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
