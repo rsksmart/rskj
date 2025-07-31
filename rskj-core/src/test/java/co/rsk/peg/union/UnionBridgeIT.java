@@ -273,7 +273,7 @@ class UnionBridgeIT {
     @Order(3)
     void increaseUnionBridgeLockingCap_whenLovell_shouldFail() {
         // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
+        setupUnauthorizedCaller();
         Function function = INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
         byte[] functionEncoded = function.encode(NEW_LOCKING_CAP_1.asBigInteger());
         // Act & Assert
@@ -297,7 +297,7 @@ class UnionBridgeIT {
     @Order(5)
     void releaseUnionBridgeRbtc_whenLovell_shouldFail() {
         // Arrange
-        setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
+        setupUnauthorizedCaller();
         Function function = RELEASE_UNION_BRIDGE_RBTC.getFunction();
         when(rskTx.getValue()).thenReturn(AMOUNT_TO_RELEASE);
         byte[] functionEncoded = function.encode();
@@ -310,7 +310,7 @@ class UnionBridgeIT {
     @Order(6)
     void setUnionBridgeTransferPermissions_whenLovell_shouldFail() {
         // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupUnauthorizedCaller();
         Function function = SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
         byte[] functionEncoded = function.encode(true, true);
         // Act & Assert
@@ -325,7 +325,7 @@ class UnionBridgeIT {
         // Setup for all activations
         setupForAllActivations();
         // Setup authorizer for changing union address
-        setupCaller(CHANGE_UNION_ADDRESS_AUTHORIZER);
+        setupCaller(UNAUTHORIZED_CALLER);
 
         // Assert that the union address is equal to the constant address
         RskAddress unionAddressBeforeAttemptToUpdate = getUnionBridgeContractAddress();
@@ -385,6 +385,10 @@ class UnionBridgeIT {
         assertNoEventWasEmitted();
     }
 
+    /**
+     * This test simulates a scenario where a second vote is for a different value than the first vote.
+     * The expected result is that the second vote should be successful, but the locking cap should not change.
+     */
     @Test
     @Order(10)
     void increaseUnionBridgeLockingCap_whenSecondVoteForDifferentValue_shouldVoteSuccessfully() throws VMException {
@@ -401,6 +405,11 @@ class UnionBridgeIT {
         assertNoEventWasEmitted();
     }
 
+    /**
+     * This test simulates a scenario where a third vote is for the first value that was voted in the first vote.
+     * The expected result is that the third vote should be successful, and now since the required votes are 2 out of 3,
+     * the locking cap should be updated to the first value.
+     */
     @Test
     @Order(11)
     void increaseUnionBridgeLockingCap_whenThirdVoteForFirstValue_shouldIncrementLockingCap() throws VMException {
