@@ -23,7 +23,7 @@ import org.ethereum.vm.GasCost;
 
 public class Secp256k1Multiplication extends Secp256k1PrecompiledContract {
 
-    private static final int EC_256_MULTIPLICATION_GAS_COST = 3000;
+    private static final int EC_256_MULTIPLICATION_GAS_COST = 6000;
 
     public Secp256k1Multiplication(Secp256k1Service secp256k1Service) {
         super(secp256k1Service);
