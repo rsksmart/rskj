@@ -34,14 +34,14 @@ public class FederationTestNetConstants extends FederationConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 300L;
+        validationPeriodDurationInBlocks = 500L;
 
         federationActivationAgeLegacy = 60L;
         preLovellActivationAge = 120L;
-        federationActivationAge = 360L;
+        federationActivationAge = 600L;
 
         fundsMigrationAgeSinceActivationBegin = 0L;
-        fundsMigrationAgeSinceActivationEnd = 150L;
+        fundsMigrationAgeSinceActivationEnd = 200L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 900L;
 
         erpFedPubKeysList = Stream.of(
