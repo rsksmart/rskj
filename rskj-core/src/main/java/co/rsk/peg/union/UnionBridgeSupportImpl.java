@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(UnionBridgeSupportImpl.class);
-    private static final String LOG_PATTERN = "[{}] {}";
 
     private final UnionBridgeConstants constants;
     private final UnionBridgeStorageProvider storageProvider;
@@ -57,11 +56,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         // Check if the network is MAINNET as the contract address can only be set in testnet or regtest
         if (isCurrentEnvironmentMainnet()) {
-            String baseMessage = String.format(
-                "Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: %s",
+            logger.warn(
+                "[{}] Union Bridge Contract Address can only be set in Testnet and RegTest environments. Current network: {}",
+                SET_UNION_BRIDGE_ADDRESS_TAG,
                 constants.getBtcParams().getId()
             );
-            logger.warn(LOG_PATTERN, "setUnionBridgeContractAddressForTestnet", baseMessage);
             return UnionResponseCode.ENVIRONMENT_DISABLED;
         }
 
@@ -108,13 +107,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         boolean successfulVote = increaseLockingCapElection.vote(increaseLockingCapVote, txSender);
         if (!successfulVote) {
-            logger.warn("[{}] Unsuccessful {} vote", INCREASE_LOCKING_CAP_TAG, increaseLockingCapVote);
+            logger.warn("[{}] Unsuccessful vote. Sender: {}, newUnionLockingCap: {}", INCREASE_LOCKING_CAP_TAG, txSender, newCap);
             return UnionResponseCode.GENERIC_ERROR;
         }
 
         Optional<ABICallSpec> electionWinner = increaseLockingCapElection.getWinner();
         if (electionWinner.isEmpty()) {
-            logger.info("[{}}] Successful {} vote.", INCREASE_LOCKING_CAP_TAG, increaseLockingCapVote);
+            logger.info("[{}] Successful vote. Sender: {}, newUnionLockingCap: {}", INCREASE_LOCKING_CAP_TAG, txSender, newCap);
             return UnionResponseCode.SUCCESS;
         }
 
@@ -166,7 +165,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isRequestEnabled() {
         // By default, the request is enabled if the storage provider does not have a specific value set.
         Boolean isRequestEnabled = storageProvider.isUnionBridgeRequestEnabled().orElse(true);
-        logger.trace("[{isRequestEnabled}] Union Bridge request enabled: {}", isRequestEnabled);
+        logger.trace("[isRequestEnabled] Union Bridge request enabled: {}", isRequestEnabled);
 
         return isRequestEnabled;
     }
@@ -175,12 +174,11 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         RskAddress unionBridgeContractAddress = getUnionBridgeContractAddress();
         boolean isCallerUnionBridgeContractAddress = callerAddress.equals(unionBridgeContractAddress);
         if (!isCallerUnionBridgeContractAddress) {
-            String baseMessage = String.format(
-                "Caller is not the Union Bridge Contract Address. Caller address: %s, Union Bridge Contract Address: %s",
+            logger.warn(
+                "[isCallerUnionBridgeContractAddress] Caller is not the Union Bridge Contract Address. Caller address: {}, Union Bridge Contract Address: {}",
                 callerAddress,
                 unionBridgeContractAddress
             );
-            logger.warn(LOG_PATTERN, "isCallerUnionBridgeContractAddress", baseMessage);
         }
         return isCallerUnionBridgeContractAddress;
     }
@@ -322,13 +320,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
 
         boolean successfulVote = setTransferPermissionsElection.vote(setTransferPermissionsVote, txSender);
         if (!successfulVote) {
-            logger.warn("[{}] Unsuccessful {} vote", SET_TRANSFER_PERMISSIONS_TAG, setTransferPermissionsVote);
+            logger.warn("[{}] Unsuccessful vote. Sender: {}, requestEnabled: {}, releaseEnabled: {}.", SET_TRANSFER_PERMISSIONS_TAG, txSender, requestEnabled, releaseEnabled);
             return UnionResponseCode.GENERIC_ERROR;
         }
 
         Optional<ABICallSpec> electionWinner = setTransferPermissionsElection.getWinner();
         if (electionWinner.isEmpty()) {
-            logger.info("[{}}] Successful {} vote.", SET_TRANSFER_PERMISSIONS_TAG, setTransferPermissionsVote);
+            logger.info("[{}] Successful vote. Sender: {}, requestEnabled: {}, releaseEnabled: {}.", SET_TRANSFER_PERMISSIONS_TAG, txSender, requestEnabled, releaseEnabled);
             return UnionResponseCode.SUCCESS;
         }
 
@@ -381,8 +379,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     private boolean isAuthorized(Transaction tx, AddressBasedAuthorizer authorizer) {
         boolean isAuthorized = authorizer.isAuthorized(tx, signatureCache);
         if (!isAuthorized) {
-            String baseMessage = String.format("Caller is not authorized to call this method. Caller address: %s", tx.getSender());
-            logger.warn(LOG_PATTERN, "isAuthorized", baseMessage);
+            logger.warn("[isAuthorized] Caller is not authorized to call this method. Caller address: {}", tx.getSender());
         }
         return isAuthorized;
     }
