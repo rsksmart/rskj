@@ -64,7 +64,7 @@ class Secp256k1MultiplicationTest {
         byte[] dataInput1 = new byte[0];
         byte[] dataInput2 = TestUtils.generateBytes("secp256k1MultiplicationRandomInput", 64);
         byte[] dataInput3 = TestUtils.generateBytes("secp256k1MultiplicationRandomInput", 96);
-        long expectedGasCost = 6000;
+        long expectedGasCost = 3000;
 
         //when the getGasForData method is called with different data lengths
         long gasCost1 = secp256k1Multiplication.getGasForData(dataInput1);
