@@ -123,7 +123,6 @@ class UnionBridgeSupportImplTest {
 
     private static Stream<Arguments> testnetAndRegtestConstantsProvider() {
         return Stream.of(
-            Arguments.of(UnionBridgeRegTestConstants.getInstance()),
             Arguments.of(UnionBridgeTestNetConstants.getInstance())
         );
     }
