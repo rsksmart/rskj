@@ -118,9 +118,9 @@ class UnionBridgeConstantsTest {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         List<RskAddress> regtestAuthorizers = mapToRskAddresses(Stream.of(
-            "04ea24f3943dff3b9b8abc59dbdf1bd2c80ec5b61f5c2c6dfcdc189299115d6d567df34c52b7e678cc9934f4d3d5491b6e53fa41a32f58a71200396f1e11917e8f",
-            "04cf42ec9eb287adc7196e8d3d2c288542b1db733681c22887e3a3e31eb98504002825ecbe0cd9b61aff3600ffd0ca4542094c75cb0bac5e93be0c7e00b2ead9ea",
-            "043a7510e39f8c406fb682c20d0e74e6f18f6ec6cb4bc9718a3c47f9bda741f3333ed39e9854b9ad89f16fccb52453975ff1039dd913addfa6a6c56bcacbd92ff9"
+            "04397d368991eac9bbc7593ea25f99d595dc175f598afc6297dbfd4533d26577ce0b3faa9296bdecd4ef7a58738f6b23b7a71a11753ebe417c660eaa7e36f64fd3",
+            "04edde251d0e8a91e118ebc4f6ea1c91a21bd1963a383d77751626a0a3a7685ec4bced2751f9c4bd914252d21799297dab159f45b870bbbccf54ed6f3eb5ad504c",
+            "049a630a1bef586e5095cf2a877bc2719840f71791bf9337ef35db36c9c4234cb0a5c3809013a5c4d01cdc0d003944ae21f42caae8d0925ca75dc444990749c688"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList());
 
         return Stream.of(
