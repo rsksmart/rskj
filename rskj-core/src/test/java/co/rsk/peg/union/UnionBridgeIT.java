@@ -352,7 +352,7 @@ class UnionBridgeIT {
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
+        assertSuccessfulResponseCode(actualUnionResponseCode);
         // Assert that the locking cap remains unchanged after the first vote
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
@@ -372,7 +372,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_2);
         // Assert
-        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
+        assertSuccessfulResponseCode(actualUnionResponseCode);
         // Assert that the locking cap remains unchanged after the second vote for another value
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
@@ -393,7 +393,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
         // Assert
-        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
+        assertSuccessfulResponseCode(actualUnionResponseCode);
         assertLockingCap(NEW_LOCKING_CAP_1);
         assertLogUnionLockingCapIncreased(INITIAL_LOCKING_CAP, NEW_LOCKING_CAP_1);
     }
@@ -407,7 +407,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_2);
         // Assert
-        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
+        assertSuccessfulResponseCode(actualUnionResponseCode);
         // Assert that the locking cap remains unchanged
         assertLockingCap(lockingCapBeforeUpdate);
         assertNoEventWasEmitted();
@@ -460,7 +460,7 @@ class UnionBridgeIT {
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), requestUnionResponseCode);
+        assertSuccessfulResponseCode(requestUnionResponseCode);
         assertLogUnionRbtcRequested();
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -482,6 +482,7 @@ class UnionBridgeIT {
         assertUnauthorizedCaller(releaseUnionResponseCode);
         assertUnionBridgeBalance(unionBridgeBalanceBeforeRelease);
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -496,11 +497,12 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
+        assertSuccessfulResponseCode(releaseUnionResponseCode);
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         assertWeisTransferredToUnionBridge(expectedWeisTransferredBalance);
         assertUnionBridgeBalance(expectedUnionBridgeBalance);
+        assertLogUnionRbtcReleased();
     }
 
     @Test
@@ -515,6 +517,7 @@ class UnionBridgeIT {
         // Assert
         assertUnauthorizedCaller(unionTransferPermissionsResponseCode);
         assertNoUnionTransferredPermissionsIsStored();
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -525,9 +528,10 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         // Assert transferred permissions remain unchanged
         assertNoUnionTransferredPermissionsIsStored();
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -538,8 +542,9 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertNoUnionTransferredPermissionsIsStored();
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -547,16 +552,16 @@ class UnionBridgeIT {
     void setTransferPermissions_whenThirdVoteForSameValue_shouldUpdateTransferPermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-
-        // Act
         boolean requestEnabled = false;
         boolean releaseEnabled = false;
+
+        // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
 
         // Assert transferred permissions are updated
         assertUnionTransferredPermissions(requestEnabled, releaseEnabled);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -596,10 +601,11 @@ class UnionBridgeIT {
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(newLockingCap);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
+        assertSuccessfulResponseCode(actualUnionResponseCode);
 
         // Assert that the locking cap remains unchanged
         assertLockingCap(lockingCapBeforeIncrement);
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -613,7 +619,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(newLockingCap);
         // Assert
-        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
+        assertSuccessfulResponseCode(actualUnionResponseCode);
         assertLockingCap(newLockingCap);
         assertLogUnionLockingCapIncreased(lockingCapBeforeIncrement, newLockingCap);
     }
@@ -640,15 +646,16 @@ class UnionBridgeIT {
         throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-
-        // Act
         boolean requestEnabled = true;
         boolean releaseEnabled = false;
+
+        // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         // Assert that the transfer permissions remain the same
         assertUnionTransferredPermissions(false, false);
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -656,16 +663,16 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableOnlyRequest_shouldUpdatePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-
-        // Act
         boolean requestEnabled = true;
         boolean releaseEnabled = false;
+
+        // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(requestEnabled, releaseEnabled);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -680,7 +687,7 @@ class UnionBridgeIT {
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), requestUnionResponseCode);
+        assertSuccessfulResponseCode(requestUnionResponseCode);
         assertLogUnionRbtcRequested();
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -716,9 +723,10 @@ class UnionBridgeIT {
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         // Assert that the transfer permissions remain the same
         assertUnionTransferredPermissions(true, false);
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -726,14 +734,16 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableOnlyRelease_shouldUpdatePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        boolean expectedRequestEnabled = false;
+        boolean expectedReleaseEnabled = true;
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(expectedRequestEnabled, expectedReleaseEnabled);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(false, true);
-        assertLogUnionTransferPermissionsSet(false, true);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -767,7 +777,7 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
+        assertSuccessfulResponseCode(releaseUnionResponseCode);
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
 
@@ -781,10 +791,11 @@ class UnionBridgeIT {
     void setTransferPermissions_whenFirstVoteToEnableBothPermissions_shouldVoteSuccessfully() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
+
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(false, true);
     }
 
@@ -793,12 +804,15 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        boolean expectedRequestEnabled = true;
+        boolean expectedReleaseEnabled = true;
+
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(expectedRequestEnabled, expectedReleaseEnabled);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(true, true);
-        assertLogUnionTransferPermissionsSet(true, true);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -838,8 +852,10 @@ class UnionBridgeIT {
         assertEquals(INVALID_VALUE.getCode(), releaseUnionResponseCode);
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
         assertUnionBridgeBalance(amountSurpassingWeisTransferredBalance);
-        assertUnionTransferredPermissions(false, false);
-        assertLogUnionTransferPermissionsSet(false, false);
+        boolean expectedRequestEnabled = false;
+        boolean expectedReleaseEnabled = false;
+        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, BRIDGE_ADDR);
     }
 
     @Test
@@ -850,8 +866,9 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(false, false);
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -859,12 +876,15 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableBackBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        boolean expectedRequestEnabled = true;
+        boolean expectedReleaseEnabled = true;
+
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(expectedRequestEnabled, expectedReleaseEnabled);
         // Assert
-        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(true, true);
-        assertLogUnionTransferPermissionsSet(true, true);
+        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -880,7 +900,7 @@ class UnionBridgeIT {
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), requestUnionResponseCode);
+        assertSuccessfulResponseCode(requestUnionResponseCode);
         assertLogUnionRbtcRequested();
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -901,7 +921,7 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
+        assertSuccessfulResponseCode(releaseUnionResponseCode);
         assertLogUnionRbtcReleased();
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
@@ -911,6 +931,10 @@ class UnionBridgeIT {
 
     private void addFundsToUnionAddress(Coin amount) {
         repository.addBalance(CURRENT_UNION_BRIDGE_ADDRESS, amount);
+    }
+
+    private static void assertSuccessfulResponseCode(int releaseUnionResponseCode) {
+        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
     }
 
     private void assertUnauthorizedCaller(int actualResponseCode) {
@@ -926,9 +950,9 @@ class UnionBridgeIT {
         assertTrue(logs.isEmpty(), "No events should have been emitted");
     }
 
-    private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled) {
+    private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled, RskAddress callerAddress) {
         CallTransaction.Function transferPermissionsEvent = UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
-        List<DataWord> encodedTopics = getEncodedTopics(transferPermissionsEvent, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2.toHexString());
+        List<DataWord> encodedTopics = getEncodedTopics(transferPermissionsEvent, callerAddress.toHexString());
         byte[] encodedData = getEncodedData(transferPermissionsEvent, requestEnabled, releaseEnabled);
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
         assertEventWasEmittedWithExpectedData(logs, encodedData);
