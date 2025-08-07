@@ -24,6 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.core.bc.SuperBlockFields;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.mine.gas.provider.FixedMinGasPriceProvider;
@@ -177,7 +178,8 @@ public class BlockGenerator {
         return blockFactory.newBlock(
                 newHeader,
                 Collections.emptyList(),
-                uncles
+                uncles,
+                null
         );
     }
 
@@ -215,6 +217,7 @@ public class BlockGenerator {
                 newHeader,
                 txs,
                 Collections.emptyList(),
+                null,
                 false
         );
     }
@@ -245,13 +248,13 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(
-            Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+            Block parent, List<Transaction> txs, List<BlockHeader> uncles, SuperBlockFields superBlockFields,
             long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
         short[] edges = activationConfig.isActive(ConsensusRule.RSKIP144, parent.getNumber() + 1) ? new short[0] : null;
-        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, coinbase, edges);
+        return createChildBlock(parent, txs, uncles, superBlockFields, difficulty, minGasPrice, gasLimit, coinbase, edges);
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles, SuperBlockFields superBlockFields,
                                   long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase, short[] edges) {
         if (txs == null) {
             txs = new ArrayList<>();
@@ -270,6 +273,7 @@ public class BlockGenerator {
         long blockNumber = parent.getNumber() + 1;
 
         byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+        byte[] superChainDataHash = activationConfig.isActive(ConsensusRule.RSKIP481, blockNumber) ? new byte[0] : null;
 
         Coin coinMinGasPrice = (minGasPrice != null) ? new Coin(minGasPrice) : null;
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
@@ -286,6 +290,7 @@ public class BlockGenerator {
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
+                .setSuperChainDataHash(superChainDataHash)
                 .setTxExecutionSublistsEdges(edges)
                 .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
@@ -302,12 +307,12 @@ public class BlockGenerator {
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
-        return blockFactory.newBlock(newHeader, txs, uncles, false);
+        return blockFactory.newBlock(newHeader, txs, uncles, superBlockFields, false);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
                                   long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
-        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
+        return createChildBlock(parent, txs, uncles, null, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
     }
 
     public Block createBlock(long number, int ntxs) {
@@ -351,7 +356,8 @@ public class BlockGenerator {
         return blockFactory.newBlock(
                 newHeader,
                 txs,
-                Collections.emptyList()
+                Collections.emptyList(),
+                null
         );
     }
 
@@ -389,7 +395,8 @@ public class BlockGenerator {
         return blockFactory.newBlock(
                 newHeader,
                 txs,
-                Collections.emptyList()
+                Collections.emptyList(),
+                null
         );
     }
 

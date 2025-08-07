@@ -159,6 +159,34 @@ class BytesTest {
         assertEquals(expectedMessage, actualMessage);
     }
 
+    @Test
+    void testEqualByteSlices() {
+        byte[] b1Array = {1, 2, 3, 4, 5};
+        byte[] b2Array = {1, 2, 3, 4, 5};
+        byte[] b3Array = {1, 2, 3, 2, 1};
+        byte[] emptyArray = {};
+
+        // Both null
+        assertTrue(Bytes.equalByteSlices(null, null));
+
+        // One null, one non-null
+        assertFalse(Bytes.equalByteSlices(Bytes.of(b1Array), null));
+        assertFalse(Bytes.equalByteSlices(null, Bytes.of(b1Array)));
+
+        // Both empty
+        assertTrue(Bytes.equalByteSlices(Bytes.of(emptyArray), Bytes.of(emptyArray)));
+
+        // Different lengths
+        assertFalse(Bytes.equalByteSlices(Bytes.of(b1Array), Bytes.of(new byte[]{1, 2, 3, 4})));
+
+        // Same length, different content
+        assertFalse(Bytes.equalByteSlices(Bytes.of(b1Array), Bytes.of(b3Array)));
+
+        // Slices of Bytes
+        assertTrue(Bytes.equalByteSlices(Bytes.of(b1Array).slice(0, b1Array.length), Bytes.of(b2Array)));
+        assertFalse(Bytes.equalByteSlices(Bytes.of(b1Array).slice(0, b1Array.length), Bytes.of(b3Array).slice(0, b3Array.length)));
+    }
+
     private static void checkArraycopy(Functions.Action5<Object, Integer, Object, Integer, Integer> fun) {
         /*
             'fun' signature:
