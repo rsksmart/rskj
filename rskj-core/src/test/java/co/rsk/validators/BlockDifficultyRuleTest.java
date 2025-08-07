@@ -48,7 +48,7 @@ class BlockDifficultyRuleTest {
         blockHeader = mock(BlockHeader.class);
         when(block.getHeader()).thenReturn(blockHeader);
         difficultyCalculator = mock(DifficultyCalculator.class);
-        rule = new BlockDifficultyRule(difficultyCalculator);
+        rule = new BlockDifficultyRule(difficultyCalculator, null);
     }
 
     @Test
@@ -72,7 +72,7 @@ class BlockDifficultyRuleTest {
     }
 
     private void whenCalculatedDifficulty(int difficulty) {
-        when(difficultyCalculator.calcDifficulty(blockHeader, parentHeader))
+        when(difficultyCalculator.calcDifficulty(null, blockHeader, parentHeader))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(difficulty)));
     }
 }
