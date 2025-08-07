@@ -53,7 +53,6 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
         Optional.of(userAddress)
     );
 
-    private BtcBlockStoreWithCache.Factory mockFactory;
     private Transaction rskTx;
     private BridgeStorageProvider bridgeStorageProvider;
     private BtcBlockStoreWithCache btcBlockStore;
@@ -185,6 +184,49 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
     }
 
     @Test
+    void registerBtcTx_correctLegacyPeginWithNonParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+        BtcTransaction pegin = buildCorrectLegacyPeginWithNonParseableScriptPubKey();
+
+        // act
+        registerPegin(pegin, bridgeTestnetConstants);
+
+        // assert
+        assertTransactionWasProcessed(pegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(1);
+    }
+
+    @Test
+    void registerBtcTx_correctLegacyPeginWithNonParseableScriptPubKey_withSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+
+        // save svp spend tx hash
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+        BtcTransaction pegin = buildCorrectLegacyPeginWithNonParseableScriptPubKey();
+
+        // act
+        registerPegin(pegin, bridgeTestnetConstants);
+
+        // assert
+        assertTransactionWasProcessed(pegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(1);
+    }
+
+    private BtcTransaction buildCorrectLegacyPeginWithNonParseableScriptPubKey() {
+        BtcTransaction pegin = new BtcTransaction(networkParameters);
+        BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
+        Script p2pkhScriptSig = ScriptBuilder.createInputScript(null, pubKey);
+        pegin.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
+        pegin.addOutput(Coin.COIN, activeFederation.getAddress());
+        return pegin;
+    }
+
+    @Test
     void registerBtcTx_correctPeginV1WithNonParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // arrange
         setUp(allActivations, bridgeTestnetConstants);
@@ -268,7 +310,7 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
         // arrange
         setUp(allActivations, bridgeTestnetConstants);
         // recreate real testnet pegin but with correct op return
-        BtcTransaction correctPegin = recreatePeginWithCorrectOpReturn();
+        BtcTransaction correctPegin = recreatePeginV1WithCorrectOpReturn();
         // save svp spend tx hash, so it enters the flow that throws exception
         bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
 
@@ -284,8 +326,9 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
     void registerBtcTx_correctPeginV1WithParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
         setUp(allActivations, bridgeTestnetConstants);
+
         // recreate real testnet pegin but with correct op return
-        BtcTransaction correctPegin = recreatePeginWithCorrectOpReturn();
+        BtcTransaction correctPegin = recreatePeginV1WithCorrectOpReturn();
 
         // act
         registerPegin(correctPegin, bridgeTestnetConstants);
@@ -296,7 +339,52 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
         assertUtxosSize(1);
     }
 
-    private BtcTransaction recreatePeginWithCorrectOpReturn() {
+    @Test
+    void registerBtcTx_correctLegacyPeginWithParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+
+        BtcTransaction legacyPegin = recreateLegacyPegin();
+
+        // act
+        registerPegin(legacyPegin, bridgeTestnetConstants);
+
+        // assert
+        assertTransactionWasProcessed(legacyPegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(1);
+    }
+
+    @Test
+    void registerBtcTx_correctLegacyPeginWithParseableScriptPubKey_withSVPOnGoing_shouldThrowISE() throws IOException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+
+        BtcTransaction legacyPegin = recreateLegacyPegin();
+
+        // save svp spend tx hash, so it enters the flow that throws exception
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+        // act
+        assertThrows(IllegalStateException.class, () -> registerPegin(legacyPegin, bridgeTestnetConstants));
+
+        // assert
+        assertTransactionWasNotProcessed(legacyPegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(0);
+    }
+
+    private BtcTransaction recreateLegacyPegin() {
+        BtcTransaction pegin = new BtcTransaction(bridgeTestnetConstants.getBtcParams());
+        for (TransactionInput input : testnetRealPegin.getInputs()) {
+            pegin.addInput(input);
+        }
+        pegin.addOutput(testnetRealPegin.getOutput(1));
+        pegin.addOutput(testnetRealPegin.getOutput(2));
+        return pegin;
+    }
+
+    private BtcTransaction recreatePeginV1WithCorrectOpReturn() {
         BtcTransaction correctPegin = new BtcTransaction(bridgeTestnetConstants.getBtcParams());
         for (TransactionInput input : testnetRealPegin.getInputs()) {
             correctPegin.addInput(input);
