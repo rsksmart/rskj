@@ -94,4 +94,4 @@ doc/rpc/openrpc.json
 **/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
 
 # VS Code
-.vscode
+.vscode/

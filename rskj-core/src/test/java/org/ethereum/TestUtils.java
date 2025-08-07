@@ -283,4 +283,31 @@ public final class TestUtils {
         when(mock.getBytes()).thenReturn(Hex.decode(addr));
         return mock;
     }
+
+    public static String bigIntegerToHex(BigInteger value) {
+        return ByteUtil.toHexString(ByteUtil.bigIntegerToBytes(value));
+    }
+
+    public static String bigIntegerToHexDW(String valueBase10) {
+        return ByteUtil.toHexString(byte32Of(ByteUtil.bigIntegerToBytes(new BigInteger(valueBase10))));
+    }
+
+    public static byte[] byte32Of(byte[] data) {
+        if (data == null || data.length == 0) {
+            return new byte[32];
+        }
+
+        if (data.length > 32) {
+            throw new IllegalArgumentException(String.format("A DataWord must be %d bytes long", 32));
+        }
+
+        // if there is not enough data
+        // trailing zeros are assumed (this is required for PUSH opcode semantics)
+        var copiedData = new byte[32];
+        final var dlen = Integer.min(data.length, data.length);
+
+        System.arraycopy(data, 0, copiedData, 32 - data.length, dlen);
+
+        return copiedData;
+    }
 }
