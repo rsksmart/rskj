@@ -46,6 +46,12 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @TestInstance(Lifecycle.PER_CLASS)
 class UnionBridgeIT {
 
+    // Boolean constants for transfer permissions
+    private static final boolean REQUEST_PERMISSION_ENABLED = true;
+    private static final boolean REQUEST_PERMISSION_DISABLED = false;
+    private static final boolean RELEASE_PERMISSION_ENABLED = true;
+    private static final boolean RELEASE_PERMISSION_DISABLED = false;
+
     private static final ActivationConfig lovellActivations = ActivationConfigsForTest.lovell700();
     private static final ActivationConfig allActivations = ActivationConfigsForTest.all();
 
@@ -287,7 +293,7 @@ class UnionBridgeIT {
         // Arrange
         setupUnauthorizedCaller();
         Function function = SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
-        byte[] functionEncoded = function.encode(true, true);
+        byte[] functionEncoded = function.encode(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Act & Assert
         executeBridgeMethodAndAssertFail(functionEncoded);
         assertNoEventWasEmitted();
@@ -313,11 +319,11 @@ class UnionBridgeIT {
         // Assert mainnet network does not allow updating union address
         assertEquals(ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
         assertNoAddressIsStored();
+        assertNoEventWasEmitted();
 
         // Assert that the union address continues to be the constant address
         RskAddress actualUnionAddress = getUnionBridgeContractAddress();
         assertEquals(unionAddressBeforeAttemptToUpdate, actualUnionAddress);
-        assertNoEventWasEmitted();
     }
 
     @Test
@@ -493,16 +499,18 @@ class UnionBridgeIT {
         setupUnionAddressCaller();
         Coin weisTransferredBalanceBeforeRelease = getWeisTransferredToUnionBridge();
         Coin unionBridgeBalanceBeforeRelease = getUnionBridgeBalance();
+
         // Act
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
         assertSuccessfulResponseCode(releaseUnionResponseCode);
+        assertLogUnionRbtcReleased();
+
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         assertWeisTransferredToUnionBridge(expectedWeisTransferredBalance);
         assertUnionBridgeBalance(expectedUnionBridgeBalance);
-        assertLogUnionRbtcReleased();
     }
 
     @Test
@@ -513,7 +521,7 @@ class UnionBridgeIT {
         assertNoUnionTransferredPermissionsIsStored();
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
         // Assert
         assertUnauthorizedCaller(unionTransferPermissionsResponseCode);
         assertNoUnionTransferredPermissionsIsStored();
@@ -526,7 +534,7 @@ class UnionBridgeIT {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         // Assert transferred permissions remain unchanged
@@ -540,7 +548,7 @@ class UnionBridgeIT {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertNoUnionTransferredPermissionsIsStored();
@@ -552,16 +560,14 @@ class UnionBridgeIT {
     void setTransferPermissions_whenThirdVoteForSameValue_shouldUpdateTransferPermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-        boolean requestEnabled = false;
-        boolean releaseEnabled = false;
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
 
         // Assert transferred permissions are updated
-        assertUnionTransferredPermissions(requestEnabled, releaseEnabled);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -646,15 +652,12 @@ class UnionBridgeIT {
         throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-        boolean requestEnabled = true;
-        boolean releaseEnabled = false;
-
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         // Assert that the transfer permissions remain the same
-        assertUnionTransferredPermissions(false, false);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
         assertNoEventWasEmitted();
     }
 
@@ -663,16 +666,14 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableOnlyRequest_shouldUpdatePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-        boolean requestEnabled = true;
-        boolean releaseEnabled = false;
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
 
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(requestEnabled, releaseEnabled);
-        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -702,15 +703,13 @@ class UnionBridgeIT {
         // Arrange
         Coin weisTransferredBalanceBeforeRelease = getWeisTransferredToUnionBridge();
         Coin unionBridgeBalanceBeforeRelease = getUnionBridgeBalance();
-
         // Act
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
-
         // Assert
         assertEquals(RELEASE_DISABLED.getCode(), releaseUnionResponseCode);
+        assertNoEventWasEmitted();
         assertUnionBridgeBalance(unionBridgeBalanceBeforeRelease);
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
-        assertNoEventWasEmitted();
     }
 
     @Test
@@ -718,14 +717,12 @@ class UnionBridgeIT {
     void setTransferPermissions_whenFirstVoteToEnableOnlyRelease_shouldVoteSuccessfully() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
-
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         // Assert that the transfer permissions remain the same
-        assertUnionTransferredPermissions(true, false);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
         assertNoEventWasEmitted();
     }
 
@@ -734,16 +731,14 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableOnlyRelease_shouldUpdatePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-        boolean expectedRequestEnabled = false;
-        boolean expectedReleaseEnabled = true;
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
 
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
-        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -778,12 +773,12 @@ class UnionBridgeIT {
 
         // Assert
         assertSuccessfulResponseCode(releaseUnionResponseCode);
+        assertLogUnionRbtcReleased();
+
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
-
         assertWeisTransferredToUnionBridge(expectedWeisTransferredBalance);
         assertUnionBridgeBalance(expectedUnionBridgeBalance);
-        assertLogUnionRbtcReleased();
     }
 
     @Test
@@ -791,12 +786,12 @@ class UnionBridgeIT {
     void setTransferPermissions_whenFirstVoteToEnableBothPermissions_shouldVoteSuccessfully() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(false, true);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
+        assertNoEventWasEmitted();
     }
 
     @Test
@@ -804,15 +799,13 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-        boolean expectedRequestEnabled = true;
-        boolean expectedReleaseEnabled = true;
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
-        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -852,10 +845,8 @@ class UnionBridgeIT {
         assertEquals(INVALID_VALUE.getCode(), releaseUnionResponseCode);
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
         assertUnionBridgeBalance(amountSurpassingWeisTransferredBalance);
-        boolean expectedRequestEnabled = false;
-        boolean expectedReleaseEnabled = false;
-        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
-        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, BRIDGE_ADDR);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED, BRIDGE_ADDR);
     }
 
     @Test
@@ -864,10 +855,10 @@ class UnionBridgeIT {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(false, false);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
         assertNoEventWasEmitted();
     }
 
@@ -876,15 +867,12 @@ class UnionBridgeIT {
     void setTransferPermissions_whenSecondVoteToEnableBackBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-        boolean expectedRequestEnabled = true;
-        boolean expectedReleaseEnabled = true;
-
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(expectedRequestEnabled, expectedReleaseEnabled);
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(expectedRequestEnabled, expectedReleaseEnabled);
-        assertLogUnionTransferPermissionsSet(expectedRequestEnabled, expectedReleaseEnabled, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
     }
 
     @Test
@@ -923,6 +911,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(releaseUnionResponseCode);
         assertLogUnionRbtcReleased();
+
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         assertWeisTransferredToUnionBridge(expectedWeisTransferredBalance);
