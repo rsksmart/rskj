@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -149,7 +150,8 @@ class RemascTestRunner {
                         precompiledContracts,
                         blockTxSignatureCache
                 ),
-                builder.getConfig());
+                builder.getConfig(),
+                new SuperDifficultyCalculator(builder.getConfig().getNetworkConstants()));
 
         Random random = new Random(RemascTestRunner.class.hashCode());
         for(int i = 0; i <= this.initialHeight; i++) {
