@@ -1,41 +1,28 @@
 package co.rsk.peg.union;
 
+import static co.rsk.peg.BridgeEvents.*;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedData;
 import static co.rsk.peg.BridgeEventsTestUtils.getEncodedTopics;
 import static co.rsk.peg.BridgeMethods.*;
-import static co.rsk.peg.BridgeMethods.GET_UNION_BRIDGE_CONTRACT_ADDRESS;
-import static co.rsk.peg.BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP;
-import static co.rsk.peg.BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP;
-import static co.rsk.peg.BridgeMethods.RELEASE_UNION_BRIDGE_RBTC;
-import static co.rsk.peg.BridgeMethods.REQUEST_UNION_BRIDGE_RBTC;
-import static co.rsk.peg.BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedData;
 import static co.rsk.peg.BridgeSupportTestUtil.assertEventWasEmittedWithExpectedTopics;
+import static co.rsk.peg.union.UnionBridgeStorageIndexKey.*;
+import static co.rsk.peg.union.UnionResponseCode.*;
 import static org.ethereum.vm.PrecompiledContracts.BRIDGE_ADDR;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeEvents;
-import co.rsk.peg.BridgeIllegalArgumentException;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.BridgeSupport;
-import co.rsk.peg.BridgeSupportTestUtil;
+import co.rsk.peg.*;
 import co.rsk.peg.constants.BridgeMainNetConstants;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.union.constants.UnionBridgeConstants;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
-import co.rsk.test.builders.BridgeBuilder;
-import co.rsk.test.builders.BridgeSupportBuilder;
-import co.rsk.test.builders.UnionBridgeSupportBuilder;
+import co.rsk.test.builders.*;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,25 +32,15 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.CallTransaction;
+import org.ethereum.core.*;
 import org.ethereum.core.CallTransaction.Function;
-import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
@@ -83,8 +60,7 @@ class UnionBridgeIT {
     private static final BridgeBuilder bridgeBuilder = new BridgeBuilder();
     private Bridge bridge;
 
-    private static final RskAddress UNAUTHORIZED_CALLER = TestUtils.generateAddress(
-        "UNAUTHORIZED");
+    private static final RskAddress UNAUTHORIZED_CALLER_ADDRESS = TestUtils.generateAddress("UNAUTHORIZED");
 
     private static final RskAddress CHANGE_UNION_ADDRESS_AUTHORIZER = new RskAddress(
         ECKey.fromPublicOnly(Hex.decode(
@@ -148,8 +124,7 @@ class UnionBridgeIT {
     void lovellSetup() {
         ForBlock lovellActivationsForBlock = lovellActivations.forBlock(0);
         repository = BridgeSupportTestUtil.createRepository();
-        repository.addBalance(BRIDGE_ADDR,
-            co.rsk.core.Coin.fromBitcoin(bridgeMainNetConstants.getMaxRbtc()));
+        repository.addBalance(BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeMainNetConstants.getMaxRbtc()));
         storageAccessor = new BridgeStorageAccessorImpl(repository);
 
         signatureCache = mock(SignatureCache.class);
@@ -325,7 +300,7 @@ class UnionBridgeIT {
         // Setup for all activations
         setupForAllActivations();
         // Setup authorizer for changing union address
-        setupCaller(UNAUTHORIZED_CALLER);
+        setupCaller(UNAUTHORIZED_CALLER_ADDRESS);
 
         // Assert that the union address is equal to the constant address
         RskAddress unionAddressBeforeAttemptToUpdate = getUnionBridgeContractAddress();
@@ -336,7 +311,7 @@ class UnionBridgeIT {
         int actualUnionResponseCode = updateUnionAddress();
 
         // Assert mainnet network does not allow updating union address
-        assertEquals(UnionResponseCode.ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
+        assertEquals(ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
         assertNoAddressIsStored();
 
         // Assert that the union address continues to be the constant address
@@ -349,7 +324,7 @@ class UnionBridgeIT {
     @Order(8)
     void increaseUnionBridgeLockingCap_whenUnauthorized_shouldFailAndReturnUnauthorizedCaller() throws VMException {
         // Arrange
-        setupCaller(UNAUTHORIZED_CALLER);
+        setupCaller(UNAUTHORIZED_CALLER_ADDRESS);
         // Assert that the initial locking cap is equal to the mainnet constant INITIAL_LOCKING_CAP
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
@@ -377,7 +352,7 @@ class UnionBridgeIT {
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
         // Assert that the locking cap remains unchanged after the first vote
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
@@ -397,7 +372,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_2);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
         // Assert that the locking cap remains unchanged after the second vote for another value
         Coin actualUnionLockingCap = getUnionBridgeLockingCap();
         assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
@@ -418,7 +393,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
         assertLockingCap(NEW_LOCKING_CAP_1);
         assertLogUnionLockingCapIncreased(INITIAL_LOCKING_CAP, NEW_LOCKING_CAP_1);
     }
@@ -432,7 +407,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_2);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
         // Assert that the locking cap remains unchanged
         assertLockingCap(lockingCapBeforeUpdate);
         assertNoEventWasEmitted();
@@ -448,7 +423,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(smallerLockingCap);
         // Assert
-        assertEquals(UnionResponseCode.INVALID_VALUE.getCode(), actualUnionResponseCode);
+        assertEquals(INVALID_VALUE.getCode(), actualUnionResponseCode);
         // Assert that the locking cap remains unchanged
         assertLockingCap(lockingCapBeforeUpdate);
         assertNoEventWasEmitted();
@@ -485,7 +460,7 @@ class UnionBridgeIT {
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), requestUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), requestUnionResponseCode);
         assertLogUnionRbtcRequested();
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -521,7 +496,7 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), releaseUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         assertWeisTransferredToUnionBridge(expectedWeisTransferredBalance);
@@ -550,7 +525,7 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         // Assert transferred permissions remain unchanged
         assertNoUnionTransferredPermissionsIsStored();
     }
@@ -563,7 +538,7 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         assertNoUnionTransferredPermissionsIsStored();
     }
 
@@ -574,28 +549,34 @@ class UnionBridgeIT {
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, false);
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        boolean requestEnabled = false;
+        boolean releaseEnabled = false;
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
 
         // Assert transferred permissions are updated
-        assertUnionTransferredPermissions(false, false);
-        assertLogUnionTransferPermissionsSet(false, false);
+        assertUnionTransferredPermissions(requestEnabled, releaseEnabled);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
     }
 
     @Test
     @Order(22)
-    void requestUnionBridgeRbtc_whenRequestIsDisabled_shouldReturnDisabledCode()
-        throws VMException {
+    void requestUnionBridgeRbtc_whenRequestIsDisabled_shouldReturnDisabledCode() throws VMException {
         // Arrange
         setupUnionAddressCaller();
         Coin weisTransferredBalanceBeforeRequest = getWeisTransferredToUnionBridge();
         Coin unionBridgeBalanceBeforeRequest = getUnionBridgeBalance();
+
         // Act
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
+
         // Assert
-        assertEquals(UnionResponseCode.REQUEST_DISABLED.getCode(),
+        assertEquals(
+            REQUEST_DISABLED.getCode(),
             requestUnionResponseCode,
-            "Requesting union rBTC should fail when request permission is disabled");
+            "Requesting union rBTC should fail when request permission is disabled"
+        );
+        assertNoEventWasEmitted();
 
         // Assert that the balance remains the same
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRequest);
@@ -615,7 +596,7 @@ class UnionBridgeIT {
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(newLockingCap);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
 
         // Assert that the locking cap remains unchanged
         assertLockingCap(lockingCapBeforeIncrement);
@@ -632,7 +613,7 @@ class UnionBridgeIT {
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(newLockingCap);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), actualUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), actualUnionResponseCode);
         assertLockingCap(newLockingCap);
         assertLogUnionLockingCapIncreased(lockingCapBeforeIncrement, newLockingCap);
     }
@@ -646,7 +627,7 @@ class UnionBridgeIT {
         assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, actualUnionAddress);
 
         int actualUnionResponseCode = updateUnionAddress();
-        assertEquals(UnionResponseCode.ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
+        assertEquals(ENVIRONMENT_DISABLED.getCode(), actualUnionResponseCode);
 
         // Assert that the union address remains unchanged
         assertNoAddressIsStored();
@@ -661,39 +642,45 @@ class UnionBridgeIT {
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, false);
+        boolean requestEnabled = true;
+        boolean releaseEnabled = false;
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         // Assert that the transfer permissions remain the same
         assertUnionTransferredPermissions(false, false);
     }
 
     @Test
     @Order(27)
-    void setTransferPermissions_whenSecondVoteToEnableOnlyRequest_shouldUpdatePermissions()
-        throws VMException {
+    void setTransferPermissions_whenSecondVoteToEnableOnlyRequest_shouldUpdatePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, false);
+        boolean requestEnabled = true;
+        boolean releaseEnabled = false;
+        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(requestEnabled, releaseEnabled);
+
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(true, false);
-        assertLogUnionTransferPermissionsSet(true, false);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertUnionTransferredPermissions(requestEnabled, releaseEnabled);
+        assertLogUnionTransferPermissionsSet(requestEnabled, releaseEnabled);
     }
 
     @Test
     @Order(28)
-    void requestUnionBridgeRbtc_whenRequestIsEnabled_shouldTransferFundsToUnionBridge()
-        throws VMException {
+    void requestUnionBridgeRbtc_whenRequestIsEnabled_shouldTransferFundsToUnionBridge() throws VMException {
         // Arrange
         setupUnionAddressCaller();
         Coin weisTransferredBalanceBeforeRequest = getWeisTransferredToUnionBridge();
         Coin unionBridgeBalanceBeforeRequest = getUnionBridgeBalance();
+
         // Act
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
+
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), requestUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), requestUnionResponseCode);
         assertLogUnionRbtcRequested();
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -704,24 +691,24 @@ class UnionBridgeIT {
 
     @Test
     @Order(29)
-    void releaseUnionBridgeRbtc_whenReleaseIsDisabled_shouldReturnReleaseDisabled()
-        throws VMException {
+    void releaseUnionBridgeRbtc_whenReleaseIsDisabled_shouldReturnReleaseDisabled() throws VMException {
         // Arrange
         Coin weisTransferredBalanceBeforeRelease = getWeisTransferredToUnionBridge();
         Coin unionBridgeBalanceBeforeRelease = getUnionBridgeBalance();
+
         // Act
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(UnionResponseCode.RELEASE_DISABLED.getCode(), releaseUnionResponseCode);
+        assertEquals(RELEASE_DISABLED.getCode(), releaseUnionResponseCode);
         assertUnionBridgeBalance(unionBridgeBalanceBeforeRelease);
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
+        assertNoEventWasEmitted();
     }
 
     @Test
     @Order(30)
-    void setTransferPermissions_whenFirstVoteToEnableOnlyRelease_shouldVoteSuccessfully()
-        throws VMException {
+    void setTransferPermissions_whenFirstVoteToEnableOnlyRelease_shouldVoteSuccessfully() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
 
@@ -729,15 +716,14 @@ class UnionBridgeIT {
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         // Assert that the transfer permissions remain the same
         assertUnionTransferredPermissions(true, false);
     }
 
     @Test
     @Order(31)
-    void setTransferPermissions_whenSecondVoteToEnableOnlyRelease_shouldUpdatePermissions()
-        throws VMException {
+    void setTransferPermissions_whenSecondVoteToEnableOnlyRelease_shouldUpdatePermissions() throws VMException {
         // Arrange
         setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
 
@@ -745,15 +731,14 @@ class UnionBridgeIT {
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(false, true);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(false, true);
         assertLogUnionTransferPermissionsSet(false, true);
     }
 
     @Test
     @Order(32)
-    void requestUnionBridgeRbtc_whenRequestNowIsDisabled_shouldReturnRequestDisabled()
-        throws VMException {
+    void requestUnionBridgeRbtc_whenRequestNowIsDisabled_shouldReturnRequestDisabled() throws VMException {
         // Arrange
         setupUnionAddressCaller();
         Coin weisTransferredBalanceBeforeRequest = getWeisTransferredToUnionBridge();
@@ -762,7 +747,9 @@ class UnionBridgeIT {
         // Act
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
         // Assert
-        assertEquals(UnionResponseCode.REQUEST_DISABLED.getCode(), requestUnionResponseCode);
+        assertEquals(REQUEST_DISABLED.getCode(), requestUnionResponseCode);
+        assertNoEventWasEmitted();
+
         // Assert union bridge balance remains the same
         assertUnionBridgeBalance(weisTransferredBalanceBeforeRequest);
         assertWeisTransferredToUnionBridge(unionBridgeBalanceBeforeRequest);
@@ -770,8 +757,7 @@ class UnionBridgeIT {
 
     @Test
     @Order(33)
-    void releaseUnionBridgeRbtc_whenReleaseIsEnabled_shouldReceiveFundsBack()
-        throws VMException {
+    void releaseUnionBridgeRbtc_whenReleaseIsEnabled_shouldReceiveFundsBack() throws VMException {
         // Arrange
         setupUnionAddressCaller();
         Coin weisTransferredBalanceBeforeRelease = getWeisTransferredToUnionBridge();
@@ -781,7 +767,7 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), releaseUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
 
@@ -798,7 +784,7 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(false, true);
     }
 
@@ -810,7 +796,7 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(true, true);
         assertLogUnionTransferPermissionsSet(true, true);
     }
@@ -824,10 +810,12 @@ class UnionBridgeIT {
         Coin unionBridgeBalanceBeforeRelease = getUnionBridgeBalance();
         Coin currentLockingCap = getUnionBridgeLockingCap();
         Coin amountSurpassingUnionLockingCap = currentLockingCap.add(Coin.valueOf(1));
+
         // Act
         int requestUnionRbtcResponseCode = requestUnionRbtc(amountSurpassingUnionLockingCap);
+
         // Assert
-        assertEquals(UnionResponseCode.INVALID_VALUE.getCode(), requestUnionRbtcResponseCode);
+        assertEquals(INVALID_VALUE.getCode(), requestUnionRbtcResponseCode);
         assertNoEventWasEmitted();
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
         assertUnionBridgeBalance(unionBridgeBalanceBeforeRelease);
@@ -847,10 +835,11 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(amountSurpassingWeisTransferredBalance);
 
         // Assert
-        assertEquals(UnionResponseCode.INVALID_VALUE.getCode(), releaseUnionResponseCode);
+        assertEquals(INVALID_VALUE.getCode(), releaseUnionResponseCode);
         assertWeisTransferredToUnionBridge(weisTransferredBalanceBeforeRelease);
         assertUnionBridgeBalance(amountSurpassingWeisTransferredBalance);
         assertUnionTransferredPermissions(false, false);
+        assertLogUnionTransferPermissionsSet(false, false);
     }
 
     @Test
@@ -861,7 +850,7 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(false, false);
     }
 
@@ -873,7 +862,7 @@ class UnionBridgeIT {
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(true, true);
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), unionTransferPermissionsResponseCode);
+        assertEquals(SUCCESS.getCode(), unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(true, true);
         assertLogUnionTransferPermissionsSet(true, true);
     }
@@ -891,7 +880,7 @@ class UnionBridgeIT {
         int requestUnionResponseCode = requestUnionRbtc(AMOUNT_TO_REQUEST);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), requestUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), requestUnionResponseCode);
         assertLogUnionRbtcRequested();
 
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRequest.add(AMOUNT_TO_REQUEST);
@@ -902,8 +891,7 @@ class UnionBridgeIT {
 
     @Test
     @Order(41)
-    void releaseUnionBridgeRbtc_whenPermissionsEnabledAfterForcePause_shouldReceiveFundsBack()
-        throws VMException {
+    void releaseUnionBridgeRbtc_whenPermissionsEnabledAfterForcePause_shouldReceiveFundsBack() throws VMException {
         // Arrange
         setupUnionAddressCaller();
         Coin weisTransferredBalanceBeforeRelease = getWeisTransferredToUnionBridge();
@@ -913,7 +901,7 @@ class UnionBridgeIT {
         int releaseUnionResponseCode = releaseUnionRbtc(AMOUNT_TO_RELEASE);
 
         // Assert
-        assertEquals(UnionResponseCode.SUCCESS.getCode(), releaseUnionResponseCode);
+        assertEquals(SUCCESS.getCode(), releaseUnionResponseCode);
         assertLogUnionRbtcReleased();
         Coin expectedWeisTransferredBalance = weisTransferredBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
         Coin expectedUnionBridgeBalance = unionBridgeBalanceBeforeRelease.subtract(AMOUNT_TO_RELEASE);
@@ -926,17 +914,20 @@ class UnionBridgeIT {
     }
 
     private void assertUnauthorizedCaller(int actualResponseCode) {
-        assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER.getCode(), actualResponseCode,
-            "Expected response code to be UNAUTHORIZED_CALLER");
+        assertEquals(
+            UNAUTHORIZED_CALLER.getCode(),
+            actualResponseCode,
+            "Expected response code to be UNAUTHORIZED_CALLER"
+        );
         assertNoEventWasEmitted();
     }
 
     private void assertNoEventWasEmitted() {
-        Assertions.assertTrue(logs.isEmpty(), "No events should have been emitted");
+        assertTrue(logs.isEmpty(), "No events should have been emitted");
     }
 
     private void assertLogUnionTransferPermissionsSet(boolean requestEnabled, boolean releaseEnabled) {
-        CallTransaction.Function transferPermissionsEvent = BridgeEvents.UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
+        CallTransaction.Function transferPermissionsEvent = UNION_BRIDGE_TRANSFER_PERMISSIONS_UPDATED.getEvent();
         List<DataWord> encodedTopics = getEncodedTopics(transferPermissionsEvent, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2.toHexString());
         byte[] encodedData = getEncodedData(transferPermissionsEvent, requestEnabled, releaseEnabled);
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
@@ -944,7 +935,7 @@ class UnionBridgeIT {
     }
 
     private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
-        CallTransaction.Function unionLockingCapIncreasedEvent = BridgeEvents.UNION_LOCKING_CAP_INCREASED.getEvent();
+        CallTransaction.Function unionLockingCapIncreasedEvent = UNION_LOCKING_CAP_INCREASED.getEvent();
         List<DataWord> encodedTopics = getEncodedTopics(unionLockingCapIncreasedEvent, CHANGE_LOCKING_CAP_AUTHORIZER_2.toHexString());
         byte[] encodedData = getEncodedData(unionLockingCapIncreasedEvent, previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
@@ -952,7 +943,7 @@ class UnionBridgeIT {
     }
 
     private void assertLogUnionRbtcReleased() {
-        CallTransaction.Function releaseUnionRbtcEvent = BridgeEvents.UNION_RBTC_RELEASED.getEvent();
+        CallTransaction.Function releaseUnionRbtcEvent = UNION_RBTC_RELEASED.getEvent();
         List<DataWord> encodedTopics = getEncodedTopics(releaseUnionRbtcEvent, CURRENT_UNION_BRIDGE_ADDRESS.toHexString());
         byte[] encodedData = getEncodedData(releaseUnionRbtcEvent, AMOUNT_TO_RELEASE.asBigInteger());
 
@@ -961,7 +952,7 @@ class UnionBridgeIT {
     }
 
     private void assertLogUnionRbtcRequested() {
-        CallTransaction.Function releaseUnionRbtcEvent = BridgeEvents.UNION_RBTC_REQUESTED.getEvent();
+        CallTransaction.Function releaseUnionRbtcEvent = UNION_RBTC_REQUESTED.getEvent();
         List<DataWord> encodedTopics = getEncodedTopics(releaseUnionRbtcEvent, CURRENT_UNION_BRIDGE_ADDRESS.toHexString());
         byte[] encodedData = getEncodedData(releaseUnionRbtcEvent, AMOUNT_TO_REQUEST.asBigInteger());
 
@@ -970,7 +961,7 @@ class UnionBridgeIT {
     }
 
     private void setupUnauthorizedCaller() {
-        setupCaller(UNAUTHORIZED_CALLER);
+        setupCaller(UNAUTHORIZED_CALLER_ADDRESS);
     }
 
     private void setupUnionAddressCaller() {
@@ -979,8 +970,7 @@ class UnionBridgeIT {
 
     private int updateUnionAddress() throws VMException {
         CallTransaction.Function function = SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
-        byte[] setUnionBridgeContractAddressData = function.encode(
-            UnionBridgeIT.NEW_UNION_BRIDGE_CONTRACT_ADDRESS.toHexString());
+        byte[] setUnionBridgeContractAddressData = function.encode(NEW_UNION_BRIDGE_CONTRACT_ADDRESS.toHexString());
         byte[] result = bridge.execute(setUnionBridgeContractAddressData);
         BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(
             result)[0];
@@ -989,16 +979,16 @@ class UnionBridgeIT {
 
     private void assertNoAddressIsStored() {
         RskAddress actualRskAddress = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
+            UNION_BRIDGE_CONTRACT_ADDRESS.getKey(),
             BridgeSerializationUtils::deserializeRskAddress
         );
-        Assertions.assertNull(actualRskAddress);
+        assertNull(actualRskAddress);
     }
 
     private RskAddress getUnionBridgeContractAddress() throws VMException {
         CallTransaction.Function function = GET_UNION_BRIDGE_CONTRACT_ADDRESS.getFunction();
-        byte[] setUnionBridgeContractAddressData = function.encode();
-        byte[] result = bridge.execute(setUnionBridgeContractAddressData);
+        byte[] getUnionBridgeContractAddressData = function.encode();
+        byte[] result = bridge.execute(getUnionBridgeContractAddressData);
         return new RskAddress(
             (DataWord) Bridge.GET_UNION_BRIDGE_CONTRACT_ADDRESS.decodeResult(result)[0]);
     }
@@ -1033,28 +1023,26 @@ class UnionBridgeIT {
 
     private void assertNoStoredUnionLockingCap() {
         Coin storedLockingCap = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertNull(storedLockingCap,
-            "Union bridge locking cap should not be stored when no increase has been made");
+        assertNull(storedLockingCap, "Union bridge locking cap should not be stored when no increase has been made");
     }
 
     private void assertStoredUnionLockingCap(Coin expectedLockingCap) {
         Coin storedLockingCap = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_LOCKING_CAP.getKey(),
+            UNION_BRIDGE_LOCKING_CAP.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        Assertions.assertEquals(expectedLockingCap, storedLockingCap);
+        assertEquals(expectedLockingCap, storedLockingCap);
     }
 
     private void assertNoWeisTransferredToUnionBridgeIsStored() {
         Coin actualUnionWeisTransferred = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         );
-        assertNull(actualUnionWeisTransferred,
-            "Weis transferred to union bridge should not be stored");
+        assertNull(actualUnionWeisTransferred, "Weis transferred to union bridge should not be stored");
     }
 
     private int requestUnionRbtc(Coin amountToRequest) throws VMException {
@@ -1070,14 +1058,14 @@ class UnionBridgeIT {
 
     private Coin getWeisTransferredToUnionBridge() {
         return Optional.ofNullable(storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
+            WEIS_TRANSFERRED_TO_UNION_BRIDGE.getKey(),
             BridgeSerializationUtils::deserializeRskCoin
         )).orElse(Coin.ZERO);
     }
 
     private void assertWeisTransferredToUnionBridge(Coin expectedUnionWeisTransferred) {
         Coin actualUnionWeisTransferred = getWeisTransferredToUnionBridge();
-        Assertions.assertEquals(expectedUnionWeisTransferred, actualUnionWeisTransferred);
+        assertEquals(expectedUnionWeisTransferred, actualUnionWeisTransferred);
     }
 
     private Coin getUnionBridgeBalance() {
@@ -1112,8 +1100,7 @@ class UnionBridgeIT {
         );
     }
 
-    private int setUnionTransferPermissions(boolean requestEnabled, boolean releaseEnabled)
-        throws VMException {
+    private int setUnionTransferPermissions(boolean requestEnabled, boolean releaseEnabled) throws VMException {
         CallTransaction.Function function = SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
         byte[] setUnionTransferPermissionsData = function.encode(requestEnabled, releaseEnabled);
         byte[] result = bridge.execute(setUnionTransferPermissionsData);
@@ -1124,34 +1111,37 @@ class UnionBridgeIT {
 
     private void assertNoUnionTransferredPermissionsIsStored() {
         Boolean actualRequestEnabled = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            UNION_BRIDGE_REQUEST_ENABLED.getKey(),
             BridgeSerializationUtils::deserializeBoolean
         );
-        Assertions.assertNull(actualRequestEnabled,
-            "Union bridge request enabled should not be stored");
+        assertNull(actualRequestEnabled, "Union bridge request enabled should not be stored");
 
         Boolean actualReleaseEnabled = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+            UNION_BRIDGE_RELEASE_ENABLED.getKey(),
             BridgeSerializationUtils::deserializeBoolean
         );
-        Assertions.assertNull(actualReleaseEnabled,
-            "Union bridge release enabled should not be stored");
+        assertNull(actualReleaseEnabled, "Union bridge release enabled should not be stored");
     }
 
-    private void assertUnionTransferredPermissions(boolean expectedRequestEnabled,
-        boolean expectedReleaseEnabled) {
+    private void assertUnionTransferredPermissions(boolean expectedRequestEnabled, boolean expectedReleaseEnabled) {
         Boolean actualRequestEnabled = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_REQUEST_ENABLED.getKey(),
+            UNION_BRIDGE_REQUEST_ENABLED.getKey(),
             BridgeSerializationUtils::deserializeBoolean
         );
-        Assertions.assertEquals(expectedRequestEnabled, actualRequestEnabled,
-            "Union bridge request enabled should match expected value");
+        assertEquals(
+            expectedRequestEnabled,
+            actualRequestEnabled,
+            "Union bridge request enabled should match expected value"
+        );
 
-        Boolean actualRequestDisabled = storageAccessor.getFromRepository(
-            UnionBridgeStorageIndexKey.UNION_BRIDGE_RELEASE_ENABLED.getKey(),
+        Boolean actualReleaseEnabled = storageAccessor.getFromRepository(
+            UNION_BRIDGE_RELEASE_ENABLED.getKey(),
             BridgeSerializationUtils::deserializeBoolean
         );
-        Assertions.assertEquals(expectedReleaseEnabled, actualRequestDisabled,
-            "Union bridge release enabled should match expected value");
+        assertEquals(
+            expectedReleaseEnabled,
+            actualReleaseEnabled,
+            "Union bridge release enabled should match expected value"
+        );
     }
 }
