@@ -19,8 +19,10 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionListExecutor;
 import co.rsk.core.types.bytes.Bytes;
@@ -30,7 +32,6 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.util.Trio;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -78,6 +79,7 @@ public class BlockExecutor {
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private final long minSequentialSetGasLimit;
+    private final SuperDifficultyCalculator superDifficultyCalculator;
 
     private boolean registerProgramResults;
 
@@ -93,7 +95,8 @@ public class BlockExecutor {
                          ReceiptStore receiptStore,
                          RepositoryLocator repositoryLocator,
                          TransactionExecutorFactory transactionExecutorFactory,
-                         RskSystemProperties systemProperties) {
+                         RskSystemProperties systemProperties,
+                         SuperDifficultyCalculator superDifficultyCalculator) {
         this.activationConfig = systemProperties.getActivationConfig();
 
         this.blockStore = blockStore;
@@ -103,6 +106,7 @@ public class BlockExecutor {
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
         this.minSequentialSetGasLimit = systemProperties.getNetworkConstants().getMinSequentialSetGasLimit();
+        this.superDifficultyCalculator = superDifficultyCalculator;
 
         int numOfParallelList = Constants.getTransactionExecutionThreads();
         this.execServices = new ExecutorService[numOfParallelList];
@@ -187,12 +191,20 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            final var superParentAndBridgeEvent =
-                    FamilyUtils.findSuperParentAndUnclesAndBridgeEvent(blockStore, receiptStore, block, result.getTransactionReceipts());
+            final var superParentAndBridgeEvent = FamilyUtils.findSuperParentAndBridgeEvent(
+                    blockStore,
+                    receiptStore,
+                    block,
+                    result.getTransactionReceipts());
+
+            var superDifficulty = superParentAndBridgeEvent.superParent() == null ?
+                    BlockDifficulty.ONE :
+                    superDifficultyCalculator.calcSuperDifficulty(block, superParentAndBridgeEvent.superParent());
 
             SuperBlockFields superBlockFields = makeSuperBlockFields(
                     superParentAndBridgeEvent.superParent(),
-                    superParentAndBridgeEvent.superBridgeEvent()
+                    superParentAndBridgeEvent.superBridgeEvent(),
+                    superDifficulty
             );
             block.setSuperChainFields(superBlockFields);
         }
@@ -201,14 +213,15 @@ public class BlockExecutor {
         profiler.stop(metric);
     }
 
-    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event) {
+    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event, BlockDifficulty superDifficulty) {
         Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
         long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
 
         return new SuperBlockFields(
                 superParentHash,
                 superParentBlockNumber,
-                event
+                event,
+                superDifficulty
         );
     }
 

@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
@@ -32,11 +33,14 @@ public class SuperBlockFields {
     private final BytesSlice parentHash;
     private final long blockNumber;
     private final SuperBridgeEvent bridgeEvent;
+    private BlockDifficulty superDifficulty;
 
-    public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber, @Nullable SuperBridgeEvent bridgeEvent) {
+    public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber,
+                            @Nullable SuperBridgeEvent bridgeEvent, BlockDifficulty superDifficulty) {
         this.parentHash = parentHash;
         this.blockNumber = blockNumber;
         this.bridgeEvent = bridgeEvent;
+        this.superDifficulty = superDifficulty;
     }
 
     public BytesSlice getParentHash() {
@@ -51,11 +55,20 @@ public class SuperBlockFields {
         return bridgeEvent;
     }
 
+    public BlockDifficulty getSuperDifficulty() {
+        return superDifficulty;
+    }
+
+    public void setSuperDifficulty(BlockDifficulty superDifficulty) {
+        this.superDifficulty = superDifficulty;
+    }
+
     public byte[] getEncoded() {
         return RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
+                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null),
+                RLP.encodeElement(superDifficulty != null ? superDifficulty.getBytes() : null)
         );
     }
 
@@ -64,7 +77,8 @@ public class SuperBlockFields {
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
+                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null),
+                RLP.encodeElement(superDifficulty != null ? superDifficulty.getBytes() : null)
         );
 
         return new Keccak256(HashUtil.keccak256(encoded));

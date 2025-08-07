@@ -596,7 +596,8 @@ class TransactionModuleTest {
                 receiptStore,
                 repositoryLocator,
                 this.transactionExecutorFactory,
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
 
         MinerServer minerServer = new MinerServerImpl(
                 config,

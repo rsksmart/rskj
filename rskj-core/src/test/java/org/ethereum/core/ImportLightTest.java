@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -89,7 +90,8 @@ class ImportLightTest {
                         receiptStore,
                         repositoryLocator,
                         transactionExecutorFactory,
-                        config),
+                        config,
+                        new SuperDifficultyCalculator(config.getNetworkConstants())),
                 stateRootHandler
         );
 

@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
@@ -1494,7 +1495,8 @@ public class BlockExecutorTest {
                         new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
                         signatureCache
                 ),
-                cfg);
+                cfg,
+                new SuperDifficultyCalculator(cfg.getNetworkConstants()));
     }
 
     public static class TestObjects {
