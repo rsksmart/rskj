@@ -282,7 +282,7 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
         // arrange
         bridgeConstants = BridgeMainNetConstants.getInstance();
         setUp(allActivations);
-        BtcTransaction pegin = buildLegacyPeginWithParseableScriptPubKey();
+        BtcTransaction pegin = buildPeginV1WithParseableScriptPubKey();
         // save svp spend tx hash
         bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
 
@@ -339,7 +339,6 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
         BtcTransaction pegin = new BtcTransaction(networkParameters);
         pegin.addInput(BitcoinTestUtils.createHash(1), 0, parseableScriptPubKey);
 
-        pegin.addOutput(Coin.ZERO, opReturnScript);
         pegin.addOutput(Coin.COIN, activeFederation.getAddress());
 
         return pegin;
