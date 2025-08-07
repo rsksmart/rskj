@@ -15,9 +15,9 @@ public class FeePerKbTestNetConstants extends FeePerKbConstants {
 
     private FeePerKbTestNetConstants() {
         List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
-            "04701d1d27f8c2ae97912d96fb1f82f10c2395fd320e7a869049268c6b53d2060dfb2e22e3248955332d88cd2ae29a398f8f3858e48dd6d8ffbc37dfd6d1aa4934",
-            "045ef89e4a5645dc68895dbc33b4c966c3a0a52bb837ecdd2ba448604c4f47266456d1191420e1d32bbe8741f8315fde4d1440908d400e5998dbed6549d499559b",
-            "0455db9b3867c14e84a6f58bd2165f13bfdba0703cb84ea85788373a6a109f3717e40483aa1f8ef947f435ccdf10e530dd8b3025aa2d4a7014f12180ee3a301d27"
+            "0454c8532676f580543750f8e47ce63f74a1e7086eff28e6c6742c404c62ee6a0aff059951c74360d820afef03dda28d1ff155c7e6bc0f82ac37adfa4c4794a8ad",
+            "049be6581113de22e566d3089ca4d8d2e6f94ae7f60c18772e00580a2c8fe850d62079395f8d8eb36bb341355a457a6481a8f469f7ed46ef8f5609863342b382a2",
+            "04692ac30246337d142be8baf667d3cdafd3506f35e1b432284ef60b73bf56757dec3500e0b920e17fac04ae58c7b4e6392aaebf1b1bbfbbb65c15daafd78cebb1"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         feePerKbChangeAuthorizer = new AddressBasedAuthorizer(

@@ -15,9 +15,9 @@ public class LockingCapTestNetConstants extends LockingCapConstants {
 
     private LockingCapTestNetConstants() {
         List<ECKey> increaseAuthorizedKeys = Collections.unmodifiableList(Stream.of(
-            "04701d1d27f8c2ae97912d96fb1f82f10c2395fd320e7a869049268c6b53d2060dfb2e22e3248955332d88cd2ae29a398f8f3858e48dd6d8ffbc37dfd6d1aa4934",
-            "045ef89e4a5645dc68895dbc33b4c966c3a0a52bb837ecdd2ba448604c4f47266456d1191420e1d32bbe8741f8315fde4d1440908d400e5998dbed6549d499559b",
-            "0455db9b3867c14e84a6f58bd2165f13bfdba0703cb84ea85788373a6a109f3717e40483aa1f8ef947f435ccdf10e530dd8b3025aa2d4a7014f12180ee3a301d27"
+            "0400fea26eef55e5df7ebe2ce3ba8f6c7f67d88f64946d8c6a66f07797a7cb8bd65c09ffd578393dd355968436d127c3f9264c7ebc396d257a3852f586b84aa2c5",
+            "048148da8c89f9b04452e2853487ac933913a0e868aa05585ae60ddc26b7cb3f7c04c57fcdb3233c217f9220e6dbc3c394aa0d79b5a599af60ee4d9e17d906c137",
+            "04752c732b98578cc933968ce47b92b3b63f60effee25cbaf772e7bd707e0a2d9428737a0e59f34d86b6d737b3af5375011d153c68de2c140e026b0378107789fc"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()));
 
         increaseAuthorizer = new AddressBasedAuthorizer(
