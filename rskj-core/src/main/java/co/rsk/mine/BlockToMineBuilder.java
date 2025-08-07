@@ -255,7 +255,7 @@ public class BlockToMineBuilder {
                 .setSuperBlockResolver(isSuperResolver)
                 .build();
 
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(blockStore, newHeader, newBlockParentHeader));
         return newHeader;
     }
 }

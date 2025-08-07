@@ -21,7 +21,9 @@ package co.rsk.core;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.db.BlockStore;
 
 import java.math.BigInteger;
 
@@ -36,7 +38,15 @@ public class DifficultyCalculator {
         this.constants = constants;
     }
 
-    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
+    public BlockDifficulty calcDifficulty(BlockStore blockStore, BlockHeader header, BlockHeader parentHeader) {
+        if (header.isSuper().orElse(false)) {
+            return calcSuperDifficulty(blockStore, header, parentHeader);
+        }
+
+        return calcDifficulty(header, parentHeader);
+    }
+
+    private BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
         boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
         if (!rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
@@ -46,6 +56,27 @@ public class DifficultyCalculator {
         }
 
         return getBlockDifficulty(header, parentHeader);
+    }
+
+    private Block getBlockForSuperBlockRetargetingInterval(BlockStore blockStore, BlockHeader blockHeader) {
+        var retargetingBlock = blockStore.getBlockByHash(blockHeader.getParentHash().getBytes());
+
+        for (int count = 1; count < constants.getSuperBlockRetargetingInterval().intValue() - 1; count++) {
+            retargetingBlock = blockStore.getBlockByHash(retargetingBlock.getParentHash().getBytes());
+        }
+
+        return retargetingBlock;
+    }
+
+    public BlockDifficulty calcSuperDifficulty(BlockStore blockStore, BlockHeader header, BlockHeader parentHeader) {
+        var shouldUpdateDifficulty = header.getNumber() % constants.getSuperBlockRetargetingInterval().longValue() == 0;
+
+        if (shouldUpdateDifficulty) {
+            var retargetingBlock = getBlockForSuperBlockRetargetingInterval(blockStore, header);
+            return getSuperBlockDifficulty(header, retargetingBlock.getHeader());
+        }
+
+        return parentHeader.getDifficulty();
     }
 
     private BlockDifficulty getBlockDifficulty(
@@ -59,6 +90,20 @@ public class DifficultyCalculator {
         BigInteger difDivisor = constants.getDifficultyBoundDivisor(activationConfig.forBlock(curBlockHeader.getNumber()));
         BlockDifficulty minDif = constants.getMinimumDifficulty(curBlockHeader.getNumber());
         return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
+    }
+
+    private BlockDifficulty getSuperBlockDifficulty(BlockHeader curBlockHeader, BlockHeader retargetingBlockHeader) {
+        var currentTimestamp = curBlockHeader.getTimestamp() - retargetingBlockHeader.getTimestamp();
+        var correctionFactor = constants.getSuperBlockExpectedRetargetIntervalInSeconds()
+                .divide(BigInteger.valueOf(currentTimestamp))
+                .multiply(constants.getSuperBlockDifficultyCorrectionFactor());
+
+        return calcSuperDifficultyWithTimeStamps(
+                retargetingBlockHeader.getDifficulty(),
+                correctionFactor,
+                constants.getSuperBlockDifficultyCorrectionFactor(),
+                constants.getSuperBlockDifficultyMinCorrectionFactor(),
+                constants.getSuperBlockDifficultyMaxCorrectionFactor());
     }
 
     private static BlockDifficulty calcDifficultyWithTimeStamps(
@@ -102,5 +147,36 @@ public class DifficultyCalculator {
         // cases.
         // Note that we have to apply max() first in case fromParent ended up being negative.
         return new BlockDifficulty(max(minDif.asBigInteger(), fromParent));
+    }
+
+    private static BlockDifficulty calcSuperDifficultyWithTimeStamps(
+            BlockDifficulty oldDifficulty,
+            BigInteger correctionFactor,
+            BigInteger superBlockDifficultyCorrectionFactor,
+            BigInteger superBlockDifficultyMinCorrectionFactor,
+            BigInteger superBlockDifficultyMaxCorrectionFactor) {
+
+        if (correctionFactor.compareTo(superBlockDifficultyMinCorrectionFactor) < 0) {
+            return computeSuperBlockDifficulty(oldDifficulty, superBlockDifficultyMinCorrectionFactor, superBlockDifficultyCorrectionFactor);
+        }
+
+        if (correctionFactor.compareTo(superBlockDifficultyMaxCorrectionFactor) > 0) {
+            return computeSuperBlockDifficulty(oldDifficulty, superBlockDifficultyMaxCorrectionFactor, superBlockDifficultyCorrectionFactor);
+        }
+
+        return computeSuperBlockDifficulty(oldDifficulty, correctionFactor, superBlockDifficultyCorrectionFactor);
+    }
+
+    private static BlockDifficulty computeSuperBlockDifficulty(
+            BlockDifficulty oldDifficulty,
+            BigInteger correctionFactor,
+            BigInteger superBlockDifficultyCorrectionFactor
+    ) {
+        var newSuperDifficulty = oldDifficulty
+                .multiply(correctionFactor)
+                .asBigInteger()
+                .divide(superBlockDifficultyCorrectionFactor);
+
+        return new BlockDifficulty(newSuperDifficulty);
     }
 }
