@@ -186,8 +186,10 @@ public class ActivationConfigsForTest {
         ));
     }
 
-    private static List<ConsensusRule> getTbd800Rskips() {
-        return new ArrayList<>(List.of());
+    private static List<ConsensusRule> getReed800Rskips() {
+        return new ArrayList<>(List.of(
+            ConsensusRule.RSKIP305
+        ));
     }
 
     public static ActivationConfig genesis() {
@@ -375,7 +377,7 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig tbd800(List<ConsensusRule> except) {
+    public static ActivationConfig reed800(List<ConsensusRule> except) {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(getOrchidRskips());
@@ -391,13 +393,13 @@ public class ActivationConfigsForTest {
         rskips.addAll(getArrowhead600Rskips());
         rskips.addAll(getArrowhead631Rskips());
         rskips.addAll(getLovell700Rskips());
-        rskips.addAll(getTbd800Rskips());
+        rskips.addAll(getReed800Rskips());
 
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig tbd800() {
-        return tbd800(Collections.emptyList());
+    public static ActivationConfig reed800() {
+        return reed800(Collections.emptyList());
     }
 
     public static ActivationConfig lovell700() {

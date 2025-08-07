@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.BridgeStorageIndexKey.*;
+import static java.util.Objects.isNull;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -63,6 +64,7 @@ public class BridgeStorageProvider {
     private ReleaseRequestQueue releaseRequestQueue;
     private PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations;
     private SortedMap<Keccak256, BtcTransaction> pegoutsWaitingForSignatures;
+    private SortedMap<Sha256Hash, List<Coin>> releasesOutpointsValues;
 
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
@@ -239,6 +241,69 @@ public class BridgeStorageProvider {
         }
     }
 
+    public Optional<List<Coin>> getReleaseOutpointsValues(Sha256Hash releaseTxHash) {
+        if (!activations.isActive(RSKIP305)) {
+            throw new IllegalStateException("Can't call this method before RSKIP305 activation.");
+        }
+
+        return Optional.ofNullable(releasesOutpointsValues)
+            // search in cache
+            .map(cachedValues -> cachedValues.get(releaseTxHash))
+            // search in storage
+            .or(() -> Optional.ofNullable(
+                repository.getStorageBytes(contractAddress, getStorageKeyForReleaseOutpointsValues(releaseTxHash)))
+                .map(BridgeSerializationUtils::deserializeOutpointsValues)
+            );
+    }
+
+    public void setReleaseOutpointsValues(Sha256Hash releaseTxHash, List<Coin> outpointsValues) {
+        if (!activations.isActive(RSKIP305)) {
+            return;
+        }
+
+        if (releaseTxHash == null || outpointsValues == null || outpointsValues.isEmpty()) {
+            throw new IllegalArgumentException(
+                String.format("Invalid release outpoints values entry, has hash %s and coins list %s", releaseTxHash, outpointsValues)
+            );
+        }
+
+        if (releaseTxHashStorageKeyAlreadyExists(releaseTxHash)) {
+            throw new IllegalArgumentException("Release tx hash key already exists in storage.");
+        }
+
+        if (releasesOutpointsValues == null) {
+            releasesOutpointsValues = new TreeMap<>();
+        }
+        releasesOutpointsValues.put(releaseTxHash, List.copyOf(outpointsValues));
+    }
+
+    private boolean releaseTxHashStorageKeyAlreadyExists(Sha256Hash releaseTxHash) {
+        byte[] data = repository.getStorageBytes(
+            contractAddress,
+            getStorageKeyForReleaseOutpointsValues(releaseTxHash)
+        );
+
+        return data != null;
+    }
+
+    private void saveReleasesOutpointsValues() {
+        if (!activations.isActive(RSKIP305)) {
+            return;
+        }
+
+        if (isNull(releasesOutpointsValues)) {
+            return;
+        }
+
+        releasesOutpointsValues.forEach(
+            (releaseTxHash, outpointsValues) -> safeSaveToRepository(
+                getStorageKeyForReleaseOutpointsValues(releaseTxHash),
+                outpointsValues,
+                BridgeSerializationUtils::serializeOutpointsValues
+            )
+        );
+    }
+
     public SortedMap<Keccak256, BtcTransaction> getPegoutsWaitingForSignatures() throws IOException {
         if (pegoutsWaitingForSignatures != null) {
             return pegoutsWaitingForSignatures;
@@ -251,7 +316,7 @@ public class BridgeStorageProvider {
         return pegoutsWaitingForSignatures;
     }
 
-    public void savePegoutsWaitingForSignatures() {
+    private void savePegoutsWaitingForSignatures() {
         if (pegoutsWaitingForSignatures == null) {
             return;
         }
@@ -735,6 +800,8 @@ public class BridgeStorageProvider {
 
         savePegoutTxSigHashes();
 
+        saveReleasesOutpointsValues();
+
         saveSvpFundTxHashUnsigned();
         saveSvpFundTxSigned();
         saveSvpSpendTxHashUnsigned();
@@ -763,6 +830,10 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForPegoutTxSigHash(Sha256Hash sigHash) {
         return PEGOUT_TX_SIG_HASH.getCompoundKey("-", sigHash.toString());
+    }
+
+    private DataWord getStorageKeyForReleaseOutpointsValues(Sha256Hash releaseTxHash) {
+        return RELEASES_OUTPOINTS_VALUES.getCompoundKey("-", releaseTxHash.toString());
     }
 
     private <T> T safeGetFromRepository(BridgeStorageIndexKey keyAddress, RepositoryDeserializer<T> deserializer) {
