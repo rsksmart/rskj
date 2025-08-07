@@ -22,6 +22,7 @@ package org.ethereum.validator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,14 +37,20 @@ public class DifficultyRule extends DependentBlockHeaderRule {
     private static final Logger logger = LoggerFactory.getLogger(DifficultyRule.class);
 
     private final DifficultyCalculator difficultyCalculator;
+    private final BlockStore blockStore;
 
-    public DifficultyRule(DifficultyCalculator difficultyCalculator) {
+    public DifficultyRule(DifficultyCalculator difficultyCalculator, BlockStore blockStore) {
         this.difficultyCalculator = difficultyCalculator;
+        this.blockStore = blockStore;
     }
 
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
-        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
+        if (header.isSuper().orElse(false)) {
+            return true;
+        }
+
+        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(blockStore, header, parent);
         BlockDifficulty difficulty = header.getDifficulty();
 
         if (!difficulty.equals(calcDifficulty)) {
