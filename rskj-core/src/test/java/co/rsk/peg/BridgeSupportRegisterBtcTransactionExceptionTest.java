@@ -1,8 +1,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeTestNetConstants;
@@ -29,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static co.rsk.RskTestUtils.createRskBlock;
 import static co.rsk.peg.BridgeSupportTestUtil.*;
@@ -36,28 +41,28 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BridgeSupportRegisterBtcTransactionExceptionTest {
-
+class BridgeSupportRegisterBtcTransactionExceptionTest {
+    private static final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
     private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeTestnetConstants = BridgeTestNetConstants.getInstance();
-    private static final ActivationConfig.ForBlock lovell700Activations = ActivationConfigsForTest.lovell700().forBlock(0);
+    private final Address userAddress = Address.fromBase58(bridgeTestnetConstants.getBtcParams(), "n1v91DdSnhUG7XoBAbnz1NFijyiCHr2zXS");
+    private final RskAddress destinationRskAddress = PegTestUtils.createRandomRskAddress();
+    private final Script correctOpReturn = PegTestUtils.createOpReturnScriptForRsk(
+        1,
+        destinationRskAddress,
+        Optional.of(userAddress)
+    );
 
-    private FederationStorageProvider federationStorageProvider;
-    private Federation retiringFederation;
-    private Federation activeFederation;
     private BtcBlockStoreWithCache.Factory mockFactory;
-    private BridgeEventLogger bridgeEventLogger;
-    private BtcLockSenderProvider btcLockSenderProvider;
-    private PeginInstructionsProvider peginInstructionsProvider;
-    private FeePerKbSupport feePerKbSupport;
     private Transaction rskTx;
     private BridgeStorageProvider bridgeStorageProvider;
     private BtcBlockStoreWithCache btcBlockStore;
     private BridgeSupport bridgeSupport;
     private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
-    private List<LogInfo> logs;
-    private long blockNumber;
-    private List<BtcECKey> members = List.of( BtcECKey.fromPublicOnly(Hex.decode("02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209")),
+    private FederationSupport federationSupport;
+    private long rskExecutionBlockNumber;
+    private final List<BtcECKey> activeFedKeys = List.of(
+        BtcECKey.fromPublicOnly(Hex.decode("02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209")),
         BtcECKey.fromPublicOnly(Hex.decode("0222caa9b1436ebf8cdf0c97233a8ca6713ed37b5105bcbbc674fd91353f43d9f7")),
         BtcECKey.fromPublicOnly(Hex.decode("022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c")),
         BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")),
@@ -68,67 +73,69 @@ public class BridgeSupportRegisterBtcTransactionExceptionTest {
         BtcECKey.fromPublicOnly(Hex.decode("03eae17ad1d0094a5bf33c037e722eaf3056d96851450fb7f514a9ed3af1dbb570"))
     );
 
-    private byte[] rawTx = Hex.decode("0200000002d5dfff21c0e1f0b02dcbcda77a56ffd6412b79d2081bc4bc0466cf3f0913b297010000006a47304402201dc13fabe4b29d0a596a84f6f15b3d2d636625a8aa02acb8a4635038322040e10220421d22271ca64b7c02b496dc916f092ea84a74e811f81a328f2f9d888aaee59b01210342e7b7961475e1fcb0e604ed34fc554f14ce7f931373646e98e463ae52a4b564fdffffffd5dfff21c0e1f0b02dcbcda77a56ffd6412b79d2081bc4bc0466cf3f0913b297020000006a47304402207e0add6292ac318db6657aeeb717818136f0f4d6e4efef35302ce72a79731fba0220297c3259eed72cd15fae7e0b9a63d2321e415eb6bd36c023bd179455f236147301210342e7b7961475e1fcb0e604ed34fc554f14ce7f931373646e98e463ae52a4b564fdffffff030000000000000000446a4252534b540147bc43b214c418c101b976f8bbb5101ed262a069011ae302de6607907116810e598b83897b00f764d5c0eff2d4911d78c411bf873de759e10d3b2eeaba04bc0300000000001976a914dfc505d84d81d346563fe9726a76c28e9ea8454588ac20a107000000000017a91405804450706addc3c6df3a400a22397ecaafe2d687cfba3d00");
-    private BtcTransaction testnetRealPegin = new BtcTransaction(bridgeTestnetConstants.getBtcParams(), rawTx);
+    private final byte[] testnetRealPeginSerialized = Hex.decode("0200000002d5dfff21c0e1f0b02dcbcda77a56ffd6412b79d2081bc4bc0466cf3f0913b297010000006a47304402201dc13fabe4b29d0a596a84f6f15b3d2d636625a8aa02acb8a4635038322040e10220421d22271ca64b7c02b496dc916f092ea84a74e811f81a328f2f9d888aaee59b01210342e7b7961475e1fcb0e604ed34fc554f14ce7f931373646e98e463ae52a4b564fdffffffd5dfff21c0e1f0b02dcbcda77a56ffd6412b79d2081bc4bc0466cf3f0913b297020000006a47304402207e0add6292ac318db6657aeeb717818136f0f4d6e4efef35302ce72a79731fba0220297c3259eed72cd15fae7e0b9a63d2321e415eb6bd36c023bd179455f236147301210342e7b7961475e1fcb0e604ed34fc554f14ce7f931373646e98e463ae52a4b564fdffffff030000000000000000446a4252534b540147bc43b214c418c101b976f8bbb5101ed262a069011ae302de6607907116810e598b83897b00f764d5c0eff2d4911d78c411bf873de759e10d3b2eeaba04bc0300000000001976a914dfc505d84d81d346563fe9726a76c28e9ea8454588ac20a107000000000017a91405804450706addc3c6df3a400a22397ecaafe2d687cfba3d00");
+    private final BtcTransaction testnetRealPegin = new BtcTransaction(bridgeTestnetConstants.getBtcParams(), testnetRealPeginSerialized);
+    private final Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+    private NetworkParameters networkParameters;
+    private Federation activeFederation;
 
     void setUp(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
-        NetworkParameters params = bridgeConstants.getBtcParams();
+        networkParameters = bridgeConstants.getBtcParams();
         FederationConstants federationConstants = bridgeConstants.getFederationConstants();
 
-        int activeFedCreationBlockNumber = bridgeTestnetConstants.getBtcHeightWhenPegoutTxIndexActivates()
-            + bridgeTestnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         List<BtcECKey> erpFedPubKeys = federationConstants.getErpFedPubKeysList();
+        Federation retiringFederation = P2shErpFederationBuilder.builder()
+            .withNetworkParameters(networkParameters)
+            .withErpPublicKeys(erpFedPubKeys)
+            .build();
 
+        int activeFedCreationBlockNumber = bridgeConstants.getBtcHeightWhenPegoutTxIndexActivates()
+            + bridgeConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
         activeFederation = P2shErpFederationBuilder.builder()
             .withCreationBlockNumber(activeFedCreationBlockNumber)
-            .withMembersBtcPublicKeys(members)
-            .withNetworkParameters(params)
+            .withMembersBtcPublicKeys(activeFedKeys)
+            .withNetworkParameters(networkParameters)
             .withErpPublicKeys(erpFedPubKeys)
             .build();
 
-        retiringFederation = P2shErpFederationBuilder.builder()
-            .withNetworkParameters(params)
-            .withErpPublicKeys(erpFedPubKeys)
-            .build();
-
-        feePerKbSupport = mock(FeePerKbSupport.class);
+        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-        logs = new ArrayList<>();
 
-        Repository repository = createRepository();
-        bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, params, activations);
-        bridgeEventLogger = new BridgeEventLoggerImpl(
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
             bridgeConstants,
             activations,
             logs
         );
 
         StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
-        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setOldFederation(retiringFederation);
         federationStorageProvider.setNewFederation(activeFederation);
 
         // Move the required blocks ahead for the new powpeg to become active
-        blockNumber = activeFederation.getCreationBlockNumber()
+        rskExecutionBlockNumber = activeFederation.getCreationBlockNumber()
             + federationConstants.getFederationActivationAge(activations);
-        Block currentBlock = createRskBlock(blockNumber);
+        Block rskExecutionBlock = createRskBlock(rskExecutionBlockNumber);
 
-        FederationSupport federationSupport = federationSupportBuilder
+        federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstants)
             .withFederationStorageProvider(federationStorageProvider)
-            .withRskExecutionBlock(currentBlock)
+            .withRskExecutionBlock(rskExecutionBlock)
             .withActivations(activations)
             .build();
 
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(params, 100, 100);
+        Repository repository = createRepository();
+        bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, networkParameters, activations);
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters, 100, 100);
         btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
-        btcLockSenderProvider = new BtcLockSenderProvider();
-        peginInstructionsProvider = new PeginInstructionsProvider();
+        BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+        PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
 
         BridgeSupportBuilder bridgeSupportBuilder = BridgeSupportBuilder.builder();
         bridgeSupport = bridgeSupportBuilder
             .withActivations(activations)
-            .withExecutionBlock(currentBlock)
+            .withExecutionBlock(rskExecutionBlock)
             .withBridgeConstants(bridgeConstants)
             .withProvider(bridgeStorageProvider)
             .withRepository(repository)
@@ -141,18 +148,16 @@ public class BridgeSupportRegisterBtcTransactionExceptionTest {
             .build();
 
         rskTx = mock(Transaction.class);
-        when(rskTx.getHash()).thenReturn(PegTestUtils.createHash3(1));
+        when(rskTx.getHash()).thenReturn(rskTxHash);
     }
 
-    public static PartialMerkleTree buildPMTAndRecreateChainForTransactionRegistration(
+    private PartialMerkleTree buildPMTAndRecreateChainForTransactionRegistration(
         BridgeStorageProvider bridgeStorageProvider,
         BridgeConstants bridgeConstants,
         int btcBlockToRegisterHeight,
         BtcTransaction transaction,
         BtcBlockStoreWithCache btcBlockStore
     ) throws BlockStoreException {
-        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
         PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), networkParameters);
         int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
         recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
@@ -165,7 +170,7 @@ public class BridgeSupportRegisterBtcTransactionExceptionTest {
         PartialMerkleTree pmtWithTransactions = buildPMTAndRecreateChainForTransactionRegistration(
             bridgeStorageProvider,
             bridgeConstants,
-            (int) blockNumber,
+            (int) rskExecutionBlockNumber,
             pegin,
             btcBlockStore
         );
@@ -173,32 +178,157 @@ public class BridgeSupportRegisterBtcTransactionExceptionTest {
         bridgeSupport.registerBtcTransaction(
             rskTx,
             pegin.bitcoinSerialize(),
-            (int) blockNumber,
+            (int) rskExecutionBlockNumber,
             pmtWithTransactions.bitcoinSerialize()
         );
         bridgeSupport.save();
     }
 
     @Test
-    void registerBtcTx_realWrongPegin_pre305_withSVPOnGoing_shouldThrowIllegalStateException() {
+    void registerBtcTx_correctPeginV1WithNonParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // arrange
-        setUp(lovell700Activations, bridgeTestnetConstants);
+        setUp(allActivations, bridgeTestnetConstants);
+        BtcTransaction pegin = buildCorrectPeginV1WithNonParseableScriptPubKey();
+
+        // act
+        registerPegin(pegin, bridgeTestnetConstants);
+
+        // assert
+        assertTransactionWasProcessed(pegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(1);
+    }
+
+    @Test
+    void registerBtcTx_correctPeginV1WithNonParseableScriptPubKey_withSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+        // save svp spend tx hash
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+        BtcTransaction pegin = buildCorrectPeginV1WithNonParseableScriptPubKey();
+
+        // act
+        registerPegin(pegin, bridgeTestnetConstants);
+
+        // assert
+        assertTransactionWasProcessed(pegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(1);
+    }
+
+    private BtcTransaction buildCorrectPeginV1WithNonParseableScriptPubKey() {
+        BtcTransaction pegin = new BtcTransaction(networkParameters);
+        BtcECKey pubKey = BitcoinTestUtils.getBtcEcKeyFromSeed("abc");
+        Script p2pkhScriptSig = ScriptBuilder.createInputScript(null, pubKey);
+        pegin.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
+        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
+            1,
+            destinationRskAddress,
+            Optional.empty()
+        );
+
+        pegin.addOutput(Coin.ZERO, opReturnScript);
+        pegin.addOutput(Coin.COIN, activeFederation.getAddress());
+
+        return pegin;
+    }
+
+    @Test
+    void registerBtcTx_incorrectPeginV1WithParseableScriptPubKey_withSVPOnGoing_shouldThrowISE() throws IOException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+        // save svp spend tx hash, so it enters the flow that throws exception as it happens in reality
         bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
 
         // act & assert
         assertThrows(IllegalStateException.class, () -> registerPegin(testnetRealPegin, bridgeTestnetConstants));
+
+        assertTransactionWasNotProcessed(testnetRealPegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(0);
     }
 
     @Test
-    void registerBtcTx_realWrongPegin_pre305_withoutSVPOnGoing_shouldRegisterAndRefundPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerBtcTx_incorrectPeginV1WithParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterAndRefundPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         // arrange
-        setUp(lovell700Activations, bridgeTestnetConstants);
+        setUp(allActivations, bridgeTestnetConstants);
 
         // act
         registerPegin(testnetRealPegin, bridgeTestnetConstants);
 
         // assert
-        assertTrue(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(testnetRealPegin.getHash()).isPresent());
+        assertTransactionWasProcessed(testnetRealPegin.getHash());
+        assertRefundWasCreated();
+        assertUtxosSize(0);
+    }
+
+    @Test
+    void registerBtcTx_correctPeginV1WithParseableScriptPubKey_withSVPOnGoing_shouldThrowISE() throws IOException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+        // recreate real testnet pegin but with correct op return
+        BtcTransaction correctPegin = recreatePeginWithCorrectOpReturn();
+        // save svp spend tx hash, so it enters the flow that throws exception
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+        // act & assert
+        assertThrows(IllegalStateException.class, () -> registerPegin(correctPegin, bridgeTestnetConstants));
+
+        assertTransactionWasNotProcessed(correctPegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(0);
+    }
+
+    @Test
+    void registerBtcTx_correctPeginV1WithParseableScriptPubKey_withoutSVPOnGoing_shouldRegisterPegin() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // arrange
+        setUp(allActivations, bridgeTestnetConstants);
+        // recreate real testnet pegin but with correct op return
+        BtcTransaction correctPegin = recreatePeginWithCorrectOpReturn();
+
+        // act
+        registerPegin(correctPegin, bridgeTestnetConstants);
+
+        // assert
+        assertTransactionWasProcessed(correctPegin.getHash());
+        assertRefundWasNotCreated();
+        assertUtxosSize(1);
+    }
+
+    private BtcTransaction recreatePeginWithCorrectOpReturn() {
+        BtcTransaction correctPegin = new BtcTransaction(bridgeTestnetConstants.getBtcParams());
+        for (TransactionInput input : testnetRealPegin.getInputs()) {
+            correctPegin.addInput(input);
+        }
+        correctPegin.addOutput(Coin.ZERO, correctOpReturn);
+        correctPegin.addOutput(testnetRealPegin.getOutput(1));
+        correctPegin.addOutput(testnetRealPegin.getOutput(2));
+
+        return correctPegin;
+    }
+
+    private void assertTransactionWasProcessed(Sha256Hash transactionHash) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertTrue(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+
+        assertEquals(rskExecutionBlockNumber, rskBlockHeightAtWhichBtcTxWasProcessed.get());
+    }
+
+    private void assertTransactionWasNotProcessed(Sha256Hash transactionHash) throws IOException {
+        Optional<Long> rskBlockHeightAtWhichBtcTxWasProcessed = bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(transactionHash);
+        assertFalse(rskBlockHeightAtWhichBtcTxWasProcessed.isPresent());
+    }
+
+    private void assertRefundWasCreated() throws IOException {
         assertEquals(1, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+    }
+
+    private void assertRefundWasNotCreated() throws IOException {
+        assertEquals(0, bridgeStorageProvider.getPegoutsWaitingForConfirmations().getEntries().size());
+    }
+
+    private void assertUtxosSize(int expectedSize) {
+        assertEquals(expectedSize, federationSupport.getActiveFederationBtcUTXOs().size());
     }
 }
