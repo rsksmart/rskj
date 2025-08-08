@@ -44,6 +44,7 @@ import static org.mockito.Mockito.when;
 
 class BridgeSupportRegisterBtcTransactionExceptionTest {
     private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+    private final ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0);
     private final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private final Script nonParseableScriptPubKey = ScriptBuilder.createInputScript(null, BitcoinTestUtils.getBtcEcKeyFromSeed("abc"));
     private final Script parseableScriptPubKey = ScriptBuilder.createInputScript(null, BtcECKey.fromPublicOnly(
@@ -155,21 +156,6 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
         when(rskTx.getHash()).thenReturn(rskTxHash);
     }
 
-    private PartialMerkleTree buildPMTAndRecreateChainForTransactionRegistration(
-        BridgeStorageProvider bridgeStorageProvider,
-        BridgeConstants bridgeConstants,
-        int btcBlockToRegisterHeight,
-        BtcTransaction transaction,
-        BtcBlockStoreWithCache btcBlockStore
-    ) throws BlockStoreException {
-        PartialMerkleTree pmtWithTransactions = createValidPmtForTransactions(List.of(transaction), networkParameters);
-        int chainHeight = btcBlockToRegisterHeight + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
-        recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockToRegisterHeight, networkParameters);
-        bridgeStorageProvider.save();
-
-        return pmtWithTransactions;
-    }
-
     private void registerPegin(BtcTransaction pegin) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         PartialMerkleTree pmtWithTransactions = buildPMTAndRecreateChainForTransactionRegistration(
             bridgeStorageProvider,
@@ -203,10 +189,27 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
     }
 
     @Test
-    void registerBtcTx_legacyPeginWithParseableScriptPubKey_withSVPOnGoing_shouldThrowISE() throws IOException {
+    void registerBtcTx_legacyPeginWithParseableScriptPubKey_withSVPOnGoing_shouldRegisterPegIn() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // arrange
         bridgeConstants = BridgeMainNetConstants.getInstance();
         setUp(allActivations);
+        BtcTransaction pegin = buildLegacyPeginWithParseableScriptPubKey();
+
+        // save svp spend tx hash, so it enters the flow that throws exception
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+        // act
+        registerPegin(pegin);
+
+        // assert
+        assertPeginWasRegisteredSuccessfully(pegin.getHash());
+    }
+
+    @Test
+    void registerBtcTx_legacyPeginWithParseableScriptPubKey_beforeRSKIP305_withSVPOnGoing_shouldThrowISE() throws IOException {
+        // arrange
+        bridgeConstants = BridgeMainNetConstants.getInstance();
+        setUp(lovellActivations);
         BtcTransaction pegin = buildLegacyPeginWithParseableScriptPubKey();
 
         // save svp spend tx hash, so it enters the flow that throws exception
@@ -278,10 +281,26 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
     }
 
     @Test
-    void registerBtcTx_peginV1WithParseableScriptPubKey_withSVPOnGoing_shouldThrowISE() throws IOException {
+    void registerBtcTx_peginV1WithParseableScriptPubKey_withSVPOnGoing_shouldRegisterPegin() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // arrange
         bridgeConstants = BridgeMainNetConstants.getInstance();
         setUp(allActivations);
+        BtcTransaction pegin = buildPeginV1WithParseableScriptPubKey();
+        // save svp spend tx hash
+        bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+        // act
+        registerPegin(pegin);
+
+        //assert
+        assertPeginWasRegisteredSuccessfully(pegin.getHash());
+    }
+
+    @Test
+    void registerBtcTx_peginV1WithParseableScriptPubKey_beforeRSKIP305_withSVPOnGoing_shouldThrowISE() throws IOException {
+        // arrange
+        bridgeConstants = BridgeMainNetConstants.getInstance();
+        setUp(lovellActivations);
         BtcTransaction pegin = buildPeginV1WithParseableScriptPubKey();
         // save svp spend tx hash
         bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
@@ -308,10 +327,10 @@ class BridgeSupportRegisterBtcTransactionExceptionTest {
     // testnet real pegin v1 that had a parseable script pub key
     // and was malformed (with an incorrect op return)
     @Test
-    void registerBtcTx_testnetRealPeginV1_withSVPOnGoing_shouldThrowISE() throws IOException {
+    void registerBtcTx_testnetRealPeginV1_withSVPOnGoing_beforeRSKIP305_shouldThrowISE() throws IOException {
         // arrange
         bridgeConstants = BridgeTestNetConstants.getInstance();
-        setUp(allActivations);
+        setUp(lovellActivations);
         // save svp spend tx hash, so it enters the flow that throws exception as it happens in reality
         bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
 

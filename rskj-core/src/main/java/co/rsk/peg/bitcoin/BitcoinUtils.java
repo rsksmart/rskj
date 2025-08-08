@@ -140,6 +140,15 @@ public class BitcoinUtils {
         return transaction.getHash();
     }
 
+    public static Sha256Hash getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(BtcTransaction transaction) {
+        if (!transaction.hasWitness()) {
+            BtcTransaction multiSigTransactionWithoutSignatures = getMultiSigTransactionWithoutSignaturesBeforeRSKIP305(transaction);
+            return multiSigTransactionWithoutSignatures.getHash();
+        }
+
+        return transaction.getHash();
+    }
+
     /**
      * Returns a Bitcoin transaction that has all its inputs from a multiSig,
      * with the signatures removed.
@@ -150,6 +159,13 @@ public class BitcoinUtils {
         NetworkParameters networkParameters = transaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
         removeSignaturesFromMultiSigTransaction(transactionCopy);
+        return transactionCopy;
+    }
+
+    public static BtcTransaction getMultiSigTransactionWithoutSignaturesBeforeRSKIP305(BtcTransaction transaction) {
+        NetworkParameters networkParameters = transaction.getParams();
+        BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
+        removeSignaturesFromMultiSigTransactionBeforeRSKIP305(transactionCopy);
         return transactionCopy;
     }
 
@@ -170,6 +186,25 @@ public class BitcoinUtils {
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
             Script redeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .filter(Script::isSentToMultiSig)
+                .orElseThrow(() -> {
+                    String message = "Cannot remove signatures from transaction inputs that do not have P2SH multisig input script.";
+                    logger.error("[removeSignaturesFromMultiSigTransaction] {}", message);
+                    return new IllegalArgumentException(message);
+                });
+
+            boolean inputHasWitness = inputHasWitness(transaction, inputIndex);
+            if (inputHasWitness) {
+                setSpendingBaseScriptSegwit(transaction, inputIndex, redeemScript);
+            } else {
+                setSpendingBaseScriptLegacy(transaction, inputIndex, redeemScript);
+            }
+        }
+    }
+
+    public static void removeSignaturesFromMultiSigTransactionBeforeRSKIP305(BtcTransaction transaction) {
+        List<TransactionInput> inputs = transaction.getInputs();
+        for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
+            Script redeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
                 .orElseThrow(() -> {
                     String message = "Cannot remove signatures from transaction inputs that do not have P2SH multisig input script.";
                     logger.error("[removeSignaturesFromMultiSigTransaction] {}", message);
