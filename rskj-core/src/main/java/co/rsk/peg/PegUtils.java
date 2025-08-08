@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import static co.rsk.peg.bitcoin.BitcoinUtils.getMultiSigTransactionHashWithoutSignatures;
+import static co.rsk.peg.bitcoin.BitcoinUtils.getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305;
 import static co.rsk.peg.pegin.RejectedPeginReason.INVALID_AMOUNT;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER;
 import static co.rsk.peg.pegin.RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER;
@@ -120,10 +121,10 @@ public class PegUtils {
         }
 
         // Check first if the transaction is part of an SVP process
-        if (isTheSvpFundTransaction(provider, btcTransaction)) {
+        if (isTheSvpFundTransaction(provider, activations, btcTransaction)) {
             return PegTxType.SVP_FUND_TX;
         }
-        if (isTheSvpSpendTransaction(provider, btcTransaction)) {
+        if (isTheSvpSpendTransaction(provider, activations, btcTransaction)) {
             return PegTxType.SVP_SPEND_TX;
         }
 
@@ -149,12 +150,18 @@ public class PegUtils {
 
     private static boolean isTheSvpFundTransaction(
         BridgeStorageProvider provider,
+        ActivationConfig.ForBlock activations,
         BtcTransaction transaction
     ) {
         return provider.getSvpFundTxHashUnsigned()
             .map(svpFundTxHashUnsigned -> {
                 try {
-                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
+                    Sha256Hash txHashWithoutSignatures;
+                    if (!activations.isActive(ConsensusRule.RSKIP305)) {
+                        txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(transaction);
+                    } else {
+                        txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
+                    }
                     return svpFundTxHashUnsigned.equals(txHashWithoutSignatures);
                 } catch (IllegalArgumentException e) {
                     logger.trace(
@@ -170,12 +177,18 @@ public class PegUtils {
 
     private static boolean isTheSvpSpendTransaction(
         BridgeStorageProvider provider,
+        ActivationConfig.ForBlock activations,
         BtcTransaction transaction
     ) {
         return provider.getSvpSpendTxHashUnsigned()
             .map(svpSpendTxHashUnsigned -> {
                 try {
-                    Sha256Hash txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
+                    Sha256Hash txHashWithoutSignatures;
+                    if (!activations.isActive(ConsensusRule.RSKIP305)) {
+                        txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(transaction);
+                    } else {
+                        txHashWithoutSignatures = getMultiSigTransactionHashWithoutSignatures(transaction);
+                    }
                     return svpSpendTxHashUnsigned.equals(txHashWithoutSignatures);
                 } catch (IllegalArgumentException e) {
                     logger.trace(
