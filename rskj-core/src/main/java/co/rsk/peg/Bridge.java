@@ -224,6 +224,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
+    // Union Bridge Contract functions
+    public static final CallTransaction.Function SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+    public static final CallTransaction.Function GET_UNION_BRIDGE_CONTRACT_ADDRESS = BridgeMethods.GET_UNION_BRIDGE_CONTRACT_ADDRESS.getFunction();
+    public static final CallTransaction.Function GET_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.GET_UNION_BRIDGE_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function INCREASE_UNION_BRIDGE_LOCKING_CAP = BridgeMethods.INCREASE_UNION_BRIDGE_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function REQUEST_UNION_BRIDGE_RBTC = BridgeMethods.REQUEST_UNION_BRIDGE_RBTC.getFunction();
+    public static final CallTransaction.Function RELEASE_UNION_BRIDGE_RBTC = BridgeMethods.RELEASE_UNION_BRIDGE_RBTC.getFunction();
+    public static final CallTransaction.Function SET_UNION_BRIDGE_TRANSFER_PERMISSIONS = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
+
     // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
@@ -1480,6 +1489,47 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getEstimatedFeesForNextPegOutEvent");
 
         return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
+    public int setUnionBridgeContractAddressForTestnet(Object[] args) {
+        logger.trace("setUnionBridgeContractAddressForTestnet");
+        // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
+        RskAddress unionBridgeContractAddress = new RskAddress((DataWord) args[0]);
+        return bridgeSupport.setUnionBridgeContractAddressForTestnet(rskTx, unionBridgeContractAddress).getCode();
+    }
+
+    public String getUnionBridgeContractAddress(Object[] args) {
+        logger.trace("getUnionBridgeContractAddress");
+        return bridgeSupport.getUnionBridgeContractAddress().toHexString();
+    }
+
+    public BigInteger getUnionBridgeLockingCap(Object[] args) {
+        logger.trace("getUnionBridgeLockingCap");
+        return bridgeSupport.getUnionBridgeLockingCap().asBigInteger();
+    }
+
+    public int increaseUnionBridgeLockingCap(Object[] args) {
+        logger.trace("increaseUnionBridgeLockingCap");
+        co.rsk.core.Coin newLockingCap = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
+    }
+
+    public int requestUnionBridgeRbtc(Object[] args) {
+        logger.trace("requestUnionBridgeRbtc");
+        co.rsk.core.Coin amountRequested = new co.rsk.core.Coin((BigInteger) args[0]);
+        return bridgeSupport.requestUnionBridgeRbtc(rskTx, amountRequested).getCode();
+    }
+
+    public int releaseUnionBridgeRbtc(Object[] args) {
+        logger.trace("releaseUnionBridgeRbtc");
+        return bridgeSupport.releaseUnionBridgeRbtc(rskTx).getCode();
+    }
+
+    public int setUnionBridgeTransferPermissions(Object[] args) {
+        logger.trace("setUnionBridgeTransferPermissions");
+        boolean requestEnabled = (boolean) args[0];
+        boolean releaseEnabled = (boolean) args[1];
+        return bridgeSupport.setUnionBridgeTransferPermissions(rskTx, requestEnabled, releaseEnabled).getCode();
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

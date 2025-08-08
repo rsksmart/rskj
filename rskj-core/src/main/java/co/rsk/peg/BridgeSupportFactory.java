@@ -32,6 +32,10 @@ import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.storage.BridgeStorageAccessorImpl;
 import co.rsk.peg.storage.StorageAccessor;
+import co.rsk.peg.union.UnionBridgeStorageProvider;
+import co.rsk.peg.union.UnionBridgeStorageProviderImpl;
+import co.rsk.peg.union.UnionBridgeSupport;
+import co.rsk.peg.union.UnionBridgeSupportImpl;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.*;
 import co.rsk.peg.whitelist.constants.WhitelistConstants;
@@ -100,6 +104,8 @@ public class BridgeSupportFactory {
             }
         }
 
+        UnionBridgeSupport unionBridgeSupport = getUnionBridgeSupportInstance(bridgeStorageAccessor, eventLogger);
+
         BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
         PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
 
@@ -116,9 +122,21 @@ public class BridgeSupportFactory {
             whitelistSupport,
             federationSupport,
             lockingCapSupport,
+            unionBridgeSupport,
             btcBlockStoreFactory,
             activations,
             signatureCache
+        );
+    }
+
+    private UnionBridgeSupport getUnionBridgeSupportInstance(StorageAccessor bridgeStorageAccessor, BridgeEventLogger eventLogger) {
+        UnionBridgeStorageProvider unionBridgeStorageProvider = new UnionBridgeStorageProviderImpl(bridgeStorageAccessor);
+
+        return new UnionBridgeSupportImpl(
+            bridgeConstants.getUnionBridgeConstants(),
+            unionBridgeStorageProvider,
+            signatureCache,
+            eventLogger
         );
     }
 
