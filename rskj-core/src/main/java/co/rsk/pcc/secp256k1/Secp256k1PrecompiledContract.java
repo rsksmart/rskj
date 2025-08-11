@@ -17,13 +17,13 @@
  */
 package co.rsk.pcc.secp256k1;
 
-import org.ethereum.crypto.signature.Secp256k1Service;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.exception.VMException;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import java.util.Optional;
 
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import org.ethereum.crypto.signature.Secp256k1Service;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 
 public abstract class Secp256k1PrecompiledContract extends PrecompiledContracts.PrecompiledContract {
     protected final Secp256k1Service secp256k1Service;
@@ -39,5 +39,5 @@ public abstract class Secp256k1PrecompiledContract extends PrecompiledContracts.
         return executeOperation(validatedData);
     }
 
-    protected abstract byte[] executeOperation(byte[] data);
+    protected abstract byte[] executeOperation(byte[] data) throws VMException;
 }
