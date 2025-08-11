@@ -66,11 +66,11 @@ public class ConfigLoader {
      * with the config settings only error logs will be generated and the node will continue its running.
      *
      * <p>
-     * If the <b><blockchain.config.verify/b> setting is {@code true} (either set in a .conf file or via <b>--verify-config</b> command line flag),
+     * If the <b>blockchain.config.verify</b> setting is {@code true} (either set in a .conf file or via <b>--verify-config</b> command line flag),
      * then in a case of any problems an exception will be thrown.
      *
      * Note:
-     *  1. The <b><blockchain.config.verify/b> setting is {@code false} by default.
+     *  1. The <b>blockchain.config.verify</b> setting is {@code false} by default.
      *  2. Config verification process of matching actual and expected config settings is a recursive process and takes into
      *  account appropriate setting names. Scalar values are not tested for matching, e.g. if we have settingKey="some value"
      *  in the expected.conf file and settingKey=100 in a user config file, then it will pass the verification process.
