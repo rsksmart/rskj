@@ -19,7 +19,10 @@
 
 package org.ethereum.crypto.signature;
 
-import co.rsk.core.types.bytes.Bytes;
+import java.math.BigInteger;
+
+import javax.annotation.Nullable;
+
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
@@ -32,11 +35,11 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
+import co.rsk.core.types.bytes.Bytes;
 
 /**
  * Implementation of SignatureService with Bouncy Castle.
@@ -49,11 +52,13 @@ class Secp256k1ServiceBC implements Secp256k1Service {
      */
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
-    // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
+    // All clients must agree on the curve to use by agreement. Ethereum uses
+    // secp256k1.
     private static final X9ECParameters X9_ELLIPTIC_CURVE_PARAMS = SECNamedCurves.getByName("secp256k1");
 
     static {
-        CURVE = new ECDomainParameters(X9_ELLIPTIC_CURVE_PARAMS.getCurve(), X9_ELLIPTIC_CURVE_PARAMS.getG(), X9_ELLIPTIC_CURVE_PARAMS.getN(), X9_ELLIPTIC_CURVE_PARAMS.getH());
+        CURVE = new ECDomainParameters(X9_ELLIPTIC_CURVE_PARAMS.getCurve(), X9_ELLIPTIC_CURVE_PARAMS.getG(),
+                X9_ELLIPTIC_CURVE_PARAMS.getN(), X9_ELLIPTIC_CURVE_PARAMS.getH());
         HALF_CURVE_ORDER = X9_ELLIPTIC_CURVE_PARAMS.getN().shiftRight(1);
     }
 
@@ -72,43 +77,54 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         check(sig.getR().signum() >= 0, "r must be positive");
         check(sig.getS().signum() >= 0, "s must be positive");
         check(messageHash != null, "messageHash must not be null");
-        // 1.0 For j from 0 to h   (h == recId here and the loop is outside this function)
-        //   1.1 Let x = r + jn
-        BigInteger n = CURVE.getN();  // Curve order.
+        // 1.0 For j from 0 to h (h == recId here and the loop is outside this function)
+        // 1.1 Let x = r + jn
+        BigInteger n = CURVE.getN(); // Curve order.
         BigInteger i = BigInteger.valueOf((long) recId / 2);
         BigInteger x = sig.getR().add(i.multiply(n));
-        //   1.2. Convert the integer x to an octet string X of length mlen using the conversion routine
-        //        specified in Section 2.3.7, where mlen = ⌈(log2 p)/8⌉ or mlen = ⌈m/8⌉.
-        //   1.3. Convert the octet string (16 set binary digits)||X to an elliptic curve point R using the
-        //        conversion routine specified in Section 2.3.4. If this conversion routine outputs “invalid”, then
-        //        do another iteration of Step 1.
+        // 1.2. Convert the integer x to an octet string X of length mlen using the
+        // conversion routine
+        // specified in Section 2.3.7, where mlen = ⌈(log2 p)/8⌉ or mlen = ⌈m/8⌉.
+        // 1.3. Convert the octet string (16 set binary digits)||X to an elliptic curve
+        // point R using the
+        // conversion routine specified in Section 2.3.4. If this conversion routine
+        // outputs “invalid”, then
+        // do another iteration of Step 1.
         //
-        // More concisely, what these points mean is to use X as a compressed public key.
+        // More concisely, what these points mean is to use X as a compressed public
+        // key.
         ECCurve.Fp curve = (ECCurve.Fp) CURVE.getCurve();
-        BigInteger prime = curve.getQ();  // Bouncy Castle is not consistent about the letter it uses for the prime.
+        BigInteger prime = curve.getQ(); // Bouncy Castle is not consistent about the letter it uses for the prime.
         if (x.compareTo(prime) >= 0) {
-            // Cannot have point co-ordinates larger than this as everything takes place modulo Q.
+            // Cannot have point co-ordinates larger than this as everything takes place
+            // modulo Q.
             return null;
         }
-        // Compressed keys require you to know an extra bit of data about the y-coord as there are two possibilities.
+        // Compressed keys require you to know an extra bit of data about the y-coord as
+        // there are two possibilities.
         // So it's encoded in the recId.
         ECPoint r = decompressKey(x, (recId & 1) == 1);
-        //   1.4. If nR != point at infinity, then do another iteration of Step 1 (callers responsibility).
+        // 1.4. If nR != point at infinity, then do another iteration of Step 1 (callers
+        // responsibility).
         if (!r.multiply(n).isInfinity()) {
             return null;
         }
-        //   1.5. Compute e from M using Steps 2 and 3 of ECDSA signature verification.
+        // 1.5. Compute e from M using Steps 2 and 3 of ECDSA signature verification.
         BigInteger e = new BigInteger(1, messageHash);
-        //   1.6. For k from 1 to 2 do the following.   (loop is outside this function via iterating recId)
-        //   1.6.1. Compute a candidate public key as:
-        //               Q = mi(r) * (sR - eG)
+        // 1.6. For k from 1 to 2 do the following. (loop is outside this function via
+        // iterating recId)
+        // 1.6.1. Compute a candidate public key as:
+        // Q = mi(r) * (sR - eG)
         //
-        // Where mi(x) is the modular multiplicative inverse. We transform this into the following:
-        //               Q = (mi(r) * s ** R) + (mi(r) * -e ** G)
-        // Where -e is the modular additive inverse of e, that is z such that z + e = 0 (mod n). In the above equation
+        // Where mi(x) is the modular multiplicative inverse. We transform this into the
+        // following:
+        // Q = (mi(r) * s ** R) + (mi(r) * -e ** G)
+        // Where -e is the modular additive inverse of e, that is z such that z + e = 0
+        // (mod n). In the above equation
         // ** is point multiplication and + is point addition (the EC group operator).
         //
-        // We can find the additive inverse by subtracting e from zero then taking the mod. For example the additive
+        // We can find the additive inverse by subtracting e from zero then taking the
+        // mod. For example the additive
         // inverse of 3 modulo 11 is 8 because 3 + 8 mod 11 = 0, and -3 mod 11 = 8.
         BigInteger eInv = BigInteger.ZERO.subtract(e).mod(n);
         BigInteger rInv = sig.getR().modInverse(n);
@@ -126,8 +142,10 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         try {
             return signer.verifySignature(data, signature.getR(), signature.getS());
         } catch (NullPointerException npe) {
-            // Bouncy Castle contains a bug that can cause NPEs given specially crafted signatures.
-            // Those signatures are inherently invalid/attack sigs so we just fail them here rather than crash the thread.
+            // Bouncy Castle contains a bug that can cause NPEs given specially crafted
+            // signatures.
+            // Those signatures are inherently invalid/attack sigs so we just fail them here
+            // rather than crash the thread.
             logger.error("Caught NPE inside bouncy castle", npe);
             return false;
         }
@@ -181,7 +199,7 @@ class Secp256k1ServiceBC implements Secp256k1Service {
     }
 
     @Override
-    public byte[] add(byte[] data) {
+    public byte[] add(byte[] data) throws VMException {
         final var x1 = ByteUtil.parseWord(data, 0);
         final var y1 = ByteUtil.parseWord(data, 1);
 
@@ -190,13 +208,13 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         final var p1 = getPoint(x1, y1);
 
         if (p1 == null) {
-            return null;
+            throw new VMException("Invalid point coordinates for first point in add operation");
         }
 
         final var p2 = getPoint(x2, y2);
 
         if (p2 == null) {
-            return null;
+            throw new VMException("Invalid point coordinates for second point in add operation");
         }
         final var res = p1.add(p2);
 
@@ -204,17 +222,16 @@ class Secp256k1ServiceBC implements Secp256k1Service {
     }
 
     @Override
-    public byte[] mul(byte[] data) {
+    public byte[] mul(byte[] data) throws VMException {
         final var x = ByteUtil.parseWord(data, 0);
         final var y = ByteUtil.parseWord(data, 1);
 
         final var s = ByteUtil.parseWord(data, 2);
 
-
         final var p = getPoint(x, y);
 
         if (p == null) {
-            return null;
+            throw new VMException("Invalid point coordinates for mul operation");
         }
 
         var res = p.multiply(BIUtil.toBI(s));

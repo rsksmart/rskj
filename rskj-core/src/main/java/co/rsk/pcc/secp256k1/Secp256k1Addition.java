@@ -20,6 +20,7 @@ package co.rsk.pcc.secp256k1;
 
 import org.ethereum.crypto.signature.Secp256k1Service;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.exception.VMException;
 
 public class Secp256k1Addition extends Secp256k1PrecompiledContract {
 
@@ -35,7 +36,7 @@ public class Secp256k1Addition extends Secp256k1PrecompiledContract {
     }
 
     @Override
-    protected byte[] executeOperation(byte[] data) {
+    protected byte[] executeOperation(byte[] data) throws VMException {
         return secp256k1Service.add(data);
     }
 }
