@@ -21,6 +21,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
+import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +36,8 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public class PegoutsWaitingForConfirmations {
+    private static final Logger logger = LoggerFactory.getLogger(PegoutsWaitingForConfirmations.class);
+
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
         public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
@@ -40,7 +45,29 @@ public class PegoutsWaitingForConfirmations {
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
+                logger.info("BTC_TX_COMPARATOR---------------------------------------------");
+                logger.info("BTC_TX_COMPARATOR---------------------------------------------");
+                logger.info("ByteUtil.toHexString(e1.getPegoutCreationRskTxHash().getBytes())");
+                Optional.ofNullable(e1.getPegoutCreationRskTxHash()).ifPresent(h -> logger.info(ByteUtil.toHexString(h.getBytes())));
+                logger.info("ByteUtil.toHexString(e2.getPegoutCreationRskTxHash().getBytes())");
+                Optional.ofNullable(e2.getPegoutCreationRskTxHash()).ifPresent(h -> logger.info(ByteUtil.toHexString(h.getBytes())));
+
+                logger.info("ByteUtil.toHexString(e1.getBtcTransaction().bitcoinSerialize().getBytes())");
+                logger.info(ByteUtil.toHexString(e1.getBtcTransaction().bitcoinSerialize()));
+                logger.info("ByteUtil.toHexString(e2.getBtcTransaction().bitcoinSerialize().getBytes())");
+                logger.info(ByteUtil.toHexString(e2.getBtcTransaction().bitcoinSerialize()));
+
+                logger.info("e1.getPegoutCreationRskBlockNumber()");
+                logger.info(e1.getPegoutCreationRskBlockNumber().toString());
+                logger.info("e2.getPegoutCreationRskBlockNumber()");
+                logger.info(e2.getPegoutCreationRskBlockNumber().toString());
+
+                var compareResult = comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
+
+                logger.info("compareResult");
+                logger.info(compareResult + "");
+
+                return compareResult;
             }
         };
 
@@ -125,7 +152,40 @@ public class PegoutsWaitingForConfirmations {
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
-        return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+        logger.info("getNextPegoutWithEnoughConfirmations------------------------------");
+        logger.info("getNextPegoutWithEnoughConfirmations------------------------------");
+
+        logger.info("currentBlockNumber");
+        logger.info(currentBlockNumber.toString());
+        logger.info("minimumConfirmations");
+        logger.info(minimumConfirmations.toString());
+
+        logger.info("getNextPegoutWithEnoughConfirmations-entries------------------------------");
+
+        entries.stream().forEach(e -> {
+            logger.info("ByteUtil.toHexString(e.getPegoutCreationRskTxHash().getBytes())");
+            Optional.ofNullable(e.getPegoutCreationRskTxHash()).ifPresent(h -> logger.info(ByteUtil.toHexString(h.getBytes())));
+        });
+
+        logger.info("getNextPegoutWithEnoughConfirmations-entries-filter------------------------------");
+        return entries.stream().filter(entry -> {
+            logger.info("getNextPegoutWithEnoughConfirmations-entries-filter-entry------------------------------");
+
+            logger.info("ByteUtil.toHexString(entry.getPegoutCreationRskTxHash().getBytes())");
+            Optional.ofNullable(entry.getPegoutCreationRskTxHash()).ifPresent(h -> logger.info(ByteUtil.toHexString(h.getBytes())));
+
+            logger.info("currentBlockNumber");
+            logger.info(currentBlockNumber.toString());
+            logger.info("minimumConfirmations");
+            logger.info(minimumConfirmations.toString());
+
+            var hasEnoughConfirmationsResult = hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations);
+
+            logger.info("hasEnoughConfirmationsResult");
+            logger.info(hasEnoughConfirmationsResult + "");
+
+            return hasEnoughConfirmationsResult;
+        }).findFirst();
     }
 
     public boolean removeEntry(Entry entry){
