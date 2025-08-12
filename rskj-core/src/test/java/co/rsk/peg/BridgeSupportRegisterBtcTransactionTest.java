@@ -2429,8 +2429,9 @@ class BridgeSupportRegisterBtcTransactionTest {
             assertPeginWasRegisteredSuccessfully(pegin.getHash());
         }
 
-        // testnet real pegin v1 that had a parseable script pub key
+        // data from testnet real pegin v1 that had a parseable script pub key
         // and was malformed (with an incorrect op return)
+        // https://mempool.space/testnet/tx/77a135b5f233671686e655e462efa5d87013d94b105b8fcacc219e78503866a6
         @Test
         void registerBtcTx_testnetRealPeginV1_withSVPOnGoing_beforeRSKIP305_shouldThrowISE() throws IOException {
             // arrange
