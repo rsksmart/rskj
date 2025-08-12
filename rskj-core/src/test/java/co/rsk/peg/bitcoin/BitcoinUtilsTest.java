@@ -892,17 +892,10 @@ class BitcoinUtilsTest {
     void getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305_fromP2PKH_withParseableScriptPubKey_shouldThrowIAE() {
         // arrange
         BtcTransaction tx = new BtcTransaction(btcMainnetParams);
-        Script parseableScriptPubKey = ScriptBuilder.createInputScript(null, BtcECKey.fromPublicOnly(
+        Script parseableScriptPubKeyInputScript = ScriptBuilder.createInputScript(null, BtcECKey.fromPublicOnly(
             Hex.decode("0377a6c71c43d9fac4343f87538cd2880cf5ebefd3dd1d9aabdbbf454bca162de9")
         ));
-
-        byte[] signature = Hex.decode("304402201dc13fabe4b29d0a596a84f6f15b3d2d636625a8aa02acb8a4635038322040e10220421d22271ca64b7c02b496dc916f092ea84a74e811f81a328f2f9d888aaee59b01");
-        ScriptBuilder scriptBuilder = new ScriptBuilder();
-        Script inputScript = scriptBuilder
-            .data(signature)
-            .data(parseableScriptPubKey.getProgram())
-            .build();
-        tx.addInput(BitcoinTestUtils.createHash(1), 0, inputScript);
+        tx.addInput(BitcoinTestUtils.createHash(1), 0, parseableScriptPubKeyInputScript);
 
         Address someAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "destinationAddress");
         tx.addOutput(Coin.COIN, someAddress);

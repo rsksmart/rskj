@@ -13,9 +13,8 @@ import java.util.List;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 
 public class BitcoinUtilsLegacy {
-    private BitcoinUtilsLegacy() {}
-
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtilsLegacy.class);
+    private BitcoinUtilsLegacy() {}
 
     /**
      * @deprecated replaced by {@link BitcoinUtils#getMultiSigTransactionHashWithoutSignatures(BtcTransaction transaction)}
