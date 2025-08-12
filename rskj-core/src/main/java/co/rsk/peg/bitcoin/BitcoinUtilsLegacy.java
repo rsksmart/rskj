@@ -13,8 +13,13 @@ import java.util.List;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 
 public class BitcoinUtilsLegacy {
+    private BitcoinUtilsLegacy() {}
+
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtilsLegacy.class);
 
+    /**
+     * @deprecated replaced by {@link BitcoinUtils#getMultiSigTransactionHashWithoutSignatures(BtcTransaction transaction)}
+     */
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated(since="LOVELL-7.2.0", forRemoval=false)
     public static Sha256Hash getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(BtcTransaction transaction) {
@@ -26,6 +31,9 @@ public class BitcoinUtilsLegacy {
         return transaction.getHash();
     }
 
+    /**
+     * @deprecated replaced by {@link BitcoinUtils#getMultiSigTransactionWithoutSignatures(BtcTransaction transaction)}
+     */
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated(since="LOVELL-7.2.0", forRemoval=false)
     private static BtcTransaction getMultiSigTransactionWithoutSignaturesBeforeRSKIP305(BtcTransaction transaction) {
@@ -35,6 +43,9 @@ public class BitcoinUtilsLegacy {
         return transactionCopy;
     }
 
+    /**
+     * @deprecated replaced by {@link BitcoinUtils#removeSignaturesFromMultiSigTransaction(BtcTransaction)}
+     */
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated(since="LOVELL-7.2.0", forRemoval=false)
     private static void removeSignaturesFromMultiSigTransactionBeforeRSKIP305(BtcTransaction transaction) {

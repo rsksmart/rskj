@@ -102,8 +102,6 @@ class BridgeSupportRegisterBtcTransactionTest {
     private List<BtcECKey> activeFedSigners;
     private Federation activeFederation;
 
-    private List<BtcECKey> erpFedPubKeys;
-
     private BtcBlockStoreWithCache.Factory mockFactory;
     private SignatureCache signatureCache;
     private BridgeEventLogger bridgeEventLogger;
