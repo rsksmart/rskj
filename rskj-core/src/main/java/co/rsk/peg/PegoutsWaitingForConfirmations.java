@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.crypto.Keccak256;
-import co.rsk.util.HexUtils;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.ByteUtil;
 
