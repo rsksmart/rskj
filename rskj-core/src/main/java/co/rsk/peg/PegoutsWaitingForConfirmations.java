@@ -20,7 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.HexUtils;
 import com.google.common.primitives.UnsignedBytes;
+import org.ethereum.util.ByteUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,7 +42,29 @@ public class PegoutsWaitingForConfirmations {
 
             @Override
             public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
+                System.out.println("BTC_TX_COMPARATOR---------------------------------------------");
+                System.out.println("BTC_TX_COMPARATOR---------------------------------------------");
+                System.out.println("ByteUtil.toHexString(e1.getPegoutCreationRskTxHash().getBytes())");
+                Optional.ofNullable(e1.getPegoutCreationRskTxHash()).ifPresent(h -> System.out.println(ByteUtil.toHexString(h.getBytes())));
+                System.out.println("ByteUtil.toHexString(e2.getPegoutCreationRskTxHash().getBytes())");
+                Optional.ofNullable(e2.getPegoutCreationRskTxHash()).ifPresent(h -> System.out.println(ByteUtil.toHexString(h.getBytes())));
+
+                System.out.println("ByteUtil.toHexString(e1.getBtcTransaction().bitcoinSerialize().getBytes())");
+                System.out.println(ByteUtil.toHexString(e1.getBtcTransaction().bitcoinSerialize()));
+                System.out.println("ByteUtil.toHexString(e2.getBtcTransaction().bitcoinSerialize().getBytes())");
+                System.out.println(ByteUtil.toHexString(e2.getBtcTransaction().bitcoinSerialize()));
+
+                System.out.println("e1.getPegoutCreationRskBlockNumber()");
+                System.out.println(e1.getPegoutCreationRskBlockNumber());
+                System.out.println("e2.getPegoutCreationRskBlockNumber()");
+                System.out.println(e2.getPegoutCreationRskBlockNumber());
+
+                var compareResult = comparator.compare(e1.getBtcTransaction().bitcoinSerialize(), e2.getBtcTransaction().bitcoinSerialize());
+
+                System.out.println("compareResult");
+                System.out.println(compareResult);
+
+                return compareResult;
             }
         };
 
@@ -125,7 +149,40 @@ public class PegoutsWaitingForConfirmations {
      * @return an optional with an entry with enough confirmations if found. If not, an empty optional.
      */
     public Optional<Entry> getNextPegoutWithEnoughConfirmations(Long currentBlockNumber, Integer minimumConfirmations) {
-        return entries.stream().filter(entry -> hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)).findFirst();
+        System.out.println("getNextPegoutWithEnoughConfirmations------------------------------");
+        System.out.println("getNextPegoutWithEnoughConfirmations------------------------------");
+
+        System.out.println("currentBlockNumber");
+        System.out.println(currentBlockNumber);
+        System.out.println("minimumConfirmations");
+        System.out.println(minimumConfirmations);
+
+        System.out.println("getNextPegoutWithEnoughConfirmations-entries------------------------------");
+
+        entries.stream().forEach(e -> {
+            System.out.println("ByteUtil.toHexString(e.getPegoutCreationRskTxHash().getBytes())");
+            Optional.ofNullable(e.getPegoutCreationRskTxHash()).ifPresent(h -> System.out.println(ByteUtil.toHexString(h.getBytes())));
+        });
+
+        System.out.println("getNextPegoutWithEnoughConfirmations-entries-filter------------------------------");
+        return entries.stream().filter(entry -> {
+            System.out.println("getNextPegoutWithEnoughConfirmations-entries-filter-entry------------------------------");
+
+            System.out.println("ByteUtil.toHexString(entry.getPegoutCreationRskTxHash().getBytes())");
+            Optional.ofNullable(entry.getPegoutCreationRskTxHash()).ifPresent(h -> System.out.println(ByteUtil.toHexString(h.getBytes())));
+
+            System.out.println("currentBlockNumber");
+            System.out.println(currentBlockNumber);
+            System.out.println("minimumConfirmations");
+            System.out.println(minimumConfirmations);
+
+            var hasEnoughConfirmationsResult = hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations);
+
+            System.out.println("hasEnoughConfirmationsResult");
+            System.out.println(hasEnoughConfirmationsResult);
+
+            return hasEnoughConfirmationsResult;
+        }).findFirst();
     }
 
     public boolean removeEntry(Entry entry){
