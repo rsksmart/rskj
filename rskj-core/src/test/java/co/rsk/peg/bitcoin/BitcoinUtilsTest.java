@@ -14,6 +14,7 @@ import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.ReleaseTransactionBuilder;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
+import co.rsk.peg.constants.BridgeTestNetConstants;
 import co.rsk.peg.federation.*;
 
 import co.rsk.test.builders.PegoutTransactionBuilder;
@@ -872,6 +873,19 @@ class BitcoinUtilsTest {
             TransactionSignature firstSignatureDecoded = TransactionSignature.decodeFromBitcoin(sig, false, false);
             assertTrue(signingKey.verify(sigHash, firstSignatureDecoded));
         }
+    }
+
+    @Test
+    void getMultiSigTransactionHashWithoutSignatures_fromP2PKH_withParseableScriptPubKey_shouldThrowIAE() {
+        // arrange
+        byte[] testnetRealPeginSerialized = Hex.decode("0200000002d5dfff21c0e1f0b02dcbcda77a56ffd6412b79d2081bc4bc0466cf3f0913b297010000006a47304402201dc13fabe4b29d0a596a84f6f15b3d2d636625a8aa02acb8a4635038322040e10220421d22271ca64b7c02b496dc916f092ea84a74e811f81a328f2f9d888aaee59b01210342e7b7961475e1fcb0e604ed34fc554f14ce7f931373646e98e463ae52a4b564fdffffffd5dfff21c0e1f0b02dcbcda77a56ffd6412b79d2081bc4bc0466cf3f0913b297020000006a47304402207e0add6292ac318db6657aeeb717818136f0f4d6e4efef35302ce72a79731fba0220297c3259eed72cd15fae7e0b9a63d2321e415eb6bd36c023bd179455f236147301210342e7b7961475e1fcb0e604ed34fc554f14ce7f931373646e98e463ae52a4b564fdffffff030000000000000000446a4252534b540147bc43b214c418c101b976f8bbb5101ed262a069011ae302de6607907116810e598b83897b00f764d5c0eff2d4911d78c411bf873de759e10d3b2eeaba04bc0300000000001976a914dfc505d84d81d346563fe9726a76c28e9ea8454588ac20a107000000000017a91405804450706addc3c6df3a400a22397ecaafe2d687cfba3d00");
+        BtcTransaction testnetRealPegin = new BtcTransaction(BridgeTestNetConstants.getInstance().getBtcParams(), testnetRealPeginSerialized);
+
+        // act & assert
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> BitcoinUtils.getMultiSigTransactionHashWithoutSignatures(testnetRealPegin)
+        );
     }
 
     @Test
