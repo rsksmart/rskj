@@ -1,26 +1,24 @@
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
+
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-import static co.rsk.peg.bitcoin.BitcoinUtils.*;
-
 public class BitcoinUtilsLegacy {
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtilsLegacy.class);
+    private BitcoinUtilsLegacy() {}
+
     private BitcoinUtilsLegacy() {}
 
     /**
      * @deprecated replaced by {@link BitcoinUtils#getMultiSigTransactionHashWithoutSignatures(BtcTransaction transaction)}
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(since="LOVELL-7.2.0", forRemoval=false)
+    @Deprecated(since="LOVELL-7.2.0")
     public static Sha256Hash getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(BtcTransaction transaction) {
         if (!transaction.hasWitness()) {
             BtcTransaction multiSigTransactionWithoutSignatures = getMultiSigTransactionWithoutSignaturesBeforeRSKIP305(transaction);
@@ -33,8 +31,7 @@ public class BitcoinUtilsLegacy {
     /**
      * @deprecated replaced by {@link BitcoinUtils#getMultiSigTransactionWithoutSignatures(BtcTransaction transaction)}
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(since="LOVELL-7.2.0", forRemoval=false)
+    @Deprecated(since="LOVELL-7.2.0")
     private static BtcTransaction getMultiSigTransactionWithoutSignaturesBeforeRSKIP305(BtcTransaction transaction) {
         NetworkParameters networkParameters = transaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
@@ -45,8 +42,7 @@ public class BitcoinUtilsLegacy {
     /**
      * @deprecated replaced by {@link BitcoinUtils#removeSignaturesFromMultiSigTransaction(BtcTransaction)}
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(since="LOVELL-7.2.0", forRemoval=false)
+    @Deprecated(since="LOVELL-7.2.0")
     private static void removeSignaturesFromMultiSigTransactionBeforeRSKIP305(BtcTransaction transaction) {
         List<TransactionInput> inputs = transaction.getInputs();
         for (int inputIndex = 0; inputIndex < inputs.size(); inputIndex++) {
