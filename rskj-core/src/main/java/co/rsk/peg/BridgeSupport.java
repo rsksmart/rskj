@@ -1603,8 +1603,7 @@ public class BridgeSupport {
         Optional<PegoutsWaitingForConfirmations.Entry> nextPegoutWithEnoughConfirmations = pegoutsWaitingForConfirmations
             .getNextPegoutWithEnoughConfirmations(
                 rskExecutionBlock.getNumber(),
-                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations()
-            );
+                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations());
 
         if (!nextPegoutWithEnoughConfirmations.isPresent()) {
             return;
