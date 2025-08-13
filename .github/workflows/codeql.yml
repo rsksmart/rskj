@@ -39,15 +39,15 @@ jobs:
         run: ./configure.sh
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@60168efe1c415ce0f5521ea06d5c2062adbeed1b #v3.28.17
+        uses: github/codeql-action/init@76621b61decf072c1cee8dd1ce2d2a82d33c17ed #v3.29.5
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@60168efe1c415ce0f5521ea06d5c2062adbeed1b #v3.28.17
+        uses: github/codeql-action/autobuild@76621b61decf072c1cee8dd1ce2d2a82d33c17ed #v3.29.5
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@60168efe1c415ce0f5521ea06d5c2062adbeed1b #v3.28.17
+        uses: github/codeql-action/analyze@76621b61decf072c1cee8dd1ce2d2a82d33c17ed #v3.29.5
         with:
           category: "/language:${{ matrix.language }}"

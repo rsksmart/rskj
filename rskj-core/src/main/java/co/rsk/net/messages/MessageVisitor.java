@@ -21,6 +21,7 @@ package co.rsk.net.messages;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
+import co.rsk.net.sync.SnapProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
@@ -46,17 +47,18 @@ public class MessageVisitor {
 
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
-    private final SnapshotProcessor snapshotProcessor;
+    private final SnapProcessor snapshotProcessor;
     private final TransactionGateway transactionGateway;
     private final Peer sender;
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final ChannelManager channelManager;
 
+    @SuppressWarnings("java:S107")
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
                           SyncProcessor syncProcessor,
-                          SnapshotProcessor snapshotProcessor,
+                          SnapProcessor snapshotProcessor,
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,

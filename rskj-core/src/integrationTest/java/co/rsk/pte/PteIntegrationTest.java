@@ -42,7 +42,7 @@ import static co.rsk.util.OkHttpClientTestFixture.ETH_GET_BLOCK_BY_NUMBER;
 import static co.rsk.util.OkHttpClientTestFixture.FromToAddressPair.of;
 import static co.rsk.util.OkHttpClientTestFixture.getEnvelopedMethodCalls;
 
-public class PteIntegrationTest {
+class PteIntegrationTest {
 
     /*
         When running this test locally, don't forget to build the .jar for the code you're trying to
@@ -63,7 +63,7 @@ public class PteIntegrationTest {
     private Path tempDir;
 
     @BeforeEach
-    public void setup() throws IOException {
+    void setup() throws IOException {
         String projectPath = System.getProperty("user.dir");
         buildLibsPath = String.format("%s/build/libs", projectPath);
         String integrationTestResourcesPath = String.format("%s/src/integrationTest/resources", projectPath);
@@ -198,5 +198,4 @@ public class PteIntegrationTest {
 
         return completableFuture;
     }
-
 }

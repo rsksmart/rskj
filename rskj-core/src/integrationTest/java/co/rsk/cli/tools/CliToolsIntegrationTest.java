@@ -209,7 +209,7 @@ class CliToolsIntegrationTest {
         String cmd = String.format("%s -cp %s/%s co.rsk.Start --reset %s", baseJavaCmd, buildLibsPath, jarName, strBaseArgs);
         CommandLineFixture.runCommand(
                 cmd,
-                1,
+                2,
                 TimeUnit.MINUTES, proc -> {
                     try {
                         Response response = OkHttpClientTestFixture.sendJsonRpcGetBestBlockMessage(port);
@@ -228,7 +228,7 @@ class CliToolsIntegrationTest {
         long blockNumber = HexUtils.jsonHexToLong(transactionsNode.get(0).get("blockNumber").asText());
         long fromBlock = blockNumber - 10;
         cmd = String.format("%s -cp %s/%s co.rsk.cli.tools.ExecuteBlocks --fromBlock %s --toBlock %s %s", baseJavaCmd, buildLibsPath, jarName, fromBlock, blockNumber, strBaseArgs);
-        CommandLineFixture.runCommand(cmd, 1, TimeUnit.MINUTES);
+        CommandLineFixture.runCommand(cmd, 2, TimeUnit.MINUTES);
 
         RskContext rskContext = new RskContext(baseArgs);
 

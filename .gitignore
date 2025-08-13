@@ -72,16 +72,16 @@ rskdump.json
 rskj-core/keyfiletest.txt
 rskj-core/java/
 
-#GradleJARS
+# GradleJARS
 rskj-core/libs/gradle-witness.jar
 rskj-core/libs/rsk-gradle-witness.jar
 rskj-core/networkStateExporterTest.json
 gradle/wrapper/gradle-wrapper.jar
 
-#Classes
+# Classes
 classes/
 
-#Infer
+# Infer
 infer-out/
 
 # jenv
@@ -93,10 +93,5 @@ doc/rpc/openrpc.json
 **/.ci-fuzz-corpus/
 **/src/test/resources/org/ethereum/util/ByteUtilFuzzTestInputs/
 
-
-bench_avg.csv
-bench_med.csv
-error_per_scale_avg.png
-error_per_scale_med.png
-time_per_scale_avg.png
-time_per_scale_med.png
+# VS Code
+.vscode

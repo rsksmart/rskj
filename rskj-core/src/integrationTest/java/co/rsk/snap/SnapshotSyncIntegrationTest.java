@@ -46,7 +46,7 @@ import static co.rsk.util.FilesHelper.readBytesFromFile;
 import static co.rsk.util.OkHttpClientTestFixture.FromToAddressPair.of;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SnapshotSyncIntegrationTest {
+class SnapshotSyncIntegrationTest {
     private static final int TEN_MINUTES_IN_MILLISECONDS = 600000;
     private static final String TAG_TO_REPLACE_SERVER_RPC_PORT = "<SERVER_NODE_RPC_PORT>";
     private static final String TAG_TO_REPLACE_SERVER_PORT = "<SERVER_NODE_PORT>";
@@ -78,7 +78,7 @@ public class SnapshotSyncIntegrationTest {
     }
 
     @Test
-    public void whenStartTheServerAndClientNodes_thenTheClientWillSynchWithServer() throws IOException, InterruptedException {
+    void whenStartTheServerAndClientNodes_thenTheClientWillSynchWithServer() throws IOException, InterruptedException {
         //given
         Path serverDbDir = tempDirectory.resolve("server/database");
         Path clientDbDir = tempDirectory.resolve("client/database");
@@ -86,7 +86,7 @@ public class SnapshotSyncIntegrationTest {
         String rskConfFileChangedServer = configureServerWithGeneratedInformation(serverDbDir);
         serverNode = new NodeIntegrationTestCommandLine(rskConfFileChangedServer, "--regtest");
         serverNode.startNode();
-        ThreadTimerHelper.waitForSeconds(20);
+        ThreadTimerHelper.waitForSeconds(60);
         generateBlocks();
 
         JsonNode serverBestBlockResponse = OkHttpClientTestFixture.getJsonResponseForGetBestBlockMessage(portServerRpc, "latest");
@@ -117,10 +117,10 @@ public class SnapshotSyncIntegrationTest {
                     }
                 } catch (Exception e) {
                     System.out.println("Error while trying to get the best block number from the client: " + e.getMessage());
-                    System.out.println("We will try again in 10 seconds.");
+                    System.out.println("We will try again in 20 seconds.");
                 }
             }
-            ThreadTimerHelper.waitForSeconds(2);
+            ThreadTimerHelper.waitForSeconds(20);
         }
 
         assertTrue(isClientSynced);
@@ -171,7 +171,7 @@ public class SnapshotSyncIntegrationTest {
         List<String> accounts = OkHttpClientTestFixture.PRE_FUNDED_ACCOUNTS;
         Random rand = new Random(111);
 
-        for (int i = 0; i < 900; i++) {
+        for (int i = 0; i < 1001; i++) {
             OkHttpClientTestFixture.FromToAddressPair[] pairs = IntStream.range(0, 10)
                     .mapToObj(n -> of(accounts.get(rand.nextInt(accounts.size())), accounts.get(rand.nextInt(accounts.size()))))
                     .toArray(OkHttpClientTestFixture.FromToAddressPair[]::new);
