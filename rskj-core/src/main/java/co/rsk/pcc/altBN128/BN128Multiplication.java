@@ -18,9 +18,12 @@
 
 package co.rsk.pcc.altBN128;
 
-import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.GasCost;
+
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 
 /**
  * Computes multiplication of scalar value on a point belonging to Barreto–Naehrig curve.
@@ -50,6 +53,11 @@ public class BN128Multiplication extends BN128PrecompiledContract {
     @Override
     public long getGasForData(byte[] data) {
         return GasCost.toGas(6000);
+    }
+
+    @Override
+    public int getMaxInput() {
+        return NO_LIMIT_ON_MAX_INPUT; // TODO: It should be 96 bytes, but still under evaluation (3 × 32-byte values (x, y, scalar))
     }
 
     @Override

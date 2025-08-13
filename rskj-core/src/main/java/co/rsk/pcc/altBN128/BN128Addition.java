@@ -18,9 +18,12 @@
 
 package co.rsk.pcc.altBN128;
 
-import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.GasCost;
+
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 
 /**
  * Computes point addition on Barreto–Naehrig curve.
@@ -50,6 +53,11 @@ public class BN128Addition extends BN128PrecompiledContract {
     @Override
     public long getGasForData(byte[] data) {
         return GasCost.toGas(150);
+    }
+
+    @Override
+    public int getMaxInput() {
+        return NO_LIMIT_ON_MAX_INPUT; // TODO: It should be 128 bytes, but still under evaluation (4 × 32-byte coordinates for 2 points (x1, y1, x2, y2))
     }
 
     @Override
