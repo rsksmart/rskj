@@ -64,6 +64,15 @@ public class BitcoinUtils {
         return extractRedeemScriptFromInputWitness(transaction.getWitness(inputIndex));
     }
 
+    /**
+     * Extracts the redeem script from the input's scriptSig, if it's a P2SH input.
+     *
+     * For some P2PKH inputs, the scriptSig contains a public key as the last chunk of the scriptSig that is parsed as a redeem script.
+     * This is a known issue, pending review for a permanent solution. In the meantime, always call `isSentToMultiSig()` on the returned redeem script
+     *
+     * @param txInput The input of the transaction from which to extract the redeem script.
+     * @return An Optional containing the redeem script if it can be extracted, or an empty Optional if it cannot be extracted
+     */
     private static Optional<Script> extractRedeemScriptFromInputScriptSig(TransactionInput txInput) {
         Script inputScript = txInput.getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
