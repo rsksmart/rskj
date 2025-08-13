@@ -105,7 +105,8 @@ public enum ConsensusRule {
     RSKIP453("rskip453"),
     RSKIP454("rskip454"),
     RSKIP459("rskip459"),
-    RSKIP460("rskip460")
+    RSKIP460("rskip460"),
+    RSKIP517("rskip517") // "Block time-centric difficulty adjustment with uncle threshold"
     ;
 
     private final String configKey;
