@@ -31,14 +31,14 @@ public class FederationRegTestConstants extends FederationConstants {
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 125L;
+        validationPeriodDurationInBlocks = 20L;
 
-        federationActivationAgeLegacy = 10L;
-        federationActivationAge = 150L;
+        federationActivationAgeLegacy = 3L;
+        federationActivationAge = 3L;
 
-        fundsMigrationAgeSinceActivationBegin = 15L;
-        fundsMigrationAgeSinceActivationEnd = 150L;
-        specialCaseFundsMigrationAgeSinceActivationEnd = 150L;
+        fundsMigrationAgeSinceActivationBegin = 3L;
+        fundsMigrationAgeSinceActivationEnd = 15L;
+        specialCaseFundsMigrationAgeSinceActivationEnd = 15L;
 
         // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-05'
         erpFedPubKeysList = Stream.of(

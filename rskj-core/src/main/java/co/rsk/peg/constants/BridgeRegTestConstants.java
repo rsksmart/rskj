@@ -50,7 +50,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         federationConstants = FederationRegTestConstants.getInstance(federationPublicKeys);
         lockingCapConstants = LockingCapRegTestConstants.getInstance();
 
-        btc2RskMinimumAcceptableConfirmations = 3;
+        btc2RskMinimumAcceptableConfirmations = 2;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 3;
 
@@ -74,7 +74,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         maxInputsPerPegoutTransaction = 10;
 
-        numberOfBlocksBetweenPegouts = 50; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = 5; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
 
         btcHeightWhenPegoutTxIndexActivates = 250;
         pegoutTxIndexGracePeriodInBtcBlocks = 100;
