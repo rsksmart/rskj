@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 public class BitcoinUtilsLegacy {
     private static final Logger logger = LoggerFactory.getLogger(BitcoinUtilsLegacy.class);
-    private BitcoinUtilsLegacy() {}
 
     private BitcoinUtilsLegacy() {}
 
