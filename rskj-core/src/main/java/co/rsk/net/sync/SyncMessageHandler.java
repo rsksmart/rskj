@@ -58,7 +58,7 @@ public abstract class SyncMessageHandler implements Runnable {
 
     @Override
     public void run() {
-        logger.debug("Starting processing queue of messages for: [{}]", name);
+        logger.info("Starting processing queue of messages for: [{}]", name);
 
         if (listener != null) {
             listener.onStart();
@@ -93,7 +93,7 @@ public abstract class SyncMessageHandler implements Runnable {
             listener.onComplete();
         }
 
-        logger.debug("Finished processing queue of messages for: [{}]", name);
+        logger.info("Finished processing queue of messages for: [{}]", name);
     }
 
     public void processJob(Job job) {
