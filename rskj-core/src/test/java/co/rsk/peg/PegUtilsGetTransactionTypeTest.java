@@ -1,10 +1,10 @@
 package co.rsk.peg;
 
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static co.rsk.peg.PegTestUtils.*;
 import static co.rsk.peg.bitcoin.BitcoinUtils.createBaseWitnessThatSpendsFromErpRedeemScript;
 import static co.rsk.peg.federation.FederationTestUtils.createP2shErpFederation;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,16 +20,21 @@ import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import java.util.*;
 import java.util.stream.Stream;
+
+import co.rsk.peg.storage.InMemoryStorage;
+import co.rsk.peg.storage.StorageAccessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class PegUtilsGetTransactionTypeTest {
+    private static final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
     private static final BridgeConstants bridgeMainnetConstants = BridgeMainNetConstants.getInstance();
     private static final NetworkParameters btcMainnetParams = bridgeMainnetConstants.getBtcParams();
     private static final FederationConstants federationMainNetConstants = bridgeMainnetConstants.getFederationConstants();
@@ -2264,5 +2269,252 @@ class PegUtilsGetTransactionTypeTest {
 
         // Assert
         assertEquals(expectedType, transactionType);
+    }
+
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("Pegin from user with non/parseable pub key before and after Reed, when svp is /not ongoing")
+    class PeginBeforeAndAfterReed {
+        private final Script parseableScriptPubKeyInputScript = ScriptBuilder.createInputScript(null, BtcECKey.fromPublicOnly(
+            Hex.decode("0377a6c71c43d9fac4343f87538cd2880cf5ebefd3dd1d9aabdbbf454bca162de9")
+        ));
+        private final Script nonParseableScriptPubKeyInputScript = ScriptBuilder.createInputScript(null, BitcoinTestUtils.getBtcEcKeyFromSeed("abc"));
+
+        private BridgeStorageProvider bridgeStorageProvider;
+        private long rskExecutionBlockNumber;
+
+        private void setUp(ActivationConfig.ForBlock activations, Federation retiringFed, Federation activeFed) {
+            Repository repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, activations);
+
+            StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+            FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+            federationStorageProvider.setOldFederation(retiringFed);
+            federationStorageProvider.setNewFederation(activeFed);
+
+            FederationConstants federationConstants = bridgeMainnetConstants.getFederationConstants();
+            // Move the required blocks ahead for the new powpeg to become active
+            rskExecutionBlockNumber = activeFed.getCreationBlockNumber()
+                + federationConstants.getFederationActivationAge(activations);
+
+            federationContext = FederationContext.builder()
+                .withActiveFederation(activeFed)
+                .build();
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withParseableScriptPubKey_whenSVPOnGoing_lovellActivations_shouldThrowISE(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            setUp(lovellActivations, retiringFed, activeFed);
+
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+            BtcTransaction pegin = buildP2PKHPegin(parseableScriptPubKeyInputScript, activeFed);
+
+            // act & assert
+            assertThrows(
+                IllegalStateException.class,
+                () -> PegUtils.getTransactionType(
+                    lovellActivations,
+                    bridgeStorageProvider,
+                    bridgeMainnetConstants,
+                    federationContext,
+                    pegin,
+                    rskExecutionBlockNumber
+                )
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withParseableScriptPubKey_whenSVPOnGoing_allActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+            setUp(allActivations, retiringFed, activeFed);
+
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+            BtcTransaction pegin = buildP2PKHPegin(parseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(allActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withParseableScriptPubKey_withoutSVPOnGoing_lovellActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            setUp(lovellActivations, retiringFed, activeFed);
+            BtcTransaction pegin = buildP2PKHPegin(parseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(lovellActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withParseableScriptPubKey_withoutSVPOnGoing_allActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+            setUp(allActivations, retiringFed, activeFed);
+            BtcTransaction pegin = buildP2PKHPegin(parseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(allActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withNonParseableScriptPubKey_whenSVPOnGoing_lovellActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            setUp(lovellActivations, retiringFed, activeFed);
+
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+            BtcTransaction pegin = buildP2PKHPegin(nonParseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(lovellActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withNonParseableScriptPubKey_whenSVPOnGoing_allActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+            setUp(allActivations, retiringFed, activeFed);
+
+            bridgeStorageProvider.setSvpSpendTxHashUnsigned(Sha256Hash.ZERO_HASH);
+
+            BtcTransaction pegin = buildP2PKHPegin(nonParseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(allActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withNonParseableScriptPubKey_withoutSVPOnGoing_lovellActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            setUp(lovellActivations, retiringFed, activeFed);
+            BtcTransaction pegin = buildP2PKHPegin(nonParseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(lovellActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        @ParameterizedTest
+        @MethodSource("activeAndRetiringFeds")
+        void getTransactionType_peginFromP2PKH_withNonParseableScriptPubKey_withoutSVPOnGoing_allActivations_shouldReturnPeginTxType(
+            Federation retiringFed,
+            Federation activeFed
+        ) {
+            // arrange
+            ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0L);
+            setUp(allActivations, retiringFed, activeFed);
+            BtcTransaction pegin = buildP2PKHPegin(nonParseableScriptPubKeyInputScript, activeFed);
+
+            // act
+            PegTxType pegTxType =
+                PegUtils.getTransactionType(allActivations, bridgeStorageProvider, bridgeMainnetConstants, federationContext, pegin, rskExecutionBlockNumber);
+
+            // assert
+            assertEquals(PegTxType.PEGIN, pegTxType);
+        }
+
+        private BtcTransaction buildP2PKHPegin(Script scriptPubKey, Federation activeFed) {
+            BtcTransaction pegin = new BtcTransaction(btcMainnetParams);
+
+            pegin.addInput(BitcoinTestUtils.createHash(1), 0, scriptPubKey);
+            pegin.addOutput(Coin.COIN, activeFed.getAddress());
+
+            return pegin;
+        }
+
+        private static Stream<Arguments> activeAndRetiringFeds() {
+            List<BtcECKey> realActiveFedKeys = List.of(
+                BtcECKey.fromPublicOnly(Hex.decode("02099fd69cf6a350679a05593c3ff814bfaa281eb6dde505c953cf2875979b1209")),
+                BtcECKey.fromPublicOnly(Hex.decode("0222caa9b1436ebf8cdf0c97233a8ca6713ed37b5105bcbbc674fd91353f43d9f7")),
+                BtcECKey.fromPublicOnly(Hex.decode("022a159227df514c7b7808ee182ae07d71770b67eda1e5ee668272761eefb2c24c")),
+                BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da")),
+                BtcECKey.fromPublicOnly(Hex.decode("02b1645d3f0cff938e3b3382b93d2d5c082880b86cbb70b6600f5276f235c28392")),
+                BtcECKey.fromPublicOnly(Hex.decode("030297f45c6041e322ecaee62eb633e84825da984009c731cba980286f532b8d96")),
+                BtcECKey.fromPublicOnly(Hex.decode("039ee63f1e22ed0eb772fe0a03f6c34820ce8542f10e148bc3315078996cb81b25")),
+                BtcECKey.fromPublicOnly(Hex.decode("03e2fbfd55959660c94169320ed0a778507f8e4c7a248a71c6599a4ce8a3d956ac")),
+                BtcECKey.fromPublicOnly(Hex.decode("03eae17ad1d0094a5bf33c037e722eaf3056d96851450fb7f514a9ed3af1dbb570"))
+            );
+
+            Federation retiringFederationLegacy = P2shErpFederationBuilder.builder()
+                .build();
+            Federation retiringFederationSegwit = P2shP2wshErpFederationBuilder.builder()
+                .build();
+
+            int activeFedCreationBlockNumber = bridgeMainnetConstants.getBtcHeightWhenPegoutTxIndexActivates()
+                + bridgeMainnetConstants.getPegoutTxIndexGracePeriodInBtcBlocks();
+            Federation activeFederationLegacy = P2shErpFederationBuilder.builder()
+                .withCreationBlockNumber(activeFedCreationBlockNumber)
+                .withMembersBtcPublicKeys(realActiveFedKeys)
+                .build();
+            Federation activeFederationSegwit = P2shP2wshErpFederationBuilder.builder()
+                .withCreationBlockNumber(activeFedCreationBlockNumber)
+                .withMembersBtcPublicKeys(realActiveFedKeys)
+                .build();
+
+            return Stream.of(
+                Arguments.of(retiringFederationLegacy, activeFederationLegacy),
+                Arguments.of(retiringFederationLegacy, activeFederationSegwit),
+                Arguments.of(retiringFederationSegwit, activeFederationSegwit)
+            );
+        }
     }
 }

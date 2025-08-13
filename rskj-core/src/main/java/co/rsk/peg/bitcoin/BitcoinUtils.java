@@ -64,6 +64,15 @@ public class BitcoinUtils {
         return extractRedeemScriptFromInputWitness(transaction.getWitness(inputIndex));
     }
 
+    /**
+     * Extracts the redeem script from the input's scriptSig, if it's a P2SH input.
+     *
+     * For some P2PKH inputs, the scriptSig contains a public key as the last chunk of the scriptSig that is parsed as a redeem script.
+     * This is a known issue, pending review for a permanent solution. In the meantime, always call `isSentToMultiSig()` on the returned redeem script
+     *
+     * @param txInput The input of the transaction from which to extract the redeem script.
+     * @return An Optional containing the redeem script if it can be extracted, or an empty Optional if it cannot be extracted
+     */
     private static Optional<Script> extractRedeemScriptFromInputScriptSig(TransactionInput txInput) {
         Script inputScript = txInput.getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
@@ -146,7 +155,7 @@ public class BitcoinUtils {
      * @param transaction transaction
      * @return a transaction copy without the signatures
      */
-    private static BtcTransaction getMultiSigTransactionWithoutSignatures(BtcTransaction transaction) {
+    public static BtcTransaction getMultiSigTransactionWithoutSignatures(BtcTransaction transaction) {
         NetworkParameters networkParameters = transaction.getParams();
         BtcTransaction transactionCopy = new BtcTransaction(networkParameters, transaction.bitcoinSerialize()); // this is needed to not remove signatures from the original tx
         removeSignaturesFromMultiSigTransaction(transactionCopy);
@@ -218,13 +227,13 @@ public class BitcoinUtils {
         setSpendingBaseScriptSegwit(btcTx, inputIndex, redeemScript);
     }
 
-    private static void setSpendingBaseScriptLegacy(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+    protected static void setSpendingBaseScriptLegacy(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
         TransactionInput input = btcTx.getInput(inputIndex);
         Script inputScript = createBaseInputScriptThatSpendsFromRedeemScript(redeemScript);
         input.setScriptSig(inputScript);
     }
 
-    private static void setSpendingBaseScriptSegwit(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
+    protected static void setSpendingBaseScriptSegwit(BtcTransaction btcTx, int inputIndex, Script redeemScript) {
         TransactionInput input = btcTx.getInput(inputIndex);
         TransactionWitness witnessScript = createBaseWitnessThatSpendsFromErpRedeemScript(redeemScript);
         btcTx.setWitness(inputIndex, witnessScript);
