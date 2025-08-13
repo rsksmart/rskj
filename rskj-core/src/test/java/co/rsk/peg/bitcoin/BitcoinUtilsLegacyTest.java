@@ -134,7 +134,11 @@ class BitcoinUtilsLegacyTest {
         Script p2pkhScriptSig = ScriptBuilder.createInputScript(null, pubKey);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
+        // Try extracting redeem script from input, which should return empty as it is not a P2SH multisig input
+        Optional<Script> redeemScript = extractRedeemScriptFromInput(transaction, 0);
+
         // act & assert
+        assertTrue(redeemScript.isEmpty());
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtilsLegacy.getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(transaction));
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction));
     }
@@ -151,7 +155,13 @@ class BitcoinUtilsLegacyTest {
         transaction.addInput(BitcoinTestUtils.createHash(2), 0, p2shMultiSigScriptSig);
         transaction.addInput(BitcoinTestUtils.createHash(1), 0, p2pkhScriptSig);
 
+        // Try extracting redeem script from inputs. First input should return redeem script, second should return empty
+        Optional<Script> redeemScriptInput0 = extractRedeemScriptFromInput(transaction, 0);
+        Optional<Script> redeemScriptInput1 = extractRedeemScriptFromInput(transaction, 1);
+
         // act & assert
+        assertTrue(redeemScriptInput0.isPresent());
+        assertTrue(redeemScriptInput1.isEmpty());
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtilsLegacy.getMultiSigTransactionHashWithoutSignaturesBeforeRSKIP305(transaction));
         assertThrows(IllegalArgumentException.class, () -> BitcoinUtils.getMultiSigTransactionWithoutSignatures(transaction));
     }
