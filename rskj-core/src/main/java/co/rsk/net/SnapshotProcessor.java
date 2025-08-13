@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.InternalService;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockUtils;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.MetricKind;
@@ -69,7 +70,6 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger("snapshotprocessor");
 
-    public static final int BLOCK_NUMBER_CHECKPOINT = 5000;
     public static final int BLOCK_CHUNK_SIZE = 400;
     public static final int BLOCKS_REQUIRED = 6000;
     public static final long CHUNK_ITEM_SIZE = 1024L;
@@ -77,7 +77,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
     private final TrieStore trieStore;
     private final BlockStore blockStore;
     private final int chunkSize;
-    private final int checkpointDistance;
+    private final SyncConfiguration syncConfiguration;
     private final SnapshotPeersInformation peersInformation;
     private final TransactionPool transactionPool;
 
@@ -111,13 +111,13 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                              BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                              BlockHeaderValidationRule blockHeaderValidator,
                              int chunkSize,
-                             int checkpointDistance,
+                             SyncConfiguration syncConfiguration,
                              int maxSenderRequests,
                              boolean checkHistoricalHeaders,
                              boolean isParallelEnabled) { // NOSONAR
         this(blockchain, trieStore, peersInformation, blockStore, transactionPool,
                 blockParentValidator, blockValidator, blockHeaderParentValidator, blockHeaderValidator,
-                chunkSize, checkpointDistance, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
+                chunkSize, syncConfiguration, maxSenderRequests, checkHistoricalHeaders, isParallelEnabled, null);
     }
 
     @VisibleForTesting
@@ -132,7 +132,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
                       BlockHeaderParentDependantValidationRule blockHeaderParentValidator,
                       BlockHeaderValidationRule blockHeaderValidator,
                       int chunkSize,
-                      int checkpointDistance,
+                      SyncConfiguration syncConfiguration,
                       int maxSenderRequests,
                       boolean checkHistoricalHeaders,
                       boolean isParallelEnabled,
@@ -141,7 +141,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         this.trieStore = trieStore;
         this.peersInformation = peersInformation;
         this.chunkSize = chunkSize;
-        this.checkpointDistance = checkpointDistance;
+        this.syncConfiguration = syncConfiguration;
         this.maxSenderRequests = maxSenderRequests;
         this.blockStore = blockStore;
         this.transactionPool = transactionPool;
@@ -227,10 +227,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
     void processSnapStatusRequestInternal(Peer sender, SnapStatusRequestMessage requestMessage) {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
-        // round to BLOCK_NUMBER_CHECKPOINT, so that the next checkpoint block selected is after 5000 blocks
-        long roundedBlockNumber = bestBlockNumber - (bestBlockNumber % BLOCK_NUMBER_CHECKPOINT);
-
-        long checkpointBlockNumber = Math.max(0, roundedBlockNumber - checkpointDistance);
+        long checkpointBlockNumber = BlockUtils.getSnapCheckpointBlockNumber(bestBlockNumber, syncConfiguration);
         long lowerBlockNumberToRetrieve = Math.max(0, checkpointBlockNumber - BLOCK_CHUNK_SIZE);
         logger.debug("Processing snapshot status request, checkpointBlockNumber: {}, bestBlockNumber: {}", checkpointBlockNumber, bestBlockNumber);
 
@@ -295,13 +292,24 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
         }
 
         List<Block> blocksFromResponse = responseMessage.getBlocks();
+        if (blocksFromResponse == null || blocksFromResponse.isEmpty()) {
+            failSyncing(state, sender, EventType.INVALID_BLOCK, "Received empty blocks list in snap status response");
+            return;
+        }
+
         List<BlockDifficulty> difficultiesFromResponse = responseMessage.getDifficulties();
-        if (blocksFromResponse.size() != difficultiesFromResponse.size()) {
-            failSyncing(state, sender, EventType.INVALID_BLOCK, "Blocks and difficulties size mismatch. Blocks: [{}], Difficulties: [{}]", blocksFromResponse.size(), difficultiesFromResponse.size());
+        if (difficultiesFromResponse == null || blocksFromResponse.size() != difficultiesFromResponse.size()) {
+            failSyncing(state, sender, EventType.INVALID_BLOCK, "Blocks and difficulties size mismatch. Blocks: [{}], Difficulties: [{}]", blocksFromResponse.size(), Optional.ofNullable(difficultiesFromResponse).map(List::size).map(Object::toString).orElse("<null>"));
             return;
         }
 
         Block lastBlock = blocksFromResponse.get(blocksFromResponse.size() - 1);
+        if (state.getValidatedHeader() != null && !state.getValidatedHeader().getHash().equals(lastBlock.getHash())) {
+            failSyncing(state, sender, EventType.INVALID_BLOCK, "Received blocks with different hash than the validated header. Expected: [{}], Received: [{}]",
+                    state.getValidatedHeader().getHash(), lastBlock.getHash());
+            return;
+        }
+
         BlockDifficulty lastBlockDifficulty = difficultiesFromResponse.get(difficultiesFromResponse.size() - 1);
 
         state.setLastBlock(lastBlock, lastBlockDifficulty, sender);
