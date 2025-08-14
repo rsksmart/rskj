@@ -17,86 +17,119 @@
  */
 package co.rsk.peg;
 
+import static co.rsk.RskTestUtils.createRskBlock;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.PegTestUtils.*;
+import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
+
 import co.rsk.RskTestUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.peg.bitcoin.BitcoinTestUtils;
-import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
-import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.constants.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
+import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.constants.*;
 import co.rsk.peg.federation.*;
 import co.rsk.peg.federation.constants.FederationConstants;
 import co.rsk.peg.feeperkb.FeePerKbSupport;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
-import co.rsk.peg.lockingcap.LockingCapSupport;
+import co.rsk.peg.lockingcap.*;
+import co.rsk.peg.lockingcap.constants.LockingCapConstants;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.storage.BridgeStorageAccessorImpl;
+import co.rsk.peg.storage.InMemoryStorage;
 import co.rsk.peg.storage.StorageAccessor;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.whitelist.WhitelistSupport;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.test.builders.FederationSupportBuilder;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.InternalTransaction;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static co.rsk.peg.PegTestUtils.createBech32Output;
-import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
-import static co.rsk.peg.PegTestUtils.createP2shOutput;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
-import static co.rsk.peg.BridgeSupportTestUtil.*;
+import java.util.stream.Stream;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.*;
+import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 
 class BridgeSupportFlyoverTest {
+    private final ActivationConfig.ForBlock allActivations = ActivationConfigsForTest.all().forBlock(0);
+
+    private final RskAddress bridgeContractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
+    private final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
+    private final FederationConstants federationConstantsMainnet = bridgeConstantsMainnet.getFederationConstants();
+    private final LockingCapConstants lockingCapMainnetConstants = bridgeConstantsMainnet.getLockingCapConstants();
 
     private final BridgeConstants bridgeConstantsRegtest = new BridgeRegTestConstants();
+    private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private final FederationConstants federationConstantsRegtest = bridgeConstantsRegtest.getFederationConstants();
-    private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
-    protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
-    protected final NetworkParameters btcMainnetParams = bridgeConstantsMainnet.getBtcParams();
+
+    private final Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
+    private final RskAddress lbcAddress = new RskAddress(new byte[20]);
+    private final Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "sender");
+    private final Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcMainnetParams, "liqProvider");
+
+    private final Transaction rskTx = new InternalTransaction(
+        Keccak256.ZERO_HASH.getBytes(), 0, 0, null, null, null,
+        lbcAddress.getBytes(), null, null, null, null, null
+    );
+
+    private final FederationSupportBuilder federationSupportBuilder = FederationSupportBuilder.builder();
+
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
+    private Repository repository;
+    private FederationStorageProvider federationStorageProvider;
     private BridgeSupportBuilder bridgeSupportBuilder;
+    private LockingCapStorageProvider lockingCapStorageProvider;
     private LockingCapSupport lockingCapSupport;
     private WhitelistSupport whitelistSupport;
-    private FederationSupportBuilder federationSupportBuilder;
+    private FeePerKbSupport feePerKbSupport;
     private ActivationConfig.ForBlock activations;
-    private SignatureCache signatureCache;
+
+    private Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsMainnet, "fa01", "fa02");
+    private Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsMainnet, "fa03", "fa04", "fa05");
 
     @BeforeEach
     void setUpOnEachTest() {
         activations = mock(ActivationConfig.ForBlock.class);
-        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         bridgeSupportBuilder = BridgeSupportBuilder.builder();
         lockingCapSupport = mock(LockingCapSupport.class);
         whitelistSupport = mock(WhitelistSupport.class);
-        federationSupportBuilder = FederationSupportBuilder.builder();
+
+        repository = createRepository();
+
+        StorageAccessor bridgeStorageAccessor = new InMemoryStorage();
+        federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
+        lockingCapStorageProvider = new LockingCapStorageProviderImpl(bridgeStorageAccessor);
+
+        feePerKbSupport = mock(FeePerKbSupport.class);
+        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
     }
 
     private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
@@ -117,14 +150,8 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Repository repository = createRepository();
-
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederation(any(), any())).thenReturn(activeFederation);
-
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -149,13 +176,12 @@ class BridgeSupportFlyoverTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -196,21 +222,6 @@ class BridgeSupportFlyoverTest {
             registerHeader,
             height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
             height
-        );
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
         );
 
         co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
@@ -266,8 +277,6 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
@@ -277,7 +286,6 @@ class BridgeSupportFlyoverTest {
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
-        Repository repository = createRepository();
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
@@ -301,13 +309,12 @@ class BridgeSupportFlyoverTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address retiringFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -348,21 +355,6 @@ class BridgeSupportFlyoverTest {
             registerHeader,
             height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
             height
-        );
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
         );
 
         co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
@@ -419,8 +411,6 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
@@ -428,9 +418,7 @@ class BridgeSupportFlyoverTest {
         when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
-        Repository repository = createRepository();
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
@@ -454,13 +442,12 @@ class BridgeSupportFlyoverTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
@@ -509,21 +496,6 @@ class BridgeSupportFlyoverTest {
             registerHeader,
             height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
             height
-        );
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
         );
 
         co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
@@ -600,18 +572,12 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(activeFederation);
         when(federationStorageProvider.getOldFederation(bridgeConstants.getFederationConstants(), activations)).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
-
-        Repository repository = createRepository();
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
@@ -635,13 +601,12 @@ class BridgeSupportFlyoverTest {
             .withRepository(repository)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -688,21 +653,6 @@ class BridgeSupportFlyoverTest {
             height
         );
 
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
-        );
-
         return bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
             btcTx.bitcoinSerialize(),
@@ -729,9 +679,6 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(btcRegTestParams).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa03", "fa04");
-        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
-
         FederationStorageProvider federationStorageProvider = mock(FederationStorageProvider.class);
         when(federationStorageProvider.getNewFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(activeFederation);
         when(federationStorageProvider.getOldFederation(bridgeConstantsRegtest.getFederationConstants(), activations)).thenReturn(retiringFederation);
@@ -746,10 +693,9 @@ class BridgeSupportFlyoverTest {
         Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "refund");
         Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(btcRegTestParams, "lp");
 
-        Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(
             this.bridgeConstantsRegtest.getMaxRbtc()));
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -757,9 +703,6 @@ class BridgeSupportFlyoverTest {
         when(mockFactory.newInstance(repository, bridgeConstantsRegtest, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsRegtest)
@@ -780,13 +723,12 @@ class BridgeSupportFlyoverTest {
             .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -834,21 +776,6 @@ class BridgeSupportFlyoverTest {
             height
         );
 
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
-        );
-
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
             btcTx.bitcoinSerialize(),
@@ -865,7 +792,7 @@ class BridgeSupportFlyoverTest {
             List<BtcTransaction> pegoutsWaitingForConfirmationsEntries = provider.getPegoutsWaitingForConfirmations().getEntries()
                 .stream()
                 .map(PegoutsWaitingForConfirmations.Entry::getBtcTransaction)
-                .collect(Collectors.toList());
+                .toList();
 
             assertEquals(1, pegoutsWaitingForConfirmationsEntries.size());
             BtcTransaction releaseTx = pegoutsWaitingForConfirmationsEntries.get(0);
@@ -900,31 +827,318 @@ class BridgeSupportFlyoverTest {
         return result;
     }
 
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    @Tag("test flyover pegin that surpasses locking cap different scenarios")
+    class FlyoverPeginThatSurpassesLockingCap {
+        private final int btcBlockToRegisterHeight = bridgeConstantsMainnet.getBtcHeightWhenPegoutTxIndexActivates() + bridgeConstantsMainnet.getPegoutTxIndexGracePeriodInBtcBlocks(); // we want pegout tx index to be activated
+
+        private final Coin amountRequestedThatSurpassesLockingCap = lockingCapMainnetConstants.getInitialValue().add(Coin.SATOSHI);
+
+        private Block currentBlock;
+        private Repository repository;
+        private BridgeStorageProvider bridgeStorageProvider;
+        private BridgeSupport bridgeSupport;
+        private List<LogInfo> logs;
+
+        private BtcBlockStoreWithCache btcBlockStore;
+
+        private BtcTransaction flyoverBtcTx;
+        private Keccak256 flyoverDerivationHash;
+        private PartialMerkleTree pmtWithTransactions;
+
+        private void setUpWithActivations(ActivationConfig.ForBlock activations) {
+            logs = new ArrayList<>();
+            BridgeEventLogger bridgeEventLogger = new BridgeEventLoggerImpl(
+                bridgeConstantsMainnet,
+                allActivations,
+                logs
+            );
+
+            FederationSupport federationSupport = federationSupportBuilder
+                .withFederationConstants(federationConstantsMainnet)
+                .withFederationStorageProvider(federationStorageProvider)
+                .withRskExecutionBlock(currentBlock)
+                .withActivations(activations)
+                .build();
+
+            lockingCapSupport = new LockingCapSupportImpl(lockingCapStorageProvider, activations, lockingCapMainnetConstants, signatureCache);
+
+            federationStorageProvider.setNewFederation(activeFederation);
+
+            repository = createRepository();
+            bridgeStorageProvider = new BridgeStorageProvider(repository, bridgeContractAddress, btcMainnetParams, activations);
+
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcMainnetParams, 100, 100);
+            btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstantsMainnet, bridgeStorageProvider, activations);
+
+            bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withExecutionBlock(currentBlock)
+                .withBridgeConstants(bridgeConstantsMainnet)
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withFederationSupport(federationSupport)
+                .withFeePerKbSupport(feePerKbSupport)
+                .withLockingCapSupport(lockingCapSupport)
+                .build();
+        }
+
+        private static Stream<Arguments> flyoverExpectedResponseCodeArgs() {
+            return Stream.of(
+                Arguments.of(true, FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()),
+                Arguments.of(false, FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value())
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("flyoverExpectedResponseCodeArgs")
+        void registerFlyoverBtcTransaction_whenAmountRequestedSurpassesLockingCap_beforeRSKIP305_justEmitsPegoutTransactionCreatedEvent(boolean shouldTransferToContract, long expectedResponseCodeResult) throws Exception {
+            // arrange
+            ActivationConfig.ForBlock lovellActivations = ActivationConfigsForTest.lovell700().forBlock(0L);
+            setUpWithActivations(lovellActivations);
+            arrangeFlyoverBtcTransaction(lovellActivations);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                shouldTransferToContract
+            );
+            bridgeSupport.save();
+
+            // assert
+            assertEquals(BigInteger.valueOf(expectedResponseCodeResult), result);
+            BtcTransaction releaseTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertLogPegoutTransactionCreated(logs, releaseTransaction, List.of(amountRequestedThatSurpassesLockingCap));
+            assertReleaseOutpointsValuesWereNotSavedInStorage(releaseTransaction);
+        }
+
+        private void assertReleaseOutpointsValuesWereNotSavedInStorage(BtcTransaction releaseTransaction) {
+            byte[] actualReleaseOutpointsValues = repository.getStorageBytes(
+                bridgeContractAddress,
+                getStorageKeyForReleaseOutpointsValues(releaseTransaction.getHash())
+            );
+            assertNull(actualReleaseOutpointsValues);
+        }
+
+        @ParameterizedTest
+        @MethodSource("flyoverExpectedResponseCodeArgs")
+        void registerFlyoverBtcTransaction_whenAmountRequestedSurpassesLockingCap_afterRSKIP305_processReleaseRejectionTransactionInfo(
+            boolean shouldTransferToContract,
+            long expectedResponseCodeResult
+        ) throws Exception {
+            // arrange
+            setUpWithActivations(allActivations);
+            arrangeFlyoverBtcTransaction(allActivations);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                shouldTransferToContract
+            );
+            bridgeSupport.save();
+
+            // assert
+            assertEquals(BigInteger.valueOf(expectedResponseCodeResult), result);
+            BtcTransaction releaseRejectionTransaction = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+            assertReleaseTransactionInfoWasProcessed(repository, bridgeStorageProvider, logs, releaseRejectionTransaction, List.of(amountRequestedThatSurpassesLockingCap));
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shErpActiveAndP2shErpRetiringFeds_shouldSetRedeemDataInInputsScriptSig() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            federationStorageProvider.setOldFederation(retiringFederation);
+
+            List<BtcECKey> newFedKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(
+                new String[]{"newMember01", "newMember02", "newMember03", "newMember04", "newMember05", "newMember06", "newMember07", "newMember08", "newMember09"}, true
+            );
+            activeFederation = P2shErpFederationBuilder.builder()
+                .withMembersBtcPublicKeys(newFedKeys)
+                .build();
+
+            // Move the required blocks ahead for the new powpeg to become active
+            var blockNumber =
+                activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
+            currentBlock = createRskBlock(blockNumber);
+
+            setUpWithActivations(allActivations);
+            createFlyoverBtcTransaction(allActivations);
+            // adding output to retiring fed
+            var retiringFederationFlyoverAddress = getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, retiringFederation);
+            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, retiringFederationFlyoverAddress);
+
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+            bridgeSupport.save();
+
+            // assert
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+
+            // we should get refund liq provider response
+            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+
+            // pegout should have two inputs, one related to the active fed and one to the retiring fed
+            assertEquals(2, pegout.getInputs().size());
+            // since active fed is legacy, redeem data should be in the script sig
+            // first input should belong to active fed
+            var inputToActiveFlyoverFed = pegout.getInput(0);
+            var expectedActiveFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, activeFederation.getRedeemScript());
+            assertScriptSigHasExpectedInputRedeemData(inputToActiveFlyoverFed, expectedActiveFederationFlyoverRedeemScript);
+            // second input should belong to retiring fed
+            var inputToRetiringFlyoverFed = pegout.getInput(1);
+            var expectedRetiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
+            assertScriptSigHasExpectedInputRedeemData(inputToRetiringFlyoverFed, expectedRetiringFederationFlyoverRedeemScript);
+        }
+
+        @Test
+        void registerFlyoverBtcTransaction_fundsThatSurpassLockingCapSentToP2shP2wshErpActiveAndP2shErpRetiringFeds_shouldSetFixedScriptSig_shouldSetRedeemDataInInputsWitness() throws Exception {
+            // arrange
+            retiringFederation = P2shErpFederationBuilder.builder().build();
+            federationStorageProvider.setOldFederation(retiringFederation);
+            activeFederation = P2shP2wshErpFederationBuilder.builder().build();
+
+            // Move the required blocks ahead for the new powpeg to become active
+            var blockNumber =
+                activeFederation.getCreationBlockNumber() + federationConstantsMainnet.getFederationActivationAge(allActivations);
+            currentBlock = createRskBlock(blockNumber);
+
+            setUpWithActivations(allActivations);
+            createFlyoverBtcTransaction(allActivations);
+            // adding output to retiring fed
+            var retiringFederationFlyoverAddress = getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, retiringFederation);
+            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, retiringFederationFlyoverAddress);
+
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+
+            // act
+            BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
+                rskTx,
+                flyoverBtcTx.bitcoinSerialize(),
+                btcBlockToRegisterHeight,
+                pmtWithTransactions.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+            );
+            bridgeSupport.save();
+
+            // assert
+            BtcTransaction pegout = getReleaseFromPegoutsWFC(bridgeStorageProvider);
+
+            // we should get refund liq provider response
+            assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+
+            // pegout should have two inputs, one related to the active fed and one to the retiring fed
+            assertEquals(2, pegout.getInputs().size());
+            // since active fed is segwit compatible, redeem data should be in the witness
+            // first input data should belong to active fed
+            int activeFlyoverFedInputIndex = 0;
+            var expectedActiveFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, activeFederation.getRedeemScript());
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                pegout.getWitness(activeFlyoverFedInputIndex),
+                pegout.getInput(activeFlyoverFedInputIndex),
+                expectedActiveFederationFlyoverRedeemScript
+            );
+            // second input data should belong to retiring fed
+            int retiringFlyoverFedInputIndex = 1;
+            var expectedRetiringFederationFlyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder()
+                .of(flyoverDerivationHash, retiringFederation.getRedeemScript());
+            assertWitnessAndScriptSigHaveExpectedInputRedeemData(
+                pegout.getWitness(retiringFlyoverFedInputIndex),
+                pegout.getInput(retiringFlyoverFedInputIndex),
+                expectedRetiringFederationFlyoverRedeemScript
+            );
+        }
+
+        private void arrangeFlyoverBtcTransaction(ActivationConfig.ForBlock activations) throws Exception {
+            createFlyoverBtcTransaction(activations);
+            setUpForTransactionRegistration(flyoverBtcTx, btcBlockToRegisterHeight);
+        }
+
+        private void createFlyoverBtcTransaction(ActivationConfig.ForBlock activations) {
+            flyoverBtcTx = new BtcTransaction(btcMainnetParams);
+            flyoverBtcTx.addInput(BitcoinTestUtils.createHash(0), 0, new Script(new byte[]{}));
+
+            flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lpBtcAddress,
+                lbcAddress,
+                activations
+            );
+
+            var flyoverActiveFederationAddress = PegUtils.getFlyoverFederationAddress(btcMainnetParams, flyoverDerivationHash, activeFederation);
+            flyoverBtcTx.addOutput(amountRequestedThatSurpassesLockingCap, flyoverActiveFederationAddress);
+        }
+
+        private void setUpForTransactionRegistration(BtcTransaction btcTx, int btcBlockWithPmtHeight) throws Exception {
+            pmtWithTransactions = createValidPmtForTransactions(List.of(btcTx), btcMainnetParams);
+            var chainHeight = btcBlockWithPmtHeight + bridgeConstantsMainnet.getBtc2RskMinimumAcceptableConfirmations();
+
+            recreateChainFromPmt(btcBlockStore, chainHeight, pmtWithTransactions, btcBlockWithPmtHeight, btcMainnetParams);
+            bridgeStorageProvider.save();
+        }
+    }
+
     @Test
     void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_regtest() {
         Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
-                bridgeConstantsRegtest,
-                false,
-                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                    Coin valueToSend = Coin.COIN;
-                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                    return tx;
-                }
+            bridgeConstantsRegtest,
+            false,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                return tx;
+            }
         ));
     }
 
     @Test
     void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_mainnet() {
         Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
-                bridgeConstantsMainnet,
-                false,
-                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                    Coin valueToSend = Coin.COIN;
-                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                    return tx;
-                }
+            bridgeConstantsMainnet,
+            false,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                return tx;
+            }
         ));
     }
 
@@ -1277,19 +1491,19 @@ class BridgeSupportFlyoverTest {
     @Test
     void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_regtest() {
         Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
-                bridgeConstantsRegtest,
-                false,
-                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                    Coin valueToSend = Coin.COIN;
-                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+            bridgeConstantsRegtest,
+            false,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-                    tx.addOutput(valueToSend, activeFederationAddress);
-                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                    tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
-                    tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
+                tx.addOutput(valueToSend, activeFederationAddress);
+                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
+                tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
 
-                    return tx;
-                }
+                return tx;
+            }
         ));
     }
 
@@ -1321,19 +1535,19 @@ class BridgeSupportFlyoverTest {
     @Test
     void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_mainnet() {
         Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
-                bridgeConstantsMainnet,
-                false,
-                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                    Coin valueToSend = Coin.COIN;
-                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+            bridgeConstantsMainnet,
+            false,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-                    tx.addOutput(valueToSend, activeFederationAddress);
-                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                    tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
-                    tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
+                tx.addOutput(valueToSend, activeFederationAddress);
+                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
+                tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
 
-                    return tx;
-                }
+                return tx;
+            }
         ));
     }
 
@@ -1364,22 +1578,22 @@ class BridgeSupportFlyoverTest {
 
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_before_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        Coin valueToSend = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.CENT);
+        Coin halfMinimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).div(2);
         BigInteger result = sendFundsToActiveFederation(
             false,
-            valueToSend
+            halfMinimumPeginTxValue
         );
 
-        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(halfMinimumPeginTxValue).asBigInteger(), result);
     }
 
     @Test
     void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueBelowMinimum = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).minus(Coin.CENT);
+        Coin halfMinimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValue(activations).div(2);
         BigInteger result = sendFundsToActiveFederation(
             true,
-            valueBelowMinimum
+            halfMinimumPeginTxValue
         );
 
         Assertions.assertEquals(
@@ -1661,25 +1875,15 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Repository repository = createRepository();
-
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
-
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(bridgeConstants.getFederationConstants())
             .withFederationStorageProvider(federationStorageProvider)
@@ -1697,13 +1901,12 @@ class BridgeSupportFlyoverTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 fastBridgeDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -1759,22 +1962,12 @@ class BridgeSupportFlyoverTest {
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
         provider.setCoinbaseInformation(registerHeader.getHash(), coinbaseInformation);
 
-        Keccak256 derivationHash =
-            bridgeSupport.getFlyoverDerivationHash(derivationArgumentsHash, userRefundBtcAddress, lpBtcAddress, lbcAddress);
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 derivationHash = PegUtils.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress,
+            activations
         );
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -1860,33 +2053,22 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-
-        Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
-
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         Coin lockingCap = Coin.COIN;
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCap));
@@ -1910,13 +2092,12 @@ class BridgeSupportFlyoverTest {
             .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 fastBridgeDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -1972,22 +2153,12 @@ class BridgeSupportFlyoverTest {
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
         provider.setCoinbaseInformation(registerHeader.getHash(), coinbaseInformation);
 
-        Keccak256 derivationHash =
-            bridgeSupport.getFlyoverDerivationHash(derivationArgumentsHash, userRefundBtcAddress, lpBtcAddress, lbcAddress);
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 derivationHash = PegUtils.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress,
+            activations
         );
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -2069,33 +2240,22 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
 
-        Repository repository = createRepository();
-        // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
-
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         Coin lockingCapValue = Coin.COIN;
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
@@ -2118,13 +2278,12 @@ class BridgeSupportFlyoverTest {
             .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 fastBridgeDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2180,26 +2339,12 @@ class BridgeSupportFlyoverTest {
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
         provider.setCoinbaseInformation(registerHeader.getHash(), coinbaseInformation);
 
-        Keccak256 derivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 derivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
-        );
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+            lbcAddress,
+            activations
         );
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -2286,35 +2431,25 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
-
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsSpy)
@@ -2335,13 +2470,12 @@ class BridgeSupportFlyoverTest {
             .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 fastBridgeDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2384,26 +2518,12 @@ class BridgeSupportFlyoverTest {
             height
         );
 
-        Keccak256 derivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 derivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
-        );
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+            lbcAddress,
+            activations
         );
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -2476,35 +2596,25 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Repository repository = createRepository();
         // For simplicity of this test, the max rbtc value is set as the current balance for the repository
         // This simulates that no pegin has ever been processed
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.fromBitcoin(bridgeConstants.getMaxRbtc()));
 
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
 
         Coin lockingCapValue = Coin.COIN;
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(lockingCapValue));
 
         PegoutsWaitingForConfirmations pegoutsWaitingForConfirmations = new PegoutsWaitingForConfirmations(new HashSet<>());
         doReturn(pegoutsWaitingForConfirmations).when(provider).getPegoutsWaitingForConfirmations();
 
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
-
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(federationConstantsSpy)
@@ -2525,13 +2635,12 @@ class BridgeSupportFlyoverTest {
             .withLockingCapSupport(lockingCapSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 fastBridgeDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2574,26 +2683,12 @@ class BridgeSupportFlyoverTest {
             height
         );
 
-        Keccak256 derivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 derivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
-        );
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+            lbcAddress,
+            activations
         );
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -2677,19 +2772,11 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
 
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Repository repository = createRepository();
-
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
         federationStorageProvider.setNewFederation(activeFederation);
-
-        Address userRefundBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "refund");
-        Address lpBtcAddress = BitcoinTestUtils.createP2PKHAddress(bridgeConstants.getBtcParams(), "lp");
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants.getBtcParams(), activations));
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, bridgeContractAddress, bridgeConstants.getBtcParams(), activations));
         when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
@@ -2710,13 +2797,12 @@ class BridgeSupportFlyoverTest {
             .withFederationSupport(federationSupport)
             .build();
 
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 fastBridgeDerivationHash = PegUtils.getFlyoverDerivationHash(
             derivationArgumentsHash,
             userRefundBtcAddress,
             lpBtcAddress,
-            lbcAddress
+            lbcAddress,
+            activations
         );
 
         Address activeFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
@@ -2759,22 +2845,12 @@ class BridgeSupportFlyoverTest {
             height
         );
 
-        Keccak256 derivationHash =
-            bridgeSupport.getFlyoverDerivationHash(derivationArgumentsHash, userRefundBtcAddress, lpBtcAddress, lbcAddress);
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 derivationHash = PegUtils.getFlyoverDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress,
+            activations
         );
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -2867,21 +2943,6 @@ class BridgeSupportFlyoverTest {
             .withBridgeConstants(bridgeConstantsRegtest)
             .build();
 
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        );
-
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
@@ -2905,8 +2966,12 @@ class BridgeSupportFlyoverTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
-
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+        Address activeFlyoverFederationAddress = PegTestUtils.getFlyoverAddressFromRedeemScript(
+            bridgeConstantsRegtest,
+            activeFederation.getRedeemScript(),
+            Sha256Hash.wrap(derivationArgumentsHash.getBytes())
+        );
+        tx.addOutput(Coin.COIN, activeFlyoverFederationAddress);
 
         BridgeSupport bridgeSupport = spy(bridgeSupportBuilder
             .withProvider(provider)
@@ -2914,34 +2979,15 @@ class BridgeSupportFlyoverTest {
             .withBridgeConstants(bridgeConstantsRegtest)
             .build());
 
-        doReturn(PegTestUtils.createHash3(5))
-            .when(bridgeSupport)
-            .getFlyoverDerivationHash(any(), any(), any(), any());
-
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
-        );
-
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
             Hex.decode("ab"),
-            PegTestUtils.createHash3(0),
-            mock(Address.class),
+            derivationArgumentsHash,
+            userRefundBtcAddress,
             lbcAddress,
-            mock(Address.class),
+            lpBtcAddress,
             false
         );
 
@@ -2957,9 +3003,6 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(btcMainnetParams);
 
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsMainnet,
             mock(BridgeStorageProvider.class),
@@ -2982,28 +3025,21 @@ class BridgeSupportFlyoverTest {
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
-            any(Keccak256.class),
-            any(Address.class),
-            any(Address.class),
-            any(RskAddress.class)
-        );
 
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcMainnetParams));
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Address btcAddress = Address.fromBase58(
+            btcRegTestParams,
+            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+            RskTestUtils.createHash(0),
+            btcAddress,
+            btcAddress,
+            lbcAddress,
+            activations
+        );
+        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.ZERO, activeFlyoverFederationAddress);
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
@@ -3011,9 +3047,9 @@ class BridgeSupportFlyoverTest {
             100,
             Hex.decode("ab"),
             PegTestUtils.createHash3(0),
-            mock(Address.class),
+            btcAddress,
             lbcAddress,
-            mock(Address.class),
+            btcAddress,
             false
         );
 
@@ -3040,9 +3076,6 @@ class BridgeSupportFlyoverTest {
 
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(btcRegTestParams);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
 
@@ -3071,36 +3104,22 @@ class BridgeSupportFlyoverTest {
         when(bridgeSupport.getActiveFederation()).thenReturn(genesisFederation);
         when(bridgeSupport.validationsForRegisterBtcTransaction(any(), anyInt(), any(), any())).thenReturn(true);
 
-        doReturn(RskTestUtils.createHash(1)).when(bridgeSupport).getFlyoverDerivationHash(
-            any(Keccak256.class),
-            any(Address.class),
-            any(Address.class),
-            any(RskAddress.class)
-        );
-
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFlyoverFederationAddress());
-        byte[] pmtSerialized = Hex.decode("ab");
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+            RskTestUtils.createHash(0),
+            btcAddress,
+            btcAddress,
+            lbcAddress,
+            activations
         );
+        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, activeFlyoverFederationAddress);
+        byte[] pmtSerialized = Hex.decode("ab");
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
@@ -3140,9 +3159,6 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(btcRegTestParams);
 
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
-
         when(lockingCapSupport.getLockingCap()).thenReturn(Optional.of(Coin.COIN));
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
@@ -3170,36 +3186,21 @@ class BridgeSupportFlyoverTest {
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
 
-        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
-            any(Keccak256.class),
-            any(Address.class),
-            any(Address.class),
-            any(RskAddress.class)
-        );
-
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
-
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFlyoverFederationAddress());
-        byte[] pmtSerialized = Hex.decode("ab");
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+            RskTestUtils.createHash(0),
+            btcAddress,
+            btcAddress,
+            lbcAddress,
+            activations
         );
+        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, activeFlyoverFederationAddress);
+        byte[] pmtSerialized = Hex.decode("ab");
 
         BigInteger result = bridgeSupport.registerFlyoverBtcTransaction(
             rskTx,
@@ -3223,12 +3224,11 @@ class BridgeSupportFlyoverTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
-        Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.valueOf(1));
+        repository.addBalance(bridgeContractAddress, co.rsk.core.Coin.valueOf(1));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
@@ -3239,9 +3239,6 @@ class BridgeSupportFlyoverTest {
 
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(btcRegTestParams);
-
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
-        when(feePerKbSupport.getFeePerKb()).thenReturn(Coin.MILLICOIN);
 
         Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
         FederationSupport federationSupport = mock(FederationSupport.class);
@@ -3271,36 +3268,23 @@ class BridgeSupportFlyoverTest {
             Optional.of(Coin.COIN), // The first time we simulate a lower locking cap than the value to register, to force the reimburse
             Optional.of(Coin.FIFTY_COINS) // The next time we simulate a height locking cap, to verify the user can't attempt to register the already reimbursed tx
         ).when(lockingCapSupport).getLockingCap();
-        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
-            any(Keccak256.class),
-            any(Address.class),
-            any(Address.class),
-            any(RskAddress.class)
-        );
 
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFlyoverFederationAddress());
-        byte[] pmtSerialized = Hex.decode("ab");
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+            RskTestUtils.createHash(0),
+            btcAddress,
+            btcAddress,
+            lbcAddress,
+            activations
         );
+        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, activeFlyoverFederationAddress);
+        byte[] pmtSerialized = Hex.decode("ab");
 
         Keccak256 dHash = PegTestUtils.createHash3(0);
 
@@ -3348,15 +3332,17 @@ class BridgeSupportFlyoverTest {
         Repository repository = spy(createRepository());
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
 
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
-        FederationSupport federationSupport = new FederationSupportImpl(federationConstantsRegtest, federationStorageProvider, mock(Block.class), activations);
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
+        FederationSupport federationSupport = federationSupportBuilder
+            .withFederationConstants(federationConstantsRegtest)
+            .withFederationStorageProvider(federationStorageProvider)
+            .withActivations(activations)
+            .build();
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
             provider,
@@ -3379,36 +3365,23 @@ class BridgeSupportFlyoverTest {
 
         doReturn(genesisFederation).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFlyoverDerivationHash(
-            any(Keccak256.class),
-            any(Address.class),
-            any(Address.class),
-            any(RskAddress.class)
-        );
 
         Address btcAddress = Address.fromBase58(
             btcRegTestParams,
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
-
         Coin valueToSend = Coin.COIN;
-        BtcTransaction tx = createBtcTransactionWithOutputToAddress(valueToSend, getFlyoverFederationAddress());
-        InternalTransaction rskTx = new InternalTransaction(
-            Keccak256.ZERO_HASH.getBytes(),
-            0,
-            0,
-            null,
-            null,
-            null,
-            lbcAddress.getBytes(),
-            null,
-            null,
-            null,
-            null,
-            null
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
+            RskTestUtils.createHash(0),
+            btcAddress,
+            btcAddress,
+            lbcAddress,
+            activations
         );
+        Address activeFlyoverFederationAddress = PegUtils.getFlyoverFederationAddress(btcRegTestParams, flyoverDerivationHash, genesisFederation);
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(valueToSend, activeFlyoverFederationAddress);
 
         co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
@@ -3438,7 +3411,7 @@ class BridgeSupportFlyoverTest {
         assertTrue(
             provider.isFlyoverDerivationHashUsed(
                 tx.getHash(),
-                bridgeSupport.getFlyoverDerivationHash(PegTestUtils.createHash3(0), btcAddress, btcAddress, lbcAddress)
+                flyoverDerivationHash
             )
         );
         assertEquals(1, federationStorageProvider.getNewFederationBtcUTXOs(btcRegTestParams, activations).size());
@@ -3468,7 +3441,6 @@ class BridgeSupportFlyoverTest {
         FederationSupport federationSupport = mock(FederationSupport.class);
         when(federationSupport.getActiveFederation()).thenReturn(activeFederation);
 
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeConstantsRegtest,
             mock(BridgeStorageProvider.class),
@@ -3497,7 +3469,7 @@ class BridgeSupportFlyoverTest {
             federationRedeemScript
         );
 
-        Script flyoverP2SHScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverP2SHScript = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
 
         FlyoverFederationInformation expectedFlyoverFederationInformation =
             new FlyoverFederationInformation(flyoverDerivationHash,
@@ -3522,7 +3494,6 @@ class BridgeSupportFlyoverTest {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(btcRegTestParams);
 
-        FeePerKbSupport feePerKbSupport = mock(FeePerKbSupport.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeConstantsRegtest,
             mock(BridgeStorageProvider.class),
@@ -3549,7 +3520,7 @@ class BridgeSupportFlyoverTest {
             genesisFederation.getRedeemScript()
         );
 
-        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
 
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
@@ -3579,11 +3550,6 @@ class BridgeSupportFlyoverTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
-            .withActivations(activations)
-            .build();
-
         Address userRefundBtcAddress = Address.fromBase58(
             btcRegTestParams,
             "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
@@ -3600,29 +3566,26 @@ class BridgeSupportFlyoverTest {
         byte[] lbcAddress = ByteUtil.leftPadBytes(new byte[]{0x03}, 20);
         byte[] result = ByteUtil.merge(derivationArgumentsHash, userRefundBtcAddressBytes, lbcAddress, lpBtcAddressBytes);
 
-        Keccak256 flyoverDerivationHash = bridgeSupport.getFlyoverDerivationHash(
+        Keccak256 flyoverDerivationHash = PegUtils.getFlyoverDerivationHash(
             new Keccak256(derivationArgumentsHash),
             userRefundBtcAddress,
             lpBtcAddress,
-            new RskAddress(lbcAddress)
+            new RskAddress(lbcAddress),
+            activations
         );
 
         Assertions.assertArrayEquals(HashUtil.keccak256(result), flyoverDerivationHash.getBytes());
     }
 
     @Test
-    void saveFlyoverDataInStorage_OK() throws IOException {
+    void saveFlyoverDataInStorage_OK() {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeContractAddress,
             btcRegTestParams,
             activations
         );
-
-        StorageAccessor bridgeStorageAccessor = new BridgeStorageAccessorImpl(repository);
-        FederationStorageProvider federationStorageProvider = new FederationStorageProviderImpl(bridgeStorageAccessor);
 
         FederationSupport federationSupport = federationSupportBuilder
             .withFederationConstants(bridgeConstantsRegtest.getFederationConstants())
@@ -3665,20 +3628,6 @@ class BridgeSupportFlyoverTest {
         FlyoverFederationInformation obtainedFlyoverFederationInformation = optionalFlyoverFederationInformation.get();
         Assertions.assertEquals(flyoverFederationInformation.getDerivationHash(), obtainedFlyoverFederationInformation.getDerivationHash());
         Assertions.assertArrayEquals(flyoverFederationInformation.getFederationRedeemScriptHash(), obtainedFlyoverFederationInformation.getFederationRedeemScriptHash());
-    }
-
-    private Address getFlyoverFederationAddress() {
-        Federation genesisFederation = FederationTestUtils.getGenesisFederation(federationConstantsRegtest);
-        Script federationRedeemScript = genesisFederation.getRedeemScript();
-
-        Keccak256 flyoverDerivationHash = RskTestUtils.createHash(1);
-        Script flyoverRedeemScript = FlyoverRedeemScriptBuilderImpl.builder().of(
-            flyoverDerivationHash,
-            federationRedeemScript
-        );
-
-        Script flyoverP2SHScript = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
-        return Address.fromP2SHScript(btcRegTestParams, flyoverP2SHScript);
     }
 
     private interface BtcTransactionProvider {

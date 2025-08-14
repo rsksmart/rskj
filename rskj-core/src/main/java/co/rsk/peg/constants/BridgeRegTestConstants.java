@@ -58,9 +58,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        legacyMinimumPeginTxValue = Coin.COIN;
+        legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
+        minimumPeginTxValue = Coin.valueOf(500_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(500_000);
-        minimumPeginTxValue = Coin.COIN.div(2);
         minimumPegoutTxValue = Coin.valueOf(250_000);
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
