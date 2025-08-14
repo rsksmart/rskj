@@ -368,7 +368,8 @@ class BlockValidatorTest {
         Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
                 newHeader,
                 Collections.emptyList(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                null
         ));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
