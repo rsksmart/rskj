@@ -844,23 +844,25 @@ public enum BridgeMethods {
         fixedCost(3_000L), // TODO: Define final cost
         (BridgeMethodExecutorTyped<String>) Bridge::getUnionBridgeContractAddress,
         activations -> activations.isActive(RSKIP502),
-        fixedPermission(false)
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     GET_UNION_BRIDGE_LOCKING_CAP(
         CallTransaction.Function.fromSignature(
             "getUnionBridgeLockingCap",
             new String[]{},
-            new String[]{"int256"}
+            new String[]{"uint256"}
         ),
         fixedCost(3_000L), // TODO: Define final cost
         (BridgeMethodExecutorTyped<BigInteger>) Bridge::getUnionBridgeLockingCap,
         activations -> activations.isActive(RSKIP502),
-        fixedPermission(false)
+        fixedPermission(false),
+        CallTypeHelper.ALLOW_STATIC_CALL
     ),
     INCREASE_UNION_BRIDGE_LOCKING_CAP(
         CallTransaction.Function.fromSignature(
             "increaseUnionBridgeLockingCap",
-            new String[]{"int256"},
+            new String[]{"uint256"},
             new String[]{"int"}
         ),
         fixedCost(8_000L), // TODO: Define final cost
@@ -871,7 +873,7 @@ public enum BridgeMethods {
     REQUEST_UNION_BRIDGE_RBTC(
         CallTransaction.Function.fromSignature(
             "requestUnionBridgeRbtc",
-            new String[]{"int256"},
+            new String[]{"uint256"},
             new String[]{"int"}
         ),
         fixedCost(8_000L), // TODO: Define final cost
