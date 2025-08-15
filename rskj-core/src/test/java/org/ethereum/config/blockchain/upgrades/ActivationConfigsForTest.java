@@ -188,7 +188,12 @@ public class ActivationConfigsForTest {
 
     private static List<ConsensusRule> getReed800Rskips() {
         return new ArrayList<>(List.of(
-            ConsensusRule.RSKIP305,
+            ConsensusRule.RSKIP305
+        ));
+    }
+
+    private static List<ConsensusRule> getReed801Rskips() {
+        return new ArrayList<>(List.of(
             ConsensusRule.RSKIP502
         ));
     }
@@ -358,6 +363,10 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
+    public static ActivationConfig lovell700() {
+        return lovell700(Collections.emptyList());
+    }
+
     public static ActivationConfig lovell700(List<ConsensusRule> except) {
         List<ConsensusRule> rskips = new ArrayList<>();
         rskips.addAll(getPaidBridgeTxsRskip());
@@ -376,6 +385,10 @@ public class ActivationConfigsForTest {
         rskips.addAll(getLovell700Rskips());
 
         return enableTheseDisableThose(rskips, except);
+    }
+
+    public static ActivationConfig reed800() {
+        return reed800(Collections.emptyList());
     }
 
     public static ActivationConfig reed800(List<ConsensusRule> except) {
@@ -399,12 +412,28 @@ public class ActivationConfigsForTest {
         return enableTheseDisableThose(rskips, except);
     }
 
-    public static ActivationConfig reed800() {
-        return reed800(Collections.emptyList());
-    }
+    public static ActivationConfig reed801() { return reed801(Collections.emptyList()); }
 
-    public static ActivationConfig lovell700() {
-        return lovell700(Collections.emptyList());
+    public static ActivationConfig reed801(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+        rskips.addAll(getIris300Rskips());
+        rskips.addAll(getHop400Rskips());
+        rskips.addAll(getHop401Rskips());
+        rskips.addAll(getFingerroot500Rskips());
+        rskips.addAll(getArrowhead600Rskips());
+        rskips.addAll(getArrowhead631Rskips());
+        rskips.addAll(getLovell700Rskips());
+        rskips.addAll(getReed800Rskips());
+        rskips.addAll(getReed801Rskips());
+
+        return enableTheseDisableThose(rskips, except);
     }
 
     public static ActivationConfig regtest() {
