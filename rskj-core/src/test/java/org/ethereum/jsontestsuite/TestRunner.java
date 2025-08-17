@@ -558,13 +558,13 @@ public class TestRunner {
 
                     boolean assertData = Arrays.equals(
                             expectedCallCreate.getData(),
-                            resultCallCreate.getData());
+                            resultCallCreate.getData().copyArray());
                     if (!assertData) {
 
                         String output =
                                 String.format("Call/Create data is different. Expected: [ %s ], result: [ %s ]",
                                         ByteUtil.toHexString(expectedCallCreate.getData()),
-                                        ByteUtil.toHexString(resultCallCreate.getData()));
+                                        resultCallCreate.getData().toHexString());
                         logger.info(output);
                         results.add(output);
                     }
