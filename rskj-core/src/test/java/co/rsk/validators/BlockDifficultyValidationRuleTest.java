@@ -62,7 +62,7 @@ class BlockDifficultyValidationRuleTest {
     @Test
     void testDifficulty() {
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
-        BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
+        BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator, null);
 
         Block block = Mockito.mock(Block.class);
         Block parent= Mockito.mock(Block.class);

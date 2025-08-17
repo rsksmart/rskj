@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -63,7 +64,7 @@ class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
 
-            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
+            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent, Collections.emptyList()));
         }
     }
 
@@ -83,7 +84,7 @@ class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
 
-            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
+            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent, Collections.emptyList()));
         }
     }
 
@@ -103,7 +104,7 @@ class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
 
-            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
+            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent, Collections.emptyList()));
         }
     }
 }

@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DifficultyRuleTest {
     private final ActivationConfig activationConfig = ActivationConfigsForTest.all();
     private final BlockFactory blockFactory = new BlockFactory(activationConfig);
-    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest()));
+    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest()), null);
 
     @Disabled("???")
     @Test // pass rule

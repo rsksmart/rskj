@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -77,5 +78,18 @@ public class ConsensusValidationMainchainViewImpl implements ConsensusValidation
         }
 
         return headers;
+    }
+
+    @Override
+    public List<BlockHeader> getFromBestBlock(long blockCount) {
+        List<BlockHeader> result = new ArrayList<>();
+        Block block = blockStore.getBestBlock();
+        for (int i = 0; i < (int) blockCount; i++) { // todo(fede) improve this casting
+            result.add(block.getHeader());
+            Keccak256 parentHash = block.getParentHash();
+            block = blockStore.getBlockByHash(parentHash.getBytes());
+        }
+
+        return result;
     }
 }
