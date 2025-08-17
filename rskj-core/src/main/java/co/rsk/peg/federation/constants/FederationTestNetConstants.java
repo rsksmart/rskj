@@ -20,29 +20,28 @@ public class FederationTestNetConstants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         genesisFederationPublicKeys = Stream.of(
-            "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9",
-            "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
-            "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
-            "034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"
+            "03f7f755a259ce31f44a44f32fad9b744a7d529243a78a3f832f80c95a3f6813c2",
+            "03930cc5564c1a1382cc3cbb6e39db6d65d41e0948d9f7fa77125e09d03be431a4",
+            "0202a813e06617ed8f71aacd49f4e320c4113e07608cc20c02cdd78f9f3955e124"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
-        genesisFederationCreationTime = ZonedDateTime.parse("1970-01-18T19:29:27.600Z").toInstant();
+        genesisFederationCreationTime = ZonedDateTime.parse("2025-06-03T12:00:00.000Z").toInstant();
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Stream.of(
-            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
-            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
-            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+            "04910ef64c3269a4cd665e0572a42b8f370172d6076964242159843b3d3976631a99e1e86a5136a7f94373bafff1172d60ba2f87be755f2e892c54528d53a628a7",
+            "04c645d01fdc7184ff3274748697c826af357d22546a24f51b65b510d22991b57b5341ef49515f40aca2cdcee817b7213175055b31abe18fcb863aa8ec89d03fe4",
+            "046e8920b163e515f351e310d8bc97a8375cfb7866ccec3892dceec9214a37257bfae4368d00d2fc4b8d3c19bb7b54fa85ba3ae9dacd314f4ea1d22c02050d5a6a"
         ).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).toList();
         federationChangeAuthorizer = new AddressBasedAuthorizer(federationChangeAuthorizedKeys, AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        validationPeriodDurationInBlocks = 2000L;
+        validationPeriodDurationInBlocks = 300L;
 
         federationActivationAgeLegacy = 60L;
         preLovellActivationAge = 120L;
-        federationActivationAge = 2400L;
+        federationActivationAge = 360L;
 
-        fundsMigrationAgeSinceActivationBegin = 60L;
-        fundsMigrationAgeSinceActivationEnd = 900L;
+        fundsMigrationAgeSinceActivationBegin = 0L;
+        fundsMigrationAgeSinceActivationEnd = 150L;
         specialCaseFundsMigrationAgeSinceActivationEnd = 900L;
 
         erpFedPubKeysList = Stream.of(
