@@ -42,7 +42,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
         minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
-        btc2RskMinimumAcceptableConfirmations = 10;
+        btc2RskMinimumAcceptableConfirmations = 5;
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
@@ -53,7 +53,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         legacyMaxInputsPerMigrationTransaction = 50;
         maxInputsPerMigrationTransaction = 150;
         maxOutputsPerMigrationTransaction = 50;
-        migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
+        migrationValueForMultipleOutputs = Coin.COIN.multiply(2);
 
         btcHeightWhenBlockIndexActivates = 2_039_594;
         maxDepthToSearchBlocksBelowIndexActivation = THIRTY_DAYS_IN_BTC_BLOCKS;
@@ -62,7 +62,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
-        numberOfBlocksBetweenPegouts = THREE_HOURS_IN_RSK_BLOCKS;
+        numberOfBlocksBetweenPegouts = 60; // 30 minutes of RSK blocks (considering 1 block every 30 seconds)
 
         btcHeightWhenPegoutTxIndexActivates = 2_589_553; // Estimated date Wed, 20 Mar 2024 15:00:00 GMT. 2,579,823 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 1_440; // 10 days in BTC blocks (considering 1 block every 10 minutes)
