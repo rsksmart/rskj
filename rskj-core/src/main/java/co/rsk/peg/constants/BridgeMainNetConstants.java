@@ -23,9 +23,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
-
-        btc2RskMinimumAcceptableConfirmations = 100;
-        rsk2BtcMinimumAcceptableConfirmations = 4000;
+        
+        btc2RskMinimumAcceptableConfirmations = 5;
+        rsk2BtcMinimumAcceptableConfirmations = 10;
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
@@ -43,6 +43,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
+
+        maxInputsPerPegoutTransaction = 50;
 
         numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
 
