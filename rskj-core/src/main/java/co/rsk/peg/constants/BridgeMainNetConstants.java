@@ -17,9 +17,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
         federationConstants = FederationMainNetConstants.getInstance();
         lockingCapConstants = LockingCapMainNetConstants.getInstance();
 
-        btc2RskMinimumAcceptableConfirmations = 100;
-        btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
-        rsk2BtcMinimumAcceptableConfirmations = 4000;
+        btc2RskMinimumAcceptableConfirmations = 5;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
+        rsk2BtcMinimumAcceptableConfirmations = 10;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
@@ -40,7 +40,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         maxInputsPerPegoutTransaction = 50;
 
-        numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
+        numberOfBlocksBetweenPegouts = 60; // 30 minutes of RSK blocks (considering 1 block every 30 seconds)
 
         btcHeightWhenPegoutTxIndexActivates = 837_589; // Estimated date Wed, 03 Apr 2024 15:00:00 GMT. 832,430 was the block number at time of calculation
         pegoutTxIndexGracePeriodInBtcBlocks = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
