@@ -44,7 +44,7 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         unionBridgeConstants = UnionBridgeTestNetConstants.getInstance();
         historicalPegoutSelectionsConstants = new co.rsk.peg.pegout.HistoricalPegoutSelectionsConstants();
 
-        btc2RskMinimumAcceptableConfirmations = 10;
+        btc2RskMinimumAcceptableConfirmations = 5;
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
         updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
@@ -56,7 +56,7 @@ public class BridgeTestNet2Constants extends BridgeConstants {
         legacyMaxInputsPerMigrationTransaction = 50;
         maxInputsPerMigrationTransaction = 150;
         maxOutputsPerMigrationTransaction = 50;
-        migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
+        migrationValueForMultipleOutputs = Coin.COIN.multiply(2);
 
         // The Bridge BTC block store starts at the last block in org.bitcoin.testnet4.checkpoints,
         // and the block index covers the store from that block on.

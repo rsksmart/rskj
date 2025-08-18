@@ -24,8 +24,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         updateBridgeExecutionPeriod = THREE_MINUTES_IN_MILLIS;
         minSecondsBetweenCallsReceiveHeader = FIVE_MINUTES_IN_SECONDS;
 
-        btc2RskMinimumAcceptableConfirmations = 100;
-        rsk2BtcMinimumAcceptableConfirmations = 4000;
+        btc2RskMinimumAcceptableConfirmations = 5;
+        rsk2BtcMinimumAcceptableConfirmations = 10;
 
         legacyMinimumPeginTxValue = Coin.valueOf(1_000_000);
         legacyMinimumPegoutTxValue = Coin.valueOf(800_000);
@@ -35,7 +35,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         legacyMaxInputsPerMigrationTransaction = 50;
         maxInputsPerMigrationTransaction = 150;
         maxOutputsPerMigrationTransaction = 50;
-        migrationValueForMultipleOutputs = Coin.COIN.multiply(20);
+        migrationValueForMultipleOutputs = Coin.COIN.multiply(2);
 
         btcHeightWhenBlockIndexActivates = 696_022;
         maxDepthToSearchBlocksBelowIndexActivation = THIRTY_DAYS_IN_BTC_BLOCKS;
