@@ -19,21 +19,19 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         unionBridgeAddress = ZERO_ADDRESS;
 
         BigInteger oneRbtc = BigInteger.TEN.pow(18); // 1 RBTC = 1000000000000000000 wei
-        initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(200));
+        initialLockingCap = new Coin(oneRbtc).divide(BigInteger.valueOf(2)); // 0.5 RBTC
         lockingCapIncrementsMultiplier = 2;
 
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("c38c7f0bcdf679dd360dee652d83be7d5b386956")
+            new RskAddress("e8b8a9214ca868ab10e0d9fd8af1136313965154")
         );
 
-        // TODO: Replace with actual authorizers
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            ZERO_ADDRESS
+            new RskAddress("48cc621e629c6b44ebb7ebe22d1178d2f5a4eb32")
         );
 
-        // TODO: Replace with actual authorizers
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            ZERO_ADDRESS
+            new RskAddress("5e345a83481fd8782ba7ae4dfc4015aaebec9646")
         );
     }
 
