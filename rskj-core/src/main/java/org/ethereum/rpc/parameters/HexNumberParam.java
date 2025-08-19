@@ -39,11 +39,12 @@ public class HexNumberParam implements Serializable {
     private final String hexNumber;
 
     public HexNumberParam(String hexNumber) {
+        boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
+
         if (!isHexNumberLengthValid(hexNumber)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid param: " + StringUtils.trim(hexNumber));
         }
 
-        boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
         if (!HexUtils.isHex(hexNumber.toLowerCase(), hasPrefix ? 2 : 0)) {
             try {
                 new BigInteger(hexNumber);
@@ -65,7 +66,8 @@ public class HexNumberParam implements Serializable {
     }
 
     public static boolean isHexNumberLengthValid(String hex) {
-        return hex != null && hex.length() <= MAX_HEX_NUM_LEN;
+        int maxLength = HexUtils.hasHexPrefix(hex) ? MAX_HEX_NUM_LEN + 2 : MAX_HEX_NUM_LEN;
+        return hex != null && hex.length() <= maxLength;
     }
 
     public static class Deserializer extends StdDeserializer<HexNumberParam> {

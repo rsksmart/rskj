@@ -152,14 +152,15 @@ public class EthModule
     }
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
-        boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
 
-        validateStateOverrideAllowance(shouldPerformStateOverride);
+        if (accountOverrideList != null) {
+            validateAccountOverride(accountOverrideList);
+        }
 
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
-        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList);
+        MutableRepository mutableRepository = prepareRepository(result, block, accountOverrideList);
 
         CallArguments callArgs = argsParam.toCallArguments();
 
@@ -177,15 +178,20 @@ public class EthModule
         }
     }
 
-    private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
-        if (shouldPerformStateOverride && !allowCallStateOverride) {
-            throw invalidParamError("State override is not allowed");
+    private void validateAccountOverride(List<AccountOverride> accountOverrideList) {
+        if (!accountOverrideList.isEmpty()) {
+            if (!allowCallStateOverride) {
+                throw invalidParamError("State override is not allowed");
+            }
+
+            if (accountOverrideList.size() > AccountOverride.MAX_ACCOUNT_OVERRIDES) {
+                throw invalidParamError("Number of account overrides exceeded. Max " + AccountOverride.MAX_ACCOUNT_OVERRIDES);
+            }
         }
     }
 
     private MutableRepository prepareRepository(ExecutionBlockRetriever.Result result,
                                                 Block block,
-                                                boolean shouldPerformStateOverride,
                                                 List<AccountOverride> accountOverrideList) {
         MutableRepository mutableRepository = null;
 
@@ -193,7 +199,7 @@ public class EthModule
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
         }
 
-        if (shouldPerformStateOverride) {
+        if (accountOverrideList != null) {
             if (mutableRepository == null) {
                 mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
             }
