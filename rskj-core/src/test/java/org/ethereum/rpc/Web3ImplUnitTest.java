@@ -425,10 +425,10 @@ class Web3ImplUnitTest {
         assertEquals(1, receivedOverrides.size());
         AccountOverride receivedOverride = receivedOverrides.get(0);
         assertEquals(hexAddressParam.getAddress(), receivedOverride.getAddress());
-        BigInteger expectedBalance = BigInteger.valueOf(HexUtils.jsonHexToLong(overrideParam.getBalance().getHexNumber()));
+        BigInteger expectedBalance = BigInteger.valueOf(HexUtils.jsonHexToLong(overrideParam.balance().getHexNumber()));
         assertEquals(expectedBalance, receivedOverride.getBalance());
-        assertEquals(HexUtils.jsonHexToLong(overrideParam.getNonce().getHexNumber()), receivedOverride.getNonce());
-        assertEquals(overrideParam.getCode().getRawDataBytes(), receivedOverride.getCode());
+        assertEquals(HexUtils.jsonHexToLong(overrideParam.nonce().getHexNumber()), receivedOverride.getNonce());
+        assertEquals(overrideParam.code().getRawDataBytes(), receivedOverride.getCode());
     }
 
     private AccountOverrideParam getValidAccountOverrideParam() {

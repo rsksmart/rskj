@@ -227,10 +227,10 @@ class Web3MethodResolutionTest {
                 .orElse(null);
 
         assertNotNull(override);
-        assertEquals(code, override.getCode().getAsHexString());
-        assertEquals(balance, override.getBalance().getHexNumber());
-        assertEquals(nonce, override.getNonce().getHexNumber());
-        assertEquals(storageValue, override.getState().get(new HexDataParam(storageKey)).getAsHexString());
+        assertEquals(code, override.code().getAsHexString());
+        assertEquals(balance, override.balance().getHexNumber());
+        assertEquals(nonce, override.nonce().getHexNumber());
+        assertEquals(storageValue, override.state().get(new HexDataParam(storageKey)).getAsHexString());
         assertNotNull(response);
     }
 
