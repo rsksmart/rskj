@@ -17,32 +17,49 @@ package org.ethereum.vm.program;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.peg.Bridge;
-import com.google.common.collect.Sets;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContractArgs;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigInteger;
+import com.google.common.collect.Sets;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.pcc.secp256k1.Secp256k1Addition;
+import co.rsk.peg.Bridge;
 
 @ExtendWith(MockitoExtension.class)
 class ProgramTest {
@@ -52,7 +69,8 @@ class ProgramTest {
     protected static final int STACK_STATE_ERROR = 0;
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null,
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
     private final ProgramInvoke programInvoke = mock(ProgramInvoke.class);
     private final MessageCall msg = mock(MessageCall.class);
@@ -66,7 +84,8 @@ class ProgramTest {
 
     @BeforeEach
     void setup() {
-        precompiledContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
+        precompiledContract = spy(
+                precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
         gasCost = precompiledContract.getGasForData(DataWord.ONE.getData());
 
         when(repository.startTracking()).thenReturn(repository);
@@ -91,35 +110,34 @@ class ProgramTest {
         when(msg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
 
         Transaction transaction = Transaction
-            .builder()
-            .nonce(BigInteger.ONE.toByteArray())
-            .gasPrice(BigInteger.ONE)
-            .gasLimit(BigInteger.valueOf(21000))
-            .destination(PrecompiledContracts.BRIDGE_ADDR)
-            .chainId(config.getNetworkConstants().getChainId())
-            .value(BigInteger.TEN)
-            .build();
+                .builder()
+                .nonce(BigInteger.ONE.toByteArray())
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(PrecompiledContracts.BRIDGE_ADDR)
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
         when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
 
         BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
         program = new Program(
-            config.getVmConfig(),
-            precompiledContracts,
-            blockFactory,
-            activations,
-            null,
-            programInvoke,
-            transaction,
-            Sets.newHashSet(),
-            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-        );
+                config.getVmConfig(),
+                precompiledContracts,
+                blockFactory,
+                activations,
+                null,
+                programInvoke,
+                transaction,
+                Sets.newHashSet(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         program.getResult().spendGas(TOTAL_GAS);
     }
 
     @Test
     void testCallToPrecompiledAddress_success() throws VMException {
-        when(precompiledContract.execute(any())).thenReturn(new byte[]{1});
+        when(precompiledContract.execute(any())).thenReturn(new byte[] { 1 });
 
         program.callToPrecompiledAddress(msg, precompiledContract);
 
@@ -129,11 +147,11 @@ class ProgramTest {
         assertEquals(gasCost, program.getResult().getGasUsed());
     }
 
-
     @Test
     void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new RuntimeException());
-        Assertions.assertThrows(RuntimeException.class, () -> program.callToPrecompiledAddress(msg, precompiledContract));
+        Assertions.assertThrows(RuntimeException.class,
+                () -> program.callToPrecompiledAddress(msg, precompiledContract));
     }
 
     @Test
@@ -149,7 +167,7 @@ class ProgramTest {
     @Test
     void testCallToPrecompiledAddress_with_logs_success() throws VMException {
         Bridge bridge = mock(Bridge.class);
-        when(bridge.execute(any())).thenReturn(new byte[]{1});
+        when(bridge.execute(any())).thenReturn(new byte[] { 1 });
 
         program.callToPrecompiledAddress(msg, bridge);
 
@@ -164,6 +182,10 @@ class ProgramTest {
         assertNull(argsCaptor.getValue().getReceiptStore());
         assertNotNull(argsCaptor.getValue().getLogs());
         assertNotNull(argsCaptor.getValue().getProgramInvoke());
+    }
+
+    private Program aMockedProgram() {
+        return mock(Program.class);
     }
 
     /*********************************
