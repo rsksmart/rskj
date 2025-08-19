@@ -55,18 +55,13 @@ public class BN128Pairing extends BN128PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
+        long baseCost = GasCost.toGas(45_000);
+        long perPairCost = GasCost.toGas(34_000L);
+
         if (data == null) {
             return GasCost.toGas(45000);
         }
-        return GasCost.toGas(45000 + 34000 * (data.length / 192));
-    }
-
-    @Override
-    public int getMaxInput() {
-        // BN128 pairing processes pairs of points, each pair is 192 bytes
-        // Limit to a reasonable number of pairs to prevent excessive processing
-        // 100 pairs = 19,200 bytes should be sufficient for most use cases
-        return 192 * 100; // 19,200 bytes maximum
+        return GasCost.add(GasCost.multiply(perPairCost, (data.length / AbstractAltBN128.PAIR_SIZE)) , baseCost);
     }
 
     @Override

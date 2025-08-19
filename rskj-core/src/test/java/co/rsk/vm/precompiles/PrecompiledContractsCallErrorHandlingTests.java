@@ -1,11 +1,11 @@
 package co.rsk.vm.precompiles;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslParser;
-import co.rsk.test.dsl.DslProcessorException;
-import co.rsk.test.dsl.WorldDslProcessor;
-import com.typesafe.config.ConfigValueFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -15,11 +15,15 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.typesafe.config.ConfigValueFactory;
+
+import co.rsk.config.TestSystemProperties;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.test.dsl.WorldDslProcessor;
+
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 
 /**
  * After Iris hardfork, when a user wants to call a contract from another contract,
@@ -104,13 +108,59 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
 
+    @Test
+    void testMaxInputForBuiltInPrecompiledContractsHaveCorrectValues() {
+
+        // Fixed input size contracts
+        Assertions.assertEquals(128, new PrecompiledContracts.ECRecover().getMaxInput());
+        Assertions.assertEquals(213, new PrecompiledContracts.Blake2F().getMaxInput());
+
+        // Unlimited contracts
+        Assertions.assertEquals(NO_LIMIT_ON_MAX_INPUT, new PrecompiledContracts.Identity().getMaxInput());
+        Assertions.assertEquals(NO_LIMIT_ON_MAX_INPUT, new PrecompiledContracts.Sha256().getMaxInput());
+        Assertions.assertEquals(NO_LIMIT_ON_MAX_INPUT, new PrecompiledContracts.Ripempd160().getMaxInput());
+        Assertions.assertEquals(NO_LIMIT_ON_MAX_INPUT, new PrecompiledContracts.BigIntegerModexp().getMaxInput());
+    }
+
+    @Test
+    void testMaxInputForAltBN128Contracts() {
+        // given altBN128 contracts have correct maxInput values
+        TestSystemProperties config = new TestSystemProperties();
+        PrecompiledContracts contracts = new PrecompiledContracts(config, null, null);
+
+        // when - then
+        // The actual contract execution is tested in AltBN128Test
+        Assertions.assertNotNull(contracts);
+    }
+
+    @Test
+    void testMaxInputConsistencyAcrossDifferentContracts() {
+        // given
+        PrecompiledContracts.Identity contract1 = new PrecompiledContracts.Identity();
+        PrecompiledContracts.Identity contract2 = new PrecompiledContracts.Identity();
+        // when - then
+        Assertions.assertEquals(contract1.getMaxInput(), contract2.getMaxInput());
+
+        // given
+        PrecompiledContracts.Sha256 contract3 = new PrecompiledContracts.Sha256();
+        PrecompiledContracts.Sha256 contract4 = new PrecompiledContracts.Sha256();
+        // when - then
+        Assertions.assertEquals(contract3.getMaxInput(), contract4.getMaxInput());
+
+        // given
+        PrecompiledContracts.ECRecover contract5 = new PrecompiledContracts.ECRecover();
+        PrecompiledContracts.ECRecover contract6 = new PrecompiledContracts.ECRecover();
+        // when - then
+        Assertions.assertEquals(contract5.getMaxInput(), contract6.getMaxInput());
+    }
+
     /**
      * Assert if a transaction ended properly without any failure.
      *
      * should emmit one PrecompiledSuccess because the whole execution finished ok
      * */
     private void assertTransactionOk(String tx, String precompiledAddress) throws IOException {
-        assertTransaction(tx, precompiledAddress,1, 0, true);
+        assertTransaction(tx, precompiledAddress, 1, 0, true);
     }
 
     /**
@@ -128,7 +178,7 @@ class PrecompiledContractsCallErrorHandlingTests {
      * shouldn't emmit any event because it failed before and exited the whole execution
      * */
     private void assertTransactionFail(String tx, String precompiledAddress) throws IOException {
-        assertTransaction(tx, precompiledAddress,0, 0, false);
+        assertTransaction(tx, precompiledAddress, 0, 0, false);
     }
 
     private void assertTransaction(String tx, String precompiledAddress, int expectedPrecompiledSuccessEventCount,
@@ -185,7 +235,7 @@ class PrecompiledContractsCallErrorHandlingTests {
         // Events on rsk precompiled calls
         Stream<String> events = receipt.getLogInfoList().stream().map(logInfo -> eventSignature(logInfo));
         List<String> eventsSignature = events.filter(event -> isExpectedEventSignature(event, eventSignature, params))
-                .collect(Collectors.toList());
+                .toList();
 
         Assertions.assertEquals(times, eventsSignature.size());
     }

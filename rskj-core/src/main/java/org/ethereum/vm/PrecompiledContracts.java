@@ -118,6 +118,8 @@ public class PrecompiledContracts {
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
     public static final RskAddress ENVIRONMENT_ADDR = new RskAddress(ENVIRONMENT_ADDR_STR);
 
+    public static final int NO_LIMIT_ON_MAX_INPUT = -1;
+
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
             SHA256_ADDR,
@@ -267,7 +269,7 @@ public class PrecompiledContracts {
         public abstract byte[] execute(byte[] data) throws VMException;
 
         public int getMaxInput() {
-            return -1; // Default: no limit enforced
+            return NO_LIMIT_ON_MAX_INPUT; // Default: no limit enforced
         }
     }
 
@@ -379,6 +381,10 @@ public class PrecompiledContracts {
                     out = DataWord.valueOf(key.getAddress());
                 }
             } catch (Exception any) {
+                // If any exception occurs, we return an empty byte array
+                // This is to ensure that the contract does not fail and returns a valid output
+                // even if the input data is malformed or the signature is invalid
+                out = null;
             }
 
             if (out == null) {

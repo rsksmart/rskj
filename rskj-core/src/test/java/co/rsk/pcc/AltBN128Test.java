@@ -25,6 +25,7 @@ import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.BN128PrecompiledContract;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
+import co.rsk.pcc.altBN128.impls.GoAltBN128;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -494,11 +495,23 @@ class AltBN128Test {
                 "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
                 "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed" +
                 "275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec" +
+                "1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d" +
+                "0000000000000000000000000000000000000000000000000000000000000001" +
+                "0000000000000000000000000000000000000000000000000000000000000002" +
+                "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
+                "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed" +
+                "090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b" +
+                "12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa" +
+                "0000000000000000000000000000000000000000000000000000000000000001" +
+                "0000000000000000000000000000000000000000000000000000000000000002" +
+                "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
+                "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed" +
+                "275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec" +
                 "1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d";
 
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
         executePrecompileAndAssert(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 385_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 453_000);
     }
 
     @Test
@@ -665,6 +678,52 @@ class AltBN128Test {
                 ByteUtil.toHexString(multiplier.toByteArray())};
 
         executeVMAltBNOperation(inputs, expects, PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
+    }
+
+    @Test
+    void testMaxInputForBN128Addition() {
+        BN128Addition contract = new BN128Addition(activations, new JavaAltBN128());
+
+        // BN128 addition expects exactly 4 words: x1, y1, x2, y2
+        // Each word is 32 bytes, so total expected input is 128 bytes
+        assertEquals(128, contract.getMaxInput());
+    }
+
+    @Test
+    void testMaxInputForBN128Multiplication() {
+        BN128Multiplication contract = new BN128Multiplication(activations, new JavaAltBN128());
+
+        // BN128 multiplication expects exactly 3 words: x, y, scalar
+        // Each word is 32 bytes, so total expected input is 96 bytes
+        assertEquals(96, contract.getMaxInput());
+    }
+
+    @Test
+    void testMaxInputConsistencyAcrossInstances() {
+        // given
+        AbstractAltBN128 javaAltbn128 = new JavaAltBN128();
+
+        BN128Addition contract1 = new BN128Addition(activations, javaAltbn128);
+        BN128Addition contract2 = new BN128Addition(activations, javaAltbn128);
+        // when - then
+        assertEquals(contract1.getMaxInput(), contract2.getMaxInput());
+
+        // given
+        BN128Multiplication contract3 = new BN128Multiplication(activations, javaAltbn128);
+        BN128Multiplication contract4 = new BN128Multiplication(activations, javaAltbn128);
+        // when - then
+        assertEquals(contract3.getMaxInput(), contract4.getMaxInput());
+    }
+
+    @Test
+    void testMaxInputLimitsAreReasonable() {
+        // Verify that maxInput limits are reasonable and not too restrictive
+
+        // ECADD: 128 bytes is reasonable for 4 elliptic curve points
+        assertEquals(128, new BN128Addition(activations, new JavaAltBN128()).getMaxInput());
+
+        // ECMUL: 96 bytes is reasonable for 3 values (point + scalar)
+        assertEquals(96, new BN128Multiplication(activations, new JavaAltBN128()).getMaxInput());
     }
 
     private void executePrecompileAndAssertError(String inputString, String errorMessage,
