@@ -18,6 +18,39 @@
  */
 package org.ethereum.vm;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.util.ByteUtil.numberOfLeadingZeros;
+import static org.ethereum.util.ByteUtil.parseBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
+
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.cryptohash.Blake2b;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.crypto.signature.Secp256k1;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.BIUtil;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.exception.VMException;
+
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
@@ -33,31 +66,6 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.crypto.signature.Secp256k1;
-import org.ethereum.crypto.cryptohash.Blake2b;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.util.BIUtil;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.exception.VMException;
-
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.ethereum.util.ByteUtil.*;
 
 /**
  * @author Roman Mandeleil
@@ -117,8 +125,7 @@ public class PrecompiledContracts {
             IDENTITY_ADDR,
             BIG_INT_MODEXP_ADDR,
             BRIDGE_ADDR,
-            REMASC_ADDR
-    ));
+            REMASC_ADDR));
 
     // this maps needs to be updated by hand any time a new pcc is added
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
@@ -129,9 +136,8 @@ public class PrecompiledContracts {
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
                     new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
-                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203)
-            ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-    );
+                    new AbstractMap.SimpleEntry<>(ENVIRONMENT_ADDR, ConsensusRule.RSKIP203))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -144,8 +150,8 @@ public class PrecompiledContracts {
     private final RemascConfig remascConfig;
 
     public PrecompiledContracts(RskSystemProperties config,
-                                BridgeSupportFactory bridgeSupportFactory,
-                                SignatureCache signatureCache) {
+            BridgeSupportFactory bridgeSupportFactory,
+            SignatureCache signatureCache) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.signatureCache = signatureCache;
@@ -184,7 +190,8 @@ public class PrecompiledContracts {
             return bigIntegerModexp;
         }
         if (address.equals(REMASC_ADDR_DW)) {
-            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
+            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(),
+                    config.getActivationConfig());
         }
 
         // TODO(mc) reuse CONSENSUS_ENABLED_ADDRESSES
@@ -222,13 +229,22 @@ public class PrecompiledContracts {
     public abstract static class PrecompiledContract {
         public RskAddress contractAddress;
 
+        public PrecompiledContract() {
+        }
+
+        public PrecompiledContract(RskAddress contractAddress) {
+            this.contractAddress = contractAddress;
+        }
+
         public abstract long getGasForData(byte[] data);
 
         /**
-         * @deprecated( in favor of {@link #init(org.ethereum.vm.PrecompiledContractArgs)})
+         * @deprecated( in favor of
+         * {@link #init(org.ethereum.vm.PrecompiledContractArgs)})
          */
         @Deprecated
-        public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        public final void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore,
+                ReceiptStore receiptStore, List<LogInfo> logs) {
             PrecompiledContractArgs args = PrecompiledContractArgsBuilder.builder()
                     .transaction(tx)
                     .executionBlock(executionBlock)
@@ -249,6 +265,10 @@ public class PrecompiledContracts {
         }
 
         public abstract byte[] execute(byte[] data) throws VMException;
+
+        public int getMaxInput() {
+            return -1; // Default: no limit enforced
+        }
     }
 
     public static class Identity extends PrecompiledContract {
@@ -260,7 +280,7 @@ public class PrecompiledContracts {
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 15 and additional 3 for each 32 bytes word (round  up)
+            // minimum 15 and additional 3 for each 32 bytes word (round up)
             if (data == null) {
                 return 15;
             }
@@ -276,12 +296,11 @@ public class PrecompiledContracts {
 
     public static class Sha256 extends PrecompiledContract {
 
-
         @Override
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 60 and additional 12 for each 32 bytes word (round  up)
+            // minimum 60 and additional 12 for each 32 bytes word (round up)
             if (data == null) {
                 return 60;
             }
@@ -299,16 +318,14 @@ public class PrecompiledContracts {
         }
     }
 
-
     public static class Ripempd160 extends PrecompiledContract {
-
 
         @Override
         public long getGasForData(byte[] data) {
 
             // TODO Replace magic numbers with constants
             // gas charge for the execution:
-            // minimum 600 and additional 120 for each 32 bytes word (round  up)
+            // minimum 600 and additional 120 for each 32 bytes word (round up)
             if (data == null) {
                 return 600;
             }
@@ -329,7 +346,6 @@ public class PrecompiledContracts {
             return DataWord.valueOf(result).getData();
         }
     }
-
 
     public static class ECRecover extends PrecompiledContract {
 
@@ -379,6 +395,13 @@ public class PrecompiledContracts {
             BigInteger s = new BigInteger(1, sBytes);
 
             return ECDSASignature.validateComponents(r, s, v);
+        }
+
+        @Override
+        public int getMaxInput() {
+            // ECRecover expects exactly 128 bytes: 32 bytes hash + 32 bytes v + 32 bytes r
+            // + 32 bytes s
+            return 128;
         }
     }
 
@@ -504,9 +527,7 @@ public class PrecompiledContracts {
             byte[] bytes = parseBytes(data, offset, len);
             return BIUtil.toBI(bytes);
         }
-
     }
-
 
     public static class Blake2F extends PrecompiledContract {
 
@@ -567,6 +588,13 @@ public class PrecompiledContracts {
                 output.putLong(h[i]);
             }
             return output.array();
+        }
+
+        @Override
+        public int getMaxInput() {
+            // Blake2F expects exactly 213 bytes: 4 bytes rounds + 64 bytes h + 128 bytes m
+            // + 16 bytes t + 1 byte f
+            return 213;
         }
     }
 }
