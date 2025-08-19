@@ -27,6 +27,7 @@ public enum BridgeStorageIndexKey {
     SVP_FUND_TX_SIGNED("svpFundTxSigned"),
     SVP_SPEND_TX_HASH_UNSIGNED("svpSpendTxHashUnsigned"),
     SVP_SPEND_TX_WAITING_FOR_SIGNATURES("svpSpendTxWaitingForSignatures"),
+    SUPER_EVENT_DATA("superEventData"),
     ;
 
     private final String key;

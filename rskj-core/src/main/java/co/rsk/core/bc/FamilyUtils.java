@@ -18,19 +18,21 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.util.Trio;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.BridgeStorageIndexKey;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.Math.max;
 
@@ -39,7 +41,7 @@ import static java.lang.Math.max;
  */
 public class FamilyUtils {
 
-    public record FindSuperParentAndBridgeEventResponse (Block superParent, SuperBridgeEvent superBridgeEvent) {}
+    public record FindSuperParentAndBridgeEventResponse(Block superParent, SuperBridgeEvent superBridgeEvent) {}
 
     /**
      * Calculate the set of hashes of ancestors of a block
@@ -176,26 +178,24 @@ public class FamilyUtils {
     }
 
     public static FindSuperParentAndBridgeEventResponse findSuperParentAndUnclesAndBridgeEvent(
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            Block block,
-            List<TransactionReceipt> blockReceipts) {
+        RepositoryLocator repositoryLocator,
+        BlockStore blockStore,
+        Block block
+    ) {
         Pair<Block, List<Block>> superParentAndAncestors = findSuperParentAndAncestors(blockStore, block.getHeader());
         Block superParent = superParentAndAncestors.getLeft();
-        List<Block> ancestors = superParentAndAncestors.getRight();
 
         if (superParent == null) {
             return new FindSuperParentAndBridgeEventResponse(null,  null);
         }
 
-        SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
-                Stream.concat(
-                        blockReceipts.stream(),
-                        BlockUtils.makeReceiptsStream(receiptStore, ancestors, SuperBridgeEvent.FILTER)
-                )
-        );
+        Repository repo = repositoryLocator.startTrackingAt(superParent.getHeader());
+        RskAddress address = PrecompiledContracts.BRIDGE_ADDR;
+        DataWord key = BridgeStorageIndexKey.SUPER_EVENT_DATA.getKey(); // tbd
+        byte[] data = repo.getStorageBytes(address, key);
 
-        return new FindSuperParentAndBridgeEventResponse(superParent, bridgeEvent);
+        SuperBridgeEvent superBridgeEvent = SuperBridgeEvent.decode(data);
+        return new FindSuperParentAndBridgeEventResponse(superParent, superBridgeEvent);
     }
 
     public static Pair<Block, List<Block>> findSuperParentAndAncestors(BlockStore blockStore, BlockHeader header) {
