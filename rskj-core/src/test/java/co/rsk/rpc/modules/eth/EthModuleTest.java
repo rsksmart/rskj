@@ -225,6 +225,50 @@ class EthModuleTest {
     }
 
     @Test
+    void testCall_whenCalledWithAccountOverrideListButAccountOverridesAreHigherThanMaxAllowed_throwsExceptionAsExpected() {
+        // Given
+        CallArgumentsParam callArgumentsParam = TransactionFactoryHelper.toCallArgumentsParam(new CallArguments());
+        BlockIdentifierParam blockIdentifierParam = new BlockIdentifierParam("latest");
+        List<AccountOverride> accountOverrideList = List.of(
+                new AccountOverride(TestUtils.generateAddress("test"), 0, 0),
+                new AccountOverride(TestUtils.generateAddress("test2"), 0, 0)
+        );
+
+        int maxAccountOverrides = 1;
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 1,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null, signatureCache),
+                config.getGasEstimationCap(),
+                config.getCallGasCap(),
+                config.getActivationConfig(),
+                new PrecompiledContracts(config, null, null),
+                true,
+                new DefaultStateOverrideApplier(),
+                maxAccountOverrides,
+                0,
+                0);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            eth.call(callArgumentsParam, blockIdentifierParam, accountOverrideList);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Number of account overrides exceeded. Max " + maxAccountOverrides, exception.getMessage());
+    }
+
+    @Test
     void testCall_whenCalledWithAccountOverrideOverPrecompileContractAddress_throwsExceptionAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("test");
