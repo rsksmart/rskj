@@ -137,6 +137,8 @@ class RemascTestRunner {
                 builder.getConfig().getActivationConfig(), blockTxSignatureCache);
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, blockTxSignatureCache);
         BlockExecutor blockExecutor = new BlockExecutor(
+                builder.getBlockStore(),
+                builder.getReceiptStore(),
                 builder.getRepositoryLocator(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
@@ -277,6 +279,7 @@ class RemascTestRunner {
                 ),
                 txs,
                 uncles,
+                null,
                 true,
                 false
         );
@@ -294,7 +297,7 @@ class RemascTestRunner {
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null, new byte[0],
-                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0], null
+                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0], new byte[0], SuperBlockResolver.FALSE, null
             );
             this.blockHash = blockHash;
         }
