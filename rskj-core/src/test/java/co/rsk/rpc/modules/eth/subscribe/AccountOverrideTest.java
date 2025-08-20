@@ -39,7 +39,7 @@ class AccountOverrideTest {
     @Test
     void applyWithoutAddressThrowsException() {
         RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            new AccountOverride(null);
+            new AccountOverride(null, 0, 0);
         });
         assertEquals(-32602, exception.getCode());
         assertEquals("Address cannot be null", exception.getMessage());
@@ -48,7 +48,7 @@ class AccountOverrideTest {
     @Test
     void fromAccountOverrideParam_setMovePrecompileToAddress_throwsExceptionAsExpected() {
         // Given
-        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("address"));
+        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("address"), 0, 0);
         HexAddressParam hexAddressParam = new HexAddressParam(TestUtils.generateAddress("aPrecompiledAddress").toString());
         AccountOverrideParam accountOverrideParam = new AccountOverrideParam(null, null, null, null, null, hexAddressParam);
 
@@ -66,7 +66,7 @@ class AccountOverrideTest {
     void fromAccountOverrideParam_nullParameters_executesAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address);
+        AccountOverride accountOverride = new AccountOverride(address, 0, 0);
         AccountOverrideParam accountOverrideParam = new AccountOverrideParam(null, null, null, null, null, null);
 
         // When
@@ -85,7 +85,7 @@ class AccountOverrideTest {
     void fromAccountOverrideParam_validParameters_executesAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address);
+        AccountOverride accountOverride = new AccountOverride(address, 1, 0);
 
         HexNumberParam balance = new HexNumberParam("0x01");
         HexNumberParam nonce = new HexNumberParam("0x02");
@@ -108,7 +108,7 @@ class AccountOverrideTest {
     void testSetBalance_balanceLessThanZero_throwsExceptionAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address);
+        AccountOverride accountOverride = new AccountOverride(address, 0, 0);
 
         BigInteger balance = BigInteger.valueOf(-1L);
 
@@ -126,7 +126,7 @@ class AccountOverrideTest {
     void testSetNonce_nonceLessThanZero_throwsExceptionAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address);
+        AccountOverride accountOverride = new AccountOverride(address, 0, 0);
 
         Long nonce = -1L;
 
@@ -145,14 +145,14 @@ class AccountOverrideTest {
         // Given
         RskAddress address= TestUtils.generateAddress("address");
 
-        AccountOverride accountOverride = new AccountOverride(address);
+        AccountOverride accountOverride = new AccountOverride(address, 1, 1);
         accountOverride.setBalance(BigInteger.TEN);
         accountOverride.setNonce(1L);
         accountOverride.setCode(new byte[]{1});
         accountOverride.setState(Map.of(DataWord.valueOf(1), DataWord.valueOf(2)));
         accountOverride.setStateDiff(Map.of(DataWord.valueOf(3), DataWord.valueOf(4)));
 
-        AccountOverride otherAccountOverride = new AccountOverride(address);
+        AccountOverride otherAccountOverride = new AccountOverride(address, 1, 1);
         otherAccountOverride.setBalance(BigInteger.TEN);
         otherAccountOverride.setNonce(1L);
         otherAccountOverride.setCode(new byte[]{1});
