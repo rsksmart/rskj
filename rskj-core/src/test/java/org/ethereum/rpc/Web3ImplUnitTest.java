@@ -404,6 +404,8 @@ class Web3ImplUnitTest {
         AccountOverrideParam overrideParam = getValidAccountOverrideParam();
         HexAddressParam hexAddressParam = new HexAddressParam("0xaaa4567890123456789012345678901234567890");
         when(ethModule.call(any(), any(), any())).thenReturn("OK");
+        when(ethModule.getMaxOverridableCodeSize()).thenReturn(3);
+        when(ethModule.getMaxStateOverrideChanges()).thenReturn(1);
 
         ArgumentCaptor<CallArgumentsParam> callArgumentsParamArgumentCaptor = ArgumentCaptor.forClass(CallArgumentsParam.class);
         ArgumentCaptor<BlockIdentifierParam> blockIdentifierParamArgumentCaptor = ArgumentCaptor.forClass(BlockIdentifierParam.class);

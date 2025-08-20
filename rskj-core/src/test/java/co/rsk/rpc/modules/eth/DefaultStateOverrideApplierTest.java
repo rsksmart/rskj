@@ -65,7 +65,7 @@ class DefaultStateOverrideApplierTest {
 
         populateRepository(repository, address);
 
-        accountOverride = new AccountOverride(address);
+        accountOverride = new AccountOverride(address, 2, 1);
     }
 
     private void populateRepository(Repository repository, RskAddress address) {

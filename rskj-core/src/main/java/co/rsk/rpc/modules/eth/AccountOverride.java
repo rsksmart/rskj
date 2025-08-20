@@ -34,10 +34,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemente
 
 public class AccountOverride {
 
-    public static final int MAX_ACCOUNT_OVERRIDES = 1;
-    public static final int MAX_CODE_SIZE = 1;
-    public static final int MAX_STATE_CHANGES = 1;
-
     private BigInteger balance;
     private Long nonce;
     private byte[] code;
@@ -46,11 +42,17 @@ public class AccountOverride {
     private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
-    public AccountOverride(RskAddress address) {
+    private final int maxOverridableCodeSize;
+    private final int maxStateOverrideChanges;
+
+    public AccountOverride(RskAddress address, int maxOverridableCodeSize, int maxStateOverrideChanges) {
         if (address == null) {
             throw invalidParamError("Address cannot be null");
         }
         this.address = address;
+
+        this.maxOverridableCodeSize = maxOverridableCodeSize;
+        this.maxStateOverrideChanges = maxStateOverrideChanges;
     }
 
     public BigInteger getBalance() {
@@ -80,8 +82,8 @@ public class AccountOverride {
     }
 
     public void setCode(byte[] code) {
-        if (code.length > MAX_CODE_SIZE) {
-            throw invalidParamError("Code length in bytes exceeded. Max " + MAX_CODE_SIZE);
+        if (code.length > maxOverridableCodeSize) {
+            throw invalidParamError("Code length in bytes exceeded. Max " + maxOverridableCodeSize);
         }
         this.code = code;
     }
@@ -91,8 +93,8 @@ public class AccountOverride {
     }
 
     public void setState(Map<DataWord, DataWord> state) {
-        if (state.size() > MAX_STATE_CHANGES) {
-            throw invalidParamError("Number of state changes exceeded. Max " + MAX_STATE_CHANGES);
+        if (state.size() > maxStateOverrideChanges) {
+            throw invalidParamError("Number of state changes exceeded. Max " + maxStateOverrideChanges);
         }
         this.state = state;
     }
