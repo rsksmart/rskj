@@ -39,12 +39,11 @@ public class HexNumberParam implements Serializable {
     private final String hexNumber;
 
     public HexNumberParam(String hexNumber) {
-        boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
-
         if (!isHexNumberLengthValid(hexNumber)) {
             throw RskJsonRpcRequestException.invalidParamError("Invalid param: " + StringUtils.trim(hexNumber));
         }
 
+        boolean hasPrefix = HexUtils.hasHexPrefix(hexNumber);
         if (!HexUtils.isHex(hexNumber.toLowerCase(), hasPrefix ? 2 : 0)) {
             try {
                 new BigInteger(hexNumber);
