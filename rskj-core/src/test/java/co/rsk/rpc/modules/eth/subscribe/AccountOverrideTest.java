@@ -30,6 +30,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,13 +86,15 @@ class AccountOverrideTest {
     void fromAccountOverrideParam_validParameters_executesAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, 1, 0);
+        AccountOverride accountOverride = new AccountOverride(address, 1, 1);
 
         HexNumberParam balance = new HexNumberParam("0x01");
         HexNumberParam nonce = new HexNumberParam("0x02");
         HexDataParam code = new HexDataParam("0x03");
+        Map<HexDataParam, HexDataParam> state = new HashMap<>();
+        state.put(new HexDataParam("0x00"), new HexDataParam("0x01"));
 
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, null, null, null);
+        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, state, null, null);
 
         // When
         accountOverride = accountOverride.fromAccountOverrideParam(accountOverrideParam);
@@ -138,6 +141,46 @@ class AccountOverrideTest {
         // Then
         assertEquals(-32602, exception.getCode());
         assertEquals("Nonce must be equal or bigger than zero", exception.getMessage());
+    }
+
+    @Test
+    void testSetCode_codeSizeBiggerThanMax_throwsExceptionAsExpected() {
+        // Given
+        int maxOverridableCodeSize = 1;
+        RskAddress address = TestUtils.generateAddress("address");
+        AccountOverride accountOverride = new AccountOverride(address, maxOverridableCodeSize, 0);
+
+        byte[] code = "01".getBytes(); // Two Bytes
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            accountOverride.setCode(code);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Code length in bytes exceeded. Max " + maxOverridableCodeSize, exception.getMessage());
+    }
+
+    @Test
+    void testSetState_stateSizeBiggerThanMax_throwsExceptionAsExpected() {
+        // Given
+        int maxStateOverrideChanges = 1;
+        RskAddress address = TestUtils.generateAddress("address");
+        AccountOverride accountOverride = new AccountOverride(address, 0, maxStateOverrideChanges);
+
+        Map<DataWord, DataWord> state = new HashMap<>();
+        state.put(DataWord.valueOf(0), DataWord.ZERO);
+        state.put(DataWord.valueOf(1), DataWord.ONE);
+
+        // When
+        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
+            accountOverride.setState(state);
+        });
+
+        // Then
+        assertEquals(-32602, exception.getCode());
+        assertEquals("Number of state changes exceeded. Max " + maxStateOverrideChanges, exception.getMessage());
     }
 
     @Test
