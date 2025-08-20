@@ -21,13 +21,15 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HexNumberParamTest {
+class HexNumberParamTest {
 
     @Test
-    public void testValidHexNumberParam() {
+    void testValidHexNumberParam() {
         String validHexNumber = "0x76c0";
         HexNumberParam hexNumberParam = new HexNumberParam(validHexNumber);
 
@@ -36,7 +38,7 @@ public class HexNumberParamTest {
     }
 
     @Test
-    public void testValidHexNumberParamAsStringNumber() {
+    void testValidHexNumberParamAsStringNumber() {
         String validStringNumber = "1500";
         HexNumberParam hexNumberParam = new HexNumberParam(validStringNumber);
 
@@ -45,9 +47,32 @@ public class HexNumberParamTest {
     }
 
     @Test
-    public void testInvalidHexNumberParam() {
+    void testInvalidHexNumberParam() {
         String invalidHexNumber = "0x76ty";
 
         assertThrows(RskJsonRpcRequestException.class, () -> new HexNumberParam(invalidHexNumber));
     }
+
+    @Test
+    void testIsHexNumberLengthValid_lengthsEqualsToUpperBounds_returnsTrueAsExpected() {
+        // Given
+        String maxLengthWithPrefix = "0x000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F";
+        String maxLengthWithoutPrefix = "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F";
+
+        // Then
+        assertTrue(HexNumberParam.isHexNumberLengthValid(maxLengthWithPrefix));
+        assertTrue(HexNumberParam.isHexNumberLengthValid(maxLengthWithoutPrefix));
+    }
+
+    @Test
+    void testIsHexNumberLengthValid_lengthsHigherThanUpperBounds_returnsFalseAsExpected() {
+        // Given
+        String longerThanMaxWithPrefix = "0x000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20";
+        String longerThanMaxWithoutPrefix = "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F20";
+
+        // Then
+        assertFalse(HexNumberParam.isHexNumberLengthValid(longerThanMaxWithPrefix));
+        assertFalse(HexNumberParam.isHexNumberLengthValid(longerThanMaxWithoutPrefix));
+    }
+
 }
