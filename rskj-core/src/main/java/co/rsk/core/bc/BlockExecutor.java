@@ -30,7 +30,6 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.util.Trio;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -188,7 +187,7 @@ public class BlockExecutor {
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
             final var superParentAndBridgeEvent =
-                    FamilyUtils.findSuperParentAndUnclesAndBridgeEvent(blockStore, receiptStore, block, result.getTransactionReceipts());
+                    FamilyUtils.findSuperParentAndBridgeEvent(blockStore, receiptStore, block, result.getTransactionReceipts());
 
             SuperBlockFields superBlockFields = makeSuperBlockFields(
                     superParentAndBridgeEvent.superParent(),
