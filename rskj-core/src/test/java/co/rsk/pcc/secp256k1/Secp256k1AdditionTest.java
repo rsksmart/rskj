@@ -18,14 +18,15 @@
  */
 package co.rsk.pcc.secp256k1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.signature.Secp256k1Service;
+import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,7 +42,7 @@ class Secp256k1AdditionTest {
     }
 
     @Test
-    void whenExecuteOperationIsCalled_thenDelegatesCorrectlyToService() {
+    void whenExecuteOperationIsCalled_thenDelegatesCorrectlyToService() throws VMException {
         // given
         byte[] inputData = TestUtils.generateBytes("secp256k1AdditionInput", 128);
         byte[] expectedOutput = TestUtils.generateBytes("secp256k1AdditionOutput", 64);
@@ -59,20 +60,27 @@ class Secp256k1AdditionTest {
 
     @Test
     void givenDifferentDataLengths_whenGetGasForDataIsCalled_thenGasCostIsCalculatedCorrectly() {
-        //given 
+        // given
         byte[] dataInput1 = new byte[0];
         byte[] dataInput2 = TestUtils.generateBytes("secp256k1AdditionRandomInput", 64);
         byte[] dataInput3 = TestUtils.generateBytes("secp256k1AdditionRandomInput", 128);
         long expectedGasCost = 150;
 
-        //when the getGasForData method is called with different data lengths
+        // when the getGasForData method is called with different data lengths
         long gasCost1 = secp256k1Addition.getGasForData(dataInput1);
         long gasCost2 = secp256k1Addition.getGasForData(dataInput2);
         long gasCost3 = secp256k1Addition.getGasForData(dataInput3);
 
-        //then the gas cost should be calculated correctly
+        // then the gas cost should be calculated correctly
         assertEquals(expectedGasCost, gasCost1);
         assertEquals(expectedGasCost, gasCost2);
         assertEquals(expectedGasCost, gasCost3);
+    }
+
+    @Test
+    void testMaxInputReturnsCorrectValue() {
+        // Secp256k1 addition expects exactly 4 words: x1, y1, x2, y2
+        // Each word is 32 bytes, so total expected input is 128 bytes
+        assertEquals(128, secp256k1Addition.getMaxInput());
     }
 }

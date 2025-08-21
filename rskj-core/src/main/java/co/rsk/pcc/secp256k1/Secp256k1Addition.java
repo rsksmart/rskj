@@ -20,6 +20,7 @@ package co.rsk.pcc.secp256k1;
 
 import org.ethereum.crypto.signature.Secp256k1Service;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.exception.VMException;
 
 public class Secp256k1Addition extends Secp256k1PrecompiledContract {
 
@@ -35,7 +36,14 @@ public class Secp256k1Addition extends Secp256k1PrecompiledContract {
     }
 
     @Override
-    protected byte[] executeOperation(byte[] data) {
+    public int getMaxInput() {
+        // Secp256k1 addition expects exactly 4 words: x1, y1, x2, y2
+        // Each word is 32 bytes, so total expected input is 128 bytes
+        return 128;
+    }
+
+    @Override
+    protected byte[] executeOperation(byte[] data) throws VMException {
         return secp256k1Service.add(data);
     }
 }

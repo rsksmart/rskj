@@ -20,6 +20,7 @@ package co.rsk.pcc.secp256k1;
 
 import org.ethereum.crypto.signature.Secp256k1Service;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.exception.VMException;
 
 public class Secp256k1Multiplication extends Secp256k1PrecompiledContract {
 
@@ -30,12 +31,19 @@ public class Secp256k1Multiplication extends Secp256k1PrecompiledContract {
     }
 
     @Override
+    public int getMaxInput() {
+        // Secp256k1 multiplication expects exactly 3 words: x, y, scalar
+        // Each word is 32 bytes, so total expected input is 96 bytes
+        return 96;
+    }
+
+    @Override
     public long getGasForData(byte[] data) {
         return GasCost.toGas(EC_256_MULTIPLICATION_GAS_COST);
     }
 
     @Override
-    protected byte[] executeOperation(byte[] data) {
+    protected byte[] executeOperation(byte[] data) throws VMException {
         return secp256k1Service.mul(data);
     }
 }

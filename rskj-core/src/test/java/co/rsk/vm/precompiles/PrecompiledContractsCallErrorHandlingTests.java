@@ -1,15 +1,17 @@
 package co.rsk.vm.precompiles;
 
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -18,12 +20,12 @@ import org.junit.jupiter.api.Test;
 import com.typesafe.config.ConfigValueFactory;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.pcc.secp256k1.Secp256k1Addition;
+import co.rsk.pcc.secp256k1.Secp256k1Multiplication;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-
-import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 
 /**
  * After Iris hardfork, when a user wants to call a contract from another contract,
@@ -46,10 +48,9 @@ class PrecompiledContractsCallErrorHandlingTests {
 
     @Test
     void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
-                        .withValue("blockchain.config.hardforkActivationHeights.reed800", ConfigValueFactory.fromAnyRef(0))
-        );
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
+                .withValue("blockchain.config.hardforkActivationHeights.reed800", ConfigValueFactory.fromAnyRef(0)));
 
         DslParser parser = DslParser.fromResource(DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT);
         world = new World(config);
@@ -73,8 +74,8 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOk("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
         assertTransactionOk("tx14", PrecompiledContracts.BLAKE2F_ADDR_STR);
-        
-        // RSKIP-516 precompiles test
+
+        // EC Secp256k1 precompiles test
         assertTransactionOk("tx16", PrecompiledContracts.SECP256K1_ADD_ADDR_STR);
         assertTransactionOk("tx17", PrecompiledContracts.SECP256K1_MUL_ADDR_STR);
 
@@ -83,10 +84,9 @@ class PrecompiledContractsCallErrorHandlingTests {
 
     @Test
     void handleErrorOnFailedPrecompiledContractCall_afterIris() throws IOException, DslProcessorException {
-        TestSystemProperties config = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
-                        .withValue("blockchain.config.hardforkActivationHeights.tbd800", ConfigValueFactory.fromAnyRef(0))
-        );
+        TestSystemProperties config = new TestSystemProperties(rawConfig -> rawConfig
+                .withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
+                .withValue("blockchain.config.hardforkActivationHeights.reed800", ConfigValueFactory.fromAnyRef(0)));
 
         DslParser parser = DslParser.fromResource(DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT);
         world = new World(config);
@@ -110,10 +110,10 @@ class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOkWithErrorHandling("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
         assertTransactionOkWithErrorHandling("tx14", PrecompiledContracts.BLAKE2F_ADDR_STR);
-        
-        // RSKIP-516 precompiles test - commenting out temporarily to fix the test
-         assertTransactionOkWithErrorHandling("tx16", PrecompiledContracts.SECP256K1_ADD_ADDR_STR);
-         assertTransactionOkWithErrorHandling("tx17", PrecompiledContracts.SECP256K1_MUL_ADDR_STR);
+
+        // EC Secp256k1 precompiles test
+        assertTransactionOk("tx16", PrecompiledContracts.SECP256K1_ADD_ADDR_STR);
+        assertTransactionOk("tx17", PrecompiledContracts.SECP256K1_MUL_ADDR_STR);
 
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
@@ -124,6 +124,8 @@ class PrecompiledContractsCallErrorHandlingTests {
         // Fixed input size contracts
         Assertions.assertEquals(128, new PrecompiledContracts.ECRecover().getMaxInput());
         Assertions.assertEquals(213, new PrecompiledContracts.Blake2F().getMaxInput());
+        Assertions.assertEquals(128, new Secp256k1Addition(Secp256k1.getInstance()).getMaxInput());
+        Assertions.assertEquals(96, new Secp256k1Multiplication(Secp256k1.getInstance()).getMaxInput());
 
         // Unlimited contracts
         Assertions.assertEquals(NO_LIMIT_ON_MAX_INPUT, new PrecompiledContracts.Identity().getMaxInput());

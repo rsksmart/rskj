@@ -28,7 +28,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public abstract class Secp256k1PrecompiledContract extends PrecompiledContracts.PrecompiledContract {
     protected final Secp256k1Service secp256k1Service;
 
-    public Secp256k1PrecompiledContract(Secp256k1Service secp256k1Service) {
+    protected Secp256k1PrecompiledContract(Secp256k1Service secp256k1Service) {
         this.secp256k1Service = secp256k1Service;
     }
 
@@ -39,5 +39,5 @@ public abstract class Secp256k1PrecompiledContract extends PrecompiledContracts.
         return executeOperation(validatedData);
     }
 
-    protected abstract byte[] executeOperation(byte[] data);
+    protected abstract byte[] executeOperation(byte[] data) throws VMException;
 }

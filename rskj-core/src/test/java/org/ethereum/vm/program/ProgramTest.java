@@ -36,6 +36,7 @@ import java.math.BigInteger;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.ReceivedTxSignatureCache;
@@ -392,8 +393,153 @@ class ProgramTest {
         assertStack(STACK_STATE_SUCCESS);
     }
 
-    private Program aMockedProgram() {
-        return mock(Program.class);
+    @Test
+    void testRSKIP516ActiveMaxInputTruncation() throws VMException {
+        // given: RSKIP516 is active
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
+
+        // Create a mock contract with fixed maxInput (like Secp256k1Addition)
+        PrecompiledContracts.PrecompiledContract fixedSizeContract = mock(
+                PrecompiledContracts.PrecompiledContract.class);
+        when(fixedSizeContract.getMaxInput()).thenReturn(128);
+        when(fixedSizeContract.execute(any())).thenReturn(new byte[] { 1 });
+
+        // Create message with large input data (200 bytes > maxInput 128)
+        MessageCall largeMsg = mock(MessageCall.class);
+        when(largeMsg.getCodeAddress()).thenReturn(DataWord.ONE);
+        when(largeMsg.getType()).thenReturn(MessageCall.MsgType.CALL);
+        when(largeMsg.getEndowment()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataSize()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataSize()).thenReturn(DataWord.valueOf(200)); // 200 bytes input
+        when(largeMsg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
+
+        // Mock the memory chunk method to return data of the expected size
+        Program spyProgram = spy(program);
+        doAnswer(invocation -> {
+            int size = invocation.getArgument(1);
+            return generateTestData(size);
+        }).when(spyProgram).memoryChunk(anyInt(), anyInt());
+
+        // when: RSKIP516 is active, input should be truncated
+        spyProgram.callToPrecompiledAddress(largeMsg, fixedSizeContract);
+
+        // then: Input should be truncated to maxInput (128 bytes)
+        verify(fixedSizeContract).execute(argThat(data -> data.length == 128));
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testRSKIP516InactiveNoTruncation() throws VMException {
+        // given: RSKIP516 is NOT active
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(false);
+
+        // Create a mock contract with fixed maxInput (like Secp256k1Addition)
+        PrecompiledContracts.PrecompiledContract fixedSizeContract = mock(
+                PrecompiledContracts.PrecompiledContract.class);
+        when(fixedSizeContract.getMaxInput()).thenReturn(128);
+        when(fixedSizeContract.execute(any())).thenReturn(new byte[] { 1 });
+
+        // Create message with large input data (200 bytes > maxInput 128)
+        MessageCall largeMsg = mock(MessageCall.class);
+        when(largeMsg.getCodeAddress()).thenReturn(DataWord.ONE);
+        when(largeMsg.getType()).thenReturn(MessageCall.MsgType.CALL);
+        when(largeMsg.getEndowment()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataSize()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataSize()).thenReturn(DataWord.valueOf(200)); // 200 bytes input
+        when(largeMsg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
+
+        // Mock the memory chunk method to return data of the expected size
+        Program spyProgram = spy(program);
+        doAnswer(invocation -> {
+            int size = invocation.getArgument(1);
+            return generateTestData(size);
+        }).when(spyProgram).memoryChunk(anyInt(), anyInt());
+
+        // when: RSKIP516 is NOT active, input should NOT be truncated
+        spyProgram.callToPrecompiledAddress(largeMsg, fixedSizeContract);
+
+        // then: Input should NOT be truncated, should receive full 200 bytes
+        verify(fixedSizeContract).execute(argThat(data -> data.length == 200));
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testRSKIP516ActiveTruncationForSecp256k1Multiplication() throws VMException {
+        // given: RSKIP516 is active
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
+
+        // Create a mock contract with fixed maxInput (like Secp256k1Multiplication)
+        PrecompiledContracts.PrecompiledContract fixedSizeContract = mock(
+                PrecompiledContracts.PrecompiledContract.class);
+        when(fixedSizeContract.getMaxInput()).thenReturn(96); // 96 bytes like Secp256k1Multiplication
+        when(fixedSizeContract.execute(any())).thenReturn(new byte[] { 1 });
+
+        // Create message with large input data (150 bytes > maxInput 96)
+        MessageCall largeMsg = mock(MessageCall.class);
+        when(largeMsg.getCodeAddress()).thenReturn(DataWord.ONE);
+        when(largeMsg.getType()).thenReturn(MessageCall.MsgType.CALL);
+        when(largeMsg.getEndowment()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataSize()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataSize()).thenReturn(DataWord.valueOf(150)); // 150 bytes input
+        when(largeMsg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
+
+        // Mock the memory chunk method to return data of the expected size
+        Program spyProgram = spy(program);
+        doAnswer(invocation -> {
+            int size = invocation.getArgument(1);
+            return generateTestData(size);
+        }).when(spyProgram).memoryChunk(anyInt(), anyInt());
+
+        // when: RSKIP516 is active, input should be truncated
+        spyProgram.callToPrecompiledAddress(largeMsg, fixedSizeContract);
+
+        // then: Input should be truncated to maxInput (96 bytes)
+        verify(fixedSizeContract).execute(argThat(data -> data.length == 96));
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testRSKIP516ActiveNoTruncationForUnlimitedContracts() throws VMException {
+        // given: RSKIP516 is active
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
+
+        // Create a mock contract with unlimited maxInput (like Identity)
+        PrecompiledContracts.PrecompiledContract unlimitedContract = mock(
+                PrecompiledContracts.PrecompiledContract.class);
+        when(unlimitedContract.getMaxInput()).thenReturn(NO_LIMIT_ON_MAX_INPUT);
+        when(unlimitedContract.execute(any())).thenReturn(new byte[] { 1 });
+
+        // Create message with large input data (1000 bytes)
+        MessageCall largeMsg = mock(MessageCall.class);
+        when(largeMsg.getCodeAddress()).thenReturn(DataWord.ONE);
+        when(largeMsg.getType()).thenReturn(MessageCall.MsgType.CALL);
+        when(largeMsg.getEndowment()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataSize()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataSize()).thenReturn(DataWord.valueOf(1000)); // 1000 bytes input
+        when(largeMsg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
+
+        // Mock the memory chunk method to return data of the expected size
+        Program spyProgram = spy(program);
+        doAnswer(invocation -> {
+            int size = invocation.getArgument(1);
+            return generateTestData(size);
+        }).when(spyProgram).memoryChunk(anyInt(), anyInt());
+
+        // when: RSKIP516 is active but contract has unlimited maxInput
+        spyProgram.callToPrecompiledAddress(largeMsg, unlimitedContract);
+
+        // then: Input should NOT be truncated for unlimited contracts, even when
+        // RSKIP516 is active
+        verify(unlimitedContract).execute(argThat(data -> data.length == 1000));
+        assertStack(STACK_STATE_SUCCESS);
     }
 
     /*********************************

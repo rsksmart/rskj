@@ -474,6 +474,10 @@ public class Program {
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
         byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
 
+        if (programCode == null) {
+            programCode = EMPTY_BYTE_ARRAY;
+        }
+
         byte[] newAddressBytes = HashUtil.calcSaltAddr(senderAddress, programCode, salt.getData());
         byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
         RskAddress newAddress = new RskAddress(newAddressBytes);
@@ -485,6 +489,11 @@ public class Program {
             DataWord memSize, RskAddress contractAddress, boolean isCreate2) {
         // [1] FETCH THE CODE FROM THE MEMORY
         byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+
+        if (programCode == null) {
+            programCode = EMPTY_BYTE_ARRAY;
+        }
+
         validateInitcodeSize(programCode);
 
         if (getCallDeep() == getMaxDepth()) {
@@ -763,6 +772,10 @@ public class Program {
         }
 
         byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
+
+        if (data == null) {
+            data = EMPTY_BYTE_ARRAY;
+        }
 
         // FETCH THE SAVED STORAGE
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
@@ -1426,16 +1439,12 @@ public class Program {
             return;
         }
 
-        int maxInputFromContract = contract.getMaxInput();
-        int inputLength =  msg.getInDataSize().intValue();
-        if (maxInputFromContract > 0 && inputLength > maxInputFromContract) {
-            inputLength = maxInputFromContract;
-            if (isLogEnabled) {
-                logger.info("Input data truncated from {} to {} bytes for precompiled contract at address: [{}]",
-                        msg.getInDataSize().intValue(), maxInputFromContract, new RskAddress(msg.getCodeAddress()));
-            }
-        }
+        int inputLength = getInputLength(msg, contract);
         byte[] data = this.memoryChunk(msg.getInDataOffs().intValue(), inputLength);
+
+        if (data == null) {
+            data = EMPTY_BYTE_ARRAY;
+        }
 
         // Charge for endowment - is not reversible by rollback
         track.transfer(senderAddress, contextAddress, new Coin(msg.getEndowment().getData()));
@@ -1511,6 +1520,23 @@ public class Program {
                 executePrecompiled(contract, msg, requiredGas, track, data);
             }
         }
+    }
+
+    private int getInputLength(MessageCall msg, PrecompiledContract contract) {
+        int inputLength = msg.getInDataSize().intValue();
+        if (!activations.isActive(ConsensusRule.RSKIP516)) {
+            return inputLength;
+        }
+
+        int maxInputFromContract = contract.getMaxInput();
+        if (maxInputFromContract > 0 && inputLength > maxInputFromContract) {
+            inputLength = maxInputFromContract;
+            if (isLogEnabled) {
+                logger.info("Input data truncated from {} to {} bytes for precompiled contract at address: [{}]",
+                        msg.getInDataSize().intValue(), maxInputFromContract, new RskAddress(msg.getCodeAddress()));
+            }
+        }
+        return inputLength;
     }
 
     /**
@@ -1660,6 +1686,7 @@ public class Program {
         public static OutOfGasException gasOverflow(@Nonnull Program program, long actualGas, BigInteger gasLimit) {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d], tx[%s]", actualGas, gasLimit.longValue(), extractTxHash(program));
         }
+
         public static IllegalOperationException invalidOpCode(@Nonnull Program program) {
             return new IllegalOperationException("Invalid operation code: opcode[%s], tx[%s]", ByteUtil.toHexString(new byte[] {program.getCurrentOp()}, 0, 1), extractTxHash(program));
         }
