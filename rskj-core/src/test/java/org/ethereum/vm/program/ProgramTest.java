@@ -392,6 +392,10 @@ class ProgramTest {
         assertStack(STACK_STATE_SUCCESS);
     }
 
+    private Program aMockedProgram() {
+        return mock(Program.class);
+    }
+
     /*********************************
      * ---------- UTILS ------------ *
      *********************************/

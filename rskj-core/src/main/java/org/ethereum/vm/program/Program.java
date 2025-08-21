@@ -1191,8 +1191,8 @@ public class Program {
                 Iterator<DataWord> it = getStorage().getStorageKeys(ownerAddress);
                 while (it.hasNext()) {
                     DataWord key = it.next();
-                    storageData.append(" ").append(key).append(" -> ").
-                            append(getStorage().getStorageValue(ownerAddress, key)).append('\n');
+                    storageData.append(" ").append(key).append(" -> ")
+                            .append(getStorage().getStorageValue(ownerAddress, key)).append('\n');
                 }
                 if (storageData.length() > 0) {
                     storageData.insert(0, "\n");
@@ -1206,8 +1206,7 @@ public class Program {
                         .append("(")
                         .append(memory.size())
                         .append(") bytes");
-            }
-            else {
+            } else {
                 for (int i = 0; i < memory.size(); ++i) {
 
                     byte value = memory.readByte(i);
