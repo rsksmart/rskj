@@ -1,6 +1,7 @@
 package co.rsk.peg.bitcoin;
 
 import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHOutputScript;
+import static co.rsk.bitcoinj.script.ScriptBuilder.createP2SHP2WSHOutputScript;
 import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 
 import co.rsk.bitcoinj.core.*;
@@ -29,6 +30,17 @@ public class BitcoinTestUtils {
 
         if (sorted) {
             keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        }
+
+        return keys;
+    }
+
+    public static List<BtcECKey> getBtcEcKeys(int amount) {
+        List<BtcECKey> keys = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            String seed = "seed" + i;
+            BtcECKey key = getBtcEcKeyFromSeed(seed);
+            keys.add(key);
         }
 
         return keys;
@@ -118,7 +130,7 @@ public class BitcoinTestUtils {
     public static byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
         List<byte[]> pubKeys = keys.stream()
             .map(BtcECKey::getPubKey)
-            .collect(Collectors.toList());
+            .toList();
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
         byte[] flatPubKeys = new byte[pubKeysLength];
@@ -131,37 +143,84 @@ public class BitcoinTestUtils {
         return flatPubKeys;
     }
 
-    public static void signTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
-        if (transaction.getWitness(inputIndex).getPushCount() == 0) {
-            signLegacyTransactionInputFromP2shMultiSig(transaction, inputIndex, keys);
-        }
-    }
-
-    private static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
-        TransactionInput input = transaction.getInput(inputIndex);
-
-        Script inputRedeemScript = extractRedeemScriptFromInput(input)
+    public static void signLegacyTransactionInputFromP2shMultiSig(BtcTransaction transaction, int inputIndex, List<BtcECKey> keys) {
+        Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
             .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
 
         Script outputScript = createP2SHOutputScript(inputRedeemScript);
-        Sha256Hash sigHash = transaction.hashForSignature(inputIndex, inputRedeemScript, BtcTransaction.SigHash.ALL, false);
-        Script inputScriptSig = input.getScriptSig();
+        Sha256Hash sigHash = transaction.hashForSignature(
+            inputIndex,
+            inputRedeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
 
-        for (BtcECKey key : keys) {
-            BtcECKey.ECDSASignature sig = key.sign(sigHash);
-            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
-            byte[] txSigEncoded = txSig.encodeToBitcoin();
-
-            int keyIndex = inputScriptSig.getSigInsertionIndex(sigHash, key);
-            inputScriptSig = outputScript.getScriptSigWithSignature(inputScriptSig, txSigEncoded, keyIndex);
-            input.setScriptSig(inputScriptSig);
+        List<BtcECKey> requiredKeys = getRequiredKeysToSign(keys, inputRedeemScript);
+        for (BtcECKey key : requiredKeys) {
+            signTxInputWithKey(transaction, inputIndex, sigHash, key, outputScript);
         }
+    }
+
+    public static void signWitnessTransactionInputFromP2shMultiSig(
+        BtcTransaction transaction,
+        int inputIndex,
+        Coin inputValue,
+        List<BtcECKey> keys
+    ) {
+        Script inputRedeemScript = extractRedeemScriptFromInput(transaction, inputIndex)
+            .orElseThrow(() -> new IllegalArgumentException("Cannot sign inputs that are not from a p2sh multisig"));
+
+        Script outputScript = createP2SHP2WSHOutputScript(inputRedeemScript);
+        Sha256Hash sigHash = transaction.hashForWitnessSignature(
+            inputIndex,
+            inputRedeemScript,
+            inputValue,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        List<BtcECKey> requiredKeys = getRequiredKeysToSign(keys, inputRedeemScript);
+        for (BtcECKey key : requiredKeys) {
+            signTxInputWithKey(transaction, inputIndex, sigHash, key, outputScript);
+        }
+    }
+
+    private static List<BtcECKey> getRequiredKeysToSign(List<BtcECKey> allKeys, Script redeemScript) {
+        int requiredSignatures = redeemScript.getNumberOfSignaturesRequiredToSpend();
+        int keysToSign = Math.min(requiredSignatures, allKeys.size());
+
+        return new ArrayList<>(allKeys.subList(0, keysToSign));
+    }
+
+    public static void signTxInputWithKey(
+        BtcTransaction tx,
+        int inputIndex,
+        Sha256Hash sigHash,
+        BtcECKey signingKey,
+        Script outputScript
+    ) {
+        int sigInsertionIndex = getSigInsertionIndex(tx, inputIndex, sigHash, signingKey);
+        byte[] sig = signingKey.sign(sigHash).encodeToDER();
+
+        TransactionSignature federatorTxSig = new TransactionSignature(
+            BtcECKey.ECDSASignature.decodeFromDER(sig),
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+        signInput(tx, inputIndex, federatorTxSig, sigInsertionIndex, outputScript);
     }
 
     public static List<Sha256Hash> generateTransactionInputsSigHashes(BtcTransaction btcTx) {
         return IntStream.range(0, btcTx.getInputs().size())
-            .mapToObj(i -> generateSigHashForP2SHTransactionInput(btcTx, i))
+            .mapToObj(i -> generateTransactionInputSigHash(btcTx, i))
             .toList();
+    }
+
+    public static Sha256Hash generateTransactionInputSigHash(BtcTransaction btcTx, int inputIndex) {
+        if (!inputHasWitness(btcTx, inputIndex)) {
+            return generateSigHashForLegacyTransactionInput(btcTx, inputIndex);
+        }
+        return generateSigHashForSegwitTransactionInput(btcTx, inputIndex, btcTx.getInput(inputIndex).getValue());
     }
 
     public static List<byte[]> generateSignerEncodedSignatures(BtcECKey signingKey, List<Sha256Hash> sigHashes) {
@@ -255,5 +314,9 @@ public class BitcoinTestUtils {
         List<TransactionOutput> outputs = sourceTransaction.getOutputs();
         searchForOutput(outputs, expectedOutputScript)
             .ifPresent(transaction::addInput);
+    }
+
+    public static byte[] getOutputScriptPubKeyHash(TransactionOutput output) {
+        return output.getScriptPubKey().getPubKeyHash();
     }
 }
