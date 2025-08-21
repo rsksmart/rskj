@@ -116,7 +116,7 @@ public class BlockFactory {
         if (isRSKIP481Active && block.size() == 4) {
             RLPList superBlockFieldsRlp = (RLPList) block.get(3);
 
-            superBlockFields = decodeSuperBlockFields(superBlockFieldsRlp);
+            superBlockFields = decodeSuperBlockFields(superBlockFieldsRlp, sealed);
         }
 
         return newBlock(header, transactionList, uncleList, superBlockFields, sealed);
@@ -350,11 +350,11 @@ public class BlockFactory {
         return Collections.unmodifiableList(parsedTxs);
     }
 
-    public SuperBlockFields decodeSuperBlockFields(byte[] encoded) {
-        return decodeSuperBlockFields(RLP.decodeList(encoded));
+    public SuperBlockFields decodeSuperBlockFields(byte[] encoded, boolean sealed) {
+        return decodeSuperBlockFields(RLP.decodeList(encoded), sealed);
     }
 
-    private SuperBlockFields decodeSuperBlockFields(RLPList superBlockFieldsRlp) {
+    private SuperBlockFields decodeSuperBlockFields(RLPList superBlockFieldsRlp, boolean sealed) {
         byte[] superParentHash = superBlockFieldsRlp.get(0).getRLPData();
 
         long superBlockNumber = parseBigInteger(superBlockFieldsRlp.get(1).getRLPData()).longValueExact();
@@ -362,6 +362,14 @@ public class BlockFactory {
         byte[] superBridgeEventRlp = superBlockFieldsRlp.get(2).getRLPData();
         SuperBridgeEvent bridgeEvent = SuperBridgeEvent.decode(superBridgeEventRlp);
 
-        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, bridgeEvent);
+        BlockHeader superUncleBlockHeader = null;
+        final var superUncleHeadersRlp = (RLPList) superBlockFieldsRlp.get(3);
+
+        if (superUncleHeadersRlp.size() > 0) {
+            final var element = superUncleHeadersRlp.get(0);
+            superUncleBlockHeader = decodeHeader((RLPList)element, false, sealed);
+        }
+
+        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, bridgeEvent, superUncleBlockHeader);
     }
 }

@@ -30,7 +30,6 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.util.Trio;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -187,12 +186,13 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            final var superParentAndBridgeEvent =
-                    FamilyUtils.findSuperParentAndUnclesAndBridgeEvent(blockStore, receiptStore, block, result.getTransactionReceipts());
+            final var superParentAndBridgeEventAndSuperUncleBlockHeader =
+                    FamilyUtils.findSuperParentAndBridgeEventAndSuperUncleBlockHeader(blockStore, receiptStore, block, result.getTransactionReceipts());
 
             SuperBlockFields superBlockFields = makeSuperBlockFields(
-                    superParentAndBridgeEvent.superParent(),
-                    superParentAndBridgeEvent.superBridgeEvent()
+                    superParentAndBridgeEventAndSuperUncleBlockHeader.superParent(),
+                    superParentAndBridgeEventAndSuperUncleBlockHeader.superBridgeEvent(),
+                    superParentAndBridgeEventAndSuperUncleBlockHeader.superUncleBlockHeader()
             );
             block.setSuperChainFields(superBlockFields);
         }
@@ -201,14 +201,15 @@ public class BlockExecutor {
         profiler.stop(metric);
     }
 
-    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event) {
+    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event, BlockHeader superUncleBlockHeader) {
         Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
         long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
 
         return new SuperBlockFields(
                 superParentHash,
                 superParentBlockNumber,
-                event
+                event,
+                superUncleBlockHeader
         );
     }
 
