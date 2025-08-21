@@ -7,6 +7,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.vote.AddressBasedAuthorizerFactory;
 import java.math.BigInteger;
+import java.util.Set;
 
 public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
 
@@ -19,20 +20,24 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
         unionBridgeAddress = ZERO_ADDRESS;
 
         BigInteger oneRbtc = BigInteger.TEN.pow(18); // 1 RBTC = 1000000000000000000 wei
-        initialLockingCap = new Coin(oneRbtc);
-        lockingCapIncrementsMultiplier = 2;
+        initialLockingCap = new Coin(oneRbtc).multiply(BigInteger.valueOf(400)); // 400 rbtc
+        lockingCapIncrementsMultiplier = 3;
 
         changeUnionBridgeContractAddressAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("54fdb399cf235c9b0d464ab4055af9251883bbfe")
+            new RskAddress("e8b8a9214ca868ab10e0d9fd8af1136313965154")
         );
 
-        changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("1a8109af0f019ED3045Fbcdf45E5e90d6b6AAfaF")
-        );
+        changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(Set.of(
+            new RskAddress("e8b8a9214ca868ab10e0d9fd8af1136313965154"),
+            new RskAddress("624e1844183096932c013db4995923fc9fe580f9"),
+            new RskAddress("39bbfc0ffd207dbe53e51506f4b8fceac9629bdf")
+        ));
 
-        changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("8db1F83E8119E4Dce5bC708ec2f4390FFd910B19")
-        );
+        changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(Set.of(
+            new RskAddress("e8b8a9214ca868ab10e0d9fd8af1136313965154"),
+            new RskAddress("624e1844183096932c013db4995923fc9fe580f9"),
+            new RskAddress("39bbfc0ffd207dbe53e51506f4b8fceac9629bdf")
+        ));
     }
 
     public static UnionBridgeConstants getInstance() {
