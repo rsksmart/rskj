@@ -435,13 +435,12 @@ class ProgramTest {
         // given: RSKIP516 is NOT active
         when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(false);
 
-        // Create a mock contract with fixed maxInput (like Secp256k1Addition)
+        // Create a mock contract (maxInput is not used when RSKIP516 is inactive)
         PrecompiledContracts.PrecompiledContract fixedSizeContract = mock(
                 PrecompiledContracts.PrecompiledContract.class);
-        when(fixedSizeContract.getMaxInput()).thenReturn(128);
         when(fixedSizeContract.execute(any())).thenReturn(new byte[] { 1 });
 
-        // Create message with large input data (200 bytes > maxInput 128)
+        // Create message with large input data (200 bytes > 128)
         MessageCall largeMsg = mock(MessageCall.class);
         when(largeMsg.getCodeAddress()).thenReturn(DataWord.ONE);
         when(largeMsg.getType()).thenReturn(MessageCall.MsgType.CALL);
@@ -539,6 +538,43 @@ class ProgramTest {
         // then: Input should NOT be truncated for unlimited contracts, even when
         // RSKIP516 is active
         verify(unlimitedContract).execute(argThat(data -> data.length == 1000));
+        assertStack(STACK_STATE_SUCCESS);
+    }
+
+    @Test
+    void testRSKIP516ActiveMaxInputZeroReturnsZeroInput() throws VMException {
+        // given: RSKIP516 is active
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
+
+        // Create a mock contract with maxInput = 0 (contract doesn't accept input)
+        PrecompiledContracts.PrecompiledContract zeroMaxContract = mock(
+                PrecompiledContracts.PrecompiledContract.class);
+        when(zeroMaxContract.getMaxInput()).thenReturn(0);
+        when(zeroMaxContract.execute(any())).thenReturn(new byte[] { 1 });
+
+        // Create message with large input data (500 bytes)
+        MessageCall largeMsg = mock(MessageCall.class);
+        when(largeMsg.getCodeAddress()).thenReturn(DataWord.ONE);
+        when(largeMsg.getType()).thenReturn(MessageCall.MsgType.CALL);
+        when(largeMsg.getEndowment()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getOutDataSize()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataOffs()).thenReturn(DataWord.ONE);
+        when(largeMsg.getInDataSize()).thenReturn(DataWord.valueOf(500)); // 500 bytes input
+        when(largeMsg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
+
+        // Mock the memory chunk method to return data of the expected size
+        Program spyProgram = spy(program);
+        doAnswer(invocation -> {
+            int size = invocation.getArgument(1);
+            return generateTestData(size);
+        }).when(spyProgram).memoryChunk(anyInt(), anyInt());
+
+        // when: RSKIP516 is active and contract has maxInput = 0
+        spyProgram.callToPrecompiledAddress(largeMsg, zeroMaxContract);
+
+        // then: Contract should receive 0 bytes of input (empty array)
+        verify(zeroMaxContract).execute(argThat(data -> data.length == 0));
         assertStack(STACK_STATE_SUCCESS);
     }
 
