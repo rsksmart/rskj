@@ -42,11 +42,17 @@ public class AccountOverride {
     private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
-    public AccountOverride(RskAddress address) {
+    private final int maxOverridableCodeSize;
+    private final int maxStateOverrideChanges;
+
+    public AccountOverride(RskAddress address, int maxOverridableCodeSize, int maxStateOverrideChanges) {
         if (address == null) {
             throw invalidParamError("Address cannot be null");
         }
         this.address = address;
+
+        this.maxOverridableCodeSize = maxOverridableCodeSize;
+        this.maxStateOverrideChanges = maxStateOverrideChanges;
     }
 
     public BigInteger getBalance() {
@@ -76,6 +82,9 @@ public class AccountOverride {
     }
 
     public void setCode(byte[] code) {
+        if (code.length > maxOverridableCodeSize) {
+            throw invalidParamError("Code length in bytes exceeded. Max " + maxOverridableCodeSize);
+        }
         this.code = code;
     }
 
@@ -84,6 +93,9 @@ public class AccountOverride {
     }
 
     public void setState(Map<DataWord, DataWord> state) {
+        if (state.size() > maxStateOverrideChanges) {
+            throw invalidParamError("Number of state changes exceeded. Max " + maxStateOverrideChanges);
+        }
         this.state = state;
     }
 
@@ -105,33 +117,33 @@ public class AccountOverride {
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {
 
-        if (accountOverrideParam.getMovePrecompileToAddress() != null) {
-            this.setMovePrecompileToAddress(accountOverrideParam.getMovePrecompileToAddress().getAddress());
+        if (accountOverrideParam.movePrecompileToAddress() != null) {
+            this.setMovePrecompileToAddress(accountOverrideParam.movePrecompileToAddress().getAddress());
         }
 
-        if (accountOverrideParam.getBalance() != null) {
-            this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.getBalance().getHexNumber()));
+        if (accountOverrideParam.balance() != null) {
+            this.setBalance(HexUtils.stringHexToBigInteger(accountOverrideParam.balance().getHexNumber()));
         }
 
-        if (accountOverrideParam.getNonce() != null) {
-            this.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.getNonce().getHexNumber()));
+        if (accountOverrideParam.nonce() != null) {
+            this.setNonce(HexUtils.jsonHexToLong(accountOverrideParam.nonce().getHexNumber()));
         }
 
-        if (accountOverrideParam.getCode() != null) {
-            this.setCode(accountOverrideParam.getCode().getRawDataBytes());
+        if (accountOverrideParam.code() != null) {
+            this.setCode(accountOverrideParam.code().getRawDataBytes());
         }
 
-        if (accountOverrideParam.getState() != null) {
+        if (accountOverrideParam.state() != null) {
             Map<DataWord, DataWord> newState = new HashMap<>();
-            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getState().entrySet()) {
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.state().entrySet()) {
                 newState.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
             this.setState(newState);
         }
 
-        if (accountOverrideParam.getStateDiff() != null) {
+        if (accountOverrideParam.stateDiff() != null) {
             Map<DataWord, DataWord> newStateDiff = new HashMap<>();
-            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.getStateDiff().entrySet()) {
+            for (Map.Entry<HexDataParam, HexDataParam> entry : accountOverrideParam.stateDiff().entrySet()) {
                 newStateDiff.put(entry.getKey().getAsDataWord(),entry.getValue().getAsDataWord());
             }
             this.setStateDiff(newStateDiff);

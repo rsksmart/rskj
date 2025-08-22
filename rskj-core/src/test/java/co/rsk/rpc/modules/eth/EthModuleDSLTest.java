@@ -91,7 +91,7 @@ class EthModuleDSLTest {
     }
 
     @Test
-    void testCall_StateOverride_stateIsOverride() throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_stateIsOverridden() throws DslProcessorException, FileNotFoundException {
         // When
         World world = new World();
         // given a deployed contract with stored state = 10
@@ -111,7 +111,7 @@ class EthModuleDSLTest {
         assertEquals(SIMPLE_CONTRACT_STORED_DATA, HexUtils.jsonHexToInt(result));
         // then the result is the stored state value: 10
 
-        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress), 0, 1);
         DataWord key = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000000");
         DataWord value = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000014");
         // given a call to the same contract with a state override setting storage[0] = 20
@@ -135,7 +135,7 @@ class EthModuleDSLTest {
      * }
      */
     @Test
-    void testCall_StateOverride_codeOverride() throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_codeIsOverridden() throws DslProcessorException, FileNotFoundException {
         // Given
         // This is the runtime bytecode of the contract above to override the original contract
         String runtimeByteCode = "0x6103e760005260206000f3";
@@ -158,7 +158,7 @@ class EthModuleDSLTest {
         // then it returns the original stored value: 10
         assertEquals(SIMPLE_CONTRACT_STORED_DATA, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress));
+        AccountOverride accountOverride = new AccountOverride(new RskAddress(contractAddress), 22, 0);
         byte[] newCode = HexUtils.stringHexToByteArray(runtimeByteCode);
         // given a call to the same contract with overridden bytecode that returns 999
         accountOverride.setCode(newCode);
@@ -169,7 +169,7 @@ class EthModuleDSLTest {
     }
 
     @Test
-    void testCall_StateOverride_balanceOverride()throws DslProcessorException, FileNotFoundException {
+    void testCall_StateOverride_balanceIsOverridden()throws DslProcessorException, FileNotFoundException {
         // Given
         long defaultBalance = 30000L;
         World world = new World();
@@ -194,7 +194,7 @@ class EthModuleDSLTest {
         // then the returned balance is not equal to 30000
         assertNotEquals(defaultBalance, HexUtils.jsonHexToInt(result));
 
-        AccountOverride accountOverride = new AccountOverride(acc.getAddress());
+        AccountOverride accountOverride = new AccountOverride(acc.getAddress(), 0, 0);
         accountOverride.setBalance(BigInteger.valueOf(defaultBalance));
         // given a call to the same contract with a balance override setting msg.sender balance to 30000
         // when calling getMyBalance() with the override

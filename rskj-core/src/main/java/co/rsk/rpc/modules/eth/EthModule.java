@@ -92,6 +92,9 @@ public class EthModule
     private final PrecompiledContracts precompiledContracts;
     private final boolean allowCallStateOverride;
     private final StateOverrideApplier stateOverrideApplier;
+    private final int maxAccountOverrides;
+    private final int maxOverridableCodeSize;
+    private final int maxStateOverrideChanges;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -109,7 +112,10 @@ public class EthModule
             ActivationConfig activationConfig,
             PrecompiledContracts precompiledContracts,
             boolean allowCallStateOverride,
-            StateOverrideApplier stateOverrideApplier) {
+            StateOverrideApplier stateOverrideApplier,
+            int maxAccountOverrides,
+            int maxOverridableCodeSize,
+            int maxStateOverrideChanges) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -126,6 +132,9 @@ public class EthModule
         this.precompiledContracts = precompiledContracts;
         this.allowCallStateOverride = allowCallStateOverride;
         this.stateOverrideApplier = stateOverrideApplier;
+        this.maxAccountOverrides = maxAccountOverrides;
+        this.maxOverridableCodeSize = maxOverridableCodeSize;
+        this.maxStateOverrideChanges = maxStateOverrideChanges;
     }
 
     @Override
@@ -152,14 +161,16 @@ public class EthModule
     }
 
     public String call(CallArgumentsParam argsParam, BlockIdentifierParam bnOrId, List<AccountOverride> accountOverrideList) {
-        boolean shouldPerformStateOverride = accountOverrideList != null && !accountOverrideList.isEmpty();
+        boolean shouldApplyStateOverride = shouldApplyStateOverride(accountOverrideList);
 
-        validateStateOverrideAllowance(shouldPerformStateOverride);
+        if (shouldApplyStateOverride) {
+            validateAccountOverride(accountOverrideList);
+        }
 
         ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId.getIdentifier());
         Block block = result.getBlock();
 
-        MutableRepository mutableRepository = prepareRepository(result, block, shouldPerformStateOverride, accountOverrideList);
+        MutableRepository mutableRepository = prepareRepository(result, block, accountOverrideList, shouldApplyStateOverride);
 
         CallArguments callArgs = argsParam.toCallArguments();
 
@@ -177,23 +188,17 @@ public class EthModule
         }
     }
 
-    private void validateStateOverrideAllowance(boolean shouldPerformStateOverride) {
-        if (shouldPerformStateOverride && !allowCallStateOverride) {
-            throw invalidParamError("State override is not allowed");
-        }
-    }
-
     private MutableRepository prepareRepository(ExecutionBlockRetriever.Result result,
                                                 Block block,
-                                                boolean shouldPerformStateOverride,
-                                                List<AccountOverride> accountOverrideList) {
+                                                List<AccountOverride> accountOverrideList,
+                                                boolean shouldApplyStateOverride) {
         MutableRepository mutableRepository = null;
 
         if (result.getFinalState() != null) {
             mutableRepository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), result.getFinalState());
         }
 
-        if (shouldPerformStateOverride) {
+        if (shouldApplyStateOverride) {
             if (mutableRepository == null) {
                 mutableRepository = (MutableRepository) repositoryLocator.snapshotAt(block.getHeader());
             }
@@ -201,6 +206,20 @@ public class EthModule
         }
 
         return mutableRepository;
+    }
+
+    private void validateAccountOverride(List<AccountOverride> accountOverrideList) {
+        if (!allowCallStateOverride) {
+            throw invalidParamError("State override is not allowed");
+        }
+
+        if (accountOverrideList.size() > maxAccountOverrides) {
+            throw invalidParamError("Number of account overrides exceeded. Max " + maxAccountOverrides);
+        }
+    }
+
+    private boolean shouldApplyStateOverride(List<AccountOverride> accountOverrideList) {
+        return accountOverrideList != null && !accountOverrideList.isEmpty();
     }
 
     private void applyStateOverride(Block block, MutableRepository mutableRepository, List<AccountOverride> accountOverrideList) {
@@ -421,5 +440,13 @@ public class EthModule
 
             throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason, revertData);
         }
+    }
+
+    public int getMaxOverridableCodeSize() {
+        return this.maxOverridableCodeSize;
+    }
+
+    public int getMaxStateOverrideChanges() {
+        return this.maxStateOverrideChanges;
     }
 }
