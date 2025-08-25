@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
@@ -251,7 +252,8 @@ public class BlockChainBuilder {
                 receiptStore,
                 repositoryLocator,
                 transactionExecutorFactory,
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
         BlockChainImpl blockChain = new BlockChainLoader(
                 blockStore,
                 receiptStore,

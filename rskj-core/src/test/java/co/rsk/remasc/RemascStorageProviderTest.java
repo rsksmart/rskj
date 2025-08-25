@@ -493,7 +493,8 @@ class RemascStorageProviderTest {
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());

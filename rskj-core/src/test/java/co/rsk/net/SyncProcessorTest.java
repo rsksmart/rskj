@@ -820,7 +820,8 @@ class SyncProcessorTest {
                         new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
         Assertions.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assertions.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());

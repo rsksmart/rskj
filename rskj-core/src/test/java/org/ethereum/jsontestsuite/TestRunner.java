@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -168,7 +169,8 @@ public class TestRunner {
                         receiptStore,
                         new RepositoryLocator(trieStore, stateRootHandler),
                         transactionExecutorFactory,
-                        config),
+                        config,
+                        new SuperDifficultyCalculator(config.getNetworkConstants())),
                 stateRootHandler
         );
 
