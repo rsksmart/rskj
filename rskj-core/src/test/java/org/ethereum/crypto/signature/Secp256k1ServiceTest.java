@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
+import java.util.stream.Stream;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -44,6 +45,9 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -592,6 +596,48 @@ public abstract class Secp256k1ServiceTest {
 
         // then
         Assertions.assertArrayEquals(output, result);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideEmptyInputData")
+    void whenExecuteAdditionIsCalledWithNullOrEmptyInput_thenReturnsPaddedZeroArray(String testName, byte[] input)
+            throws VMException {
+        // given input
+
+        // when
+        byte[] result = secp256k1.add(input);
+
+        // then
+        assertEquals(64, result.length);
+        for (byte b : result) {
+            assertEquals(0, b);
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideEmptyInputData")
+    void whenExecuteMultiplicationIsCalledWithNullOrEmptyInput_thenReturnsPaddedZeroArray(String testName, byte[] input)
+            throws VMException {
+        // given input
+
+        // when
+        byte[] result = secp256k1.mul(input);
+
+        // then
+        assertEquals(64, result.length);
+        for (byte b : result) {
+            assertEquals(0, b);
+        }
+    }
+
+    private static Stream<Arguments> provideEmptyInputData() {
+        return Stream.of(
+                Arguments.of(
+                        "When execute with empty input", new byte[0]),
+                Arguments.of(
+                        "With execute zero padded input of 32 bytes", new byte[32]),
+                Arguments.of(
+                        "With execute zero padded input of 64", new byte[64]));
     }
 
     private void encodeECPointsInput(byte[] input, BigInteger x, BigInteger y, BigInteger multiplier) {
