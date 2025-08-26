@@ -20,8 +20,8 @@ public class FederationTestNetConstants extends FederationConstants {
         btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
         genesisFederationPublicKeys = Stream.of(
-            "03d9d48cdc0fdf039d08371c64b1e86e1715e9898d4680595f1d4e3398dbdd9e9e",
-            "0379d78dcae0be90715a088413c588da6a9381aae42e504f6e05c7b5204ed5bf3a",
+            "0239e36bc0dd5a1632860c8a88bc2e4a3d4e7f4905fa009f44c468304285103ab0",
+            "02cc1d7f5be600f0a7c0644e92f7facddf9a39d77cc580949980344acccda81ec6",
             "035f29d6a4825b42f43de2e654531b7864059bfcfb33f5b6d868ba9b302cfb522b"
         ).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).toList();
         genesisFederationCreationTime = ZonedDateTime.parse("2025-08-15T12:00:00.000Z").toInstant();
