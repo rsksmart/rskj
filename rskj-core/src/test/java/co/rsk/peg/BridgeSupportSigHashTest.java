@@ -104,7 +104,7 @@ class BridgeSupportSigHashTest {
 
         if (activations.isActive(ConsensusRule.RSKIP379)){
             PegoutsWaitingForConfirmations.Entry pegoutBatchTx = pegoutsWaitingForConfirmations.getEntries().stream().findFirst().get();
-            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(pegoutBatchTx.getBtcTransaction());
+            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
         } else {
@@ -183,7 +183,7 @@ class BridgeSupportSigHashTest {
                 stream().
                 findFirst().
                 get();
-            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx.getBtcTransaction());
+            Optional<Sha256Hash> firstInputSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.getBtcTransaction());
             assertTrue(firstInputSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(firstInputSigHash.get());
         } else {
@@ -285,11 +285,11 @@ class BridgeSupportSigHashTest {
             assertTrue(migrationTx.isPresent());
             assertTrue(pegoutBatchTx.isPresent());
 
-            Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getFirstInputSigHash(migrationTx.get().getBtcTransaction());
+            Optional<Sha256Hash> migrationTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(migrationTx.get().getBtcTransaction());
             assertTrue(migrationTxSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(migrationTxSigHash.get());
 
-            Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getFirstInputSigHash(pegoutBatchTx.get().getBtcTransaction());
+            Optional<Sha256Hash> pegoutBatchTxSigHash = BitcoinUtils.getSigHashForPegoutIndex(pegoutBatchTx.get().getBtcTransaction());
             assertTrue(pegoutBatchTxSigHash.isPresent());
             verify(provider, times(1)).setPegoutTxSigHash(pegoutBatchTxSigHash.get());
         } else {

@@ -145,11 +145,11 @@ public final class FederationTestUtils {
     public static List<FederationMember> getFederationMembersWithBtcKeys(List<BtcECKey> keys) {
         return keys.stream()
             .map(btcKey -> new FederationMember(btcKey, new ECKey(), new ECKey()))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public static List<FederationMember> getFederationMembersWithKeys(List<BtcECKey> pks) {
-        return pks.stream().map(FederationTestUtils::getFederationMemberWithKey).collect(Collectors.toList());
+        return pks.stream().map(FederationTestUtils::getFederationMemberWithKey).toList();
     }
 
     public static FederationMember getFederationMemberWithKey(BtcECKey pk) {
@@ -168,6 +168,29 @@ public final class FederationTestUtils {
         FederationArgs federationArgs = new FederationArgs(fedMembers, creationTime, 0L, btcParams);
         return FederationFactory.buildP2shErpFederation(federationArgs, erpPubKeys, activationDelay);
     }
+
+    public static TransactionWitness createBaseWitnessThatSpendsFromEmergencyKeys(Script redeemScript, int numberOfSignaturesRequiredToSpend) {
+        int pushForByteArray = 1;
+        int pushForOpNotif = 1;
+        int pushForRedeemScript = 1;
+        int witnessSize = pushForRedeemScript + pushForOpNotif + numberOfSignaturesRequiredToSpend + pushForByteArray;
+
+        List<byte[]> pushes = new ArrayList<>(witnessSize);
+        byte[] emptyByte = {};
+        pushes.add(emptyByte);
+
+        // empty signatures
+        for (int i = 0; i < numberOfSignaturesRequiredToSpend; i ++) {
+            pushes.add(emptyByte);
+        }
+        // IMPORTANT: The argument of OP_IF/NOTIF in P2WSH must be minimal.
+        // Ref: https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#new-script-semantics
+        byte[] opNotifArgument = new byte[]{1};
+        pushes.add(opNotifArgument);
+        pushes.add(redeemScript.getProgram());
+        return TransactionWitness.of(pushes);
+    }
+
 
     public static void spendFromErpFed(
         NetworkParameters networkParameters,

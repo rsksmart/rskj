@@ -20,7 +20,6 @@ package co.rsk.peg.federation;
 
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.peg.bitcoin.ScriptValidations;
 
 /**
  * Immutable representation of an RSK Federation in the context of
@@ -32,11 +31,9 @@ public class StandardMultisigFederation extends Federation {
 
     protected StandardMultisigFederation(
         FederationArgs federationArgs,
-        int formatVersion) {
-
+        int formatVersion
+    ) {
         super(federationArgs, formatVersion);
-
-        validateRedeemScriptSize();
     }
 
     @Override
@@ -46,10 +43,5 @@ public class StandardMultisigFederation extends Federation {
         }
 
         return redeemScript;
-    }
-
-    private void validateRedeemScriptSize() {
-        Script redeemScript = this.getRedeemScript();
-        ScriptValidations.validateScriptSize(redeemScript);
     }
 }

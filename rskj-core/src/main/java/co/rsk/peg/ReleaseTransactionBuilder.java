@@ -19,15 +19,23 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.crypto.Keccak256;
+import co.rsk.peg.federation.Federation;
+import co.rsk.peg.federation.FederationFormatVersion;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static co.rsk.peg.PegUtils.getFlyoverFederationAddress;
+import static co.rsk.peg.bitcoin.BitcoinUtils.addSpendingFederationBaseScript;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Given a set of UTXOs, a ReleaseTransactionBuilder
@@ -40,6 +48,7 @@ import java.util.stream.Collectors;
  */
 public class ReleaseTransactionBuilder {
 
+    public static final int BTC_TX_VERSION_1 = 1;
     public static final int BTC_TX_VERSION_2 = 2;
 
     public class BuildResult {
@@ -74,19 +83,32 @@ public class ReleaseTransactionBuilder {
 
     private final NetworkParameters params;
     private final Wallet wallet;
+    private final int federationFormatVersion;
     private final Address changeAddress;
     private final Coin feePerKb;
     private final ActivationConfig.ForBlock activations;
 
+    /**
+     * Creates a release transaction builder.
+     *
+     * @param params                        network params
+     * @param wallet                        wallet to be used to build the release tx
+     * @param federationFormatVersion       needed to correctly set the redeem input data (script sig for legacy fed, witness for segwit fed)
+     * @param changeAddress                 address to send change to
+     * @param feePerKb                      fee per kb
+     * @param activations                   activations
+     */
     public ReleaseTransactionBuilder(
         NetworkParameters params,
         Wallet wallet,
+        int federationFormatVersion,
         Address changeAddress,
         Coin feePerKb,
         ActivationConfig.ForBlock activations
     ) {
         this.params = params;
         this.wallet = wallet;
+        this.federationFormatVersion = federationFormatVersion;
         this.changeAddress = changeAddress;
         this.feePerKb = feePerKb;
         this.activations = activations;
@@ -120,6 +142,25 @@ public class ReleaseTransactionBuilder {
         }, String.format("batching %d pegouts", entries.size()));
     }
 
+    public BuildResult buildSvpFundTransaction(Federation proposedFederation, Keccak256 proposedFederationFlyoverPrefix, Coin svpFundTxOutputsValue) {
+        return buildWithConfiguration((SendRequest sr) -> {
+            sr.tx.addOutput(svpFundTxOutputsValue, proposedFederation.getAddress());
+            sr.tx.addOutput(svpFundTxOutputsValue, getFlyoverFederationAddress(params, proposedFederationFlyoverPrefix, proposedFederation));
+            sr.changeAddress = changeAddress;
+            sr.recipientsPayFees = false;
+        }, String.format("sending %s in svp fund transaction", svpFundTxOutputsValue));
+    }
+
+    public BuildResult buildMigrationTransaction(Coin migrationValue, Address destinationAddress) {
+        return buildWithConfiguration((SendRequest sr) -> {
+            if (!activations.isActive(ConsensusRule.RSKIP376)){
+                sr.tx.setVersion(BTC_TX_VERSION_1);
+            }
+            sr.tx.addOutput(migrationValue, destinationAddress);
+            sr.changeAddress = destinationAddress;
+        }, String.format("sending %s in migration transaction", migrationValue));
+    }
+
     public BuildResult buildEmptyWalletTo(Address to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
@@ -129,24 +170,15 @@ public class ReleaseTransactionBuilder {
     }
 
     private BuildResult buildWithConfiguration(
-            SendRequestConfigurator sendRequestConfigurator,
-            String operationDescription) {
-
+        SendRequestConfigurator sendRequestConfigurator,
+        String operationDescription
+    ) {
         // Build a tx and send request and configure it
-        BtcTransaction btcTx = new BtcTransaction(params);
-
-        if (activations.isActive(ConsensusRule.RSKIP201)) {
-            btcTx.setVersion(BTC_TX_VERSION_2);
-        }
-
-        SendRequest sr = SendRequest.forTx(btcTx);
-        // Default settings
-        defaultSettingsConfigurator.configure(sr);
-        // Specific settings
-        sendRequestConfigurator.configure(sr);
+        BtcTransaction btcTx = setDefaultTxConfig();
+        SendRequest sr = setSrConfiguration(sendRequestConfigurator, btcTx);
 
         try {
-            wallet.completeTx(sr);
+            completeTx(sr);
 
             // Disconnect input from output because we don't need the reference and it interferes serialization
             for (TransactionInput transactionInput : btcTx.getInputs()) {
@@ -161,29 +193,70 @@ public class ReleaseTransactionBuilder {
                         input.getOutpoint().getIndex() == utxo.getIndex()
                     )
                 )
-                .collect(Collectors.toList());
+                .toList();
 
             return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
             logger.warn(String.format("Not enough BTC in the wallet to complete %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.INSUFFICIENT_MONEY);
         } catch (Wallet.CouldNotAdjustDownwards e) {
             logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.COULD_NOT_ADJUST_DOWNWARDS);
+        } catch (Wallet.DustySendRequested e) {
+            logger.warn(String.format("Tx contains a dust output %s", operationDescription), e);
+            return new BuildResult(null, null, Response.DUSTY_SEND_REQUESTED);
         } catch (Wallet.ExceededMaxTransactionSize e) {
             logger.warn(String.format("Tx size too big %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("exceededmaxtransactionsize", "Tx size too big " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.EXCEED_MAX_TRANSACTION_SIZE);
         } catch (UTXOProviderException e) {
             logger.warn(String.format("UTXO provider exception sending %s", operationDescription), e);
-            // Comment out panic logging for now
-            // panicProcessor.panic("utxoprovider", "UTXO provider exception " + rskTxHash + " " + btcTx);
             return new BuildResult(null, null, Response.UTXO_PROVIDER_EXCEPTION);
+        }
+    }
+
+    private BtcTransaction setDefaultTxConfig() {
+        // Build a tx and send request and configure it
+        BtcTransaction btcTx = new BtcTransaction(params);
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
+            btcTx.setVersion(BTC_TX_VERSION_2);
+        }
+
+        return btcTx;
+    }
+
+    private SendRequest setSrConfiguration(SendRequestConfigurator sendRequestConfigurator, BtcTransaction btcTx) {
+        SendRequest sr = SendRequest.forTx(btcTx);
+        // Default settings
+        defaultSettingsConfigurator.configure(sr);
+        // Specific settings
+        sendRequestConfigurator.configure(sr);
+
+        if (federationFormatVersion == FederationFormatVersion.P2SH_P2WSH_ERP_FEDERATION.getFormatVersion()) {
+            sr.signInputs = false;
+            sr.isSegwitCompatible = true;
+        }
+
+        return sr;
+    }
+
+    private void completeTx(SendRequest sr) throws InsufficientMoneyException {
+        wallet.completeTx(sr);
+
+        if (!sr.isSegwitCompatible) {
+            return;
+        }
+
+        signSegwitTxInputs(sr.tx);
+    }
+
+    private void signSegwitTxInputs(BtcTransaction tx) {
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            TransactionInput txInput = tx.getInput(i);
+            RedeemData redeemData = txInput.getConnectedRedeemData(wallet);
+            checkNotNull(redeemData, "Transaction exists in wallet that we cannot redeem: %s", txInput.getOutpoint().getHash());
+            Script redeemScript = redeemData.redeemScript;
+
+            addSpendingFederationBaseScript(tx, i, redeemScript, federationFormatVersion);
         }
     }
 
@@ -198,8 +271,8 @@ public class ReleaseTransactionBuilder {
         SUCCESS,
         INSUFFICIENT_MONEY,
         COULD_NOT_ADJUST_DOWNWARDS,
+        DUSTY_SEND_REQUESTED,
         EXCEED_MAX_TRANSACTION_SIZE,
         UTXO_PROVIDER_EXCEPTION
     }
-
 }

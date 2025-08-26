@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.peg.bitcoin.BitcoinTestUtils;
 import co.rsk.peg.bitcoin.FlyoverRedeemScriptBuilderImpl;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.peg.constants.BridgeMainNetConstants;
@@ -63,6 +64,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateSignerEncodedSignatures;
+import static co.rsk.peg.bitcoin.BitcoinTestUtils.generateTransactionInputsSigHashes;
+import static co.rsk.peg.bitcoin.BitcoinUtils.*;
 import static co.rsk.peg.federation.FederationTestUtils.REGTEST_FEDERATION_PRIVATE_KEYS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -496,12 +501,13 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         tx.addInput(txInput);
+        int inputIndex = 0;
 
         List<ScriptChunk> chunks = inputScript.getChunks();
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
 
-        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
         BtcECKey.ECDSASignature sig = federator1Key.sign(sighash);
 
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
@@ -512,10 +518,52 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federator1Key, sighash);
 
         // Assert
         Assertions.assertTrue(isSigned);
+    }
+
+    @Test
+    void isInputSignedByThisFederator_whenSigningWithCorrectFederator_forSegwitFed_shouldBeTrue() {
+        // Arrange
+        Federation federation = P2shP2wshErpFederationBuilder.builder().build();
+        List<BtcECKey> federationSignersKeys = BitcoinTestUtils.getBtcEcKeysFromSeeds(new String[]{
+            "member01", "member02", "member03", "member04", "member05", "member06", "member07", "member08", "member09"
+        }, true); // we need the priv keys
+
+        BtcTransaction prevTx = new BtcTransaction(bridgeConstantsMainnet.getBtcParams());
+        prevTx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+        Coin prevValue = Coin.COIN;
+        prevTx.addOutput(prevValue, federation.getAddress());
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.setVersion(ReleaseTransactionBuilder.BTC_TX_VERSION_2);
+        tx.addInput(prevTx.getOutput(0));
+
+        int inputIndex = 0;
+        addSpendingFederationBaseScript(tx, inputIndex, federation.getRedeemScript(), federation.getFormatVersion());
+
+        BtcECKey federatorSigningKey = federationSignersKeys.get(0);
+
+        // generate signatures
+        List<Sha256Hash> sigHashes = generateTransactionInputsSigHashes(tx);
+        Sha256Hash sigHash = sigHashes.get(inputIndex);
+        int sigInsertionIndex = getSigInsertionIndex(tx, inputIndex, sigHash, federatorSigningKey);
+        List<byte[]> federatorSigs = generateSignerEncodedSignatures(federatorSigningKey, sigHashes);
+        byte[] federatorSig = federatorSigs.get(inputIndex);
+        TransactionSignature txSig = new TransactionSignature(BtcECKey.ECDSASignature.decodeFromDER(federatorSig), BtcTransaction.SigHash.ALL, false);
+
+        // sign
+        TransactionWitness inputWitness = tx.getWitness(inputIndex);
+        TransactionWitness inputWitnessWithSignature = inputWitness.updateWitnessWithSignature(federation.getP2SHScript(), txSig.encodeToBitcoin(), sigInsertionIndex);
+        tx.setWitness(inputIndex, inputWitnessWithSignature);
+
+        // Act
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federatorSigningKey, sigHash);
+
+        // assert
+        assertTrue(isSigned);
     }
 
     @Test
@@ -547,12 +595,13 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         tx.addInput(txInput);
+        int inputIndex = 0;
 
         List<ScriptChunk> chunks = inputScript.getChunks();
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
 
-        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
         BtcECKey.ECDSASignature sig = federator1Key.sign(sighash);
 
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
@@ -563,7 +612,7 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator2Key, sighash, txInput);
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federator2Key, sighash);
 
         // Assert
         Assertions.assertFalse(isSigned);
@@ -598,15 +647,16 @@ class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         tx.addInput(txInput);
+        int inputIndex = 0;
 
         List<ScriptChunk> chunks = inputScript.getChunks();
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
 
-        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(tx, inputIndex, federator1Key, sighash);
 
         // Assert
         Assertions.assertFalse(isSigned);
@@ -919,7 +969,6 @@ class BridgeUtilsTest {
 
     @Test
     void testCalculatePegoutTxSize_ZeroInput_ZeroOutput() {
-        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
@@ -938,7 +987,7 @@ class BridgeUtilsTest {
     @Test
     void testCalculatePegoutTxSize_2Inputs_2Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
@@ -954,18 +1003,33 @@ class BridgeUtilsTest {
         int outputSize = 2;
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
+        assertEquals(2058, pegoutTxSize);
+
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .01;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(694, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage > 59);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_9Inputs_2Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
@@ -981,17 +1045,33 @@ class BridgeUtilsTest {
         int outputSize = 2;
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
+        assertEquals(9002, pegoutTxSize);
+
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 9069; // Data for 9 inputs, 2 outputs From https://www.blockchain.com/btc/tx/15adf52f7b4b7a7e563fca92aec7bbe8149b87fac6941285a181e6fcd799a1cd
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .01;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(2866, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage > 59);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_10Inputs_20Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
@@ -1011,18 +1091,33 @@ class BridgeUtilsTest {
 
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
+        assertEquals(10570, pegoutTxSize);
+
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .02;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(3752, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 59);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_50Inputs_200Outputs() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         FederationArgs federationArgs = new FederationArgs(
             FederationMember.getFederationMembersFromKeys(keys),
@@ -1041,18 +1136,33 @@ class BridgeUtilsTest {
 
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
+        assertEquals(56010, pegoutTxSize);
+
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .02;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(keys)
+            .build();
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(21922, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 59);
+
     }
 
     @Test
     void testCalculatePegoutTxSize_50Inputs_200Outputs_nonStandardErpFederation() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1083,18 +1193,32 @@ class BridgeUtilsTest {
 
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
+        assertEquals(26510, pegoutTxSize);
+
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .03;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultFederationKeys)
+            .build();
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(13172, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 49);
     }
 
     @Test
     void testCalculatePegoutTxSize_100Inputs_50Outputs_nonStandardErpFederation() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
-
+        when(activations.isActive(ConsensusRule.RSKIP305)).thenReturn(true);
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1125,12 +1249,27 @@ class BridgeUtilsTest {
 
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, nonStandardErpFederation, inputSize, outputSize);
 
+        assertEquals(41810, pegoutTxSize);
+
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .03;
 
         assertTrue(difference < tolerance && difference > -tolerance);
+
+        ErpFederation p2shP2wshFederation = P2shP2wshErpFederationBuilder.builder()
+            .withMembersBtcPublicKeys(defaultFederationKeys)
+            .build();
+
+        int pegoutTxSizeSegwit = BridgeUtils.calculatePegoutTxSize(activations, p2shP2wshFederation, inputSize, outputSize);
+
+        assertEquals(15135, pegoutTxSizeSegwit);
+
+        double segWitSavingPercentage = (100 - ((double) pegoutTxSizeSegwit / pegoutTxSize * 100));
+
+        assertTrue(segWitSavingPercentage >= 49);
+
     }
 
     @Test
@@ -1489,8 +1628,7 @@ class BridgeUtilsTest {
                 federation.getRedeemScript()
             );
 
-            Script flyoverP2SH = ScriptBuilder
-                .createP2SHOutputScript(flyoverRedeemScript);
+            Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, federation.getFormatVersion());
             address = Address.fromP2SHHash(networkParameters, flyoverP2SH.getPubKeyHash());
             program = flyoverRedeemScript.getProgram();
 
