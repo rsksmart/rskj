@@ -26,6 +26,7 @@ import static org.ethereum.util.BIUtil.isNotCovers;
 import static org.ethereum.util.BIUtil.isPositive;
 import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.PrecompiledContracts.NO_LIMIT_ON_MAX_INPUT;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -1537,7 +1538,7 @@ public class Program {
             return initialInputLength;
         }
 
-        int maxInputFromContract = contract.getMaxInput();
+        int maxInputFromContract = contract.getMaxInput() != NO_LIMIT_ON_MAX_INPUT ? contract.getMaxInput() : initialInputLength;
         int finalInputLength = maxInputFromContract == 0 ? 0 : Math.min(initialInputLength, maxInputFromContract);
 
         if (isLogEnabled && maxInputFromContract > 0 && initialInputLength > maxInputFromContract) {
