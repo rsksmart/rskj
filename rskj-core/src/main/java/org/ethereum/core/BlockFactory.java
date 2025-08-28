@@ -362,6 +362,9 @@ public class BlockFactory {
         byte[] superBridgeEventRlp = superBlockFieldsRlp.get(2).getRLPData();
         SuperBridgeEvent bridgeEvent = SuperBridgeEvent.decode(superBridgeEventRlp);
 
-        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, bridgeEvent);
+        byte[] superDifficultyBytes = superBlockFieldsRlp.get(3).getRLPData();
+        BlockDifficulty superDifficulty = RLP.parseBlockDifficulty(superDifficultyBytes);
+
+        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, bridgeEvent, superDifficulty);
     }
 }

@@ -21,6 +21,7 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
@@ -134,7 +135,8 @@ public class BlockBuilder {
                             new PrecompiledContracts(config, bridgeSupportFactory, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     ),
-                    config);
+                    config,
+                    new SuperDifficultyCalculator(config.getNetworkConstants()));
             executor.executeAndFill(block, parent.getHeader());
         }
 

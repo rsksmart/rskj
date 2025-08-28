@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.util.Trio;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -175,7 +174,7 @@ public class FamilyUtils {
         return family;
     }
 
-    public static FindSuperParentAndBridgeEventResponse findSuperParentAndUnclesAndBridgeEvent(
+    public static FindSuperParentAndBridgeEventResponse findSuperParentAndBridgeEvent(
             BlockStore blockStore,
             ReceiptStore receiptStore,
             Block block,

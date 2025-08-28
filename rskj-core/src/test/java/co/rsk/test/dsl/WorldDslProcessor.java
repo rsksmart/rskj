@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -328,7 +329,8 @@ public class WorldDslProcessor {
                             null,
                             world.getBlockTxSignatureCache()
                     ),
-                    config);
+                    config,
+                    new SuperDifficultyCalculator(config.getNetworkConstants()));
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;
