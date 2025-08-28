@@ -4,7 +4,8 @@ public class ScriptCreationException extends RuntimeException {
     private final Reason reason;
 
     public enum Reason {
-        ABOVE_MAX_SCRIPT_ELEMENT_SIZE
+        ABOVE_MAX_SCRIPTSIG_ELEMENT_SIZE,
+        ABOVE_MAX_SCRIPT_FOR_WITNESS_SIZE
     }
 
     public ScriptCreationException(String s, Reason reason) {

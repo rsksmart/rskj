@@ -42,7 +42,7 @@ public class SystemUtils {
     private SystemUtils() { /* hidden */ }
 
     /**
-    * Wrapper for {@link Utils::isArm()} from external library
+    * Wrapper for {@link Utils#isArm()} from external library
     */
     public static boolean isArm() {
         return Utils.isArm();

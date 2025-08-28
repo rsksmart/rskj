@@ -16,8 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 package org.ethereum.vm;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -339,10 +337,9 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift left, both this and input arg are treated as unsigned
-     * @param arg
-     * @return this << arg
+     * @param arg the arg to be shifted
+     * @return this &lt;&lt; arg
      */
-
     public DataWord shiftLeft(DataWord arg) {
         if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
             return DataWord.ZERO;
@@ -355,8 +352,8 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift right, both this and input arg are treated as unsigned
-     * @param arg
-     * @return this >> arg
+     * @param arg the to be shifted
+     * @return this &gt;&gt; arg
      */
     public DataWord shiftRight(DataWord arg) {
         if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
@@ -369,8 +366,8 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift right, this is signed, while input arg is treated as unsigned
-     * @param arg
-     * @return this >> arg
+     * @param arg the arg to be shifted
+     * @return this &gt;&gt; arg
      */
     public DataWord shiftRightSigned(DataWord arg) {
         // Taken from Pantheon implementation
@@ -543,8 +540,8 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     /**
-     * Will create a Dataword from the keccack256 representation of the string value.
-     * @param value any streing with a byte representation of more than 32 bytes
+     * Will create a DataWord from the keccack256 representation of the string value.
+     * @param value any String with a byte representation of more than 32 bytes
      * @return a DataWord with the hashed string as the data
      */
     public static DataWord fromLongString(String value) { return valueOf(HashUtil.keccak256(value.getBytes(StandardCharsets.UTF_8))); }
