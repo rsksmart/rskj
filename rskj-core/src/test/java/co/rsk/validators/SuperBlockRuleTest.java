@@ -19,6 +19,8 @@
 
 package co.rsk.validators;
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.bc.SuperBlockFields;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -42,10 +44,11 @@ class SuperBlockRuleTest {
 
     @BeforeEach
     void setUp() {
+        final var config = new TestSystemProperties();
         activationConfig = mock(ActivationConfig.class);
         BlockStore blockStore = mock(BlockStore.class);
         ReceiptStore receiptStore = mock(ReceiptStore.class);
-        rule = new SuperBlockRule(activationConfig, blockStore, receiptStore);
+        rule = new SuperBlockRule(activationConfig, blockStore, receiptStore, new SuperDifficultyCalculator(config.getNetworkConstants()));
     }
 
     @Test

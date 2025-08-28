@@ -19,6 +19,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.core.bc.SuperBlockFields;
@@ -32,6 +33,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,15 +42,18 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidationRule {
+    private static final Logger logger = LoggerFactory.getLogger(SuperBlockRule.class);
 
     private final ActivationConfig activationConfig;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final SuperDifficultyCalculator superDifficultyCalculator;
 
-    public SuperBlockRule(ActivationConfig activationConfig, BlockStore blockStore, ReceiptStore receiptStore) {
+    public SuperBlockRule(ActivationConfig activationConfig, BlockStore blockStore, ReceiptStore receiptStore, SuperDifficultyCalculator superDifficultyCalculator) {
         this.activationConfig = activationConfig;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.superDifficultyCalculator = superDifficultyCalculator;
     }
 
     @Override
@@ -95,6 +101,14 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
                 return false;
             }
             if (superBlockFields.getBlockNumber() != superParent.getSuperBlockFields().getBlockNumber() + 1) {
+                return false;
+            }
+
+            final var calcSuperDifficulty = superDifficultyCalculator.calcSuperDifficulty(block, superParent);
+            final var superDifficulty = superBlockFields.getSuperDifficulty();
+
+            if (!superDifficulty.equals(calcSuperDifficulty)) {
+                logger.error("#{}: superDifficulty != calcSuperDifficulty", block.getNumber());
                 return false;
             }
         }

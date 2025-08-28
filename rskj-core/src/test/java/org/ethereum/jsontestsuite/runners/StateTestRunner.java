@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite.runners;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -169,7 +170,8 @@ public class StateTestRunner {
                     precompiledContracts,
                     new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                    config),
+                    config,
+                    new SuperDifficultyCalculator(config.getNetworkConstants())),
             stateRootHandler
         );
 

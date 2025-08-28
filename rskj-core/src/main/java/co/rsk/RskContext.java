@@ -180,6 +180,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private Genesis genesis;
     private CompositeEthereumListener compositeEthereumListener;
     private DifficultyCalculator difficultyCalculator;
+    private SuperDifficultyCalculator superDifficultyCalculator;
     private ForkDetectionDataCalculator forkDetectionDataCalculator;
     private ProofOfWorkRule proofOfWorkRule;
     private ForkDetectionDataRule forkDetectionDataRule;
@@ -494,7 +495,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getReceiptStore(),
                     getRepositoryLocator(),
                     getTransactionExecutorFactory(),
-                    getRskSystemProperties()
+                    getRskSystemProperties(),
+                    getSuperDifficultyCalculator()
             );
         }
 
@@ -1125,7 +1127,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getNetworkConstants(),
                     rskSystemProperties.getBitcoinjNetworkConstants()
             );
-            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore());
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore(), getSuperDifficultyCalculator());
             blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
@@ -1813,7 +1815,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.getNetworkConstants(),
                     rskSystemProperties.getBitcoinjNetworkConstants()
             );
-            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore());
+            final SuperBlockRule superBlockRule = new SuperBlockRule(rskSystemProperties.getActivationConfig(), getBlockStore(), getReceiptStore(), getSuperDifficultyCalculator());
 
             final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
                     getProofOfWorkRule(),
@@ -1918,6 +1920,17 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return difficultyCalculator;
+    }
+
+    private SuperDifficultyCalculator getSuperDifficultyCalculator() {
+        if (superDifficultyCalculator == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            superDifficultyCalculator = new SuperDifficultyCalculator(
+                    rskSystemProperties.getNetworkConstants()
+            );
+        }
+
+        return superDifficultyCalculator;
     }
 
     private BlockToMineBuilder getBlockToMineBuilder() {
