@@ -3,7 +3,8 @@ package co.rsk.peg.utils;
 public enum NonRefundablePeginReason {
     LEGACY_PEGIN_UNDETERMINED_SENDER(1),
     PEGIN_V1_REFUND_ADDRESS_NOT_SET(2),
-    INVALID_AMOUNT(3);
+    INVALID_AMOUNT(3),
+    OUTPUTS_SENT_TO_DIFFERENT_TYPES_OF_FEDS(4);
 
     private final int value;
 

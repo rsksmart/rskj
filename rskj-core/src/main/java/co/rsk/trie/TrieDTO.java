@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.trie;
 
 import co.rsk.bitcoinj.core.VarInt;
@@ -413,7 +412,7 @@ public class TrieDTO {
     }
 
     /**
-     * Based on {@link Trie:toMessage()}
+     * Based on {@link Trie#toMessage()}
      */
     public byte[] toMessage() {
 

@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static co.rsk.peg.PegUtils.getFlyoverFederationOutputScript;
+
 @Disabled
 class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction btcTx;
@@ -171,7 +173,7 @@ class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
                 federationRedeemScript
             );
 
-            Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+            Script flyoverP2SH = getFlyoverFederationOutputScript(flyoverRedeemScript, genesisFederation.getFormatVersion());
             Address flyoverFederationAddress = Address.fromP2SHScript(
                 bridgeConstants.getBtcParams(), flyoverP2SH);
 
