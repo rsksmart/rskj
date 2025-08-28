@@ -18,22 +18,34 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NetBlockStore;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.AddressesTopicsFilter;
 import org.ethereum.vm.GasCost;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by ajlopez on 19/08/2016.
  */
 public class BlockUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(BlockUtils.class);
+
     private static final long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
 
     private BlockUtils() { }
@@ -189,6 +201,27 @@ public class BlockUtils {
                 return minSequentialSetGasLimit + extraGasLimit;
             }
             return parallelTxSetGasLimit;
+        }
+    }
+
+    public static Stream<TransactionReceipt> makeReceiptsStream(@Nonnull ReceiptStore receiptStore,
+                                                                @Nonnull List<Block> blocks,
+                                                                @Nonnull AddressesTopicsFilter blockBloomFilter) {
+        return blocks.stream().filter(block -> blockBloomFilter.matchBloom(new Bloom(block.getLogBloom()))).flatMap(
+                block -> block.getTransactionsList().stream()
+                        .map(tx -> receiptStore.get(tx.getHash().getBytes(), block.getHash().getBytes()))
+                        .flatMap(Optional::stream)
+                        .map(TransactionInfo::getReceipt)
+        );
+    }
+
+    @Nullable
+    public static BtcBlock makeBtcBlock(@Nonnull NetworkParameters params, @Nonnull byte[] bitcoinMergedMiningHeader) {
+        try {
+            return params.getDefaultSerializer().makeBlock(bitcoinMergedMiningHeader);
+        } catch (RuntimeException e) {
+            logger.error("Cannot make a BTC block from `{}`", Bytes.of(bitcoinMergedMiningHeader), e);
+            return null;
         }
     }
 }

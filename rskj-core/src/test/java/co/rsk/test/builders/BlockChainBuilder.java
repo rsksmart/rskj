@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
@@ -247,9 +248,12 @@ public class BlockChainBuilder {
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         BlockExecutor blockExecutor = new BlockExecutor(
+                blockStore,
+                receiptStore,
                 repositoryLocator,
                 transactionExecutorFactory,
-                config);
+                config,
+                new SuperDifficultyCalculator(config.getNetworkConstants()));
         BlockChainImpl blockChain = new BlockChainLoader(
                 blockStore,
                 receiptStore,

@@ -57,6 +57,8 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
+    private byte[] superChainDataHash;
+    private SuperBlockResolver isSuperResolver;
     private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
@@ -264,6 +266,16 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setSuperChainDataHash(byte[] superChainDataHash) {
+        this.superChainDataHash = copy(superChainDataHash, null);
+        return this;
+    }
+
+    public BlockHeaderBuilder setSuperBlockResolver(SuperBlockResolver isSuperResolver) {
+        this.isSuperResolver = isSuperResolver;
+        return this;
+    }
+
     public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
             this.txExecutionSublistsEdges = new short[edges.length];
@@ -333,11 +345,35 @@ public class BlockHeaderBuilder {
             }
         }
 
+        if (activationConfig.isActive(ConsensusRule.RSKIP481, number)) {
+            if (superChainDataHash == null) {
+                superChainDataHash = new byte[0];
+            }
+        }
+
         if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
 
-        if (activationConfig.getHeaderVersion(number) == 0x1) {
+        byte version = activationConfig.getHeaderVersion(number);
+
+        if (version == 0x2) {
+            return new BlockHeaderV2(
+                    parentHash, unclesHash, coinbase,
+                    stateRoot, txTrieRoot, receiptTrieRoot,
+                    logsBloom, difficulty, number,
+                    gasLimit, gasUsed, timestamp, extraData, paidFees,
+                    bitcoinMergedMiningHeader,
+                    bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction,
+                    mergedMiningForkDetectionData,
+                    minimumGasPrice, uncleCount,
+                    false, useRskip92Encoding,
+                    includeForkDetectionData, ummRoot, superChainDataHash, isSuperResolver, txExecutionSublistsEdges, false
+            );
+        }
+
+        if (version == 0x1) {
             return new BlockHeaderV1(
                     parentHash, unclesHash, coinbase,
                     stateRoot, txTrieRoot, receiptTrieRoot,
@@ -349,7 +385,7 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
+                    includeForkDetectionData, ummRoot, superChainDataHash, isSuperResolver, txExecutionSublistsEdges, false
             );
         }
 
@@ -364,7 +400,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
+                includeForkDetectionData, ummRoot, superChainDataHash, isSuperResolver, txExecutionSublistsEdges
         );
     }
 }

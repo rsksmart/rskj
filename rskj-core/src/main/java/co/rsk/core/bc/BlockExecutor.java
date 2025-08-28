@@ -19,10 +19,13 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionListExecutor;
+import co.rsk.core.types.bytes.Bytes;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
@@ -34,6 +37,8 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -49,8 +54,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -64,15 +68,20 @@ public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
+    private final ActivationConfig activationConfig;
+
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private final ActivationConfig activationConfig;
     private final boolean remascEnabled;
     private final Set<RskAddress> concurrentContractsDisallowed;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
+    private final long minSequentialSetGasLimit;
+    private final SuperDifficultyCalculator superDifficultyCalculator;
+
     private boolean registerProgramResults;
-    private long minSequentialSetGasLimit;
 
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
@@ -82,16 +91,22 @@ public class BlockExecutor {
      */
     private final ExecutorService[] execServices;
 
-    public BlockExecutor(
-            RepositoryLocator repositoryLocator,
-            TransactionExecutorFactory transactionExecutorFactory,
-            RskSystemProperties systemProperties) {
+    public BlockExecutor(BlockStore blockStore,
+                         ReceiptStore receiptStore,
+                         RepositoryLocator repositoryLocator,
+                         TransactionExecutorFactory transactionExecutorFactory,
+                         RskSystemProperties systemProperties,
+                         SuperDifficultyCalculator superDifficultyCalculator) {
+        this.activationConfig = systemProperties.getActivationConfig();
+
+        this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
-        this.activationConfig = systemProperties.getActivationConfig();
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
         this.minSequentialSetGasLimit = systemProperties.getNetworkConstants().getMinSequentialSetGasLimit();
+        this.superDifficultyCalculator = superDifficultyCalculator;
 
         int numOfParallelList = Constants.getTransactionExecutionThreads();
         this.execServices = new ExecutorService[numOfParallelList];
@@ -175,8 +190,39 @@ public class BlockExecutor {
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
+        if (activationConfig.isActive(RSKIP481, block.getNumber())) {
+            final var superParentAndBridgeEvent = FamilyUtils.findSuperParentAndBridgeEvent(
+                    blockStore,
+                    receiptStore,
+                    block,
+                    result.getTransactionReceipts());
+
+            var superDifficulty = superParentAndBridgeEvent.superParent() == null ?
+                    BlockDifficulty.ONE :
+                    superDifficultyCalculator.calcSuperDifficulty(block, superParentAndBridgeEvent.superParent());
+
+            SuperBlockFields superBlockFields = makeSuperBlockFields(
+                    superParentAndBridgeEvent.superParent(),
+                    superParentAndBridgeEvent.superBridgeEvent(),
+                    superDifficulty
+            );
+            block.setSuperChainFields(superBlockFields);
+        }
+
         block.flushRLP();
         profiler.stop(metric);
+    }
+
+    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event, BlockDifficulty superDifficulty) {
+        Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
+        long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
+
+        return new SuperBlockFields(
+                superParentHash,
+                superParentBlockNumber,
+                event,
+                superDifficulty
+        );
     }
 
     /**
