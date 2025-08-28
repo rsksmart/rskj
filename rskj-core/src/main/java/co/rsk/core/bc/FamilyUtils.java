@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.util.Trio;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -39,7 +38,7 @@ import static java.lang.Math.max;
  */
 public class FamilyUtils {
 
-    public record FindSuperParentAndBridgeEventResponse (Block superParent, SuperBridgeEvent superBridgeEvent) {}
+    public record FindSuperParentAndBridgeEventAndSuperUncleBlockHeaderResponse (Block superParent, SuperBridgeEvent superBridgeEvent, BlockHeader superUncleBlockHeader) {}
 
     /**
      * Calculate the set of hashes of ancestors of a block
@@ -175,7 +174,22 @@ public class FamilyUtils {
         return family;
     }
 
-    public static FindSuperParentAndBridgeEventResponse findSuperParentAndUnclesAndBridgeEvent(
+    private static Block getSuperUncleBlock(List<Block> ancestors, BlockStore blockStore) {
+        for (Block ancestor : ancestors) {
+            List<Block> blockList = blockStore.getChainBlocksByNumber(ancestor.getNumber());
+            for (Block b : blockList) {
+                if (!ancestor.getHash().equals(b.getHash())
+                        && ancestor.getParentHash().equals(b.getParentHash())
+                        && b.isSuper().orElse(false)) {
+                    return b;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static FindSuperParentAndBridgeEventAndSuperUncleBlockHeaderResponse findSuperParentAndBridgeEventAndSuperUncleBlockHeader(
             BlockStore blockStore,
             ReceiptStore receiptStore,
             Block block,
@@ -185,8 +199,11 @@ public class FamilyUtils {
         List<Block> ancestors = superParentAndAncestors.getRight();
 
         if (superParent == null) {
-            return new FindSuperParentAndBridgeEventResponse(null,  null);
+            return new FindSuperParentAndBridgeEventAndSuperUncleBlockHeaderResponse(null,  null, null);
         }
+
+        final var superUncleBlock = getSuperUncleBlock(ancestors, blockStore);
+        final var superUncleBlockHeader = superUncleBlock != null ? superUncleBlock.getHeader() : null;
 
         SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
                 Stream.concat(
@@ -195,7 +212,7 @@ public class FamilyUtils {
                 )
         );
 
-        return new FindSuperParentAndBridgeEventResponse(superParent, bridgeEvent);
+        return new FindSuperParentAndBridgeEventAndSuperUncleBlockHeaderResponse(superParent, bridgeEvent, superUncleBlockHeader);
     }
 
     public static Pair<Block, List<Block>> findSuperParentAndAncestors(BlockStore blockStore, BlockHeader header) {

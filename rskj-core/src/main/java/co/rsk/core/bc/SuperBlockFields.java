@@ -20,21 +20,25 @@ package co.rsk.core.bc;
 
 import co.rsk.core.types.bytes.BytesSlice;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.util.stream.Stream;
 
 public class SuperBlockFields {
 
     private final BytesSlice parentHash;
     private final long blockNumber;
     private final SuperBridgeEvent bridgeEvent;
+    private final BlockHeader uncleBlockHeader;
 
-    public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber, @Nullable SuperBridgeEvent bridgeEvent) {
+    public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber, @Nullable SuperBridgeEvent bridgeEvent, @Nullable BlockHeader uncleBlockHeader) {
         this.parentHash = parentHash;
+        this.uncleBlockHeader = uncleBlockHeader;
         this.blockNumber = blockNumber;
         this.bridgeEvent = bridgeEvent;
     }
@@ -51,11 +55,16 @@ public class SuperBlockFields {
         return bridgeEvent;
     }
 
+    public BlockHeader getUncleBlockHeader() {
+        return uncleBlockHeader;
+    }
+
     public byte[] getEncoded() {
         return RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
+                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null),
+                uncleBlockHeader != null ? RLP.encodeList(Stream.of(uncleBlockHeader).map(BlockHeader::getFullEncoded).toArray(byte[][]::new)) : RLP.encodedEmptyList()
         );
     }
 
@@ -64,7 +73,8 @@ public class SuperBlockFields {
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null)
+                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null),
+                uncleBlockHeader != null ? RLP.encodeList(Stream.of(uncleBlockHeader).map(BlockHeader::getFullEncoded).toArray(byte[][]::new)) : RLP.encodedEmptyList()
         );
 
         return new Keccak256(HashUtil.keccak256(encoded));
