@@ -19,6 +19,10 @@
 
 package org.ethereum.crypto.signature;
 
+import java.math.BigInteger;
+
+import javax.annotation.Nullable;
+
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
@@ -29,11 +33,13 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.BIUtil;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
+import co.rsk.core.types.bytes.Bytes;
 
 /**
  * Implementation of SignatureService with Bouncy Castle.
@@ -46,12 +52,14 @@ class Secp256k1ServiceBC implements Secp256k1Service {
      */
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
+    public static final X9ECParameters X9_ELLIPTIC_CURVE_PARAMS;
 
     static {
         // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
-        X9ECParameters params = SECNamedCurves.getByName("secp256k1");
-        CURVE = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
-        HALF_CURVE_ORDER = params.getN().shiftRight(1);
+        X9_ELLIPTIC_CURVE_PARAMS = SECNamedCurves.getByName("secp256k1");
+        CURVE = new ECDomainParameters(X9_ELLIPTIC_CURVE_PARAMS.getCurve(), X9_ELLIPTIC_CURVE_PARAMS.getG(),
+                X9_ELLIPTIC_CURVE_PARAMS.getN(), X9_ELLIPTIC_CURVE_PARAMS.getH());
+        HALF_CURVE_ORDER = X9_ELLIPTIC_CURVE_PARAMS.getN().shiftRight(1);
     }
 
     /**
@@ -128,6 +136,95 @@ class Secp256k1ServiceBC implements Secp256k1Service {
             logger.error("Caught NPE inside bouncy castle", npe);
             return false;
         }
+    }
+
+    private static byte[] encodeRes(byte[] w1, byte[] w2) {
+        var res = new byte[64];
+
+        var w1Updated = ByteUtil.stripLeadingZeroes(w1);
+        var w2Updated = ByteUtil.stripLeadingZeroes(w2);
+
+        Bytes.arraycopy(w1Updated, 0, res, 32 - w1Updated.length, w1Updated.length);
+        Bytes.arraycopy(w2Updated, 0, res, 64 - w2Updated.length, w2Updated.length);
+
+        return res;
+    }
+
+    private static byte[] getOutput(ECPoint res) {
+        final var normalizedRes = res.normalize(); // allow affine coordinates
+
+        if (normalizedRes.isInfinity()) {
+            return new byte[64];
+        }
+
+        return encodeRes(normalizedRes.getAffineXCoord().getEncoded(), normalizedRes.getAffineYCoord().getEncoded());
+    }
+
+    private static boolean isValidPoint(byte[] x, byte[] y) {
+        try {
+            X9_ELLIPTIC_CURVE_PARAMS.getCurve().validatePoint(BIUtil.toBI(x), BIUtil.toBI(y));
+        } catch (java.lang.IllegalArgumentException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public static ECPoint getPoint(byte[] x1, byte[] y1) {
+        ECPoint p1;
+
+        if (ByteUtil.isAllZeroes(x1) && (ByteUtil.isAllZeroes(y1))) {
+            p1 = X9_ELLIPTIC_CURVE_PARAMS.getCurve().getInfinity();
+        } else {
+            if (!isValidPoint(x1, y1)) {
+                return null;
+            }
+
+            p1 = X9_ELLIPTIC_CURVE_PARAMS.getCurve().createPoint(BIUtil.toBI(x1), BIUtil.toBI(y1));
+        }
+
+        return p1;
+    }
+
+    @Override
+    public byte[] add(byte[] data) throws VMException {
+        final var x1 = ByteUtil.parseWord(data, 0);
+        final var y1 = ByteUtil.parseWord(data, 1);
+
+        final var x2 = ByteUtil.parseWord(data, 2);
+        final var y2 = ByteUtil.parseWord(data, 3);
+        final var p1 = getPoint(x1, y1);
+
+        if (p1 == null) {
+            throw new VMException("Invalid point coordinates for first point in add operation");
+        }
+
+        final var p2 = getPoint(x2, y2);
+
+        if (p2 == null) {
+            throw new VMException("Invalid point coordinates for second point in add operation");
+        }
+        final var res = p1.add(p2);
+
+        return getOutput(res);
+    }
+
+    @Override
+    public byte[] mul(byte[] data) throws VMException {
+        final var x = ByteUtil.parseWord(data, 0);
+        final var y = ByteUtil.parseWord(data, 1);
+
+        final var s = ByteUtil.parseWord(data, 2);
+
+        final var p = getPoint(x, y);
+
+        if (p == null) {
+            throw new VMException("Invalid point coordinates for mul operation");
+        }
+
+        var res = p.multiply(BIUtil.toBI(s));
+        res = res.normalize();
+
+        return getOutput(res);
     }
 
     /**

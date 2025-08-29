@@ -18,9 +18,10 @@
 
 package co.rsk.pcc.altBN128;
 
-import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.GasCost;
+
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 
 /**
  * Computes pairing check. <br/>
@@ -47,7 +48,7 @@ import org.ethereum.vm.GasCost;
  * @since 10.09.2019
  */
 public class BN128Pairing extends BN128PrecompiledContract {
-    
+
     public BN128Pairing(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
         super(activations, altBN128);
     }
@@ -58,9 +59,8 @@ public class BN128Pairing extends BN128PrecompiledContract {
         long perPairCost = GasCost.toGas(34_000L);
 
         if (data == null) {
-            return baseCost;
+            return GasCost.toGas(45000);
         }
-
         return GasCost.add(GasCost.multiply(perPairCost, (data.length / AbstractAltBN128.PAIR_SIZE)) , baseCost);
     }
 
