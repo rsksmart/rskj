@@ -41,8 +41,6 @@ import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,9 +52,16 @@ import java.math.BigInteger;
 import java.util.HashSet;
 
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Sebastian Sicardi
@@ -96,13 +101,13 @@ class AltBN128Test {
         PrecompiledContracts.PrecompiledContract altBN128Mul = precompiledContracts.getContractForAddress(activations, altBN128MulAddr);
         PrecompiledContracts.PrecompiledContract altBN128Pair = precompiledContracts.getContractForAddress(activations, altBN128PairAddr);
 
-        MatcherAssert.assertThat(altBN128Add, notNullValue());
-        MatcherAssert.assertThat(altBN128Mul, notNullValue());
-        MatcherAssert.assertThat(altBN128Pair, notNullValue());
+        assertThat(altBN128Add, notNullValue());
+        assertThat(altBN128Mul, notNullValue());
+        assertThat(altBN128Pair, notNullValue());
 
-        MatcherAssert.assertThat(altBN128Add, instanceOf(BN128Addition.class));
-        MatcherAssert.assertThat(altBN128Mul, instanceOf(BN128Multiplication.class));
-        MatcherAssert.assertThat(altBN128Pair, instanceOf(BN128Pairing.class));
+        assertThat(altBN128Add, instanceOf(BN128Addition.class));
+        assertThat(altBN128Mul, instanceOf(BN128Multiplication.class));
+        assertThat(altBN128Pair, instanceOf(BN128Pairing.class));
     }
 
     @Test
@@ -121,9 +126,9 @@ class AltBN128Test {
         PrecompiledContracts.PrecompiledContract altBN128Mul = precompiledContracts.getContractForAddress(activations, altBN128MulAddr);
         PrecompiledContracts.PrecompiledContract altBN128Pair = precompiledContracts.getContractForAddress(activations, altBN128PairAddr);
 
-        MatcherAssert.assertThat(altBN128Add, nullValue());
-        MatcherAssert.assertThat(altBN128Mul, nullValue());
-        MatcherAssert.assertThat(altBN128Pair, nullValue());
+        assertThat(altBN128Add, nullValue());
+        assertThat(altBN128Mul, nullValue());
+        assertThat(altBN128Pair, nullValue());
     }
 
     @Test
@@ -234,7 +239,6 @@ class AltBN128Test {
                 "Error: Point is not on curve, should return zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
                 ADD_GAS_COST);
-
 
         when(activations.isActive(ConsensusRule.RSKIP197)).thenReturn(true);
 
@@ -494,11 +498,23 @@ class AltBN128Test {
                 "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
                 "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed" +
                 "275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec" +
+                "1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d" +
+                "0000000000000000000000000000000000000000000000000000000000000001" +
+                "0000000000000000000000000000000000000000000000000000000000000002" +
+                "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
+                "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed" +
+                "090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b" +
+                "12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa" +
+                "0000000000000000000000000000000000000000000000000000000000000001" +
+                "0000000000000000000000000000000000000000000000000000000000000002" +
+                "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
+                "1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed" +
+                "275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec" +
                 "1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d";
 
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
         executePrecompileAndAssert(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 385_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 453_000);
     }
 
     @Test
@@ -620,7 +636,6 @@ class AltBN128Test {
                 ByteUtil.toHexString(p1x.toByteArray()),
                 ByteUtil.toHexString(p1y.toByteArray())};
 
-
         String[] expects = {"030644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd3",
                 "15ed738c0e0a7c92e7845f96b2ae9c0a68a6a449e3538fc7ff3ebf7a5a18a2c4"};
 
@@ -667,6 +682,52 @@ class AltBN128Test {
         executeVMAltBNOperation(inputs, expects, PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
     }
 
+    @Test
+    void testMaxInputForBN128Addition() {
+        BN128Addition contract = new BN128Addition(activations, new JavaAltBN128());
+
+        // BN128 addition expects exactly 4 words: x1, y1, x2, y2
+        // Each word is 32 bytes, so total expected input is 128 bytes
+        assertEquals(128, contract.getMaxInput());
+    }
+
+    @Test
+    void testMaxInputForBN128Multiplication() {
+        BN128Multiplication contract = new BN128Multiplication(activations, new JavaAltBN128());
+
+        // BN128 multiplication expects exactly 3 words: x, y, scalar
+        // Each word is 32 bytes, so total expected input is 96 bytes
+        assertEquals(96, contract.getMaxInput());
+    }
+
+    @Test
+    void testMaxInputConsistencyAcrossInstances() {
+        // given
+        AbstractAltBN128 javaAltbn128 = new JavaAltBN128();
+
+        BN128Addition contract1 = new BN128Addition(activations, javaAltbn128);
+        BN128Addition contract2 = new BN128Addition(activations, javaAltbn128);
+        // when - then
+        assertEquals(contract1.getMaxInput(), contract2.getMaxInput());
+
+        // given
+        BN128Multiplication contract3 = new BN128Multiplication(activations, javaAltbn128);
+        BN128Multiplication contract4 = new BN128Multiplication(activations, javaAltbn128);
+        // when - then
+        assertEquals(contract3.getMaxInput(), contract4.getMaxInput());
+    }
+
+    @Test
+    void testMaxInputLimitsAreReasonable() {
+        // Verify that maxInput limits are reasonable and not too restrictive
+
+        // ECADD: 128 bytes is reasonable for 4 elliptic curve points
+        assertEquals(128, new BN128Addition(activations, new JavaAltBN128()).getMaxInput());
+
+        // ECMUL: 96 bytes is reasonable for 3 values (point + scalar)
+        assertEquals(96, new BN128Multiplication(activations, new JavaAltBN128()).getMaxInput());
+    }
+
     private void executePrecompileAndAssertError(String inputString, String errorMessage,
                                                  DataWord contractAddress, long gasCost, ActivationConfig.ForBlock activations) {
         BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(this.activations, contractAddress));
@@ -687,9 +748,9 @@ class AltBN128Test {
         byte[] input = inputString == null ? null : Hex.decode(inputString);
         byte[] output = contract.execute(input);
 
-        MatcherAssert.assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
-        MatcherAssert.assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
-    }
+        assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
+        assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
+}
 
     private void runAndAssertError(String inputString, String errorMessage, BN128PrecompiledContract contract, long gasCost) {
         byte[] input = inputString == null ? null : Hex.decode(inputString);
@@ -699,8 +760,8 @@ class AltBN128Test {
         } catch (VMException e) {
             assertEquals(errorMessage, e.getMessage());
         }
-        MatcherAssert.assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
-    }
+        assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
+}
 
     private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) throws VMException {
         byte[] input = new byte[96];
@@ -781,15 +842,15 @@ class AltBN128Test {
         Program program = executeCode(code);
         Stack stack = program.getStack();
 
-        MatcherAssert.assertThat(stack.size(), is(1 + expect.length));
+        assertThat(stack.size(), is(1 + expect.length));
 
         for (int j = expect.length - 1; j >= 0; j--) {
             DataWord output = stack.pop();
-            MatcherAssert.assertThat(DataWord.valueFromHex(expect[j]), is(output));
+            assertThat(DataWord.valueFromHex(expect[j]), is(output));
         }
 
         DataWord contractIsSuccessful = stack.pop();
-        MatcherAssert.assertThat(DataWord.valueOf(1), is(contractIsSuccessful));
+        assertThat(DataWord.valueOf(1), is(contractIsSuccessful));
     }
 
     private Program executeCode(String code) {
@@ -818,7 +879,7 @@ class AltBN128Test {
             return new BN128Pairing(activations, javaAltbn128);
         }
 
-        Assertions.fail("this is unexpected");
+        fail("this is unexpected");
 
         return null;
     }
