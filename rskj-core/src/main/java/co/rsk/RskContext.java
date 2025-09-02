@@ -933,7 +933,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (minerClient == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            if (rskSystemProperties.minerClientAutoMine()) {
+            if (rskSystemProperties.minerClientTimedMine()) {
+                minerClient = new TimedMinerClient(
+                        getMinerServer(),
+                        rskSystemProperties.minerClientMedianBlockTime()
+                );
+            } else if (rskSystemProperties.minerClientAutoMine()) {
                 minerClient = new AutoMinerClient(getMinerServer());
             } else {
                 minerClient = new MinerClientImpl(
