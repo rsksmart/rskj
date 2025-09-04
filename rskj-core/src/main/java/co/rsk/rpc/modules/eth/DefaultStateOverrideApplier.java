@@ -18,6 +18,7 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
@@ -26,40 +27,98 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+
 public class DefaultStateOverrideApplier implements StateOverrideApplier {
+
+    private final int maxOverridableCodeSize;
+    private final int maxStateOverrideChanges;
+
+    public DefaultStateOverrideApplier(int maxOverridableCodeSize, int maxStateOverrideChanges) {
+        this.maxOverridableCodeSize = maxOverridableCodeSize;
+        this.maxStateOverrideChanges = maxStateOverrideChanges;
+    }
 
     @Override
     public void applyToRepository(Repository repository, AccountOverride accountOverride) {
 
-        if (accountOverride.getBalance() != null) {
-            Coin storedValue = Optional.ofNullable(repository.getBalance(accountOverride.getAddress())).orElse(Coin.ZERO);
-            repository.addBalance(accountOverride.getAddress(), new Coin(accountOverride.getBalance()).subtract(storedValue));
+        RskAddress address = accountOverride.getAddress();
+
+        if (address == null) {
+            throw invalidParamError("Address cannot be null");
         }
 
-        if (accountOverride.getNonce() != null) {
-            repository.setNonce(accountOverride.getAddress(), BigInteger.valueOf(accountOverride.getNonce()));
-        }
-
-        if (accountOverride.getCode() != null) {
-            repository.saveCode(accountOverride.getAddress(), accountOverride.getCode());
-        }
         if (accountOverride.getStateDiff() != null && accountOverride.getState() != null) {
-            throw new IllegalStateException("AccountOverride.stateDiff and AccountOverride.state cannot be set at the same time");
-        }
-        if (accountOverride.getState() != null) {
-            Iterator<DataWord> keys = repository.getStorageKeys(accountOverride.getAddress());
-            while (keys.hasNext()) {
-                repository.addStorageRow(accountOverride.getAddress(), keys.next(), DataWord.ZERO);
-            }
-            for (Map.Entry<DataWord, DataWord> entry : accountOverride.getState().entrySet()) {
-                repository.addStorageRow(accountOverride.getAddress(), entry.getKey(), entry.getValue());
-            }
+            throw invalidParamError("AccountOverride.stateDiff and AccountOverride.state cannot be set at the same time");
         }
 
-        if (accountOverride.getStateDiff() != null) {
-            for (Map.Entry<DataWord, DataWord> entry : accountOverride.getStateDiff().entrySet()) {
-                repository.addStorageRow(accountOverride.getAddress(), entry.getKey(), entry.getValue());
+        applyBalanceOverride(repository, address, accountOverride.getBalance());
+        applyNonceOverride(repository, address, accountOverride.getNonce());
+        applyCodeOverride(repository, address, accountOverride.getCode());
+        applyStateOverride(repository, address, accountOverride.getState());
+        applyStateDiff(repository, address, accountOverride.getStateDiff());
+        applyMovePrecompileToAddress(repository, address, accountOverride.getMovePrecompileToAddress());
+
+    }
+
+    private void applyBalanceOverride(Repository repository, RskAddress address, BigInteger newBalance) {
+        if (newBalance != null) {
+
+            if (newBalance.compareTo(BigInteger.ZERO) < 0) {
+                throw invalidParamError("Balance must be equal or bigger than zero");
             }
+
+            Coin storedValue = Optional.ofNullable(repository.getBalance(address)).orElse(Coin.ZERO);
+            repository.addBalance(address, new Coin(newBalance).subtract(storedValue));
+        }
+    }
+
+    private void applyNonceOverride(Repository repository, RskAddress address, Long newNonce) {
+        if (newNonce != null) {
+            if (newNonce < 0) {
+                throw invalidParamError("Nonce must be equal or bigger than zero");
+            }
+            repository.setNonce(address, BigInteger.valueOf(newNonce));
+        }
+    }
+
+    private void applyCodeOverride(Repository repository, RskAddress address, byte[] newCode) {
+        if (newCode != null) {
+            if (newCode.length > maxOverridableCodeSize) {
+                throw invalidParamError("Code length in bytes exceeded. Max " + maxOverridableCodeSize);
+            }
+            repository.saveCode(address, newCode);
+        }
+    }
+
+    private void applyStateOverride(Repository repository, RskAddress address, Map<DataWord, DataWord> newState) {
+        if (newState != null) {
+            if (newState.size() > maxStateOverrideChanges) {
+                throw invalidParamError("Number of state changes exceeded. Max " + maxStateOverrideChanges);
+            }
+
+            Iterator<DataWord> keys = repository.getStorageKeys(address);
+            while (keys.hasNext()) {
+                repository.addStorageRow(address, keys.next(), DataWord.ZERO);
+            }
+            for (Map.Entry<DataWord, DataWord> entry : newState.entrySet()) {
+                repository.addStorageRow(address, entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void applyStateDiff(Repository repository, RskAddress address, Map<DataWord, DataWord> stateDiff) {
+        if (stateDiff != null) {
+            for (Map.Entry<DataWord, DataWord> entry : stateDiff.entrySet()) {
+                repository.addStorageRow(address, entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void applyMovePrecompileToAddress(Repository repository, RskAddress address, RskAddress destinationAddress) {
+        if (destinationAddress != null) {
+            throw unimplemented("Move precompile to address is not supported yet");
         }
     }
 

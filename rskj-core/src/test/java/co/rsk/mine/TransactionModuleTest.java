@@ -655,9 +655,7 @@ class TransactionModuleTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                new DefaultStateOverrideApplier(),
-                0,
-                0,
+                new DefaultStateOverrideApplier(0, 0),
                 0
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());

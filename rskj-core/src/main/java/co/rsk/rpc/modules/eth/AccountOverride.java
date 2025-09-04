@@ -29,30 +29,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
-
 public class AccountOverride {
 
+    private final RskAddress address;
     private BigInteger balance;
     private Long nonce;
     private byte[] code;
     private Map<DataWord, DataWord> state;
     private Map<DataWord, DataWord> stateDiff;
-    private RskAddress address;
     private RskAddress movePrecompileToAddress;
 
-    private final int maxOverridableCodeSize;
-    private final int maxStateOverrideChanges;
-
-    public AccountOverride(RskAddress address, int maxOverridableCodeSize, int maxStateOverrideChanges) {
-        if (address == null) {
-            throw invalidParamError("Address cannot be null");
-        }
+    public AccountOverride(RskAddress address) {
         this.address = address;
-
-        this.maxOverridableCodeSize = maxOverridableCodeSize;
-        this.maxStateOverrideChanges = maxStateOverrideChanges;
     }
 
     public BigInteger getBalance() {
@@ -60,9 +48,6 @@ public class AccountOverride {
     }
 
     public void setBalance(BigInteger balance) {
-        if (balance.compareTo(BigInteger.ZERO) < 0) {
-            throw invalidParamError("Balance must be equal or bigger than zero");
-        }
         this.balance = balance;
     }
 
@@ -71,9 +56,6 @@ public class AccountOverride {
     }
 
     public void setNonce(Long nonce) {
-        if (nonce < 0) {
-            throw invalidParamError("Nonce must be equal or bigger than zero");
-        }
         this.nonce = nonce;
     }
 
@@ -82,9 +64,6 @@ public class AccountOverride {
     }
 
     public void setCode(byte[] code) {
-        if (code.length > maxOverridableCodeSize) {
-            throw invalidParamError("Code length in bytes exceeded. Max " + maxOverridableCodeSize);
-        }
         this.code = code;
     }
 
@@ -93,9 +72,6 @@ public class AccountOverride {
     }
 
     public void setState(Map<DataWord, DataWord> state) {
-        if (state.size() > maxStateOverrideChanges) {
-            throw invalidParamError("Number of state changes exceeded. Max " + maxStateOverrideChanges);
-        }
         this.state = state;
     }
 
@@ -112,7 +88,11 @@ public class AccountOverride {
     }
 
     public void setMovePrecompileToAddress(RskAddress movePrecompileToAddress) {
-        throw unimplemented("Move precompile to address is not supported yet");
+        this.movePrecompileToAddress = movePrecompileToAddress;
+    }
+
+    public RskAddress getMovePrecompileToAddress() {
+        return movePrecompileToAddress;
     }
 
     public AccountOverride fromAccountOverrideParam(AccountOverrideParam accountOverrideParam) {

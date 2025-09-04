@@ -1079,8 +1079,6 @@ class Web3ImplLogsTest {
                 null,
                 false,
                 null,
-                0,
-                0,
                 0
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);

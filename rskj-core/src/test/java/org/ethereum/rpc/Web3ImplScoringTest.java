@@ -405,8 +405,6 @@ class Web3ImplScoringTest {
                 null,
                 false,
                 null,
-                0,
-                0,
                 0
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
