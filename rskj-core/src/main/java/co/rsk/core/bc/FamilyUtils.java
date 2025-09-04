@@ -38,7 +38,7 @@ import static java.lang.Math.max;
  */
 public class FamilyUtils {
 
-    public record FindSuperParentAndBridgeEventResponse (Block superParent, SuperBridgeEvent superBridgeEvent) {}
+    public record FindSuperParentAndBridgeEventResponse (Block superParent, byte[] superBridgeEvent) {}
 
     /**
      * Calculate the set of hashes of ancestors of a block
@@ -174,11 +174,9 @@ public class FamilyUtils {
         return family;
     }
 
-    public static FindSuperParentAndBridgeEventResponse findSuperParentAndBridgeEvent(
+    public static FindSuperParentAndBridgeEventResponse findSuperParentAndSuperBridgeEvent(
             BlockStore blockStore,
-            ReceiptStore receiptStore,
-            Block block,
-            List<TransactionReceipt> blockReceipts) {
+            Block block) {
         Pair<Block, List<Block>> superParentAndAncestors = findSuperParentAndAncestors(blockStore, block.getHeader());
         Block superParent = superParentAndAncestors.getLeft();
         List<Block> ancestors = superParentAndAncestors.getRight();
@@ -187,14 +185,9 @@ public class FamilyUtils {
             return new FindSuperParentAndBridgeEventResponse(null,  null);
         }
 
-        SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
-                Stream.concat(
-                        blockReceipts.stream(),
-                        BlockUtils.makeReceiptsStream(receiptStore, ancestors, SuperBridgeEvent.FILTER)
-                )
-        );
+        byte[] superBridgeEvent = SuperBridgeEventResolver.resolveSuperBridgeEvent(superParent);
 
-        return new FindSuperParentAndBridgeEventResponse(superParent, bridgeEvent);
+        return new FindSuperParentAndBridgeEventResponse(superParent, superBridgeEvent);
     }
 
     public static Pair<Block, List<Block>> findSuperParentAndAncestors(BlockStore blockStore, BlockHeader header) {

@@ -32,14 +32,14 @@ public class SuperBlockFields {
 
     private final BytesSlice parentHash;
     private final long blockNumber;
-    private final SuperBridgeEvent bridgeEvent;
+    private final byte[] superBridgeEvent;
     private BlockDifficulty superDifficulty;
 
     public SuperBlockFields(@Nullable BytesSlice parentHash, long blockNumber,
-                            @Nullable SuperBridgeEvent bridgeEvent, BlockDifficulty superDifficulty) {
+                            @Nullable byte[] superBridgeEvent, BlockDifficulty superDifficulty) {
         this.parentHash = parentHash;
         this.blockNumber = blockNumber;
-        this.bridgeEvent = bridgeEvent;
+        this.superBridgeEvent = superBridgeEvent;
         this.superDifficulty = superDifficulty;
     }
 
@@ -51,8 +51,8 @@ public class SuperBlockFields {
         return blockNumber;
     }
 
-    public SuperBridgeEvent getBridgeEvent() {
-        return bridgeEvent;
+    public byte[] getSuperBridgeEvent() {
+        return superBridgeEvent;
     }
 
     public BlockDifficulty getSuperDifficulty() {
@@ -67,7 +67,7 @@ public class SuperBlockFields {
         return RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null),
+                RLP.encodeElement(superBridgeEvent != null ? superBridgeEvent : null),
                 RLP.encodeElement(superDifficulty != null ? superDifficulty.getBytes() : null)
         );
     }
@@ -77,7 +77,7 @@ public class SuperBlockFields {
         byte[] encoded = RLP.encodeList(
                 RLP.encodeElement(parentHash != null ? parentHash.copyArray() : null),
                 RLP.encodeBigInteger(BigInteger.valueOf(blockNumber)),
-                RLP.encodeElement(bridgeEvent != null ? bridgeEvent.getEncoded() : null),
+                RLP.encodeElement(superBridgeEvent != null ? superBridgeEvent : null),
                 RLP.encodeElement(superDifficulty != null ? superDifficulty.getBytes() : null)
         );
 
