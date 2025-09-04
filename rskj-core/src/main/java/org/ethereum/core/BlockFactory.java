@@ -25,7 +25,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.core.bc.SuperBlockFields;
-import co.rsk.core.bc.SuperBridgeEvent;
 import co.rsk.core.types.bytes.Bytes;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.SuperChainUtils;
@@ -359,12 +358,11 @@ public class BlockFactory {
 
         long superBlockNumber = parseBigInteger(superBlockFieldsRlp.get(1).getRLPData()).longValueExact();
 
-        byte[] superBridgeEventRlp = superBlockFieldsRlp.get(2).getRLPData();
-        SuperBridgeEvent bridgeEvent = SuperBridgeEvent.decode(superBridgeEventRlp);
+        byte[] superBridgeEvent = superBlockFieldsRlp.get(2).getRLPData();
 
         byte[] superDifficultyBytes = superBlockFieldsRlp.get(3).getRLPData();
         BlockDifficulty superDifficulty = RLP.parseBlockDifficulty(superDifficultyBytes);
 
-        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, bridgeEvent, superDifficulty);
+        return new SuperBlockFields(Bytes.of(superParentHash), superBlockNumber, superBridgeEvent, superDifficulty);
     }
 }

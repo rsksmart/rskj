@@ -20,10 +20,9 @@
 package co.rsk.validators;
 
 import co.rsk.core.SuperDifficultyCalculator;
-import co.rsk.core.bc.BlockUtils;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.core.bc.SuperBlockFields;
-import co.rsk.core.bc.SuperBridgeEvent;
+import co.rsk.core.bc.SuperBridgeEventResolver;
 import co.rsk.core.types.bytes.Bytes;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,10 +35,8 @@ import org.ethereum.db.ReceiptStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidationRule {
     private static final Logger logger = LoggerFactory.getLogger(SuperBlockRule.class);
@@ -113,13 +110,8 @@ public class SuperBlockRule implements BlockHeaderValidationRule, BlockValidatio
             }
         }
 
-        SuperBridgeEvent bridgeEvent = SuperBridgeEvent.findEvent(
-                Stream.concat(
-                        BlockUtils.makeReceiptsStream(receiptStore, Collections.singletonList(block), SuperBridgeEvent.FILTER),
-                        BlockUtils.makeReceiptsStream(receiptStore, ancestors, SuperBridgeEvent.FILTER)
-                )
-        );
-        return SuperBridgeEvent.equalEvents(superBlockFields.getBridgeEvent(), bridgeEvent);
+        byte[] bridgeEvent = SuperBridgeEventResolver.resolveSuperBridgeEvent(superParent);
+        return SuperBridgeEventResolver.equalEvents(superBlockFields.getSuperBridgeEvent(), bridgeEvent);
     }
 
     private boolean isRSKIP481Active(long blockNumber) {

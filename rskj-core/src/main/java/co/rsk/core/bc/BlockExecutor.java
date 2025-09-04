@@ -191,11 +191,9 @@ public class BlockExecutor {
         header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         if (activationConfig.isActive(RSKIP481, block.getNumber())) {
-            final var superParentAndBridgeEvent = FamilyUtils.findSuperParentAndBridgeEvent(
+            final var superParentAndBridgeEvent = FamilyUtils.findSuperParentAndSuperBridgeEvent(
                     blockStore,
-                    receiptStore,
-                    block,
-                    result.getTransactionReceipts());
+                    block);
 
             var superDifficulty = superParentAndBridgeEvent.superParent() == null ?
                     BlockDifficulty.ONE :
@@ -213,14 +211,14 @@ public class BlockExecutor {
         profiler.stop(metric);
     }
 
-    private static SuperBlockFields makeSuperBlockFields(Block superParent, SuperBridgeEvent event, BlockDifficulty superDifficulty) {
+    private static SuperBlockFields makeSuperBlockFields(Block superParent, byte[] superBridgeEvent, BlockDifficulty superDifficulty) {
         Bytes superParentHash = superParent == null ? null : Bytes.of(superParent.getHash().getBytes());
         long superParentBlockNumber = superParent == null ? 0 : superParent.getSuperBlockFields().getBlockNumber() + 1;
 
         return new SuperBlockFields(
                 superParentHash,
                 superParentBlockNumber,
-                event,
+                superBridgeEvent,
                 superDifficulty
         );
     }
