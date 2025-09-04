@@ -64,10 +64,8 @@ public class EthModuleTestUtils {
                 config.getActivationConfig(),
                 new PrecompiledContracts(config, null, null),
                 config.getAllowCallStateOverride(),
-                new DefaultStateOverrideApplier(),
-                config.getMaxAccountOverrides(),
-                config.getMaxOverridableCodeSize(),
-                config.getMaxStateOverrideChanges());
+                new DefaultStateOverrideApplier(config.getMaxOverridableCodeSize(), config.getMaxStateOverrideChanges()),
+                config.getMaxAccountOverrides());
     }
 
     public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
@@ -91,8 +89,6 @@ public class EthModuleTestUtils {
                 null,
                 false,
                 null,
-                0,
-                0,
                 0);
     }
 
@@ -121,12 +117,11 @@ public class EthModuleTestUtils {
                                        BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap, long gasCap,
                                        ActivationConfig activationConfig, PrecompiledContracts precompiledContracts,
                                        boolean allowCallStateOverride, StateOverrideApplier stateOverrideApplier,
-                                       int maxAccountOverrides, int maxOverridableCodeSize, int maxStateOverrideChanges) {
+                                       int maxAccountOverrides) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
                     bridgeSupportFactory, gasEstimationCap, gasCap, activationConfig, precompiledContracts,
-                    allowCallStateOverride, stateOverrideApplier, maxAccountOverrides, maxOverridableCodeSize,
-                    maxStateOverrideChanges);
+                    allowCallStateOverride, stateOverrideApplier, maxAccountOverrides);
         }
 
         private ProgramResult estimationResult;

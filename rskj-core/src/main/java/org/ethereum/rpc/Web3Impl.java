@@ -418,9 +418,7 @@ public class Web3Impl implements Web3 {
     public String eth_call(CallArgumentsParam args, BlockRefParam blockRefParam, Map<HexAddressParam, AccountOverrideParam> accParam) {
         List<AccountOverride> accountOverrideList = accParam.entrySet().stream()
                 .map(entry -> new AccountOverride(
-                        entry.getKey().getAddress(),
-                        ethModule.getMaxOverridableCodeSize(),
-                        ethModule.getMaxStateOverrideChanges())
+                        entry.getKey().getAddress())
                         .fromAccountOverrideParam(entry.getValue()))
                 .toList();
         if (blockRefParam.getIdentifier() != null) {

@@ -21,7 +21,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.rpc.modules.eth.AccountOverride;
 import co.rsk.util.HexUtils;
 import org.ethereum.TestUtils;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.rpc.parameters.AccountOverrideParam;
 import org.ethereum.rpc.parameters.HexAddressParam;
 import org.ethereum.rpc.parameters.HexDataParam;
@@ -33,41 +32,16 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class AccountOverrideTest {
-
-    @Test
-    void applyWithoutAddressThrowsException() {
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            new AccountOverride(null, 0, 0);
-        });
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Address cannot be null", exception.getMessage());
-    }
-
-    @Test
-    void fromAccountOverrideParam_setMovePrecompileToAddress_throwsExceptionAsExpected() {
-        // Given
-        AccountOverride accountOverride = new AccountOverride(TestUtils.generateAddress("address"), 0, 0);
-        HexAddressParam hexAddressParam = new HexAddressParam(TestUtils.generateAddress("aPrecompiledAddress").toString());
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(null, null, null, null, null, hexAddressParam);
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.fromAccountOverrideParam(accountOverrideParam);
-        });
-
-        // Then
-        assertEquals(-32201, exception.getCode());
-        assertEquals("Move precompile to address is not supported yet", exception.getMessage());
-    }
 
     @Test
     void fromAccountOverrideParam_nullParameters_executesAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, 0, 0);
+        AccountOverride accountOverride = new AccountOverride(address);
         AccountOverrideParam accountOverrideParam = new AccountOverrideParam(null, null, null, null, null, null);
 
         // When
@@ -86,15 +60,16 @@ class AccountOverrideTest {
     void fromAccountOverrideParam_validParameters_executesAsExpected() {
         // Given
         RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, 1, 1);
+        AccountOverride accountOverride = new AccountOverride(address);
 
         HexNumberParam balance = new HexNumberParam("0x01");
         HexNumberParam nonce = new HexNumberParam("0x02");
         HexDataParam code = new HexDataParam("0x03");
         Map<HexDataParam, HexDataParam> state = new HashMap<>();
         state.put(new HexDataParam("0x00"), new HexDataParam("0x01"));
+        HexAddressParam movePrecompileToAddress = new HexAddressParam(TestUtils.generateAddress("aPrecompiledAddress").toString());
 
-        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, state, null, null);
+        AccountOverrideParam accountOverrideParam = new AccountOverrideParam(balance, nonce, code, state, null, movePrecompileToAddress);
 
         // When
         accountOverride = accountOverride.fromAccountOverrideParam(accountOverrideParam);
@@ -108,94 +83,18 @@ class AccountOverrideTest {
     }
 
     @Test
-    void testSetBalance_balanceLessThanZero_throwsExceptionAsExpected() {
-        // Given
-        RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, 0, 0);
-
-        BigInteger balance = BigInteger.valueOf(-1L);
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.setBalance(balance);
-        });
-
-        // Then
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Balance must be equal or bigger than zero", exception.getMessage());
-    }
-
-    @Test
-    void testSetNonce_nonceLessThanZero_throwsExceptionAsExpected() {
-        // Given
-        RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, 0, 0);
-
-        Long nonce = -1L;
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.setNonce(nonce);
-        });
-
-        // Then
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Nonce must be equal or bigger than zero", exception.getMessage());
-    }
-
-    @Test
-    void testSetCode_codeSizeBiggerThanMax_throwsExceptionAsExpected() {
-        // Given
-        int maxOverridableCodeSize = 1;
-        RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, maxOverridableCodeSize, 0);
-
-        byte[] code = "01".getBytes(); // Two Bytes
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.setCode(code);
-        });
-
-        // Then
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Code length in bytes exceeded. Max " + maxOverridableCodeSize, exception.getMessage());
-    }
-
-    @Test
-    void testSetState_stateSizeBiggerThanMax_throwsExceptionAsExpected() {
-        // Given
-        int maxStateOverrideChanges = 1;
-        RskAddress address = TestUtils.generateAddress("address");
-        AccountOverride accountOverride = new AccountOverride(address, 0, maxStateOverrideChanges);
-
-        Map<DataWord, DataWord> state = new HashMap<>();
-        state.put(DataWord.valueOf(0), DataWord.ZERO);
-        state.put(DataWord.valueOf(1), DataWord.ONE);
-
-        // When
-        RskJsonRpcRequestException exception = assertThrows(RskJsonRpcRequestException.class, () -> {
-            accountOverride.setState(state);
-        });
-
-        // Then
-        assertEquals(-32602, exception.getCode());
-        assertEquals("Number of state changes exceeded. Max " + maxStateOverrideChanges, exception.getMessage());
-    }
-
-    @Test
     void testEqualsAndHashCode() {
         // Given
-        RskAddress address= TestUtils.generateAddress("address");
+        RskAddress address = TestUtils.generateAddress("address");
 
-        AccountOverride accountOverride = new AccountOverride(address, 1, 1);
+        AccountOverride accountOverride = new AccountOverride(address);
         accountOverride.setBalance(BigInteger.TEN);
         accountOverride.setNonce(1L);
         accountOverride.setCode(new byte[]{1});
         accountOverride.setState(Map.of(DataWord.valueOf(1), DataWord.valueOf(2)));
         accountOverride.setStateDiff(Map.of(DataWord.valueOf(3), DataWord.valueOf(4)));
 
-        AccountOverride otherAccountOverride = new AccountOverride(address, 1, 1);
+        AccountOverride otherAccountOverride = new AccountOverride(address);
         otherAccountOverride.setBalance(BigInteger.TEN);
         otherAccountOverride.setNonce(1L);
         otherAccountOverride.setCode(new byte[]{1});
