@@ -46,6 +46,8 @@ class PrecompiledContractAddressTests {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HDWALLETUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String SECP256K1_ADD_ADDR_STR = "0000000000000000000000000000000001000016";
+    public static final String SECP256K1_MUL_ADDR_STR = "0000000000000000000000000000000001000017";
 
     private final TestSystemProperties config = new TestSystemProperties();
 
@@ -62,6 +64,8 @@ class PrecompiledContractAddressTests {
         checkAddr(pcList,REMASC_ADDR_STR ,"RemascContract");
         checkAddr(pcList,BLOCK_HEADER_ADDR_STR,"BlockHeaderContract");
         checkAddr(pcList, HDWALLETUTILS_ADDR_STR,"HDWalletUtils");
+        checkAddr(pcList, SECP256K1_ADD_ADDR_STR,"Secp256k1Addition");
+        checkAddr(pcList, SECP256K1_MUL_ADDR_STR,"Secp256k1Multiplication");
     }
 
     void checkAddr(PrecompiledContracts pcList,String addr,String className) {
@@ -70,6 +74,7 @@ class PrecompiledContractAddressTests {
         // Enabling necessary RSKIPs for every precompiled contract to be available
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP516)).thenReturn(true);
 
         RskAddress a;
         a = new RskAddress(addr);

@@ -18,34 +18,39 @@
 
 package co.rsk.core.types.bytes;
 
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Objects;
+
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.FastByteComparisons;
 
 /**
  * A {@link Bytes} is a readable sequence of <code>byte</code> values. This
  * interface provides uniform, read-only access to many different kinds of
  * <code>byte</code> sequences.
  *
- * <p> This interface does not refine the general contracts of the {@link
+ * <p>
+ * This interface does not refine the general contracts of the {@link
  * java.lang.Object#equals(java.lang.Object) equals} and {@link
- * java.lang.Object#hashCode() hashCode} methods.  The result of comparing two
+ * java.lang.Object#hashCode() hashCode} methods. The result of comparing two
  * objects that implement <tt>Bytes</tt> is therefore, in general,
  * undefined. Each object may be implemented by a different class, and there
  * is no guarantee that each class will be capable of testing its instances
  * for equality with those of the other. It is therefore inappropriate to use
  * arbitrary <tt>Bytes</tt> instances as elements in a set or as keys in
- * a map. </p>
+ * a map.
+ * </p>
  */
 public interface Bytes extends BytesSlice {
 
     /**
-     * Returns an instance of the {@link Bytes} interface, which represents {@code unsafeByteArray}.
+     * Returns an instance of the {@link Bytes} interface, which represents
+     * {@code unsafeByteArray}.
      *
-     * @return the instance of the {@link Bytes} interface that wraps a provided byte array.
+     * @return the instance of the {@link Bytes} interface that wraps a provided
+     *         byte array.
      */
     static Bytes of(@Nullable byte[] unsafeByteArray) {
         if (unsafeByteArray == null) {
@@ -57,7 +62,8 @@ public interface Bytes extends BytesSlice {
     /**
      * A helper method for printing "nullable" byte arrays.
      *
-     * @return {@code valueIfNull}, if {@code byteArray} is {@code null}. Otherwise - {@code Bytes.of(byteArray).toPrintableString()}.
+     * @return {@code valueIfNull}, if {@code byteArray} is {@code null}. Otherwise
+     *         - {@code Bytes.of(byteArray).toPrintableString()}.
      */
     static String toPrintableString(@Nullable byte[] byteArray, @Nullable String valueIfNull) {
         if (byteArray == null) {
@@ -69,7 +75,8 @@ public interface Bytes extends BytesSlice {
     /**
      * A helper method for printing "nullable" byte arrays.
      *
-     * @return {@code "<null>"}, if {@code byteArray} is {@code null}. Otherwise - {@code Bytes.of(byteArray).toPrintableString()}.
+     * @return {@code "<null>"}, if {@code byteArray} is {@code null}. Otherwise -
+     *         {@code Bytes.of(byteArray).toPrintableString()}.
      */
     @Nonnull
     static String toPrintableString(@Nullable byte[] byteArray) {
@@ -77,9 +84,11 @@ public interface Bytes extends BytesSlice {
     }
 
     /**
-     * A helper method for extracting "unsafe" underlying byte array from the {@code bytes} instance.
+     * A helper method for extracting "unsafe" underlying byte array from the
+     * {@code bytes} instance.
      *
-     * @return {@code null}, if {@code bytes} is {@code null}. Otherwise - {@code bytes.asUnsafeByteArray()}.
+     * @return {@code null}, if {@code bytes} is {@code null}. Otherwise -
+     *         {@code bytes.asUnsafeByteArray()}.
      */
     @Nullable
     static byte[] asUnsafeByteArray(@Nullable Bytes bytes) {
@@ -124,24 +133,40 @@ public interface Bytes extends BytesSlice {
     }
 
     /**
-     * Returns an underlying byte array, which is backing this instance. Any mutations that are being done with the bytes
-     * of returned array will have direct impact on the byte array that is being wrapped by this instance.
+     * Returns an underlying byte array, which is backing this instance. Any
+     * mutations that are being done with the bytes
+     * of returned array will have direct impact on the byte array that is being
+     * wrapped by this instance.
      *
      * @return the wrapped by this instance byte array.
      */
     byte[] asUnsafeByteArray();
+
+    static void arraycopy(byte[] orig, int srcPos, byte[] dest, int destPos, int length) {
+        if (orig == null) {
+            throw new IllegalArgumentException("source array cannot be null");
+        }
+
+        Bytes.of(orig).slice(0, orig.length).arraycopy(srcPos, dest, destPos, length);
+    }
 }
 
 /**
- * The {@link BytesImpl} class represents a read-only sequence of <code>byte</code> values.
+ * The {@link BytesImpl} class represents a read-only sequence of
+ * <code>byte</code> values.
  * <p>
- * Instances of the {@link BytesImpl} class are constant; their values cannot be changed after they
- * are created via the methods that this class provides. But a {@code byteArray} instance itself provided in the constructor
- * is mutable and can be modified outside the class. It's generally a bad idea to mutate a byte array that's being wrapped
- * by an instance of this class, as the idea is to make a byte sequence immutable, which is not the case with the Java
+ * Instances of the {@link BytesImpl} class are constant; their values cannot be
+ * changed after they
+ * are created via the methods that this class provides. But a {@code byteArray}
+ * instance itself provided in the constructor
+ * is mutable and can be modified outside the class. It's generally a bad idea
+ * to mutate a byte array that's being wrapped
+ * by an instance of this class, as the idea is to make a byte sequence
+ * immutable, which is not the case with the Java
  * built-in {@code byte[]} type.
  * <p>
- * Because {@link BytesImpl} objects are immutable they can be safely used by multiple Java threads, if the wrapped array
+ * Because {@link BytesImpl} objects are immutable they can be safely used by
+ * multiple Java threads, if the wrapped array
  * is not being referenced and modified outside.
  */
 class BytesImpl implements Bytes {
