@@ -108,6 +108,7 @@ public enum ConsensusRule {
     RSKIP459("rskip459"),
     RSKIP460("rskip460"),
     RSKIP516("rskip516"), //  Addition of precompiled contracts for add and mul operations on the secp256k1 curve
+    RSKIP481("rskip481"), // Superchain
     ;
 
     private final String configKey;
