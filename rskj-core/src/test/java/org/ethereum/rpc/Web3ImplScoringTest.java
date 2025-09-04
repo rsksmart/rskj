@@ -404,7 +404,8 @@ class Web3ImplScoringTest {
                 config.getActivationConfig(),
                 null,
                 false,
-                null
+                null,
+                0
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
         DebugTracer debugTracer = new RskTracer(null, null, null, null);

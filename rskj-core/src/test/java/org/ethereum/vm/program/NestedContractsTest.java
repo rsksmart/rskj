@@ -224,7 +224,8 @@ class NestedContractsTest {
                 null,
                 null,
                 false,
-                null);
+                null,
+                0);
     }
 }
 
