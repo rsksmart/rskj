@@ -71,6 +71,9 @@ public class BlockHeaderBuilder {
     private boolean createUmmCompliantHeader;
     private boolean createParallelCompliantHeader;
 
+    private long lastIncreasedToBlockGasLimitBlockNumber;
+    private short[] txsIndexForIncreasedBlockGasLimit;
+
     public BlockHeaderBuilder(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
         createConsensusCompliantHeader = true;
@@ -276,6 +279,21 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setLastIncreasedToBlockGasLimitBlockNumber(long lastIncreasedToBlockGasLimitBlockNumber) {
+        this.lastIncreasedToBlockGasLimitBlockNumber = lastIncreasedToBlockGasLimitBlockNumber;
+        return this;
+    }
+
+    public BlockHeaderBuilder setTxsIndexForIncreasedBlockGasLimit(short[] txsIndexForIncreasedBlockGasLimit) {
+        if (txsIndexForIncreasedBlockGasLimit != null) {
+            this.txsIndexForIncreasedBlockGasLimit = new short[txsIndexForIncreasedBlockGasLimit.length];
+            System.arraycopy(txsIndexForIncreasedBlockGasLimit, 0, this.txsIndexForIncreasedBlockGasLimit, 0, txsIndexForIncreasedBlockGasLimit.length);
+        } else {
+            this.txsIndexForIncreasedBlockGasLimit = null;
+        }
+        return this;
+    }
+
     private void initializeWithDefaultValues() {
         extraData = normalizeValue(extraData, new byte[0]);
         bitcoinMergedMiningHeader = normalizeValue(bitcoinMergedMiningHeader, new byte[0]);
@@ -337,6 +355,10 @@ public class BlockHeaderBuilder {
             txExecutionSublistsEdges = new short[0];
         }
 
+        if (activationConfig.isActive(ConsensusRule.RSKIPXXX, number) && txsIndexForIncreasedBlockGasLimit == null) {
+            txsIndexForIncreasedBlockGasLimit = new short[0];
+        }
+
         if (activationConfig.getHeaderVersion(number) == 0x1) {
             return new BlockHeaderV1(
                     parentHash, unclesHash, coinbase,
@@ -349,7 +371,9 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData,
                     minimumGasPrice, uncleCount,
                     false, useRskip92Encoding,
-                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false
+                    includeForkDetectionData, ummRoot, txExecutionSublistsEdges, false,
+                    lastIncreasedToBlockGasLimitBlockNumber,
+                    txsIndexForIncreasedBlockGasLimit
             );
         }
 

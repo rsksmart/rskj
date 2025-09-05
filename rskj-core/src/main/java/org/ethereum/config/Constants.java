@@ -62,6 +62,9 @@ public class Constants {
     private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
     private static final int REGTEST_DURATION_LIMIT = 10;
 
+    private static final int BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT = 100;
+    private static final int BLOCK_GAS_LIMIT_MULTIPLIER = 3;
+
     private final byte chainId;
     private final boolean seedCowAccounts;
     private final int durationLimit;
@@ -74,6 +77,9 @@ public class Constants {
     private final ActivationConfig activationConfig;
     private final long minSequentialSetGasLimit;
 
+    private final int blockThresholdToIncreaseBlockGasLimit;
+    private final int blockGasLimitMultiplier;
+
     public Constants(
             byte chainId,
             boolean seedCowAccounts,
@@ -85,7 +91,9 @@ public class Constants {
             BridgeConstants bridgeConstants,
             ActivationConfig activationConfig,
             BlockDifficulty minimumDifficultyForRskip290,
-            long minSequentialSetGasLimit) {
+            long minSequentialSetGasLimit,
+            int blockThresholdToIncreaseBlockGasLimit,
+            int blockGasLimitMultiplier) {
         this.chainId = chainId;
         this.seedCowAccounts = seedCowAccounts;
         this.durationLimit = durationLimit;
@@ -97,6 +105,8 @@ public class Constants {
         this.activationConfig = activationConfig;
         this.minimumDifficultyForRskip290 = minimumDifficultyForRskip290;
         this.minSequentialSetGasLimit = minSequentialSetGasLimit;
+        this.blockThresholdToIncreaseBlockGasLimit = blockThresholdToIncreaseBlockGasLimit;
+        this.blockGasLimitMultiplier = blockGasLimitMultiplier;
     }
 
     public Constants(
@@ -109,7 +119,9 @@ public class Constants {
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
             BlockDifficulty minimumDifficultyForRskip290,
-            long minSequentialSetGasLimit) {
+            long minSequentialSetGasLimit,
+            int blockThresholdToIncreaseBlockGasLimit,
+            int blockGasLimitMultiplier) {
         this(chainId,
                 seedCowAccounts,
                 durationLimit,
@@ -120,7 +132,9 @@ public class Constants {
                 bridgeConstants,
                 null,
                 minimumDifficultyForRskip290,
-                minSequentialSetGasLimit
+                minSequentialSetGasLimit,
+                blockThresholdToIncreaseBlockGasLimit,
+                blockGasLimitMultiplier
                 );
     }
 
@@ -257,6 +271,14 @@ public class Constants {
         return minSequentialSetGasLimit;
     }
 
+    public int getBlockThresholdToIncreaseBlockGasLimit() {
+        return blockThresholdToIncreaseBlockGasLimit;
+    }
+
+    public int getBlockGasLimitMultiplier() {
+        return blockGasLimitMultiplier;
+    }
+
     public static Constants mainnet() {
         return new Constants(
                 MAINNET_CHAIN_ID,
@@ -268,7 +290,9 @@ public class Constants {
                 60,
                 BridgeMainNetConstants.getInstance(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT,
+                BLOCK_GAS_LIMIT_MULTIPLIER
         );
     }
 
@@ -283,7 +307,9 @@ public class Constants {
                 NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 new BridgeDevNetConstants(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT,
+                BLOCK_GAS_LIMIT_MULTIPLIER
         );
     }
 
@@ -299,7 +325,9 @@ public class Constants {
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT,
+                BLOCK_GAS_LIMIT_MULTIPLIER
         );
     }
 
@@ -315,7 +343,9 @@ public class Constants {
                 BridgeTestNetConstants.getInstance(),
                 activationConfig,
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                MIN_SEQUENTIAL_SET_GAS_LIMIT
+                MIN_SEQUENTIAL_SET_GAS_LIMIT,
+                BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT,
+                BLOCK_GAS_LIMIT_MULTIPLIER
         );
     }
 
@@ -330,7 +360,9 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                1_000_000L
+                1_000_000L,
+                BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT,
+                BLOCK_GAS_LIMIT_MULTIPLIER
         );
     }
 
@@ -345,7 +377,9 @@ public class Constants {
                 0,
                 new BridgeRegTestConstants(federationPublicKeys),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
-                1_000_000L
+                1_000_000L,
+                BLOCK_THRESHOLD_TO_INCREASE_BLOCK_GAS_LIMIT,
+                BLOCK_GAS_LIMIT_MULTIPLIER
         );
     }
 }

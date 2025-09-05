@@ -19,6 +19,7 @@ package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockUtils;
+import co.rsk.mine.GasLimitCalculator;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.bouncycastle.util.BigIntegers;
@@ -36,6 +37,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Validator for using in pending state.
@@ -73,9 +75,14 @@ public class TxPendingValidator {
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
         long executionBlockNumber = executionBlock.getNumber();
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlockNumber);
+        final Supplier<BigInteger> getBlockGasLimitFn = () -> GasLimitCalculator.calculateBlockGasLimitIncrease(
+                activationConfig.forBlock(executionBlock.getNumber()),
+                constants,
+                executionBlock
+        );
         BigInteger gasLimit = activations.isActive(ConsensusRule.RSKIP144)
-                ? BigInteger.valueOf(Math.max(BlockUtils.getSublistGasLimit(executionBlock, true, constants.getMinSequentialSetGasLimit()), BlockUtils.getSublistGasLimit(executionBlock, false, constants.getMinSequentialSetGasLimit())))
-                : BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
+                ? BigInteger.valueOf(Math.max(BlockUtils.getSublistGasLimit(getBlockGasLimitFn, true, constants.getMinSequentialSetGasLimit()), BlockUtils.getSublistGasLimit(executionBlock, false, constants.getMinSequentialSetGasLimit())))
+                : BigIntegers.fromUnsignedByteArray(getBlockGasLimitFn.get().toByteArray());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
         long basicTxCost = tx.transactionCost(constants, activations, signatureCache);

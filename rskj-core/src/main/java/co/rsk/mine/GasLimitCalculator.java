@@ -19,6 +19,9 @@
 package co.rsk.mine;
 
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
 
 import java.math.BigInteger;
 
@@ -99,5 +102,26 @@ public class GasLimitCalculator {
        }
 
         return newGasLimit;
+    }
+
+    public static BigInteger calculateBlockGasLimitIncrease(ActivationConfig.ForBlock activations, Constants constants, Block block) {
+        return calculateBlockGasLimitIncrease(activations, constants, block, 0L);
+    }
+
+    public static BigInteger calculateBlockGasLimitIncrease(ActivationConfig.ForBlock activations, Constants constants, Block block, long gasUsed) {
+        final var gasLimit = new BigInteger(block.getGasLimit());
+
+        if(gasUsed <= gasLimit.longValue()) {
+            return gasLimit;
+        }
+
+        final var lastIncreasedToBlockGasLimitBlockNumber = block.getHeader().getLastIncreasedToBlockGasLimitBlockNumber();
+        final var blockNumber = block.getHeader().getNumber();
+
+        if (activations.isActive(ConsensusRule.RSKIPXXX) && blockNumber - lastIncreasedToBlockGasLimitBlockNumber > constants.getBlockThresholdToIncreaseBlockGasLimit()) {
+            return gasLimit.multiply(BigInteger.valueOf(constants.getBlockGasLimitMultiplier()));
+        }
+
+        return gasLimit;
     }
 }

@@ -29,6 +29,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.MetricKind;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.mine.GasLimitCalculator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -45,12 +46,16 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIPXXX;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -73,6 +78,8 @@ public class BlockExecutor {
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
     private long minSequentialSetGasLimit;
+    private final Function<Block, Supplier<BigInteger>> getBlockGasLimitFn;
+    private final Map<Short, Long> transactionIndexGasUsedMap = new HashMap<>();
 
     /**
      * An array of ExecutorService's of size `Constants.getTransactionExecutionThreads()`. Each parallel list uses an executor
@@ -81,6 +88,7 @@ public class BlockExecutor {
      * on some circumstances.
      */
     private final ExecutorService[] execServices;
+    private final Constants constants;
 
     public BlockExecutor(
             RepositoryLocator repositoryLocator,
@@ -92,6 +100,12 @@ public class BlockExecutor {
         this.remascEnabled = systemProperties.isRemascEnabled();
         this.concurrentContractsDisallowed = Collections.unmodifiableSet(new HashSet<>(systemProperties.concurrentContractsDisallowed()));
         this.minSequentialSetGasLimit = systemProperties.getNetworkConstants().getMinSequentialSetGasLimit();
+        this.constants = systemProperties.getNetworkConstants();
+        this.getBlockGasLimitFn = (block) -> () -> GasLimitCalculator.calculateBlockGasLimitIncrease(
+                activationConfig.forBlock(block.getNumber()),
+                constants,
+                block
+        );
 
         int numOfParallelList = Constants.getTransactionExecutionThreads();
         this.execServices = new ExecutorService[numOfParallelList];
@@ -174,6 +188,14 @@ public class BlockExecutor {
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
         header.setTxExecutionSublistsEdges(result.getTxEdges());
+
+        if (activationConfig.isActive(RSKIPXXX, block.getNumber())) {
+            final var entryOptional = transactionIndexGasUsedMap.entrySet().stream().filter(e -> e.getValue() > new BigInteger(header.getGasLimit()).longValue()).findFirst();
+            entryOptional.ifPresent(e -> {
+                header.setLastIncreasedToBlockGasLimitBlockNumber(header.getNumber());
+                header.setTxsIndexForIncreasedBlockGasLimit(new short[]{e.getKey()});
+            });
+        }
 
         block.flushRLP();
         profiler.stop(metric);
@@ -374,7 +396,9 @@ public class BlockExecutor {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts);
+                    deletedAccounts,
+                    getBlockGasLimitFn.apply(block)
+            );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -389,6 +413,8 @@ public class BlockExecutor {
 
             long gasUsed = txExecutor.getGasConsumed();
             totalGasUsed += gasUsed;
+
+            transactionIndexGasUsedMap.put((short)txindex, gasUsed);
 
             totalPaidFees = addTotalPaidFees(totalPaidFees, txExecutor);
 
@@ -567,7 +593,7 @@ public class BlockExecutor {
                 totalPaidFees,
                 remascEnabled,
                 Collections.emptySet(), // precompiled contracts are always allowed in a sequential list, as there's no concurrency in it
-                BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit)
+                BlockUtils.getSublistGasLimit(getBlockGasLimitFn.apply(block), true, minSequentialSetGasLimit)
         );
         Boolean success = txListExecutor.call();
         if (!Boolean.TRUE.equals(success)) {
@@ -649,7 +675,12 @@ public class BlockExecutor {
         int txindex = 0;
 
         int transactionExecutionThreads = Constants.getTransactionExecutionThreads();
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) transactionExecutionThreads, block, minSequentialSetGasLimit);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(
+                (short) transactionExecutionThreads,
+                block,
+                minSequentialSetGasLimit,
+                getBlockGasLimitFn.apply(block)
+        );
 
         int logIndexOffset = 0;
         for (Transaction tx : transactionsList) {
@@ -666,7 +697,7 @@ public class BlockExecutor {
                     0,
                     deletedAccounts,
                     true,
-                    Math.max(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit))
+                    Math.max(BlockUtils.getSublistGasLimit(getBlockGasLimitFn.apply(block), true, minSequentialSetGasLimit), BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit))
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
@@ -703,6 +734,8 @@ public class BlockExecutor {
             long gasUsed = txExecutor.getGasConsumed();
             totalGasUsed += gasUsed;
             totalPaidFees = addTotalPaidFees(totalPaidFees, txExecutor);
+
+            transactionIndexGasUsedMap.put((short)txindex, gasUsed);
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 

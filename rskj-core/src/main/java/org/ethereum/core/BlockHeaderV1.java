@@ -18,7 +18,8 @@ public class BlockHeaderV1 extends BlockHeader {
                          Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                          Coin minimumGasPrice, int uncleCount, boolean sealed,
-                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges, boolean compressed) {
+                         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges, boolean compressed,
+                         long lastIncreasedToBlockGasLimitBlockNumber, short[] txsIndexForIncreasedBlockGasLimit) {
         super(parentHash,unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, compressed ? extensionData : null, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
@@ -27,8 +28,8 @@ public class BlockHeaderV1 extends BlockHeader {
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
         this.extension = compressed
-                ? new BlockHeaderExtensionV1(null, null)
-                : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges);
+                ? new BlockHeaderExtensionV1(null, null, 0, null)
+                : new BlockHeaderExtensionV1(extensionData, txExecutionSublistsEdges, lastIncreasedToBlockGasLimitBlockNumber, txsIndexForIncreasedBlockGasLimit);
         if(!compressed) {
             this.updateExtensionData(); // update after calculating
         }
@@ -79,6 +80,38 @@ public class BlockHeaderV1 extends BlockHeader {
         this.hash = null;
 
         this.extension.setTxExecutionSublistsEdges(edges != null ? Arrays.copyOf(edges, edges.length) : null);
+        this.updateExtensionData();
+    }
+
+    @Override
+    public long getLastIncreasedToBlockGasLimitBlockNumber() {
+        return this.extension.getLastIncreasedToBlockGasLimitBlockNumber();
+    }
+
+    @Override
+    public void setLastIncreasedToBlockGasLimitBlockNumber(long lastIncreasedToBlockGasLimitBlockNumber) {
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter last increased block gas limit block number");
+        }
+        this.hash = null;
+
+        this.extension.setLastIncreasedToBlockGasLimitBlockNumber(lastIncreasedToBlockGasLimitBlockNumber);
+        this.updateExtensionData();
+    }
+
+    @Override
+    public short[] getTxsIndexForIncreasedBlockGasLimit() {
+        return new short[0];
+    }
+
+    @Override
+    public void setTxsIndexForIncreasedBlockGasLimit(short[] txsIndexForIncreasedBlockGasLimit) {
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter transactions that were assisted with block gas limit increase");
+        }
+        this.hash = null;
+
+        this.extension.setTxsIndexForIncreasedBlockGasLimit(txsIndexForIncreasedBlockGasLimit);
         this.updateExtensionData();
     }
 

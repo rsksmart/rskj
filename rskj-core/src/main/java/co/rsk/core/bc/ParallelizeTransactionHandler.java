@@ -24,7 +24,9 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.GasCost;
 
+import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
 
 public class ParallelizeTransactionHandler {
     private final HashMap<ByteArrayWrapper, TransactionSublist> sublistsHavingWrittenToKey;
@@ -33,6 +35,10 @@ public class ParallelizeTransactionHandler {
     private final ArrayList<TransactionSublist> sublists;
 
     public ParallelizeTransactionHandler(short numberOfSublists, Block block, long minSequentialSetGasLimit) {
+        this(numberOfSublists, block, minSequentialSetGasLimit, () -> new BigInteger(block.getGasLimit()));
+    }
+
+    public ParallelizeTransactionHandler(short numberOfSublists, Block block, long minSequentialSetGasLimit, Supplier<BigInteger> getBlockGasLimitFn) {
         this.sublistOfSender = new HashMap<>();
         this.sublistsHavingWrittenToKey = new HashMap<>();
         this.sublistsHavingReadFromKey = new HashMap<>();
@@ -40,7 +46,7 @@ public class ParallelizeTransactionHandler {
         for (short i = 0; i < numberOfSublists; i++){
             this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, false, minSequentialSetGasLimit), false));
         }
-        this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(block, true, minSequentialSetGasLimit), true));
+        this.sublists.add(new TransactionSublist(BlockUtils.getSublistGasLimit(getBlockGasLimitFn, true, minSequentialSetGasLimit), true));
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {

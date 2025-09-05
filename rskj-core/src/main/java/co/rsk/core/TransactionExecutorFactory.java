@@ -28,8 +28,10 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class TransactionExecutorFactory {
 
@@ -81,6 +83,35 @@ public class TransactionExecutorFactory {
             Set<DataWord> deletedAccounts,
             boolean postponeFeePayment,
             long sublistGasLimit) {
+        return newInstance(
+                tx,
+                txindex,
+                coinbase,
+                track,
+                block,
+                totalGasUsed,
+                vmTrace,
+                vmTraceOptions,
+                deletedAccounts,
+                postponeFeePayment,
+                sublistGasLimit,
+                () -> new BigInteger(block.getGasLimit())
+        );
+    }
+
+    public TransactionExecutor newInstance(
+            Transaction tx,
+            int txindex,
+            RskAddress coinbase,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            boolean vmTrace,
+            int vmTraceOptions,
+            Set<DataWord> deletedAccounts,
+            boolean postponeFeePayment,
+            long sublistGasLimit,
+            Supplier<BigInteger> getBlockGasLimitFn) {
         // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
@@ -115,7 +146,8 @@ public class TransactionExecutorFactory {
                 deletedAccounts,
                 blockTxSignatureCache,
                 postponeFeePayment,
-                sublistGasLimit
+                sublistGasLimit,
+                getBlockGasLimitFn
         );
     }
 
@@ -130,6 +162,20 @@ public class TransactionExecutorFactory {
             int vmTraceOptions,
             Set<DataWord> deletedAccounts) {
         return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false, GasCost.toGas(block.getGasLimit()));
+    }
+
+    public TransactionExecutor newInstance(
+            Transaction tx,
+            int txindex,
+            RskAddress coinbase,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            boolean vmTrace,
+            int vmTraceOptions,
+            Set<DataWord> deletedAccounts,
+            Supplier<BigInteger> getBlockGasLimitFn) {
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, vmTrace, vmTraceOptions, deletedAccounts, false, GasCost.toGas(getBlockGasLimitFn.get()));
     }
     // TODO(JULI): set the sublist gas limit as the whole block is wrong. However, this method is just used either when RSKIP144 is deactivated or for testing.
 }

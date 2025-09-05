@@ -27,7 +27,9 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.vm.GasCost;
 
+import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -140,7 +142,11 @@ public class BlockUtils {
      * @return set of ancestors block hashes
      */
     public static long getSublistGasLimit(Block block, boolean forSequentialTxSet, long minSequentialSetGasLimit) {
-        long blockGasLimit = GasCost.toGas(block.getGasLimit());
+        return getSublistGasLimit(() -> new BigInteger(block.getGasLimit()), forSequentialTxSet, minSequentialSetGasLimit);
+    }
+
+    public static long getSublistGasLimit(Supplier<BigInteger> getBlockGasLimitSupplier, boolean forSequentialTxSet, long minSequentialSetGasLimit) {
+        long blockGasLimit = GasCost.toGas(getBlockGasLimitSupplier.get());
         int transactionExecutionThreadCount = Constants.getTransactionExecutionThreads();
 
         /*

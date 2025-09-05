@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
@@ -107,6 +108,7 @@ public class TransactionExecutor {
     private final Set<RskAddress> precompiledContractsCalled = new HashSet<>();
 
     private final boolean postponeFeePayment;
+    private final Supplier<BigInteger> getBlockGasLimitFn;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -114,6 +116,19 @@ public class TransactionExecutor {
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasConsumed, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
             SignatureCache signatureCache, boolean postponeFeePayment, long sublistGasLimit) {
+        this(constants, activationConfig, tx, txindex, coinbase,
+                track, blockStore, receiptStore, blockFactory,
+                programInvokeFactory, executionBlock, gasConsumed, vmConfig,
+                remascEnabled, precompiledContracts, deletedAccounts,
+                signatureCache, postponeFeePayment, sublistGasLimit, () -> new BigInteger(executionBlock.getGasLimit()));
+    }
+
+    public TransactionExecutor(
+            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
+            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasConsumed, VmConfig vmConfig,
+            boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
+            SignatureCache signatureCache, boolean postponeFeePayment, long sublistGasLimit, Supplier<BigInteger> getBlockGasLimitFn) {
         this.constants = constants;
         this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
@@ -134,6 +149,7 @@ public class TransactionExecutor {
         this.deletedAccounts = new HashSet<>(deletedAccounts);
         this.postponeFeePayment = postponeFeePayment;
         this.sublistGasLimit = sublistGasLimit;
+        this.getBlockGasLimitFn = getBlockGasLimitFn;
     }
 
     /**
@@ -177,7 +193,7 @@ public class TransactionExecutor {
         }
 
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long gasLimit = activations.isActive(RSKIP144) ? sublistGasLimit : GasCost.toGas(executionBlock.getGasLimit());
+        long gasLimit = activations.isActive(RSKIP144) ? sublistGasLimit : GasCost.toGas(getBlockGasLimitFn.get());
 
         if (!gasIsValid(txGasLimit, gasLimit)) {
             return false;

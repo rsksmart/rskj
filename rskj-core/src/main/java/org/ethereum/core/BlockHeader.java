@@ -55,6 +55,12 @@ public abstract class BlockHeader {
     public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
     public abstract void setTxExecutionSublistsEdges(short[] edges);
 
+    public abstract long getLastIncreasedToBlockGasLimitBlockNumber();
+    public abstract void setLastIncreasedToBlockGasLimitBlockNumber(long lastIncreasedToBlockGasLimitBlockNumber);
+
+    public abstract short[] getTxsIndexForIncreasedBlockGasLimit();
+    public abstract void setTxsIndexForIncreasedBlockGasLimit(short[] txsIndexForIncreasedBlockGasLimit);
+
     // called after encoding the header, used to add elements at the end
     public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
 
