@@ -56,14 +56,17 @@ class HttpGetMinGasPriceProviderTest {
 
         SimpleHttpClient httpClient = mock(SimpleHttpClient.class);
         when(httpClient.doGet(anyString())).thenReturn("{\"bitcoin\":{\"usd\":10000}}");
+
         StableMinGasPriceSystemConfig config = createStableMinGasPriceSystemConfig();
         HttpGetMinGasPriceProvider provider = spy(new HttpGetMinGasPriceProvider(config, fallbackProvider, httpClient));
 
+        // First call should fetch and cache the value
         provider.getMinGasPrice();
+        // Second call should use the cached value
         provider.getMinGasPrice(true);
 
-        verify(provider, times(2)).getMinGasPrice(anyBoolean());
         verify(httpClient, times(1)).doGet(anyString());
+        verify(provider, times(2)).getMinGasPrice(anyBoolean());
     }
 
     @Test
