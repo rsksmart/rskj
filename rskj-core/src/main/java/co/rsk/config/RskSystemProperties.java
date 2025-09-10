@@ -166,6 +166,13 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getDuration("miner.client.medianBlockTime");
     }
 
+    // Tx Load generator configuration
+    public boolean txLoadEnabled() { return getBoolean("txLoad.enabled", false); }
+    public long txLoadBlockTargetGas() { return getLong("txLoad.blockTargetGas", getTargetGasLimit()); }
+    public long txLoadPrimaryTxGas() { return getLong("txLoad.primaryTxGas", 9_000_000L); }
+    public String txLoadProfile() { return getString("txLoad.profile", "intrinsic"); }
+    public String txLoadSenderSeed() { return getString("txLoad.senderSeed", "txload_default_seed"); }
+
     public boolean isMinerServerEnabled() {
         return configFromFiles.getBoolean("miner.server.enabled");
     }

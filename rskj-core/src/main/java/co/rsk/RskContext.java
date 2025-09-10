@@ -1055,6 +1055,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             }
         }
 
+        // Synthetic tx load generator
+        if (getRskSystemProperties().txLoadEnabled() && getRskSystemProperties().minerClientTimedMine()) {
+            internalServices.add(getTxLoadGeneratorService());
+        }
+
         NodeBlockProcessor nodeBlockProcessor = getNodeBlockProcessor();
         if (nodeBlockProcessor instanceof InternalService) {
             internalServices.add((InternalService) nodeBlockProcessor);
@@ -1082,6 +1087,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         internalServices.add(getExecutionBlockRetriever());
 
         return Collections.unmodifiableList(internalServices);
+    }
+
+    private co.rsk.txload.TxLoadGeneratorService getTxLoadGeneratorService() {
+        return new co.rsk.txload.TxLoadGeneratorService(
+                getRskSystemProperties(),
+                getRsk(),
+                getWallet(),
+                getTransactionPool(),
+                getBlockchain()
+        );
     }
 
     public synchronized GenesisLoader getGenesisLoader() {
