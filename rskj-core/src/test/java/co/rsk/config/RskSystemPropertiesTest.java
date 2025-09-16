@@ -18,6 +18,9 @@
 
 package co.rsk.config;
 
+import co.rsk.bitcoinj.params.MainNetParams;
+import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.bitcoinj.params.TestNet2Params;
 import co.rsk.cli.RskCli;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
@@ -371,4 +374,78 @@ class RskSystemPropertiesTest {
         assertEquals("/dbdir/lastPeers.properties", testSystemProperties.getLastKnewPeersFilePath().toString());
     }
 
+    @Test
+    void whenNetNameIsMainnet_shouldUseBitcoinjMainnetNetworkParams() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--mainnet"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), MainNetParams.get());
+    }
+
+    @Test
+    void whenNetNameIsTestnet_shouldUseBitcoinjTestnetNetworkParams() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--testnet"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet2Params.get());
+    }
+
+    @Test
+    void whenNetNameIsTestnet2_shouldUseBitcoinjTestnet2NetworkParams() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--testnet2"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet2Params.get());
+    }
+
+    @Test
+    void whenNetNameIsDevnet_shouldUseBitcoinjTestnet2NetworkParams() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--devnet"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), TestNet2Params.get());
+    }
+
+    @Test
+    void whenNetNameIsRegtest_shouldUseBitcoinjRegtestNetworkParams() {
+        RskCli rskCli = new RskCli();
+        String[] snapNodesArgs = {"--regtest"};
+        rskCli.load(snapNodesArgs);
+
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        rskCli.getCliArgs()
+                )
+        );
+
+        Assertions.assertEquals(rskSystemProperties.getBitcoinjNetworkConstants(), RegTestParams.get());
+    }
 }

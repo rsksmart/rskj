@@ -18,6 +18,7 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
@@ -234,7 +235,7 @@ class MainNetMinerTest {
                 transactionPool,
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new GasLimitCalculator(config.getNetworkConstants()),
-                new ForkDetectionDataCalculator(),
+                new ForkDetectionDataCalculator(RegTestParams.get()),
                 unclesValidationRule,
                 clock,
                 blockFactory,

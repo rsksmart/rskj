@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.params.RegTestParams;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ class AutoMinerClientTest {
     @BeforeEach
     void setUp() {
         minerServer = mock(MinerServer.class);
-        autoMinerClient = new AutoMinerClient(minerServer);
+        autoMinerClient = new AutoMinerClient(minerServer, RegTestParams.get());
     }
 
     @Test
