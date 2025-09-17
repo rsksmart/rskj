@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.net;
 
 import co.rsk.config.InternalService;
@@ -817,19 +816,23 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
 
         Keccak256 stateRoot = stateRootHandler.translate(lastBlock.getHeader());
 
+        byte[] firstKey = null;
         byte[] lastKey = null;
         for (Map.Entry<byte[], byte[]> entry : keyValues.entrySet()) {
             byte[] key = entry.getKey();
             byte[] value = entry.getValue();
             trie = trie.put(key, value);
+            if (firstKey == null) {
+                firstKey = key;
+            }
             lastKey = key;
         }
 
         final byte[] blockHash = lastBlock.getHash().getBytes();
-        final byte[] fromKey = lastKey;
 
         boolean verified = chunk.proof().verify(stateRoot, trie);
         if (!verified) {
+            final byte[] fromKey = firstKey;
             logger.error("State chunk proof verification failed for block: [{}] with state root: [{}]", lastBlock.getHash(), stateRoot);
             peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "State chunk proof verification failed for block: [{}] with state root: [{}]", lastBlock.getHash(), stateRoot);
 
@@ -864,6 +867,7 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
             return;
         }
 
+        final byte[] fromKey = lastKey;
         // Request next chunk
         state.submitRequest(
                 snapPeerSelector(sender),
