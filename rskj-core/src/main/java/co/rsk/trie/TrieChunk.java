@@ -15,17 +15,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
-import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -234,7 +231,7 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
     public record ProofNode (int sharedPathLength, @Nullable Trie rightNode) {
 
         public byte[] encode() {
-            byte[] rlpSharedPathLength = RLP.encodeBigInteger(BigInteger.valueOf(sharedPathLength));
+            byte[] rlpSharedPathLength = RLP.encodeInt(sharedPathLength);
             byte[] rlpRightNode = RLP.encodeElement(rightNode != null ? rightNode.toMessage() : null);
             return RLP.encodeList(rlpSharedPathLength, rlpRightNode);
         }
@@ -244,7 +241,7 @@ public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnu
                 throw new IllegalArgumentException("Invalid ProofNode RLP structure: expected 2 elements, got " + list.size());
             }
 
-            int sharedPathLength = BigIntegers.fromUnsignedByteArray(list.get(0).getRLPRawData()).intValue();
+            int sharedPathLength = RLP.decodeInt(list.get(0).getRLPRawData(), 0);
 
             byte[] rightNodeRlp = list.get(1).getRLPData();
             Trie rightNode = null;
