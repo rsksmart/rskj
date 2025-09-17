@@ -39,7 +39,7 @@ class TimedMinerClientTest {
     @BeforeEach
     void setUp() {
         minerServer = mock(MinerServer.class);
-        timedMinerClient = new TimedMinerClient(minerServer, Duration.ofSeconds(10));
+        timedMinerClient = new TimedMinerClient(minerServer, Duration.ofSeconds(10), false);
     }
 
     @Test
@@ -79,7 +79,7 @@ class TimedMinerClientTest {
     @Test
     void constructorWithCustomMedianTime() {
         Duration customMedian = Duration.ofMinutes(5);
-        TimedMinerClient customClient = new TimedMinerClient(minerServer, customMedian);
+        TimedMinerClient customClient = new TimedMinerClient(minerServer, customMedian, false);
         
         assertThat(customClient.isMining(), is(false));
         customClient.start();

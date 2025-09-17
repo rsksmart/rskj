@@ -189,6 +189,20 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("miner.server.updateWorkOnNewTransaction", false);
     }
 
+    public boolean minerServerSkipPowValidation() {
+        return getBoolean("miner.server.skipPowValidation", false);
+    }
+
+    public long simulatedWireDelayMillis() {
+        // Value like "100 ms" in HOCON maps to a duration; use getDuration when stored as duration
+        // Fallback to 0 if missing
+        try {
+            return configFromFiles.getDuration("wire.simulatedDelay").toMillis();
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
     public long minerMinGasPrice() {
         return configFromFiles.getLong("miner.minGasPrice");
     }
