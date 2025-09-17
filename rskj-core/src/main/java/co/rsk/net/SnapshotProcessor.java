@@ -799,16 +799,10 @@ public class SnapshotProcessor implements InternalService, SnapProcessor {
             return;
         }
 
-        for (Map.Entry<byte[], byte[]> entry : keyValues.entrySet()) {
-            if (entry.getKey().length > TrieChunk.MAX_BYTE_SIZE) {
-                logger.error("Received state chunk containing a key with a length of [{}] exceeding the maximum allowed size in bytes of [{}] for block: [{}]", entry.getKey().length, TrieChunk.MAX_BYTE_SIZE, lastBlock.getHash());
-                peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received state chunk containing a key with a length of [{}] exceeding the maximum allowed size in bytes of [{}] for block: [{}]", entry.getKey().length, TrieChunk.MAX_BYTE_SIZE, lastBlock.getHash());
-                return;
-            }
-
-            if (entry.getValue().length > TrieChunk.MAX_BYTE_SIZE) {
-                logger.error("Received state chunk containing a value with a length of [{}] exceeding the maximum allowed size in bytes of [{}] for block: [{}]", entry.getValue().length, TrieChunk.MAX_BYTE_SIZE, lastBlock.getHash());
-                peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received state chunk containing a value with a length of [{}] exceeding the maximum allowed size in bytes of [{}] for block: [{}]", entry.getValue().length, TrieChunk.MAX_BYTE_SIZE, lastBlock.getHash());
+        for (byte[] entry : keyValues.keySet()) {
+            if (entry.length > TrieChunk.MAX_KEY_SIZE) {
+                logger.error("Received state chunk containing a key with a length of [{}] exceeding the maximum allowed size in bytes of [{}] for block: [{}]", entry.length, TrieChunk.MAX_KEY_SIZE, lastBlock.getHash());
+                peersInformation.processSyncingError(sender, EventType.INVALID_STATE_CHUNK, "Received state chunk containing a key with a length of [{}] exceeding the maximum allowed size in bytes of [{}] for block: [{}]", entry.length, TrieChunk.MAX_KEY_SIZE, lastBlock.getHash());
                 return;
             }
         }
