@@ -359,6 +359,16 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         return UnionResponseCode.SUCCESS;
     }
 
+    @Override
+    public boolean isAuthorizedChangeLockingCap(Transaction tx) {
+        return isAuthorized(tx, constants.getChangeLockingCapAuthorizer());
+    }
+
+    @Override
+    public boolean isAuthorizedChangeTransferPermissions(Transaction tx) {
+        return isAuthorized(tx, constants.getChangeTransferPermissionsAuthorizer());
+    }
+
     private boolean isTransferPermissionStateAlreadySet(boolean requestEnabled, boolean releaseEnabled) {
         boolean currentRequestEnabled = isRequestEnabled();
         boolean currentReleaseEnabled = isReleaseEnabled();

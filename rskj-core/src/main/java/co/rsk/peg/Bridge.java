@@ -1514,6 +1514,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.increaseUnionBridgeLockingCap(rskTx, newLockingCap).getCode();
     }
 
+    public static BridgeMethods.BridgeMethodExecutor unionChangeLockingCapAuthorizerOnly(BridgeMethods.BridgeMethodExecutor decorate, String funcName) {
+        return (self, args) -> {
+            //self.constants.bridgeConstants.getUnionBridgeConstants().getChangeLockingCapAuthorizer().isAuthorized(self.rskTx, self.signatureCache);
+            if (!self.bridgeSupport.isAuthorizedToChangeUnionLockingCap(self.rskTx)) {
+                String errorMessage = String.format(
+                    "The sender is not an authorized address to invoke the function: '%s'",
+                    funcName
+                );
+                logger.warn(errorMessage);
+                throw new VMException(errorMessage);
+            }
+            return decorate.execute(self, args);
+        };
+    }
+
     public int requestUnionBridgeRbtc(Object[] args) {
         logger.trace("requestUnionBridgeRbtc");
         co.rsk.core.Coin amountRequested = new co.rsk.core.Coin((BigInteger) args[0]);
@@ -1530,6 +1545,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         boolean requestEnabled = (boolean) args[0];
         boolean releaseEnabled = (boolean) args[1];
         return bridgeSupport.setUnionBridgeTransferPermissions(rskTx, requestEnabled, releaseEnabled).getCode();
+    }
+
+    public static BridgeMethods.BridgeMethodExecutor unionChangeTransferPermissionsAuthorizerOnly(BridgeMethods.BridgeMethodExecutor decorate, String funcName) {
+        return (self, args) -> {
+            //self.constants.bridgeConstants.getUnionBridgeConstants().getChangeTransferPermissionsAuthorizer().isAuthorized(self.rskTx, self.signatureCache);
+            if (!self.bridgeSupport.isAuthorizedToChangeUnionTransferPermissions(self.rskTx)) {
+                String errorMessage = String.format(
+                    "The sender is not an authorized address to invoke the function: '%s'",
+                    funcName
+                );
+                logger.warn(errorMessage);
+                throw new VMException(errorMessage);
+            }
+            return decorate.execute(self, args);
+        };
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

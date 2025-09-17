@@ -22,5 +22,9 @@ public interface UnionBridgeSupport {
 
     UnionResponseCode setTransferPermissions(Transaction tx, boolean requestEnabled, boolean releaseEnabled);
 
+    // PoC access-control helpers for Bridge-level checks
+    boolean isAuthorizedChangeLockingCap(Transaction tx);
+    boolean isAuthorizedChangeTransferPermissions(Transaction tx);
+
     void save();
 }

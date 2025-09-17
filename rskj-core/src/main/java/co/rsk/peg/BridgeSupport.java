@@ -2941,6 +2941,15 @@ public class BridgeSupport {
         return unionBridgeSupport.setTransferPermissions(tx, requestEnabled, releaseEnabled);
     }
 
+    // PoC: expose union authorizer checks for Bridge-level wrappers
+    public boolean isAuthorizedToChangeUnionLockingCap(Transaction tx) {
+        return unionBridgeSupport.isAuthorizedChangeLockingCap(tx);
+    }
+
+    public boolean isAuthorizedToChangeUnionTransferPermissions(Transaction tx) {
+        return unionBridgeSupport.isAuthorizedChangeTransferPermissions(tx);
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }

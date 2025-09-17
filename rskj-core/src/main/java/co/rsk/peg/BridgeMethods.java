@@ -866,7 +866,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(8_000L), // TODO: Define final cost
-        (BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap,
+        Bridge.unionChangeLockingCapAuthorizerOnly((BridgeMethodExecutorTyped<Integer>) Bridge::increaseUnionBridgeLockingCap, "increaseUnionBridgeLockingCap"),
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
@@ -899,7 +899,7 @@ public enum BridgeMethods {
             new String[]{"int"}
         ),
         fixedCost(8_000L), // TODO: Define final cost
-        (BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions,
+        Bridge.unionChangeTransferPermissionsAuthorizerOnly((BridgeMethodExecutorTyped<Integer>) Bridge::setUnionBridgeTransferPermissions, "setUnionBridgeTransferPermissions"),
         activations -> activations.isActive(RSKIP502),
         fixedPermission(false)
     ),
