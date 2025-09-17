@@ -35,6 +35,7 @@ import java.util.Optional;
 public record TrieChunk(@Nonnull LinkedHashMap<byte[], byte[]> keyValues, @Nonnull TrieChunk.Proof proof) {
 
     public static final int MAX_CHUNK_SIZE = 1024;
+    public static final int MAX_BYTE_SIZE = 1024; // TODO -> review this value
 
     public byte[] encode() {
         // Encode key-value pairs as a list of [key, value] pairs
