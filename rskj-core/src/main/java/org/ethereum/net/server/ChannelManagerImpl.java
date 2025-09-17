@@ -27,6 +27,7 @@ import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressUtils;
 import co.rsk.scoring.InvalidInetAddressException;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.Constants;
 import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
@@ -87,6 +88,7 @@ public class ChannelManagerImpl implements ChannelManager {
         this.newPeers = new CopyOnWriteArrayList<>();
         this.maxConnectionsAllowed = config.maxConnectionsAllowed();
         this.networkCIDR = config.networkCIDR();
+        this.rskConfig = config;
     }
 
     @Override
@@ -209,12 +211,12 @@ public class ChannelManagerImpl implements ChannelManager {
                 Channel peer = peers.get(i);
                 nodesIdsBroadcastedTo.add(peer.getNodeId());
                 logger.trace("RSK propagate: {}", peer);
-                peer.sendMessage(newBlock);
+                sendWithOptionalDelay(() -> peer.sendMessage(newBlock));
             }
             for (int i = sqrt; i < peers.size(); i++) {
                 Channel peer = peers.get(i);
                 logger.trace("RSK announce: {}", peer);
-                peer.sendMessage(newBlockHashes);
+                sendWithOptionalDelay(() -> peer.sendMessage(newBlockHashes));
             }
         }
 
@@ -233,7 +235,7 @@ public class ChannelManagerImpl implements ChannelManager {
                     .filter(p -> targets.contains(p.getNodeId()))
                     .forEach(peer -> {
                         logger.trace("RSK announce hash: {}", peer);
-                        peer.sendMessage(newBlockHash);
+                        sendWithOptionalDelay(() -> peer.sendMessage(newBlockHash));
                     });
         }
 
@@ -253,7 +255,7 @@ public class ChannelManagerImpl implements ChannelManager {
             Collections.shuffle(shuffledPeers);
             shuffledPeers.stream()
                     .limit(numberOfPeersToSendStatusTo)
-                    .forEach(c -> c.sendMessage(message));
+                    .forEach(c -> sendWithOptionalDelay(() -> c.sendMessage(message)));
             return numberOfPeersToSendStatusTo;
         }
     }
@@ -347,7 +349,7 @@ public class ChannelManagerImpl implements ChannelManager {
                 filter(p -> !skip.contains(p.getNodeId())).collect(Collectors.toList());
 
         peersToBroadcast.forEach(peer -> {
-            peer.sendMessage(newTransactions);
+            sendWithOptionalDelay(() -> peer.sendMessage(newTransactions));
             nodesIdsBroadcastedTo.add(peer.getNodeId());
         });
 
@@ -378,6 +380,20 @@ public class ChannelManagerImpl implements ChannelManager {
 
             this.timeLastLoggedPeers = refTime;
         }
+    }
+    // --- Simulated delay support ---
+    private RskSystemProperties rskConfig;
+    private void sendWithOptionalDelay(Runnable send) {
+        long delayMs = 0L;
+        try {
+            delayMs = rskConfig.simulatedWireDelayMillis();
+        } catch (Exception ignored) {}
+        boolean isRegtest = rskConfig.getNetworkConstants().getChainId() == Constants.REGTEST_CHAIN_ID;
+        if (!isRegtest || delayMs <= 0) {
+            send.run();
+            return;
+        }
+        mainWorker.schedule(send, delayMs, TimeUnit.MILLISECONDS);
     }
 
 }

@@ -59,7 +59,7 @@ public class Constants {
     private static final int NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE = 540;
     private static final long MIN_SEQUENTIAL_SET_GAS_LIMIT = 7_500_000L;
     private static final int MINIMUM_DIFFICULTY = 131072;
-    private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 14;
+    private static final int TESTNET_AND_DEVNET_DURATION_LIMIT = 7;
     private static final int REGTEST_DURATION_LIMIT = 10;
 
     private final byte chainId;
@@ -103,8 +103,8 @@ public class Constants {
             byte chainId,
             boolean seedCowAccounts,
             int durationLimit,
-            BlockDifficulty minimumDifficulty,
             BlockDifficulty fallbackMiningDifficulty,
+            BlockDifficulty minimumDifficulty,
             BigInteger difficultyBoundDivisor,
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
@@ -324,10 +324,10 @@ public class Constants {
                 REGTEST_CHAIN_ID,
                 true,
                 REGTEST_DURATION_LIMIT,
-                new BlockDifficulty(BigInteger.ONE),
-                BlockDifficulty.ZERO,
-                BigInteger.valueOf(2048),
-                0,
+                new BlockDifficulty(BigInteger.valueOf(MINIMUM_DIFFICULTY)),
+                new BlockDifficulty(BigInteger.valueOf(FALLBACK_MINING_DIFFICULTY)),
+                DIFFICULTY_BOUND_DIVISOR,
+                NEW_BLOCK_MAX_SECONDS_IN_THE_FUTURE,
                 new BridgeRegTestConstants(),
                 new BlockDifficulty(MINIMUN_DIFFICULTY_FOR_RSKIP290),
                 1_000_000L

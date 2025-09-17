@@ -57,7 +57,7 @@ public class TxLoadGeneratorService implements InternalService {
     private final long blockTargetGas;
     private final long primaryTxGas;
     private final String profile;
-    private final String[] rotateProfiles = new String[]{"intrinsic","cpu","writes","reads","mixed"};
+    private final String[] rotateProfiles = new String[]{"intrinsic","cpu","writes","reads","mixed","calldata"};
     private long lastSeenBlock = -1L;
     private int rotateIndex = 0;
     private final String senderSeed;
@@ -75,55 +75,6 @@ public class TxLoadGeneratorService implements InternalService {
     private byte[] writesContract;
     private byte[] readsContract;
     private byte[] writesRandomContract;
-
-    /*
-     * Reference contracts used by txload (source only; we deploy via bytecode):
-     *
-     * // SPDX-License-Identifier: MIT
-     * pragma solidity ^0.8.24;
-     *
-     * // Random, non-local storage writes to defeat caching
-     * contract RandomWrites {
-     *     function runRandomWrites(uint256 iterations, uint256 seed) external {
-     *         assembly {
-     *             let x := seed
-     *             for { let i := 0 } lt(i, iterations) { i := add(i, 1) } {
-     *                 x := xor(x, shl(13, x))
-     *                 x := xor(x, shr(7,  x))
-     *                 x := xor(x, shl(17, x))
-     *                 sstore(x, gas())
-     *             }
-     *         }
-     *     }
-     *
-     *     function runRandomWritesUntilOutOfGas(uint256 seed, uint256 minGasLeft) external {
-     *         assembly {
-     *             let x := seed
-     *             for { } gt(gas(), minGasLeft) { } {
-     *                 x := xor(x, shl(13, x))
-     *                 x := xor(x, shr(7,  x))
-     *                 x := xor(x, shl(17, x))
-     *                 sstore(x, gas())
-     *             }
-     *         }
-     *     }
-     * }
-     *
-     * // Transient-storage wide address writes (used here via precompiled bytecode and selector 0x09fdcd3f)
-     * // pragma solidity ^0.8.24;
-     * // contract TstoreWideAddressSpaceLoopUntilOutOfGas {
-     * //     function runTstoreWideAddressSpaceUntilOutOfGas() external {
-     * //         assembly {
-     * //             for { let i := 0 } lt(i, 1000000) { i := add(i, 1) } {
-     * //                 let pcValue := codesize()
-     * //                 let shiftedPc := shl(pcValue, 1)
-     * //                 let addResult := add(shiftedPc, gas())
-     * //                 tstore(addResult, gas())
-     * //             }
-     * //         }
-     * //     }
-     * // }
-     */
 
     public TxLoadGeneratorService(RskSystemProperties config,
                                   Ethereum ethereum,
@@ -334,6 +285,9 @@ public class TxLoadGeneratorService implements InternalService {
             case "mixed":
                 tx = buildMixedTx(nonce, gasLimit);
                 break;
+            case "calldata":
+                tx = buildCalldataOnlyTx(nonce, gasLimit);
+                break;
             case "intrinsic":
             default:
                 tx = buildIntrinsicTx(nonce, gasLimit);
@@ -341,13 +295,13 @@ public class TxLoadGeneratorService implements InternalService {
         tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
         TransactionPoolAddResult res = ethereum.submitTransaction(tx);
         if (!res.transactionsWereAdded()) {
-            logger.debug("tx not added: {}", res.getErrorMessage());
+            logger.trace("tx not added: {}", res.getErrorMessage());
             // backoff on nonce window errors to let mining catch up
             String err = res.getErrorMessage();
             if (err != null && err.contains("nonce too high")) {
-                logger.debug("Nonce too high, backing off for 1s, nonce: {}", nonce);
+                logger.trace("Nonce too high, backing off for 100ms, nonce: {}", nonce);
                 // wait either next block or short cooldown
-                nextAllowedSubmitAtMs = System.currentTimeMillis() + 1000L;
+                nextAllowedSubmitAtMs = System.currentTimeMillis() + 100L;
                 return false;
             }
             return true;
@@ -392,7 +346,7 @@ public class TxLoadGeneratorService implements InternalService {
         ta.setValue(BigInteger.ZERO);
         String selectorAndArg = "b9554c59" + leftPad64("0");
         ta.setData(selectorAndArg);
-        logger.debug("Submitting CPU tx with data (hex, no 0x): {}", ta.getData());
+        logger.trace("Submitting CPU tx with data (hex, no 0x): {}", ta.getData());
         return Transaction.builder().withTransactionArguments(ta).build();
     }
 
@@ -415,6 +369,34 @@ public class TxLoadGeneratorService implements InternalService {
         byte[] addr = dummyContractAddress("mixed");
         String pattern = repeat("54", 16) + repeat("55", 16); // some reads and writes
         TransactionArguments ta = baseCallArgs(nonce, gasLimit, addr, pattern);
+        return Transaction.builder().withTransactionArguments(ta).build();
+    }
+
+    // Build a transaction that spends almost all gas in calldata cost
+    // Gas cost: base 21000 + 68 per non-zero byte (16 per zero). Use non-zero to maximize.
+    // Respect pool TX_MAX_SIZE (=128KB). We'll cap payload to not exceed it.
+    private Transaction buildCalldataOnlyTx(BigInteger nonce, long gasLimit) {
+        final long base = 21000L;
+        final long perNonZero = 68L;
+        long budget = Math.max(0L, gasLimit - base);
+        long nonZeroBytes = Math.max(0L, budget / perNonZero);
+        // Hard cap to TX_MAX_SIZE (128KB). Keep some headroom for RLP overhead; cap at 120KB
+        long maxBytes = 120_000L;
+        if (nonZeroBytes > maxBytes) nonZeroBytes = maxBytes;
+
+        StringBuilder data = new StringBuilder((int) nonZeroBytes * 2);
+        for (int i = 0; i < nonZeroBytes; i++) {
+            data.append("01");
+        }
+
+        TransactionArguments ta = new TransactionArguments();
+        ta.setNonce(nonce);
+        ta.setGasPrice(BigInteger.ONE);
+        ta.setGasLimit(BigInteger.valueOf(gasLimit));
+        // Send to self so it executes as a CALL with data (no contract needed)
+        ta.setTo(senderAccount.getAddress().getBytes());
+        ta.setValue(BigInteger.ZERO);
+        ta.setData(data.toString());
         return Transaction.builder().withTransactionArguments(ta).build();
     }
 
