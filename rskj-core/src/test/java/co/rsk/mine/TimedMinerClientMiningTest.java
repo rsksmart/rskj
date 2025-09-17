@@ -55,7 +55,7 @@ class TimedMinerClientMiningTest {
         
         when(minerServer.getWork()).thenReturn(mockWork);
         
-        timedMinerClient = new TimedMinerClient(minerServer, Duration.ofSeconds(1));
+        timedMinerClient = new TimedMinerClient(minerServer, Duration.ofSeconds(1), false);
     }
 
     @Test
@@ -119,7 +119,7 @@ class TimedMinerClientMiningTest {
     @Test
     void usesExponentialDistribution() {
         // Test with a very short median time to see multiple mining attempts
-        TimedMinerClient fastClient = new TimedMinerClient(minerServer, Duration.ofMillis(100));
+        TimedMinerClient fastClient = new TimedMinerClient(minerServer, Duration.ofMillis(100), false);
         
         fastClient.start();
         

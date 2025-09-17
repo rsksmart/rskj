@@ -36,7 +36,7 @@ class TimedMinerClientSimpleTest {
     @Test
     void testConstructor() {
         Duration medianTime = Duration.ofSeconds(10);
-        TimedMinerClient client = new TimedMinerClient(minerServer, medianTime);
+        TimedMinerClient client = new TimedMinerClient(minerServer, medianTime, false);
         
         assertNotNull(client);
         assertFalse(client.isMining());
@@ -45,7 +45,7 @@ class TimedMinerClientSimpleTest {
     @Test
     void testStartAndStop() {
         Duration medianTime = Duration.ofSeconds(1);
-        TimedMinerClient client = new TimedMinerClient(minerServer, medianTime);
+        TimedMinerClient client = new TimedMinerClient(minerServer, medianTime, false);
         
         // Initially not mining
         assertFalse(client.isMining());
@@ -62,7 +62,7 @@ class TimedMinerClientSimpleTest {
     @Test
     void testMultipleStartStopCycles() {
         Duration medianTime = Duration.ofSeconds(1);
-        TimedMinerClient client = new TimedMinerClient(minerServer, medianTime);
+        TimedMinerClient client = new TimedMinerClient(minerServer, medianTime, false);
         
         // First cycle
         client.start();
@@ -82,8 +82,8 @@ class TimedMinerClientSimpleTest {
         Duration shortDuration = Duration.ofMillis(100);
         Duration longDuration = Duration.ofMinutes(5);
         
-        TimedMinerClient shortClient = new TimedMinerClient(minerServer, shortDuration);
-        TimedMinerClient longClient = new TimedMinerClient(minerServer, longDuration);
+        TimedMinerClient shortClient = new TimedMinerClient(minerServer, shortDuration, false);
+        TimedMinerClient longClient = new TimedMinerClient(minerServer, longDuration, false);
         
         assertNotNull(shortClient);
         assertNotNull(longClient);

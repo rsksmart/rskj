@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.util.HexUtils;
+import co.rsk.util.DifficultyUtils;
 import co.rsk.mine.MinerUtils;
 
 /**
@@ -43,19 +44,25 @@ public class TimedMinerClient implements MinerClient {
     private final Duration medianBlockTime;
     private final ScheduledExecutorService scheduler;
     private final Random random;
+    private final boolean skipPowValidation;
+    private final long baseMedianMillis;
+    private volatile double difficultyScale = 1.0; // currentDifficulty / baselineDifficulty
+    private BigInteger baselineDifficulty = null;
 
     private volatile boolean stop = false;
     private volatile boolean isMining = false;
 
-    public TimedMinerClient(MinerServer minerServer, Duration medianBlockTime) {
+    public TimedMinerClient(MinerServer minerServer, Duration medianBlockTime, boolean skipPowValidation) {
         this.minerServer = minerServer;
         this.medianBlockTime = medianBlockTime;
+        this.skipPowValidation = skipPowValidation;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "TimedMinerClient");
             t.setDaemon(true);
             return t;
         });
         this.random = new Random();
+        this.baseMedianMillis = medianBlockTime.toMillis();
     }
 
     @Override
@@ -88,8 +95,30 @@ public class TimedMinerClient implements MinerClient {
             co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
             co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
-            BigInteger target = new BigInteger(1, HexUtils.stringHexToByteArray(work.getTarget()));
-            findNonce(bitcoinMergedMiningBlock, target);
+            // Update difficulty scaling for next interval
+            try {
+                BigInteger target = new BigInteger(1, HexUtils.stringHexToByteArray(work.getTarget()));
+                if (target.signum() > 0) {
+                    BigInteger currentDifficulty = DifficultyUtils.MAX.divide(target);
+                    if (baselineDifficulty == null || baselineDifficulty.signum() == 0) {
+                        baselineDifficulty = currentDifficulty;
+                        difficultyScale = 1.0;
+                    } else {
+                        difficultyScale = currentDifficulty.doubleValue() / baselineDifficulty.doubleValue();
+                        if (!Double.isFinite(difficultyScale) || difficultyScale <= 0) {
+                            difficultyScale = 1.0;
+                        }
+                    }
+                }
+                if (!skipPowValidation) {
+                    findNonce(bitcoinMergedMiningBlock, target);
+                } else {
+                    bitcoinMergedMiningBlock.setNonce(0);
+                }
+            } catch (Exception ignored) {
+                // Any nonce is acceptable when PoW validation is skipped
+                bitcoinMergedMiningBlock.setNonce(0);
+            }
 
             logger.info("Mined block: {}", work.getBlockHashForMergedMining());
             minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
@@ -136,13 +165,18 @@ public class TimedMinerClient implements MinerClient {
 
         // Generate exponential distribution time with the configured median
         // For exponential distribution: mean = median / ln(2)
-        double mean = medianBlockTime.toMillis() / Math.log(2.0);
+        // Scale median by observed difficulty ratio so higher difficulty → longer intervals
+        double scaledMedianMs = (baseMedianMillis * difficultyScale);
+        if (!Double.isFinite(scaledMedianMs) || scaledMedianMs <= 0) {
+            scaledMedianMs = baseMedianMillis;
+        }
+        double mean = scaledMedianMs / Math.log(2.0);
         long delayMillis = (long) (-mean * Math.log(1.0 - random.nextDouble()));
         
         // Ensure minimum delay of 100ms to prevent excessive CPU usage
         delayMillis = Math.max(delayMillis, 100);
         
-        logger.debug("Scheduling next mining operation in {} ms", delayMillis);
+        logger.debug("Scheduling next mining operation in {} ms / median is: {} ms", delayMillis, (long)scaledMedianMs);
         
         scheduler.schedule(() -> {
             if (isMining && !stop) {
