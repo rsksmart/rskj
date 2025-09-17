@@ -21,6 +21,7 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SuperDifficultyCalculator;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
@@ -32,6 +33,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -45,6 +47,7 @@ public class BlockBuilder {
     private final Blockchain blockChain;
     private final BlockGenerator blockGenerator;
     private TrieStore trieStore;
+    private ReceiptStore receiptStore;
     private Block parent;
     private long difficulty;
     private List<Transaction> txs;
@@ -104,6 +107,11 @@ public class BlockBuilder {
         return this;
     }
 
+    public BlockBuilder receiptStore(ReceiptStore store) {
+        this.receiptStore = store;
+        return this;
+    }
+
     public Block build() {
         final TestSystemProperties config = new TestSystemProperties();
         return this.build(config);
@@ -115,6 +123,8 @@ public class BlockBuilder {
         if (blockChain != null) {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
+                    blockStore,
+                    receiptStore,
                     new RepositoryLocator(trieStore, stateRootHandler),
                     new TransactionExecutorFactory(
                             config,
@@ -125,7 +135,8 @@ public class BlockBuilder {
                             new PrecompiledContracts(config, bridgeSupportFactory, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     ),
-                    config);
+                    config,
+                    new SuperDifficultyCalculator(config.getNetworkConstants()));
             executor.executeAndFill(block, parent.getHeader());
         }
 
