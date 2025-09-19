@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
@@ -75,6 +76,8 @@ public class TxLoadGeneratorService implements InternalService {
     private byte[] writesContract;
     private byte[] readsContract;
     private byte[] writesRandomContract;
+    // Compiled creation bytecode for persistent SSTORE random writes
+    private static final String RANDOM_WRITES_CREATION_HEX = "608060405234801561000f575f80fd5b506101818061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c806323c62778146100385780633dcf015914610054575b5f80fd5b610052600480360381019061004d919061010d565b610070565b005b61006e6004803603810190610069919061010d565b61009f565b005b815b815a111561009a5780600d1b811890508060071c811890508060111b811890505a8155610072565b505050565b805f5b838110156100d05781600d1b821891508160071c821891508160111b821891505a82556001810190506100a2565b50505050565b5f80fd5b5f819050919050565b6100ec816100da565b81146100f6575f80fd5b50565b5f81359050610107816100e3565b92915050565b5f8060408385031215610123576101226100d6565b5b5f610130858286016100f9565b9250506020610141858286016100f9565b915050925092905056fea26469706673582212208192f606f9266c8315c4fb5918dd4e76e78d66c927080e249eb43afaa567bfb964736f6c63430008180033";
 
     public TxLoadGeneratorService(RskSystemProperties config,
                                   Ethereum ethereum,
@@ -178,10 +181,9 @@ public class TxLoadGeneratorService implements InternalService {
             baseNonce = baseNonce.add(BigInteger.ONE);
         }
 
-        // Deploy TstoreWideAddressSpaceLoopUntilOutOfGas (Random Writes via transient storage)
+        // Deploy RandomWrites persistent SSTORE implementation
         if (writesRandomContract == null) {
-            String tstoreWideCreation = "6080604052348015600e575f80fd5b5060918061001b5f395ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c806309fdcd3f14602a575b5f80fd5b60306032565b005b5f5b620f4240811015605857386001811b5a81015a815d50505080806001019150506034565b5056fea264697066735822122098cf088d672ad1d70c2d2a0edbbba6202aff9669702ae83d6e9eb1050fc6622864736f6c63430008180033";
-            Transaction tx = buildCreationTx(baseNonce, tstoreWideCreation, Math.max(primaryTxGas, 1_000_000L));
+            Transaction tx = buildCreationTx(baseNonce, RANDOM_WRITES_CREATION_HEX, Math.max(primaryTxGas, 1_000_000L));
             tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
             ethereum.submitTransaction(tx);
             writesRandomContract = computeContractAddress(senderAccount.getAddress().getBytes(), baseNonce);
@@ -351,10 +353,21 @@ public class TxLoadGeneratorService implements InternalService {
     }
 
     private Transaction buildWritesTx(BigInteger nonce, long gasLimit) {
-        // call Random wide-address writes function (09fdcd3f) for non-locality writes
-        byte[] addr = writesRandomContract != null ? writesRandomContract : writesContract;
-        String selector = writesRandomContract != null ? "09fdcd3f" : "7b17abde";
-        TransactionArguments ta = baseCallArgs(nonce, gasLimit, addr, selector);
+        // Prefer persistent RandomWrites.runRandomWritesUntilOutOfGas(seed, minGasLeft)
+        if (writesRandomContract != null) {
+            byte[] addr = writesRandomContract;
+            long minGasLeft = 30000L;
+            BigInteger seed = BigInteger.valueOf(System.nanoTime());
+            CallTransaction.Function f = CallTransaction.Function.fromSignature(
+                    "runRandomWritesUntilOutOfGas",
+                    new String[]{"uint256","uint256"}, new String[]{});
+            byte[] data = f.encode(seed, BigInteger.valueOf(minGasLeft));
+            TransactionArguments ta = baseCallArgs(nonce, gasLimit, addr, data);
+            return Transaction.builder().withTransactionArguments(ta).build();
+        }
+        // fallback to transient
+        byte[] addr = writesContract;
+        TransactionArguments ta = baseCallArgs(nonce, gasLimit, addr, "7b17abde");
         return Transaction.builder().withTransactionArguments(ta).build();
     }
 
@@ -408,6 +421,17 @@ public class TxLoadGeneratorService implements InternalService {
         ta.setTo(to);
         ta.setValue(BigInteger.ZERO);
         ta.setData(normalizeHex(data));
+        return ta;
+    }
+
+    private TransactionArguments baseCallArgs(BigInteger nonce, long gasLimit, byte[] to, byte[] data) {
+        TransactionArguments ta = new TransactionArguments();
+        ta.setNonce(nonce);
+        ta.setGasPrice(BigInteger.ONE);
+        ta.setGasLimit(BigInteger.valueOf(gasLimit));
+        ta.setTo(to);
+        ta.setValue(BigInteger.ZERO);
+        ta.setData(Hex.toHexString(data));
         return ta;
     }
 
