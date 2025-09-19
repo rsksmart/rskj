@@ -22,57 +22,6 @@ contract GasBurner {
 }
 
 // ----------------------------
-// 2) Writes (sequential-ish transient writes) - TstoreLoopUntilOutOfGas
-//    Selector: runTstoreUntilOutOfGas() -> 0x7b17abde
-// ----------------------------
-contract TstoreLoopUntilOutOfGas {
-    function runTstoreUntilOutOfGas() external {
-        assembly {
-            // Run tstore in a loop until out of gas
-            for { let i := 0 } lt(i, 1000000) { i := add(i, 1) } {
-                // Use remaining gas as both key and value, to change each iteration
-                tstore(gas(), gas())
-            }
-        }
-    }
-}
-
-// ----------------------------
-// 3) Reads + Writes (transient) - TstoreAndTloadLoopUntilOutOfGas
-//    Selector: runTstoreAndTloadUntilOutOfGas() -> 0xae1978d7
-// ----------------------------
-contract TstoreAndTloadLoopUntilOutOfGas {
-    function runTstoreAndTloadUntilOutOfGas() external {
-        assembly {
-            for { let i := 0 } lt(i, 1000000) { i := add(i, 1) } {
-                let gasValue := gas()
-                tstore(gasValue, gas())
-                // load again to stress reads; ignore value
-                let _ := tload(gasValue)
-            }
-        }
-    }
-}
-
-// ----------------------------
-// 4) Writes (wide/random-like transient storage) - TstoreWideAddressSpaceLoopUntilOutOfGas
-//    Selector: runTstoreWideAddressSpaceUntilOutOfGas() -> 0x09fdcd3f
-//    Idea: Generate non-local keys using code size + gas as entropy to reduce locality.
-// ----------------------------
-contract TstoreWideAddressSpaceLoopUntilOutOfGas {
-    function runTstoreWideAddressSpaceUntilOutOfGas() external {
-        assembly {
-            for { let i := 0 } lt(i, 1000000) { i := add(i, 1) } {
-                let pcValue := codesize()
-                let shiftedPc := shl(pcValue, 1)
-                let key := add(shiftedPc, gas())
-                tstore(key, gas())
-            }
-        }
-    }
-}
-
-// ----------------------------
 // 5) Random Writes (contract storage) - RandomWrites
 //    Selectors:
 //      - runRandomWrites(uint256,uint256)
@@ -114,6 +63,22 @@ contract KeccakRandomWrites {
         for (uint256 i = 0; i < iterations; ++i) {
             bytes32 slot = keccak256(abi.encodePacked(seed, i, gasleft(), block.number));
             assembly { sstore(slot, gas()) }
+        }
+    }
+}
+
+// ----------------------------
+// 7) Random Reads (contract storage) - RandomReads
+//    Selector: runRandomReadsUntilOutOfGas(uint256 seed, uint256 minGasLeft)
+// ----------------------------
+contract RandomReads {
+    function runRandomReadsUntilOutOfGas(uint256 seed, uint256 minGasLeft) external view returns (uint256 acc) {
+        for (;;) {
+            if (gasleft() <= minGasLeft) break;
+            bytes32 slot = keccak256(abi.encodePacked(seed, acc, gasleft(), block.number));
+            uint256 v;
+            assembly { v := sload(slot) }
+            acc ^= v;
         }
     }
 }
