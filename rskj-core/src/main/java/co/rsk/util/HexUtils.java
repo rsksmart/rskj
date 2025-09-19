@@ -24,6 +24,7 @@ import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -360,5 +361,9 @@ public class HexUtils {
         String preResult = removeHexPrefix(param);
 
         return Integer.parseInt(preResult, 16);
+    }
+
+    public static String generateRandomUUIDToHexString () {
+        return HexUtils.toJsonHex(UUID.randomUUID().toString().getBytes());
     }
 }
