@@ -42,6 +42,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.exception.VMException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -3407,9 +3408,23 @@ class BridgeTest {
         private static final UnionBridgeConstants unionBridgeMainNetConstants = mainNetConstants.getBridgeConstants()
             .getUnionBridgeConstants();
         private static final co.rsk.core.Coin initialLockingCap = unionBridgeMainNetConstants.getInitialLockingCap();
-
         private static final co.rsk.core.Coin newLockingCap = initialLockingCap.multiply(
             BigInteger.valueOf(unionBridgeMainNetConstants.getLockingCapIncrementsMultiplier()));
+
+        private static final RskAddress unionBridgeAddress = unionBridgeMainNetConstants.getAddress();
+
+        private static final ECKey changeTestnetUnionAddressKeyAuthorizer = ECKey.fromPublicOnly(Hex.decode("041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"));
+        private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress(changeTestnetUnionAddressKeyAuthorizer.getAddress());
+
+        private static final ECKey increaseLockingCapKeyAuthorizer = ECKey.fromPublicOnly(Hex.decode("040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09"));
+        private static final RskAddress increaseLockingCapAuthorizer = new RskAddress(increaseLockingCapKeyAuthorizer.getAddress());
+
+        private static final ECKey setTransferPermissionsKeyAuthorizer = ECKey.fromPublicOnly(Hex.decode("0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282"));
+        private static final RskAddress setTransferPermissionsAuthorizer = new RskAddress(
+            setTransferPermissionsKeyAuthorizer.getAddress());
+
+        private static final RskAddress unauthorizedCaller = new RskAddress("0000000000000000000000000000000000000001");
+
         private UnionBridgeSupport unionBridgeSupport;
         private Repository repository;
         private BridgeEventLogger eventLogger;
@@ -3436,6 +3451,8 @@ class BridgeTest {
                 .bridgeSupport(bridgeSupport)
                 .transaction(rskTx)
                 .build();
+
+            when(rskTx.getSender(any())).thenReturn(unionBridgeAddress);
         }
 
         @Test
@@ -3445,6 +3462,7 @@ class BridgeTest {
                 .constants(Constants.testnet2(activationConfig))
                 .activationConfig(activationConfig)
                 .build();
+            when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
             byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
@@ -3471,6 +3489,29 @@ class BridgeTest {
                 .bridgeSupport(bridgeSupport)
                 .constants(constants)
                 .build();
+            when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
+
+            CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
+            byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
+
+            byte[] result = bridge.execute(data);
+            BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.decodeResult(result)[0];
+
+            int actualUnionResponseCode = decodedResult.intValue();
+            assertEquals(expectedUnionResponseCode.getCode(), actualUnionResponseCode);
+        }
+
+        @Test
+        void setUnionBridgeContractAddressForTestnet_whenMainnet_shouldReturnEnvironmentDisabled() throws VMException {
+            bridge = bridgeBuilder
+                .activationConfig(allActivations)
+                .bridgeSupport(bridgeSupport)
+                .constants(Constants.mainnet())
+                .build();
+
+            UnionResponseCode expectedUnionResponseCode = UnionResponseCode.ENVIRONMENT_DISABLED;
+            when(unionBridgeSupport.setUnionBridgeContractAddressForTestnet(any(), any())).thenReturn(
+                expectedUnionResponseCode);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
             byte[] data = function.encode(TestUtils.generateAddress("unionBridgeContractAddress").toHexString());
@@ -3492,6 +3533,8 @@ class BridgeTest {
                 .bridgeSupport(bridgeSupport)
                 .constants(Constants.testnet2(allActivations))
                 .build();
+
+            when(rskTx.getSender(any())).thenReturn(changeTestnetUnionAddressAuthorizer);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
             byte[] data = function.encode();
@@ -3576,7 +3619,7 @@ class BridgeTest {
             bridge = bridgeBuilder
                 .activationConfig(ActivationConfigsForTest.lovell700())
                 .build();
-
+            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
 
             byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.asBigInteger());
 
@@ -3587,6 +3630,7 @@ class BridgeTest {
         void increaseUnionBridgeLockingCap_afterRSKIP502_whenMeetRequirements_shouldReturnSuccess()
             throws VMException {
             // Arrange
+            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
             UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(expectedResponseCode);
 
@@ -3606,6 +3650,7 @@ class BridgeTest {
         void increaseUnionBridgeLockingCap_afterRSKIP502_whenNewLockingCapSurpassingMaxIncrement_shouldReturnInvalidLockingCapCode()
             throws VMException {
             // Arrange
+            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
@@ -3627,6 +3672,7 @@ class BridgeTest {
         void increaseUnionBridgeLockingCap_afterRSKIP502_whenSendingZero_shouldReturnInvalidLockingCapCode()
             throws VMException {
             // Arrange
+            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), any())).thenReturn(
                 expectedResponseCode);
@@ -3645,30 +3691,25 @@ class BridgeTest {
         }
 
         @Test
-        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNotAuthorized_shouldReturnUnauthorizedCode()
-            throws VMException {
+        void increaseUnionBridgeLockingCap_afterRSKIP502_whenNotAuthorized_shouldThrownAnVmException() {
             // Arrange
-            UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
-
-            when(bridgeSupport.increaseUnionBridgeLockingCap(any(), eq(newLockingCap))).thenReturn(
-                expectedResponseCode);
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
             byte[] data = Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.encode(newLockingCap.asBigInteger());
 
             // Act
-            byte[] result = bridge.execute(data);
+            VMException vmException = assertThrows(VMException.class, () -> bridge.execute(data));
+            assertInstanceOf(VMException.class, vmException.getCause());
+            assertTrue(vmException.getMessage().contains("The sender is not authorized to call increaseUnionBridgeLockingCa"));
 
-            // Assert
-            BigInteger decodedResult = (BigInteger) Bridge.INCREASE_UNION_BRIDGE_LOCKING_CAP.decodeResult(
-                result)[0];
-            int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
+            verify(unionBridgeSupport, never()).increaseLockingCap(any(), any());
         }
 
         @Test
         void increaseUnionBridgeLockingCap_afterRSKIP502_emptyArgument_shouldFail() throws VMException {
             // Arrange
             UnionResponseCode expectedResponseCode = UnionResponseCode.INVALID_VALUE;
+            when(rskTx.getSender(any())).thenReturn(increaseLockingCapAuthorizer);
 
             // when no argument is passed, the default value assigned to the arg is a big integer of zero
             when(bridgeSupport.increaseUnionBridgeLockingCap(any(), eq(co.rsk.core.Coin.ZERO))).thenReturn(expectedResponseCode);
@@ -3847,20 +3888,20 @@ class BridgeTest {
             bridge = bridgeBuilder
                 .activationConfig(ActivationConfigsForTest.lovell700())
                 .build();
+            when(rskTx.getSender(any())).thenReturn(setTransferPermissionsAuthorizer);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
             byte[] data = function.encode(true, true);
 
-            assertThrows(VMException.class, () -> bridge.execute(data));
+            VMException actualException = assertThrows(VMException.class, () -> bridge.execute(data));
+            assertTrue(actualException.getMessage().contains("Invalid data given"));
         }
         
         @Test
         void setUnionBridgeTransferPermissions_whenValidArgs_shouldSetTransferPermissions() throws VMException {
             // Arrange
-            RskAddress expectedChangeTransferPermissionsAddress = mainNetConstants.getBridgeConstants()
-                .getUnionBridgeConstants().getAddress();
             UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
-            when(rskTx.getSender(any())).thenReturn(expectedChangeTransferPermissionsAddress);
+            when(rskTx.getSender(any())).thenReturn(setTransferPermissionsAuthorizer);
             when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(),
                 anyBoolean())).thenReturn(expectedResponseCode);
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
@@ -3881,6 +3922,7 @@ class BridgeTest {
         void setUnionBridgeTransferPermissions_whenEmptyArguments_shouldAssumeArgAsFalseAndProcessed() throws VMException {
             // Arrange
             UnionResponseCode expectedResponseCode = UnionResponseCode.SUCCESS;
+            when(rskTx.getSender(any())).thenReturn(setTransferPermissionsAuthorizer);
             // when no argument is passed, the default value assigned to the arg is false
             when(unionBridgeSupport.setTransferPermissions(any(), eq(false), eq(false))).thenReturn(expectedResponseCode);
 
@@ -3902,23 +3944,17 @@ class BridgeTest {
         void setUnionBridgeTransferPermissions_whenNotAuthorized_shouldReturnUnauthorizedCode()
             throws VMException {
             // Arrange
-            UnionResponseCode expectedResponseCode = UnionResponseCode.UNAUTHORIZED_CALLER;
-            when(unionBridgeSupport.setTransferPermissions(any(), anyBoolean(), anyBoolean())).thenReturn(
-                expectedResponseCode);
+            when(rskTx.getSender(any())).thenReturn(unauthorizedCaller);
 
             CallTransaction.Function function = BridgeMethods.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.getFunction();
             byte[] data = function.encode(true, true);
 
             // Act
-            byte[] result = bridge.execute(data);
+            VMException actualException = Assertions.assertThrows(VMException.class, () -> bridge.execute(data));
 
             // Assert
-            BigInteger decodedResult = (BigInteger) Bridge.SET_UNION_BRIDGE_TRANSFER_PERMISSIONS.decodeResult(
-                result)[0];
-            int actualUnionResponseCode = decodedResult.intValue();
-            assertEquals(expectedResponseCode.getCode(), actualUnionResponseCode);
-
-            verify(unionBridgeSupport, times(1)).setTransferPermissions(any(Transaction.class), eq(true), eq(true));
+            assertInstanceOf(VMException.class, actualException.getCause());
+            verify(unionBridgeSupport, never()).setTransferPermissions(any(Transaction.class), anyBoolean(), anyBoolean());
         }
     }
 

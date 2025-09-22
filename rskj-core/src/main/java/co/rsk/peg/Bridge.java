@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.types.bytes.Bytes;
+import co.rsk.peg.BridgeMethods.AuthorizerProvider;
 import co.rsk.peg.constants.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -38,6 +39,7 @@ import co.rsk.peg.federation.FederationChangeResponseCode;
 import co.rsk.peg.federation.FederationMember;
 import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.vote.AddressBasedAuthorizer;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.WhitelistResponseCode;
@@ -1530,6 +1532,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         boolean requestEnabled = (boolean) args[0];
         boolean releaseEnabled = (boolean) args[1];
         return bridgeSupport.setUnionBridgeTransferPermissions(rskTx, requestEnabled, releaseEnabled).getCode();
+    }
+
+    public static BridgeMethods.BridgeMethodExecutor executeIfAuthorized(AuthorizerProvider authorizerProvider, BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+        return (self, args) -> {
+            AddressBasedAuthorizer addressBasedAuthorizer = authorizerProvider.provide(self.bridgeConstants);
+            if (!addressBasedAuthorizer.isAuthorized(self.rskTx, self.signatureCache)) {
+                String errorMessage = String.format(
+                    "The sender is not authorized to call %s",
+                    funcName
+                );
+                throw new VMException(errorMessage);
+            }
+            return decoratee.execute(self, args);
+        };
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
