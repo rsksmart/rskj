@@ -25,7 +25,6 @@ import org.ethereum.crypto.ECKey;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Authorizes an operation based
@@ -44,16 +43,24 @@ public class AddressBasedAuthorizer {
         this.authorizedAddresses = authorizedAddresses
             .stream()
             .map(RskAddress::getBytes)
-            .collect(Collectors.toList());
+            .toList();
         this.requiredCalculation = requiredCalculation;
     }
 
     /**
      * @deprecated Use AddressBasedAuthorizerFactory to construct instances.
+     * This constructor is deprecated and may be removed in future versions.
+     * This constructs an AddressBasedAuthorizer using a list of ECKey for authorized addresses
+     * and a minimum required calculation method.
+     *
+     * @param authorizedKeys the list of ECKey instances representing authorized keys.
+     *                       Each ECKey is converted to its corresponding address.
+     * @param requiredCalculation the method for calculating the minimum number of
+     *                             authorizations required. It can be ONE, MAJORITY, or ALL.
      */
-    @Deprecated
+    @Deprecated(since = "8.0.0", forRemoval = true)
     public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
-        this.authorizedAddresses = authorizedKeys.stream().map(ECKey::getAddress).collect(Collectors.toList());
+        this.authorizedAddresses = authorizedKeys.stream().map(ECKey::getAddress).toList();
         this.requiredCalculation = requiredCalculation;
     }
 
