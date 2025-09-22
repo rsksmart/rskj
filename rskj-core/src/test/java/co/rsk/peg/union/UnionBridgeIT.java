@@ -68,11 +68,6 @@ class UnionBridgeIT {
 
     private static final RskAddress UNAUTHORIZED_CALLER_ADDRESS = TestUtils.generateAddress("UNAUTHORIZED");
 
-    private static final RskAddress CHANGE_UNION_ADDRESS_AUTHORIZER = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d"))
-            .getAddress());
-
     private static final RskAddress CHANGE_LOCKING_CAP_AUTHORIZER_1 = new RskAddress(
         ECKey.fromPublicOnly(Hex.decode(
                 "040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09"))
@@ -219,7 +214,7 @@ class UnionBridgeIT {
     @Order(0)
     void setUnionBridgeContractAddressForTestnet_whenLovell_shouldFail() {
         // Arrange
-        setupCaller(CHANGE_UNION_ADDRESS_AUTHORIZER);
+        setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
         Function function = SET_UNION_BRIDGE_CONTRACT_ADDRESS_FOR_TESTNET.getFunction();
         byte[] functionEncoded = function.encode(
             NEW_UNION_BRIDGE_CONTRACT_ADDRESS.toHexString());
@@ -306,7 +301,7 @@ class UnionBridgeIT {
         // Setup for all activations
         setupForAllActivations();
         // Setup authorizer for changing union address
-        setupCaller(UNAUTHORIZED_CALLER_ADDRESS);
+        setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
 
         // Assert that the union address is equal to the constant address
         RskAddress unionAddressBeforeAttemptToUpdate = getUnionBridgeContractAddress();
@@ -338,9 +333,10 @@ class UnionBridgeIT {
         assertNoStoredUnionLockingCap();
 
         // Act
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
+        VMException actualException = assertThrows(VMException.class, () -> increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1));
+
         // Assert
-        assertUnauthorizedCaller(actualUnionResponseCode);
+        assertTrue(actualException.getMessage().contains("The sender is not authorized to call increaseUnionBridgeLockingCap"));
         // Assert that the locking cap remains unchanged
         assertEquals(INITIAL_LOCKING_CAP, getUnionBridgeLockingCap());
         // Assert that the stored union locking cap is still null
@@ -515,15 +511,16 @@ class UnionBridgeIT {
 
     @Test
     @Order(18)
-    void setTransferPermissions_whenUnauthorized_shouldReturnUnauthorized() throws VMException {
+    void setTransferPermissions_whenUnauthorized_shouldReturnUnauthorized() {
         setupUnauthorizedCaller();
         // Assert that no union transferred permissions are stored initially
         assertNoUnionTransferredPermissionsIsStored();
 
         // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
+        VMException actualException = assertThrows(VMException.class, () -> setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED));
+
         // Assert
-        assertUnauthorizedCaller(unionTransferPermissionsResponseCode);
+        assertTrue(actualException.getMessage().contains("The sender is not authorized to call setUnionBridgeTransferPermissions"));
         assertNoUnionTransferredPermissionsIsStored();
         assertNoEventWasEmitted();
     }
@@ -634,7 +631,7 @@ class UnionBridgeIT {
     @Order(25)
     void setUnionBridgeContractAddressForTestnet_whenMainnetAndTransferIsDisabled_shouldReturnEnvironmentDisabled()
         throws VMException {
-        setupCaller(CHANGE_UNION_ADDRESS_AUTHORIZER);
+        setupCaller(CURRENT_UNION_BRIDGE_ADDRESS);
         RskAddress actualUnionAddress = getUnionBridgeContractAddress();
         assertEquals(CURRENT_UNION_BRIDGE_ADDRESS, actualUnionAddress);
 
