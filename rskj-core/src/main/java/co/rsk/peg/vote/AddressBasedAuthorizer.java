@@ -18,6 +18,7 @@
 package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
+import java.util.Set;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -35,9 +36,22 @@ import java.util.stream.Collectors;
 public class AddressBasedAuthorizer {
     public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL }
 
-    protected List<byte[]> authorizedAddresses;
-    protected MinimumRequiredCalculation requiredCalculation;
+    protected final List<byte[]> authorizedAddresses;
+    protected final MinimumRequiredCalculation requiredCalculation;
 
+    // New private constructor that accepts addresses directly
+    private AddressBasedAuthorizer(Set<RskAddress> authorizedAddresses, MinimumRequiredCalculation requiredCalculation) {
+        this.authorizedAddresses = authorizedAddresses
+            .stream()
+            .map(RskAddress::getBytes)
+            .collect(Collectors.toList());
+        this.requiredCalculation = requiredCalculation;
+    }
+
+    /**
+     * @deprecated Use AddressBasedAuthorizerFactory to construct instances.
+     */
+    @Deprecated
     public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
         this.authorizedAddresses = authorizedKeys.stream().map(ECKey::getAddress).collect(Collectors.toList());
         this.requiredCalculation = requiredCalculation;
@@ -57,14 +71,18 @@ public class AddressBasedAuthorizer {
     }
 
     public int getRequiredAuthorizedKeys() {
-        switch (requiredCalculation) {
-            case ONE:
-                return 1;
-            case MAJORITY:
-                return getNumberOfAuthorizedKeys() / 2 + 1;
-            case ALL:
-            default:
-                return getNumberOfAuthorizedKeys();
-        }
+        return switch (requiredCalculation) {
+            case ONE -> 1;
+            case MAJORITY -> getNumberOfAuthorizedKeys() / 2 + 1;
+            default -> getNumberOfAuthorizedKeys();
+        };
+    }
+
+    static AddressBasedAuthorizer of(Set<RskAddress> authorizedAddresses, MinimumRequiredCalculation calculation) {
+        return new AddressBasedAuthorizer(authorizedAddresses, calculation);
+    }
+
+    static AddressBasedAuthorizer of(RskAddress authorizedAddress) {
+        return new AddressBasedAuthorizer(Set.of(authorizedAddress), MinimumRequiredCalculation.ONE);
     }
 }
