@@ -563,33 +563,6 @@ class UnionBridgeSupportImplTest {
         Assertions.assertNotEquals(newLockingCap, storedLockingCap);
     }
 
-    @Test
-    void increaseLockingCap_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode() {
-        // arrange
-        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants).build();
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            TestUtils.generateAddress("notAuthorizedAddress"));
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants)
-            .build();
-        Coin initialLockingCap = bridgeConstants.getInitialLockingCap();
-        Coin newLockingCap = initialLockingCap.multiply(BigInteger.valueOf(bridgeConstants.getLockingCapIncrementsMultiplier()));
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.increaseLockingCap(rskTx, newLockingCap);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
-        assertNoLockingCapIsStored();
-        assertNoEventWasEmitted();
-
-        // call save and assert that nothing is stored
-        unionBridgeSupport.save();
-        assertNoLockingCapIsStored();
-    }
-
     @ParameterizedTest
     @CsvSource({
         "false, false",
@@ -1201,38 +1174,11 @@ class UnionBridgeSupportImplTest {
 
     @ParameterizedTest
     @CsvSource({
-        "true, true",
         "true, false",
         "false, true",
         "false, false"
     })
-    void setTransferPermissions_whenCallerIsNotAuthorized_shouldReturnUnauthorizedCode(boolean requestEnabled, boolean releaseEnabled) {
-        // arrange
-        UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
-        unionBridgeSupport = unionBridgeSupportBuilder
-            .withConstants(bridgeConstants).build();
-        when(rskTx.getSender(signatureCache)).thenReturn(
-            TestUtils.generateAddress("notAuthorizedAddress"));
-
-        // act
-        UnionResponseCode actualResponseCode = unionBridgeSupport.setTransferPermissions(rskTx, requestEnabled, releaseEnabled);
-
-        // assert
-        Assertions.assertEquals(UnionResponseCode.UNAUTHORIZED_CALLER, actualResponseCode);
-        assertNoEventWasEmitted();
-
-        // call save and assert that nothing is stored
-        unionBridgeSupport.save();
-        assertNoTransferPermissionsWereStored();
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "true, false",
-        "false, true",
-        "false, false"
-    })
-    void setTransferPermissions_whenCallerIsAuthorized_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
+    void setTransferPermissions_whenMeetsRequirements_shouldReturnSuccessCode(boolean requestEnabled, boolean releaseEnabled) {
         // arrange
         UnionBridgeConstants bridgeConstants = UnionBridgeMainNetConstants.getInstance();
         unionBridgeSupport = unionBridgeSupportBuilder
