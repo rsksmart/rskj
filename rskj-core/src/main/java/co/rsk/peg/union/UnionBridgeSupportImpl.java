@@ -89,17 +89,13 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
     public UnionResponseCode increaseLockingCap(Transaction tx, Coin newCap) {
         final String INCREASE_LOCKING_CAP_TAG = "increaseLockingCap";
 
-        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
-
         if (!isValidLockingCap(newCap)) {
             return UnionResponseCode.INVALID_VALUE;
         }
 
         RskAddress txSender = tx.getSender(signatureCache);
 
+        AddressBasedAuthorizer authorizer = constants.getChangeLockingCapAuthorizer();
         ABICallElection increaseLockingCapElection = storageProvider.getIncreaseLockingCapElection(
             authorizer);
         ABICallSpec increaseLockingCapVote = new ABICallSpec(INCREASE_LOCKING_CAP_TAG, new byte[][]{
@@ -295,11 +291,6 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         boolean releaseEnabled) {
         final String SET_TRANSFER_PERMISSIONS_TAG = "setTransferPermissions";
 
-        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
-        if (!isAuthorized(tx, authorizer)) {
-            return UnionResponseCode.UNAUTHORIZED_CALLER;
-        }
-
         if (isTransferPermissionStateAlreadySet(requestEnabled, releaseEnabled)) {
             logger.info(
                 "[{}] Transfer permissions are already set to the requested values. Request enabled: {}, Release enabled: {}",
@@ -311,6 +302,7 @@ public class UnionBridgeSupportImpl implements UnionBridgeSupport {
         }
 
         RskAddress txSender = tx.getSender(signatureCache);
+        AddressBasedAuthorizer authorizer = constants.getChangeTransferPermissionsAuthorizer();
         ABICallElection setTransferPermissionsElection = storageProvider.getTransferPermissionsElection(
             authorizer);
         ABICallSpec setTransferPermissionsVote = new ABICallSpec(SET_TRANSFER_PERMISSIONS_TAG, new byte[][]{
