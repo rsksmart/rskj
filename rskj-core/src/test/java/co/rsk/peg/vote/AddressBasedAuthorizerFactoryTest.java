@@ -1,6 +1,7 @@
 package co.rsk.peg.vote;
 
 import co.rsk.core.RskAddress;
+import java.util.HashSet;
 import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -76,8 +77,10 @@ class AddressBasedAuthorizerFactoryTest {
 
     @Test
     void buildMajorityAuthorizer_whenSetContainsNull_shouldThrowNullPointerException() {
-        Set<RskAddress> authorizersWithNull = Set.of((RskAddress) null);
-        Assertions.assertThrows(NullPointerException.class, () -> AddressBasedAuthorizerFactory.buildMajorityAuthorizer(authorizersWithNull));
+        Set<RskAddress> authorizersWithNull = new HashSet<>();
+        authorizersWithNull.add(null);
+        authorizersWithNull.add(null);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AddressBasedAuthorizerFactory.buildMajorityAuthorizer(authorizersWithNull));
     }
 
     @Test
