@@ -12,13 +12,13 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Set;
 
+import static co.rsk.core.RskAddress.ZERO_ADDRESS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class AddressBasedAuthorizerFactoryTest {
 
-    private static final RskAddress zeroAddress = new RskAddress("0000000000000000000000000000000000000000");
     private static final RskAddress authorizedAddress = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(1L)).getAddress());
     private static final RskAddress unauthorizedAddress = new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(999L)).getAddress());
     private static final Set<RskAddress> authorizedAddresses = Set.of(
@@ -40,10 +40,11 @@ class AddressBasedAuthorizerFactoryTest {
     @Test
     void buildSingleAuthorizer_whenZeroAddress_shouldBuildAuthorizer() {
         // Act
-        AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(zeroAddress);
+        AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
+            ZERO_ADDRESS);
 
         // Assert
-        assertSingleAuthorizer(addressBasedAuthorizer, zeroAddress);
+        assertSingleAuthorizer(addressBasedAuthorizer, ZERO_ADDRESS);
         // Assert unauthorized for any other addresses
         Assertions.assertFalse(addressBasedAuthorizer.isAuthorized(unauthorizedAddress));
     }
@@ -93,7 +94,7 @@ class AddressBasedAuthorizerFactoryTest {
 
     @Test
     void buildMajorityAuthorizer_whenSetContainsZeroAddress_shouldBuildAuthorizer() {
-        Set<RskAddress> addresses = Set.of(zeroAddress, authorizedAddress);
+        Set<RskAddress> addresses = Set.of(ZERO_ADDRESS, authorizedAddress);
         AddressBasedAuthorizer addressBasedAuthorizer = AddressBasedAuthorizerFactory.buildMajorityAuthorizer(addresses);
         assertMajorityAuthorizer(addressBasedAuthorizer, addresses);
         // Assert unauthorized for any other addresses

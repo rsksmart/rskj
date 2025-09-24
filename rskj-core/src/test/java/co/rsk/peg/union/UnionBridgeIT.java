@@ -27,14 +27,12 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.core.CallTransaction.Function;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -68,25 +66,8 @@ class UnionBridgeIT {
 
     private static final RskAddress UNAUTHORIZED_CALLER_ADDRESS = TestUtils.generateAddress("UNAUTHORIZED");
 
-    private static final RskAddress CHANGE_LOCKING_CAP_AUTHORIZER_1 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09"))
-            .getAddress());
-
-    private static final RskAddress CHANGE_LOCKING_CAP_AUTHORIZER_2 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "04ee99364235a33edbd177c0293bd3e13f1c85b2ee6197e66aa7e975fb91183b08b30bf1227468980180e10092decaaeed0ae1c4bcf29d17993569bb3c1b274f83"))
-            .getAddress());
-
-    private static final RskAddress CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282"))
-            .getAddress());
-
-    private static final RskAddress CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2 = new RskAddress(
-        ECKey.fromPublicOnly(Hex.decode(
-                "0486559d73a991df9e5eef1782c41959ecc7e334ef57ddcb6e4ebc500771a50f0c3b889afb9917165db383a9bf9a8e9b4f73abd542109ba06387f016f62df41b0f"))
-            .getAddress());
+    private static final RskAddress CHANGE_LOCKING_CAP_AUTHORIZER = RskAddress.ZERO_ADDRESS;
+    private static final RskAddress CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER = RskAddress.ZERO_ADDRESS;
 
     private static final RskAddress CURRENT_UNION_BRIDGE_ADDRESS = new RskAddress(
         "0000000000000000000000000000000000000000");
@@ -100,7 +81,6 @@ class UnionBridgeIT {
             LOCKING_CAP_INCREMENTS_MULTIPLIER));
 
     private static final Coin NEW_LOCKING_CAP_1 = INITIAL_MAX_LOCKING_CAP_INCREMENT.subtract(Coin.valueOf(20));
-    private static final Coin NEW_LOCKING_CAP_2 = NEW_LOCKING_CAP_1.add(Coin.valueOf(10));
 
     private static final BigInteger ONE_ETH = BigInteger.TEN.pow(
         18); // 1 ETH = 1000000000000000000 wei
@@ -345,53 +325,10 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(9)
-    void increaseUnionBridgeLockingCap_whenFirstVote_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_1);
-
-        // Act
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
-
-        // Assert
-        assertSuccessfulResponseCode(actualUnionResponseCode);
-        // Assert that the locking cap remains unchanged after the first vote
-        Coin actualUnionLockingCap = getUnionBridgeLockingCap();
-        assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
-        assertNoStoredUnionLockingCap();
-        assertNoEventWasEmitted();
-    }
-
-    /**
-     * This test simulates a scenario where a second vote is for a different value than the first vote.
-     * The expected result is that the second vote should be successful, but the locking cap should not change.
-     */
-    @Test
-    @Order(10)
-    void increaseUnionBridgeLockingCap_whenSecondVoteForDifferentValue_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
-        // Act
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_2);
-        // Assert
-        assertSuccessfulResponseCode(actualUnionResponseCode);
-        // Assert that the locking cap remains unchanged after the second vote for another value
-        Coin actualUnionLockingCap = getUnionBridgeLockingCap();
-        assertEquals(INITIAL_LOCKING_CAP, actualUnionLockingCap);
-        assertNoStoredUnionLockingCap();
-        assertNoEventWasEmitted();
-    }
-
-    /**
-     * This test simulates a scenario where a third vote is for the first value that was voted in the first vote.
-     * The expected result is that the third vote should be successful, and now since the required votes are 2 out of 3,
-     * the locking cap should be updated to the first value.
-     */
-    @Test
     @Order(11)
-    void increaseUnionBridgeLockingCap_whenThirdVoteForFirstValue_shouldIncrementLockingCap() throws VMException {
+    void increaseUnionBridgeLockingCap_whenAuthorized_shouldIncrementLockingCap() throws VMException {
         // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER);
         // Act
         int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_1);
         // Assert
@@ -401,25 +338,10 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(12)
-    void increaseUnionBridgeLockingCap_whenVoteAgainForPreviousDifferentValueAfterElectionClear_shouldVoteSuccessfulButNoChange() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
-        Coin lockingCapBeforeUpdate = getUnionBridgeLockingCap();
-        // Act
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(NEW_LOCKING_CAP_2);
-        // Assert
-        assertSuccessfulResponseCode(actualUnionResponseCode);
-        // Assert that the locking cap remains unchanged
-        assertLockingCap(lockingCapBeforeUpdate);
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(13)
     void increaseUnionBridgeLockingCap_whenSmallerLockingCap_shouldReturnInvalidValue() throws VMException {
         // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER);
         Coin lockingCapBeforeUpdate = getUnionBridgeLockingCap();
         Coin smallerLockingCap = lockingCapBeforeUpdate.subtract(Coin.valueOf(1));
         // Act
@@ -526,37 +448,10 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(19)
-    void setTransferPermissions_whenFirstVote_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-        // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        // Assert
-        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        // Assert transferred permissions remain unchanged
-        assertNoUnionTransferredPermissionsIsStored();
-        assertNoEventWasEmitted();
-    }
-
-    @Test
-    @Order(20)
-    void setTransferPermissions_whenSecondVoteForDifferentValue_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
-        // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
-        // Assert
-        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertNoUnionTransferredPermissionsIsStored();
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(21)
-    void setTransferPermissions_whenThirdVoteForSameValue_shouldUpdateTransferPermissions() throws VMException {
+    void setTransferPermissions_whenAuthorized_shouldUpdateTransferPermissions() throws VMException {
         // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
@@ -564,7 +459,7 @@ class UnionBridgeIT {
 
         // Assert transferred permissions are updated
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
     }
 
     @Test
@@ -592,30 +487,10 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(23)
-    void increaseUnionBridgeLockingCap_whenFirstVoteWhileTransferIsDisabled_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_1);
-        Coin lockingCapBeforeIncrement = getUnionBridgeLockingCap();
-        Coin newLockingCap = lockingCapBeforeIncrement.multiply(
-            BigInteger.valueOf(LOCKING_CAP_INCREMENTS_MULTIPLIER));
-
-        // Act
-        int actualUnionResponseCode = increaseUnionBridgeLockingCap(newLockingCap);
-
-        // Assert
-        assertSuccessfulResponseCode(actualUnionResponseCode);
-
-        // Assert that the locking cap remains unchanged
-        assertLockingCap(lockingCapBeforeIncrement);
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(24)
-    void increaseUnionBridgeLockingCap_whenSecondVoteWhileTransferIsDisabled_shouldIncrementLockingCap() throws VMException {
+    void increaseUnionBridgeLockingCap_whenTransferIsDisabled_shouldIncrementLockingCap() throws VMException {
         // Arrange
-        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER_2);
+        setupCaller(CHANGE_LOCKING_CAP_AUTHORIZER);
         Coin lockingCapBeforeIncrement = getUnionBridgeLockingCap();
         Coin newLockingCap = lockingCapBeforeIncrement.multiply(
             BigInteger.valueOf(LOCKING_CAP_INCREMENTS_MULTIPLIER));
@@ -644,25 +519,10 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(26)
-    void setTransferPermissions_whenFirstVoteToEnableOnlyRequest_shouldVoteSuccessfully()
-        throws VMException {
-        // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-        // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
-        // Assert
-        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        // Assert that the transfer permissions remain the same
-        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(27)
-    void setTransferPermissions_whenSecondVoteToEnableOnlyRequest_shouldUpdatePermissions() throws VMException {
+    void setTransferPermissions_whenSetToEnableOnlyRequest_shouldUpdatePermissions() throws VMException {
         // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
@@ -670,7 +530,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
     }
 
     @Test
@@ -710,24 +570,10 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(30)
-    void setTransferPermissions_whenFirstVoteToEnableOnlyRelease_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-        // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
-        // Assert
-        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        // Assert that the transfer permissions remain the same
-        assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_DISABLED);
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(31)
-    void setTransferPermissions_whenSecondVoteToEnableOnlyRelease_shouldUpdatePermissions() throws VMException {
+    void setTransferPermissions_whenSetToEnableOnlyRelease_shouldUpdatePermissions() throws VMException {
         // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
@@ -735,7 +581,7 @@ class UnionBridgeIT {
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
     }
 
     @Test
@@ -779,30 +625,17 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(34)
-    void setTransferPermissions_whenFirstVoteToEnableBothPermissions_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-        // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        // Assert
-        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_ENABLED);
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(35)
-    void setTransferPermissions_whenSecondVoteToEnableBothPermissions_shouldEnablePermissions() throws VMException {
+    void setTransferPermissions_whenSetToEnableBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
 
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
     }
 
     @Test
@@ -847,29 +680,16 @@ class UnionBridgeIT {
     }
 
     @Test
-    @Order(38)
-    void setTransferPermissions_whenFirstVoteToEnableBackBothPermissions_shouldVoteSuccessfully() throws VMException {
-        // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_1);
-        // Act
-        int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        // Assert
-        assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
-        assertUnionTransferredPermissions(REQUEST_PERMISSION_DISABLED, RELEASE_PERMISSION_DISABLED);
-        assertNoEventWasEmitted();
-    }
-
-    @Test
     @Order(39)
-    void setTransferPermissions_whenSecondVoteToEnableBackBothPermissions_shouldEnablePermissions() throws VMException {
+    void setTransferPermissions_whenSetToEnableBackBothPermissions_shouldEnablePermissions() throws VMException {
         // Arrange
-        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        setupCaller(CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
         // Act
         int unionTransferPermissionsResponseCode = setUnionTransferPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
         // Assert
         assertSuccessfulResponseCode(unionTransferPermissionsResponseCode);
         assertUnionTransferredPermissions(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED);
-        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER_2);
+        assertLogUnionTransferPermissionsSet(REQUEST_PERMISSION_ENABLED, RELEASE_PERMISSION_ENABLED, CHANGE_TRANSFER_PERMISSIONS_AUTHORIZER);
     }
 
     @Test
@@ -946,7 +766,7 @@ class UnionBridgeIT {
 
     private void assertLogUnionLockingCapIncreased(Coin previousLockingCap, Coin newLockingCap) {
         CallTransaction.Function unionLockingCapIncreasedEvent = UNION_LOCKING_CAP_INCREASED.getEvent();
-        List<DataWord> encodedTopics = getEncodedTopics(unionLockingCapIncreasedEvent, CHANGE_LOCKING_CAP_AUTHORIZER_2.toHexString());
+        List<DataWord> encodedTopics = getEncodedTopics(unionLockingCapIncreasedEvent, CHANGE_LOCKING_CAP_AUTHORIZER.toHexString());
         byte[] encodedData = getEncodedData(unionLockingCapIncreasedEvent, previousLockingCap.asBigInteger(), newLockingCap.asBigInteger());
         assertEventWasEmittedWithExpectedTopics(logs, encodedTopics);
         assertEventWasEmittedWithExpectedData(logs, encodedData);

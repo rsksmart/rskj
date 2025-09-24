@@ -1,5 +1,7 @@
 package co.rsk.peg.union.constants;
 
+import static co.rsk.core.RskAddress.ZERO_ADDRESS;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -36,13 +38,13 @@ public class UnionBridgeTestNetConstants extends UnionBridgeConstants {
 
         // TODO: Replace with actual authorizers
         changeLockingCapAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("0000000000000000000000000000000000000000")
-        );;
+            ZERO_ADDRESS
+        );
 
         // TODO: Replace with actual authorizers
         changeTransferPermissionsAuthorizer = AddressBasedAuthorizerFactory.buildSingleAuthorizer(
-            new RskAddress("0000000000000000000000000000000000000000")
-        );;
+            ZERO_ADDRESS
+        );
     }
 
     public static UnionBridgeConstants getInstance() {
