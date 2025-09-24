@@ -3417,12 +3417,8 @@ class BridgeTest {
         private static final ECKey changeTestnetUnionAddressKeyAuthorizer = ECKey.fromPublicOnly(Hex.decode("041fb6d4b421bb14d95b6fb79823d45b777f0e8fd07fe18d0940c0c113d9667911e354d4e8c8073f198d7ae5867d86e3068caff4f6bd7bffccc6757a3d7ee8024a"));
         private static final RskAddress changeTestnetUnionAddressAuthorizer = new RskAddress(changeTestnetUnionAddressKeyAuthorizer.getAddress());
 
-        private static final ECKey increaseLockingCapKeyAuthorizer = ECKey.fromPublicOnly(Hex.decode("040162aff21e78665eabe736746ed86ca613f9e628289438697cf820ed8ac800e5fe8cbca350f8cf0b3ee4ec3d8c3edec93820d889565d4ae9b4f6e6d012acec09"));
-        private static final RskAddress increaseLockingCapAuthorizer = new RskAddress(increaseLockingCapKeyAuthorizer.getAddress());
-
-        private static final ECKey setTransferPermissionsKeyAuthorizer = ECKey.fromPublicOnly(Hex.decode("0458fdbe66a1eda5b94eaf3b3ef1bc8439a05a0b13d2bb9d5a1c6ea1d98ed5b0405fd002c884eed4aa1102d812c7347acc6dd172ad4828de542e156bd47cd90282"));
-        private static final RskAddress setTransferPermissionsAuthorizer = new RskAddress(
-            setTransferPermissionsKeyAuthorizer.getAddress());
+        private static final RskAddress increaseLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
+        private static final RskAddress setTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
         private static final RskAddress unauthorizedCaller = new RskAddress("0000000000000000000000000000000000000001");
 

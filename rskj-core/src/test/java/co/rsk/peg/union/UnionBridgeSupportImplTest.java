@@ -47,9 +47,8 @@ class UnionBridgeSupportImplTest {
             "04bd1d5747ca6564ed860df015c1a8779a35ef2a9f184b6f5390bccb51a3dcace02f88a401778be6c8fd8ed61e4d4f1f508075b3394eb6ac0251d4ed6d06ce644d"))
         .getAddress());
 
-    private static final RskAddress zeroAddress = new RskAddress("0000000000000000000000000000000000000000");
-    private static final RskAddress changeLockingCapAuthorizer = zeroAddress;
-    private static final RskAddress changeTransferPermissionsAuthorizer = zeroAddress;
+    private static final RskAddress changeLockingCapAuthorizer = RskAddress.ZERO_ADDRESS;
+    private static final RskAddress changeTransferPermissionsAuthorizer = RskAddress.ZERO_ADDRESS;
 
     private static final RskAddress testnetChangeUnionAddressAuthorizer = new RskAddress(
         ECKey.fromPublicOnly(Hex.decode(
